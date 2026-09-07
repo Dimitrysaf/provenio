@@ -8,15 +8,18 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,58 +35,100 @@ import io.github.dimitrysaf.provenio.pages.MoviesPage
 import io.github.dimitrysaf.provenio.pages.ProfilePage
 import io.github.dimitrysaf.provenio.pages.SettingsPage
 import io.github.dimitrysaf.provenio.pages.TvPage
+import io.github.dimitrysaf.provenio.theme.AppTheme
+import io.github.dimitrysaf.provenio.theme.ThemeMode
+import io.github.dimitrysaf.provenio.theme.isDynamicColorSupported
+import io.github.dimitrysaf.provenio.ui.components.AppTopBar
+import io.github.dimitrysaf.provenio.ui.responsive.WindowSizeClass
 import io.github.dimitrysaf.provenio.ui.responsive.contentHorizontalPadding
 import io.github.dimitrysaf.provenio.ui.responsive.maxContentWidth
+import io.github.dimitrysaf.provenio.ui.responsive.windowSizeClassOf
+
+@Composable
+private fun DestinationIcon(entry: Destination, selected: Boolean) {
+    Icon(
+        imageVector = if (selected) entry.selectedIcon else entry.unselectedIcon,
+        contentDescription = entry.label,
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
-    MaterialTheme {
+    var themeMode by remember { mutableStateOf(ThemeMode.System) }
+    var useDynamicColor by remember { mutableStateOf(true) }
+
+    AppTheme(themeMode = themeMode, useDynamicColor = useDynamicColor) {
         var destination by remember { mutableStateOf(Destination.Profile) }
 
-        Scaffold(
-            bottomBar = {
-                NavigationBar {
-                    Destination.entries.forEach { entry ->
-                        val selected = entry == destination
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = { destination = entry },
-                            icon = {
-                                Icon(
-                                    imageVector = if (selected) entry.selectedIcon else entry.unselectedIcon,
-                                    contentDescription = entry.label,
-                                )
-                            },
-                            label = { Text(entry.label) },
-                        )
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val isCompact = windowSizeClassOf(maxWidth) == WindowSizeClass.Compact
+
+            Row(modifier = Modifier.fillMaxSize()) {
+                if (!isCompact) {
+                    NavigationRail {
+                        Destination.entries.forEach { entry ->
+                            val selected = entry == destination
+                            NavigationRailItem(
+                                selected = selected,
+                                onClick = { destination = entry },
+                                icon = { DestinationIcon(entry, selected) },
+                                label = { Text(entry.label) },
+                            )
+                        }
                     }
                 }
-            },
-        ) { innerPadding ->
-            BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-                val horizontalPadding = contentHorizontalPadding(maxWidth)
 
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                    AnimatedContent(
-                        targetState = destination,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .widthIn(max = maxContentWidth)
-                            .padding(horizontal = horizontalPadding),
-                        transitionSpec = {
-                            (fadeIn() + slideInVertically { height -> height / 8 })
-                                .togetherWith(fadeOut() + slideOutVertically { height -> -height / 8 })
-                        },
-                    ) { current ->
-                        val content: @Composable (Modifier) -> Unit = when (current) {
-                            Destination.Profile -> { modifier -> ProfilePage(modifier) }
-                            Destination.Tv -> { modifier -> TvPage(modifier) }
-                            Destination.Movies -> { modifier -> MoviesPage(modifier) }
-                            Destination.Lists -> { modifier -> ListsPage(modifier) }
-                            Destination.Settings -> { modifier -> SettingsPage(modifier) }
+                Scaffold(
+                    modifier = Modifier.weight(1f),
+                    topBar = { AppTopBar() },
+                    bottomBar = {
+                        if (isCompact) {
+                            NavigationBar {
+                                Destination.entries.forEach { entry ->
+                                    val selected = entry == destination
+                                    NavigationBarItem(
+                                        selected = selected,
+                                        onClick = { destination = entry },
+                                        icon = { DestinationIcon(entry, selected) },
+                                        label = { Text(entry.label) },
+                                    )
+                                }
+                            }
                         }
-                        content(Modifier.fillMaxSize())
+                    },
+                ) { innerPadding ->
+                    BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                        val horizontalPadding = contentHorizontalPadding(maxWidth)
+
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                            AnimatedContent(
+                                targetState = destination,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .widthIn(max = maxContentWidth)
+                                    .padding(horizontal = horizontalPadding),
+                                transitionSpec = {
+                                    (fadeIn() + slideInVertically { height -> height / 8 })
+                                        .togetherWith(fadeOut() + slideOutVertically { height -> -height / 8 })
+                                },
+                            ) { current ->
+                                when (current) {
+                                    Destination.Profile -> ProfilePage(Modifier.fillMaxSize())
+                                    Destination.Tv -> TvPage(Modifier.fillMaxSize())
+                                    Destination.Movies -> MoviesPage(Modifier.fillMaxSize())
+                                    Destination.Lists -> ListsPage(Modifier.fillMaxSize())
+                                    Destination.Settings -> SettingsPage(
+                                        modifier = Modifier.fillMaxSize(),
+                                        themeMode = themeMode,
+                                        onThemeModeChange = { themeMode = it },
+                                        useDynamicColor = useDynamicColor,
+                                        onUseDynamicColorChange = { useDynamicColor = it },
+                                        dynamicColorAvailable = isDynamicColorSupported(),
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
