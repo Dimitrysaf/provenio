@@ -17,6 +17,11 @@ jobs:
     steps:
       - name: Set up environment
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        run: echo "VERSION=0.0.1-$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
 
       - name: Install JDK
         uses: actions/setup-java@v4
@@ -47,8 +52,8 @@ jobs:
       - name: Output prerelease
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: prerelease
-          name: "Prerelease (latest main)"
+          tag_name: ${{ env.VERSION }}
+          name: "Prerelease ${{ env.VERSION }}"
           prerelease: true
           make_latest: false
           target_commitish: ${{ github.sha }}
