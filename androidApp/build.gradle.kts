@@ -10,11 +10,6 @@ kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
     }
-
-    dependencies {
-        implementation(projects.composeApp)
-        implementation(libs.androidx.activity.compose)
-    }
 }
 
 android {
@@ -28,4 +23,9 @@ android {
         versionCode = 1
         versionName = "1.0.0"
     }
+}
+
+dependencies {
+    implementation(project(":composeApp"))
+    implementation(libs.androidx.activity.compose)
 }
