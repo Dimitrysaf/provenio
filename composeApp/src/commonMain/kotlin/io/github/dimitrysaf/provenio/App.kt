@@ -1,16 +1,15 @@
 package io.github.dimitrysaf.provenio
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,7 +27,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.navigation.Destination
 import io.github.dimitrysaf.provenio.navigation.Screen
 import io.github.dimitrysaf.provenio.pages.ListsPage
@@ -53,6 +57,11 @@ private fun DestinationIcon(entry: Destination, selected: Boolean) {
     )
 }
 
+@Composable
+private fun DestinationLabel(entry: Destination, selected: Boolean) {
+    Text(text = entry.label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
@@ -73,64 +82,72 @@ fun App() {
         ) {
             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                 val isCompact = windowSizeClassOf(maxWidth) == WindowSizeClass.Compact
+                val density = LocalDensity.current
 
-                Row(modifier = Modifier.fillMaxSize()) {
+                var railWidthPx by remember { mutableStateOf(0) }
+                var navBarHeightPx by remember { mutableStateOf(0) }
+                val railWidth = with(density) { railWidthPx.toDp() }
+                val navBarHeight = with(density) { navBarHeightPx.toDp() }
+
+                // The rail/bottom bar always stays laid out in place; content overlays it
+                // (rather than being removed from composition) so hiding never leaves a
+                // reflow gap behind.
+                val startInset by animateDpAsState(if (!isCompact && navBarVisible) railWidth else 0.dp)
+                val bottomInset by animateDpAsState(if (isCompact && navBarVisible) navBarHeight else 0.dp)
+
+                Box(modifier = Modifier.fillMaxSize()) {
                     if (!isCompact) {
-                        AnimatedVisibility(
-                            visible = navBarVisible,
-                            enter = fadeIn() + slideInHorizontally { width -> -width },
-                            exit = fadeOut() + slideOutHorizontally { width -> -width },
+                        NavigationRail(
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .fillMaxHeight()
+                                .onSizeChanged { size -> railWidthPx = size.width },
                         ) {
-                            NavigationRail {
-                                Destination.entries.forEach { entry ->
-                                    val selected = entry == selectedTab
-                                    NavigationRailItem(
-                                        selected = selected,
-                                        onClick = {
-                                            selectedTab = entry
-                                            screen = Screen.Tab(entry)
-                                        },
-                                        icon = { DestinationIcon(entry, selected) },
-                                        label = { Text(entry.label) },
-                                    )
-                                }
+                            Destination.entries.forEach { entry ->
+                                val selected = entry == selectedTab
+                                NavigationRailItem(
+                                    selected = selected,
+                                    onClick = {
+                                        selectedTab = entry
+                                        screen = Screen.Tab(entry)
+                                    },
+                                    icon = { DestinationIcon(entry, selected) },
+                                    label = { DestinationLabel(entry, selected) },
+                                )
+                            }
+                        }
+                    } else {
+                        NavigationBar(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .onSizeChanged { size -> navBarHeightPx = size.height },
+                        ) {
+                            Destination.entries.forEach { entry ->
+                                val selected = entry == selectedTab
+                                NavigationBarItem(
+                                    selected = selected,
+                                    onClick = {
+                                        selectedTab = entry
+                                        screen = Screen.Tab(entry)
+                                    },
+                                    icon = { DestinationIcon(entry, selected) },
+                                    label = { DestinationLabel(entry, selected) },
+                                )
                             }
                         }
                     }
 
                     Scaffold(
-                        modifier = Modifier.weight(1f),
-                        bottomBar = {
-                            if (isCompact) {
-                                AnimatedVisibility(
-                                    visible = navBarVisible,
-                                    enter = fadeIn() + slideInVertically { height -> height },
-                                    exit = fadeOut() + slideOutVertically { height -> height },
-                                ) {
-                                    NavigationBar {
-                                        Destination.entries.forEach { entry ->
-                                            val selected = entry == selectedTab
-                                            NavigationBarItem(
-                                                selected = selected,
-                                                onClick = {
-                                                    selectedTab = entry
-                                                    screen = Screen.Tab(entry)
-                                                },
-                                                icon = { DestinationIcon(entry, selected) },
-                                                label = { Text(entry.label) },
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(start = startInset, bottom = bottomInset),
+                        contentWindowInsets = WindowInsets(left = 0, top = 0, right = 0, bottom = 0),
                     ) { innerPadding ->
                         AnimatedContent(
                             targetState = screen,
                             modifier = Modifier.fillMaxSize().padding(innerPadding),
                             transitionSpec = {
-                                (fadeIn() + slideInVertically { height -> height / 8 })
-                                    .togetherWith(fadeOut() + slideOutVertically { height -> -height / 8 })
+                                fadeIn(tween(100)).togetherWith(fadeOut(tween(100)))
                             },
                         ) { current ->
                             when (current) {
