@@ -11,7 +11,7 @@ plugins {
 kotlin {
     androidLibrary {
         namespace = "io.github.dimitrysaf.provenio.shared"
-        compileSdk = 36
+        compileSdk = 37
 
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
