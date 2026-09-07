@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -101,6 +102,7 @@ fun App() {
                             modifier = Modifier
                                 .align(Alignment.CenterStart)
                                 .fillMaxHeight()
+                                .width(96.dp)
                                 .onSizeChanged { size -> railWidthPx = size.width },
                         ) {
                             Destination.entries.forEach { entry ->
