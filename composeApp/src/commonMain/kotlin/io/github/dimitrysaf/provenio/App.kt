@@ -33,6 +33,7 @@ import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import io.github.dimitrysaf.provenio.navigation.Destination
 import io.github.dimitrysaf.provenio.navigation.Overlay
+import io.github.dimitrysaf.provenio.pages.AppearancePage
 import io.github.dimitrysaf.provenio.pages.ListsPage
 import io.github.dimitrysaf.provenio.pages.MoviesPage
 import io.github.dimitrysaf.provenio.pages.ProfilePage
@@ -61,6 +63,7 @@ import kotlinx.coroutines.launch
 
 /** How far the leaving page shrinks and slides at full predictive-back progress. */
 private const val BackScaleAtFullProgress = 0.9f
+private const val BackAlphaAtFullProgress = 0.9f
 private const val BackSlideFractionOfWidth = 0.08f
 private val BackCornerRadiusAtFullProgress = 28.dp
 
@@ -80,20 +83,29 @@ fun App() {
 
     AppTheme(themeMode = themeMode, useDynamicColor = useDynamicColor) {
         var selectedTab by remember { mutableStateOf(Destination.Profile) }
-        var overlay by remember { mutableStateOf<Overlay?>(null) }
+        var overlayStack by remember { mutableStateOf<List<Overlay>>(emptyList()) }
 
         val scope = rememberCoroutineScope()
         val backProgress = remember { Animatable(0f) }
         var backFromStart by remember { mutableStateOf(true) }
+        // Progress frozen at the moment a gesture committed, so the page that is leaving
+        // keeps the position the drag gave it instead of snapping back to full size first.
+        var exitProgress by remember { mutableFloatStateOf(0f) }
 
-        fun open(target: Overlay) {
-            // Clear any progress left over from the previous dismissal before entering.
+        fun push(target: Overlay) {
             scope.launch { backProgress.snapTo(0f) }
-            overlay = target
+            exitProgress = 0f
+            overlayStack = overlayStack + target
+        }
+
+        fun pop() {
+            exitProgress = backProgress.value
+            scope.launch { backProgress.snapTo(0f) }
+            overlayStack = overlayStack.dropLast(1)
         }
 
         SystemBackHandler(
-            enabled = overlay != null,
+            enabled = overlayStack.isNotEmpty(),
             onProgress = { gesture ->
                 backFromStart = gesture.fromStart
                 scope.launch { backProgress.snapTo(gesture.progress) }
@@ -109,9 +121,7 @@ fun App() {
                     )
                 }
             },
-            // Progress deliberately stays where the drag left it, so the exit animation
-            // continues from the previewed position instead of snapping back first.
-            onBack = { overlay = null },
+            onBack = { pop() },
         )
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -175,22 +185,22 @@ fun App() {
                         when (tab) {
                             Destination.Profile -> ProfilePage(
                                 modifier = Modifier.fillMaxSize(),
-                                onSearchClick = { open(Overlay.Search) },
-                                onSettingsClick = { open(Overlay.Settings) },
+                                onSearchClick = { push(Overlay.Search) },
+                                onSettingsClick = { push(Overlay.Settings) },
                             )
                             Destination.Tv -> TvPage(
                                 modifier = Modifier.fillMaxSize(),
-                                onSearchClick = { open(Overlay.Search) },
+                                onSearchClick = { push(Overlay.Search) },
                                 onFilterClick = {},
                             )
                             Destination.Movies -> MoviesPage(
                                 modifier = Modifier.fillMaxSize(),
-                                onSearchClick = { open(Overlay.Search) },
+                                onSearchClick = { push(Overlay.Search) },
                                 onFilterClick = {},
                             )
                             Destination.Lists -> ListsPage(
                                 modifier = Modifier.fillMaxSize(),
-                                onSearchClick = { open(Overlay.Search) },
+                                onSearchClick = { push(Overlay.Search) },
                                 onFilterClick = {},
                             )
                         }
@@ -212,19 +222,38 @@ fun App() {
                 }
             }
 
-            // ── Layer 2: sub-pages, stacked over the navigation ─────────────────────
-            // An overlay covers the rail/bar rather than asking it to move aside, and
-            // carries the predictive-back transform as the user drags.
+            // ── Layer 2: the overlay stack, over the navigation ─────────────────────
+            // The page one level down is composed underneath the top one so that dragging
+            // back reveals the page you are actually returning to, not the tabs behind it.
+            val beneath = overlayStack.getOrNull(overlayStack.lastIndex - 1)
+            if (beneath != null) {
+                OverlaySurface(modifier = Modifier.fillMaxSize()) {
+                    OverlayPage(
+                        overlay = beneath,
+                        onBack = { pop() },
+                        onPush = { push(it) },
+                        themeMode = themeMode,
+                        onThemeModeChange = { themeMode = it },
+                        useDynamicColor = useDynamicColor,
+                        onUseDynamicColorChange = { useDynamicColor = it },
+                    )
+                }
+            }
+
             AnimatedContent(
-                targetState = overlay,
+                targetState = overlayStack,
                 modifier = Modifier.fillMaxSize(),
                 transitionSpec = {
+                    // Pushing slides the new page in from the end edge; popping sends the
+                    // leaving page back out that way and brings the previous one in from
+                    // the start, which is the direction the back gesture already implies.
+                    val forward = targetState.size >= initialState.size
                     val enter = slideInHorizontally(
                         animationSpec = tween(
                             durationMillis = MotionTokens.DurationMedium4,
                             easing = MotionTokens.EmphasizedDecelerate,
                         ),
-                        initialOffsetX = { it },
+                        initialOffsetX = { width -> if (forward) width else -width },
                     ) + fadeIn(
                         tween(
                             durationMillis = MotionTokens.DurationMedium2,
@@ -236,7 +265,7 @@ fun App() {
                             durationMillis = MotionTokens.DurationMedium2,
                             easing = MotionTokens.EmphasizedAccelerate,
                         ),
-                        targetOffsetX = { it },
+                        targetOffsetX = { width -> if (forward) -width else width },
                     ) + fadeOut(
                         tween(
                             durationMillis = MotionTokens.DurationShort4,
@@ -246,45 +275,42 @@ fun App() {
                     (enter togetherWith exit).using(SizeTransform(clip = false))
                 },
                 label = "overlay",
-            ) { current ->
+            ) { stack ->
+                val current = stack.lastOrNull()
                 if (current == null) {
                     // Nothing stacked; layer 1 shows through untouched.
                     Box(modifier = Modifier.fillMaxSize())
                 } else {
-                    Surface(
+                    // The page still on top follows the live gesture; one already on its
+                    // way out holds the progress it was released at.
+                    val isTop = stack == overlayStack
+                    OverlaySurface(
                         modifier = Modifier
                             .fillMaxSize()
                             .graphicsLayer {
-                                val progress = backProgress.value
-                                val scale = lerpFloat(1f, BackScaleAtFullProgress, progress)
+                                val progress =
+                                    if (isTop) backProgress.value else exitProgress
+                                val scale = 1f + (BackScaleAtFullProgress - 1f) * progress
                                 scaleX = scale
                                 scaleY = scale
                                 translationX = (if (backFromStart) 1f else -1f) *
                                     progress * size.width * BackSlideFractionOfWidth
-                                alpha = lerpFloat(1f, 0.9f, progress)
+                                alpha = 1f + (BackAlphaAtFullProgress - 1f) * progress
                                 shape = RoundedCornerShape(
                                     lerp(0.dp, BackCornerRadiusAtFullProgress, progress),
                                 )
                                 clip = progress > 0f
-                            }
-                            .windowInsetsPadding(WindowInsets.navigationBars),
-                        color = MaterialTheme.colorScheme.background,
+                            },
                     ) {
-                        when (current) {
-                            Overlay.Settings -> SettingsPage(
-                                modifier = Modifier.fillMaxSize(),
-                                onBack = { overlay = null },
-                                themeMode = themeMode,
-                                onThemeModeChange = { themeMode = it },
-                                useDynamicColor = useDynamicColor,
-                                onUseDynamicColorChange = { useDynamicColor = it },
-                                dynamicColorAvailable = isDynamicColorSupported(),
-                            )
-                            Overlay.Search -> SearchPage(
-                                modifier = Modifier.fillMaxSize(),
-                                onBack = { overlay = null },
-                            )
-                        }
+                        OverlayPage(
+                            overlay = current,
+                            onBack = { pop() },
+                            onPush = { push(it) },
+                            themeMode = themeMode,
+                            onThemeModeChange = { themeMode = it },
+                            useDynamicColor = useDynamicColor,
+                            onUseDynamicColorChange = { useDynamicColor = it },
+                        )
                     }
                 }
             }
@@ -292,5 +318,50 @@ fun App() {
     }
 }
 
-private fun lerpFloat(start: Float, stop: Float, fraction: Float): Float =
-    start + (stop - start) * fraction
+/**
+ * Opaque backing for a stacked page. Material's Surface also blocks pointer events, so an
+ * overlay swallows touches meant for the navigation it covers.
+ */
+@Composable
+private fun OverlaySurface(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Surface(
+        modifier = modifier.windowInsetsPadding(WindowInsets.navigationBars),
+        color = MaterialTheme.colorScheme.background,
+        content = content,
+    )
+}
+
+@Composable
+private fun OverlayPage(
+    overlay: Overlay,
+    onBack: () -> Unit,
+    onPush: (Overlay) -> Unit,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
+    useDynamicColor: Boolean,
+    onUseDynamicColorChange: (Boolean) -> Unit,
+) {
+    when (overlay) {
+        Overlay.Settings -> SettingsPage(
+            modifier = Modifier.fillMaxSize(),
+            onBack = onBack,
+            onOpenAppearance = { onPush(Overlay.Appearance) },
+        )
+        Overlay.Appearance -> AppearancePage(
+            modifier = Modifier.fillMaxSize(),
+            onBack = onBack,
+            themeMode = themeMode,
+            onThemeModeChange = onThemeModeChange,
+            useDynamicColor = useDynamicColor,
+            onUseDynamicColorChange = onUseDynamicColorChange,
+            dynamicColorAvailable = isDynamicColorSupported(),
+        )
+        Overlay.Search -> SearchPage(
+            modifier = Modifier.fillMaxSize(),
+            onBack = onBack,
+        )
+    }
+}
