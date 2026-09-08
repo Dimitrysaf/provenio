@@ -3,11 +3,11 @@ package io.github.dimitrysaf.provenio.pages
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,7 +23,6 @@ import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -68,68 +67,41 @@ import kotlinx.coroutines.launch
 fun AddonsContent() {
     val collection by AddonRepository.collection.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
-
     val addons = collection.all
-    if (addons.isEmpty()) {
-        EmptyAddons()
-    } else {
-        Text(
-            text = "Add-ons are asked in this order.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-        SettingsGroup(verticalArrangement = Arrangement.spacedBy(SettingsTileSpacing)) {
-            addons.forEachIndexed { index, addon ->
-                AddonRow(
-                    addon = addon,
-                    isFirst = index == 0,
-                    isLast = index == addons.lastIndex,
-                    position = tilePositionOf(index, addons.size),
-                )
-            }
-        }
-    }
 
-    Spacer(Modifier.height(16.dp))
-    FilledTonalButton(
-        onClick = { showAddDialog = true },
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Icon(Icons.Filled.Add, contentDescription = null)
-        Spacer(Modifier.width(8.dp))
-        Text("Add an add-on")
+    Text(
+        text = if (addons.isEmpty()) {
+            "Add-ons supply the catalogs, metadata and streams."
+        } else {
+            "Add-ons are asked in this order."
+        },
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+
+    // One block: the installed add-ons, with adding one as its last row rather than a
+    // button floating on the page behind them.
+    val rowCount = addons.size + 1
+    SettingsGroup(verticalArrangement = Arrangement.spacedBy(SettingsTileSpacing)) {
+        addons.forEachIndexed { index, addon ->
+            AddonRow(
+                addon = addon,
+                isFirst = index == 0,
+                isLast = index == addons.lastIndex,
+                position = tilePositionOf(index, rowCount),
+            )
+        }
+        SettingsTile(
+            title = { Text("Add an add-on") },
+            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+            position = tilePositionOf(addons.size, rowCount),
+            onClick = { showAddDialog = true },
+        )
     }
 
     if (showAddDialog) {
         AddAddonDialog(onDismiss = { showAddDialog = false })
-    }
-}
-
-@Composable
-private fun EmptyAddons() {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 48.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Extension,
-            contentDescription = null,
-            modifier = Modifier.size(48.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = "No add-ons yet",
-            style = MaterialTheme.typography.titleMedium,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = "Add-ons supply the catalogs, metadata and streams. " +
-                "Paste an add-on's manifest URL to get started.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 
