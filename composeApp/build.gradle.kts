@@ -36,6 +36,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.navigation.compose)
             implementation(libs.sqldelight.runtime)
+            implementation(libs.compose.settings.expressive)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
