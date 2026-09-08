@@ -2,8 +2,7 @@ package io.github.dimitrysaf.provenio.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -37,7 +36,12 @@ private fun ColorScheme.toAmoled(): ColorScheme {
 
 private const val AmoledBlend = 0.6f
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+/**
+ * Colour is the only slot supplied here; the baseline M3 typography and shape scales are
+ * already spec-correct. `MaterialExpressiveTheme` would additionally install the expressive
+ * motion, shape and type scales, but it is `internal` in material3 1.12.0-alpha03 — see
+ * [MotionTokens] for how motion is handled in the meantime.
+ */
 @Composable
 fun AppTheme(
     themeMode: ThemeMode,
@@ -60,8 +64,5 @@ fun AppTheme(
         baseScheme
     }
 
-    // MaterialExpressiveTheme installs the expressive motion scheme, shape scale and
-    // typography by default; plain MaterialTheme leaves motionScheme unset, which is why
-    // components fell back to generic springs before.
-    MaterialExpressiveTheme(colorScheme = colorScheme, content = content)
+    MaterialTheme(colorScheme = colorScheme, content = content)
 }
