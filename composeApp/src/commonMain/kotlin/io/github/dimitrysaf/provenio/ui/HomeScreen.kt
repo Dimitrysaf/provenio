@@ -1,10 +1,9 @@
 package io.github.dimitrysaf.provenio.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -97,23 +96,16 @@ fun HomeScreen(
                 AnimatedContent(
                     targetState = selectedTab,
                     modifier = Modifier.weight(1f),
-                    // M3 fade-through between top-level destinations.
+                    // Same rule as page transitions: the arriving tab fades in over the
+                    // outgoing one, which stays opaque underneath. Fading both out at once
+                    // would show the window background through the gap.
                     transitionSpec = {
-                        val enterSpec = tween<Float>(
-                            durationMillis = MotionTokens.DurationMedium1,
-                            easing = MotionTokens.EmphasizedDecelerate,
-                        )
-                        (
-                            fadeIn(enterSpec) +
-                                scaleIn(animationSpec = enterSpec, initialScale = 0.92f)
-                            ).togetherWith(
-                            fadeOut(
-                                tween(
-                                    durationMillis = MotionTokens.DurationShort4,
-                                    easing = MotionTokens.StandardAccelerate,
-                                ),
+                        fadeIn(
+                            tween(
+                                durationMillis = MotionTokens.DurationShort2,
+                                easing = MotionTokens.Standard,
                             ),
-                        )
+                        ) togetherWith ExitTransition.None
                     },
                     label = "tab",
                 ) { tab ->

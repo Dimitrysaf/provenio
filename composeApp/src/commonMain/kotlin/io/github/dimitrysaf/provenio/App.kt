@@ -2,12 +2,9 @@ package io.github.dimitrysaf.provenio
 
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
@@ -35,55 +32,26 @@ import io.github.dimitrysaf.provenio.theme.isDynamicColorSupported
 import io.github.dimitrysaf.provenio.ui.HomeScreen
 
 /**
- * Page transition, per the predictive-back specification for full-screen surfaces.
+ * Page transition: a single fast fade, nothing else.
  *
- * Going back, the leaving surface scales 100% → 90% and the destination scales 110% → 100%,
- * with the two fades crossing at [FadeThreshold] so neither is fully opaque at the halfway
- * point. Going forward is the same transform inverted. Navigation Compose seeks these
- * transitions with the back gesture, so the destination is on screen and scaling up while
- * the user drags — which is the whole point of the preview.
+ * Only ever one surface animates, and it animates on top of another that stays fully
+ * opaque — the arriving page fades in over the one it covers, and going back the leaving
+ * page fades out over the destination already sitting behind it. That is what keeps the
+ * transition clean: cross-fading both at once leaves a window where neither is opaque and
+ * the window background shows through as a dark flash.
  *
- * https://developer.android.com/design/ui/mobile/guides/patterns/predictive-back
+ * Because the destination underneath is at full opacity from the first frame, the back
+ * gesture previews it immediately as Navigation Compose seeks [popExit] with the drag.
  */
-private const val PageDuration = MotionTokens.DurationMedium2
-private const val FadeThreshold = 0.35f
-private const val ExitScale = 0.9f
-private const val EnterScale = 1.1f
-
-private val fadeThroughIn = fadeIn(
-    animationSpec = keyframes {
-        durationMillis = PageDuration
-        0f at 0
-        0f at (PageDuration * FadeThreshold).toInt()
-        1f at PageDuration
-    },
+private val fadeSpec = tween<Float>(
+    durationMillis = MotionTokens.DurationShort2,
+    easing = MotionTokens.Standard,
 )
 
-private val fadeThroughOut = fadeOut(
-    animationSpec = keyframes {
-        durationMillis = PageDuration
-        1f at 0
-        0f at (PageDuration * FadeThreshold).toInt()
-        0f at PageDuration
-    },
-)
-
-private val scaleSpec = tween<Float>(
-    durationMillis = PageDuration,
-    easing = MotionTokens.StandardDecelerate,
-)
-
-/** Forward: the arriving page grows into place, the one it covers recedes. */
-private val pushEnter: EnterTransition =
-    fadeThroughIn + scaleIn(animationSpec = scaleSpec, initialScale = ExitScale)
-private val pushExit: ExitTransition =
-    fadeThroughOut + scaleOut(animationSpec = scaleSpec, targetScale = EnterScale)
-
-/** Back: the leaving page shrinks away, the destination settles down from above 100%. */
-private val popEnter: EnterTransition =
-    fadeThroughIn + scaleIn(animationSpec = scaleSpec, initialScale = EnterScale)
-private val popExit: ExitTransition =
-    fadeThroughOut + scaleOut(animationSpec = scaleSpec, targetScale = ExitScale)
+private val pushEnter: EnterTransition = fadeIn(fadeSpec)
+private val pushExit: ExitTransition = ExitTransition.None
+private val popEnter: EnterTransition = EnterTransition.None
+private val popExit: ExitTransition = fadeOut(fadeSpec)
 
 @Composable
 fun App() {
