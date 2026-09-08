@@ -36,6 +36,7 @@ import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.PlayerScreen
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
+import io.github.dimitrysaf.provenio.stremio.SearchRepository
 import io.github.dimitrysaf.provenio.pages.DetailPage
 import io.github.dimitrysaf.provenio.pages.SearchPage
 import io.github.dimitrysaf.provenio.pages.SettingsCategory
@@ -89,6 +90,7 @@ fun App() {
         AddonRepository.load()
         P2pRepository.load()
         PlayerRepository.load()
+        SearchRepository.load()
     }
 
     AppTheme(themeMode = themeMode, useDynamicColor = useDynamicColor) {

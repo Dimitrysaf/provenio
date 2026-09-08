@@ -26,7 +26,18 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Movie
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Sell
+import androidx.compose.material.icons.outlined.StarOutline
+import androidx.compose.material.icons.outlined.Subject
+import androidx.compose.material.icons.outlined.Tv
+import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -53,6 +64,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -252,7 +264,7 @@ private fun WatchProgress(meta: Meta) {
     // Zero until Simkl or local playback tracking exists.
     val watched = 0
 
-    SectionCard(title = "Watch progress") {
+    SectionCard(title = "Watch progress", icon = Icons.Outlined.Visibility) {
         // A bar pinned at zero says nothing that the text below it does not.
         if (watched > 0) {
             LinearProgressIndicator(
@@ -274,7 +286,7 @@ private fun WatchProgress(meta: Meta) {
 
 @Composable
 private fun Ratings(meta: Meta) {
-    SectionCard(title = "Ratings") {
+    SectionCard(title = "Ratings", icon = Icons.Outlined.StarOutline) {
         Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
             RatingBlock("IMDb", meta.imdbRating)
             RatingBlock("Simkl", null)
@@ -299,7 +311,7 @@ private fun RatingBlock(source: String, value: String?) {
 
 @Composable
 private fun Synopsis(meta: Meta) {
-    SectionCard(title = "Plot") {
+    SectionCard(title = "Plot", icon = Icons.Outlined.Subject) {
         Text(
             text = meta.description ?: "No description provided",
             style = MaterialTheme.typography.bodyMedium,
@@ -311,7 +323,7 @@ private fun LazyListScope.seasonSection(
     seasons: List<Pair<Int, List<Video>>>,
     expanded: MutableState<Int>,
 ) {
-    item { SectionHeader("Episodes") }
+    item { SectionHeader("Episodes", Icons.Outlined.Tv) }
 
     if (seasons.isEmpty()) {
         item { EmptyNote("No episodes listed for this title.") }
@@ -434,7 +446,7 @@ private fun EpisodeRow(video: Video) {
 }
 
 private fun LazyListScope.castAndCrew(meta: Meta) {
-    item { SectionHeader("Cast and crew") }
+    item { SectionHeader("Cast and crew", Icons.Outlined.Group) }
 
     val people = meta.cast.map { it to "Cast" } + meta.director.map { it to "Director" }
     if (people.isEmpty()) {
@@ -490,25 +502,25 @@ private fun PersonCard(name: String, role: String) {
 }
 
 private fun LazyListScope.tagsAndThemes(meta: Meta) {
-    item { SectionHeader("Tags") }
+    item { SectionHeader("Tags", Icons.Outlined.Sell) }
     if (meta.genres.isEmpty()) {
         item { EmptyNote("No tags provided.") }
     } else {
         item { ChipFlow(meta.genres) }
     }
 
-    item { SectionHeader("Themes") }
+    item { SectionHeader("Themes", Icons.Outlined.Palette) }
     // Themes are a Simkl concept. The addon protocol has no equivalent field.
     item { EmptyNote("Themes are not available from add-ons.") }
 }
 
 private fun LazyListScope.commentsSection() {
-    item { SectionHeader("Comments") }
+    item { SectionHeader("Comments", Icons.Outlined.ChatBubbleOutline) }
     item { EmptyNote("Comments arrive with account sign-in.") }
 }
 
 private fun LazyListScope.factsSection(meta: Meta) {
-    item { SectionHeader("Facts") }
+    item { SectionHeader("Facts", Icons.Outlined.Info) }
 
     val facts = listOfNotNull(
         meta.released?.let { "Air date" to it.take(10) },
@@ -540,7 +552,7 @@ private fun LazyListScope.factsSection(meta: Meta) {
 }
 
 private fun LazyListScope.trailersSection(meta: Meta, openUrl: (String) -> Unit) {
-    item { SectionHeader("Trailers") }
+    item { SectionHeader("Trailers", Icons.Outlined.Movie) }
     if (meta.trailers.isEmpty()) {
         item { EmptyNote("No trailers provided.") }
         return
@@ -564,7 +576,7 @@ private fun LazyListScope.trailersSection(meta: Meta, openUrl: (String) -> Unit)
 }
 
 private fun LazyListScope.backdropsSection(meta: Meta) {
-    item { SectionHeader("Backdrops") }
+    item { SectionHeader("Backdrops", Icons.Outlined.Image) }
     val art = listOfNotNull(meta.background, meta.poster, meta.logo)
     if (art.isEmpty()) {
         item { EmptyNote("No artwork provided.") }
@@ -594,14 +606,21 @@ private fun LazyListScope.backdropsSection(meta: Meta) {
 }
 
 @Composable
-private fun SectionHeader(title: String) {
+private fun SectionHeader(title: String, icon: ImageVector) {
     Column {
         HorizontalDivider(modifier = Modifier.padding(top = 20.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
+        Row(
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-        )
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(text = title, style = MaterialTheme.typography.titleLarge)
+        }
     }
 }
 
@@ -621,13 +640,20 @@ private fun Meta.trackedEpisodeCount(): Int =
 private fun pad(value: Int): String = value.toString().padStart(2, '0')
 
 @Composable
-private fun SectionCard(title: String, content: @Composable () -> Unit) {
+private fun SectionCard(title: String, icon: ImageVector, content: @Composable () -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
+        Row(
             modifier = Modifier.padding(bottom = 6.dp),
-        )
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(text = title, style = MaterialTheme.typography.titleMedium)
+        }
         content()
     }
 }

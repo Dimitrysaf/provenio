@@ -1,0 +1,17 @@
+-- Recency comes from rowid rather than a timestamp, which avoids needing a clock in
+-- common code. Re-searching a term deletes and reinserts it so it moves to the top.
+CREATE TABLE searchHistory (
+    query TEXT NOT NULL UNIQUE
+);
+
+recent:
+SELECT query FROM searchHistory ORDER BY rowid DESC LIMIT 20;
+
+remove:
+DELETE FROM searchHistory WHERE query = ?;
+
+insert:
+INSERT INTO searchHistory(query) VALUES (?);
+
+clear:
+DELETE FROM searchHistory;

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
@@ -17,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -25,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,6 +39,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -52,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.navigation.SearchFilter
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
+import io.github.dimitrysaf.provenio.stremio.SearchRepository
 import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
 import kotlinx.coroutines.delay
 
@@ -83,23 +89,37 @@ fun SearchPage(
         activeFilter.type == null || catalog.type == activeFilter.type
     }
 
-    var query by remember { mutableStateOf("") }
-    var results by remember { mutableStateOf<List<MetaPreview>>(emptyList()) }
+    // Seeded from the repository so returning from a title restores what was found.
+    var query by remember { mutableStateOf(SearchRepository.lastQuery) }
+    var results by remember { mutableStateOf(SearchRepository.lastResults) }
     var searching by remember { mutableStateOf(false) }
-    var searched by remember { mutableStateOf(false) }
+    var searched by remember { mutableStateOf(SearchRepository.lastResults.isNotEmpty()) }
+    val history by SearchRepository.history.collectAsState()
 
     LaunchedEffect(query, activeFilter, allSearchable.size) {
         if (query.isBlank()) {
             results = emptyList()
             searched = false
+            SearchRepository.remember("", activeFilter, emptyList())
+            return@LaunchedEffect
+        }
+        // Nothing to redo when this is the search we already have.
+        if (query == SearchRepository.lastQuery &&
+            activeFilter == SearchRepository.lastFilter &&
+            results.isNotEmpty()
+        ) {
+            searched = true
             return@LaunchedEffect
         }
         // Debounced so typing does not fire a request per character at every addon.
         delay(SearchDebounceMillis)
         searching = true
-        results = AddonRepository.search(query.trim(), activeFilter.type)
+        val found = AddonRepository.search(query.trim(), activeFilter.type)
+        results = found
         searching = false
         searched = true
+        SearchRepository.remember(query, activeFilter, found)
+        if (found.isNotEmpty()) SearchRepository.record(query)
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -155,7 +175,63 @@ fun SearchPage(
                 searching -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 results.isNotEmpty() -> ResultGrid(results, onOpenDetail)
                 searched -> CentredNote("No results for \"$query\"")
+                history.isNotEmpty() -> RecentSearches(
+                    history = history,
+                    onPick = { query = it },
+                    onRemove = { SearchRepository.remove(it) },
+                    onClear = { SearchRepository.clear() },
+                )
                 else -> CentredNote("Search across ${searchable.size} catalogs")
+            }
+        }
+    }
+}
+
+/** Shown while the field is empty, the way a search screen normally fills that space. */
+@Composable
+private fun RecentSearches(
+    history: List<String>,
+    onPick: (String) -> Unit,
+    onRemove: (String) -> Unit,
+    onClear: () -> Unit,
+) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Recent searches",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onClear) { Text("Clear") }
+            }
+        }
+        items(history, key = { it }) { term ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onPick(term) }
+                    .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.History,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.width(16.dp))
+                Text(text = term, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                IconButton(onClick = { onRemove(term) }) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Remove \"$term\" from history",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
