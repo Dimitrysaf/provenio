@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.ui.components
 
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,6 +19,7 @@ fun BackTopBar(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     scrollBehavior: TopAppBarScrollBehavior? = null,
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
     TopAppBar(
         modifier = modifier,
@@ -27,6 +29,7 @@ fun BackTopBar(
             }
         },
         title = { Text(title) },
+        actions = actions,
         scrollBehavior = scrollBehavior,
     )
 }

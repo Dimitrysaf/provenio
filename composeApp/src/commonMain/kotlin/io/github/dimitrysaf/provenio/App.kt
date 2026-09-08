@@ -1,10 +1,15 @@
 package io.github.dimitrysaf.provenio
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
@@ -13,6 +18,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -22,6 +29,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import io.github.dimitrysaf.provenio.navigation.Routes
+import io.github.dimitrysaf.provenio.pages.AddonsPage
 import io.github.dimitrysaf.provenio.pages.AppearancePage
 import io.github.dimitrysaf.provenio.pages.SearchPage
 import io.github.dimitrysaf.provenio.pages.SettingsPage
@@ -45,6 +53,9 @@ import io.github.dimitrysaf.provenio.ui.HomeScreen
  * https://developer.android.com/design/ui/mobile/guides/patterns/predictive-back
  */
 private const val BackPreviewScale = 0.9f
+
+/** The leaving page rounds its corners as it pulls away, as the system surfaces do. */
+private val BackPreviewCornerRadius = 28.dp
 
 private val fadeSpec = tween<Float>(
     durationMillis = MotionTokens.DurationShort2,
@@ -80,7 +91,7 @@ fun App() {
             popExitTransition = { popExit },
         ) {
             composable(Routes.Home) {
-                Page(applyBottomInset = false) {
+                PageSurface(applyBottomInset = false) {
                     HomeScreen(
                         onOpenSearch = { navController.navigate(Routes.Search) },
                         onOpenSettings = { navController.navigate(Routes.SettingsGraph) },
@@ -89,7 +100,7 @@ fun App() {
             }
 
             composable(Routes.Search) {
-                Page {
+                PageSurface {
                     SearchPage(onBack = { navController.popBackStack() })
                 }
             }
@@ -98,18 +109,25 @@ fun App() {
             // walks Appearance → Settings → Home rather than dropping straight home.
             navigation(route = Routes.SettingsGraph, startDestination = Routes.SettingsRoot) {
                 composable(Routes.SettingsRoot) {
-                    Page {
+                    PageSurface {
                         SettingsPage(
                             onBack = { navController.popBackStack() },
                             onOpenAppearance = {
                                 navController.navigate(Routes.SettingsAppearance)
                             },
+                            onOpenAddons = { navController.navigate(Routes.SettingsAddons) },
                         )
                     }
                 }
 
+                composable(Routes.SettingsAddons) {
+                    PageSurface {
+                        AddonsPage(onBack = { navController.popBackStack() })
+                    }
+                }
+
                 composable(Routes.SettingsAppearance) {
-                    Page {
+                    PageSurface {
                         AppearancePage(
                             onBack = { navController.popBackStack() },
                             themeMode = themeMode,
@@ -129,11 +147,41 @@ fun App() {
  * Opaque backing for a destination. Material's Surface also blocks pointer events, so a
  * page that covers the navigation swallows touches meant for it.
  *
+ * The corner radius is driven by this destination's own enter/exit transition, which
+ * Navigation Compose seeks with the back gesture — so the page rounds off as it is dragged
+ * away and squares up again if the gesture is cancelled.
+ *
  * Home declines the bottom inset because its own navigation bar already applies one.
  */
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+private fun AnimatedVisibilityScope.PageSurface(
+    applyBottomInset: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    val cornerRadius by transition.animateDp(
+        transitionSpec = {
+            tween(
+                durationMillis = MotionTokens.DurationShort2,
+                easing = MotionTokens.StandardDecelerate,
+            )
+        },
+        label = "backCorner",
+    ) { state ->
+        if (state == EnterExitState.Visible) 0.dp else BackPreviewCornerRadius
+    }
+
+    Page(
+        applyBottomInset = applyBottomInset,
+        shape = RoundedCornerShape(cornerRadius),
+        content = content,
+    )
+}
+
 @Composable
 private fun Page(
-    applyBottomInset: Boolean = true,
+    applyBottomInset: Boolean,
+    shape: Shape,
     content: @Composable () -> Unit,
 ) {
     Surface(
@@ -146,6 +194,7 @@ private fun Page(
                     Modifier
                 },
             ),
+        shape = shape,
         color = MaterialTheme.colorScheme.background,
         content = content,
     )

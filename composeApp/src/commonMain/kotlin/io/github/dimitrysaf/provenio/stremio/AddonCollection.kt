@@ -57,6 +57,17 @@ class AddonCollection(private val addons: List<InstalledAddon> = emptyList()) {
     fun without(addonId: String): AddonCollection =
         AddonCollection(addons.filterNot { it.manifest.id == addonId })
 
+    /** Moves an addon by [delta] places, clamped to the ends. Order is priority. */
+    fun move(addonId: String, delta: Int): AddonCollection {
+        val index = addons.indexOfFirst { it.manifest.id == addonId }
+        if (index < 0) return this
+        val target = (index + delta).coerceIn(0, addons.lastIndex)
+        if (target == index) return this
+        val reordered = addons.toMutableList()
+        reordered.add(target, reordered.removeAt(index))
+        return AddonCollection(reordered)
+    }
+
     fun setEnabled(addonId: String, enabled: Boolean): AddonCollection =
         AddonCollection(
             addons.map { if (it.manifest.id == addonId) it.copy(enabled = enabled) else it },

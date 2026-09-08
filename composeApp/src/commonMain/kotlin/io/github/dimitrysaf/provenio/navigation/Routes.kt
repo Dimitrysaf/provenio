@@ -17,4 +17,5 @@ object Routes {
     const val SettingsGraph = "settings"
     const val SettingsRoot = "settings/root"
     const val SettingsAppearance = "settings/appearance"
+    const val SettingsAddons = "settings/addons"
 }
