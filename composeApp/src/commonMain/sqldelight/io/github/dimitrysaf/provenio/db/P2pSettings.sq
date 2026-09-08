@@ -1,10 +1,10 @@
 -- Single row, id is always 1. Defaults match P2pSettings: peer-to-peer off, consent not
--- given, so a fresh install never joins a swarm on its own.
+-- given, uploading off, so a fresh install never joins a swarm or seeds on its own.
 CREATE TABLE p2pSettings (
     id INTEGER NOT NULL PRIMARY KEY,
     enabled INTEGER NOT NULL DEFAULT 0,
     consentAccepted INTEGER NOT NULL DEFAULT 0,
-    uploadEnabled INTEGER NOT NULL DEFAULT 1,
+    uploadEnabled INTEGER NOT NULL DEFAULT 0,
     profile TEXT NOT NULL DEFAULT 'Balanced',
     cacheSize TEXT NOT NULL DEFAULT 'Gb2',
     listenPort INTEGER NOT NULL DEFAULT 0,

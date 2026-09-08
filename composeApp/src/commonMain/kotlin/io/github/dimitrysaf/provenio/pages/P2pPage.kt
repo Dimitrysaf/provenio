@@ -12,7 +12,12 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
@@ -49,7 +54,7 @@ import kotlinx.coroutines.delay
 private const val VpnExplainerUrl = "https://en.wikipedia.org/wiki/Virtual_private_network"
 
 /** Seconds the consent notice stays un-acceptable, so it is read rather than dismissed. */
-private const val ConsentCountdownSeconds = 5
+private const val ConsentCountdownSeconds = 10
 
 @Composable
 fun P2pContent() {
@@ -88,8 +93,8 @@ fun P2pContent() {
             title = { Text("Share while watching") },
             subtitle = {
                 Text(
-                    "Upload pieces back to the swarm. Turning this off is not anonymity — " +
-                        "your address is still visible to every peer.",
+                    "Off by default. Distributing copyrighted material is treated far " +
+                        "more seriously than downloading it in most jurisdictions.",
                 )
             },
             position = TilePosition.First,
@@ -272,9 +277,9 @@ private fun StatusGroup(status: P2pStatus) {
 /**
  * Shown once, before peer-to-peer is ever switched on.
  *
- * The primary action is held back for a few seconds because the point of the notice is the
- * address disclosure, and a button that is immediately tappable gets tapped without being
- * read.
+ * The primary action is held back for [ConsentCountdownSeconds] because the point of the
+ * notice is the address disclosure, and a button that is immediately tappable gets tapped
+ * without being read.
  */
 @Composable
 private fun P2pConsentDialog(
@@ -293,37 +298,74 @@ private fun P2pConsentDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Before you turn this on") },
+        icon = { Icon(Icons.Outlined.Warning, contentDescription = null) },
+        title = { Text("Enable P2P Streaming?") },
         text = {
-            Column {
+            // The notice is long enough to overflow a short window, so it scrolls rather
+            // than pushing the buttons off screen.
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Text(
-                    text = "Peer-to-peer downloading shares data directly with other " +
-                        "people. While it is on, your IP address is visible to every " +
-                        "other peer in a swarm, and to anyone monitoring one.",
+                    text = "This stream uses peer-to-peer technology. By enabling it, " +
+                        "you acknowledge and agree that:",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(12.dp))
+                ConsentPoint(
+                    "Your IP address is visible to other peers on the network and to " +
+                        "your Internet Service Provider.",
+                )
+                ConsentPoint(
+                    "You are solely responsible for your use of peer-to-peer connections " +
+                        "and for any content you access through them.",
+                )
+                ConsentPoint(
+                    "This app does not host, distribute, or control any content. It " +
+                        "connects to networks operated by third parties.",
+                )
+                ConsentPoint(
+                    "The developers accept no liability for any consequences arising " +
+                        "from your use of this feature.",
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "Uploading and seeding are disabled by default. Most " +
+                        "jurisdictions treat distributing copyrighted material far more " +
+                        "seriously than downloading it, and enabling upload may expose " +
+                        "you to significantly greater legal risk. Check your local law " +
+                        "before changing this.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = "A VPN hides your address from other peers. Without one, " +
-                        "assume your connection is identifiable.",
+                    text = "Using a VPN prevents other peers from seeing your address.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                Spacer(Modifier.height(12.dp))
-                TextButton(
-                    onClick = { openUrl(VpnExplainerUrl) },
-                    contentPadding = PaddingValues(0.dp),
-                ) {
-                    Text("What is a VPN?")
-                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "This can be turned off at any time in Settings.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         },
         confirmButton = {
             TextButton(enabled = remaining == 0, onClick = onAccept) {
-                Text(if (remaining == 0) "I understand" else "I understand ($remaining)")
+                Text(if (remaining == 0) "Enable P2P" else "Enable P2P ($remaining)")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            Row {
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+                TextButton(onClick = { openUrl(VpnExplainerUrl) }) { Text("What is a VPN?") }
+            }
         },
     )
+}
+
+@Composable
+private fun ConsentPoint(text: String) {
+    Row(modifier = Modifier.padding(bottom = 8.dp)) {
+        Text(text = "\u2022", style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.width(8.dp))
+        Text(text = text, style = MaterialTheme.typography.bodyMedium)
+    }
 }

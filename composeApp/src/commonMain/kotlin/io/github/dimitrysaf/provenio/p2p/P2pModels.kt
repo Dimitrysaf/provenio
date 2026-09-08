@@ -25,7 +25,8 @@ enum class CacheSize(val label: String, val bytes: Long) {
 data class P2pSettings(
     val enabled: Boolean = false,
     val consentAccepted: Boolean = false,
-    val uploadEnabled: Boolean = true,
+    /** Off by default. Distributing is treated far more seriously than receiving. */
+    val uploadEnabled: Boolean = false,
     val profile: TorrentProfile = TorrentProfile.Balanced,
     val cacheSize: CacheSize = CacheSize.Gb2,
     /** 0 asks the engine to pick a free port. */
