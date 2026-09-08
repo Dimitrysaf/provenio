@@ -34,6 +34,12 @@ object AddonUrl {
     fun manifest(addonUrl: String): String = "${base(addonUrl)}/manifest.json"
 
     /**
+     * The addon's own configuration page — the transport URL with `/manifest.json`
+     * replaced by `/configure`. Served by the addon, not by us.
+     */
+    fun configure(addonUrl: String): String = "${base(addonUrl)}/configure"
+
+    /**
      * `type` and `id` are passed through unencoded: ids come from the addon itself and
      * carry meaningful separators — an episode id is `tt0108778:1:1` — which percent
      * encoding would corrupt.

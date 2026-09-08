@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.stremio
 
 import io.github.dimitrysaf.provenio.data.AddonStore
 import io.github.dimitrysaf.provenio.data.createDatabaseDriver
+import io.github.dimitrysaf.provenio.stremio.model.Manifest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,18 +36,20 @@ object AddonRepository {
     }
 
     /**
-     * Fetches the manifest at [url] and adds the addon.
+     * Fetches the manifest at [url] without installing anything.
      *
-     * Installing by URL is the whole install flow in this protocol: the manifest is both
-     * the validation and the description, so a failure here is what tells the user the
-     * address was wrong rather than the addon being broken.
+     * Reading the manifest is both the validation and the description in this protocol, so
+     * a failure here is what tells the user the address was wrong rather than the addon
+     * being broken. It is kept separate from [add] because an addon that declares
+     * `configurationRequired` must not be installed in its unconfigured form.
      */
-    suspend fun install(url: String): AddonResult<InstalledAddon> =
-        client.fetchManifest(url).map { manifest ->
-            val addon = InstalledAddon(transportUrl = AddonUrl.manifest(url), manifest = manifest)
-            commit(_collection.value.with(addon))
-            addon
-        }
+    suspend fun inspect(url: String): AddonResult<Manifest> = client.fetchManifest(url)
+
+    fun add(url: String, manifest: Manifest): InstalledAddon {
+        val addon = InstalledAddon(transportUrl = AddonUrl.manifest(url), manifest = manifest)
+        commit(_collection.value.with(addon))
+        return addon
+    }
 
     fun remove(addonId: String) = commit(_collection.value.without(addonId))
 

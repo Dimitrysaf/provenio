@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
@@ -46,8 +47,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
+import io.github.dimitrysaf.provenio.stremio.AddonUrl
 import io.github.dimitrysaf.provenio.stremio.AddonResult
 import io.github.dimitrysaf.provenio.stremio.InstalledAddon
+import io.github.dimitrysaf.provenio.stremio.model.Manifest
+import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
 import io.github.dimitrysaf.provenio.ui.components.BackTopBar
 import io.github.dimitrysaf.provenio.ui.components.PageScaffold
 import kotlinx.coroutines.launch
@@ -137,6 +141,7 @@ private fun AddonRow(
 ) {
     val manifest = addon.manifest
     var menuOpen by remember { mutableStateOf(false) }
+    val openUrl = rememberUrlOpener()
 
     Column {
         ListItem(
@@ -166,6 +171,18 @@ private fun AddonRow(
                             expanded = menuOpen,
                             onDismissRequest = { menuOpen = false },
                         ) {
+                            if (manifest.behaviorHints?.configurable == true) {
+                                DropdownMenuItem(
+                                    text = { Text("Configure") },
+                                    leadingIcon = {
+                                        Icon(Icons.Outlined.Tune, contentDescription = null)
+                                    },
+                                    onClick = {
+                                        openUrl(AddonUrl.configure(addon.transportUrl))
+                                        menuOpen = false
+                                    },
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text("Move up") },
                                 enabled = !isFirst,
@@ -235,7 +252,20 @@ private fun AddAddonDialog(onDismiss: () -> Unit) {
     var url by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    // Set when the fetched manifest says the addon cannot run until it is configured.
+    var needsConfiguration by remember { mutableStateOf<Manifest?>(null) }
     val scope = rememberCoroutineScope()
+    val openUrl = rememberUrlOpener()
+
+    val pending = needsConfiguration
+    if (pending != null) {
+        ConfigurationRequiredDialog(
+            manifest = pending,
+            onConfigure = { openUrl(AddonUrl.configure(url.trim())) },
+            onDismiss = onDismiss,
+        )
+        return
+    }
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
@@ -272,8 +302,16 @@ private fun AddAddonDialog(onDismiss: () -> Unit) {
                     busy = true
                     error = null
                     scope.launch {
-                        when (val result = AddonRepository.install(url.trim())) {
-                            is AddonResult.Success -> onDismiss()
+                        when (val result = AddonRepository.inspect(url.trim())) {
+                            is AddonResult.Success -> {
+                                val manifest = result.value
+                                if (manifest.behaviorHints?.configurationRequired == true) {
+                                    needsConfiguration = manifest
+                                } else {
+                                    AddonRepository.add(url.trim(), manifest)
+                                    onDismiss()
+                                }
+                            }
                             is AddonResult.HttpError -> {
                                 error = "The add-on answered with ${result.code}."
                                 busy = false
@@ -299,6 +337,38 @@ private fun AddAddonDialog(onDismiss: () -> Unit) {
         },
         dismissButton = {
             TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancel") }
+        },
+    )
+}
+
+/**
+ * An addon with `configurationRequired` cannot work until the user has filled in its own
+ * form, and configuring it produces a different manifest URL — so it is not installed
+ * here. The user is sent to the addon's page and comes back with the configured link.
+ */
+@Composable
+private fun ConfigurationRequiredDialog(
+    manifest: Manifest,
+    onConfigure: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Outlined.Tune, contentDescription = null) },
+        title = { Text("${manifest.name} needs configuring") },
+        text = {
+            Text(
+                text = "This add-on cannot be used until it is set up. Opening its " +
+                    "configuration page will give you a personalised install link — paste " +
+                    "that link here instead.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfigure) { Text("Open configuration") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
 }
