@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -298,64 +299,62 @@ private fun P2pConsentDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.padding(horizontal = 24.dp),
         icon = { Icon(Icons.Outlined.Warning, contentDescription = null) },
         title = { Text("Enable P2P Streaming?") },
         text = {
-            // The notice is long enough to overflow a short window, so it scrolls rather
-            // than pushing the buttons off screen.
+            // Still long enough to overflow a short window, so it scrolls rather than
+            // pushing the buttons off screen.
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Text(
-                    text = "This stream uses peer-to-peer technology. By enabling it, " +
-                        "you acknowledge and agree that:",
+                    text = "This stream uses peer-to-peer technology. By enabling it " +
+                        "you agree that:",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(12.dp))
+                ConsentPoint("Your IP address is visible to other peers and to your ISP.")
                 ConsentPoint(
-                    "Your IP address is visible to other peers on the network and to " +
-                        "your Internet Service Provider.",
+                    "You are responsible for your use of peer-to-peer connections and " +
+                        "any content accessed through them.",
                 )
                 ConsentPoint(
-                    "You are solely responsible for your use of peer-to-peer connections " +
-                        "and for any content you access through them.",
+                    "This app does not host or control content. It connects to " +
+                        "third-party networks.",
                 )
                 ConsentPoint(
-                    "This app does not host, distribute, or control any content. It " +
-                        "connects to networks operated by third parties.",
+                    "The developers accept no liability for your use of this feature.",
                 )
-                ConsentPoint(
-                    "The developers accept no liability for any consequences arising " +
-                        "from your use of this feature.",
-                )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Uploading and seeding are disabled by default. Most " +
-                        "jurisdictions treat distributing copyrighted material far more " +
-                        "seriously than downloading it, and enabling upload may expose " +
-                        "you to significantly greater legal risk. Check your local law " +
-                        "before changing this.",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = "Using a VPN prevents other peers from seeing your address.",
+                    text = "Uploading is off by default. Distributing copyrighted " +
+                        "material is treated far more seriously than downloading it. " +
+                        "Check your local law before enabling it.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "This can be turned off at any time in Settings.",
+                    text = "A VPN prevents peers from seeing your address. You can turn " +
+                        "this off any time in Settings.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
         },
+        // All three actions live in one slot so they can be stacked and centred. The
+        // dialog's own button row aligns to the end and cannot do either.
         confirmButton = {
-            TextButton(enabled = remaining == 0, onClick = onAccept) {
-                Text(if (remaining == 0) "Enable P2P" else "Enable P2P ($remaining)")
-            }
-        },
-        dismissButton = {
-            Row {
-                TextButton(onClick = onDismiss) { Text("Cancel") }
-                TextButton(onClick = { openUrl(VpnExplainerUrl) }) { Text("What is a VPN?") }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // Cancel carries the emphasis. Declining is the safe outcome here, so it
+                // should be the easiest thing to hit and the obvious default.
+                Button(onClick = onDismiss) { Text("Cancel") }
+                TextButton(onClick = { openUrl(VpnExplainerUrl) }) {
+                    Text("What is a VPN?")
+                }
+                TextButton(enabled = remaining == 0, onClick = onAccept) {
+                    Text(if (remaining == 0) "Enable P2P" else "Enable P2P ($remaining)")
+                }
             }
         },
     )
