@@ -21,6 +21,15 @@ interface P2pEngine {
 
     /** Drops cached piece data. Returns the number of bytes reclaimed. */
     suspend fun clearCache(): Long
+
+    /**
+     * Registers a magnet and returns the localhost URL to play.
+     *
+     * The URL is the whole contract between the engine and the player. A player cannot
+     * tell one of these apart from any other HTTP source, which is what lets the two
+     * platforms launch the engine differently without changing anything above them.
+     */
+    suspend fun streamUrl(magnet: String): String?
 }
 
 /**
@@ -48,4 +57,9 @@ class UnavailableP2pEngine : P2pEngine {
     }
 
     override suspend fun clearCache(): Long = 0L
+
+    override suspend fun streamUrl(magnet: String): String? = null
 }
+
+/** The engine for this platform. */
+expect fun createP2pEngine(): P2pEngine

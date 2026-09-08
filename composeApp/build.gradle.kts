@@ -50,12 +50,25 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor3)
         }
+        // Both targets are JVM, and the torrent engine and HTTP server are JVM only.
+        // A shared intermediate source set lets them be written once.
+        val jvmShared by creating {
+            dependsOn(commonMain.get())
+            dependencies {
+                implementation(libs.bt.core)
+                implementation(libs.ktor.server.core)
+                implementation(libs.ktor.server.cio)
+            }
+        }
+        androidMain.get().dependsOn(jvmShared)
+
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.androidx.activity.compose)
             implementation(libs.sqldelight.android.driver)
         }
         val desktopMain by getting
+        desktopMain.dependsOn(jvmShared)
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.ktor.client.okhttp)

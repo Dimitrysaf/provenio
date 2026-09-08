@@ -44,6 +44,8 @@ data class P2pStatus(
     val state: P2pServiceState = P2pServiceState.Disabled,
     val listenPort: Int? = null,
     val portInUse: Boolean = false,
+    /** Localhost root the player reads from while the service is up. */
+    val baseUrl: String? = null,
     val localAddresses: List<String> = emptyList(),
     val publicAddress: String? = null,
     val peers: Int = 0,

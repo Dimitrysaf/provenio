@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 object P2pRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val engine: P2pEngine = UnavailableP2pEngine()
+    private val engine: P2pEngine = createP2pEngine()
 
     private val _settings = MutableStateFlow(P2pSettings())
     val settings: StateFlow<P2pSettings> = _settings.asStateFlow()
