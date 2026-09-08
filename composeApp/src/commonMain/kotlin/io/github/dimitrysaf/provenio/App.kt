@@ -29,6 +29,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.dimitrysaf.provenio.navigation.Routes
+import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.pages.SearchPage
 import io.github.dimitrysaf.provenio.pages.SettingsPage
@@ -77,7 +78,10 @@ fun App() {
     var themeMode by remember { mutableStateOf(ThemeMode.System) }
     var useDynamicColor by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) { AddonRepository.load() }
+    LaunchedEffect(Unit) {
+        AddonRepository.load()
+        P2pRepository.load()
+    }
 
     AppTheme(themeMode = themeMode, useDynamicColor = useDynamicColor) {
         val navController = rememberNavController()

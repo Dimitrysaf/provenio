@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +54,7 @@ enum class SettingsCategory(
 ) {
     Appearance("Appearance", "Theme and dynamic color", Icons.Outlined.Palette),
     Addons("Add-ons", "Catalogs, metadata and streams", Icons.Outlined.Extension),
+    PeerToPeer("Peer-to-peer", "Sharing, cache and status", Icons.Outlined.Share),
 }
 
 /**
@@ -241,5 +243,6 @@ private fun CategoryContent(
             dynamicColorAvailable = dynamicColorAvailable,
         )
         SettingsCategory.Addons -> AddonsContent()
+        SettingsCategory.PeerToPeer -> P2pContent()
     }
 }
