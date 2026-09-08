@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.pages
 
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -41,6 +42,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,6 +54,7 @@ import io.github.dimitrysaf.provenio.stremio.AddonResult
 import io.github.dimitrysaf.provenio.stremio.InstalledAddon
 import io.github.dimitrysaf.provenio.stremio.model.Manifest
 import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
+import coil3.compose.AsyncImage
 import com.alorma.compose.settings.ui.expressive.SettingsGroup
 import io.github.dimitrysaf.provenio.ui.components.SettingsTile
 import io.github.dimitrysaf.provenio.ui.components.SettingsTileSpacing
@@ -144,7 +149,7 @@ private fun AddonRow(
                 }
             }
         },
-        icon = { Icon(Icons.Outlined.Extension, contentDescription = null) },
+        icon = { AddonIcon(manifest.logo) },
         position = position,
         action = {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -207,6 +212,29 @@ private fun AddonRow(
         },
         onClick = { AddonRepository.setEnabled(manifest.id, !addon.enabled) },
     )
+}
+
+/**
+ * The add-on's own logo where it publishes one, falling back to the generic mark when it
+ * does not or when the image cannot be fetched — add-on servers go offline and their logo
+ * URLs rot independently of the rest of the manifest.
+ */
+@Composable
+private fun AddonIcon(logo: String?) {
+    val fallback = rememberVectorPainter(Icons.Outlined.Extension)
+    if (logo.isNullOrBlank()) {
+        Icon(Icons.Outlined.Extension, contentDescription = null)
+    } else {
+        AsyncImage(
+            model = logo,
+            contentDescription = null,
+            modifier = Modifier.size(24.dp).clip(CircleShape),
+            contentScale = ContentScale.Fit,
+            placeholder = fallback,
+            error = fallback,
+            fallback = fallback,
+        )
+    }
 }
 
 @Composable
