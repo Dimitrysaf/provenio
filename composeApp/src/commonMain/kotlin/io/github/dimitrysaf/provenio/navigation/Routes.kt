@@ -18,7 +18,11 @@ object Routes {
 
     const val Player = "player"
 
-    /** A public sample clip, used to prove the playback path end to end. */
-    const val SampleVideoUrl =
-        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+    /**
+     * A public sample clip, used to prove the playback path end to end.
+     *
+     * The Google gtv-videos-bucket samples that every tutorial still links to now answer
+     * 403. This one is W3C hosted and answers 206 with byte ranges, so seeking works.
+     */
+    const val SampleVideoUrl = "https://media.w3.org/2010/05/sintel/trailer.mp4"
 }
