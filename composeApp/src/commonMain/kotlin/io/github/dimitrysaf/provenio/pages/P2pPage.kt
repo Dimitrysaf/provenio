@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -42,10 +43,7 @@ import com.alorma.compose.settings.ui.expressive.SettingsGroup
 import io.github.dimitrysaf.provenio.p2p.CacheSize
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.p2p.P2pServiceState
-import io.github.dimitrysaf.provenio.p2p.P2pStatus
 import io.github.dimitrysaf.provenio.p2p.TorrentProfile
-import io.github.dimitrysaf.provenio.p2p.formatBytes
-import io.github.dimitrysaf.provenio.p2p.formatSpeed
 import io.github.dimitrysaf.provenio.ui.components.SettingsMainSwitch
 import io.github.dimitrysaf.provenio.ui.components.SettingsTile
 import io.github.dimitrysaf.provenio.ui.components.SettingsTileSpacing
@@ -70,10 +68,8 @@ fun P2pContent() {
 
     SettingsMainSwitch(
         title = "Peer-to-peer",
-        subtitle = if (settings.enabled) status.state.label else "Off",
         checked = settings.enabled,
         onCheckedChange = { wanted ->
-            // Turning it on for the first time asks first; turning it off never does.
             if (wanted && !settings.consentAccepted) {
                 showConsent = true
             } else {
@@ -84,20 +80,51 @@ fun P2pContent() {
 
     Spacer(Modifier.height(16.dp))
 
-    if (settings.enabled) {
-        SectionLabel("Status")
-        StatusGroup(status)
-        Spacer(Modifier.height(16.dp))
-    }
-
-    SectionLabel("Transfer")
     SettingsGroup(verticalArrangement = Arrangement.spacedBy(SettingsTileSpacing)) {
         SettingsTile(
-            title = { Text("Share while watching") },
+            title = { Text("Status") },
+            subtitle = {
+                Text(if (settings.enabled) status.state.label else P2pServiceState.Disabled.label)
+            },
+            position = TilePosition.First,
+            onClick = {},
+        )
+        SettingsTile(
+            title = { Text("Listening port") },
             subtitle = {
                 Text(
-                    "Off by default. Distributing copyrighted material is treated far " +
-                        "more seriously than downloading it in most jurisdictions.",
+                    when {
+                        status.portInUse -> "Port already in use"
+                        status.listenPort != null -> status.listenPort.toString()
+                        else -> "Not assigned"
+                    },
+                )
+            },
+            position = TilePosition.Middle,
+            onClick = {},
+        )
+        SettingsTile(
+            title = { Text("This device") },
+            subtitle = {
+                Text(
+                    status.localAddresses.takeIf { it.isNotEmpty() }?.joinToString(", ")
+                        ?: "Not found",
+                )
+            },
+            position = TilePosition.Last,
+            onClick = {},
+        )
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    SettingsGroup(verticalArrangement = Arrangement.spacedBy(SettingsTileSpacing)) {
+        SettingsTile(
+            title = { Text("Seeding") },
+            subtitle = {
+                Text(
+                    "Seeding means uploading what you already have downloaded from " +
+                        "torrents. Check with local laws.",
                 )
             },
             position = TilePosition.First,
@@ -106,7 +133,7 @@ fun P2pContent() {
         )
         SettingsTile(
             title = { Text("Connection profile") },
-            subtitle = { Text("${settings.profile.label} — ${settings.profile.summary}") },
+            subtitle = { Text(settings.profile.label) },
             position = TilePosition.Middle,
             onClick = { showProfileDialog = true },
         )
@@ -118,35 +145,30 @@ fun P2pContent() {
         )
         SettingsTile(
             title = { Text("Clear cache") },
-            subtitle = { Text("Currently using ${formatBytes(status.cacheUsedBytes)}") },
-            position = TilePosition.Last,
+            position = TilePosition.Middle,
+            enabled = status.cacheUsedBytes > 0,
             onClick = { P2pRepository.clearCache() },
         )
-    }
-
-    Spacer(Modifier.height(16.dp))
-
-    SectionLabel("Privacy")
-    SettingsGroup(verticalArrangement = Arrangement.spacedBy(SettingsTileSpacing)) {
         SettingsTile(
-            title = { Text("Hide transfer statistics") },
-            subtitle = { Text("Keep speeds and peer counts off the player") },
-            position = TilePosition.First,
+            title = { Text("Hide torrent statistics") },
+            subtitle = {
+                Text("Hide information on speed, peer and seed counts from the video player")
+            },
+            position = TilePosition.Middle,
             action = { Switch(checked = settings.hideStats, onCheckedChange = null) },
             onClick = { P2pRepository.setHideStats(!settings.hideStats) },
         )
         SettingsTile(
-            title = { Text("What is a VPN?") },
-            subtitle = { Text("Why it matters for peer-to-peer") },
-            position = TilePosition.Middle,
-            onClick = { openUrl(VpnExplainerUrl) },
-        )
-        SettingsTile(
-            title = { Text("Withdraw consent") },
-            subtitle = { Text("Turns peer-to-peer off and asks again next time") },
+            title = { Text("Information about VPNs") },
+            subtitle = { Text("Virtual Private Networks") },
             position = TilePosition.Last,
-            enabled = settings.consentAccepted,
-            onClick = { P2pRepository.revokeConsent() },
+            action = {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                    contentDescription = null,
+                )
+            },
+            onClick = { openUrl(VpnExplainerUrl) },
         )
     }
 
@@ -155,7 +177,7 @@ fun P2pContent() {
             title = "Connection profile",
             options = TorrentProfile.entries,
             selected = settings.profile,
-            label = { "${it.label} — ${it.summary}" },
+            label = { it.label },
             onSelect = {
                 P2pRepository.setProfile(it)
                 showProfileDialog = false
@@ -230,52 +252,7 @@ private fun <T> ChoiceDialog(
     )
 }
 
-@Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-    )
-}
 
-@Composable
-private fun StatusGroup(status: P2pStatus) {
-    val rows = buildList {
-        add("State" to (status.detail ?: status.state.label))
-        if (status.state == P2pServiceState.Running) {
-            add("Download" to formatSpeed(status.downloadBytesPerSecond))
-            add("Upload" to formatSpeed(status.uploadBytesPerSecond))
-            add("Peers" to "${status.peers} connected, ${status.seeds} seeding")
-            add("Active torrents" to status.activeTorrents.toString())
-            add(
-                "This session" to
-                    "${formatBytes(status.sessionDownloadedBytes)} down, " +
-                    "${formatBytes(status.sessionUploadedBytes)} up",
-            )
-            add("Cache used" to formatBytes(status.cacheUsedBytes))
-        }
-        add("Listening port" to (status.listenPort?.toString() ?: "Not assigned"))
-        add(
-            "This device" to
-                status.localAddresses.takeIf { it.isNotEmpty() }?.joinToString(", ")
-                .orEmpty().ifEmpty { "Unknown" },
-        )
-        add("Visible address" to (status.publicAddress ?: "Unknown until connected"))
-    }
-
-    SettingsGroup(verticalArrangement = Arrangement.spacedBy(SettingsTileSpacing)) {
-        rows.forEachIndexed { index, (label, value) ->
-            SettingsTile(
-                title = { Text(label) },
-                subtitle = { Text(value) },
-                position = tilePositionOf(index, rows.size),
-                onClick = {},
-            )
-        }
-    }
-}
 
 /**
  * Shown once, before peer-to-peer is ever switched on.

@@ -1,18 +1,16 @@
 package io.github.dimitrysaf.provenio.p2p
 
-/** How hard the engine works a swarm. Trades battery and bandwidth for start-up speed. */
-enum class TorrentProfile(val label: String, val summary: String) {
-    Soft("Soft", "Fewer connections, lighter on battery and data"),
-    Balanced("Balanced", "A sensible default for most connections"),
-    Fast("Fast", "Many connections, fastest start, heaviest usage"),
+enum class TorrentProfile(val label: String) {
+    Slow("Slow"),
+    Balanced("Balanced"),
+    Fast("Fast"),
 }
 
-/** How much finished piece data is kept on disk before the oldest is dropped. */
 enum class CacheSize(val label: String, val bytes: Long) {
-    None("No cache", 0L),
-    Gb2("2 GB", 2L * 1024 * 1024 * 1024),
-    Gb5("5 GB", 5L * 1024 * 1024 * 1024),
-    Gb10("10 GB", 10L * 1024 * 1024 * 1024),
+    None("No caching", 0L),
+    Gb2("2G", 2L * 1024 * 1024 * 1024),
+    Gb5("5G", 5L * 1024 * 1024 * 1024),
+    Gb10("10G", 10L * 1024 * 1024 * 1024),
 }
 
 /**
@@ -35,17 +33,17 @@ data class P2pSettings(
 )
 
 enum class P2pServiceState(val label: String) {
-    Disabled("Off"),
-    Starting("Starting…"),
-    Running("Running"),
-    Stopping("Stopping…"),
-    Failed("Failed"),
+    Disabled("Disabled"),
+    NotBuilt("Not built"),
+    Offline("Offline"),
+    Online("Online"),
 }
 
 /** Live engine readings. All zeroed while the service is not running. */
 data class P2pStatus(
     val state: P2pServiceState = P2pServiceState.Disabled,
     val listenPort: Int? = null,
+    val portInUse: Boolean = false,
     val localAddresses: List<String> = emptyList(),
     val publicAddress: String? = null,
     val peers: Int = 0,

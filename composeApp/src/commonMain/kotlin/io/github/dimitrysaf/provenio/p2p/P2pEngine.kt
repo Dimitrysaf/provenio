@@ -37,10 +37,9 @@ class UnavailableP2pEngine : P2pEngine {
 
     override suspend fun start(settings: P2pSettings) {
         _status.value = P2pStatus(
-            state = P2pServiceState.Failed,
+            state = P2pServiceState.NotBuilt,
             localAddresses = localNetworkAddresses(),
             listenPort = settings.listenPort.takeIf { it != 0 },
-            detail = "No peer-to-peer engine is bundled in this build yet.",
         )
     }
 
