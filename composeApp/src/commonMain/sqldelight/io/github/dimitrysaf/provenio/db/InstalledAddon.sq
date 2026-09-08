@@ -1,10 +1,12 @@
+-- Columns stay at SQLDelight's native types so the database needs no column adapters;
+-- the boolean and ordering conversions live in AddonStore.
 CREATE TABLE installedAddon (
     id TEXT NOT NULL PRIMARY KEY,
     transportUrl TEXT NOT NULL,
     manifestJson TEXT NOT NULL,
-    enabled INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1,
+    enabled INTEGER NOT NULL DEFAULT 1,
     -- Priority order. Addons are asked in this order, so it is data, not presentation.
-    sortIndex INTEGER AS kotlin.Int NOT NULL
+    sortIndex INTEGER NOT NULL
 );
 
 selectAll:

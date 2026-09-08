@@ -29,7 +29,7 @@ class AddonStore(driver: SqlDriver) {
             InstalledAddon(
                 transportUrl = row.transportUrl,
                 manifest = manifest,
-                enabled = row.enabled,
+                enabled = row.enabled != 0L,
             )
         }
 
@@ -41,8 +41,8 @@ class AddonStore(driver: SqlDriver) {
                     id = addon.manifest.id,
                     transportUrl = addon.transportUrl,
                     manifestJson = StremioAddonClient.addonJson.encodeToString(addon.manifest),
-                    enabled = addon.enabled,
-                    sortIndex = index,
+                    enabled = if (addon.enabled) 1L else 0L,
+                    sortIndex = index.toLong(),
                 )
             }
         }
