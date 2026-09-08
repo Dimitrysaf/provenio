@@ -27,12 +27,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import io.github.dimitrysaf.provenio.navigation.Routes
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
-import io.github.dimitrysaf.provenio.pages.AddonsPage
-import io.github.dimitrysaf.provenio.pages.AppearancePage
 import io.github.dimitrysaf.provenio.pages.SearchPage
 import io.github.dimitrysaf.provenio.pages.SettingsPage
 import io.github.dimitrysaf.provenio.theme.AppTheme
@@ -98,7 +95,7 @@ fun App() {
                 PageSurface(applyBottomInset = false) {
                     HomeScreen(
                         onOpenSearch = { navController.navigate(Routes.Search) },
-                        onOpenSettings = { navController.navigate(Routes.SettingsGraph) },
+                        onOpenSettings = { navController.navigate(Routes.Settings) },
                     )
                 }
             }
@@ -109,38 +106,16 @@ fun App() {
                 }
             }
 
-            // Settings' categories are sub-pages of Settings, not siblings of it, so back
-            // walks Appearance → Settings → Home rather than dropping straight home.
-            navigation(route = Routes.SettingsGraph, startDestination = Routes.SettingsRoot) {
-                composable(Routes.SettingsRoot) {
-                    PageSurface {
-                        SettingsPage(
-                            onBack = { navController.popBackStack() },
-                            onOpenAppearance = {
-                                navController.navigate(Routes.SettingsAppearance)
-                            },
-                            onOpenAddons = { navController.navigate(Routes.SettingsAddons) },
-                        )
-                    }
-                }
-
-                composable(Routes.SettingsAddons) {
-                    PageSurface {
-                        AddonsPage(onBack = { navController.popBackStack() })
-                    }
-                }
-
-                composable(Routes.SettingsAppearance) {
-                    PageSurface {
-                        AppearancePage(
-                            onBack = { navController.popBackStack() },
-                            themeMode = themeMode,
-                            onThemeModeChange = { themeMode = it },
-                            useDynamicColor = useDynamicColor,
-                            onUseDynamicColorChange = { useDynamicColor = it },
-                            dynamicColorAvailable = isDynamicColorSupported(),
-                        )
-                    }
+            composable(Routes.Settings) {
+                PageSurface {
+                    SettingsPage(
+                        onBack = { navController.popBackStack() },
+                        themeMode = themeMode,
+                        onThemeModeChange = { themeMode = it },
+                        useDynamicColor = useDynamicColor,
+                        onUseDynamicColorChange = { useDynamicColor = it },
+                        dynamicColorAvailable = isDynamicColorSupported(),
+                    )
                 }
             }
         }

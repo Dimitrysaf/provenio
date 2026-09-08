@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -27,14 +26,13 @@ import com.alorma.compose.settings.ui.expressive.SettingsGroup
 import com.alorma.compose.settings.ui.expressive.SettingsMenuLink
 import com.alorma.compose.settings.ui.expressive.SettingsSwitch
 import io.github.dimitrysaf.provenio.theme.ThemeMode
-import io.github.dimitrysaf.provenio.ui.components.BackTopBar
-import io.github.dimitrysaf.provenio.ui.components.PageScaffold
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * The Appearance settings themselves. No top bar, no scroll container — SettingsPage owns
+ * that, so this renders identically whether it is a pane or a whole screen.
+ */
 @Composable
-fun AppearancePage(
-    modifier: Modifier = Modifier,
-    onBack: () -> Unit,
+fun AppearanceContent(
     themeMode: ThemeMode,
     onThemeModeChange: (ThemeMode) -> Unit,
     useDynamicColor: Boolean,
@@ -43,33 +41,26 @@ fun AppearancePage(
 ) {
     var showThemeDialog by remember { mutableStateOf(false) }
 
-    PageScaffold(
-        modifier = modifier,
-        topBar = { scrollBehavior ->
-            BackTopBar(title = "Appearance", onBack = onBack, scrollBehavior = scrollBehavior)
-        },
-    ) {
-        // Settings inside a category carry no icons — there are far more settings than
-        // there are sensible icons to give them.
-        SettingsGroup {
-            SettingsMenuLink(
-                title = { Text("Theme") },
-                subtitle = { Text(themeMode.label) },
-                onClick = { showThemeDialog = true },
-            )
-            SettingsSwitch(
-                state = useDynamicColor && dynamicColorAvailable,
-                enabled = dynamicColorAvailable,
-                title = { Text("Dynamic color") },
-                subtitle = {
-                    Text(
-                        if (dynamicColorAvailable) "Use colors from your wallpaper"
-                        else "Not available on this device",
-                    )
-                },
-                onCheckedChange = onUseDynamicColorChange,
-            )
-        }
+    // Settings inside a category carry no icons — there are far more settings than there
+    // are sensible icons to give them.
+    SettingsGroup {
+        SettingsMenuLink(
+            title = { Text("Theme") },
+            subtitle = { Text(themeMode.label) },
+            onClick = { showThemeDialog = true },
+        )
+        SettingsSwitch(
+            state = useDynamicColor && dynamicColorAvailable,
+            enabled = dynamicColorAvailable,
+            title = { Text("Dynamic color") },
+            subtitle = {
+                Text(
+                    if (dynamicColorAvailable) "Use colors from your wallpaper"
+                    else "Not available on this device",
+                )
+            },
+            onCheckedChange = onUseDynamicColorChange,
+        )
     }
 
     if (showThemeDialog) {

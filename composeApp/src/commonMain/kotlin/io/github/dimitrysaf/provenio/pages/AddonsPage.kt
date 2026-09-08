@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,54 +53,48 @@ import io.github.dimitrysaf.provenio.stremio.model.Manifest
 import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
 import com.alorma.compose.settings.ui.expressive.SettingsGroup
 import com.alorma.compose.settings.ui.expressive.SettingsMenuLink
-import io.github.dimitrysaf.provenio.ui.components.BackTopBar
-import io.github.dimitrysaf.provenio.ui.components.PageScaffold
 import kotlinx.coroutines.launch
 
+/**
+ * The Add-ons settings themselves. No top bar or scroll container of its own — SettingsPage
+ * owns those — so adding an addon is an inline action rather than a top bar button that
+ * would only exist in one of the two layouts.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddonsPage(
-    modifier: Modifier = Modifier,
-    onBack: () -> Unit,
-) {
+fun AddonsContent() {
     val collection by AddonRepository.collection.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
-    PageScaffold(
-        modifier = modifier,
-        topBar = { scrollBehavior ->
-            BackTopBar(
-                title = "Add-ons",
-                onBack = onBack,
-                scrollBehavior = scrollBehavior,
-                actions = {
-                    IconButton(onClick = { showAddDialog = true }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Add an add-on")
-                    }
-                },
-            )
-        },
-    ) {
-        val addons = collection.all
-        if (addons.isEmpty()) {
-            EmptyAddons()
-        } else {
-            Text(
-                text = "Add-ons are asked in this order. Drag the top one higher to prefer it.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-            SettingsGroup {
-                addons.forEachIndexed { index, addon ->
-                    AddonRow(
-                        addon = addon,
-                        isFirst = index == 0,
-                        isLast = index == addons.lastIndex,
-                    )
-                }
+    val addons = collection.all
+    if (addons.isEmpty()) {
+        EmptyAddons()
+    } else {
+        Text(
+            text = "Add-ons are asked in this order.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        SettingsGroup {
+            addons.forEachIndexed { index, addon ->
+                AddonRow(
+                    addon = addon,
+                    isFirst = index == 0,
+                    isLast = index == addons.lastIndex,
+                )
             }
         }
+    }
+
+    Spacer(Modifier.height(16.dp))
+    FilledTonalButton(
+        onClick = { showAddDialog = true },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Icon(Icons.Filled.Add, contentDescription = null)
+        Spacer(Modifier.width(8.dp))
+        Text("Add an add-on")
     }
 
     if (showAddDialog) {
