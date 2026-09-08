@@ -19,8 +19,10 @@ fun ListsPage(
     PageScaffold(
         title = "Lists",
         modifier = modifier,
-        topBar = {
+        topBar = { scrollBehavior ->
             AppTopBar(
+                title = "Lists",
+                scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(onClick = onSearchClick) {
                         Icon(Icons.Filled.Search, contentDescription = "Search")

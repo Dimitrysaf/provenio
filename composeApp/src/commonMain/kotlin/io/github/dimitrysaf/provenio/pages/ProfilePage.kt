@@ -19,8 +19,10 @@ fun ProfilePage(
     PageScaffold(
         title = "Profile",
         modifier = modifier,
-        topBar = {
+        topBar = { scrollBehavior ->
             AppTopBar(
+                title = "Profile",
+                scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(onClick = onSearchClick) {
                         Icon(Icons.Filled.Search, contentDescription = "Search")

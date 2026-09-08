@@ -19,8 +19,10 @@ fun MoviesPage(
     PageScaffold(
         title = "Movies",
         modifier = modifier,
-        topBar = {
+        topBar = { scrollBehavior ->
             AppTopBar(
+                title = "Movies",
+                scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(onClick = onSearchClick) {
                         Icon(Icons.Filled.Search, contentDescription = "Search")

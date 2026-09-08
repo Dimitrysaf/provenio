@@ -19,8 +19,10 @@ fun TvPage(
     PageScaffold(
         title = "TV",
         modifier = modifier,
-        topBar = {
+        topBar = { scrollBehavior ->
             AppTopBar(
+                title = "TV",
+                scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(onClick = onSearchClick) {
                         Icon(Icons.Filled.Search, contentDescription = "Search")
