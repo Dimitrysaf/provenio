@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.stremio
 import io.github.dimitrysaf.provenio.data.AddonStore
 import io.github.dimitrysaf.provenio.data.createDatabaseDriver
 import io.github.dimitrysaf.provenio.stremio.model.Manifest
+import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,6 +50,28 @@ object AddonRepository {
         val addon = InstalledAddon(transportUrl = AddonUrl.manifest(url), manifest = manifest)
         commit(_collection.value.with(addon))
         return addon
+    }
+
+    /**
+     * Runs [query] against every enabled catalog that advertises a `search` extra.
+     *
+     * Results are merged and de-duplicated by id, because several addons commonly index
+     * the same catalogue and would otherwise return the same title repeatedly. Addons that
+     * fail are skipped rather than failing the whole search, since one bad addon should
+     * not empty the screen.
+     */
+    suspend fun search(query: String): List<MetaPreview> {
+        val found = mutableListOf<MetaPreview>()
+        _collection.value.searchableCatalogs().forEach { (addon, catalog) ->
+            val page = client.fetchCatalog(
+                addonUrl = addon.transportUrl,
+                type = catalog.type,
+                id = catalog.id,
+                extra = mapOf("search" to query),
+            )
+            page.getOrNull()?.metas?.let { found += it }
+        }
+        return found.distinctBy { it.id }
     }
 
     fun remove(addonId: String) = commit(_collection.value.without(addonId))

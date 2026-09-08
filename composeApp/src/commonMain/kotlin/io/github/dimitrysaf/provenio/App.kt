@@ -122,7 +122,10 @@ fun App() {
 
             composable(Routes.Search) {
                 PageSurface {
-                    SearchPage(onBack = { navController.popBackStack() })
+                    SearchPage(
+                        onBack = { navController.popBackStack() },
+                        onAddAddons = { navController.navigate(Routes.SettingsAddons) },
+                    )
                 }
             }
 
