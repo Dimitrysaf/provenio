@@ -17,7 +17,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -86,9 +90,12 @@ fun SettingsPage(
     val navigator = rememberListDetailPaneScaffoldNavigator<String>()
     val scope = rememberCoroutineScope()
 
-    val selected = navigator.currentDestination?.contentKey?.let { name ->
-        SettingsCategory.entries.firstOrNull { it.name == name }
-    } ?: SettingsCategory.entries.first()
+    // Which category the detail pane shows is our state, not the navigator's. Reading it
+    // back from the navigator meant that popping cleared it before the pane had finished
+    // animating out, so the leaving pane swapped to the fallback category mid-exit.
+    var selectedName by rememberSaveable { mutableStateOf(SettingsCategory.entries.first().name) }
+    val selected = SettingsCategory.entries.firstOrNull { it.name == selectedName }
+        ?: SettingsCategory.entries.first()
 
     // Back inside settings closes the detail pane and nothing more. Leaving settings
     // altogether is the navigation host's job, which is where predictive back lives.
@@ -121,6 +128,7 @@ fun SettingsPage(
                         CategoryList(
                             selected = selected,
                             onSelect = { category ->
+                                selectedName = category.name
                                 scope.launch {
                                     navigator.navigateTo(
                                         ListDetailPaneScaffoldRole.Detail,
