@@ -23,6 +23,12 @@ kotlin {
     jvm("desktop")
 
     sourceSets {
+        // The app deliberately targets Material 3 Expressive; opting in once here beats
+        // annotating every file that touches an expressive component.
+        all {
+            languageSettings.optIn("androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
+        }
+
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)

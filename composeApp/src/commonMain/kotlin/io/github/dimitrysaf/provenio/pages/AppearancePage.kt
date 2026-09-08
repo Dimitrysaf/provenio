@@ -1,6 +1,5 @@
 package io.github.dimitrysaf.provenio.pages
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,13 +8,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,6 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.alorma.compose.settings.ui.expressive.SettingsGroup
+import com.alorma.compose.settings.ui.expressive.SettingsMenuLink
+import com.alorma.compose.settings.ui.expressive.SettingsSwitch
 import io.github.dimitrysaf.provenio.theme.ThemeMode
 import io.github.dimitrysaf.provenio.ui.components.BackTopBar
 import io.github.dimitrysaf.provenio.ui.components.PageScaffold
@@ -50,36 +49,27 @@ fun AppearancePage(
             BackTopBar(title = "Appearance", onBack = onBack, scrollBehavior = scrollBehavior)
         },
     ) {
-        ListItem(
-            headlineContent = { Text("Theme") },
-            supportingContent = { Text(themeMode.label) },
-            modifier = Modifier.clickable { showThemeDialog = true },
-        )
-
-        // The whole row toggles, not just the switch: the switch itself takes no click of
-        // its own so the row owns a single 48dp+ target and one state layer.
-        ListItem(
-            headlineContent = { Text("Dynamic color") },
-            supportingContent = {
-                Text(
-                    if (dynamicColorAvailable) "Use colors from your wallpaper"
-                    else "Not available on this device",
-                )
-            },
-            trailingContent = {
-                Switch(
-                    checked = useDynamicColor && dynamicColorAvailable,
-                    onCheckedChange = null,
-                    enabled = dynamicColorAvailable,
-                )
-            },
-            modifier = Modifier.toggleable(
-                value = useDynamicColor && dynamicColorAvailable,
+        // Settings inside a category carry no icons — there are far more settings than
+        // there are sensible icons to give them.
+        SettingsGroup {
+            SettingsMenuLink(
+                title = { Text("Theme") },
+                subtitle = { Text(themeMode.label) },
+                onClick = { showThemeDialog = true },
+            )
+            SettingsSwitch(
+                state = useDynamicColor && dynamicColorAvailable,
                 enabled = dynamicColorAvailable,
-                role = Role.Switch,
-                onValueChange = onUseDynamicColorChange,
-            ),
-        )
+                title = { Text("Dynamic color") },
+                subtitle = {
+                    Text(
+                        if (dynamicColorAvailable) "Use colors from your wallpaper"
+                        else "Not available on this device",
+                    )
+                },
+                onCheckedChange = onUseDynamicColorChange,
+            )
+        }
     }
 
     if (showThemeDialog) {

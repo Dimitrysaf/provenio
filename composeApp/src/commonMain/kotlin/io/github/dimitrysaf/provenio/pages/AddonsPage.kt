@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
@@ -28,7 +27,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -43,7 +41,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
@@ -52,6 +49,8 @@ import io.github.dimitrysaf.provenio.stremio.AddonResult
 import io.github.dimitrysaf.provenio.stremio.InstalledAddon
 import io.github.dimitrysaf.provenio.stremio.model.Manifest
 import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
+import com.alorma.compose.settings.ui.expressive.SettingsGroup
+import com.alorma.compose.settings.ui.expressive.SettingsMenuLink
 import io.github.dimitrysaf.provenio.ui.components.BackTopBar
 import io.github.dimitrysaf.provenio.ui.components.PageScaffold
 import kotlinx.coroutines.launch
@@ -90,12 +89,14 @@ fun AddonsPage(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
-            addons.forEachIndexed { index, addon ->
-                AddonRow(
-                    addon = addon,
-                    isFirst = index == 0,
-                    isLast = index == addons.lastIndex,
-                )
+            SettingsGroup {
+                addons.forEachIndexed { index, addon ->
+                    AddonRow(
+                        addon = addon,
+                        isFirst = index == 0,
+                        isLast = index == addons.lastIndex,
+                    )
+                }
             }
         }
     }
@@ -143,108 +144,95 @@ private fun AddonRow(
     var menuOpen by remember { mutableStateOf(false) }
     val openUrl = rememberUrlOpener()
 
-    Column {
-        ListItem(
-            headlineContent = { Text(manifest.name) },
-            supportingContent = {
+    SettingsMenuLink(
+        title = { Text(manifest.name) },
+        subtitle = {
+            Column {
                 Text(
                     text = manifest.description ?: "Version ${manifest.version}",
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-            },
-            leadingContent = { Icon(Icons.Outlined.Extension, contentDescription = null) },
-            trailingContent = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Switch(
-                        checked = addon.enabled,
-                        onCheckedChange = null,
-                    )
-                    Box {
-                        IconButton(onClick = { menuOpen = true }) {
-                            Icon(
-                                Icons.Filled.MoreVert,
-                                contentDescription = "More options for ${manifest.name}",
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = menuOpen,
-                            onDismissRequest = { menuOpen = false },
-                        ) {
-                            if (manifest.behaviorHints?.configurable == true) {
-                                DropdownMenuItem(
-                                    text = { Text("Configure") },
-                                    leadingIcon = {
-                                        Icon(Icons.Outlined.Tune, contentDescription = null)
-                                    },
-                                    onClick = {
-                                        openUrl(AddonUrl.configure(addon.transportUrl))
-                                        menuOpen = false
-                                    },
-                                )
-                            }
-                            DropdownMenuItem(
-                                text = { Text("Move up") },
-                                enabled = !isFirst,
-                                leadingIcon = {
-                                    Icon(Icons.Outlined.KeyboardArrowUp, contentDescription = null)
-                                },
-                                onClick = {
-                                    AddonRepository.move(manifest.id, -1)
-                                    menuOpen = false
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Move down") },
-                                enabled = !isLast,
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Outlined.KeyboardArrowDown,
-                                        contentDescription = null,
-                                    )
-                                },
-                                onClick = {
-                                    AddonRepository.move(manifest.id, 1)
-                                    menuOpen = false
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Remove") },
-                                leadingIcon = {
-                                    Icon(Icons.Outlined.Delete, contentDescription = null)
-                                },
-                                onClick = {
-                                    AddonRepository.remove(manifest.id)
-                                    menuOpen = false
-                                },
-                            )
+                // What the addon actually provides, which is the thing worth seeing at a
+                // glance when deciding its priority.
+                val capabilities = (manifest.resources.map { it.name } + manifest.types).distinct()
+                if (capabilities.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        capabilities.forEach { capability ->
+                            AssistChip(onClick = {}, label = { Text(capability) })
                         }
                     }
                 }
-            },
-            modifier = Modifier.toggleable(
-                value = addon.enabled,
-                role = Role.Switch,
-                onValueChange = { AddonRepository.setEnabled(manifest.id, it) },
-            ),
-        )
-
-        // What the addon actually provides, which is the thing worth seeing at a glance.
-        val capabilities = manifest.resources.map { it.name } + manifest.types
-        if (capabilities.isNotEmpty()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(start = 56.dp, end = 16.dp, bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                capabilities.distinct().forEach { capability ->
-                    AssistChip(onClick = {}, label = { Text(capability) })
+            }
+        },
+        icon = { Icon(Icons.Outlined.Extension, contentDescription = null) },
+        action = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Switch(checked = addon.enabled, onCheckedChange = null)
+                Box {
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(
+                            Icons.Filled.MoreVert,
+                            contentDescription = "More options for ${manifest.name}",
+                        )
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        if (manifest.behaviorHints?.configurable == true) {
+                            DropdownMenuItem(
+                                text = { Text("Configure") },
+                                leadingIcon = {
+                                    Icon(Icons.Outlined.Tune, contentDescription = null)
+                                },
+                                onClick = {
+                                    openUrl(AddonUrl.configure(addon.transportUrl))
+                                    menuOpen = false
+                                },
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text("Move up") },
+                            enabled = !isFirst,
+                            leadingIcon = {
+                                Icon(Icons.Outlined.KeyboardArrowUp, contentDescription = null)
+                            },
+                            onClick = {
+                                AddonRepository.move(manifest.id, -1)
+                                menuOpen = false
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Move down") },
+                            enabled = !isLast,
+                            leadingIcon = {
+                                Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null)
+                            },
+                            onClick = {
+                                AddonRepository.move(manifest.id, 1)
+                                menuOpen = false
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Remove") },
+                            leadingIcon = {
+                                Icon(Icons.Outlined.Delete, contentDescription = null)
+                            },
+                            onClick = {
+                                AddonRepository.remove(manifest.id)
+                                menuOpen = false
+                            },
+                        )
+                    }
                 }
             }
-        }
-    }
+        },
+        onClick = { AddonRepository.setEnabled(manifest.id, !addon.enabled) },
+    )
 }
 
 @Composable
