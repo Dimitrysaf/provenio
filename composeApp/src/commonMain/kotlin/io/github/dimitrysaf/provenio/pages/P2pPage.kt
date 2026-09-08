@@ -2,6 +2,8 @@ package io.github.dimitrysaf.provenio.pages
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -282,6 +284,7 @@ private fun StatusGroup(status: P2pStatus) {
  * notice is the address disclosure, and a button that is immediately tappable gets tapped
  * without being read.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun P2pConsentDialog(
     onAccept: () -> Unit,
@@ -299,7 +302,6 @@ private fun P2pConsentDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = Modifier.padding(horizontal = 24.dp),
         icon = { Icon(Icons.Outlined.Warning, contentDescription = null) },
         title = { Text("Enable P2P Streaming?") },
         text = {
@@ -339,12 +341,17 @@ private fun P2pConsentDialog(
                 )
             }
         },
-        // All three actions live in one slot so they can be stacked and centred. The
-        // dialog's own button row aligns to the end and cannot do either.
+        // All three actions live in one slot so they can be centred. A flow row keeps
+        // them on one line where they fit and wraps only when they do not, which costs
+        // far less height than stacking them.
         confirmButton = {
-            Column(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalArrangement = Arrangement.spacedBy(
+                    space = 8.dp,
+                    alignment = Alignment.CenterHorizontally,
+                ),
+                verticalArrangement = Arrangement.Center,
             ) {
                 // Cancel carries the emphasis. Declining is the safe outcome here, so it
                 // should be the easiest thing to hit and the obvious default.
