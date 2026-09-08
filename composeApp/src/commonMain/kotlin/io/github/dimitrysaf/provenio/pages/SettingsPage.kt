@@ -97,22 +97,24 @@ fun SettingsPage(
     val selected = SettingsCategory.entries.firstOrNull { it.name == selectedName }
         ?: SettingsCategory.entries.first()
 
-    // Back inside settings closes the detail pane and nothing more. Leaving settings
-    // altogether is the navigation host's job, which is where predictive back lives.
-    SystemBackHandler(enabled = navigator.canNavigateBack()) {
-        scope.launch { navigator.navigateBack() }
-    }
+    // One definition of "back" for both the gesture and the top bar's arrow. While a
+    // category is open on a single pane, back closes that category; only once there is
+    // no pane left to close does it leave settings. canNavigateBack() reports false when
+    // popping would not change what is on screen, so on a two-pane window the arrow
+    // leaves settings directly rather than silently doing nothing.
+    val canClosePane = navigator.canNavigateBack()
+    val closePane: () -> Unit = { scope.launch { navigator.navigateBack() } }
 
-    // Tiles are drawn on a bright container; the page behind them has to be dimmer or
-    // there is no layer to see. Without this the rows dissolve into the background.
+    SystemBackHandler(enabled = canClosePane, onBack = closePane)
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceContainer),
     ) {
         BackTopBar(
-            title = "Settings",
-            onBack = onBack,
+            title = if (canClosePane) selected.title else "Settings",
+            onBack = { if (canClosePane) closePane() else onBack() },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
             ),
