@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.stremio
 import io.github.dimitrysaf.provenio.data.AddonStore
 import io.github.dimitrysaf.provenio.data.createDatabaseDriver
 import io.github.dimitrysaf.provenio.stremio.model.Manifest
+import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -74,6 +75,21 @@ object AddonRepository {
                 page.getOrNull()?.metas?.let { found += it }
             }
         return found.distinctBy { it.id }
+    }
+
+    /**
+     * Full metadata for one title, from the first addon that answers.
+     *
+     * Addons are asked in the collection's order and the first usable reply wins. Asking
+     * all of them and merging would mean deciding which addon's description is correct,
+     * which is the seat cascade and is not designed yet.
+     */
+    suspend fun meta(type: String, id: String): Meta? {
+        _collection.value.metaProviders(type, id).forEach { addon ->
+            val reply = client.fetchMeta(addon.transportUrl, type, id)
+            reply.getOrNull()?.meta?.let { return it }
+        }
+        return null
     }
 
     fun remove(addonId: String) = commit(_collection.value.without(addonId))

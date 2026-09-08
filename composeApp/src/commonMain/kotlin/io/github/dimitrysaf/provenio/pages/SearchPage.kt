@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.pages
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
@@ -70,6 +71,7 @@ fun SearchPage(
     modifier: Modifier = Modifier,
     onBack: () -> Unit,
     onAddAddons: () -> Unit,
+    onOpenDetail: (type: String, id: String) -> Unit,
     initialFilter: SearchFilter = SearchFilter.All,
 ) {
     val collection by AddonRepository.collection.collectAsState()
@@ -151,7 +153,7 @@ fun SearchPage(
             when {
                 searchable.isEmpty() -> NoSearchableAddons(onAddAddons)
                 searching -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                results.isNotEmpty() -> ResultGrid(results)
+                results.isNotEmpty() -> ResultGrid(results, onOpenDetail)
                 searched -> CentredNote("No results for \"$query\"")
                 else -> CentredNote("Search across ${searchable.size} catalogs")
             }
@@ -160,7 +162,10 @@ fun SearchPage(
 }
 
 @Composable
-private fun ResultGrid(results: List<MetaPreview>) {
+private fun ResultGrid(
+    results: List<MetaPreview>,
+    onOpenDetail: (type: String, id: String) -> Unit,
+) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 120.dp),
         modifier = Modifier.fillMaxSize(),
@@ -168,13 +173,15 @@ private fun ResultGrid(results: List<MetaPreview>) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        items(results, key = { it.id }) { meta -> ResultCard(meta) }
+        items(results, key = { it.id }) { meta ->
+            ResultCard(meta) { onOpenDetail(meta.type, meta.id) }
+        }
     }
 }
 
 @Composable
-private fun ResultCard(meta: MetaPreview) {
-    Column {
+private fun ResultCard(meta: MetaPreview, onClick: () -> Unit) {
+    Column(modifier = Modifier.clickable(onClick = onClick)) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()

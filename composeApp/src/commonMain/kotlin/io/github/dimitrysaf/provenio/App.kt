@@ -28,12 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import io.github.dimitrysaf.provenio.navigation.DetailRoute
 import io.github.dimitrysaf.provenio.navigation.Routes
 import io.github.dimitrysaf.provenio.navigation.SearchFilter
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.PlayerScreen
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
+import io.github.dimitrysaf.provenio.pages.DetailPage
 import io.github.dimitrysaf.provenio.pages.SearchPage
 import io.github.dimitrysaf.provenio.pages.SettingsCategory
 import io.github.dimitrysaf.provenio.pages.SettingsPage
@@ -133,8 +136,20 @@ fun App() {
                 SearchPage(
                     onBack = { navController.popBackStack() },
                     onAddAddons = { navController.navigate(Routes.SettingsAddons) },
+                    onOpenDetail = { type, id -> navController.navigate(DetailRoute(type, id)) },
                     initialFilter = filter,
                 )
+            }
+
+            composable<DetailRoute> { entry ->
+                val route = entry.toRoute<DetailRoute>()
+                PageSurface {
+                    DetailPage(
+                        type = route.type,
+                        id = route.id,
+                        onBack = { navController.popBackStack() },
+                    )
+                }
             }
 
             composable(Routes.Search) { PageSurface { search(SearchFilter.All) } }
