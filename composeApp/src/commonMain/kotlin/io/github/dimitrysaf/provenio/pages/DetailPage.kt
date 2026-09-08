@@ -171,7 +171,12 @@ private fun MetaContent(meta: Meta) {
                 Text(
                     text = if (season == 0) "Specials" else "Season $season",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, top = 20.dp, bottom = 4.dp),
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 20.dp,
+                        bottom = 4.dp,
+                    ),
                 )
             }
             items(episodes, key = { it.id }) { video -> EpisodeRow(video) }
