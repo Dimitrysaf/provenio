@@ -1,6 +1,10 @@
 package io.github.dimitrysaf.provenio.pages
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -10,9 +14,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.adaptive.layout.AnimatedPane
@@ -85,8 +93,20 @@ fun SettingsPage(
         scope.launch { navigator.navigateBack() }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
-        BackTopBar(title = "Settings", onBack = onBack)
+    // Tiles are drawn on a bright container; the page behind them has to be dimmer or
+    // there is no layer to see. Without this the rows dissolve into the background.
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceContainer),
+    ) {
+        BackTopBar(
+            title = "Settings",
+            onBack = onBack,
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            ),
+        )
 
         ListDetailPaneScaffold(
             directive = navigator.scaffoldDirective,
@@ -143,10 +163,48 @@ private fun CategoryList(
             SettingsMenuLink(
                 title = { Text(category.title) },
                 subtitle = { Text(category.summary) },
-                icon = { Icon(category.icon, contentDescription = null) },
+                icon = { CategoryIcon(category) },
                 onClick = { onSelect(category) },
             )
         }
+    }
+}
+
+/**
+ * A category's icon sits in a filled circle, the way the platform settings do it. Colours
+ * come from the scheme's container roles rather than fixed hues, so the tinting survives
+ * dark mode and wallpaper-derived palettes.
+ */
+@Composable
+private fun CategoryIcon(category: SettingsCategory) {
+    val scheme = MaterialTheme.colorScheme
+    val container: Color
+    val content: Color
+    when (category.ordinal % 3) {
+        0 -> {
+            container = scheme.primaryContainer
+            content = scheme.onPrimaryContainer
+        }
+        1 -> {
+            container = scheme.tertiaryContainer
+            content = scheme.onTertiaryContainer
+        }
+        else -> {
+            container = scheme.secondaryContainer
+            content = scheme.onSecondaryContainer
+        }
+    }
+
+    Box(
+        modifier = Modifier.size(40.dp).clip(CircleShape).background(container),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = category.icon,
+            contentDescription = null,
+            tint = content,
+            modifier = Modifier.size(24.dp),
+        )
     }
 }
 

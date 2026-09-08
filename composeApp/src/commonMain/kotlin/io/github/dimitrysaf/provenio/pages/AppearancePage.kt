@@ -11,6 +11,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -24,7 +25,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.alorma.compose.settings.ui.expressive.SettingsGroup
 import com.alorma.compose.settings.ui.expressive.SettingsMenuLink
-import com.alorma.compose.settings.ui.expressive.SettingsSwitch
 import io.github.dimitrysaf.provenio.theme.ThemeMode
 
 /**
@@ -49,9 +49,10 @@ fun AppearanceContent(
             subtitle = { Text(themeMode.label) },
             onClick = { showThemeDialog = true },
         )
-        SettingsSwitch(
-            state = useDynamicColor && dynamicColorAvailable,
-            enabled = dynamicColorAvailable,
+        // A plain row with a switch on the trailing edge. The filled, state-tinted
+        // treatment belongs to a page's *main* toggle — the one that turns the whole
+        // feature on — not to an ordinary setting.
+        SettingsMenuLink(
             title = { Text("Dynamic color") },
             subtitle = {
                 Text(
@@ -59,7 +60,15 @@ fun AppearanceContent(
                     else "Not available on this device",
                 )
             },
-            onCheckedChange = onUseDynamicColorChange,
+            enabled = dynamicColorAvailable,
+            action = {
+                Switch(
+                    checked = useDynamicColor && dynamicColorAvailable,
+                    onCheckedChange = null,
+                    enabled = dynamicColorAvailable,
+                )
+            },
+            onClick = { onUseDynamicColorChange(!useDynamicColor) },
         )
     }
 
