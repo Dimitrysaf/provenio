@@ -45,6 +45,7 @@ import io.github.dimitrysaf.provenio.pages.TvPage
 import io.github.dimitrysaf.provenio.theme.AppTheme
 import io.github.dimitrysaf.provenio.theme.ThemeMode
 import io.github.dimitrysaf.provenio.theme.isDynamicColorSupported
+import io.github.dimitrysaf.provenio.ui.backhandler.SystemBackHandler
 import io.github.dimitrysaf.provenio.ui.chrome.LocalBarsVisible
 import io.github.dimitrysaf.provenio.ui.chrome.LocalSetBarsVisible
 import io.github.dimitrysaf.provenio.ui.responsive.WindowSizeClass
@@ -76,6 +77,12 @@ fun App() {
 
         // Nav auto-hides on any screen outside the tab set (e.g. Settings, Search).
         val navBarVisible = manualBarsVisible && screen is Screen.Tab
+
+        // Settings/Search are logically sub-pages; let the system back gesture/button pop
+        // back to the previous tab instead of exiting the app.
+        SystemBackHandler(enabled = screen !is Screen.Tab) {
+            screen = Screen.Tab(selectedTab)
+        }
 
         CompositionLocalProvider(
             LocalBarsVisible provides rememberUpdatedState(manualBarsVisible),

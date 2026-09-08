@@ -36,6 +36,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.androidx.activity.compose)
         }
         val desktopMain by getting
         desktopMain.dependencies {
