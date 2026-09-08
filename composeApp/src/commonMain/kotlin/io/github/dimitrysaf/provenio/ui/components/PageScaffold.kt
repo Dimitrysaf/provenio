@@ -1,22 +1,46 @@
 package io.github.dimitrysaf.provenio.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import io.github.dimitrysaf.provenio.ui.chrome.LocalBarsVisible
 
+/**
+ * Standard page frame: a top app bar that collapses as the body scrolls under it, plus a
+ * responsive body. The bar is handed the [TopAppBarScrollBehavior] so it can apply the M3
+ * on-scroll container colour change; the separate [LocalBarsVisible] flag stays for the
+ * full-screen player case, which hides the chrome outright rather than on scroll.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageScaffold(
     title: String,
     modifier: Modifier = Modifier,
-    topBar: @Composable () -> Unit,
+    topBar: @Composable (TopAppBarScrollBehavior) -> Unit,
 ) {
-    Column(modifier = modifier) {
-        AnimatedVisibility(visible = LocalBarsVisible.current.value) {
-            topBar()
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val motionScheme = MaterialTheme.motionScheme
+
+    Column(modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection)) {
+        AnimatedVisibility(
+            visible = LocalBarsVisible.current.value,
+            enter = fadeIn(motionScheme.defaultEffectsSpec()) +
+                expandVertically(motionScheme.defaultSpatialSpec()),
+            exit = shrinkVertically(motionScheme.defaultSpatialSpec()) +
+                fadeOut(motionScheme.defaultEffectsSpec()),
+        ) {
+            topBar(scrollBehavior)
         }
 
         ResponsiveBody(modifier = Modifier.weight(1f)) {

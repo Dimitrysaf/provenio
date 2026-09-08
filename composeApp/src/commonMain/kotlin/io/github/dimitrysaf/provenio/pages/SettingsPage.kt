@@ -1,27 +1,38 @@
 package io.github.dimitrysaf.provenio.pages
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.Palette
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.theme.ThemeMode
 import io.github.dimitrysaf.provenio.ui.components.BackTopBar
@@ -38,43 +49,24 @@ fun SettingsPage(
     onUseDynamicColorChange: (Boolean) -> Unit,
     dynamicColorAvailable: Boolean,
 ) {
-    Column(modifier = modifier) {
-        BackTopBar(title = "Settings", onBack = onBack)
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    var showThemeDialog by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection)) {
+        BackTopBar(title = "Settings", onBack = onBack, scrollBehavior = scrollBehavior)
 
         ResponsiveBody(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "Appearance",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 8.dp),
+            SectionHeader("Appearance")
+
+            ListItem(
+                headlineContent = { Text("Theme") },
+                supportingContent = { Text(themeMode.label) },
+                leadingContent = { Icon(Icons.Outlined.Palette, contentDescription = null) },
+                modifier = Modifier.clickable { showThemeDialog = true },
             )
 
-            var menuExpanded by remember { mutableStateOf(false) }
-            Box {
-                ListItem(
-                    headlineContent = { Text("Theme") },
-                    supportingContent = { Text(themeMode.label) },
-                    leadingContent = { Icon(Icons.Outlined.Palette, contentDescription = null) },
-                    modifier = Modifier.clickable { menuExpanded = true },
-                )
-                DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                    ThemeMode.entries.forEach { mode ->
-                        DropdownMenuItem(
-                            text = { Text(mode.label) },
-                            onClick = {
-                                onThemeModeChange(mode)
-                                menuExpanded = false
-                            },
-                            leadingIcon = {
-                                if (mode == themeMode) {
-                                    Icon(Icons.Filled.Check, contentDescription = null)
-                                }
-                            },
-                        )
-                    }
-                }
-            }
-
+            // The whole row toggles, not just the switch: the switch itself takes no
+            // click of its own so the row owns a single 48dp+ target and one state layer.
             ListItem(
                 headlineContent = { Text("Dynamic color") },
                 supportingContent = {
@@ -87,11 +79,80 @@ fun SettingsPage(
                 trailingContent = {
                     Switch(
                         checked = useDynamicColor && dynamicColorAvailable,
-                        onCheckedChange = onUseDynamicColorChange,
+                        onCheckedChange = null,
                         enabled = dynamicColorAvailable,
                     )
                 },
+                modifier = Modifier.toggleable(
+                    value = useDynamicColor && dynamicColorAvailable,
+                    enabled = dynamicColorAvailable,
+                    role = Role.Switch,
+                    onValueChange = onUseDynamicColorChange,
+                ),
             )
         }
     }
+
+    if (showThemeDialog) {
+        ThemeModeDialog(
+            selected = themeMode,
+            onSelect = {
+                onThemeModeChange(it)
+                showThemeDialog = false
+            },
+            onDismiss = { showThemeDialog = false },
+        )
+    }
+}
+
+@Composable
+private fun SectionHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        // Aligns with ListItem's own 16dp text inset below it.
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+}
+
+/**
+ * A short enumerated choice is a dialog in M3, not a dropdown menu hung off a full-width
+ * list row — a menu would anchor to the row's leading edge and read as an overflow menu.
+ */
+@Composable
+private fun ThemeModeDialog(
+    selected: ThemeMode,
+    onSelect: (ThemeMode) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Outlined.Palette, contentDescription = null) },
+        title = { Text("Theme") },
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                ThemeMode.entries.forEach { mode ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .selectable(
+                                selected = mode == selected,
+                                onClick = { onSelect(mode) },
+                                role = Role.RadioButton,
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = mode == selected, onClick = null)
+                        Spacer(Modifier.width(16.dp))
+                        Text(text = mode.label, style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
 }
