@@ -16,12 +16,12 @@ object Routes {
 
     const val Settings = "settings"
 
-    /** Opens settings on a named category instead of the first one. */
-    const val SettingsCategoryArg = "category"
-    const val SettingsWithCategory = "$Settings?$SettingsCategoryArg={$SettingsCategoryArg}"
-
-    fun settings(category: String? = null): String =
-        if (category == null) Settings else "$Settings?$SettingsCategoryArg=$category"
+    /**
+     * Opens settings already on Add-ons. A plain second route rather than a navigation
+     * argument, because arguments arrive as SavedState here and are not worth the reach
+     * for one deep link.
+     */
+    const val SettingsAddons = "settings/addons"
 
     const val Player = "player"
 

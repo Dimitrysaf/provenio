@@ -27,9 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.NavType
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import io.github.dimitrysaf.provenio.navigation.Routes
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlayerRepository
@@ -105,11 +103,9 @@ fun App() {
                 PageSurface(applyBottomInset = false) {
                     HomeScreen(
                         onOpenSearch = { navController.navigate(Routes.Search) },
-                        onOpenSettings = { navController.navigate(Routes.settings()) },
+                        onOpenSettings = { navController.navigate(Routes.Settings) },
                         onPlaySample = { navController.navigate(Routes.Player) },
-                        onAddAddons = {
-                            navController.navigate(Routes.settings(SettingsCategory.Addons.name))
-                        },
+                        onAddAddons = { navController.navigate(Routes.SettingsAddons) },
                     )
                 }
             }
@@ -130,29 +126,24 @@ fun App() {
                 }
             }
 
-            composable(
-                route = Routes.SettingsWithCategory,
-                arguments = listOf(
-                    navArgument(Routes.SettingsCategoryArg) {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    },
-                ),
-            ) { entry ->
-                val requested = entry.arguments?.getString(Routes.SettingsCategoryArg)
-                PageSurface {
-                    SettingsPage(
-                        onBack = { navController.popBackStack() },
-                        initialCategory = SettingsCategory.entries
-                            .firstOrNull { it.name == requested },
-                        themeMode = themeMode,
-                        onThemeModeChange = { themeMode = it },
-                        useDynamicColor = useDynamicColor,
-                        onUseDynamicColorChange = { useDynamicColor = it },
-                        dynamicColorAvailable = isDynamicColorSupported(),
-                    )
-                }
+            val settings: @Composable (SettingsCategory?) -> Unit = { category ->
+                SettingsPage(
+                    onBack = { navController.popBackStack() },
+                    initialCategory = category,
+                    themeMode = themeMode,
+                    onThemeModeChange = { themeMode = it },
+                    useDynamicColor = useDynamicColor,
+                    onUseDynamicColorChange = { useDynamicColor = it },
+                    dynamicColorAvailable = isDynamicColorSupported(),
+                )
+            }
+
+            composable(Routes.Settings) {
+                PageSurface { settings(null) }
+            }
+
+            composable(Routes.SettingsAddons) {
+                PageSurface { settings(SettingsCategory.Addons) }
             }
         }
     }
