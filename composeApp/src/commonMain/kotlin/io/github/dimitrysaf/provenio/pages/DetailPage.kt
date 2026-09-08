@@ -115,10 +115,12 @@ fun DetailPage(
 @Composable
 private fun MetaContent(meta: Meta) {
     val openUrl = rememberUrlOpener()
+    // Specials last. They routinely spoil the run they belong to, so leading with them is
+    // the wrong default even though their season number sorts first.
     val seasons = meta.videos
         .groupBy { it.season ?: 0 }
         .toList()
-        .sortedBy { (season, _) -> season }
+        .sortedWith(compareBy({ (season, _) -> season == SpecialsSeason }, { it.first }))
     val expanded = rememberSaveable { mutableStateOf(seasons.firstOrNull()?.first ?: 1) }
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -202,7 +204,9 @@ private fun Header(meta: Meta) {
                 val facts = listOfNotNull(
                     meta.releaseInfo,
                     meta.runtime,
-                    "${meta.videos.size} eps".takeIf { meta.videos.isNotEmpty() },
+                    meta.trackedEpisodeCount()
+                        .takeIf { it > 0 }
+                        ?.let { "$it eps" },
                 )
                 if (facts.isNotEmpty()) {
                     Text(
@@ -244,17 +248,23 @@ private fun WatchAction(meta: Meta) {
 
 @Composable
 private fun WatchProgress(meta: Meta) {
+    val total = meta.trackedEpisodeCount()
+    // Zero until Simkl or local playback tracking exists.
+    val watched = 0
+
     SectionCard(title = "Watch progress") {
-        // Needs Simkl or local playback tracking, neither of which exists yet.
-        LinearProgressIndicator(
-            progress = { 0f },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        )
+        // A bar pinned at zero says nothing that the text below it does not.
+        if (watched > 0) {
+            LinearProgressIndicator(
+                progress = { watched.toFloat() / total },
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            )
+        }
         Text(
-            text = if (meta.videos.isEmpty()) {
-                "Not tracked yet"
-            } else {
-                "0 of ${meta.videos.size} episodes watched"
+            text = when {
+                total == 0 -> "Not tracked yet"
+                watched == 0 -> "Not started, $total episodes"
+                else -> "$watched of $total episodes watched"
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -313,6 +323,7 @@ private fun LazyListScope.seasonSection(
             SeasonHeader(
                 season = season,
                 episodeCount = episodes.size,
+                watched = 0,
                 expanded = expanded.value == season,
                 onToggle = {
                     expanded.value = if (expanded.value == season) -1 else season
@@ -331,6 +342,7 @@ private fun LazyListScope.seasonSection(
 private fun SeasonHeader(
     season: Int,
     episodeCount: Int,
+    watched: Int,
     expanded: Boolean,
     onToggle: () -> Unit,
 ) {
@@ -343,12 +355,12 @@ private fun SeasonHeader(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = if (season == 0) "Specials" else "Season $season",
+                text = if (season == SpecialsSeason) "Specials" else "Season $season",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = "0/$episodeCount",
+                text = "$watched/$episodeCount",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -362,11 +374,12 @@ private fun SeasonHeader(
                 contentDescription = null,
             )
         }
-        // Watched fraction stays at zero until there is tracking to fill it.
-        LinearProgressIndicator(
-            progress = { 0f },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        )
+        if (watched > 0) {
+            LinearProgressIndicator(
+                progress = { watched.toFloat() / episodeCount },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            )
+        }
     }
 }
 
@@ -591,6 +604,18 @@ private fun SectionHeader(title: String) {
         )
     }
 }
+
+/** Season 0 is the specials bucket by convention across every metadata source. */
+private const val SpecialsSeason = 0
+
+/**
+ * Episodes that count towards progress.
+ *
+ * Specials are excluded. They are supplementary, they are not part of the run a viewer is
+ * working through, and counting them makes a finished series read as incomplete.
+ */
+private fun Meta.trackedEpisodeCount(): Int =
+    videos.count { (it.season ?: SpecialsSeason) != SpecialsSeason }
 
 /** Zero padded episode and season numbers. Common Kotlin has no String.format. */
 private fun pad(value: Int): String = value.toString().padStart(2, '0')
