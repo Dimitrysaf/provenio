@@ -33,7 +33,8 @@ android {
 
     defaultConfig {
         applicationId = "io.github.dimitrysaf.provenio"
-        minSdk = 24
+        // The torrent engine uses MethodHandle, which needs Android 8.0.
+        minSdk = 26
         targetSdk = 37
         // Supplied by CI from the commit count so each build supersedes the last.
         versionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 1
