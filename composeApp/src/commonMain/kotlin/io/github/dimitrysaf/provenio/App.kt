@@ -4,7 +4,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
@@ -32,26 +32,35 @@ import io.github.dimitrysaf.provenio.theme.isDynamicColorSupported
 import io.github.dimitrysaf.provenio.ui.HomeScreen
 
 /**
- * Page transition: a single fast fade, nothing else.
+ * Page transitions. Only ever one surface animates, and it animates over another that
+ * stays fully opaque — cross-fading both at once leaves a window where neither is opaque
+ * and the window background shows through as a dark flash.
  *
- * Only ever one surface animates, and it animates on top of another that stays fully
- * opaque — the arriving page fades in over the one it covers, and going back the leaving
- * page fades out over the destination already sitting behind it. That is what keeps the
- * transition clean: cross-fading both at once leaves a window where neither is opaque and
- * the window background shows through as a dark flash.
+ * Forward, the arriving page fades in over the one it covers. Back, the leaving page
+ * shrinks 100% → 90% over the destination already sitting behind it at full opacity,
+ * which is the predictive-back preview for a full-screen surface. Navigation Compose
+ * seeks [popExit] with the drag, so that shrink follows the gesture directly and what
+ * shows through is the destination, never the background.
  *
- * Because the destination underneath is at full opacity from the first frame, the back
- * gesture previews it immediately as Navigation Compose seeks [popExit] with the drag.
+ * https://developer.android.com/design/ui/mobile/guides/patterns/predictive-back
  */
+private const val BackPreviewScale = 0.9f
+
 private val fadeSpec = tween<Float>(
     durationMillis = MotionTokens.DurationShort2,
     easing = MotionTokens.Standard,
 )
 
+private val scaleSpec = tween<Float>(
+    durationMillis = MotionTokens.DurationShort2,
+    easing = MotionTokens.StandardDecelerate,
+)
+
 private val pushEnter: EnterTransition = fadeIn(fadeSpec)
 private val pushExit: ExitTransition = ExitTransition.None
 private val popEnter: EnterTransition = EnterTransition.None
-private val popExit: ExitTransition = fadeOut(fadeSpec)
+private val popExit: ExitTransition =
+    scaleOut(animationSpec = scaleSpec, targetScale = BackPreviewScale)
 
 @Composable
 fun App() {
