@@ -30,6 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.dimitrysaf.provenio.navigation.Routes
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
+import io.github.dimitrysaf.provenio.player.PlayerScreen
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.pages.SearchPage
 import io.github.dimitrysaf.provenio.pages.SettingsPage
@@ -100,6 +101,16 @@ fun App() {
                     HomeScreen(
                         onOpenSearch = { navController.navigate(Routes.Search) },
                         onOpenSettings = { navController.navigate(Routes.Settings) },
+                        onPlaySample = { navController.navigate(Routes.Player) },
+                    )
+                }
+            }
+
+            composable(Routes.Player) {
+                PageSurface {
+                    PlayerScreen(
+                        url = Routes.SampleVideoUrl,
+                        onBack = { navController.popBackStack() },
                     )
                 }
             }

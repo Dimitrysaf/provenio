@@ -15,4 +15,10 @@ object Routes {
     const val Search = "search"
 
     const val Settings = "settings"
+
+    const val Player = "player"
+
+    /** A public sample clip, used to prove the playback path end to end. */
+    const val SampleVideoUrl =
+        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
 }

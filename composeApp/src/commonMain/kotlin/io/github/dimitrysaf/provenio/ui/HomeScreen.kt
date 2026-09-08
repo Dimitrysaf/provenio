@@ -55,6 +55,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     onOpenSearch: () -> Unit,
     onOpenSettings: () -> Unit,
+    onPlaySample: () -> Unit,
 ) {
     // Saved rather than remembered: navigating to a sub-page disposes this screen's
     // composition, and the selected tab has to survive coming back.
@@ -124,6 +125,7 @@ fun HomeScreen(
                             modifier = Modifier.fillMaxSize(),
                             onSearchClick = onOpenSearch,
                             onFilterClick = {},
+                            onPlaySample = onPlaySample,
                         )
                         Destination.Lists -> ListsPage(
                             modifier = Modifier.fillMaxSize(),
