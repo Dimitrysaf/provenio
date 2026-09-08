@@ -17,12 +17,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
-import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import com.alorma.compose.settings.ui.expressive.SettingsGroup
 import com.alorma.compose.settings.ui.expressive.SettingsMenuLink
 import io.github.dimitrysaf.provenio.theme.ThemeMode
 import kotlinx.coroutines.launch
+import io.github.dimitrysaf.provenio.ui.backhandler.SystemBackHandler
 import io.github.dimitrysaf.provenio.ui.components.BackTopBar
 import io.github.dimitrysaf.provenio.ui.components.ResponsiveBody
 
@@ -78,11 +79,18 @@ fun SettingsPage(
         SettingsCategory.entries.firstOrNull { it.name == name }
     } ?: SettingsCategory.entries.first()
 
+    // Back inside settings closes the detail pane and nothing more. Leaving settings
+    // altogether is the navigation host's job, which is where predictive back lives.
+    SystemBackHandler(enabled = navigator.canNavigateBack()) {
+        scope.launch { navigator.navigateBack() }
+    }
+
     Column(modifier = modifier.fillMaxSize()) {
         BackTopBar(title = "Settings", onBack = onBack)
 
-        NavigableListDetailPaneScaffold(
-            navigator = navigator,
+        ListDetailPaneScaffold(
+            directive = navigator.scaffoldDirective,
+            value = navigator.scaffoldValue,
             modifier = Modifier.weight(1f),
             listPane = {
                 AnimatedPane {
