@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.pages
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +26,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.alorma.compose.settings.ui.expressive.SettingsGroup
 import io.github.dimitrysaf.provenio.ui.components.SettingsTile
+import io.github.dimitrysaf.provenio.ui.components.SettingsTileSpacing
+import io.github.dimitrysaf.provenio.ui.components.TilePosition
 import io.github.dimitrysaf.provenio.theme.ThemeMode
 
 /**
@@ -43,10 +46,11 @@ fun AppearanceContent(
 
     // Settings inside a category carry no icons — there are far more settings than there
     // are sensible icons to give them.
-    SettingsGroup {
+    SettingsGroup(verticalArrangement = Arrangement.spacedBy(SettingsTileSpacing)) {
         SettingsTile(
             title = { Text("Theme") },
             subtitle = { Text(themeMode.label) },
+            position = TilePosition.First,
             onClick = { showThemeDialog = true },
         )
         // A plain row with a switch on the trailing edge. The filled, state-tinted
@@ -61,6 +65,7 @@ fun AppearanceContent(
                 )
             },
             enabled = dynamicColorAvailable,
+            position = TilePosition.Last,
             action = {
                 Switch(
                     checked = useDynamicColor && dynamicColorAvailable,

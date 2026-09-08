@@ -1,9 +1,9 @@
 package io.github.dimitrysaf.provenio.pages
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,6 +34,8 @@ import kotlinx.coroutines.launch
 import io.github.dimitrysaf.provenio.ui.backhandler.SystemBackHandler
 import io.github.dimitrysaf.provenio.ui.components.BackTopBar
 import io.github.dimitrysaf.provenio.ui.components.SettingsTile
+import io.github.dimitrysaf.provenio.ui.components.SettingsTileSpacing
+import io.github.dimitrysaf.provenio.ui.components.tilePositionOf
 import io.github.dimitrysaf.provenio.ui.components.ResponsiveBody
 
 /**
@@ -159,14 +161,14 @@ private fun CategoryList(
     selected: SettingsCategory?,
     onSelect: (SettingsCategory) -> Unit,
 ) {
-    SettingsGroup {
-        SettingsCategory.entries.forEach { category ->
+    SettingsGroup(verticalArrangement = Arrangement.spacedBy(SettingsTileSpacing)) {
+        val categories = SettingsCategory.entries
+        categories.forEachIndexed { index, category ->
             SettingsTile(
                 title = { Text(category.title) },
                 subtitle = { Text(category.summary) },
                 icon = { CategoryIcon(category) },
-                // Category rows carry more presence than the settings inside them.
-                modifier = Modifier.heightIn(min = 84.dp),
+                position = tilePositionOf(index, categories.size),
                 onClick = { onSelect(category) },
             )
         }

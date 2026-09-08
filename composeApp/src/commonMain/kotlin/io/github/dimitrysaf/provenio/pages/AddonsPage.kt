@@ -53,6 +53,9 @@ import io.github.dimitrysaf.provenio.stremio.model.Manifest
 import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
 import com.alorma.compose.settings.ui.expressive.SettingsGroup
 import io.github.dimitrysaf.provenio.ui.components.SettingsTile
+import io.github.dimitrysaf.provenio.ui.components.SettingsTileSpacing
+import io.github.dimitrysaf.provenio.ui.components.TilePosition
+import io.github.dimitrysaf.provenio.ui.components.tilePositionOf
 import kotlinx.coroutines.launch
 
 /**
@@ -76,12 +79,13 @@ fun AddonsContent() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
-        SettingsGroup {
+        SettingsGroup(verticalArrangement = Arrangement.spacedBy(SettingsTileSpacing)) {
             addons.forEachIndexed { index, addon ->
                 AddonRow(
                     addon = addon,
                     isFirst = index == 0,
                     isLast = index == addons.lastIndex,
+                    position = tilePositionOf(index, addons.size),
                 )
             }
         }
@@ -135,6 +139,7 @@ private fun AddonRow(
     addon: InstalledAddon,
     isFirst: Boolean,
     isLast: Boolean,
+    position: TilePosition,
 ) {
     val manifest = addon.manifest
     var menuOpen by remember { mutableStateOf(false) }
@@ -168,6 +173,7 @@ private fun AddonRow(
             }
         },
         icon = { Icon(Icons.Outlined.Extension, contentDescription = null) },
+        position = position,
         action = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Switch(checked = addon.enabled, onCheckedChange = null)
