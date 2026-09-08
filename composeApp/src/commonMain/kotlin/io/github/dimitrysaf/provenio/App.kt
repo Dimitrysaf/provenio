@@ -27,13 +27,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import io.github.dimitrysaf.provenio.navigation.Routes
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.PlayerScreen
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.pages.SearchPage
+import io.github.dimitrysaf.provenio.pages.SettingsCategory
 import io.github.dimitrysaf.provenio.pages.SettingsPage
 import io.github.dimitrysaf.provenio.theme.AppTheme
 import io.github.dimitrysaf.provenio.theme.MotionTokens
@@ -102,8 +105,11 @@ fun App() {
                 PageSurface(applyBottomInset = false) {
                     HomeScreen(
                         onOpenSearch = { navController.navigate(Routes.Search) },
-                        onOpenSettings = { navController.navigate(Routes.Settings) },
+                        onOpenSettings = { navController.navigate(Routes.settings()) },
                         onPlaySample = { navController.navigate(Routes.Player) },
+                        onAddAddons = {
+                            navController.navigate(Routes.settings(SettingsCategory.Addons.name))
+                        },
                     )
                 }
             }
@@ -124,10 +130,22 @@ fun App() {
                 }
             }
 
-            composable(Routes.Settings) {
+            composable(
+                route = Routes.SettingsWithCategory,
+                arguments = listOf(
+                    navArgument(Routes.SettingsCategoryArg) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                ),
+            ) { entry ->
+                val requested = entry.arguments?.getString(Routes.SettingsCategoryArg)
                 PageSurface {
                     SettingsPage(
                         onBack = { navController.popBackStack() },
+                        initialCategory = SettingsCategory.entries
+                            .firstOrNull { it.name == requested },
                         themeMode = themeMode,
                         onThemeModeChange = { themeMode = it },
                         useDynamicColor = useDynamicColor,
@@ -145,7 +163,7 @@ fun App() {
  * page that covers the navigation swallows touches meant for it.
  *
  * The corner radius is driven by this destination's own enter/exit transition, which
- * Navigation Compose seeks with the back gesture — so the page rounds off as it is dragged
+ * Navigation Compose seeks with the back gesture, so the page rounds off as it is dragged
  * away and squares up again if the gesture is cancelled.
  *
  * Home declines the bottom inset because its own navigation bar already applies one.

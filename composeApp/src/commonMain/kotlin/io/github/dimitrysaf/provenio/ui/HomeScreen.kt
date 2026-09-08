@@ -46,7 +46,7 @@ private fun DestinationIcon(entry: Destination, selected: Boolean) {
 /**
  * The app's only top-level destination: navigation plus the tab set.
  *
- * Laid out with plain weights and no animated insets — a sub-page covers this screen
+ * Laid out with plain weights and no animated insets. A sub-page covers this screen
  * rather than asking the navigation to move aside, so nothing here ever re-measures.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +56,7 @@ fun HomeScreen(
     onOpenSearch: () -> Unit,
     onOpenSettings: () -> Unit,
     onPlaySample: () -> Unit,
+    onAddAddons: () -> Unit,
 ) {
     // Saved rather than remembered: navigating to a sub-page disposes this screen's
     // composition, and the selected tab has to survive coming back.
@@ -115,6 +116,7 @@ fun HomeScreen(
                             modifier = Modifier.fillMaxSize(),
                             onSearchClick = onOpenSearch,
                             onSettingsClick = onOpenSettings,
+                            onAddAddons = onAddAddons,
                         )
                         Destination.Tv -> TvPage(
                             modifier = Modifier.fillMaxSize(),

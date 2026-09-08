@@ -16,6 +16,13 @@ object Routes {
 
     const val Settings = "settings"
 
+    /** Opens settings on a named category instead of the first one. */
+    const val SettingsCategoryArg = "category"
+    const val SettingsWithCategory = "$Settings?$SettingsCategoryArg={$SettingsCategoryArg}"
+
+    fun settings(category: String? = null): String =
+        if (category == null) Settings else "$Settings?$SettingsCategoryArg=$category"
+
     const val Player = "player"
 
     /**

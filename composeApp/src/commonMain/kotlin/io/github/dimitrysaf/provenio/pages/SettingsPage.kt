@@ -83,6 +83,7 @@ enum class SettingsCategory(
 fun SettingsPage(
     modifier: Modifier = Modifier,
     onBack: () -> Unit,
+    initialCategory: SettingsCategory? = null,
     themeMode: ThemeMode,
     onThemeModeChange: (ThemeMode) -> Unit,
     useDynamicColor: Boolean,
@@ -97,7 +98,9 @@ fun SettingsPage(
     // Which category the detail pane shows is our state, not the navigator's. Reading it
     // back from the navigator meant that popping cleared it before the pane had finished
     // animating out, so the leaving pane swapped to the fallback category mid-exit.
-    var selectedName by rememberSaveable { mutableStateOf(SettingsCategory.entries.first().name) }
+    var selectedName by rememberSaveable {
+        mutableStateOf((initialCategory ?: SettingsCategory.entries.first()).name)
+    }
     val selected = SettingsCategory.entries.firstOrNull { it.name == selectedName }
         ?: SettingsCategory.entries.first()
 
