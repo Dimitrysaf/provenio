@@ -28,18 +28,6 @@ fun WindowSizeClass.usesExpandedRail(): Boolean =
     this == WindowSizeClass.Large || this == WindowSizeClass.ExtraLarge
 
 /**
- * Two panes side by side start at the Expanded breakpoint — below that there is not
- * enough width for a list and a detail without squeezing both.
- */
-fun WindowSizeClass.usesTwoPanes(): Boolean =
-    this == WindowSizeClass.Expanded ||
-        this == WindowSizeClass.Large ||
-        this == WindowSizeClass.ExtraLarge
-
-/** Width of the list pane in a two-pane layout; the detail pane takes the remainder. */
-val listPaneWidth: Dp = 360.dp
-
-/**
  * M3 layout margins: a fixed 16dp in compact, 24dp at every larger breakpoint.
  * Deliberately not a percentage of width — the spec is fixed dp.
  */
