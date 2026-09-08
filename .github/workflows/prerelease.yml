@@ -20,14 +20,37 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine version
-        run: echo "VERSION=0.0.1-$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
-
       - name: Install JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
+
+      # Runners are ephemeral, so a build with no signing config gets a freshly
+      # generated debug key every time and Android refuses to install one build over
+      # another. Generating the key once and keeping it in the repo makes every APK
+      # signed by the same key, which is what makes updates install.
+      - name: Ensure stable signing key
+        run: |
+          if [ ! -f androidApp/debug.keystore ]; then
+            keytool -genkeypair -v \
+              -keystore androidApp/debug.keystore \
+              -storepass android -keypass android \
+              -alias androiddebugkey \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Provenio Debug, O=Provenio, C=GR"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -f androidApp/debug.keystore
+            git commit -m "add: stable signing key so updates install [skip ci]"
+            git push origin HEAD:main
+          fi
+
+      - name: Determine version
+        run: |
+          BUILD=$(git rev-list --count HEAD)
+          echo "BUILD=$BUILD" >> "$GITHUB_ENV"
+          echo "VERSION=0.0.1-$BUILD" >> "$GITHUB_ENV"
 
       - name: Install Android SDK
         uses: android-actions/setup-android@v3
@@ -37,7 +60,8 @@ jobs:
 
       - name: Build with Gradle (Android)
         run: |
-          ./gradlew :androidApp:assembleDebug
+          ./gradlew :androidApp:assembleDebug \
+            -PappVersionCode="$BUILD" -PappVersionName="$VERSION"
           mkdir -p dist
           cp androidApp/build/outputs/apk/debug/*.apk dist/package.apk
 
