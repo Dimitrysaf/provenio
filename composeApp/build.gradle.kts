@@ -67,6 +67,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.media3.exoplayer)
             implementation(libs.media3.ui)
+            implementation(libs.nextlib.media3ext)
             implementation(libs.sqldelight.android.driver)
         }
         val desktopMain by getting

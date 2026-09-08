@@ -16,8 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
 
 @Composable
 actual fun PlayerScreen(
@@ -36,7 +38,16 @@ actual fun PlayerScreen(
 @Composable
 private fun BuiltinPlayer(url: String, modifier: Modifier) {
     val context = LocalContext.current
-    val player = remember { ExoPlayer.Builder(context).build() }
+    val player = remember {
+        // The default renderers only reach the device's own decoders, which on most
+        // phones cannot handle AC-3, E-AC-3, DTS or TrueHD. This factory adds FFmpeg
+        // software decoders behind them, and prefers the hardware path when there is one.
+        val renderers = NextRenderersFactory(context)
+            .setExtensionRendererMode(
+                DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER,
+            )
+        ExoPlayer.Builder(context, renderers).build()
+    }
 
     DisposableEffect(url) {
         player.setMediaItem(MediaItem.fromUri(url))
