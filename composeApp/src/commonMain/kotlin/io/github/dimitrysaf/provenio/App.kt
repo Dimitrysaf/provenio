@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -13,9 +14,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarItem
@@ -45,6 +44,7 @@ import io.github.dimitrysaf.provenio.pages.SearchPage
 import io.github.dimitrysaf.provenio.pages.SettingsPage
 import io.github.dimitrysaf.provenio.pages.TvPage
 import io.github.dimitrysaf.provenio.theme.AppTheme
+import io.github.dimitrysaf.provenio.theme.MotionTokens
 import io.github.dimitrysaf.provenio.theme.ThemeMode
 import io.github.dimitrysaf.provenio.theme.isDynamicColorSupported
 import io.github.dimitrysaf.provenio.ui.backhandler.SystemBackHandler
@@ -62,7 +62,7 @@ private fun DestinationIcon(entry: Destination, selected: Boolean) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
     var themeMode by remember { mutableStateOf(ThemeMode.System) }
@@ -91,7 +91,6 @@ fun App() {
                 val showRail = sizeClass.usesRail()
                 val expandRail = sizeClass.usesExpandedRail()
                 val density = LocalDensity.current
-                val motionScheme = MaterialTheme.motionScheme
 
                 // M3 puts a collapsed rail at medium/expanded and an expanded one once
                 // there is Large-breakpoint width to spare.
@@ -110,12 +109,18 @@ fun App() {
                 // reflow gap behind.
                 val startInset by animateDpAsState(
                     targetValue = if (showRail && navVisible) railWidth else 0.dp,
-                    animationSpec = motionScheme.defaultSpatialSpec(),
+                    animationSpec = tween(
+                        durationMillis = MotionTokens.DurationMedium2,
+                        easing = MotionTokens.Emphasized,
+                    ),
                     label = "navRailInset",
                 )
                 val bottomInset by animateDpAsState(
                     targetValue = if (!showRail && navVisible) navBarHeight else 0.dp,
-                    animationSpec = motionScheme.defaultSpatialSpec(),
+                    animationSpec = tween(
+                        durationMillis = MotionTokens.DurationMedium2,
+                        easing = MotionTokens.Emphasized,
+                    ),
                     label = "navBarInset",
                 )
 
@@ -177,13 +182,21 @@ fun App() {
                             // M3 fade-through: the outgoing screen fades, the incoming one
                             // fades and settles in from a slightly smaller scale.
                             transitionSpec = {
+                                val enterSpec = tween<Float>(
+                                    durationMillis = MotionTokens.DurationMedium1,
+                                    easing = MotionTokens.EmphasizedDecelerate,
+                                )
                                 (
-                                    fadeIn(motionScheme.defaultEffectsSpec()) +
-                                        scaleIn(
-                                            animationSpec = motionScheme.defaultSpatialSpec(),
-                                            initialScale = 0.92f,
-                                        )
-                                    ).togetherWith(fadeOut(motionScheme.defaultEffectsSpec()))
+                                    fadeIn(enterSpec) +
+                                        scaleIn(animationSpec = enterSpec, initialScale = 0.92f)
+                                    ).togetherWith(
+                                    fadeOut(
+                                        tween(
+                                            durationMillis = MotionTokens.DurationShort4,
+                                            easing = MotionTokens.StandardAccelerate,
+                                        ),
+                                    ),
+                                )
                             },
                             label = "screen",
                         ) { current ->

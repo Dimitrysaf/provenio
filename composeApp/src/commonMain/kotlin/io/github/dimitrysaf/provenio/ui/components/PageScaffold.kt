@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -14,6 +15,7 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import io.github.dimitrysaf.provenio.theme.MotionTokens
 import io.github.dimitrysaf.provenio.ui.chrome.LocalBarsVisible
 
 /**
@@ -30,15 +32,20 @@ fun PageScaffold(
     topBar: @Composable (TopAppBarScrollBehavior) -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-    val motionScheme = MaterialTheme.motionScheme
 
     Column(modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection)) {
         AnimatedVisibility(
             visible = LocalBarsVisible.current.value,
-            enter = fadeIn(motionScheme.defaultEffectsSpec()) +
-                expandVertically(motionScheme.defaultSpatialSpec()),
-            exit = shrinkVertically(motionScheme.defaultSpatialSpec()) +
-                fadeOut(motionScheme.defaultEffectsSpec()),
+            enter = fadeIn(
+                tween(MotionTokens.DurationShort4, easing = MotionTokens.StandardDecelerate),
+            ) + expandVertically(
+                tween(MotionTokens.DurationShort4, easing = MotionTokens.EmphasizedDecelerate),
+            ),
+            exit = shrinkVertically(
+                tween(MotionTokens.DurationShort3, easing = MotionTokens.EmphasizedAccelerate),
+            ) + fadeOut(
+                tween(MotionTokens.DurationShort3, easing = MotionTokens.StandardAccelerate),
+            ),
         ) {
             topBar(scrollBehavior)
         }
