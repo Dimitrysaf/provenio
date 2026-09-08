@@ -106,13 +106,14 @@ fun App() {
                 }
             }
 
+            // Deliberately not wrapped in PageSurface. That applies a shape, and a shape
+            // on a Surface always clips, which a SurfaceView cannot survive. The player
+            // paints its own black background instead.
             composable(Routes.Player) {
-                PageSurface {
-                    PlayerScreen(
-                        url = Routes.SampleVideoUrl,
-                        onBack = { navController.popBackStack() },
-                    )
-                }
+                PlayerScreen(
+                    url = Routes.SampleVideoUrl,
+                    onBack = { navController.popBackStack() },
+                )
             }
 
             composable(Routes.Search) {
