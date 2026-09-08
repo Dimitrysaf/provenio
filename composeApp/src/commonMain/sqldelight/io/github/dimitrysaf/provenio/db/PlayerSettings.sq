@@ -1,0 +1,11 @@
+-- Single row, id is always 1.
+CREATE TABLE playerSettings (
+    id INTEGER NOT NULL PRIMARY KEY,
+    backend TEXT NOT NULL DEFAULT 'Builtin'
+);
+
+select:
+SELECT * FROM playerSettings WHERE id = 1;
+
+upsert:
+INSERT OR REPLACE INTO playerSettings(id, backend) VALUES (1, ?);

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -55,6 +56,7 @@ enum class SettingsCategory(
     Appearance("Appearance", "Theme and dynamic color", Icons.Outlined.Palette),
     Addons("Add-ons", "Catalogs, metadata and streams", Icons.Outlined.Extension),
     PeerToPeer("Peer-to-peer", "Sharing, cache and status", Icons.Outlined.Share),
+    VideoPlayer("Video player", "Which player opens a stream", Icons.Outlined.PlayCircle),
 }
 
 /**
@@ -244,5 +246,6 @@ private fun CategoryContent(
         )
         SettingsCategory.Addons -> AddonsContent()
         SettingsCategory.PeerToPeer -> P2pContent()
+        SettingsCategory.VideoPlayer -> VideoPlayerContent()
     }
 }

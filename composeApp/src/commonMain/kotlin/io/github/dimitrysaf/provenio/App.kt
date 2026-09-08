@@ -30,6 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.dimitrysaf.provenio.navigation.Routes
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
+import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.PlayerScreen
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.pages.SearchPage
@@ -42,11 +43,11 @@ import io.github.dimitrysaf.provenio.ui.HomeScreen
 
 /**
  * Page transitions. Only ever one surface animates, and it animates over another that
- * stays fully opaque — cross-fading both at once leaves a window where neither is opaque
+ * stays fully opaque. Cross-fading both at once leaves a window where neither is opaque
  * and the window background shows through as a dark flash.
  *
  * Forward, the arriving page fades in over the one it covers. Back, the leaving page
- * shrinks 100% → 90% over the destination already sitting behind it at full opacity,
+ * shrinks 100% to 90% over the destination already sitting behind it at full opacity,
  * which is the predictive-back preview for a full-screen surface. Navigation Compose
  * seeks [popExit] with the drag, so that shrink follows the gesture directly and what
  * shows through is the destination, never the background.
@@ -82,6 +83,7 @@ fun App() {
     LaunchedEffect(Unit) {
         AddonRepository.load()
         P2pRepository.load()
+        PlayerRepository.load()
     }
 
     AppTheme(themeMode = themeMode, useDynamicColor = useDynamicColor) {
