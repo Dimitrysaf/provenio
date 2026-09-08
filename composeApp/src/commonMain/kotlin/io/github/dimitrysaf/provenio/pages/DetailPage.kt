@@ -1,6 +1,8 @@
 package io.github.dimitrysaf.provenio.pages
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,11 +23,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -33,8 +43,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,19 +54,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.Video
+import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
 
 /**
- * Everything the addon gave us about one title.
+ * The full record for one title.
  *
- * Addons vary wildly in how much they fill in, so every section is conditional and simply
- * absent when its field is. The two exceptions are the title and the description, which
- * always render, because a page with no heading and no body reads as broken rather than
- * as sparse.
+ * Sections are always present, with an empty state when the addon or the app cannot fill
+ * them, so the page has a stable shape regardless of how thin a particular addon's data
+ * is. Individual facts inside a section are still dropped when null rather than printed
+ * as blanks.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,193 +114,518 @@ fun DetailPage(
 
 @Composable
 private fun MetaContent(meta: Meta) {
+    val openUrl = rememberUrlOpener()
     val seasons = meta.videos
         .groupBy { it.season ?: 0 }
         .toList()
         .sortedBy { (season, _) -> season }
+    val expanded = rememberSaveable { mutableStateOf(seasons.firstOrNull()?.first ?: 1) }
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        item { Artwork(meta) }
+        item { Header(meta) }
+        item { WatchAction(meta) }
+        item { WatchProgress(meta) }
+        item { Ratings(meta) }
+        item { Synopsis(meta) }
 
-        item {
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        seasonSection(seasons, expanded)
+        castAndCrew(meta)
+        tagsAndThemes(meta)
+        commentsSection()
+        factsSection(meta)
+        trailersSection(meta, openUrl)
+        backdropsSection(meta)
+
+        item { Spacer(Modifier.height(32.dp)) }
+    }
+}
+
+/** Backdrop behind, poster and title in front. */
+@Composable
+private fun Header(meta: Meta) {
+    Column {
+        Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
+            if (meta.background != null) {
+                AsyncImage(
+                    model = meta.background,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                )
+            }
+            // Keeps the back button and the title legible over a bright still.
+            Box(
+                modifier = Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Black.copy(alpha = 0.45f),
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.55f),
+                        ),
+                    ),
+                ),
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(110.dp)
+                    .aspectRatio(2f / 3f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+            ) {
+                if (meta.poster != null) {
+                    AsyncImage(
+                        model = meta.poster,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = meta.name ?: "Unknown",
                     style = MaterialTheme.typography.headlineSmall,
                 )
-
                 val facts = listOfNotNull(
                     meta.releaseInfo,
                     meta.runtime,
-                    meta.imdbRating?.let { "IMDb $it" },
-                    meta.country,
-                    meta.language,
+                    "${meta.videos.size} eps".takeIf { meta.videos.isNotEmpty() },
                 )
                 if (facts.isNotEmpty()) {
                     Text(
                         text = facts.joinToString("  ·  "),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp),
+                        modifier = Modifier.padding(top = 6.dp),
                     )
                 }
             }
         }
-
-        if (meta.genres.isNotEmpty()) {
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    meta.genres.forEach { genre ->
-                        AssistChip(onClick = {}, label = { Text(genre) })
-                    }
-                }
-            }
-        }
-
-        item {
-            Text(
-                text = meta.description ?: "No description provided",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-        }
-
-        creditRow("Cast", meta.cast)
-        creditRow("Director", meta.director)
-
-        // Hoisted so the null check is not separated from the use by a lambda boundary.
-        val awards = meta.awards
-        if (awards != null) {
-            item { LabelledFact("Awards", awards) }
-        }
-
-        seasons.forEach { (season, episodes) ->
-            item {
-                Text(
-                    text = if (season == 0) "Specials" else "Season $season",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 20.dp,
-                        bottom = 4.dp,
-                    ),
-                )
-            }
-            items(episodes, key = { it.id }) { video -> EpisodeRow(video) }
-        }
-
-        item { Spacer(Modifier.height(24.dp)) }
     }
 }
 
-/** A credit line, absent entirely when the addon listed nobody. */
-private fun LazyListScope.creditRow(label: String, people: List<String>) {
-    if (people.isEmpty()) return
-    item { LabelledFact(label, people.joinToString(", ")) }
-}
-
-/** Background, logo and poster, each drawn only if the addon supplied it. */
+/**
+ * The primary action. Inert for now: choosing a source needs the stream resource and a
+ * picker, so this points at the episode it would open rather than pretending to play.
+ */
 @Composable
-private fun Artwork(meta: Meta) {
-    if (meta.background == null && meta.poster == null && meta.logo == null) return
+private fun WatchAction(meta: Meta) {
+    val next = meta.videos.firstOrNull()
+    val label = when {
+        next?.season != null && next.episode != null ->
+            "Watch S${pad(next.season)}E${pad(next.episode)} now"
+        meta.videos.isNotEmpty() -> "Watch first episode now"
+        else -> "Watch now"
+    }
 
-    Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
-        if (meta.background != null) {
-            AsyncImage(
-                model = meta.background,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-            // Keeps the logo and the back button legible over a bright still.
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color.Black.copy(alpha = 0.45f), Color.Transparent),
-                        ),
-                    ),
-            )
-        } else if (meta.poster != null) {
-            AsyncImage(
-                model = meta.poster,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        }
-
-        if (meta.logo != null) {
-            AsyncImage(
-                model = meta.logo,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(16.dp)
-                    .height(56.dp),
-            )
-        }
+    Button(
+        onClick = {},
+        enabled = false,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+    ) {
+        Icon(Icons.Filled.PlayArrow, contentDescription = null)
+        Spacer(Modifier.width(8.dp))
+        Text(label)
     }
 }
 
 @Composable
-private fun LabelledFact(label: String, value: String) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+private fun WatchProgress(meta: Meta) {
+    SectionCard(title = "Watch progress") {
+        // Needs Simkl or local playback tracking, neither of which exists yet.
+        LinearProgressIndicator(
+            progress = { 0f },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        )
         Text(
-            text = label,
+            text = if (meta.videos.isEmpty()) {
+                "Not tracked yet"
+            } else {
+                "0 of ${meta.videos.size} episodes watched"
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun Ratings(meta: Meta) {
+    SectionCard(title = "Ratings") {
+        Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
+            RatingBlock("IMDb", meta.imdbRating)
+            RatingBlock("Simkl", null)
+        }
+    }
+}
+
+@Composable
+private fun RatingBlock(source: String, value: String?) {
+    Column {
+        Text(
+            text = source,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = value ?: "Not rated",
+            style = MaterialTheme.typography.titleLarge,
+        )
+    }
+}
+
+@Composable
+private fun Synopsis(meta: Meta) {
+    SectionCard(title = "Plot") {
+        Text(
+            text = meta.description ?: "No description provided",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+private fun LazyListScope.seasonSection(
+    seasons: List<Pair<Int, List<Video>>>,
+    expanded: MutableState<Int>,
+) {
+    item { SectionHeader("Episodes") }
+
+    if (seasons.isEmpty()) {
+        item { EmptyNote("No episodes listed for this title.") }
+        return
+    }
+
+    seasons.forEach { (season, episodes) ->
+        item {
+            SeasonHeader(
+                season = season,
+                episodeCount = episodes.size,
+                expanded = expanded.value == season,
+                onToggle = {
+                    expanded.value = if (expanded.value == season) -1 else season
+                },
+            )
+        }
+        item {
+            AnimatedVisibility(visible = expanded.value == season) {
+                Column { episodes.forEach { EpisodeRow(it) } }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SeasonHeader(
+    season: Int,
+    episodeCount: Int,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onToggle)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = if (season == 0) "Specials" else "Season $season",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "0/$episodeCount",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.width(8.dp))
+            Icon(
+                imageVector = if (expanded) {
+                    Icons.Filled.KeyboardArrowUp
+                } else {
+                    Icons.Filled.KeyboardArrowDown
+                },
+                contentDescription = null,
+            )
+        }
+        // Watched fraction stays at zero until there is tracking to fill it.
+        LinearProgressIndicator(
+            progress = { 0f },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        )
     }
 }
 
 @Composable
 private fun EpisodeRow(video: Video) {
-    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        if (video.thumbnail != null) {
-            AsyncImage(
-                model = video.thumbnail,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .width(120.dp)
-                    .aspectRatio(16f / 9f)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-            )
-            Spacer(Modifier.width(12.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .width(110.dp)
+                .aspectRatio(16f / 9f)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+        ) {
+            if (video.thumbnail != null) {
+                AsyncImage(
+                    model = video.thumbnail,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            }
         }
+        Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            val number = video.episode?.let { "$it. " } ?: ""
+            val season = video.season
+            val episode = video.episode
+            if (season != null && episode != null) {
+                Text(
+                    text = "S${pad(season)} | E${pad(episode)}",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
             Text(
-                text = number + (video.title ?: "Episode"),
+                text = video.title ?: "Episode",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Spacer(Modifier.width(8.dp))
+        // Unchecked always, for the same reason the progress bars read zero.
+        Icon(
+            imageVector = Icons.Outlined.CheckCircle,
+            contentDescription = "Not watched",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+private fun LazyListScope.castAndCrew(meta: Meta) {
+    item { SectionHeader("Cast and crew") }
+
+    val people = meta.cast.map { it to "Cast" } + meta.director.map { it to "Director" }
+    if (people.isEmpty()) {
+        item { EmptyNote("This add-on did not list any cast or crew.") }
+        return
+    }
+    item {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            people.forEach { (name, role) -> PersonCard(name, role) }
+        }
+    }
+}
+
+@Composable
+private fun PersonCard(name: String, role: String) {
+    Column(
+        modifier = Modifier.width(96.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        // The protocol carries names only, so there is no portrait to show.
+        Box(
+            modifier = Modifier
+                .size(96.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = name.take(1).uppercase(),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = name,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        Text(
+            text = role,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+private fun LazyListScope.tagsAndThemes(meta: Meta) {
+    item { SectionHeader("Tags") }
+    if (meta.genres.isEmpty()) {
+        item { EmptyNote("No tags provided.") }
+    } else {
+        item { ChipFlow(meta.genres) }
+    }
+
+    item { SectionHeader("Themes") }
+    // Themes are a Simkl concept. The addon protocol has no equivalent field.
+    item { EmptyNote("Themes are not available from add-ons.") }
+}
+
+private fun LazyListScope.commentsSection() {
+    item { SectionHeader("Comments") }
+    item { EmptyNote("Comments arrive with account sign-in.") }
+}
+
+private fun LazyListScope.factsSection(meta: Meta) {
+    item { SectionHeader("Facts") }
+
+    val facts = listOfNotNull(
+        meta.released?.let { "Air date" to it.take(10) },
+        meta.country?.let { "Country" to it },
+        meta.language?.let { "Language" to it },
+        meta.runtime?.let { "Runtime" to it },
+        meta.awards?.let { "Awards" to it },
+        meta.website?.let { "Website" to it },
+    )
+    if (facts.isEmpty()) {
+        item { EmptyNote("No facts provided.") }
+        return
+    }
+    item {
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            facts.forEach { (label, value) ->
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.width(110.dp),
+                    )
+                    Text(text = value, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+    }
+}
+
+private fun LazyListScope.trailersSection(meta: Meta, openUrl: (String) -> Unit) {
+    item { SectionHeader("Trailers") }
+    if (meta.trailers.isEmpty()) {
+        item { EmptyNote("No trailers provided.") }
+        return
+    }
+    items(meta.trailers, key = { it.source }) { trailer ->
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { openUrl("https://www.youtube.com/watch?v=${trailer.source}") }
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Outlined.PlayCircle, contentDescription = null)
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = trailer.type ?: "Trailer",
                 style = MaterialTheme.typography.bodyLarge,
             )
-            if (video.released != null) {
-                Text(
-                    text = video.released.take(10),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            if (video.overview != null) {
-                Text(
-                    text = video.overview,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
+        }
+    }
+}
+
+private fun LazyListScope.backdropsSection(meta: Meta) {
+    item { SectionHeader("Backdrops") }
+    val art = listOfNotNull(meta.background, meta.poster, meta.logo)
+    if (art.isEmpty()) {
+        item { EmptyNote("No artwork provided.") }
+        return
+    }
+    item {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            art.forEach { url ->
+                AsyncImage(
+                    model = url,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .height(110.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String) {
+    Column {
+        HorizontalDivider(modifier = Modifier.padding(top = 20.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+        )
+    }
+}
+
+/** Zero padded episode and season numbers. Common Kotlin has no String.format. */
+private fun pad(value: Int): String = value.toString().padStart(2, '0')
+
+@Composable
+private fun SectionCard(title: String, content: @Composable () -> Unit) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 6.dp),
+        )
+        content()
+    }
+}
+
+@Composable
+private fun EmptyNote(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+    )
+}
+
+@Composable
+private fun ChipFlow(values: List<String>) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        values.forEach { value -> AssistChip(onClick = {}, label = { Text(value) }) }
     }
 }
