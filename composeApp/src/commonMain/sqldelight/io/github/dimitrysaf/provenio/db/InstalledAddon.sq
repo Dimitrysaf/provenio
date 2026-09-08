@@ -1,0 +1,18 @@
+CREATE TABLE installedAddon (
+    id TEXT NOT NULL PRIMARY KEY,
+    transportUrl TEXT NOT NULL,
+    manifestJson TEXT NOT NULL,
+    enabled INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1,
+    -- Priority order. Addons are asked in this order, so it is data, not presentation.
+    sortIndex INTEGER AS kotlin.Int NOT NULL
+);
+
+selectAll:
+SELECT * FROM installedAddon ORDER BY sortIndex ASC;
+
+insert:
+INSERT INTO installedAddon(id, transportUrl, manifestJson, enabled, sortIndex)
+VALUES (?, ?, ?, ?, ?);
+
+deleteAll:
+DELETE FROM installedAddon;

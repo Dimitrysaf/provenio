@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
@@ -29,6 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import io.github.dimitrysaf.provenio.navigation.Routes
+import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.pages.AddonsPage
 import io.github.dimitrysaf.provenio.pages.AppearancePage
 import io.github.dimitrysaf.provenio.pages.SearchPage
@@ -77,6 +79,8 @@ private val popExit: ExitTransition =
 fun App() {
     var themeMode by remember { mutableStateOf(ThemeMode.System) }
     var useDynamicColor by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) { AddonRepository.load() }
 
     AppTheme(themeMode = themeMode, useDynamicColor = useDynamicColor) {
         val navController = rememberNavController()
