@@ -52,7 +52,7 @@ import io.github.dimitrysaf.provenio.stremio.InstalledAddon
 import io.github.dimitrysaf.provenio.stremio.model.Manifest
 import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
 import com.alorma.compose.settings.ui.expressive.SettingsGroup
-import com.alorma.compose.settings.ui.expressive.SettingsMenuLink
+import io.github.dimitrysaf.provenio.ui.components.SettingsTile
 import kotlinx.coroutines.launch
 
 /**
@@ -140,7 +140,7 @@ private fun AddonRow(
     var menuOpen by remember { mutableStateOf(false) }
     val openUrl = rememberUrlOpener()
 
-    SettingsMenuLink(
+    SettingsTile(
         title = { Text(manifest.name) },
         subtitle = {
             Column {

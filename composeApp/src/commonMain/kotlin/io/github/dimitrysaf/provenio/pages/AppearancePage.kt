@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.alorma.compose.settings.ui.expressive.SettingsGroup
-import com.alorma.compose.settings.ui.expressive.SettingsMenuLink
+import io.github.dimitrysaf.provenio.ui.components.SettingsTile
 import io.github.dimitrysaf.provenio.theme.ThemeMode
 
 /**
@@ -44,7 +44,7 @@ fun AppearanceContent(
     // Settings inside a category carry no icons — there are far more settings than there
     // are sensible icons to give them.
     SettingsGroup {
-        SettingsMenuLink(
+        SettingsTile(
             title = { Text("Theme") },
             subtitle = { Text(themeMode.label) },
             onClick = { showThemeDialog = true },
@@ -52,7 +52,7 @@ fun AppearanceContent(
         // A plain row with a switch on the trailing edge. The filled, state-tinted
         // treatment belongs to a page's *main* toggle — the one that turns the whole
         // feature on — not to an ordinary setting.
-        SettingsMenuLink(
+        SettingsTile(
             title = { Text("Dynamic color") },
             subtitle = {
                 Text(

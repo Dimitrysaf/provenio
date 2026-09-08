@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.pages
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,11 +29,11 @@ import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import com.alorma.compose.settings.ui.expressive.SettingsGroup
-import com.alorma.compose.settings.ui.expressive.SettingsMenuLink
 import io.github.dimitrysaf.provenio.theme.ThemeMode
 import kotlinx.coroutines.launch
 import io.github.dimitrysaf.provenio.ui.backhandler.SystemBackHandler
 import io.github.dimitrysaf.provenio.ui.components.BackTopBar
+import io.github.dimitrysaf.provenio.ui.components.SettingsTile
 import io.github.dimitrysaf.provenio.ui.components.ResponsiveBody
 
 /**
@@ -160,10 +161,12 @@ private fun CategoryList(
 ) {
     SettingsGroup {
         SettingsCategory.entries.forEach { category ->
-            SettingsMenuLink(
+            SettingsTile(
                 title = { Text(category.title) },
                 subtitle = { Text(category.summary) },
                 icon = { CategoryIcon(category) },
+                // Category rows carry more presence than the settings inside them.
+                modifier = Modifier.heightIn(min = 84.dp),
                 onClick = { onSelect(category) },
             )
         }
