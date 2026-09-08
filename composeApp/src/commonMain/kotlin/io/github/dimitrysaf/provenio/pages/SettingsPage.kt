@@ -23,7 +23,6 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,12 +30,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.theme.ThemeMode
 import io.github.dimitrysaf.provenio.ui.components.BackTopBar
-import io.github.dimitrysaf.provenio.ui.components.ResponsiveBody
+import io.github.dimitrysaf.provenio.ui.components.PageScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,48 +47,48 @@ fun SettingsPage(
     onUseDynamicColorChange: (Boolean) -> Unit,
     dynamicColorAvailable: Boolean,
 ) {
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     var showThemeDialog by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection)) {
-        BackTopBar(title = "Settings", onBack = onBack, scrollBehavior = scrollBehavior)
+    PageScaffold(
+        modifier = modifier,
+        topBar = { scrollBehavior ->
+            BackTopBar(title = "Settings", onBack = onBack, scrollBehavior = scrollBehavior)
+        },
+    ) {
+        SectionHeader("Appearance")
 
-        ResponsiveBody(modifier = Modifier.weight(1f)) {
-            SectionHeader("Appearance")
+        ListItem(
+            headlineContent = { Text("Theme") },
+            supportingContent = { Text(themeMode.label) },
+            leadingContent = { Icon(Icons.Outlined.Palette, contentDescription = null) },
+            modifier = Modifier.clickable { showThemeDialog = true },
+        )
 
-            ListItem(
-                headlineContent = { Text("Theme") },
-                supportingContent = { Text(themeMode.label) },
-                leadingContent = { Icon(Icons.Outlined.Palette, contentDescription = null) },
-                modifier = Modifier.clickable { showThemeDialog = true },
-            )
-
-            // The whole row toggles, not just the switch: the switch itself takes no
-            // click of its own so the row owns a single 48dp+ target and one state layer.
-            ListItem(
-                headlineContent = { Text("Dynamic color") },
-                supportingContent = {
-                    Text(
-                        if (dynamicColorAvailable) "Use colors from your wallpaper"
-                        else "Not available on this device",
-                    )
-                },
-                leadingContent = { Icon(Icons.Outlined.ColorLens, contentDescription = null) },
-                trailingContent = {
-                    Switch(
-                        checked = useDynamicColor && dynamicColorAvailable,
-                        onCheckedChange = null,
-                        enabled = dynamicColorAvailable,
-                    )
-                },
-                modifier = Modifier.toggleable(
-                    value = useDynamicColor && dynamicColorAvailable,
+        // The whole row toggles, not just the switch: the switch itself takes no click of
+        // its own so the row owns a single 48dp+ target and one state layer.
+        ListItem(
+            headlineContent = { Text("Dynamic color") },
+            supportingContent = {
+                Text(
+                    if (dynamicColorAvailable) "Use colors from your wallpaper"
+                    else "Not available on this device",
+                )
+            },
+            leadingContent = { Icon(Icons.Outlined.ColorLens, contentDescription = null) },
+            trailingContent = {
+                Switch(
+                    checked = useDynamicColor && dynamicColorAvailable,
+                    onCheckedChange = null,
                     enabled = dynamicColorAvailable,
-                    role = Role.Switch,
-                    onValueChange = onUseDynamicColorChange,
-                ),
-            )
-        }
+                )
+            },
+            modifier = Modifier.toggleable(
+                value = useDynamicColor && dynamicColorAvailable,
+                enabled = dynamicColorAvailable,
+                role = Role.Switch,
+                onValueChange = onUseDynamicColorChange,
+            ),
+        )
     }
 
     if (showThemeDialog) {

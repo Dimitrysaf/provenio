@@ -6,6 +6,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import io.github.dimitrysaf.provenio.ui.components.AppTopBar
@@ -19,7 +21,6 @@ fun ProfilePage(
     onSettingsClick: () -> Unit,
 ) {
     PageScaffold(
-        title = "Profile",
         modifier = modifier,
         topBar = { scrollBehavior ->
             AppTopBar(
@@ -35,5 +36,7 @@ fun ProfilePage(
                 },
             )
         },
-    )
+    ) {
+        Text(text = "Profile", style = MaterialTheme.typography.headlineLarge)
+    }
 }
