@@ -29,6 +29,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.dimitrysaf.provenio.navigation.Routes
+import io.github.dimitrysaf.provenio.navigation.SearchFilter
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.PlayerScreen
@@ -102,7 +103,15 @@ fun App() {
             composable(Routes.Home) {
                 PageSurface(applyBottomInset = false) {
                     HomeScreen(
-                        onOpenSearch = { navController.navigate(Routes.Search) },
+                        onOpenSearch = { filter ->
+                            navController.navigate(
+                                when (filter) {
+                                    SearchFilter.Movies -> Routes.SearchMovies
+                                    SearchFilter.Tv -> Routes.SearchTv
+                                    else -> Routes.Search
+                                },
+                            )
+                        },
                         onOpenSettings = { navController.navigate(Routes.Settings) },
                         onPlaySample = { navController.navigate(Routes.Player) },
                         onAddAddons = { navController.navigate(Routes.SettingsAddons) },
@@ -120,14 +129,17 @@ fun App() {
                 )
             }
 
-            composable(Routes.Search) {
-                PageSurface {
-                    SearchPage(
-                        onBack = { navController.popBackStack() },
-                        onAddAddons = { navController.navigate(Routes.SettingsAddons) },
-                    )
-                }
+            val search: @Composable (SearchFilter) -> Unit = { filter ->
+                SearchPage(
+                    onBack = { navController.popBackStack() },
+                    onAddAddons = { navController.navigate(Routes.SettingsAddons) },
+                    initialFilter = filter,
+                )
             }
+
+            composable(Routes.Search) { PageSurface { search(SearchFilter.All) } }
+            composable(Routes.SearchMovies) { PageSurface { search(SearchFilter.Movies) } }
+            composable(Routes.SearchTv) { PageSurface { search(SearchFilter.Tv) } }
 
             val settings: @Composable (SettingsCategory?) -> Unit = { category ->
                 SettingsPage(

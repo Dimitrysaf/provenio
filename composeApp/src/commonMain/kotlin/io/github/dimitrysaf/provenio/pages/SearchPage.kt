@@ -1,9 +1,12 @@
 package io.github.dimitrysaf.provenio.pages
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
@@ -25,6 +28,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +40,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +49,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import io.github.dimitrysaf.provenio.navigation.SearchFilter
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
 import kotlinx.coroutines.delay
@@ -64,16 +70,23 @@ fun SearchPage(
     modifier: Modifier = Modifier,
     onBack: () -> Unit,
     onAddAddons: () -> Unit,
+    initialFilter: SearchFilter = SearchFilter.All,
 ) {
     val collection by AddonRepository.collection.collectAsState()
-    val searchable = collection.searchableCatalogs()
+    val allSearchable = collection.searchableCatalogs()
+
+    var filter by rememberSaveable { mutableStateOf(initialFilter.name) }
+    val activeFilter = SearchFilter.entries.firstOrNull { it.name == filter } ?: SearchFilter.All
+    val searchable = allSearchable.filter { (_, catalog) ->
+        activeFilter.type == null || catalog.type == activeFilter.type
+    }
 
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<MetaPreview>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
     var searched by remember { mutableStateOf(false) }
 
-    LaunchedEffect(query, searchable.size) {
+    LaunchedEffect(query, activeFilter, allSearchable.size) {
         if (query.isBlank()) {
             results = emptyList()
             searched = false
@@ -82,7 +95,7 @@ fun SearchPage(
         // Debounced so typing does not fire a request per character at every addon.
         delay(SearchDebounceMillis)
         searching = true
-        results = AddonRepository.search(query.trim())
+        results = AddonRepository.search(query.trim(), activeFilter.type)
         searching = false
         searched = true
     }
@@ -116,6 +129,22 @@ fun SearchPage(
                     }
                 },
             )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SearchFilter.entries.forEach { option ->
+                FilterChip(
+                    selected = option == activeFilter,
+                    onClick = { filter = option.name },
+                    label = { Text(option.label) },
+                )
+            }
         }
 
         Box(modifier = Modifier.fillMaxSize()) {

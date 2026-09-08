@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.Modifier
 import io.github.dimitrysaf.provenio.navigation.Destination
+import io.github.dimitrysaf.provenio.navigation.SearchFilter
 import io.github.dimitrysaf.provenio.pages.ListsPage
 import io.github.dimitrysaf.provenio.pages.MoviesPage
 import io.github.dimitrysaf.provenio.pages.ProfilePage
@@ -53,7 +54,7 @@ private fun DestinationIcon(entry: Destination, selected: Boolean) {
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onOpenSearch: () -> Unit,
+    onOpenSearch: (SearchFilter) -> Unit,
     onOpenSettings: () -> Unit,
     onPlaySample: () -> Unit,
     onAddAddons: () -> Unit,
@@ -114,24 +115,24 @@ fun HomeScreen(
                     when (tab) {
                         Destination.Profile -> ProfilePage(
                             modifier = Modifier.fillMaxSize(),
-                            onSearchClick = onOpenSearch,
+                            onSearchClick = { onOpenSearch(SearchFilter.All) },
                             onSettingsClick = onOpenSettings,
                             onAddAddons = onAddAddons,
                         )
                         Destination.Tv -> TvPage(
                             modifier = Modifier.fillMaxSize(),
-                            onSearchClick = onOpenSearch,
+                            onSearchClick = { onOpenSearch(SearchFilter.Tv) },
                             onFilterClick = {},
                         )
                         Destination.Movies -> MoviesPage(
                             modifier = Modifier.fillMaxSize(),
-                            onSearchClick = onOpenSearch,
+                            onSearchClick = { onOpenSearch(SearchFilter.Movies) },
                             onFilterClick = {},
                             onPlaySample = onPlaySample,
                         )
                         Destination.Lists -> ListsPage(
                             modifier = Modifier.fillMaxSize(),
-                            onSearchClick = onOpenSearch,
+                            onSearchClick = { onOpenSearch(SearchFilter.All) },
                             onFilterClick = {},
                         )
                     }

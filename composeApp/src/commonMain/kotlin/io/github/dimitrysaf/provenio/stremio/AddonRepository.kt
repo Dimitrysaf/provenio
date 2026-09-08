@@ -60,17 +60,19 @@ object AddonRepository {
      * fail are skipped rather than failing the whole search, since one bad addon should
      * not empty the screen.
      */
-    suspend fun search(query: String): List<MetaPreview> {
+    suspend fun search(query: String, type: String? = null): List<MetaPreview> {
         val found = mutableListOf<MetaPreview>()
-        _collection.value.searchableCatalogs().forEach { (addon, catalog) ->
-            val page = client.fetchCatalog(
-                addonUrl = addon.transportUrl,
-                type = catalog.type,
-                id = catalog.id,
-                extra = mapOf("search" to query),
-            )
-            page.getOrNull()?.metas?.let { found += it }
-        }
+        _collection.value.searchableCatalogs()
+            .filter { (_, catalog) -> type == null || catalog.type == type }
+            .forEach { (addon, catalog) ->
+                val page = client.fetchCatalog(
+                    addonUrl = addon.transportUrl,
+                    type = catalog.type,
+                    id = catalog.id,
+                    extra = mapOf("search" to query),
+                )
+                page.getOrNull()?.metas?.let { found += it }
+            }
         return found.distinctBy { it.id }
     }
 

@@ -13,6 +13,8 @@ package io.github.dimitrysaf.provenio.navigation
 object Routes {
     const val Home = "home"
     const val Search = "search"
+    const val SearchMovies = "search/movies"
+    const val SearchTv = "search/tv"
 
     const val Settings = "settings"
 
