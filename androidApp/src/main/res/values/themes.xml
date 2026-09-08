@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Compose owns all in-app styling; this theme only styles the window before the
+        first frame. Kept in sync with values-night so the pre-Compose window background
+        matches the M3 scheme instead of always being light.
+    -->
+    <style name="Theme.Provenio" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>
