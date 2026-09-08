@@ -1,11 +1,15 @@
 package io.github.dimitrysaf.provenio.pages
 
 import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import io.github.dimitrysaf.provenio.ui.components.BackTopBar
 import io.github.dimitrysaf.provenio.ui.components.PageScaffold
 
@@ -29,22 +33,29 @@ fun SettingsPage(
         SettingsCategory(
             title = "Appearance",
             summary = "Theme and dynamic color",
+            icon = Icons.Outlined.Palette,
             onClick = onOpenAppearance,
         )
     }
 }
 
-/** A two-line list item is the M3 shape for a settings category — 72dp tall, one target. */
+/**
+ * A two-line list item is the M3 shape for a settings category — 72dp tall, one target.
+ * Categories carry an icon; the individual settings inside them do not, since there are
+ * far more of those than there are sensible icons to give them.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsCategory(
     title: String,
     summary: String,
+    icon: ImageVector,
     onClick: () -> Unit,
 ) {
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = { Text(summary) },
+        leadingContent = { Icon(icon, contentDescription = null) },
         modifier = Modifier.clickable(onClick = onClick),
     )
 }

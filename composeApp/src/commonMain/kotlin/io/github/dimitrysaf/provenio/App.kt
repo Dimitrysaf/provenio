@@ -223,23 +223,9 @@ fun App() {
             }
 
             // ── Layer 2: the overlay stack, over the navigation ─────────────────────
-            // The page one level down is composed underneath the top one so that dragging
-            // back reveals the page you are actually returning to, not the tabs behind it.
-            val beneath = overlayStack.getOrNull(overlayStack.lastIndex - 1)
-            if (beneath != null) {
-                OverlaySurface(modifier = Modifier.fillMaxSize()) {
-                    OverlayPage(
-                        overlay = beneath,
-                        onBack = { pop() },
-                        onPush = { push(it) },
-                        themeMode = themeMode,
-                        onThemeModeChange = { themeMode = it },
-                        useDynamicColor = useDynamicColor,
-                        onUseDynamicColorChange = { useDynamicColor = it },
-                    )
-                }
-            }
-
+            // One layer, whatever the stack depth. AnimatedContent already composes the
+            // outgoing and incoming pages together for the length of a transition, so a
+            // sub-page needs no surface of its own underneath.
             AnimatedContent(
                 targetState = overlayStack,
                 modifier = Modifier.fillMaxSize(),
