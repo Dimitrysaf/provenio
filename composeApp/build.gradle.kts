@@ -27,6 +27,7 @@ kotlin {
         // annotating every file that touches an expressive component.
         all {
             languageSettings.optIn("androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
+            languageSettings.optIn("androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi")
         }
 
         commonMain.dependencies {
@@ -43,6 +44,9 @@ kotlin {
             implementation(libs.navigation.compose)
             implementation(libs.sqldelight.runtime)
             implementation(libs.compose.settings.expressive)
+            implementation(libs.compose.adaptive)
+            implementation(libs.compose.adaptive.layout)
+            implementation(libs.compose.adaptive.navigation)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)

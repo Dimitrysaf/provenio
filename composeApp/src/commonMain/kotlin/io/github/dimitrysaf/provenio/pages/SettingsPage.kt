@@ -1,12 +1,8 @@
 package io.github.dimitrysaf.provenio.pages
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Palette
@@ -14,25 +10,21 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
+import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import com.alorma.compose.settings.ui.expressive.SettingsGroup
 import com.alorma.compose.settings.ui.expressive.SettingsMenuLink
 import io.github.dimitrysaf.provenio.theme.ThemeMode
-import io.github.dimitrysaf.provenio.ui.backhandler.SystemBackHandler
+import kotlinx.coroutines.launch
 import io.github.dimitrysaf.provenio.ui.components.BackTopBar
-import io.github.dimitrysaf.provenio.ui.components.PageScaffold
 import io.github.dimitrysaf.provenio.ui.components.ResponsiveBody
-import io.github.dimitrysaf.provenio.ui.responsive.listPaneWidth
-import io.github.dimitrysaf.provenio.ui.responsive.usesTwoPanes
-import io.github.dimitrysaf.provenio.ui.responsive.windowSizeClassOf
 
 /**
  * A settings category. Adding one here is the whole job — both layouts read this list, so
@@ -55,6 +47,17 @@ enum class SettingsCategory(
  * from the same category list and the same content composables, so the two cannot drift
  * apart visually.
  */
+/**
+ * Settings as an M3 list-detail layout.
+ *
+ * The scaffold decides for itself whether the two panes sit side by side or one at a time,
+ * from the same window metrics the rest of the app uses, and owns back between them. Both
+ * shapes are fed by the same category list and the same content composables, so they
+ * cannot drift apart visually.
+ *
+ * Back *within* settings just pops the detail pane. Predictive back is left to the
+ * navigation host, where it moves between real destinations — Settings back to Home.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsPage(
@@ -66,33 +69,41 @@ fun SettingsPage(
     onUseDynamicColorChange: (Boolean) -> Unit,
     dynamicColorAvailable: Boolean,
 ) {
-    // Stored by name so it survives the destination being disposed and recreated.
-    var openCategoryName by rememberSaveable { mutableStateOf<String?>(null) }
-    val openCategory = openCategoryName?.let { name ->
+    // Keyed by name rather than the enum itself so the navigator's saved state stays a
+    // plain string.
+    val navigator = rememberListDetailPaneScaffoldNavigator<String>()
+    val scope = rememberCoroutineScope()
+
+    val selected = navigator.currentDestination?.contentKey?.let { name ->
         SettingsCategory.entries.firstOrNull { it.name == name }
-    }
+    } ?: SettingsCategory.entries.first()
 
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        val twoPanes = windowSizeClassOf(maxWidth).usesTwoPanes()
+    Column(modifier = modifier.fillMaxSize()) {
+        BackTopBar(title = "Settings", onBack = onBack)
 
-        // On one pane, back should close the open category before leaving settings.
-        SystemBackHandler(enabled = !twoPanes && openCategory != null) {
-            openCategoryName = null
-        }
-
-        if (twoPanes) {
-            val selected = openCategory ?: SettingsCategory.entries.first()
-            Column(modifier = Modifier.fillMaxSize()) {
-                BackTopBar(title = "Settings", onBack = onBack)
-                Row(modifier = Modifier.weight(1f)) {
-                    ResponsiveBody(modifier = Modifier.width(listPaneWidth).fillMaxHeight()) {
+        NavigableListDetailPaneScaffold(
+            navigator = navigator,
+            modifier = Modifier.weight(1f),
+            listPane = {
+                AnimatedPane {
+                    ResponsiveBody(modifier = Modifier.fillMaxSize()) {
                         CategoryList(
                             selected = selected,
-                            onSelect = { openCategoryName = it.name },
+                            onSelect = { category ->
+                                scope.launch {
+                                    navigator.navigateTo(
+                                        ListDetailPaneScaffoldRole.Detail,
+                                        category.name,
+                                    )
+                                }
+                            },
                         )
                     }
-                    VerticalDivider()
-                    ResponsiveBody(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                }
+            },
+            detailPane = {
+                AnimatedPane {
+                    ResponsiveBody(modifier = Modifier.fillMaxSize()) {
                         Text(
                             text = selected.title,
                             style = MaterialTheme.typography.titleLarge,
@@ -108,35 +119,8 @@ fun SettingsPage(
                         )
                     }
                 }
-            }
-        } else if (openCategory == null) {
-            PageScaffold(
-                topBar = { scrollBehavior ->
-                    BackTopBar("Settings", onBack = onBack, scrollBehavior = scrollBehavior)
-                },
-            ) {
-                CategoryList(selected = null, onSelect = { openCategoryName = it.name })
-            }
-        } else {
-            PageScaffold(
-                topBar = { scrollBehavior ->
-                    BackTopBar(
-                        title = openCategory.title,
-                        onBack = { openCategoryName = null },
-                        scrollBehavior = scrollBehavior,
-                    )
-                },
-            ) {
-                CategoryContent(
-                    category = openCategory,
-                    themeMode = themeMode,
-                    onThemeModeChange = onThemeModeChange,
-                    useDynamicColor = useDynamicColor,
-                    onUseDynamicColorChange = onUseDynamicColorChange,
-                    dynamicColorAvailable = dynamicColorAvailable,
-                )
-            }
-        }
+            },
+        )
     }
 }
 
