@@ -39,6 +39,40 @@ data class SourceOption(
         }
 }
 
+/**
+ * Resolution, read out of the text an addon supplies.
+ *
+ * The protocol has no quality field, so this is inferred from the name and description,
+ * which is where every addon puts it by convention. Unknown is a real answer, not a
+ * failure: plenty of sources genuinely do not say.
+ */
+enum class SourceQuality(val label: String) {
+    Uhd("4K"),
+    Fhd("1080p"),
+    Hd("720p"),
+    Sd("480p and below"),
+    Unknown("Unlabelled"),
+}
+
+val SourceOption.quality: SourceQuality
+    get() {
+        val text = (label + " " + detail.orEmpty()).lowercase()
+        return when {
+            listOf("2160", "4k", "uhd").any { it in text } -> SourceQuality.Uhd
+            "1080" in text -> SourceQuality.Fhd
+            "720" in text -> SourceQuality.Hd
+            listOf("480", "360", "240").any { it in text } -> SourceQuality.Sd
+            else -> SourceQuality.Unknown
+        }
+    }
+
+/** True when the source text contains every whitespace separated term in [query]. */
+fun SourceOption.matches(query: String): Boolean {
+    if (query.isBlank()) return true
+    val text = (label + " " + detail.orEmpty()).lowercase()
+    return query.trim().lowercase().split(" ").all { term -> term in text }
+}
+
 enum class SourceKind(val label: String) {
     Direct("Direct"),
     Torrent("Peer-to-peer"),

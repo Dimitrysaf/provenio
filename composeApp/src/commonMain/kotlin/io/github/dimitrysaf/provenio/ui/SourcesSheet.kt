@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,11 +14,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.FilterList
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -25,7 +32,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetValue
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -50,6 +57,9 @@ import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.InstalledAddon
 import io.github.dimitrysaf.provenio.stremio.SourceKind
 import io.github.dimitrysaf.provenio.stremio.SourceOption
+import io.github.dimitrysaf.provenio.stremio.SourceQuality
+import io.github.dimitrysaf.provenio.stremio.matches
+import io.github.dimitrysaf.provenio.stremio.quality
 import kotlinx.coroutines.launch
 
 /** One addon's contribution, and whether it has finished contributing. */
@@ -78,13 +88,7 @@ fun SourcesSheet(
     onDismiss: () -> Unit,
     onPlay: (SourceOption) -> Unit,
 ) {
-    // Refusing the Hidden value stops a downward drag from dismissing the sheet, which
-    // otherwise competes with scrolling the list inside it. The scrim and the back gesture
-    // still call onDismissRequest, so there is always a way out.
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true,
-        confirmValueChange = { it != SheetValue.Hidden },
-    )
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val groups = remember { mutableStateListOf<AddonSources>() }
     val collapsed = remember { mutableStateMapOf<String, Boolean>() }
 
@@ -95,6 +99,10 @@ fun SourcesSheet(
     var failure by remember { mutableStateOf<String?>(null) }
 
     var reloads by remember { mutableIntStateOf(0) }
+    var query by remember { mutableStateOf("") }
+    // Empty means no restriction. Only qualities actually present are ever offered.
+    val hiddenQualities = remember { mutableStateListOf<SourceQuality>() }
+    var filterOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(type, id, reloads) {
         groups.clear()
@@ -167,6 +175,16 @@ fun SourcesSheet(
     val stillLoading = groups.filter { it.loading }
     val total = groups.sumOf { it.sources.size }
 
+    fun visibleIn(group: AddonSources): List<SourceOption> = group.sources.filter { source ->
+        source.matches(query) && source.quality !in hiddenQualities
+    }
+
+    val presentQualities = SourceQuality.entries.filter { candidate ->
+        groups.any { group -> group.sources.any { it.quality == candidate } }
+    }
+    val filtering = query.isNotBlank() || hiddenQualities.isNotEmpty()
+    val matches = groups.sumOf { visibleIn(it).size }
+
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
             Row(
@@ -194,6 +212,68 @@ fun SourcesSheet(
                     Icon(Icons.Outlined.Refresh, contentDescription = "Refresh sources")
                 }
             }
+            // Search and quality live above the list so they apply to every section.
+            if (total > 0) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 8.dp, top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        placeholder = { Text("Filter sources") },
+                        leadingIcon = {
+                            Icon(Icons.Outlined.Search, contentDescription = null)
+                        },
+                        trailingIcon = {
+                            if (query.isNotEmpty()) {
+                                IconButton(onClick = { query = "" }) {
+                                    Icon(Icons.Filled.Close, contentDescription = "Clear filter")
+                                }
+                            }
+                        },
+                    )
+                    Box {
+                        IconButton(onClick = { filterOpen = true }) {
+                            Icon(
+                                imageVector = Icons.Outlined.FilterList,
+                                contentDescription = "Quality filter",
+                                tint = if (hiddenQualities.isEmpty()) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.primary
+                                },
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = filterOpen,
+                            onDismissRequest = { filterOpen = false },
+                        ) {
+                            presentQualities.forEach { candidate ->
+                                val shown = candidate !in hiddenQualities
+                                DropdownMenuItem(
+                                    text = { Text(candidate.label) },
+                                    leadingIcon = {
+                                        Checkbox(checked = shown, onCheckedChange = null)
+                                    },
+                                    onClick = {
+                                        if (shown) {
+                                            hiddenQualities.add(candidate)
+                                        } else {
+                                            hiddenQualities.remove(candidate)
+                                        }
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             Spacer(Modifier.height(8.dp))
 
             val message = failure
@@ -217,15 +297,27 @@ fun SourcesSheet(
                 NoSources()
                 return@Column
             }
+            if (filtering && matches == 0) {
+                Message(
+                    title = "Nothing matches",
+                    body = "No source matches that filter. Clear it to see all of them.",
+                )
+                return@Column
+            }
 
             LazyColumn(modifier = Modifier.heightIn(max = 460.dp)) {
                 groups.forEach { group ->
                     val addonId = group.addon.manifest.id
+                    val shown = visibleIn(group)
+                    // While filtering, a section with no matches is noise rather than
+                    // information, so it drops out entirely.
+                    if (filtering && shown.isEmpty()) return@forEach
                     val isCollapsed = collapsed[addonId] ?: false
 
                     item(key = "header:$addonId") {
                         AddonHeader(
                             group = group,
+                            shownCount = shown.size,
                             collapsed = isCollapsed,
                             onToggle = { collapsed[addonId] = !isCollapsed },
                         )
@@ -233,7 +325,7 @@ fun SourcesSheet(
                     item(key = "body:$addonId") {
                         AnimatedVisibility(visible = !isCollapsed) {
                             Column {
-                                group.sources.forEach { source ->
+                                shown.forEach { source ->
                                     SourceRow(source) { choose(source) }
                                 }
                                 if (!group.loading && group.sources.isEmpty()) {
@@ -260,6 +352,7 @@ fun SourcesSheet(
 @Composable
 private fun AddonHeader(
     group: AddonSources,
+    shownCount: Int,
     collapsed: Boolean,
     onToggle: () -> Unit,
 ) {
@@ -281,7 +374,7 @@ private fun AddonHeader(
                 CircularProgressIndicator(modifier = Modifier.size(18.dp))
             } else {
                 Text(
-                    text = group.sources.size.toString(),
+                    text = shownCount.toString(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
