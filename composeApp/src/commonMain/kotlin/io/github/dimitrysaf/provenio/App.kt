@@ -35,6 +35,7 @@ import io.github.dimitrysaf.provenio.navigation.SearchFilter
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.PlayerScreen
+import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.SearchRepository
 import io.github.dimitrysaf.provenio.pages.DetailPage
@@ -91,6 +92,7 @@ fun App() {
         P2pRepository.load()
         PlayerRepository.load()
         SearchRepository.load()
+        SimklRepository.load()
     }
 
     AppTheme(themeMode = themeMode, useDynamicColor = useDynamicColor) {

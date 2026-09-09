@@ -1,0 +1,15 @@
+-- Single row, id is always 1. Simkl tokens last about five years and have no refresh, so
+-- there is nothing to store beside the token itself.
+CREATE TABLE simklAuth (
+    id INTEGER NOT NULL PRIMARY KEY,
+    accessToken TEXT NOT NULL
+);
+
+select:
+SELECT * FROM simklAuth WHERE id = 1;
+
+upsert:
+INSERT OR REPLACE INTO simklAuth(id, accessToken) VALUES (1, ?);
+
+clear:
+DELETE FROM simklAuth;

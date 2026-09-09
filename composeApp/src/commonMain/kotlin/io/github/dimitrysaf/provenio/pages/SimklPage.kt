@@ -1,0 +1,136 @@
+package io.github.dimitrysaf.provenio.pages
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.alorma.compose.settings.ui.expressive.SettingsGroup
+import io.github.dimitrysaf.provenio.simkl.SimklAuthState
+import io.github.dimitrysaf.provenio.simkl.SimklRepository
+import io.github.dimitrysaf.provenio.ui.components.SettingsTile
+import io.github.dimitrysaf.provenio.ui.components.SettingsTileSpacing
+import io.github.dimitrysaf.provenio.ui.components.TilePosition
+import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
+
+@Composable
+fun SimklContent() {
+    val state by SimklRepository.authState.collectAsState()
+    val openUrl = rememberUrlOpener()
+
+    when (val current = state) {
+        SimklAuthState.SignedOut -> SignedOut()
+        SimklAuthState.Starting -> Note("Asking Simkl for a code...")
+        is SimklAuthState.AwaitingUser -> AwaitingUser(
+            code = current.userCode,
+            page = current.verificationPage,
+            secondsRemaining = current.secondsRemaining,
+            onOpen = { openUrl(current.verificationPage) },
+        )
+        SimklAuthState.SignedIn -> SignedIn()
+        is SimklAuthState.Error -> ErrorState(current.message)
+    }
+}
+
+@Composable
+private fun SignedOut() {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Text(
+            text = "Sign in to sync your watchlist, progress and ratings with Simkl.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(16.dp))
+        Button(
+            onClick = { SimklRepository.signIn() },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Sign in with Simkl")
+        }
+    }
+}
+
+/**
+ * The PIN step. The code is typed by hand on another device, so it is set large and the
+ * link is one tap away rather than something to transcribe.
+ */
+@Composable
+private fun AwaitingUser(
+    code: String,
+    page: String,
+    secondsRemaining: Int,
+    onOpen: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = "Go to $page and enter this code.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Text(text = code, style = MaterialTheme.typography.displaySmall)
+        Text(
+            text = "Expires in ${secondsRemaining / 60}m ${secondsRemaining % 60}s",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Button(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
+            Text("Open Simkl")
+        }
+        TextButton(onClick = { SimklRepository.cancelSignIn() }) { Text("Cancel") }
+    }
+}
+
+@Composable
+private fun SignedIn() {
+    SettingsGroup(verticalArrangement = Arrangement.spacedBy(SettingsTileSpacing)) {
+        SettingsTile(
+            title = { Text("Account") },
+            subtitle = { Text("Signed in") },
+            position = TilePosition.First,
+            onClick = {},
+        )
+        SettingsTile(
+            title = { Text("Sign out") },
+            subtitle = { Text("Removes the token from this device") },
+            position = TilePosition.Last,
+            onClick = { SimklRepository.signOut() },
+        )
+    }
+}
+
+@Composable
+private fun ErrorState(message: String) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Text(text = message, style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.height(12.dp))
+        OutlinedButton(onClick = { SimklRepository.signIn() }) { Text("Try again") }
+    }
+}
+
+@Composable
+private fun Note(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp),
+    )
+}

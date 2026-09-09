@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Share
@@ -57,6 +58,7 @@ enum class SettingsCategory(
     Addons("Add-ons", "Catalogs, metadata and streams", Icons.Outlined.Extension),
     PeerToPeer("Peer-to-peer", "Sharing, cache and status", Icons.Outlined.Share),
     VideoPlayer("Video player", "Which player opens a stream", Icons.Outlined.PlayCircle),
+    Simkl("Simkl", "Sync your watchlist and progress", Icons.Outlined.CloudSync),
 }
 
 /**
@@ -250,5 +252,6 @@ private fun CategoryContent(
         SettingsCategory.Addons -> AddonsContent()
         SettingsCategory.PeerToPeer -> P2pContent()
         SettingsCategory.VideoPlayer -> VideoPlayerContent()
+        SettingsCategory.Simkl -> SimklContent()
     }
 }
