@@ -30,9 +30,10 @@ sealed interface SyncState {
  *
  *  - `/sync/activities` is fetched first, always, and the sync stops there when nothing has
  *    moved since the saved timestamp.
- *  - The first sync calls `/sync/shows`, `/sync/movies` and `/sync/anime` one after another.
- *    Deliberately sequential. Fanning these out with `async` would be the natural Kotlin
- *    shape and is exactly what Simkl asks callers not to do.
+ *  - The first sync calls `/sync/all-items/shows`, `/sync/all-items/movies` and
+ *    `/sync/all-items/anime` one after another. Deliberately sequential. Fanning these out
+ *    with `async` would be the natural Kotlin shape and is exactly what Simkl asks callers
+ *    not to do.
  *  - Every later sync is a single `/sync/all-items?date_from=` carrying the saved timestamp
  *    unchanged.
  *  - Nothing polls. Sync happens on startup or when the user asks, throttled by

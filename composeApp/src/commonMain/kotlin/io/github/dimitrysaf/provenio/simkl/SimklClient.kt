@@ -61,13 +61,13 @@ class SimklClient(
         getJson(endpoint("/sync/activities"), token)
 
     /**
-     * One library, fetched whole. Phase 1 only.
+     * One library, fetched whole, from `/sync/all-items/{type}`. Phase 1 only.
      *
      * Simkl requires these to be called one at a time rather than in parallel, so nothing
      * here fans out and callers must await each in turn.
      */
     suspend fun library(token: String, type: String): SimklAllItems? =
-        getJson(endpoint("/sync/$type"), token)
+        getJson(endpoint("/sync/all-items/$type"), token)
 
     /**
      * Everything that changed since [dateFrom], in one request. Phase 2.
