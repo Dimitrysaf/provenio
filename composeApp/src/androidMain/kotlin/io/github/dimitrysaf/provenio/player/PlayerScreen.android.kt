@@ -14,14 +14,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -41,10 +47,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
@@ -93,8 +102,10 @@ private fun BuiltinPlayer(
             )
         ExoPlayer.Builder(context, renderers).build()
     }
+    var playbackError by remember { mutableStateOf<PlaybackException?>(null) }
 
     DisposableEffect(url) {
+        playbackError = null
         player.setMediaItem(MediaItem.fromUri(url))
         player.prepare()
         player.playWhenReady = true
@@ -102,6 +113,16 @@ private fun BuiltinPlayer(
         // Releasing is not optional. A leaked codec surfaces later as a decoder failure
         // on an unrelated video, which looks random and is miserable to trace back.
         onDispose { player.release() }
+    }
+
+    DisposableEffect(player) {
+        val listener = object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                playbackError = error
+            }
+        }
+        player.addListener(listener)
+        onDispose { player.removeListener(listener) }
     }
 
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
@@ -121,6 +142,90 @@ private fun BuiltinPlayer(
         if (scrobbleTarget != null) {
             ScrobbleReporter(player = player, target = scrobbleTarget)
         }
+    }
+
+    playbackError?.let { error ->
+        PlaybackErrorDialog(
+            info = error.toDebugInfo(url),
+            onDismiss = { playbackError = null },
+        )
+    }
+}
+
+/** Everything worth showing about a failed load, in the order it's most useful to read. */
+private data class PlaybackDebugInfo(
+    val errorCodeName: String,
+    val errorCode: Int,
+    val message: String,
+    val causeSummary: String?,
+    val url: String,
+) {
+    /** Plain text, so "Copy" hands over exactly what the dialog shows. */
+    fun toClipboardText(): String = buildString {
+        appendLine("Playback failed")
+        appendLine("Error: $errorCodeName ($errorCode)")
+        appendLine("Message: $message")
+        if (causeSummary != null) appendLine("Cause: $causeSummary")
+        appendLine("Source: $url")
+    }
+}
+
+private fun PlaybackException.toDebugInfo(url: String): PlaybackDebugInfo {
+    // The immediate cause is usually a wrapper (an ExoPlaybackException, say); the root
+    // cause is the one that actually names what went wrong — a 404, a codec the device
+    // does not have, a malformed container.
+    val root = generateSequence(cause) { it.cause }.lastOrNull() ?: cause
+    return PlaybackDebugInfo(
+        errorCodeName = errorCodeName,
+        errorCode = errorCode,
+        message = message ?: "No message",
+        causeSummary = root?.let { "${it::class.simpleName}: ${it.message ?: "no detail"}" },
+        url = url,
+    )
+}
+
+/**
+ * What "the player failed to load" actually was, since a black screen with no explanation
+ * is not something a source-quality problem can be told apart from a real app bug by.
+ */
+@Composable
+private fun PlaybackErrorDialog(info: PlaybackDebugInfo, onDismiss: () -> Unit) {
+    val clipboard = LocalClipboardManager.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Outlined.ErrorOutline, contentDescription = null) },
+        title = { Text("Playback failed") },
+        text = {
+            Column(
+                modifier = Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()),
+            ) {
+                DebugRow("Error", "${info.errorCodeName} (${info.errorCode})")
+                DebugRow("Message", info.message)
+                info.causeSummary?.let { DebugRow("Cause", it) }
+                DebugRow("Source", info.url)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { clipboard.setText(AnnotatedString(info.toClipboardText())) }) {
+                Text("Copy")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+    )
+}
+
+@Composable
+private fun DebugRow(label: String, value: String) {
+    Column(modifier = Modifier.padding(bottom = 12.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
