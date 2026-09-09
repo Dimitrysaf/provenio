@@ -56,8 +56,8 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     onOpenSearch: (SearchFilter) -> Unit,
     onOpenSettings: () -> Unit,
-    onPlaySample: () -> Unit,
     onAddAddons: () -> Unit,
+    onOpenDetail: (type: String, id: String) -> Unit,
 ) {
     // Saved rather than remembered: navigating to a sub-page disposes this screen's
     // composition, and the selected tab has to survive coming back.
@@ -123,12 +123,15 @@ fun HomeScreen(
                             modifier = Modifier.fillMaxSize(),
                             onSearchClick = { onOpenSearch(SearchFilter.Tv) },
                             onFilterClick = {},
+                            onOpenDetail = onOpenDetail,
+                            onAddAddons = onAddAddons,
                         )
                         Destination.Movies -> MoviesPage(
                             modifier = Modifier.fillMaxSize(),
                             onSearchClick = { onOpenSearch(SearchFilter.Movies) },
                             onFilterClick = {},
-                            onPlaySample = onPlaySample,
+                            onOpenDetail = onOpenDetail,
+                            onAddAddons = onAddAddons,
                         )
                         Destination.Lists -> ListsPage(
                             modifier = Modifier.fillMaxSize(),

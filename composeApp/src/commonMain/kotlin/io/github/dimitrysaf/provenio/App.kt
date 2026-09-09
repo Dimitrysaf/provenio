@@ -122,8 +122,10 @@ fun App() {
                             )
                         },
                         onOpenSettings = { navController.navigate(Routes.Settings) },
-                        onPlaySample = { navController.navigate(Routes.Player) },
                         onAddAddons = { navController.navigate(Routes.SettingsAddons) },
+                        onOpenDetail = { type, id ->
+                            navController.navigate(DetailRoute(type, id))
+                        },
                     )
                 }
             }

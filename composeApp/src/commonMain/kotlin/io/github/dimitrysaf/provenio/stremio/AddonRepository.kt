@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.stremio
 import io.github.dimitrysaf.provenio.data.AddonStore
 import io.github.dimitrysaf.provenio.data.createDatabaseDriver
 import io.github.dimitrysaf.provenio.stremio.model.Manifest
+import io.github.dimitrysaf.provenio.stremio.model.ManifestCatalog
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -90,6 +91,26 @@ object AddonRepository {
             reply.getOrNull()?.meta?.let { return it }
         }
         return null
+    }
+
+    /**
+     * One page of a catalog.
+     *
+     * `skip` is how the protocol paginates. Without it a shelf silently stops at whatever
+     * the addon returns first and looks like the end of the catalog.
+     */
+    suspend fun catalogPage(
+        addon: InstalledAddon,
+        catalog: ManifestCatalog,
+        skip: Int,
+    ): List<MetaPreview>? {
+        val extra = if (skip > 0) mapOf("skip" to skip.toString()) else emptyMap()
+        return client.fetchCatalog(
+            addonUrl = addon.transportUrl,
+            type = catalog.type,
+            id = catalog.id,
+            extra = extra,
+        ).getOrNull()?.metas
     }
 
     fun remove(addonId: String) = commit(_collection.value.without(addonId))
