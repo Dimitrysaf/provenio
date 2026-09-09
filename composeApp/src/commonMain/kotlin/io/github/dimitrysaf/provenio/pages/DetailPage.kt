@@ -74,6 +74,7 @@ import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.db.SimklItem
 import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.simkl.SyncState
+import io.github.dimitrysaf.provenio.simkl.toSimklEpisodeCode
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.Video
@@ -169,16 +170,26 @@ private fun MetaContent(meta: Meta, onChooseSource: (String) -> Unit) {
         }
     }
 
-    // Per-episode watched state has no Simkl equivalent to read back, so it is tracked
-    // locally and only mirrored to Simkl one-way, on toggle.
-    val watchedIds by EpisodeWatchedRepository.watched.collectAsState()
+    // Simkl never sends a per-episode watched list, only the aggregate count above and a
+    // next-to-watch marker, so every regular episode before that marker is inferred
+    // watched from it. Local overrides win over that inference in either direction — see
+    // EpisodeWatchedRepository for why an override is not simply "watched" or absent.
+    val overrides by EpisodeWatchedRepository.overrides.collectAsState()
+    val watchedIds = remember(meta, simklItem, overrides) {
+        val inferred = simklWatchedIds(meta, simklItem)
+        val watched = inferred.toMutableSet()
+        overrides.forEach { (videoId, isWatched) ->
+            if (isWatched) watched.add(videoId) else watched.remove(videoId)
+        }
+        watched
+    }
     val onToggleWatched: (Video) -> Unit = { video ->
-        EpisodeWatchedRepository.toggle(meta.id, video)
+        EpisodeWatchedRepository.setWatched(meta.id, video, video.id !in watchedIds)
     }
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item { Header(meta) }
-        item { WatchAction(meta, onChooseSource) }
+        item { WatchAction(meta, simklItem, onChooseSource) }
         item { WatchProgress(meta, simklItem, watchedIds) }
         item { Ratings(meta) }
         item { Synopsis(meta) }
@@ -275,12 +286,12 @@ private fun Header(meta: Meta) {
 }
 
 /**
- * The primary action. Inert for now: choosing a source needs the stream resource and a
- * picker, so this points at the episode it would open rather than pretending to play.
+ * The primary action. Resumes at whatever Simkl says is next, when it has an opinion;
+ * otherwise opens the first episode of the first regular season, never a special.
  */
 @Composable
-private fun WatchAction(meta: Meta, onChooseSource: (String) -> Unit) {
-    val next = meta.firstRegularEpisode()
+private fun WatchAction(meta: Meta, simklItem: SimklItem?, onChooseSource: (String) -> Unit) {
+    val next = simklNextEpisode(meta, simklItem) ?: meta.firstRegularEpisode()
     val label = when {
         next?.season != null && next.episode != null ->
             "Watch S${pad(next.season)}E${pad(next.episode)} now"
@@ -729,6 +740,40 @@ private fun Meta.firstRegularEpisode(): Video? =
         .filter { (it.season ?: SpecialsSeason) != SpecialsSeason }
         .minWithOrNull(compareBy({ it.season }, { it.episode }))
         ?: videos.firstOrNull()
+
+/** The video matching Simkl's next-to-watch marker, when it has one and [meta] lists it. */
+private fun simklNextEpisode(meta: Meta, simklItem: SimklItem?): Video? {
+    val (season, episode) = simklItem?.nextToWatch?.toSimklEpisodeCode() ?: return null
+    return meta.videos.firstOrNull { it.season == season && it.episode == episode }
+}
+
+/**
+ * Regular episode ids Simkl considers already watched, inferred rather than read back
+ * directly: Simkl's synced library never sends a per-episode list, only the aggregate
+ * count [WatchProgress] already uses and the next-to-watch marker [simklNextEpisode]
+ * reads. Every regular episode strictly before that marker counts as watched; with no
+ * marker at all, everything does once Simkl's own counts agree there is nothing left,
+ * and nothing does otherwise (a title Simkl has not synced episode-level data for).
+ */
+private fun simklWatchedIds(meta: Meta, simklItem: SimklItem?): Set<String> {
+    if (simklItem == null || simklItem.totalEpisodes <= 0) return emptySet()
+    val regular = meta.videos.filter { (it.season ?: SpecialsSeason) != SpecialsSeason }
+    val next = simklItem.nextToWatch?.toSimklEpisodeCode()
+        ?: return if (simklItem.watchedEpisodes >= simklItem.totalEpisodes) {
+            regular.map { it.id }.toSet()
+        } else {
+            emptySet()
+        }
+    val (nextSeason, nextEpisode) = next
+    return regular
+        .filter { video ->
+            val season = video.season ?: return@filter false
+            val episode = video.episode ?: return@filter false
+            season < nextSeason || (season == nextSeason && episode < nextEpisode)
+        }
+        .map { it.id }
+        .toSet()
+}
 
 /** Zero padded episode and season numbers. Common Kotlin has no String.format. */
 private fun pad(value: Int): String = value.toString().padStart(2, '0')

@@ -54,6 +54,20 @@ data class SimklEntry(
     val isMovie: Boolean get() = movie != null
 }
 
+/**
+ * Parses Simkl's `next_to_watch` marker, formatted like `"S01E05"`, into a season and
+ * episode number. Null for a title Simkl considers fully watched, where the field is
+ * absent, and for anything not in that shape.
+ */
+fun String.toSimklEpisodeCode(): Pair<Int, Int>? {
+    val match = SimklEpisodeCodePattern.matchEntire(trim()) ?: return null
+    val season = match.groupValues[1].toIntOrNull() ?: return null
+    val episode = match.groupValues[2].toIntOrNull() ?: return null
+    return season to episode
+}
+
+private val SimklEpisodeCodePattern = Regex("""[Ss](\d+)[Ee](\d+)""")
+
 @Serializable
 data class SimklMedia(
     @SerialName("title") val title: String? = null,

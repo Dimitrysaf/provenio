@@ -16,22 +16,26 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Which episodes the user has watched, kept locally by video id (e.g. `"tt0108778:1:1"`).
+ * Explicit, local overrides of watched state, by video id (e.g. `"tt0108778:1:1"`).
  *
- * Simkl's synced library only reports a watched/total count per show, never which
- * episodes those are, so the episode tick box in the details page cannot be driven from
- * [io.github.dimitrysaf.provenio.simkl.SimklSync] the way the overall progress bar is.
- * This is the source of truth for that tick box instead. Toggling one is applied here
- * first, so the UI updates immediately, and mirrored to Simkl's history endpoints in the
- * background on a best-effort basis when the user is signed in.
+ * Simkl's synced library only reports a watched/total count and a next-to-watch marker per
+ * show, never a full per-episode list, so the details page derives a default tick state
+ * from that (see `DetailPage.kt`'s `simklWatchedIds`). [overrides] is layered on top of
+ * that default: a video id present here always wins, in either direction, over the
+ * Simkl-derived guess. An id absent here means "no local opinion", not "not watched" — so
+ * un-watching an episode Simkl otherwise infers as watched is recorded the same way as
+ * watching one Simkl has not caught up to yet.
+ *
+ * Setting an override is applied here first, so the UI updates immediately, and mirrored
+ * to Simkl's history endpoints in the background on a best-effort basis when signed in.
  */
 object EpisodeWatchedRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val client = SimklClient()
 
-    private val _watched = MutableStateFlow<Set<String>>(emptySet())
-    val watched: StateFlow<Set<String>> = _watched.asStateFlow()
+    private val _overrides = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val overrides: StateFlow<Map<String, Boolean>> = _overrides.asStateFlow()
 
     private var store: EpisodeWatchedStore? = null
     private var loaded = false
@@ -40,36 +44,27 @@ object EpisodeWatchedRepository {
         if (loaded) return
         loaded = true
         store = runCatching { EpisodeWatchedStore(createDatabaseDriver()) }.getOrNull()
-        _watched.value = store
+        _overrides.value = store
             ?.let { runCatching { it.all() }.getOrNull() }
             .orEmpty()
-            .map { it.videoId }
-            .toSet()
+            .associate { it.videoId to (it.watched != 0L) }
     }
 
     /**
-     * Flips [video]'s watched state. [showId] is the title's own id (an imdb id for every
-     * addon this app talks to), used both as the local grouping key and, when Simkl can be
-     * reached, as the id Simkl matches the episode against.
+     * Records that [video] is watched, or not, overriding whatever the Simkl-derived
+     * default would otherwise show for it. [showId] is the title's own id (an imdb id for
+     * every addon this app talks to), used both as the local grouping key and, when Simkl
+     * can be reached, as the id Simkl matches the episode against.
      */
-    fun toggle(showId: String, video: Video) {
+    fun setWatched(showId: String, video: Video, watched: Boolean) {
         val videoId = video.id
-        val nowWatched = videoId !in _watched.value
-        _watched.value = if (nowWatched) {
-            _watched.value + videoId
-        } else {
-            _watched.value - videoId
-        }
+        _overrides.value = _overrides.value + (videoId to watched)
 
         val season = video.season
         val episode = video.episode
         store?.let { s ->
             runCatching {
-                if (nowWatched) {
-                    s.markWatched(videoId, showId, season ?: 0, episode ?: 0, currentTimeMillis())
-                } else {
-                    s.markUnwatched(videoId)
-                }
+                s.setWatched(videoId, showId, season ?: 0, episode ?: 0, watched, currentTimeMillis())
             }
         }
 
@@ -81,7 +76,7 @@ object EpisodeWatchedRepository {
             scope.launch {
                 val request = singleEpisodeHistoryRequest(showId, season, episode)
                 runCatching {
-                    if (nowWatched) {
+                    if (watched) {
                         client.addToHistory(token, request)
                     } else {
                         client.removeFromHistory(token, request)
@@ -93,6 +88,6 @@ object EpisodeWatchedRepository {
 
     fun clear() {
         store?.let { runCatching { it.clear() } }
-        _watched.value = emptySet()
+        _overrides.value = emptyMap()
     }
 }

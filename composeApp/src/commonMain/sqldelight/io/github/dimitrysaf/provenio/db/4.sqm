@@ -1,0 +1,7 @@
+-- Episode watched rows used to exist only when watched, so "no row" meant "not watched".
+-- That collapsed into the wrong state once ticks could also be driven by Simkl's synced
+-- progress: there was no way to record "the user explicitly un-watched an episode Simkl
+-- still counts as watched" other than deleting a row that was never there. A row is now an
+-- explicit override in either direction; its absence means "no local opinion, defer to
+-- Simkl's synced progress" instead of "not watched".
+ALTER TABLE episodeWatched ADD COLUMN watched INTEGER NOT NULL DEFAULT 1;

@@ -5,12 +5,12 @@ import io.github.dimitrysaf.provenio.db.EpisodeWatched
 import io.github.dimitrysaf.provenio.db.ProvenioDatabase
 
 /**
- * Local record of which episodes have been watched, by video id.
+ * Local, per-episode overrides of watched state.
  *
  * This exists because Simkl's synced library ([SimklLibraryStore]) only carries a
- * watched/total count per show, not which individual episodes those are. The episode tick
- * boxes in the details page read and write here directly; syncing the change to Simkl is a
- * separate, best-effort step layered on top.
+ * watched/total count and a next-to-watch marker per show, not which individual episodes
+ * those are. The episode tick boxes in the details page infer a default from that, and a
+ * row here overrides the inference in either direction; there is no row for "no opinion".
  */
 class EpisodeWatchedStore(driver: SqlDriver) {
 
@@ -18,11 +18,23 @@ class EpisodeWatchedStore(driver: SqlDriver) {
 
     fun all(): List<EpisodeWatched> = queries.selectAll().executeAsList()
 
-    fun markWatched(videoId: String, showId: String, season: Int, episode: Int, nowMillis: Long) {
-        queries.markWatched(videoId, showId, season.toLong(), episode.toLong(), nowMillis)
+    fun setWatched(
+        videoId: String,
+        showId: String,
+        season: Int,
+        episode: Int,
+        watched: Boolean,
+        nowMillis: Long,
+    ) {
+        queries.setWatched(
+            videoId = videoId,
+            showId = showId,
+            season = season.toLong(),
+            episode = episode.toLong(),
+            watchedAtMillis = nowMillis,
+            watched = if (watched) 1L else 0L,
+        )
     }
-
-    fun markUnwatched(videoId: String) = queries.markUnwatched(videoId)
 
     fun clear() = queries.clearAll()
 }
