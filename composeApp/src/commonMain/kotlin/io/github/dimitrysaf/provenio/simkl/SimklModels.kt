@@ -53,3 +53,22 @@ sealed interface SimklAuthState {
     data object SignedIn : SimklAuthState
     data class Error(val message: String) : SimklAuthState
 }
+
+@Serializable
+data class SimklSettings(
+    @SerialName("user") val user: SimklUserProfile? = null,
+    @SerialName("account") val account: SimklAccount? = null,
+)
+
+@Serializable
+data class SimklUserProfile(
+    @SerialName("name") val name: String? = null,
+    // Already a full URL in this response, unlike poster and fanart which are paths.
+    @SerialName("avatar") val avatar: String? = null,
+)
+
+@Serializable
+data class SimklAccount(
+    @SerialName("id") val id: Long? = null,
+    @SerialName("type") val type: String? = null,
+)

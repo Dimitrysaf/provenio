@@ -118,6 +118,7 @@ fun HomeScreen(
                             onSearchClick = { onOpenSearch(SearchFilter.All) },
                             onSettingsClick = onOpenSettings,
                             onAddAddons = onAddAddons,
+                            onOpenDetail = onOpenDetail,
                         )
                         Destination.Tv -> TvPage(
                             modifier = Modifier.fillMaxSize(),

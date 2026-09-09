@@ -1,0 +1,8 @@
+-- Adds the cached Simkl profile. Written alongside the table rather than after the fact,
+-- because shipping a table without a migration is what left installed databases stranded
+-- at version 1 last time.
+CREATE TABLE IF NOT EXISTS simklUser (
+    id INTEGER NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    avatarUrl TEXT
+);

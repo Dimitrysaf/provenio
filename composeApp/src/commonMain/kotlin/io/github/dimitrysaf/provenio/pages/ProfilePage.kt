@@ -1,18 +1,23 @@
 package io.github.dimitrysaf.provenio.pages
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -22,25 +27,28 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.db.SimklItem
 import io.github.dimitrysaf.provenio.simkl.SimklAuthState
+import io.github.dimitrysaf.provenio.simkl.SimklImages
 import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
@@ -54,16 +62,30 @@ fun ProfilePage(
     onSearchClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onAddAddons: () -> Unit,
+    onOpenDetail: (type: String, id: String) -> Unit,
 ) {
     val collection by AddonRepository.collection.collectAsState()
-    val simklAuth by SimklRepository.authState.collectAsState()
+    val authState by SimklRepository.authState.collectAsState()
+    val profile by SimklRepository.profile.collectAsState()
     val watching by SimklSync.watching.collectAsState()
     val planToWatch by SimklSync.planToWatch.collectAsState()
-    val signedIn = simklAuth is SimklAuthState.SignedIn
-    // Every section on this page is metadata. Without an addon that serves it there is
-    // nothing to show and nothing that could arrive later.
+    val signedIn = authState is SimklAuthState.SignedIn
+
     val hasMetadata = collection.active.any { addon ->
         addon.manifest.resources.any { it.name == "meta" }
+    }
+
+    // The backdrop is the thing the user is furthest into. Simkl does not return fanart in
+    // the library payload, so it comes from the metadata addon that already knows the
+    // title, which costs nothing extra on the Simkl quota.
+    val featured = watching.firstOrNull()
+    var backdrop by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(featured?.simklId, hasMetadata) {
+        backdrop = null
+        val item = featured ?: return@LaunchedEffect
+        val imdb = item.imdbId ?: return@LaunchedEffect
+        if (!hasMetadata) return@LaunchedEffect
+        backdrop = AddonRepository.meta(item.stremioType(), imdb)?.background
     }
 
     PageScaffold(
@@ -83,88 +105,147 @@ fun ProfilePage(
             )
         },
     ) {
-        AccountHeader(signedIn = signedIn)
-        Spacer(Modifier.height(24.dp))
+        AccountHeader(
+            name = profile?.name,
+            avatarUrl = profile?.avatarUrl,
+            backdropUrl = backdrop,
+            signedIn = signedIn,
+        )
+        Spacer(Modifier.height(16.dp))
 
         if (!hasMetadata) {
             NoMetadataState(onAddAddons = onAddAddons)
-        } else {
-            LibrarySection(
-                title = "Continue watching",
-                items = watching,
-                emptyText = if (signedIn) {
-                    "Nothing in progress."
-                } else {
-                    "Sign in to Simkl to see what you are watching."
-                },
-            )
-            LibrarySection(
-                title = "Plan to watch",
-                items = planToWatch,
-                emptyText = if (signedIn) {
-                    "Nothing planned."
-                } else {
-                    "Sign in to Simkl to see your watchlist."
-                },
-            )
-            LibrarySection(
-                title = "Airing next",
-                items = emptyList(),
-                emptyText = "Not available yet.",
-            )
+            return@PageScaffold
         }
+
+        Shelf(
+            title = "Continue watching",
+            items = watching,
+            emptyText = if (signedIn) {
+                "Nothing in progress."
+            } else {
+                "Sign in to Simkl to see what you are watching."
+            },
+            onOpenDetail = onOpenDetail,
+        )
+        Shelf(
+            title = "Plan to watch",
+            items = planToWatch,
+            emptyText = if (signedIn) {
+                "Nothing planned."
+            } else {
+                "Sign in to Simkl to see your watchlist."
+            },
+            onOpenDetail = onOpenDetail,
+        )
     }
 }
+
+/** Simkl types its libraries as shows, movies and anime. The addon protocol does not. */
+private fun SimklItem.stremioType(): String = if (mediaType == "movies") "movie" else "series"
 
 /**
- * Stands in for the signed-in account.
+ * Backdrop, avatar and name.
  *
- * Simkl is what will fill this once it exists. Until then the placeholder says so rather
- * than showing a fake name.
+ * The backdrop sits behind the identity rather than beside it, so the page opens on the
+ * thing the user is actually watching. Without one it falls back to a tonal surface rather
+ * than collapsing, which keeps the header the same height either way.
  */
 @Composable
-private fun AccountHeader(signedIn: Boolean) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Person,
+private fun AccountHeader(
+    name: String?,
+    avatarUrl: String?,
+    backdropUrl: String?,
+    signedIn: Boolean,
+) {
+    Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
+        if (backdropUrl != null) {
+            AsyncImage(
+                model = backdropUrl,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             )
         }
-        Spacer(Modifier.width(16.dp))
-        Column {
-            Text(
-                text = if (signedIn) "Simkl" else "Not signed in",
-                style = MaterialTheme.typography.titleLarge,
-            )
-            Text(
-                text = if (signedIn) {
-                    "Library synced"
+
+        // Scrim only where the text sits, so the artwork stays visible above it.
+        Box(
+            modifier = Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    0f to Color.Transparent,
+                    0.55f to Color.Transparent,
+                    1f to Color.Black.copy(alpha = 0.75f),
+                ),
+            ),
+        )
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (avatarUrl != null) {
+                    AsyncImage(
+                        model = avatarUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
                 } else {
-                    "Connect Simkl to sync your library"
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+                    Icon(
+                        imageVector = Icons.Outlined.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(
+                    text = name ?: if (signedIn) "Simkl" else "Not signed in",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = if (backdropUrl != null) Color.White else Color.Unspecified,
+                )
+                if (!signedIn) {
+                    Text(
+                        text = "Connect Simkl to sync your library",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (backdropUrl != null) {
+                            Color.White.copy(alpha = 0.8f)
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
+            }
         }
     }
 }
 
-/** A library shelf, filled from the synced Simkl library. */
 @Composable
-private fun LibrarySection(title: String, items: List<SimklItem>, emptyText: String) {
-    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
+private fun Shelf(
+    title: String,
+    items: List<SimklItem>,
+    emptyText: String,
+    onOpenDetail: (type: String, id: String) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
@@ -186,14 +267,18 @@ private fun LibrarySection(title: String, items: List<SimklItem>, emptyText: Str
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items.forEach { item -> LibraryCard(item) }
+            items.forEach { item ->
+                LibraryCard(item) {
+                    item.imdbId?.let { onOpenDetail(item.stremioType(), it) }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun LibraryCard(item: SimklItem) {
-    Column(modifier = Modifier.width(120.dp)) {
+private fun LibraryCard(item: SimklItem, onClick: () -> Unit) {
+    Column(modifier = Modifier.width(120.dp).clickable(onClick = onClick)) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -201,10 +286,10 @@ private fun LibraryCard(item: SimklItem) {
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
         ) {
-            // Simkl returns a poster path rather than a URL, so it needs their CDN prefix.
-            if (!item.poster.isNullOrBlank()) {
+            val poster = SimklImages.poster(item.poster)
+            if (poster != null) {
                 AsyncImage(
-                    model = "https://wsrv.nl/?url=simkl.in/posters/${item.poster}_m.jpg",
+                    model = poster,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
@@ -218,7 +303,7 @@ private fun LibraryCard(item: SimklItem) {
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 6.dp),
         )
-        // Only shown once there is progress to show, matching the detail page.
+        // Shown only when there is progress, matching the detail page.
         if (item.totalEpisodes > 0 && item.watchedEpisodes > 0) {
             LinearProgressIndicator(
                 progress = { item.watchedEpisodes.toFloat() / item.totalEpisodes },

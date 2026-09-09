@@ -1,0 +1,16 @@
+-- Single row, id is always 1. Cached so the profile header has a name and a face before
+-- any network call finishes, and after it when offline.
+CREATE TABLE simklUser (
+    id INTEGER NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    avatarUrl TEXT
+);
+
+select:
+SELECT * FROM simklUser WHERE id = 1;
+
+upsert:
+INSERT OR REPLACE INTO simklUser(id, name, avatarUrl) VALUES (1, ?, ?);
+
+clear:
+DELETE FROM simklUser;

@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.simkl
 
 import io.github.dimitrysaf.provenio.data.SimklStore
+import io.github.dimitrysaf.provenio.data.SimklUserStore
 import io.github.dimitrysaf.provenio.data.createDatabaseDriver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +32,11 @@ object SimklRepository {
     var accessToken: String? = null
         private set
 
+    private val _profile = MutableStateFlow<SimklProfile?>(null)
+    val profile: StateFlow<SimklProfile?> = _profile.asStateFlow()
+
     private var store: SimklStore? = null
+    private var userStore: SimklUserStore? = null
     private var loaded = false
     private var pollJob: Job? = null
 
@@ -39,11 +44,19 @@ object SimklRepository {
         if (loaded) return
         loaded = true
         store = runCatching { SimklStore(createDatabaseDriver()) }.getOrNull()
+        userStore = runCatching { SimklUserStore(createDatabaseDriver()) }.getOrNull()
         accessToken = store?.let { runCatching { it.token() }.getOrNull() }
+        // Shown immediately from cache, then refreshed once the network answers.
+        userStore?.let { existing ->
+            runCatching { existing.load() }.getOrNull()?.let { row ->
+                _profile.value = SimklProfile(row.name, row.avatarUrl)
+            }
+        }
         if (accessToken != null) {
             _authState.value = SimklAuthState.SignedIn
             SimklSync.load()
             SimklSync.sync(SyncTrigger.Startup, currentTimeMillis())
+            refreshProfile()
         }
     }
 
@@ -147,6 +160,8 @@ object SimklRepository {
         pollJob = null
         accessToken = null
         store?.let { runCatching { it.clear() } }
+        userStore?.let { runCatching { it.clear() } }
+        _profile.value = null
         SimklSync.clear()
         _authState.value = SimklAuthState.SignedOut
     }
@@ -154,14 +169,29 @@ object SimklRepository {
     /** Called when a request comes back 401, which means the user revoked access. */
     fun onTokenRejected() = signOut()
 
+    private fun refreshProfile() {
+        val token = accessToken ?: return
+        scope.launch {
+            val settings = client.settings(token) ?: return@launch
+            val name = settings.user?.name ?: return@launch
+            val avatar = SimklImages.avatar(settings.user.avatar)
+            _profile.value = SimklProfile(name, avatar)
+            userStore?.let { runCatching { it.save(name, avatar) } }
+        }
+    }
+
     private fun completeSignIn(token: String) {
         accessToken = token
         store?.let { runCatching { it.save(token) } }
         _authState.value = SimklAuthState.SignedIn
         // Signing in is user interaction, so a sync here is a trigger rather than a poll.
         SimklSync.sync(SyncTrigger.Manual, currentTimeMillis())
+        refreshProfile()
     }
 
     private const val DefaultPollSeconds = 5
     private const val DefaultExpirySeconds = 900
 }
+
+/** The signed in Simkl account, as shown on the profile page. */
+data class SimklProfile(val name: String, val avatarUrl: String?)

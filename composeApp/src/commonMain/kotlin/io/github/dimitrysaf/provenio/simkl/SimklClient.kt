@@ -3,9 +3,13 @@ package io.github.dimitrysaf.provenio.simkl
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.contentType
 import io.ktor.http.encodeURLParameter
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
@@ -49,6 +53,10 @@ class SimklClient(
         }
     }
 
+    /** POST, and POST is capped at one per second, so this is called at sign in only. */
+    suspend fun settings(token: String): SimklSettings? =
+        postJson(endpoint("/users/settings"), token)
+
     suspend fun activities(token: String): SimklActivities? =
         getJson(endpoint("/sync/activities"), token)
 
@@ -84,6 +92,38 @@ class SimklClient(
             "${key.encodeURLParameter()}=${value.encodeURLParameter()}"
         }
         return "$BaseUrl$path?$query"
+    }
+
+    private suspend inline fun <reified T> postJson(
+        url: String,
+        accessToken: String,
+    ): T? {
+        lastFailure = null
+        val text = try {
+            val response = httpClient.post(url) {
+                header(HttpHeaders.UserAgent, SimklConfig.userAgent)
+                header(HttpHeaders.Authorization, "Bearer $accessToken")
+                contentType(ContentType.Application.Json)
+                setBody("{}")
+            }
+            if (!response.status.isSuccess()) {
+                lastFailure = "Simkl answered ${response.status.value}."
+                return null
+            }
+            response.bodyAsText()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (failure: Exception) {
+            lastFailure = failure::class.simpleName
+            return null
+        }
+        return try {
+            simklJson.decodeFromString<T>(text)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (failure: Exception) {
+            null
+        }
     }
 
     private suspend inline fun <reified T> getJson(
