@@ -12,7 +12,8 @@ package io.github.dimitrysaf.provenio.simkl
  */
 object SimklConfig {
 
-    const val ClientId = "REPLACE_WITH_SIMKL_CLIENT_ID"
+    const val ClientId =
+        "26bb1aa7a7dfce132f9d2936bce22157293cf1ec886da75a400c19cfb5cc109c"
 
     const val AppName = "provenio"
 
