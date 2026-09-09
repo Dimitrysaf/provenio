@@ -6,6 +6,8 @@ import io.github.dimitrysaf.provenio.stremio.model.Stream
 data class SourceOption(
     val addon: InstalledAddon,
     val stream: Stream,
+    /** Filled in once the peer-to-peer service has turned a torrent into a local URL. */
+    val resolvedUrl: String? = null,
 ) {
     /** How this source is played, which decides whether it can be played at all today. */
     val kind: SourceKind
@@ -29,7 +31,7 @@ data class SourceOption(
         get() = stream.description ?: stream.title?.takeIf { it != stream.name }
 
     val playableUrl: String?
-        get() = when (kind) {
+        get() = resolvedUrl ?: when (kind) {
             SourceKind.Direct -> stream.url
             SourceKind.YouTube -> stream.ytId?.let { "https://www.youtube.com/watch?v=$it" }
             SourceKind.External -> stream.externalUrl

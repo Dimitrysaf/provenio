@@ -36,13 +36,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.github.dimitrysaf.provenio.p2p.P2pRepository
+import io.github.dimitrysaf.provenio.p2p.canRun
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.SourceKind
 import io.github.dimitrysaf.provenio.stremio.SourceOption
@@ -69,6 +73,37 @@ fun SourcesSheet(
     var pending by remember { mutableIntStateOf(0) }
     var started by remember { mutableStateOf(false) }
 
+    val p2pSettings by P2pRepository.settings.collectAsState()
+    val scope = rememberCoroutineScope()
+    // Held while the consent notice is up, so the chosen source can continue afterwards.
+    var awaitingConsent by remember { mutableStateOf<SourceOption?>(null) }
+    var resolving by remember { mutableStateOf(false) }
+    var failure by remember { mutableStateOf<String?>(null) }
+
+    fun playTorrent(source: SourceOption) {
+        val infoHash = source.stream.infoHash ?: return
+        resolving = true
+        scope.launch {
+            val url = P2pRepository.streamUrl(infoHash)
+            resolving = false
+            if (url != null) {
+                onPlay(source.copy(resolvedUrl = url))
+            } else {
+                failure = "The peer-to-peer service could not open this source."
+            }
+        }
+    }
+
+    fun choose(source: SourceOption) {
+        failure = null
+        when {
+            source.kind != SourceKind.Torrent -> onPlay(source)
+            // Off, or consent never given. Ask, rather than showing a dead label.
+            !p2pSettings.canRun -> awaitingConsent = source
+            else -> playTorrent(source)
+        }
+    }
+
     LaunchedEffect(type, id) {
         sources.clear()
         val providers = AddonRepository.streamProviders(type, id)
@@ -81,6 +116,19 @@ fun SourcesSheet(
                 pending -= 1
             }
         }
+    }
+
+    val pendingConsent = awaitingConsent
+    if (pendingConsent != null) {
+        P2pConsentDialog(
+            onAccept = {
+                awaitingConsent = null
+                P2pRepository.acceptConsent()
+                P2pRepository.setEnabled(true)
+                playTorrent(pendingConsent)
+            },
+            onDismiss = { awaitingConsent = null },
+        )
     }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
@@ -106,12 +154,25 @@ fun SourcesSheet(
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
 
+            val message = failure
+            if (message != null) {
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                )
+            }
+            if (resolving) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+
             when {
                 started && pending == 0 && sources.isEmpty() -> NoSources()
                 sources.isEmpty() -> Loading()
                 else -> LazyColumn(modifier = Modifier.heightIn(max = 480.dp)) {
                     items(sources, key = { it.addon.manifest.id + it.label + it.hashCode() }) {
-                        SourceRow(it) { onPlay(it) }
+                        SourceRow(it, p2pSettings.canRun) { choose(it) }
                         HorizontalDivider()
                     }
                 }
@@ -121,8 +182,11 @@ fun SourcesSheet(
 }
 
 @Composable
-private fun SourceRow(source: SourceOption, onClick: () -> Unit) {
-    val playable = source.playableUrl != null
+private fun SourceRow(source: SourceOption, p2pReady: Boolean, onClick: () -> Unit) {
+    // A torrent is selectable whether or not peer-to-peer is on. Choosing one when it is
+    // off opens the consent notice, which is the only way the user can turn it on from
+    // here, so greying the row out would be a dead end.
+    val playable = source.playableUrl != null || source.kind == SourceKind.Torrent
     val alpha = if (playable) 1f else 0.5f
 
     Row(
@@ -167,19 +231,10 @@ private fun SourceRow(source: SourceOption, onClick: () -> Unit) {
                 // Provenance. Which addon produced this is the first thing worth knowing
                 // once several are installed and disagree.
                 AssistChip(onClick = {}, label = { Text(source.addon.manifest.name) })
-                if (!playable) {
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(
-                                if (source.kind == SourceKind.Torrent) {
-                                    "Needs peer-to-peer"
-                                } else {
-                                    source.kind.label
-                                },
-                            )
-                        },
-                    )
+                if (source.kind == SourceKind.Torrent && !p2pReady) {
+                    AssistChip(onClick = {}, label = { Text("Turn on peer-to-peer") })
+                } else if (!playable) {
+                    AssistChip(onClick = {}, label = { Text(source.kind.label) })
                 }
             }
         }

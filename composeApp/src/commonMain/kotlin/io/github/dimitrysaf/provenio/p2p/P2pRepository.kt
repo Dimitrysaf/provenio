@@ -55,6 +55,17 @@ object P2pRepository {
 
     fun setHideStats(hide: Boolean) = update { it.copy(hideStats = hide) }
 
+    /**
+     * The localhost URL for a torrent, or null when the service cannot serve it.
+     *
+     * Callers do not need to know whether that is because the feature is off, the user has
+     * not consented, or no engine is bundled. They only need to know they have no URL.
+     */
+    suspend fun streamUrl(infoHash: String): String? {
+        if (!_settings.value.canRun) return null
+        return engine.streamUrl(infoHash)
+    }
+
     fun clearCache() {
         scope.launch { engine.clearCache() }
     }
