@@ -63,7 +63,7 @@ class SimklClient(
 
     /**
      * Adds episodes to the signed in user's watch history, ticking them watched on Simkl.
-     * Covered by Simkl's write rate limit, same as every other `/sync/*` write endpoint.
+     * Covered by Simkl's write rate limit, same as every other `sync` write endpoint.
      */
     suspend fun addToHistory(token: String, request: SimklHistoryRequest): Boolean =
         postAndCheck(endpoint("/sync/history"), token, request)
