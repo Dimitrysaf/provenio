@@ -16,10 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.CloudOff
-import androidx.compose.material.icons.outlined.Link
-import androidx.compose.material.icons.outlined.OpenInBrowser
-import androidx.compose.material.icons.outlined.PlayCircle
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -194,10 +190,7 @@ fun SourcesSheet(
             LazyColumn(modifier = Modifier.heightIn(max = 460.dp)) {
                 groups.forEach { group ->
                     val addonId = group.addon.manifest.id
-                    // Sections open by default. A provider that returned nothing collapses
-                    // itself, so empty groups do not push results off screen.
-                    val isCollapsed = collapsed[addonId]
-                        ?: (!group.loading && group.sources.isEmpty())
+                    val isCollapsed = collapsed[addonId] ?: false
 
                     item(key = "header:$addonId") {
                         AddonHeader(
@@ -289,18 +282,8 @@ private fun SourceRow(source: SourceOption, onClick: () -> Unit) {
             .padding(start = 24.dp, end = 24.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = when (source.kind) {
-                SourceKind.Direct -> Icons.Outlined.PlayCircle
-                SourceKind.Torrent -> Icons.Outlined.Share
-                SourceKind.YouTube -> Icons.Outlined.Link
-                SourceKind.External -> Icons.Outlined.OpenInBrowser
-                SourceKind.Unsupported -> Icons.Outlined.CloudOff
-            },
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha),
-        )
-        Spacer(Modifier.width(16.dp))
+        // No leading icon. An addon returns one kind of source, so every row in a section
+        // carried the same glyph, which distinguishes nothing and only narrows the text.
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = source.label,
