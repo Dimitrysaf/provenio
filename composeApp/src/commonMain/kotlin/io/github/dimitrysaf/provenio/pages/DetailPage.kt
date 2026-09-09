@@ -23,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.Subject
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PlayArrow
@@ -35,7 +36,6 @@ import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Sell
 import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material.icons.outlined.Subject
 import androidx.compose.material.icons.outlined.Tv
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.PlayCircle
@@ -311,7 +311,7 @@ private fun RatingBlock(source: String, value: String?) {
 
 @Composable
 private fun Synopsis(meta: Meta) {
-    SectionCard(title = "Plot", icon = Icons.Outlined.Subject) {
+    SectionCard(title = "Plot", icon = Icons.AutoMirrored.Outlined.Subject) {
         Text(
             text = meta.description ?: "No description provided",
             style = MaterialTheme.typography.bodyMedium,

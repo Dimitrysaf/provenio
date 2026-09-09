@@ -33,6 +33,9 @@ import io.github.dimitrysaf.provenio.ui.components.SettingsTileSpacing
 import io.github.dimitrysaf.provenio.ui.components.TilePosition
 import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
 
+// LocalClipboard replaces this, but its API is suspend and takes a ClipEntry whose
+// multiplatform construction differs by version. Not worth the risk for one copy button.
+@Suppress("DEPRECATION")
 @Composable
 fun SimklContent() {
     val state by SimklRepository.authState.collectAsState()
