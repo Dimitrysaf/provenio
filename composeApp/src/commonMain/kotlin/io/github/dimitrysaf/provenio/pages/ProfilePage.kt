@@ -21,9 +21,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Bookmarks
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -51,6 +56,9 @@ import io.github.dimitrysaf.provenio.simkl.SimklAuthState
 import io.github.dimitrysaf.provenio.simkl.SimklImages
 import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.simkl.SimklSync
+import io.github.dimitrysaf.provenio.simkl.SyncState
+import io.github.dimitrysaf.provenio.simkl.SyncTrigger
+import io.github.dimitrysaf.provenio.simkl.currentTimeMillis
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.ui.components.AppTopBar
 import io.github.dimitrysaf.provenio.ui.components.PageScaffold
@@ -69,7 +77,9 @@ fun ProfilePage(
     val profile by SimklRepository.profile.collectAsState()
     val watching by SimklSync.watching.collectAsState()
     val planToWatch by SimklSync.planToWatch.collectAsState()
+    val syncState by SimklSync.state.collectAsState()
     val signedIn = authState is SimklAuthState.SignedIn
+    val libraryEmpty = watching.isEmpty() && planToWatch.isEmpty()
 
     val hasMetadata = collection.active.any { addon ->
         addon.manifest.resources.any { it.name == "meta" }
@@ -118,26 +128,19 @@ fun ProfilePage(
             return@PageScaffold
         }
 
-        Shelf(
-            title = "Continue watching",
-            items = watching,
-            emptyText = if (signedIn) {
-                "Nothing in progress."
-            } else {
-                "Sign in to Simkl to see what you are watching."
-            },
-            onOpenDetail = onOpenDetail,
-        )
-        Shelf(
-            title = "Plan to watch",
-            items = planToWatch,
-            emptyText = if (signedIn) {
-                "Nothing planned."
-            } else {
-                "Sign in to Simkl to see your watchlist."
-            },
-            onOpenDetail = onOpenDetail,
-        )
+        // Two shelves both saying "nothing" is a worse answer than one that explains why.
+        if (libraryEmpty) {
+            LibraryEmptyState(
+                signedIn = signedIn,
+                syncState = syncState,
+                onOpenSettings = onSettingsClick,
+                onRetry = { SimklSync.sync(SyncTrigger.Manual, currentTimeMillis()) },
+            )
+            return@PageScaffold
+        }
+
+        Shelf("Continue watching", watching, onOpenDetail)
+        Shelf("Plan to watch", planToWatch, onOpenDetail)
     }
 }
 
@@ -147,9 +150,10 @@ private fun SimklItem.stremioType(): String = if (mediaType == "movies") "movie"
 /**
  * Backdrop, avatar and name.
  *
- * The backdrop sits behind the identity rather than beside it, so the page opens on the
- * thing the user is actually watching. Without one it falls back to a tonal surface rather
- * than collapsing, which keeps the header the same height either way.
+ * With artwork the identity sits over it. Without, the header collapses to a compact row
+ * rather than reserving a 16:9 block for a picture that is not coming. Holding the height
+ * keeps the layout from shifting, but the cost is a large empty rectangle, and an empty
+ * rectangle is worse than a smaller header.
  */
 @Composable
 private fun AccountHeader(
@@ -158,22 +162,18 @@ private fun AccountHeader(
     backdropUrl: String?,
     signedIn: Boolean,
 ) {
-    Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
-        if (backdropUrl != null) {
-            AsyncImage(
-                model = backdropUrl,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-            )
-        }
+    if (backdropUrl == null) {
+        CompactHeader(name = name, avatarUrl = avatarUrl, signedIn = signedIn)
+        return
+    }
 
+    Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
+        AsyncImage(
+            model = backdropUrl,
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+        )
         // Scrim only where the text sits, so the artwork stays visible above it.
         Box(
             modifier = Modifier.fillMaxSize().background(
@@ -184,82 +184,98 @@ private fun AccountHeader(
                 ),
             ),
         )
+        Identity(
+            name = name,
+            avatarUrl = avatarUrl,
+            signedIn = signedIn,
+            onArtwork = true,
+            modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+        )
+    }
+}
 
-        Row(
+@Composable
+private fun CompactHeader(name: String?, avatarUrl: String?, signedIn: Boolean) {
+    Identity(
+        name = name,
+        avatarUrl = avatarUrl,
+        signedIn = signedIn,
+        onArtwork = false,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+}
+
+@Composable
+private fun Identity(
+    name: String?,
+    avatarUrl: String?,
+    signedIn: Boolean,
+    onArtwork: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        Box(
             modifier = Modifier
-                .align(Alignment.BottomStart)
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .size(56.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (avatarUrl != null) {
-                    AsyncImage(
-                        model = avatarUrl,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Outlined.Person,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(28.dp),
-                    )
-                }
-            }
-            Spacer(Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = name ?: if (signedIn) "Simkl" else "Not signed in",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = if (backdropUrl != null) Color.White else Color.Unspecified,
+            if (avatarUrl != null) {
+                AsyncImage(
+                    model = avatarUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
                 )
-                if (!signedIn) {
-                    Text(
-                        text = "Connect Simkl to sync your library",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (backdropUrl != null) {
-                            Color.White.copy(alpha = 0.8f)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
-                }
+            } else {
+                Icon(
+                    imageVector = Icons.Outlined.Person,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        Column {
+            Text(
+                text = name ?: if (signedIn) "Simkl" else "Not signed in",
+                style = MaterialTheme.typography.titleLarge,
+                color = if (onArtwork) Color.White else Color.Unspecified,
+            )
+            if (!signedIn) {
+                Text(
+                    text = "Connect Simkl to sync your library",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (onArtwork) {
+                        Color.White.copy(alpha = 0.8f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
             }
         }
     }
 }
 
+/**
+ * One shelf. Never rendered empty: a heading over nothing is noise, so the page shows a
+ * single explanation instead when the whole library is empty.
+ */
 @Composable
 private fun Shelf(
     title: String,
     items: List<SimklItem>,
-    emptyText: String,
     onOpenDetail: (type: String, id: String) -> Unit,
 ) {
+    if (items.isEmpty()) return
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
-        if (items.isEmpty()) {
-            Text(
-                text = emptyText,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
-            return
-        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -314,6 +330,87 @@ private fun LibraryCard(item: SimklItem, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+    }
+}
+
+/**
+ * Says why the shelves are empty.
+ *
+ * A failed sync and a genuinely empty library produced the same blank screen before this,
+ * which made a broken sync indistinguishable from having watched nothing.
+ */
+@Composable
+private fun LibraryEmptyState(
+    signedIn: Boolean,
+    syncState: SyncState,
+    onOpenSettings: () -> Unit,
+    onRetry: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        when {
+            !signedIn -> {
+                Icon(
+                    imageVector = Icons.Outlined.CloudSync,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text("Your library lives on Simkl", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "Sign in to bring what you are watching and planning to watch " +
+                        "into Provenio.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+                Button(onClick = onOpenSettings) { Text("Sign in to Simkl") }
+            }
+            syncState is SyncState.Running -> {
+                CircularProgressIndicator()
+                Text(
+                    text = "Syncing your library",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            syncState is SyncState.Failed -> {
+                Icon(
+                    imageVector = Icons.Outlined.CloudOff,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.error,
+                )
+                Text("Sync did not finish", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = syncState.message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+                Button(onClick = onRetry) { Text("Try again") }
+            }
+            else -> {
+                Icon(
+                    imageVector = Icons.Outlined.Bookmarks,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text("Nothing tracked yet", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "Anything you mark as watching or plan to watch on Simkl shows " +
+                        "up here.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+                Button(onClick = onRetry) { Text("Refresh") }
+            }
         }
     }
 }
