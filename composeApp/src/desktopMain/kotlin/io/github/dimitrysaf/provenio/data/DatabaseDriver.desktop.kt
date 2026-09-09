@@ -17,6 +17,15 @@ actual fun createDatabaseDriver(): SqlDriver {
     val driver = JdbcSqliteDriver("jdbc:sqlite:${file.absolutePath}")
     if (isNew) {
         ProvenioDatabase.Schema.create(driver)
+    } else {
+        // The Android driver tracks the schema version itself; this one does not. Every
+        // migration statement is IF NOT EXISTS, so replaying them all on each open is
+        // idempotent and avoids hand rolling version bookkeeping here.
+        ProvenioDatabase.Schema.migrate(
+            driver = driver,
+            oldVersion = 1L,
+            newVersion = ProvenioDatabase.Schema.version,
+        )
     }
     return driver
 }

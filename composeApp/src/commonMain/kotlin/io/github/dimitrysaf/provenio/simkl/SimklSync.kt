@@ -56,6 +56,17 @@ object SimklSync {
     private var loaded = false
     private var job: Job? = null
 
+    /**
+     * Runs a database call, returning null if it fails.
+     *
+     * Storage is a cache here. Losing it should cost the user their shelves until the next
+     * sync, never the app.
+     */
+    private fun <T> withStore(block: (SimklLibraryStore) -> T): T? {
+        val current = store ?: return null
+        return runCatching { block(current) }.getOrNull()
+    }
+
     fun load() {
         if (loaded) return
         loaded = true
@@ -67,7 +78,7 @@ object SimklSync {
         val token = SimklRepository.accessToken ?: return
         if (job?.isActive == true) return
 
-        val checkpoint = store?.checkpoint() ?: return
+        val checkpoint = withStore { it.checkpoint() } ?: return
         // Rapid app switching must not turn into a request per switch.
         if (trigger == SyncTrigger.Startup &&
             nowMillis - checkpoint.lastSyncedAtMillis < ThrottleMillis
@@ -90,7 +101,7 @@ object SimklSync {
         val latest = activities.all
         // Nothing moved. This is the branch that keeps the daily quota near idle.
         if (latest != null && latest == checkpoint.activitiesAll && checkpoint.initialSyncDone) {
-            store?.saveCheckpoint(checkpoint.copy(lastSyncedAtMillis = nowMillis))
+            withStore { it.saveCheckpoint(checkpoint.copy(lastSyncedAtMillis = nowMillis)) }
             _state.value = SyncState.Idle
             return
         }
@@ -107,13 +118,15 @@ object SimklSync {
             return
         }
 
-        store?.saveCheckpoint(
-            SyncCheckpoint(
-                activitiesAll = latest,
-                lastSyncedAtMillis = nowMillis,
-                initialSyncDone = true,
-            ),
-        )
+        withStore {
+            it.saveCheckpoint(
+                SyncCheckpoint(
+                    activitiesAll = latest,
+                    lastSyncedAtMillis = nowMillis,
+                    initialSyncDone = true,
+                ),
+            )
+        }
         publish()
         _state.value = SyncState.Idle
     }
@@ -123,7 +136,7 @@ object SimklSync {
         var any = false
         for (type in InitialLibraries) {
             val page = client.library(token, type) ?: continue
-            store?.apply(page.all()) { entry -> mediaTypeFor(type, entry) }
+            withStore { it.apply(page.all()) { entry -> mediaTypeFor(type, entry) } }
             any = true
         }
         return any
@@ -132,9 +145,9 @@ object SimklSync {
     /** Phase 2. One request, delta only, timestamp passed back untouched. */
     private suspend fun deltaSync(token: String, dateFrom: String): Boolean {
         val page = client.changesSince(token, dateFrom) ?: return false
-        store?.apply(page.shows) { "shows" }
-        store?.apply(page.movies) { "movies" }
-        store?.apply(page.anime) { "anime" }
+        withStore { it.apply(page.shows) { "shows" } }
+        withStore { it.apply(page.movies) { "movies" } }
+        withStore { it.apply(page.anime) { "anime" } }
         return true
     }
 
@@ -146,19 +159,14 @@ object SimklSync {
         }
 
     private fun publish() {
-        val current = store ?: return
-        _watching.value = runCatching {
-            current.itemsWithStatus(SimklStatus.Watching)
-        }.getOrDefault(emptyList())
-        _planToWatch.value = runCatching {
-            current.itemsWithStatus(SimklStatus.PlanToWatch)
-        }.getOrDefault(emptyList())
+        _watching.value = withStore { it.itemsWithStatus(SimklStatus.Watching) }.orEmpty()
+        _planToWatch.value = withStore { it.itemsWithStatus(SimklStatus.PlanToWatch) }.orEmpty()
     }
 
     fun clear() {
         job?.cancel()
-        store?.let { runCatching { it.clear() } }
-        store?.saveCheckpoint(SyncCheckpoint(null, 0L, false))
+        withStore { it.clear() }
+        withStore { it.saveCheckpoint(SyncCheckpoint(null, 0L, false)) }
         publish()
         _state.value = SyncState.Idle
     }

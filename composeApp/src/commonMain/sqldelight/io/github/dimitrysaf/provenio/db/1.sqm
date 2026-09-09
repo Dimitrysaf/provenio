@@ -1,0 +1,58 @@
+-- Brings databases created before migrations existed up to the current schema.
+--
+-- Every table added after the first release shipped without a migration, so an installed
+-- database still only has whatever existed the day it was created. Each statement is
+-- IF NOT EXISTS so this is safe to run against a database at any point in that history.
+CREATE TABLE IF NOT EXISTS installedAddon (
+    id TEXT NOT NULL PRIMARY KEY,
+    transportUrl TEXT NOT NULL,
+    manifestJson TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    sortIndex INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS p2pSettings (
+    id INTEGER NOT NULL PRIMARY KEY,
+    enabled INTEGER NOT NULL DEFAULT 0,
+    consentAccepted INTEGER NOT NULL DEFAULT 0,
+    uploadEnabled INTEGER NOT NULL DEFAULT 0,
+    profile TEXT NOT NULL DEFAULT 'Balanced',
+    cacheSize TEXT NOT NULL DEFAULT 'Gb2',
+    listenPort INTEGER NOT NULL DEFAULT 0,
+    hideStats INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS playerSettings (
+    id INTEGER NOT NULL PRIMARY KEY,
+    backend TEXT NOT NULL DEFAULT 'Builtin'
+);
+
+CREATE TABLE IF NOT EXISTS searchHistory (
+    query TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS simklAuth (
+    id INTEGER NOT NULL PRIMARY KEY,
+    accessToken TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS simklSync (
+    id INTEGER NOT NULL PRIMARY KEY,
+    activitiesAll TEXT,
+    lastSyncedAtMillis INTEGER NOT NULL DEFAULT 0,
+    initialSyncDone INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS simklItem (
+    simklId INTEGER NOT NULL PRIMARY KEY,
+    mediaType TEXT NOT NULL,
+    status TEXT NOT NULL,
+    title TEXT NOT NULL,
+    year INTEGER,
+    poster TEXT,
+    imdbId TEXT,
+    watchedEpisodes INTEGER NOT NULL DEFAULT 0,
+    totalEpisodes INTEGER NOT NULL DEFAULT 0,
+    lastWatchedAt TEXT,
+    nextToWatch TEXT
+);
