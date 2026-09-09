@@ -19,12 +19,25 @@ import kotlinx.serialization.json.Json
 class SimklClient(
     private val httpClient: HttpClient = defaultSimklHttpClient(),
 ) {
+    /**
+     * Why the last request failed.
+     *
+     * Both endpoints answer correctly from a plain HTTP client, so any failure here is
+     * something about the request as the app makes it. Carrying the reason to the screen
+     * beats guessing at it.
+     */
+    var lastFailure: String? = null
+        private set
+
     suspend fun requestPin(): SimklPin? =
         getJson<SimklPin>(endpoint("/oauth/pin"))?.takeIf { it.userCode != null }
 
+    /** The reason [requestPin] returned null, when it did. */
+    fun lastRequestFailure(): String? = lastFailure
+
     suspend fun pollPin(userCode: String): PinStatus {
         val reply = getJson<SimklPinPoll>(endpoint("/oauth/pin/$userCode"))
-            ?: return PinStatus.Failed("Could not reach Simkl.")
+            ?: return PinStatus.Failed(lastFailure ?: "Could not reach Simkl.")
         val token = reply.accessToken
         return when {
             token != null -> PinStatus.Authorized(token)
@@ -56,6 +69,7 @@ class SimklClient(
         url: String,
         accessToken: String? = null,
     ): T? {
+        lastFailure = null
         val text = try {
             val response = httpClient.get(url) {
                 header(HttpHeaders.UserAgent, SimklConfig.userAgent)
@@ -65,11 +79,15 @@ class SimklClient(
             }
             // A pending PIN is answered with a non-2xx by some deployments, so the body is
             // still worth reading before giving up on it.
-            if (!response.status.isSuccess() && response.status.value >= 500) return null
+            if (!response.status.isSuccess() && response.status.value >= 500) {
+                lastFailure = "Simkl answered ${response.status.value}."
+                return null
+            }
             response.bodyAsText()
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (failure: Exception) {
+            lastFailure = failure::class.simpleName + ": " + (failure.message ?: "no detail")
             return null
         }
 
@@ -78,6 +96,7 @@ class SimklClient(
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (failure: Exception) {
+            lastFailure = "Unreadable reply: " + text.take(120)
             null
         }
     }

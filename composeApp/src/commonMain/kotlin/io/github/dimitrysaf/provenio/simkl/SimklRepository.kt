@@ -55,7 +55,9 @@ object SimklRepository {
             val pin = client.requestPin()
             val code = pin?.userCode
             if (pin == null || code == null) {
-                _authState.value = SimklAuthState.Error("Simkl did not issue a code.")
+                _authState.value = SimklAuthState.Error(
+                    client.lastRequestFailure() ?: "Simkl did not issue a code.",
+                )
                 return@launch
             }
 
