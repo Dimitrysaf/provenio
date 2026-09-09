@@ -50,24 +50,38 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
+import io.github.dimitrysaf.provenio.simkl.SimklScrobbler
 import kotlinx.coroutines.delay
 
 @Composable
 actual fun PlayerScreen(
     url: String,
+    scrobbleTarget: ScrobbleTarget?,
     onBack: () -> Unit,
     modifier: Modifier,
 ) {
     val backend by PlayerRepository.backend.collectAsState()
 
     when (backend) {
-        PlayerBackend.Builtin -> BuiltinPlayer(url = url, onBack = onBack, modifier = modifier)
+        // Scrobbling is dropped for the external backend: once the URL is handed off,
+        // this app never sees another playback event to report progress from.
+        PlayerBackend.Builtin -> BuiltinPlayer(
+            url = url,
+            scrobbleTarget = scrobbleTarget,
+            onBack = onBack,
+            modifier = modifier,
+        )
         PlayerBackend.External -> ExternalPlayer(url = url, onBack = onBack)
     }
 }
 
 @Composable
-private fun BuiltinPlayer(url: String, onBack: () -> Unit, modifier: Modifier) {
+private fun BuiltinPlayer(
+    url: String,
+    scrobbleTarget: ScrobbleTarget?,
+    onBack: () -> Unit,
+    modifier: Modifier,
+) {
     val context = LocalContext.current
     val player = remember {
         // The default renderers only reach the device's own decoders, which on most
@@ -104,6 +118,64 @@ private fun BuiltinPlayer(url: String, onBack: () -> Unit, modifier: Modifier) {
             },
         )
         PlayerControls(player = player, onBack = onBack)
+        if (scrobbleTarget != null) {
+            ScrobbleReporter(player = player, target = scrobbleTarget)
+        }
+    }
+}
+
+/**
+ * Reports this playback's lifecycle to Simkl: `start` when it begins or resumes, `pause`
+ * whenever the user pauses, and `stop` when this screen goes away — each carrying the
+ * current position as a percentage of the media's duration. Draws nothing; this is a pure
+ * side effect riding on the player's own listener rather than a second poll loop.
+ *
+ * Also seeks once to [ScrobbleTarget.resumeProgressPercent], the first time the player
+ * reports a real duration — before that, a percentage cannot be turned into a position.
+ */
+@Composable
+private fun ScrobbleReporter(player: ExoPlayer, target: ScrobbleTarget) {
+    DisposableEffect(player, target) {
+        var seeked = false
+        var hasStarted = false
+
+        fun progressPercent(): Float {
+            val duration = player.duration
+            if (duration <= 0) return 0f
+            return (player.currentPosition.toFloat() / duration.toFloat() * 100f)
+                .coerceIn(0f, 100f)
+        }
+
+        val listener = object : Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                if (state != Player.STATE_READY || seeked) return
+                seeked = true
+                val resumePercent = target.resumeProgressPercent
+                val duration = player.duration
+                if (resumePercent != null && resumePercent > 0f && duration > 0) {
+                    player.seekTo((duration * (resumePercent / 100f)).toLong())
+                }
+            }
+
+            override fun onIsPlayingChanged(playing: Boolean) {
+                if (playing) {
+                    hasStarted = true
+                    SimklScrobbler.start(target, progressPercent())
+                } else if (hasStarted) {
+                    // Only a real pause counts, not the initial false the player reports
+                    // before it has ever played anything.
+                    SimklScrobbler.pause(target, progressPercent())
+                }
+            }
+        }
+        player.addListener(listener)
+
+        onDispose {
+            player.removeListener(listener)
+            if (hasStarted) {
+                SimklScrobbler.stop(target, progressPercent())
+            }
+        }
     }
 }
 

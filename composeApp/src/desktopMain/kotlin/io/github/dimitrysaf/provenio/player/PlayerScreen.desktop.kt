@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 @Composable
 actual fun PlayerScreen(
     url: String,
+    scrobbleTarget: ScrobbleTarget?,
     onBack: () -> Unit,
     modifier: Modifier,
 ) {

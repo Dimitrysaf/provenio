@@ -36,6 +36,7 @@ import io.github.dimitrysaf.provenio.navigation.SearchFilter
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.PlayerScreen
+import io.github.dimitrysaf.provenio.player.ScrobbleTarget
 import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
@@ -137,8 +138,18 @@ fun App() {
             // on a Surface always clips, which a SurfaceView cannot survive. The player
             // paints its own black background instead.
             composable<PlayerRoute> { entry ->
+                val route = entry.toRoute<PlayerRoute>()
                 PlayerScreen(
-                    url = entry.toRoute<PlayerRoute>().url,
+                    url = route.url,
+                    scrobbleTarget = route.imdbId?.let { imdbId ->
+                        ScrobbleTarget(
+                            mediaType = route.mediaType ?: "movie",
+                            imdbId = imdbId,
+                            season = route.season,
+                            episode = route.episode,
+                            resumeProgressPercent = route.resumeProgressPercent,
+                        )
+                    },
                     onBack = { navController.popBackStack() },
                 )
             }
@@ -159,7 +170,18 @@ fun App() {
                         type = route.type,
                         id = route.id,
                         onBack = { navController.popBackStack() },
-                        onPlay = { url -> navController.navigate(PlayerRoute(url)) },
+                        onPlay = { request ->
+                            navController.navigate(
+                                PlayerRoute(
+                                    url = request.url,
+                                    mediaType = request.type,
+                                    imdbId = request.imdbId,
+                                    season = request.season,
+                                    episode = request.episode,
+                                    resumeProgressPercent = request.resumeProgressPercent,
+                                ),
+                            )
+                        },
                     )
                 }
             }

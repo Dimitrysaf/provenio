@@ -98,6 +98,29 @@ class SimklClient(
         )
 
     /**
+     * Reports real-time playback progress. Distinct from [addToHistory]: `/scrobble/stop`
+     * at 80% or more marks the item watched itself, while anything below that is saved as
+     * a resumable paused session rather than a watchlist entry.
+     */
+    suspend fun scrobbleStart(token: String, request: SimklScrobbleRequest): SimklScrobbleResponse? =
+        postForResult(endpoint("/scrobble/start"), token, request)
+
+    /** Call when the user pauses, to save the current position without marking watched. */
+    suspend fun scrobblePause(token: String, request: SimklScrobbleRequest): SimklScrobbleResponse? =
+        postForResult(endpoint("/scrobble/pause"), token, request)
+
+    /** Call when playback ends, wherever it ended — see [scrobbleStart]'s 80% split. */
+    suspend fun scrobbleStop(token: String, request: SimklScrobbleRequest): SimklScrobbleResponse? =
+        postForResult(endpoint("/scrobble/stop"), token, request)
+
+    /**
+     * Saved, resumable pause points — not watchlist records — for every [type] the user
+     * has one for. `type` is `movies` or `episodes`; Simkl has no combined listing.
+     */
+    suspend fun playbackSessions(token: String, type: String): List<SimklPlaybackSession>? =
+        getJson(endpoint("/sync/playback/$type"), token)
+
+    /**
      * client_id, app-name and app-version go on every request as query parameters, which
      * is unusual but is what Simkl requires.
      */
@@ -172,6 +195,41 @@ class SimklClient(
         } catch (failure: Exception) {
             lastFailure = failure::class.simpleName
             false
+        }
+    }
+
+    /** A write call whose response the caller does need decoded, unlike [postAndCheck]. */
+    private suspend inline fun <reified TRequest, reified TResponse> postForResult(
+        url: String,
+        accessToken: String,
+        request: TRequest,
+    ): TResponse? {
+        lastFailure = null
+        val text = try {
+            val response = httpClient.post(url) {
+                header(HttpHeaders.UserAgent, SimklConfig.userAgent)
+                header(HttpHeaders.Authorization, "Bearer $accessToken")
+                contentType(ContentType.Application.Json)
+                setBody(simklJson.encodeToString(request))
+            }
+            if (!response.status.isSuccess()) {
+                lastFailure = "Simkl answered ${response.status.value}."
+                return null
+            }
+            response.bodyAsText()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (failure: Exception) {
+            lastFailure = failure::class.simpleName
+            return null
+        }
+        return try {
+            simklJson.decodeFromString<TResponse>(text)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (failure: Exception) {
+            lastFailure = "Unreadable reply: " + text.take(120)
+            null
         }
     }
 

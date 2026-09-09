@@ -72,6 +72,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.db.SimklItem
+import io.github.dimitrysaf.provenio.simkl.SimklPlaybackRepository
+import io.github.dimitrysaf.provenio.simkl.SimklPlaybackSession
 import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.simkl.SyncState
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
@@ -96,12 +98,12 @@ fun DetailPage(
     id: String,
     modifier: Modifier = Modifier,
     onBack: () -> Unit,
-    onPlay: (String) -> Unit,
+    onPlay: (PlaybackRequest) -> Unit,
 ) {
     var meta by remember { mutableStateOf<Meta?>(null) }
     var loading by remember { mutableStateOf(true) }
     // Which title the sources sheet is open for, or null when it is closed.
-    var sourcesFor by remember { mutableStateOf<String?>(null) }
+    var sourcesFor by remember { mutableStateOf<SourcesTarget?>(null) }
 
     LaunchedEffect(type, id) {
         loading = true
@@ -119,7 +121,9 @@ fun DetailPage(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.Center).padding(32.dp),
             )
-            else -> MetaContent(current) { sourcesFor = it }
+            else -> MetaContent(current) { videoId, resumeProgress ->
+                sourcesFor = SourcesTarget(videoId, resumeProgress)
+            }
         }
 
         TopAppBar(
@@ -137,19 +141,47 @@ fun DetailPage(
     if (openFor != null) {
         SourcesSheet(
             type = type,
-            id = openFor,
+            id = openFor.videoId,
             title = meta?.name,
             onDismiss = { sourcesFor = null },
             onPlay = { source ->
                 sourcesFor = null
-                source.playableUrl?.let(onPlay)
+                val url = source.playableUrl ?: return@SourcesSheet
+                val currentMeta = meta
+                val video = currentMeta?.videos?.firstOrNull { it.id == openFor.videoId }
+                onPlay(
+                    PlaybackRequest(
+                        url = url,
+                        type = currentMeta?.type ?: type,
+                        imdbId = currentMeta?.id ?: id,
+                        season = video?.season,
+                        episode = video?.episode,
+                        resumeProgressPercent = openFor.resumeProgressPercent,
+                    ),
+                )
             },
         )
     }
 }
 
+/** Which video the sources sheet is open for, and the resume point "Watch now" picked. */
+private data class SourcesTarget(val videoId: String, val resumeProgressPercent: Float? = null)
+
+/**
+ * Everything [DetailPage] hands off to the player: the resolved stream, and — only when
+ * [imdbId] identifies a title Simkl can match — enough to report playback progress there.
+ */
+data class PlaybackRequest(
+    val url: String,
+    val type: String,
+    val imdbId: String,
+    val season: Int? = null,
+    val episode: Int? = null,
+    val resumeProgressPercent: Float? = null,
+)
+
 @Composable
-private fun MetaContent(meta: Meta, onChooseSource: (String) -> Unit) {
+private fun MetaContent(meta: Meta, onChooseSource: (String, Float?) -> Unit) {
     val openUrl = rememberUrlOpener()
     // Specials last. They routinely spoil the run they belong to, so leading with them is
     // the wrong default even though their season number sorts first.
@@ -167,6 +199,14 @@ private fun MetaContent(meta: Meta, onChooseSource: (String) -> Unit) {
         if (syncState == SyncState.Idle) {
             simklItem = SimklSync.progressFor(meta.id)
         }
+    }
+
+    // A live look-up rather than anything synced: Simkl's paused-playback sessions are
+    // meant to be read fresh, not cached, since they change the moment the user resumes
+    // or finishes watching from any of Simkl's other connected apps.
+    var resumeSession by remember(meta.id) { mutableStateOf<SimklPlaybackSession?>(null) }
+    LaunchedEffect(meta.id) {
+        resumeSession = SimklPlaybackRepository.sessionFor(meta.id)
     }
 
     // Simkl's own per-episode watched list for this show, synced via extended=full (see
@@ -191,12 +231,18 @@ private fun MetaContent(meta: Meta, onChooseSource: (String) -> Unit) {
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item { Header(meta) }
-        item { WatchAction(meta, simklWatchedEpisodes, onChooseSource) }
+        item { WatchAction(meta, simklWatchedEpisodes, resumeSession, onChooseSource) }
         item { WatchProgress(meta, simklItem, watchedIds) }
         item { Ratings(meta) }
         item { Synopsis(meta) }
 
-        seasonSection(seasons, expanded, watchedIds, onChooseSource, onToggleWatched)
+        seasonSection(
+            seasons = seasons,
+            expanded = expanded,
+            watchedIds = watchedIds,
+            onChooseSource = { videoId -> onChooseSource(videoId, null) },
+            onToggleWatched = onToggleWatched,
+        )
         castAndCrew(meta)
         tagsAndThemes(meta)
         commentsSection()
@@ -288,18 +334,33 @@ private fun Header(meta: Meta) {
 }
 
 /**
- * The primary action. Resumes at the first regular episode Simkl has not recorded as
- * watched, when it has watched-episode data for this title; otherwise opens the first
- * episode of the first regular season, never a special.
+ * The primary action. Prefers resuming Simkl's saved playback position, when it has one
+ * for an episode this title actually lists; otherwise the first regular episode Simkl has
+ * not recorded as watched, when it has watched-episode data for this title; otherwise the
+ * first episode of the first regular season, never a special.
  */
 @Composable
 private fun WatchAction(
     meta: Meta,
     simklWatchedEpisodes: Set<Pair<Int, Int>>,
-    onChooseSource: (String) -> Unit,
+    resumeSession: SimklPlaybackSession?,
+    onChooseSource: (String, Float?) -> Unit,
 ) {
-    val next = meta.firstUnwatchedEpisode(simklWatchedEpisodes) ?: meta.firstRegularEpisode()
+    // Only trusted once matched back to a video this title actually lists — a season and
+    // episode number alone say nothing about whether the addon agrees they exist.
+    val resumeEpisode = resumeSession?.episode?.let { ep ->
+        meta.videos.firstOrNull { it.season == ep.season && it.episode == ep.number }
+    }
+    val isMovieResume = resumeSession != null && resumeSession.episode == null
+    val resumeProgress = resumeSession?.progress?.takeIf { resumeEpisode != null || isMovieResume }
+
+    val next = resumeEpisode
+        ?: meta.firstUnwatchedEpisode(simklWatchedEpisodes)
+        ?: meta.firstRegularEpisode()
     val label = when {
+        resumeProgress != null && next?.season != null && next.episode != null ->
+            "Resume S${pad(next.season)}E${pad(next.episode)} now"
+        resumeProgress != null -> "Resume now"
         next?.season != null && next.episode != null ->
             "Watch S${pad(next.season)}E${pad(next.episode)} now"
         meta.videos.isNotEmpty() -> "Watch first episode now"
@@ -311,7 +372,7 @@ private fun WatchAction(
     val playId = next?.id ?: meta.id
 
     Button(
-        onClick = { onChooseSource(playId) },
+        onClick = { onChooseSource(playId, resumeProgress) },
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
     ) {
         Icon(Icons.Filled.PlayArrow, contentDescription = null)
