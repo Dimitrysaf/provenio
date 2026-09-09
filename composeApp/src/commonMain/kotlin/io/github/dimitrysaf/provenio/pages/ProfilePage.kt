@@ -58,7 +58,7 @@ import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.simkl.SyncState
 import io.github.dimitrysaf.provenio.simkl.SyncTrigger
-import io.github.dimitrysaf.provenio.simkl.currentTimeMillis
+import io.github.dimitrysaf.provenio.util.currentTimeMillis
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.ui.components.AppTopBar
 import io.github.dimitrysaf.provenio.ui.components.PageScaffold

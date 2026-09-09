@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.stremio
 
 import io.github.dimitrysaf.provenio.data.AddonStore
 import io.github.dimitrysaf.provenio.data.createDatabaseDriver
+import io.github.dimitrysaf.provenio.util.currentTimeMillis
 import io.github.dimitrysaf.provenio.stremio.model.Manifest
 import io.github.dimitrysaf.provenio.stremio.model.ManifestCatalog
 import io.github.dimitrysaf.provenio.stremio.model.Meta
@@ -18,6 +19,9 @@ import kotlinx.coroutines.flow.asStateFlow
  * worth less than losing the ability to add an addon at all.
  */
 object AddonRepository {
+
+    /** How long a fetched source list stays usable before the addons are asked again. */
+    private const val SourceCacheMillis = 10L * 60L * 1000L
 
     private val client = StremioAddonClient()
 
@@ -113,6 +117,30 @@ object AddonRepository {
         ).getOrNull()?.metas
     }
 
+    /**
+     * Sources already fetched for a title, while they are still fresh.
+     *
+     * Stream lists change slowly compared to how often a user reopens a title, and every
+     * lookup is a request to every installed addon at once. Reopening the same title
+     * repeatedly should not repeat that.
+     */
+    fun cachedSources(type: String, id: String): List<SourceOption>? {
+        val entry = sourceCache["$type:$id"] ?: return null
+        if (currentTimeMillis() - entry.atMillis > SourceCacheMillis) {
+            sourceCache.remove("$type:$id")
+            return null
+        }
+        return entry.sources
+    }
+
+    fun cacheSources(type: String, id: String, sources: List<SourceOption>) {
+        sourceCache["$type:$id"] = CachedSources(currentTimeMillis(), sources)
+    }
+
+    fun forgetSources(type: String, id: String) {
+        sourceCache.remove("$type:$id")
+    }
+
     /** Addons that can answer for this title, so the caller can fetch them as it likes. */
     fun streamProviders(type: String, id: String): List<InstalledAddon> =
         _collection.value.streamProviders(type, id)
@@ -139,6 +167,10 @@ object AddonRepository {
         commit(_collection.value.setEnabled(addonId, enabled))
 
     fun move(addonId: String, delta: Int) = commit(_collection.value.move(addonId, delta))
+
+    private data class CachedSources(val atMillis: Long, val sources: List<SourceOption>)
+
+    private val sourceCache = mutableMapOf<String, CachedSources>()
 
     private fun commit(collection: AddonCollection) {
         _collection.value = collection

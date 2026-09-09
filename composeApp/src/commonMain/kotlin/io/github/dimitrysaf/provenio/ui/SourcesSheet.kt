@@ -16,19 +16,23 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -74,7 +78,13 @@ fun SourcesSheet(
     onDismiss: () -> Unit,
     onPlay: (SourceOption) -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    // Refusing the Hidden value stops a downward drag from dismissing the sheet, which
+    // otherwise competes with scrolling the list inside it. The scrim and the back gesture
+    // still call onDismissRequest, so there is always a way out.
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { it != SheetValue.Hidden },
+    )
     val groups = remember { mutableStateListOf<AddonSources>() }
     val collapsed = remember { mutableStateMapOf<String, Boolean>() }
 
@@ -84,14 +94,35 @@ fun SourcesSheet(
     var resolving by remember { mutableStateOf(false) }
     var failure by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(type, id) {
+    var reloads by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(type, id, reloads) {
         groups.clear()
         val providers = AddonRepository.streamProviders(type, id)
+
+        val cached = AddonRepository.cachedSources(type, id)
+        if (cached != null) {
+            providers.forEach { addon ->
+                groups.add(
+                    AddonSources(
+                        addon = addon,
+                        loading = false,
+                        sources = cached.filter { it.addon.manifest.id == addon.manifest.id },
+                    ),
+                )
+            }
+            return@LaunchedEffect
+        }
+
         providers.forEach { groups.add(AddonSources(it, loading = true, sources = emptyList())) }
         providers.forEachIndexed { index, addon ->
             launch {
                 val found = AddonRepository.streamsFrom(addon, type, id)
                 groups[index] = AddonSources(addon, loading = false, sources = found)
+                // Cached once every addon has answered, so a partial set is never stored.
+                if (groups.none { it.loading }) {
+                    AddonRepository.cacheSources(type, id, groups.flatMap { it.sources })
+                }
             }
         }
     }
@@ -138,32 +169,32 @@ fun SourcesSheet(
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-            Text(
-                text = "Sources",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 4.dp),
-            )
-            if (title != null) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 24.dp),
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = "Sources", style = MaterialTheme.typography.titleLarge)
+                    if (title != null) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                IconButton(
+                    enabled = stillLoading.isEmpty(),
+                    onClick = {
+                        AddonRepository.forgetSources(type, id)
+                        failure = null
+                        reloads += 1
+                    },
+                ) {
+                    Icon(Icons.Outlined.Refresh, contentDescription = "Refresh sources")
+                }
             }
-
-            // Naming who is still being waited on beats an anonymous bar, because a slow
-            // addon is the usual reason the list looks short.
-            if (stillLoading.isNotEmpty()) {
-                Text(
-                    text = "Loading " + stillLoading.joinToString(", ") { it.addon.manifest.name },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp),
-                )
-                Spacer(Modifier.height(8.dp))
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            }
+            Spacer(Modifier.height(8.dp))
 
             val message = failure
             if (message != null) {

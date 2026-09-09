@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.simkl
 
+import io.github.dimitrysaf.provenio.util.currentTimeMillis
 import io.github.dimitrysaf.provenio.data.SimklStore
 import io.github.dimitrysaf.provenio.data.SimklUserStore
 import io.github.dimitrysaf.provenio.data.createDatabaseDriver
