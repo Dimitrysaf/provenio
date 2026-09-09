@@ -49,6 +49,7 @@ fun SimklContent() {
             code = current.userCode,
             page = current.verificationPage,
             secondsRemaining = current.secondsRemaining,
+            note = current.note,
             onOpen = { openUrl(current.verificationPage) },
             onCopy = { clipboard.setText(AnnotatedString(current.userCode)) },
         )
@@ -84,6 +85,7 @@ private fun AwaitingUser(
     code: String,
     page: String,
     secondsRemaining: Int,
+    note: String?,
     onOpen: () -> Unit,
     onCopy: () -> Unit,
 ) {
@@ -113,8 +115,24 @@ private fun AwaitingUser(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (note != null) {
+            Text(
+                text = note,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+            )
+        }
         Button(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
             Text("Open Simkl")
+        }
+        // The moment the user returns from the browser is both when they are most likely
+        // authorised and when background network restrictions lift.
+        OutlinedButton(
+            onClick = { SimklRepository.checkNow() },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("I entered the code")
         }
         TextButton(onClick = { SimklRepository.cancelSignIn() }) { Text("Cancel") }
     }

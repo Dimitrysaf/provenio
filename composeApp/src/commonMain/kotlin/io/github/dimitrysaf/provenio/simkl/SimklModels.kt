@@ -25,11 +25,18 @@ data class SimklPinPoll(
     @SerialName("access_token") val accessToken: String? = null,
 )
 
-/** One step of the sign in poll. */
+/**
+ * One step of the sign in poll.
+ *
+ * [Unreachable] is deliberately separate from [Rejected]. Sending the user to a browser
+ * backgrounds the app, and Android restricts background network, so failing to ask is a
+ * normal event during sign in and must not end it. Only Simkl actually refusing does.
+ */
 sealed interface PinStatus {
     data object Pending : PinStatus
     data class Authorized(val accessToken: String) : PinStatus
-    data class Failed(val message: String?) : PinStatus
+    data class Rejected(val message: String?) : PinStatus
+    data class Unreachable(val reason: String?) : PinStatus
 }
 
 /** What the Simkl settings screen is doing right now. */
@@ -40,6 +47,8 @@ sealed interface SimklAuthState {
         val userCode: String,
         val verificationPage: String,
         val secondsRemaining: Int,
+        /** Set while polls are failing, so the screen can say so without giving up. */
+        val note: String? = null,
     ) : SimklAuthState
     data object SignedIn : SimklAuthState
     data class Error(val message: String) : SimklAuthState

@@ -37,7 +37,7 @@ class SimklClient(
 
     suspend fun pollPin(userCode: String): PinStatus {
         val reply = getJson<SimklPinPoll>(endpoint("/oauth/pin/$userCode"))
-            ?: return PinStatus.Failed(lastFailure ?: "Could not reach Simkl.")
+            ?: return PinStatus.Unreachable(lastFailure)
         val token = reply.accessToken
         return when {
             token != null -> PinStatus.Authorized(token)
@@ -45,7 +45,7 @@ class SimklClient(
             // message. Anything else with no token is a real failure.
             reply.message?.contains("pending", ignoreCase = true) == true -> PinStatus.Pending
             reply.result.equals("KO", ignoreCase = true) -> PinStatus.Pending
-            else -> PinStatus.Failed(reply.message)
+            else -> PinStatus.Rejected(reply.message)
         }
     }
 

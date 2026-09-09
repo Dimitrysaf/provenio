@@ -79,12 +79,21 @@ object SimklRepository {
                         completeSignIn(status.accessToken)
                         return@launch
                     }
-                    is PinStatus.Failed -> {
+                    // Simkl said no. Nothing to wait for.
+                    is PinStatus.Rejected -> {
                         _authState.value = SimklAuthState.Error(
                             status.message ?: "Simkl refused the code.",
                         )
                         return@launch
                     }
+                    // Could not ask. Expected while the browser is in front, so keep the
+                    // code alive and try again on the next tick.
+                    is PinStatus.Unreachable -> _authState.value = SimklAuthState.AwaitingUser(
+                        userCode = code,
+                        verificationPage = pin.verificationPage,
+                        secondsRemaining = remaining.coerceAtLeast(0),
+                        note = "Waiting for a connection, still trying.",
+                    )
                     PinStatus.Pending -> _authState.value = SimklAuthState.AwaitingUser(
                         userCode = code,
                         verificationPage = pin.verificationPage,
@@ -95,6 +104,26 @@ object SimklRepository {
 
             if (isActive) {
                 _authState.value = SimklAuthState.Error("The code expired. Try again.")
+            }
+        }
+    }
+
+    /**
+     * Polls immediately instead of waiting for the next tick.
+     *
+     * Used when the user comes back from the browser, which is both the moment they are
+     * most likely to be authorised and the moment network restrictions lift.
+     */
+    fun checkNow() {
+        val current = _authState.value
+        if (current !is SimklAuthState.AwaitingUser) return
+        scope.launch {
+            when (val status = client.pollPin(current.userCode)) {
+                is PinStatus.Authorized -> completeSignIn(status.accessToken)
+                is PinStatus.Rejected -> _authState.value = SimklAuthState.Error(
+                    status.message ?: "Simkl refused the code.",
+                )
+                else -> Unit
             }
         }
     }
