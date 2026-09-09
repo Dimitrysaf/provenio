@@ -32,7 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
-private const val VpnExplainerUrl = "https://en.wikipedia.org/wiki/Virtual_private_network"
+internal const val VpnExplainerUrl = "https://en.wikipedia.org/wiki/Virtual_private_network"
 
 /** Seconds the consent notice stays un-acceptable, so it is read rather than dismissed. */
 private const val ConsentCountdownSeconds = 10

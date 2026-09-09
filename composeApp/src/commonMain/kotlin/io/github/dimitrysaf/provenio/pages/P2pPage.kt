@@ -45,6 +45,7 @@ import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.p2p.P2pServiceState
 import io.github.dimitrysaf.provenio.p2p.TorrentProfile
 import io.github.dimitrysaf.provenio.ui.P2pConsentDialog
+import io.github.dimitrysaf.provenio.ui.VpnExplainerUrl
 import io.github.dimitrysaf.provenio.ui.components.SettingsMainSwitch
 import io.github.dimitrysaf.provenio.ui.components.SettingsTile
 import io.github.dimitrysaf.provenio.ui.components.SettingsTileSpacing
