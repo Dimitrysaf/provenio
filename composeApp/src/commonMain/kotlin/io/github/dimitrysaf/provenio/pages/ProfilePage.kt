@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -25,7 +23,6 @@ import androidx.compose.material.icons.outlined.Bookmarks
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.Extension
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,6 +51,8 @@ import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.db.SimklItem
 import io.github.dimitrysaf.provenio.simkl.SimklAuthState
 import io.github.dimitrysaf.provenio.simkl.SimklImages
+import io.github.dimitrysaf.provenio.simkl.SimklPlaybackRepository
+import io.github.dimitrysaf.provenio.simkl.SimklPlaybackSession
 import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.simkl.SyncState
@@ -74,7 +73,6 @@ fun ProfilePage(
 ) {
     val collection by AddonRepository.collection.collectAsState()
     val authState by SimklRepository.authState.collectAsState()
-    val profile by SimklRepository.profile.collectAsState()
     val watching by SimklSync.watching.collectAsState()
     val planToWatch by SimklSync.planToWatch.collectAsState()
     val syncState by SimklSync.state.collectAsState()
@@ -85,17 +83,12 @@ fun ProfilePage(
         addon.manifest.resources.any { it.name == "meta" }
     }
 
-    // The backdrop is the thing the user is furthest into. Simkl does not return fanart in
-    // the library payload, so it comes from the metadata addon that already knows the
-    // title, which costs nothing extra on the Simkl quota.
-    val featured = watching.firstOrNull()
-    var backdrop by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(featured?.simklId, hasMetadata) {
-        backdrop = null
-        val item = featured ?: return@LaunchedEffect
-        val imdb = item.imdbId ?: return@LaunchedEffect
-        if (!hasMetadata) return@LaunchedEffect
-        backdrop = AddonRepository.meta(item.stremioType(), imdb)?.background
+    // Simkl's own docs describe this endpoint for exactly this: a "Continue watching"
+    // list, each entry carrying precisely how far into that one episode or movie playback
+    // got — not read from the synced library, which only ever has a watched/total count.
+    var continueWatching by remember { mutableStateOf<List<SimklPlaybackSession>>(emptyList()) }
+    LaunchedEffect(signedIn) {
+        continueWatching = if (signedIn) SimklPlaybackRepository.continueWatching() else emptyList()
     }
 
     PageScaffold(
@@ -115,14 +108,6 @@ fun ProfilePage(
             )
         },
     ) {
-        AccountHeader(
-            name = profile?.name,
-            avatarUrl = profile?.avatarUrl,
-            backdropUrl = backdrop,
-            signedIn = signedIn,
-        )
-        Spacer(Modifier.height(16.dp))
-
         if (!hasMetadata) {
             NoMetadataState(onAddAddons = onAddAddons)
             return@PageScaffold
@@ -139,7 +124,7 @@ fun ProfilePage(
             return@PageScaffold
         }
 
-        Shelf("Continue watching", watching, onOpenDetail)
+        ContinueWatchingCarousel(continueWatching, onOpenDetail)
         Shelf("Plan to watch", planToWatch, onOpenDetail)
     }
 }
@@ -147,117 +132,111 @@ fun ProfilePage(
 /** Simkl types its libraries as shows, movies and anime. The addon protocol does not. */
 private fun SimklItem.stremioType(): String = if (mediaType == "movies") "movie" else "series"
 
+/** A playback session's own type, same distinction, straight from Simkl. */
+private fun SimklPlaybackSession.stremioType(): String = if (episode != null) "series" else "movie"
+
 /**
- * Backdrop, avatar and name.
- *
- * With artwork the identity sits over it. Without, the header collapses to a compact row
- * rather than reserving a 16:9 block for a picture that is not coming. Holding the height
- * keeps the layout from shifting, but the cost is a large empty rectangle, and an empty
- * rectangle is worse than a smaller header.
+ * The lead shelf: what Simkl's scrobble sessions say is genuinely mid-watch, each card
+ * carrying its own real position — not an episode count, the actual time into that one
+ * episode or movie. Never rendered empty: with no paused session anywhere, there is
+ * nothing honest to draw a time-progress bar for yet.
  */
 @Composable
-private fun AccountHeader(
-    name: String?,
-    avatarUrl: String?,
-    backdropUrl: String?,
-    signedIn: Boolean,
+private fun ContinueWatchingCarousel(
+    sessions: List<SimklPlaybackSession>,
+    onOpenDetail: (type: String, id: String) -> Unit,
 ) {
-    if (backdropUrl == null) {
-        CompactHeader(name = name, avatarUrl = avatarUrl, signedIn = signedIn)
-        return
-    }
-
-    Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
-        AsyncImage(
-            model = backdropUrl,
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop,
+    if (sessions.isEmpty()) return
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
+        Text(
+            text = "Continue watching",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
-        // Scrim only where the text sits, so the artwork stays visible above it.
-        Box(
-            modifier = Modifier.fillMaxSize().background(
-                Brush.verticalGradient(
-                    0f to Color.Transparent,
-                    0.55f to Color.Transparent,
-                    1f to Color.Black.copy(alpha = 0.75f),
-                ),
-            ),
-        )
-        Identity(
-            name = name,
-            avatarUrl = avatarUrl,
-            signedIn = signedIn,
-            onArtwork = true,
-            modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            sessions.forEach { session ->
+                val imdbId = session.media?.ids?.imdb
+                ContinueWatchingCard(session) {
+                    imdbId?.let { onOpenDetail(session.stremioType(), it) }
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun CompactHeader(name: String?, avatarUrl: String?, signedIn: Boolean) {
-    Identity(
-        name = name,
-        avatarUrl = avatarUrl,
-        signedIn = signedIn,
-        onArtwork = false,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-    )
-}
+private fun ContinueWatchingCard(session: SimklPlaybackSession, onClick: () -> Unit) {
+    val imdbId = session.media?.ids?.imdb
+    // The playback session itself carries no artwork — it is looked up from whatever the
+    // regular library sync already cached for this title, so this costs no extra request.
+    val synced = remember(imdbId) { imdbId?.let { SimklSync.progressFor(it) } }
+    val poster = SimklImages.poster(synced?.poster)
+    val title = session.media?.title ?: synced?.title ?: "Continue watching"
+    val episode = session.episode
 
-@Composable
-private fun Identity(
-    name: String?,
-    avatarUrl: String?,
-    signedIn: Boolean,
-    onArtwork: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+    Column(modifier = Modifier.width(150.dp).clickable(onClick = onClick)) {
         Box(
             modifier = Modifier
-                .size(56.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center,
+                .fillMaxWidth()
+                .aspectRatio(2f / 3f)
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
         ) {
-            if (avatarUrl != null) {
+            if (poster != null) {
                 AsyncImage(
-                    model = avatarUrl,
+                    model = poster,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                 )
-            } else {
-                Icon(
-                    imageVector = Icons.Outlined.Person,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(28.dp),
-                )
             }
-        }
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Text(
-                text = name ?: if (signedIn) "Simkl" else "Not signed in",
-                style = MaterialTheme.typography.titleLarge,
-                color = if (onArtwork) Color.White else Color.Unspecified,
+            // Scrim only behind the label, the same reasoning as the details page hero.
+            Box(
+                modifier = Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(
+                        0f to Color.Transparent,
+                        0.55f to Color.Transparent,
+                        1f to Color.Black.copy(alpha = 0.78f),
+                    ),
+                ),
             )
-            if (!signedIn) {
+            Column(modifier = Modifier.align(Alignment.BottomStart).padding(10.dp)) {
                 Text(
-                    text = "Connect Simkl to sync your library",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (onArtwork) {
-                        Color.White.copy(alpha = 0.8f)
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+                    text = title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (episode != null) {
+                    Text(
+                        text = "S${pad(episode.season)} · E${pad(episode.number)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.75f),
+                    )
+                }
+                // The position itself, in time — not an episode count — and no label:
+                // the bar sitting on the art is the whole point, the same way a video
+                // scrubber never needs to spell out what it is.
+                LinearProgressIndicator(
+                    progress = { (session.progress / 100f).coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp).height(3.dp),
+                    trackColor = Color.White.copy(alpha = 0.25f),
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
     }
 }
+
+/** Zero padded episode and season numbers. Common Kotlin has no String.format. */
+private fun pad(value: Int): String = value.toString().padStart(2, '0')
 
 /**
  * One shelf. Never rendered empty: a heading over nothing is noise, so the page shows a
@@ -319,18 +298,6 @@ private fun LibraryCard(item: SimklItem, onClick: () -> Unit) {
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 6.dp),
         )
-        // Shown only when there is progress, matching the detail page.
-        if (item.totalEpisodes > 0 && item.watchedEpisodes > 0) {
-            LinearProgressIndicator(
-                progress = { item.watchedEpisodes.toFloat() / item.totalEpisodes },
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-            )
-            Text(
-                text = "${item.watchedEpisodes}/${item.totalEpisodes}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
     }
 }
 
