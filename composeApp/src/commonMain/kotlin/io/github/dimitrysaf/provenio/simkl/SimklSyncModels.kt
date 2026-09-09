@@ -49,24 +49,26 @@ data class SimklEntry(
     @SerialName("next_to_watch") val nextToWatch: String? = null,
     @SerialName("show") val show: SimklMedia? = null,
     @SerialName("movie") val movie: SimklMedia? = null,
+    // Only present when the request carries `extended=full`: the actual list of watched
+    // episodes, grouped by season. This is the one field the app asks `extended=full`
+    // for — an aggregate count and a next-to-watch marker cannot tell which specific
+    // episodes were watched, and the details page needs exactly that.
+    @SerialName("seasons") val seasons: List<SimklSeasonWatched>? = null,
 ) {
     val media: SimklMedia? get() = show ?: movie
     val isMovie: Boolean get() = movie != null
 }
 
-/**
- * Parses Simkl's `next_to_watch` marker, formatted like `"S01E05"`, into a season and
- * episode number. Null for a title Simkl considers fully watched, where the field is
- * absent, and for anything not in that shape.
- */
-fun String.toSimklEpisodeCode(): Pair<Int, Int>? {
-    val match = SimklEpisodeCodePattern.matchEntire(trim()) ?: return null
-    val season = match.groupValues[1].toIntOrNull() ?: return null
-    val episode = match.groupValues[2].toIntOrNull() ?: return null
-    return season to episode
-}
+@Serializable
+data class SimklSeasonWatched(
+    @SerialName("number") val number: Int,
+    @SerialName("episodes") val episodes: List<SimklEpisodeWatched> = emptyList(),
+)
 
-private val SimklEpisodeCodePattern = Regex("""[Ss](\d+)[Ee](\d+)""")
+@Serializable
+data class SimklEpisodeWatched(
+    @SerialName("number") val number: Int,
+)
 
 @Serializable
 data class SimklMedia(

@@ -1,0 +1,7 @@
+-- Tracks what shape of data the last successful Simkl sync asked for, separately from
+-- whether an initial sync has ever completed. Defaulting existing rows to 0 means every
+-- installed database is, correctly, "behind" the moment SimklSync.CurrentDataVersion is
+-- bumped above 0 — which forces one full re-sync to backfill Simkl's per-episode watched
+-- list for shows a plain delta sync would otherwise skip entirely (nothing about them
+-- changed, so they would never appear in a delta response).
+ALTER TABLE simklSync ADD COLUMN dataVersion INTEGER NOT NULL DEFAULT 0;

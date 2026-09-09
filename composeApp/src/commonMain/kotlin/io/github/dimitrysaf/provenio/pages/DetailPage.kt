@@ -74,7 +74,6 @@ import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.db.SimklItem
 import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.simkl.SyncState
-import io.github.dimitrysaf.provenio.simkl.toSimklEpisodeCode
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.Video
@@ -170,13 +169,16 @@ private fun MetaContent(meta: Meta, onChooseSource: (String) -> Unit) {
         }
     }
 
-    // Simkl never sends a per-episode watched list, only the aggregate count above and a
-    // next-to-watch marker, so every regular episode before that marker is inferred
-    // watched from it. Local overrides win over that inference in either direction — see
-    // EpisodeWatchedRepository for why an override is not simply "watched" or absent.
+    // Simkl's own per-episode watched list for this show, synced via extended=full (see
+    // SimklClient.library/changesSince) rather than guessed from the aggregate count.
+    // Local overrides win over it in either direction — see EpisodeWatchedRepository for
+    // why an override is not simply "watched" or absent.
+    val simklWatchedEpisodes = remember(simklItem?.simklId) {
+        simklItem?.let { SimklSync.watchedEpisodesFor(it.simklId) }.orEmpty()
+    }
     val overrides by EpisodeWatchedRepository.overrides.collectAsState()
-    val watchedIds = remember(meta, simklItem, overrides) {
-        val inferred = simklWatchedIds(meta, simklItem)
+    val watchedIds = remember(meta, simklWatchedEpisodes, overrides) {
+        val inferred = simklWatchedIds(meta, simklWatchedEpisodes)
         val watched = inferred.toMutableSet()
         overrides.forEach { (videoId, isWatched) ->
             if (isWatched) watched.add(videoId) else watched.remove(videoId)
@@ -189,7 +191,7 @@ private fun MetaContent(meta: Meta, onChooseSource: (String) -> Unit) {
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item { Header(meta) }
-        item { WatchAction(meta, simklItem, onChooseSource) }
+        item { WatchAction(meta, simklWatchedEpisodes, onChooseSource) }
         item { WatchProgress(meta, simklItem, watchedIds) }
         item { Ratings(meta) }
         item { Synopsis(meta) }
@@ -286,12 +288,17 @@ private fun Header(meta: Meta) {
 }
 
 /**
- * The primary action. Resumes at whatever Simkl says is next, when it has an opinion;
- * otherwise opens the first episode of the first regular season, never a special.
+ * The primary action. Resumes at the first regular episode Simkl has not recorded as
+ * watched, when it has watched-episode data for this title; otherwise opens the first
+ * episode of the first regular season, never a special.
  */
 @Composable
-private fun WatchAction(meta: Meta, simklItem: SimklItem?, onChooseSource: (String) -> Unit) {
-    val next = simklNextEpisode(meta, simklItem) ?: meta.firstRegularEpisode()
+private fun WatchAction(
+    meta: Meta,
+    simklWatchedEpisodes: Set<Pair<Int, Int>>,
+    onChooseSource: (String) -> Unit,
+) {
+    val next = meta.firstUnwatchedEpisode(simklWatchedEpisodes) ?: meta.firstRegularEpisode()
     val label = when {
         next?.season != null && next.episode != null ->
             "Watch S${pad(next.season)}E${pad(next.episode)} now"
@@ -741,35 +748,35 @@ private fun Meta.firstRegularEpisode(): Video? =
         .minWithOrNull(compareBy({ it.season }, { it.episode }))
         ?: videos.firstOrNull()
 
-/** The video matching Simkl's next-to-watch marker, when it has one and [meta] lists it. */
-private fun simklNextEpisode(meta: Meta, simklItem: SimklItem?): Video? {
-    val (season, episode) = simklItem?.nextToWatch?.toSimklEpisodeCode() ?: return null
-    return meta.videos.firstOrNull { it.season == season && it.episode == episode }
+/**
+ * The first regular episode, in season/episode order, that [watchedEpisodes] does not
+ * cover. [watchedEpisodes] is Simkl's own watched-episode list (see
+ * SimklSync.watchedEpisodesFor) — an empty set here means Simkl has no watched-episode
+ * data for this title (nothing watched yet, or not signed in), which this returns null
+ * for rather than treating as "watch from the start" itself; the caller decides that
+ * fallback.
+ */
+private fun Meta.firstUnwatchedEpisode(watchedEpisodes: Set<Pair<Int, Int>>): Video? {
+    if (watchedEpisodes.isEmpty()) return null
+    return videos
+        .filter { (it.season ?: SpecialsSeason) != SpecialsSeason }
+        .sortedWith(compareBy({ it.season }, { it.episode }))
+        .firstOrNull { video ->
+            val season = video.season ?: return@firstOrNull false
+            val episode = video.episode ?: return@firstOrNull false
+            (season to episode) !in watchedEpisodes
+        }
 }
 
-/**
- * Regular episode ids Simkl considers already watched, inferred rather than read back
- * directly: Simkl's synced library never sends a per-episode list, only the aggregate
- * count [WatchProgress] already uses and the next-to-watch marker [simklNextEpisode]
- * reads. Every regular episode strictly before that marker counts as watched; with no
- * marker at all, everything does once Simkl's own counts agree there is nothing left,
- * and nothing does otherwise (a title Simkl has not synced episode-level data for).
- */
-private fun simklWatchedIds(meta: Meta, simklItem: SimklItem?): Set<String> {
-    if (simklItem == null || simklItem.totalEpisodes <= 0) return emptySet()
-    val regular = meta.videos.filter { (it.season ?: SpecialsSeason) != SpecialsSeason }
-    val next = simklItem.nextToWatch?.toSimklEpisodeCode()
-        ?: return if (simklItem.watchedEpisodes >= simklItem.totalEpisodes) {
-            regular.map { it.id }.toSet()
-        } else {
-            emptySet()
-        }
-    val (nextSeason, nextEpisode) = next
-    return regular
+/** Regular episode ids covered by Simkl's own watched-episode list for this title. */
+private fun simklWatchedIds(meta: Meta, watchedEpisodes: Set<Pair<Int, Int>>): Set<String> {
+    if (watchedEpisodes.isEmpty()) return emptySet()
+    return meta.videos
+        .filter { (it.season ?: SpecialsSeason) != SpecialsSeason }
         .filter { video ->
             val season = video.season ?: return@filter false
             val episode = video.episode ?: return@filter false
-            season < nextSeason || (season == nextSeason && episode < nextEpisode)
+            (season to episode) in watchedEpisodes
         }
         .map { it.id }
         .toSet()

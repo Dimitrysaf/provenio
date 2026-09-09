@@ -80,8 +80,13 @@ object SimklSync {
         if (job?.isActive == true) return
 
         val checkpoint = withStore { it.checkpoint() } ?: return
-        // Rapid app switching must not turn into a request per switch.
+        // Rapid app switching must not turn into a request per switch — but a stale data
+        // version means a past sync never asked Simkl for a field this version needs, and
+        // that backfill must not wait out a 20 minute throttle on every launch until it
+        // happens to land outside the window.
+        val behindDataVersion = checkpoint.dataVersion < CurrentDataVersion
         if (trigger == SyncTrigger.Startup &&
+            !behindDataVersion &&
             nowMillis - checkpoint.lastSyncedAtMillis < ThrottleMillis
         ) {
             return
@@ -100,15 +105,26 @@ object SimklSync {
         }
 
         val latest = activities.all
+        // A stale data version means a prior sync never asked for a field this version
+        // needs — the per-episode watched list, currently — so a show nothing changed
+        // about would sit forever without it if this were allowed to skip straight to
+        // "nothing moved" below, or to a delta sync that only ever mentions shows that
+        // did change.
+        val behindDataVersion = checkpoint.dataVersion < CurrentDataVersion
+
         // Nothing moved. This is the branch that keeps the daily quota near idle.
-        if (latest != null && latest == checkpoint.activitiesAll && checkpoint.initialSyncDone) {
+        if (!behindDataVersion &&
+            latest != null &&
+            latest == checkpoint.activitiesAll &&
+            checkpoint.initialSyncDone
+        ) {
             withStore { it.saveCheckpoint(checkpoint.copy(lastSyncedAtMillis = nowMillis)) }
             _state.value = SyncState.Idle
             return
         }
 
         val savedDate = checkpoint.activitiesAll
-        val ok = if (!checkpoint.initialSyncDone || savedDate == null) {
+        val ok = if (!checkpoint.initialSyncDone || savedDate == null || behindDataVersion) {
             initialSync(token)
         } else {
             deltaSync(token, savedDate)
@@ -125,6 +141,7 @@ object SimklSync {
                     activitiesAll = latest,
                     lastSyncedAtMillis = nowMillis,
                     initialSyncDone = true,
+                    dataVersion = CurrentDataVersion,
                 ),
             )
         }
@@ -167,6 +184,10 @@ object SimklSync {
     /** The synced Simkl row for one title, by its imdb id, or null if Simkl has no record. */
     fun progressFor(imdbId: String): SimklItem? = withStore { it.itemByImdbId(imdbId) }
 
+    /** Every (season, episode) Simkl has recorded as watched for one show. */
+    fun watchedEpisodesFor(simklId: Long): Set<Pair<Int, Int>> =
+        withStore { it.watchedEpisodes(simklId) }.orEmpty()
+
     fun clear() {
         job?.cancel()
         withStore { it.clear() }
@@ -179,4 +200,13 @@ object SimklSync {
     private const val ThrottleMillis = 20L * 60L * 1000L
 
     private val InitialLibraries = listOf("shows", "movies", "anime")
+
+    /**
+     * Bump this when a sync starts asking Simkl for a field it did not before. A stale
+     * [SyncCheckpoint.dataVersion] forces one full [initialSync] even if nothing changed
+     * on Simkl's side, which is the only way an existing row picks up a field a delta sync
+     * would otherwise never send for it. Current history: 1 adds the per-episode watched
+     * list (`extended=full` on every sync request).
+     */
+    private const val CurrentDataVersion = 1
 }

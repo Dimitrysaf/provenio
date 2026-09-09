@@ -1,18 +1,26 @@
 -- The saved activities timestamp, stored exactly as Simkl returned it. Their rules require
 -- passing it back byte for byte, so it is never parsed or reformatted.
+--
+-- dataVersion tracks what shape of data the last successful sync asked Simkl for. It is
+-- separate from initialSyncDone: bumping it (see SimklSync.CurrentDataVersion) forces one
+-- full re-sync even though nothing changed on Simkl's side, which is the only way to
+-- backfill existing rows after the sync starts asking for a field it did not before —
+-- Simkl's per-episode watched list, added on top of the aggregate count, is not sent for a
+-- show delta-sync skips because nothing about it changed.
 CREATE TABLE simklSync (
     id INTEGER NOT NULL PRIMARY KEY,
     activitiesAll TEXT,
     lastSyncedAtMillis INTEGER NOT NULL DEFAULT 0,
-    initialSyncDone INTEGER NOT NULL DEFAULT 0
+    initialSyncDone INTEGER NOT NULL DEFAULT 0,
+    dataVersion INTEGER NOT NULL DEFAULT 0
 );
 
 selectSync:
 SELECT * FROM simklSync WHERE id = 1;
 
 upsertSync:
-INSERT OR REPLACE INTO simklSync(id, activitiesAll, lastSyncedAtMillis, initialSyncDone)
-VALUES (1, ?, ?, ?);
+INSERT OR REPLACE INTO simklSync(id, activitiesAll, lastSyncedAtMillis, initialSyncDone, dataVersion)
+VALUES (1, ?, ?, ?, ?);
 
 CREATE TABLE simklItem (
     simklId INTEGER NOT NULL PRIMARY KEY,

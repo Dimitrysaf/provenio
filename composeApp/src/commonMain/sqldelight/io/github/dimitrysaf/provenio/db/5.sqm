@@ -1,0 +1,10 @@
+-- Adds Simkl's actual per-episode watched list. Progress was previously inferred from an
+-- aggregate count and a next-to-watch marker, which does not say which specific episodes
+-- were watched — this table holds what Simkl's own `extended=full` sync response says
+-- instead, keyed by show, season and episode number.
+CREATE TABLE IF NOT EXISTS simklWatchedEpisode (
+    simklId INTEGER NOT NULL,
+    season INTEGER NOT NULL,
+    episode INTEGER NOT NULL,
+    PRIMARY KEY (simklId, season, episode)
+);

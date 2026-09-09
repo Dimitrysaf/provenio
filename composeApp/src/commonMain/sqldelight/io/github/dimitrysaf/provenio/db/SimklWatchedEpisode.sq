@@ -1,0 +1,24 @@
+-- Ground-truth watched episodes as Simkl reports them, keyed by the show's simkl id plus
+-- season and episode number. Populated from the `seasons` array Simkl includes when a
+-- sync request carries `extended=full` (see SimklClient.library/changesSince) — this is
+-- exactly Simkl's own watched-episodes list, not an inference from an aggregate count or
+-- a next-to-watch marker. A show's rows are replaced wholesale on every sync that touches
+-- it, since Simkl sends the full current list each time rather than a delta within it.
+CREATE TABLE simklWatchedEpisode (
+    simklId INTEGER NOT NULL,
+    season INTEGER NOT NULL,
+    episode INTEGER NOT NULL,
+    PRIMARY KEY (simklId, season, episode)
+);
+
+selectForShow:
+SELECT * FROM simklWatchedEpisode WHERE simklId = ?;
+
+deleteForShow:
+DELETE FROM simklWatchedEpisode WHERE simklId = ?;
+
+insert:
+INSERT OR REPLACE INTO simklWatchedEpisode(simklId, season, episode) VALUES (?, ?, ?);
+
+clearAll:
+DELETE FROM simklWatchedEpisode;

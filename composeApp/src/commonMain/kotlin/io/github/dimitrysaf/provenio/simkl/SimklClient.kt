@@ -76,19 +76,26 @@ class SimklClient(
      * One library, fetched whole, from `/sync/all-items/{type}`. Phase 1 only.
      *
      * Simkl requires these to be called one at a time rather than in parallel, so nothing
-     * here fans out and callers must await each in turn.
+     * here fans out and callers must await each in turn. `extended=full` is requested so
+     * every entry carries its actual watched-episodes list, not just an aggregate count —
+     * Simkl warns this makes the reply substantially larger, which for a whole library
+     * with no `date_from` is the deliberate one-time cost of the initial sync.
      */
     suspend fun library(token: String, type: String): SimklAllItems? =
-        getJson(endpoint("/sync/all-items/$type"), token)
+        getJson(endpoint("/sync/all-items/$type", mapOf("extended" to "full")), token)
 
     /**
      * Everything that changed since [dateFrom], in one request. Phase 2.
      *
      * [dateFrom] is passed through exactly as Simkl returned it. Reformatting it is the
-     * mistake their sync rules single out.
+     * mistake their sync rules single out. `extended=full` is requested for the same
+     * reason as [library]; combined with `date_from` this stays a small, scoped reply.
      */
     suspend fun changesSince(token: String, dateFrom: String): SimklAllItems? =
-        getJson(endpoint("/sync/all-items", mapOf("date_from" to dateFrom)), token)
+        getJson(
+            endpoint("/sync/all-items", mapOf("date_from" to dateFrom, "extended" to "full")),
+            token,
+        )
 
     /**
      * client_id, app-name and app-version go on every request as query parameters, which
