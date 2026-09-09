@@ -39,39 +39,32 @@ data class SourceOption(
         }
 }
 
-/**
- * Resolution, read out of the text an addon supplies.
- *
- * The protocol has no quality field, so this is inferred from the name and description,
- * which is where every addon puts it by convention. Unknown is a real answer, not a
- * failure: plenty of sources genuinely do not say.
- */
-enum class SourceQuality(val label: String) {
-    Uhd("4K"),
-    Fhd("1080p"),
-    Hd("720p"),
-    Sd("480p and below"),
-    Unknown("Unlabelled"),
-}
+/** The text a filter looks at: whatever the addon wrote about this source. */
+val SourceOption.searchText: String
+    get() = (label + " " + detail.orEmpty()).lowercase()
 
-val SourceOption.quality: SourceQuality
-    get() {
-        val text = (label + " " + detail.orEmpty()).lowercase()
-        return when {
-            listOf("2160", "4k", "uhd").any { it in text } -> SourceQuality.Uhd
-            "1080" in text -> SourceQuality.Fhd
-            "720" in text -> SourceQuality.Hd
-            listOf("480", "360", "240").any { it in text } -> SourceQuality.Sd
-            else -> SourceQuality.Unknown
-        }
-    }
-
-/** True when the source text contains every whitespace separated term in [query]. */
+/** True when every whitespace separated term in [query] appears somewhere in the text. */
 fun SourceOption.matches(query: String): Boolean {
     if (query.isBlank()) return true
-    val text = (label + " " + detail.orEmpty()).lowercase()
+    val text = searchText
     return query.trim().lowercase().split(" ").all { term -> term in text }
 }
+
+/** True when the source mentions any of [terms], or when nothing is being filtered on. */
+fun SourceOption.hasAny(terms: Collection<String>): Boolean {
+    if (terms.isEmpty()) return true
+    val text = searchText
+    return terms.any { it.lowercase() in text }
+}
+
+/**
+ * Strings offered in the quality filter.
+ *
+ * Plain substrings, nothing parsed. The protocol has no quality field, so the only honest
+ * thing to do is look for the text and let a source through when it is there. Only terms
+ * that actually appear in the current results are ever shown.
+ */
+val QualityTerms = listOf("2160p", "4K", "1080p", "720p", "480p", "HDR")
 
 enum class SourceKind(val label: String) {
     Direct("Direct"),

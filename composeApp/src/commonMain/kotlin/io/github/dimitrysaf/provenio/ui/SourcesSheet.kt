@@ -32,7 +32,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -48,6 +49,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -57,9 +59,10 @@ import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.InstalledAddon
 import io.github.dimitrysaf.provenio.stremio.SourceKind
 import io.github.dimitrysaf.provenio.stremio.SourceOption
-import io.github.dimitrysaf.provenio.stremio.SourceQuality
+import io.github.dimitrysaf.provenio.stremio.QualityTerms
+import io.github.dimitrysaf.provenio.stremio.hasAny
 import io.github.dimitrysaf.provenio.stremio.matches
-import io.github.dimitrysaf.provenio.stremio.quality
+import io.github.dimitrysaf.provenio.stremio.searchText
 import kotlinx.coroutines.launch
 
 /** One addon's contribution, and whether it has finished contributing. */
@@ -100,8 +103,8 @@ fun SourcesSheet(
 
     var reloads by remember { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
-    // Empty means no restriction. Only qualities actually present are ever offered.
-    val hiddenQualities = remember { mutableStateListOf<SourceQuality>() }
+    // Terms the user ticked. Empty means no restriction.
+    val picked = remember { mutableStateListOf<String>() }
     var filterOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(type, id, reloads) {
@@ -176,13 +179,16 @@ fun SourcesSheet(
     val total = groups.sumOf { it.sources.size }
 
     fun visibleIn(group: AddonSources): List<SourceOption> = group.sources.filter { source ->
-        source.matches(query) && source.quality !in hiddenQualities
+        source.matches(query) && source.hasAny(picked)
     }
 
-    val presentQualities = SourceQuality.entries.filter { candidate ->
-        groups.any { group -> group.sources.any { it.quality == candidate } }
+    // Only terms some source actually mentions. Offering "2160p" when nothing is 4K would
+    // be a filter that can only ever empty the list.
+    val offered = QualityTerms.filter { term ->
+        val needle = term.lowercase()
+        groups.any { group -> group.sources.any { needle in it.searchText } }
     }
-    val filtering = query.isNotBlank() || hiddenQualities.isNotEmpty()
+    val filtering = query.isNotBlank() || picked.isNotEmpty()
     val matches = groups.sumOf { visibleIn(it).size }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
@@ -212,66 +218,66 @@ fun SourcesSheet(
                     Icon(Icons.Outlined.Refresh, contentDescription = "Refresh sources")
                 }
             }
-            // Search and quality live above the list so they apply to every section.
+            // One flat field above the list, so it applies to every section. No outline
+            // and no filled container: it is a filter on what is already here, not a form.
             if (total > 0) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 24.dp, end = 8.dp, top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OutlinedTextField(
-                        value = query,
-                        onValueChange = { query = it },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        placeholder = { Text("Filter sources") },
-                        leadingIcon = {
-                            Icon(Icons.Outlined.Search, contentDescription = null)
-                        },
-                        trailingIcon = {
+                TextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                    singleLine = true,
+                    placeholder = { Text("Search sources") },
+                    leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                    trailingIcon = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             if (query.isNotEmpty()) {
                                 IconButton(onClick = { query = "" }) {
-                                    Icon(Icons.Filled.Close, contentDescription = "Clear filter")
+                                    Icon(Icons.Filled.Close, contentDescription = "Clear search")
                                 }
                             }
-                        },
-                    )
-                    Box {
-                        IconButton(onClick = { filterOpen = true }) {
-                            Icon(
-                                imageVector = Icons.Outlined.FilterList,
-                                contentDescription = "Quality filter",
-                                tint = if (hiddenQualities.isEmpty()) {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                } else {
-                                    MaterialTheme.colorScheme.primary
-                                },
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = filterOpen,
-                            onDismissRequest = { filterOpen = false },
-                        ) {
-                            presentQualities.forEach { candidate ->
-                                val shown = candidate !in hiddenQualities
-                                DropdownMenuItem(
-                                    text = { Text(candidate.label) },
-                                    leadingIcon = {
-                                        Checkbox(checked = shown, onCheckedChange = null)
-                                    },
-                                    onClick = {
-                                        if (shown) {
-                                            hiddenQualities.add(candidate)
-                                        } else {
-                                            hiddenQualities.remove(candidate)
+                            if (offered.isNotEmpty()) {
+                                Box {
+                                    IconButton(onClick = { filterOpen = true }) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.FilterList,
+                                            contentDescription = "Quality filter",
+                                            tint = if (picked.isEmpty()) {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            } else {
+                                                MaterialTheme.colorScheme.primary
+                                            },
+                                        )
+                                    }
+                                    DropdownMenu(
+                                        expanded = filterOpen,
+                                        onDismissRequest = { filterOpen = false },
+                                    ) {
+                                        offered.forEach { term ->
+                                            val on = term in picked
+                                            DropdownMenuItem(
+                                                text = { Text(term) },
+                                                leadingIcon = {
+                                                    Checkbox(checked = on, onCheckedChange = null)
+                                                },
+                                                onClick = {
+                                                    if (on) picked.remove(term) else picked.add(term)
+                                                },
+                                            )
                                         }
-                                    },
-                                )
+                                    }
+                                }
                             }
                         }
-                    }
-                }
+                    },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                    ),
+                )
             }
 
             Spacer(Modifier.height(8.dp))
@@ -300,7 +306,7 @@ fun SourcesSheet(
             if (filtering && matches == 0) {
                 Message(
                     title = "Nothing matches",
-                    body = "No source matches that filter. Clear it to see all of them.",
+                    body = "No source mentions that. Clear the search to see all of them.",
                 )
                 return@Column
             }
