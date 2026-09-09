@@ -20,7 +20,6 @@ import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.OpenInBrowser
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -226,17 +225,15 @@ private fun SourceRow(source: SourceOption, p2pReady: Boolean, onClick: () -> Un
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Provenance. Which addon produced this is the first thing worth knowing
-                // once several are installed and disagree.
-                AssistChip(onClick = {}, label = { Text(source.addon.manifest.name) })
-                if (source.kind == SourceKind.Torrent && !p2pReady) {
-                    AssistChip(onClick = {}, label = { Text("Turn on peer-to-peer") })
-                } else if (!playable) {
-                    AssistChip(onClick = {}, label = { Text(source.kind.label) })
-                }
-            }
+            // Provenance, as a label rather than a chip. Which addon produced this is
+            // worth knowing, but a chip reads as a control and these were not tappable,
+            // which put dead targets on top of a row that does work when pressed.
+            Text(
+                text = source.addon.manifest.name,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha),
+                modifier = Modifier.padding(top = 2.dp),
+            )
         }
     }
 }
