@@ -113,6 +113,26 @@ object AddonRepository {
         ).getOrNull()?.metas
     }
 
+    /** Addons that can answer for this title, so the caller can fetch them as it likes. */
+    fun streamProviders(type: String, id: String): List<InstalledAddon> =
+        _collection.value.streamProviders(type, id)
+
+    /**
+     * Streams from one addon, tagged with where they came from.
+     *
+     * Provenance travels with the stream rather than being looked up later, because once
+     * several addons answer for the same title there is no way to work out afterwards
+     * which one produced a given result.
+     */
+    suspend fun streamsFrom(
+        addon: InstalledAddon,
+        type: String,
+        id: String,
+    ): List<SourceOption> {
+        val reply = client.fetchStreams(addon.transportUrl, type, id).getOrNull()
+        return reply?.streams.orEmpty().map { SourceOption(addon = addon, stream = it) }
+    }
+
     fun remove(addonId: String) = commit(_collection.value.without(addonId))
 
     fun setEnabled(addonId: String, enabled: Boolean) =

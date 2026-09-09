@@ -30,6 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import io.github.dimitrysaf.provenio.navigation.DetailRoute
+import io.github.dimitrysaf.provenio.navigation.PlayerRoute
 import io.github.dimitrysaf.provenio.navigation.Routes
 import io.github.dimitrysaf.provenio.navigation.SearchFilter
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
@@ -133,9 +134,9 @@ fun App() {
             // Deliberately not wrapped in PageSurface. That applies a shape, and a shape
             // on a Surface always clips, which a SurfaceView cannot survive. The player
             // paints its own black background instead.
-            composable(Routes.Player) {
+            composable<PlayerRoute> { entry ->
                 PlayerScreen(
-                    url = Routes.SampleVideoUrl,
+                    url = entry.toRoute<PlayerRoute>().url,
                     onBack = { navController.popBackStack() },
                 )
             }
@@ -156,6 +157,7 @@ fun App() {
                         type = route.type,
                         id = route.id,
                         onBack = { navController.popBackStack() },
+                        onPlay = { url -> navController.navigate(PlayerRoute(url)) },
                     )
                 }
             }

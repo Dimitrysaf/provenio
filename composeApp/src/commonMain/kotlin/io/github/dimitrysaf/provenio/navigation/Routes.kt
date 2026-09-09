@@ -25,6 +25,15 @@ object Routes {
      */
     const val SettingsAddons = "settings/addons"
 
+    const val Settings = "settings"
+
+    /**
+     * Opens settings already on Add-ons. A plain second route rather than a navigation
+     * argument, because arguments arrive as SavedState here and are not worth the reach
+     * for one deep link.
+     */
+    const val SettingsAddons = "settings/addons"
+
     const val Player = "player"
 
     /**

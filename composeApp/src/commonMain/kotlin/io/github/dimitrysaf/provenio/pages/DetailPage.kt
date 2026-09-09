@@ -72,6 +72,7 @@ import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.Video
+import io.github.dimitrysaf.provenio.ui.SourcesSheet
 import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
 
 /**
@@ -89,9 +90,12 @@ fun DetailPage(
     id: String,
     modifier: Modifier = Modifier,
     onBack: () -> Unit,
+    onPlay: (String) -> Unit,
 ) {
     var meta by remember { mutableStateOf<Meta?>(null) }
     var loading by remember { mutableStateOf(true) }
+    // Which title the sources sheet is open for, or null when it is closed.
+    var sourcesFor by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(type, id) {
         loading = true
@@ -109,7 +113,7 @@ fun DetailPage(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.Center).padding(32.dp),
             )
-            else -> MetaContent(current)
+            else -> MetaContent(current) { sourcesFor = it }
         }
 
         TopAppBar(
@@ -122,10 +126,24 @@ fun DetailPage(
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
         )
     }
+
+    val openFor = sourcesFor
+    if (openFor != null) {
+        SourcesSheet(
+            type = type,
+            id = openFor,
+            title = meta?.name,
+            onDismiss = { sourcesFor = null },
+            onPlay = { source ->
+                sourcesFor = null
+                source.playableUrl?.let(onPlay)
+            },
+        )
+    }
 }
 
 @Composable
-private fun MetaContent(meta: Meta) {
+private fun MetaContent(meta: Meta, onChooseSource: (String) -> Unit) {
     val openUrl = rememberUrlOpener()
     // Specials last. They routinely spoil the run they belong to, so leading with them is
     // the wrong default even though their season number sorts first.
@@ -137,7 +155,7 @@ private fun MetaContent(meta: Meta) {
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item { Header(meta) }
-        item { WatchAction(meta) }
+        item { WatchAction(meta, onChooseSource) }
         item { WatchProgress(meta) }
         item { Ratings(meta) }
         item { Synopsis(meta) }
@@ -238,7 +256,7 @@ private fun Header(meta: Meta) {
  * picker, so this points at the episode it would open rather than pretending to play.
  */
 @Composable
-private fun WatchAction(meta: Meta) {
+private fun WatchAction(meta: Meta, onChooseSource: (String) -> Unit) {
     val next = meta.videos.firstOrNull()
     val label = when {
         next?.season != null && next.episode != null ->
@@ -247,9 +265,12 @@ private fun WatchAction(meta: Meta) {
         else -> "Watch now"
     }
 
+    // A series plays its first episode; a film plays itself. Either way the id decides
+    // which streams the addons are asked for.
+    val playId = next?.id ?: meta.id
+
     Button(
-        onClick = {},
-        enabled = false,
+        onClick = { onChooseSource(playId) },
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
     ) {
         Icon(Icons.Filled.PlayArrow, contentDescription = null)
