@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,6 +32,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
+import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -146,7 +149,13 @@ private fun SimklItem.stremioType(): String = if (mediaType == "movies") "movie"
  * is real time-into-this-episode from [timeProgressByImdbId] when Simkl has that session,
  * and simply absent otherwise — an episode-count fraction is a different metric, not a
  * rougher version of the same one, so there is no fallback bar to draw without it.
+ *
+ * Uses M3's multi-browse carousel rather than a plain scrolling row: the next card sits
+ * at reduced width and grows into place as it scrolls to the front, which is the carousel
+ * spec's whole point — https://m3.material.io/components/carousel/overview — rather than
+ * a card just appearing whole once it clears the edge.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ContinueWatchingCarousel(
     items: List<SimklItem>,
@@ -154,33 +163,43 @@ private fun ContinueWatchingCarousel(
     onOpenDetail: (type: String, id: String) -> Unit,
 ) {
     if (items.isEmpty()) return
-    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
+    val carouselState = rememberCarouselState { items.size }
+
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 28.dp)) {
         Text(
             text = "Continue watching",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            items.forEach { item ->
-                val session = item.imdbId?.let { timeProgressByImdbId[it] }
-                ContinueWatchingCard(item, session) {
-                    item.imdbId?.let { onOpenDetail(item.stremioType(), it) }
-                }
-            }
+        HorizontalMultiBrowseCarousel(
+            state = carouselState,
+            preferredItemWidth = ContinueWatchingItemWidth,
+            itemSpacing = 12.dp,
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            modifier = Modifier.fillMaxWidth().height(ContinueWatchingItemHeight),
+        ) { index ->
+            val item = items[index]
+            val session = item.imdbId?.let { timeProgressByImdbId[it] }
+            ContinueWatchingCard(
+                item = item,
+                session = session,
+                // Reads the carousel's own live mask math, so the card's corners and
+                // edge clip exactly as it collapses — not a static rounded rect.
+                modifier = Modifier.maskClip(RoundedCornerShape(20.dp)),
+                onClick = { item.imdbId?.let { onOpenDetail(item.stremioType(), it) } },
+            )
         }
     }
 }
+
+private val ContinueWatchingItemWidth = 280.dp
+private val ContinueWatchingItemHeight = 380.dp
 
 @Composable
 private fun ContinueWatchingCard(
     item: SimklItem,
     session: SimklPlaybackSession?,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     val poster = SimklImages.poster(item.poster)
@@ -188,59 +207,56 @@ private fun ContinueWatchingCard(
     // one actually being resumed, so it is shown only when there is one to show.
     val episode = session?.episode
 
-    Column(modifier = Modifier.width(150.dp).clickable(onClick = onClick)) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .clickable(onClick = onClick)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+    ) {
+        if (poster != null) {
+            AsyncImage(
+                model = poster,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        }
+        // Scrim only behind the label, the same reasoning as the details page hero.
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(2f / 3f)
-                .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-        ) {
-            if (poster != null) {
-                AsyncImage(
-                    model = poster,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    0f to Color.Transparent,
+                    0.55f to Color.Transparent,
+                    1f to Color.Black.copy(alpha = 0.78f),
+                ),
+            ),
+        )
+        Column(modifier = Modifier.align(Alignment.BottomStart).padding(14.dp)) {
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (episode != null) {
+                Text(
+                    text = "S${pad(episode.season)} · E${pad(episode.number)}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White.copy(alpha = 0.75f),
                 )
             }
-            // Scrim only behind the label, the same reasoning as the details page hero.
-            Box(
-                modifier = Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(
-                        0f to Color.Transparent,
-                        0.55f to Color.Transparent,
-                        1f to Color.Black.copy(alpha = 0.78f),
-                    ),
-                ),
-            )
-            Column(modifier = Modifier.align(Alignment.BottomStart).padding(10.dp)) {
-                Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+            // The position itself, in time — not an episode count — and no label: the
+            // bar sitting on the art is the whole point, the same way a video scrubber
+            // never needs to spell out what it is. Nothing drawn at all when Simkl has
+            // not reported one.
+            if (session != null) {
+                LinearProgressIndicator(
+                    progress = { (session.progress / 100f).coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).height(4.dp),
+                    trackColor = Color.White.copy(alpha = 0.25f),
+                    color = MaterialTheme.colorScheme.primary,
                 )
-                if (episode != null) {
-                    Text(
-                        text = "S${pad(episode.season)} · E${pad(episode.number)}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.75f),
-                    )
-                }
-                // The position itself, in time — not an episode count — and no label:
-                // the bar sitting on the art is the whole point, the same way a video
-                // scrubber never needs to spell out what it is. Nothing drawn at all
-                // when Simkl has not reported one.
-                if (session != null) {
-                    LinearProgressIndicator(
-                        progress = { (session.progress / 100f).coerceIn(0f, 1f) },
-                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp).height(3.dp),
-                        trackColor = Color.White.copy(alpha = 0.25f),
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
             }
         }
     }
