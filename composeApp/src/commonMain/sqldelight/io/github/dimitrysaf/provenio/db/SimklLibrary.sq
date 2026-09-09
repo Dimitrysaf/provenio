@@ -31,6 +31,9 @@ CREATE TABLE simklItem (
 selectByStatus:
 SELECT * FROM simklItem WHERE status = ? ORDER BY lastWatchedAt DESC;
 
+selectByImdbId:
+SELECT * FROM simklItem WHERE imdbId = ? LIMIT 1;
+
 upsertItem:
 INSERT OR REPLACE INTO simklItem(
     simklId, mediaType, status, title, year, poster, imdbId,

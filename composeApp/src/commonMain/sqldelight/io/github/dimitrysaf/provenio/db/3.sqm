@@ -1,0 +1,10 @@
+-- Adds local per-episode watched tracking. Simkl's synced library has no per-episode
+-- watched list, so this table backs the episode tick boxes and is written to on every
+-- toggle regardless of whether the change also makes it to Simkl.
+CREATE TABLE IF NOT EXISTS episodeWatched (
+    videoId TEXT NOT NULL PRIMARY KEY,
+    showId TEXT NOT NULL,
+    season INTEGER NOT NULL,
+    episode INTEGER NOT NULL,
+    watchedAtMillis INTEGER NOT NULL
+);

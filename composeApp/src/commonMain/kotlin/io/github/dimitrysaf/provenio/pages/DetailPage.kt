@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Subject
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PlayArrow
@@ -53,6 +54,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -69,11 +71,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import io.github.dimitrysaf.provenio.db.SimklItem
+import io.github.dimitrysaf.provenio.simkl.SimklSync
+import io.github.dimitrysaf.provenio.simkl.SyncState
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.Video
 import io.github.dimitrysaf.provenio.ui.SourcesSheet
 import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
+import io.github.dimitrysaf.provenio.watch.EpisodeWatchedRepository
 
 /**
  * The full record for one title.
@@ -153,14 +159,31 @@ private fun MetaContent(meta: Meta, onChooseSource: (String) -> Unit) {
         .sortedWith(compareBy({ (season, _) -> season == SpecialsSeason }, { it.first }))
     val expanded = rememberSaveable { mutableStateOf(seasons.firstOrNull()?.first ?: 1) }
 
+    // Simkl only reports a watched/total count per show, refreshed whenever a sync lands,
+    // so this re-checks it once on open and again whenever a sync finishes.
+    var simklItem by remember(meta.id) { mutableStateOf<SimklItem?>(null) }
+    val syncState by SimklSync.state.collectAsState()
+    LaunchedEffect(meta.id, syncState) {
+        if (syncState == SyncState.Idle) {
+            simklItem = SimklSync.progressFor(meta.id)
+        }
+    }
+
+    // Per-episode watched state has no Simkl equivalent to read back, so it is tracked
+    // locally and only mirrored to Simkl one-way, on toggle.
+    val watchedIds by EpisodeWatchedRepository.watched.collectAsState()
+    val onToggleWatched: (Video) -> Unit = { video ->
+        EpisodeWatchedRepository.toggle(meta.id, video)
+    }
+
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item { Header(meta) }
         item { WatchAction(meta, onChooseSource) }
-        item { WatchProgress(meta) }
+        item { WatchProgress(meta, simklItem, watchedIds) }
         item { Ratings(meta) }
         item { Synopsis(meta) }
 
-        seasonSection(seasons, expanded)
+        seasonSection(seasons, expanded, watchedIds, onChooseSource, onToggleWatched)
         castAndCrew(meta)
         tagsAndThemes(meta)
         commentsSection()
@@ -257,7 +280,7 @@ private fun Header(meta: Meta) {
  */
 @Composable
 private fun WatchAction(meta: Meta, onChooseSource: (String) -> Unit) {
-    val next = meta.videos.firstOrNull()
+    val next = meta.firstRegularEpisode()
     val label = when {
         next?.season != null && next.episode != null ->
             "Watch S${pad(next.season)}E${pad(next.episode)} now"
@@ -279,17 +302,26 @@ private fun WatchAction(meta: Meta, onChooseSource: (String) -> Unit) {
     }
 }
 
+/**
+ * Simkl's synced count is preferred when it has one, because it reflects everything the
+ * user has ever marked watched, on this device or anywhere else Simkl is connected.
+ * The local, per-episode tally ([watchedIds]) is only the fallback, for a title Simkl has
+ * no record of yet or while signed out.
+ */
 @Composable
-private fun WatchProgress(meta: Meta) {
-    val total = meta.trackedEpisodeCount()
-    // Zero until Simkl or local playback tracking exists.
-    val watched = 0
+private fun WatchProgress(meta: Meta, simklItem: SimklItem?, watchedIds: Set<String>) {
+    val localWatched = meta.videos.count {
+        (it.season ?: SpecialsSeason) != SpecialsSeason && it.id in watchedIds
+    }
+    val fromSimkl = simklItem?.takeIf { it.totalEpisodes > 0 }
+    val total = fromSimkl?.totalEpisodes?.toInt() ?: meta.trackedEpisodeCount()
+    val watched = fromSimkl?.watchedEpisodes?.toInt() ?: localWatched
 
     SectionCard(title = "Watch progress", icon = Icons.Outlined.Visibility) {
         // A bar pinned at zero says nothing that the text below it does not.
-        if (watched > 0) {
+        if (watched > 0 && total > 0) {
             LinearProgressIndicator(
-                progress = { watched.toFloat() / total },
+                progress = { (watched.toFloat() / total).coerceIn(0f, 1f) },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             )
         }
@@ -343,6 +375,9 @@ private fun Synopsis(meta: Meta) {
 private fun LazyListScope.seasonSection(
     seasons: List<Pair<Int, List<Video>>>,
     expanded: MutableState<Int>,
+    watchedIds: Set<String>,
+    onChooseSource: (String) -> Unit,
+    onToggleWatched: (Video) -> Unit,
 ) {
     item { SectionHeader("Episodes", Icons.Outlined.Tv) }
 
@@ -356,7 +391,7 @@ private fun LazyListScope.seasonSection(
             SeasonHeader(
                 season = season,
                 episodeCount = episodes.size,
-                watched = 0,
+                watched = episodes.count { it.id in watchedIds },
                 expanded = expanded.value == season,
                 onToggle = {
                     expanded.value = if (expanded.value == season) -1 else season
@@ -365,7 +400,16 @@ private fun LazyListScope.seasonSection(
         }
         item {
             AnimatedVisibility(visible = expanded.value == season) {
-                Column { episodes.forEach { EpisodeRow(it) } }
+                Column {
+                    episodes.forEach { video ->
+                        EpisodeRow(
+                            video = video,
+                            watched = video.id in watchedIds,
+                            onClick = { onChooseSource(video.id) },
+                            onToggleWatched = { onToggleWatched(video) },
+                        )
+                    }
+                }
             }
         }
     }
@@ -417,9 +461,17 @@ private fun SeasonHeader(
 }
 
 @Composable
-private fun EpisodeRow(video: Video) {
+private fun EpisodeRow(
+    video: Video,
+    watched: Boolean,
+    onClick: () -> Unit,
+    onToggleWatched: () -> Unit,
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -457,12 +509,20 @@ private fun EpisodeRow(video: Video) {
             )
         }
         Spacer(Modifier.width(8.dp))
-        // Unchecked always, for the same reason the progress bars read zero.
-        Icon(
-            imageVector = Icons.Outlined.CheckCircle,
-            contentDescription = "Not watched",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        // A dedicated touch target, nested inside the row's own click target. Compose
+        // resolves nested clickables front-to-back, so pressing the tick box toggles
+        // watched state instead of also opening the sources sheet underneath it.
+        IconButton(onClick = onToggleWatched) {
+            Icon(
+                imageVector = if (watched) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
+                contentDescription = if (watched) "Watched" else "Not watched",
+                tint = if (watched) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
     }
 }
 
@@ -656,6 +716,19 @@ private const val SpecialsSeason = 0
  */
 private fun Meta.trackedEpisodeCount(): Int =
     videos.count { (it.season ?: SpecialsSeason) != SpecialsSeason }
+
+/**
+ * The episode "Watch now" opens: the lowest numbered episode of the lowest numbered
+ * regular season. Never a special, regardless of how the addon orders [videos] — Season 0
+ * routinely sorts first in raw addon data, and starting there is never what "watch now" on
+ * a series means. Falls back to the very first video for the rare title that lists nothing
+ * but specials, since playing something beats the button doing nothing.
+ */
+private fun Meta.firstRegularEpisode(): Video? =
+    videos
+        .filter { (it.season ?: SpecialsSeason) != SpecialsSeason }
+        .minWithOrNull(compareBy({ it.season }, { it.episode }))
+        ?: videos.firstOrNull()
 
 /** Zero padded episode and season numbers. Common Kotlin has no String.format. */
 private fun pad(value: Int): String = value.toString().padStart(2, '0')

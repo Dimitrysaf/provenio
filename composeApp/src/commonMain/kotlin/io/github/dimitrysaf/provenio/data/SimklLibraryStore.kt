@@ -36,6 +36,10 @@ class SimklLibraryStore(driver: SqlDriver) {
     fun itemsWithStatus(status: String): List<SimklItem> =
         sync.selectByStatus(status).executeAsList()
 
+    /** The synced library row for one title, regardless of its list status. */
+    fun itemByImdbId(imdbId: String): SimklItem? =
+        sync.selectByImdbId(imdbId).executeAsOneOrNull()
+
     /**
      * Writes a delta.
      *

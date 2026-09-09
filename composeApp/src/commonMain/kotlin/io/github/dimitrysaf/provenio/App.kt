@@ -49,6 +49,7 @@ import io.github.dimitrysaf.provenio.theme.MotionTokens
 import io.github.dimitrysaf.provenio.theme.ThemeMode
 import io.github.dimitrysaf.provenio.theme.isDynamicColorSupported
 import io.github.dimitrysaf.provenio.ui.HomeScreen
+import io.github.dimitrysaf.provenio.watch.EpisodeWatchedRepository
 
 /**
  * Page transitions. Only ever one surface animates, and it animates over another that
@@ -96,6 +97,7 @@ fun App() {
         SearchRepository.load()
         SimklSync.load()
         SimklRepository.load()
+        EpisodeWatchedRepository.load()
     }
 
     AppTheme(themeMode = themeMode, useDynamicColor = useDynamicColor) {

@@ -164,6 +164,9 @@ object SimklSync {
         _planToWatch.value = withStore { it.itemsWithStatus(SimklStatus.PlanToWatch) }.orEmpty()
     }
 
+    /** The synced Simkl row for one title, by its imdb id, or null if Simkl has no record. */
+    fun progressFor(imdbId: String): SimklItem? = withStore { it.itemByImdbId(imdbId) }
+
     fun clear() {
         job?.cancel()
         withStore { it.clear() }

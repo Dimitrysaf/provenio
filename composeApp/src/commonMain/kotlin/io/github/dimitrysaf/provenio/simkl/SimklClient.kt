@@ -13,6 +13,7 @@ import io.ktor.http.contentType
 import io.ktor.http.encodeURLParameter
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
@@ -59,6 +60,17 @@ class SimklClient(
 
     suspend fun activities(token: String): SimklActivities? =
         getJson(endpoint("/sync/activities"), token)
+
+    /**
+     * Adds episodes to the signed in user's watch history, ticking them watched on Simkl.
+     * Covered by Simkl's write rate limit, same as every other `/sync/*` write endpoint.
+     */
+    suspend fun addToHistory(token: String, request: SimklHistoryRequest): Boolean =
+        postAndCheck(endpoint("/sync/history"), token, request)
+
+    /** The inverse of [addToHistory]: same request shape, un-watches instead. */
+    suspend fun removeFromHistory(token: String, request: SimklHistoryRequest): Boolean =
+        postAndCheck(endpoint("/sync/history/remove"), token, request)
 
     /**
      * One library, fetched whole, from `/sync/all-items/{type}`. Phase 1 only.
@@ -123,6 +135,36 @@ class SimklClient(
             throw cancellation
         } catch (failure: Exception) {
             null
+        }
+    }
+
+    /**
+     * A write call whose response body carries nothing the caller needs, so success is
+     * just the status code. Used for the history endpoints, which answer with an
+     * added/not_found breakdown that this app has no use for.
+     */
+    private suspend inline fun <reified T> postAndCheck(
+        url: String,
+        accessToken: String,
+        request: T,
+    ): Boolean {
+        lastFailure = null
+        return try {
+            val response = httpClient.post(url) {
+                header(HttpHeaders.UserAgent, SimklConfig.userAgent)
+                header(HttpHeaders.Authorization, "Bearer $accessToken")
+                contentType(ContentType.Application.Json)
+                setBody(simklJson.encodeToString(request))
+            }
+            if (!response.status.isSuccess()) {
+                lastFailure = "Simkl answered ${response.status.value}."
+            }
+            response.status.isSuccess()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (failure: Exception) {
+            lastFailure = failure::class.simpleName
+            false
         }
     }
 

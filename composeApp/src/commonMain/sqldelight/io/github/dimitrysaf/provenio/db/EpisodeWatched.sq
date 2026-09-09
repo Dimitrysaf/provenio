@@ -1,0 +1,25 @@
+-- Local record of watched episodes, keyed by the addon video id (e.g. "tt0108778:1:1").
+-- Simkl's synced library only carries per-show totals, not a per-episode watched list, so
+-- this is the source of truth for the tick box on each episode row. showId, season and
+-- episode are kept alongside the key (rather than only the videoId) so a toggle already
+-- carries what a later Simkl history call needs, with no second lookup back to the addon.
+CREATE TABLE episodeWatched (
+    videoId TEXT NOT NULL PRIMARY KEY,
+    showId TEXT NOT NULL,
+    season INTEGER NOT NULL,
+    episode INTEGER NOT NULL,
+    watchedAtMillis INTEGER NOT NULL
+);
+
+selectAll:
+SELECT * FROM episodeWatched;
+
+markWatched:
+INSERT OR REPLACE INTO episodeWatched(videoId, showId, season, episode, watchedAtMillis)
+VALUES (?, ?, ?, ?, ?);
+
+markUnwatched:
+DELETE FROM episodeWatched WHERE videoId = ?;
+
+clearAll:
+DELETE FROM episodeWatched;
