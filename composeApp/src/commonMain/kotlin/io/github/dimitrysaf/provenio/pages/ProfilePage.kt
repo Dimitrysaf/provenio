@@ -83,12 +83,20 @@ fun ProfilePage(
         addon.manifest.resources.any { it.name == "meta" }
     }
 
-    // Simkl's own docs describe this endpoint for exactly this: a "Continue watching"
-    // list, each entry carrying precisely how far into that one episode or movie playback
-    // got — not read from the synced library, which only ever has a watched/total count.
-    var continueWatching by remember { mutableStateOf<List<SimklPlaybackSession>>(emptyList()) }
+    // The shelf itself is Simkl's "watching" list — the same one this page has always
+    // shown — so it is never empty just because nothing has a live scrobble session yet.
+    // Per card, a matching playback session (when Simkl has one) supplies the one thing
+    // the watching list itself cannot: real time-into-this-episode progress, keyed by
+    // imdb id so each card can look up its own without a second round trip.
+    var timeProgressByImdbId by remember { mutableStateOf<Map<String, SimklPlaybackSession>>(emptyMap()) }
     LaunchedEffect(signedIn) {
-        continueWatching = if (signedIn) SimklPlaybackRepository.continueWatching() else emptyList()
+        timeProgressByImdbId = if (signedIn) {
+            SimklPlaybackRepository.continueWatching()
+                .mapNotNull { session -> session.media?.ids?.imdb?.let { it to session } }
+                .toMap()
+        } else {
+            emptyMap()
+        }
     }
 
     PageScaffold(
@@ -124,7 +132,7 @@ fun ProfilePage(
             return@PageScaffold
         }
 
-        ContinueWatchingCarousel(continueWatching, onOpenDetail)
+        ContinueWatchingCarousel(watching, timeProgressByImdbId, onOpenDetail)
         Shelf("Plan to watch", planToWatch, onOpenDetail)
     }
 }
@@ -132,21 +140,20 @@ fun ProfilePage(
 /** Simkl types its libraries as shows, movies and anime. The addon protocol does not. */
 private fun SimklItem.stremioType(): String = if (mediaType == "movies") "movie" else "series"
 
-/** A playback session's own type, same distinction, straight from Simkl. */
-private fun SimklPlaybackSession.stremioType(): String = if (episode != null) "series" else "movie"
-
 /**
- * The lead shelf: what Simkl's scrobble sessions say is genuinely mid-watch, each card
- * carrying its own real position — not an episode count, the actual time into that one
- * episode or movie. Never rendered empty: with no paused session anywhere, there is
- * nothing honest to draw a time-progress bar for yet.
+ * The lead shelf: Simkl's "watching" list, same as this page has always shown, so it is
+ * never empty just because nothing has a live scrobble session yet. A card's progress bar
+ * is real time-into-this-episode from [timeProgressByImdbId] when Simkl has that session,
+ * and simply absent otherwise — an episode-count fraction is a different metric, not a
+ * rougher version of the same one, so there is no fallback bar to draw without it.
  */
 @Composable
 private fun ContinueWatchingCarousel(
-    sessions: List<SimklPlaybackSession>,
+    items: List<SimklItem>,
+    timeProgressByImdbId: Map<String, SimklPlaybackSession>,
     onOpenDetail: (type: String, id: String) -> Unit,
 ) {
-    if (sessions.isEmpty()) return
+    if (items.isEmpty()) return
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
         Text(
             text = "Continue watching",
@@ -160,10 +167,10 @@ private fun ContinueWatchingCarousel(
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            sessions.forEach { session ->
-                val imdbId = session.media?.ids?.imdb
-                ContinueWatchingCard(session) {
-                    imdbId?.let { onOpenDetail(session.stremioType(), it) }
+            items.forEach { item ->
+                val session = item.imdbId?.let { timeProgressByImdbId[it] }
+                ContinueWatchingCard(item, session) {
+                    item.imdbId?.let { onOpenDetail(item.stremioType(), it) }
                 }
             }
         }
@@ -171,14 +178,15 @@ private fun ContinueWatchingCarousel(
 }
 
 @Composable
-private fun ContinueWatchingCard(session: SimklPlaybackSession, onClick: () -> Unit) {
-    val imdbId = session.media?.ids?.imdb
-    // The playback session itself carries no artwork — it is looked up from whatever the
-    // regular library sync already cached for this title, so this costs no extra request.
-    val synced = remember(imdbId) { imdbId?.let { SimklSync.progressFor(it) } }
-    val poster = SimklImages.poster(synced?.poster)
-    val title = session.media?.title ?: synced?.title ?: "Continue watching"
-    val episode = session.episode
+private fun ContinueWatchingCard(
+    item: SimklItem,
+    session: SimklPlaybackSession?,
+    onClick: () -> Unit,
+) {
+    val poster = SimklImages.poster(item.poster)
+    // The watching list has no per-episode number of its own; a matched session's is the
+    // one actually being resumed, so it is shown only when there is one to show.
+    val episode = session?.episode
 
     Column(modifier = Modifier.width(150.dp).clickable(onClick = onClick)) {
         Box(
@@ -208,7 +216,7 @@ private fun ContinueWatchingCard(session: SimklPlaybackSession, onClick: () -> U
             )
             Column(modifier = Modifier.align(Alignment.BottomStart).padding(10.dp)) {
                 Text(
-                    text = title,
+                    text = item.title,
                     style = MaterialTheme.typography.labelLarge,
                     color = Color.White,
                     maxLines = 1,
@@ -223,13 +231,16 @@ private fun ContinueWatchingCard(session: SimklPlaybackSession, onClick: () -> U
                 }
                 // The position itself, in time — not an episode count — and no label:
                 // the bar sitting on the art is the whole point, the same way a video
-                // scrubber never needs to spell out what it is.
-                LinearProgressIndicator(
-                    progress = { (session.progress / 100f).coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp).height(3.dp),
-                    trackColor = Color.White.copy(alpha = 0.25f),
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                // scrubber never needs to spell out what it is. Nothing drawn at all
+                // when Simkl has not reported one.
+                if (session != null) {
+                    LinearProgressIndicator(
+                        progress = { (session.progress / 100f).coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp).height(3.dp),
+                        trackColor = Color.White.copy(alpha = 0.25f),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
     }
