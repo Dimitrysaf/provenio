@@ -1,0 +1,44 @@
+-- The saved activities timestamp, stored exactly as Simkl returned it. Their rules require
+-- passing it back byte for byte, so it is never parsed or reformatted.
+CREATE TABLE simklSync (
+    id INTEGER NOT NULL PRIMARY KEY,
+    activitiesAll TEXT,
+    lastSyncedAtMillis INTEGER NOT NULL DEFAULT 0,
+    initialSyncDone INTEGER NOT NULL DEFAULT 0
+);
+
+selectSync:
+SELECT * FROM simklSync WHERE id = 1;
+
+upsertSync:
+INSERT OR REPLACE INTO simklSync(id, activitiesAll, lastSyncedAtMillis, initialSyncDone)
+VALUES (1, ?, ?, ?);
+
+CREATE TABLE simklItem (
+    simklId INTEGER NOT NULL PRIMARY KEY,
+    mediaType TEXT NOT NULL,
+    status TEXT NOT NULL,
+    title TEXT NOT NULL,
+    year INTEGER,
+    poster TEXT,
+    imdbId TEXT,
+    watchedEpisodes INTEGER NOT NULL DEFAULT 0,
+    totalEpisodes INTEGER NOT NULL DEFAULT 0,
+    lastWatchedAt TEXT,
+    nextToWatch TEXT
+);
+
+selectByStatus:
+SELECT * FROM simklItem WHERE status = ? ORDER BY lastWatchedAt DESC;
+
+upsertItem:
+INSERT OR REPLACE INTO simklItem(
+    simklId, mediaType, status, title, year, poster, imdbId,
+    watchedEpisodes, totalEpisodes, lastWatchedAt, nextToWatch
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteItem:
+DELETE FROM simklItem WHERE simklId = ?;
+
+clearAll:
+DELETE FROM simklItem;

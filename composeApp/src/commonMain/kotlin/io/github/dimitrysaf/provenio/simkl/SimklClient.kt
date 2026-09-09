@@ -49,6 +49,27 @@ class SimklClient(
         }
     }
 
+    suspend fun activities(token: String): SimklActivities? =
+        getJson(endpoint("/sync/activities"), token)
+
+    /**
+     * One library, fetched whole. Phase 1 only.
+     *
+     * Simkl requires these to be called one at a time rather than in parallel, so nothing
+     * here fans out and callers must await each in turn.
+     */
+    suspend fun library(token: String, type: String): SimklAllItems? =
+        getJson(endpoint("/sync/$type"), token)
+
+    /**
+     * Everything that changed since [dateFrom], in one request. Phase 2.
+     *
+     * [dateFrom] is passed through exactly as Simkl returned it. Reformatting it is the
+     * mistake their sync rules single out.
+     */
+    suspend fun changesSince(token: String, dateFrom: String): SimklAllItems? =
+        getJson(endpoint("/sync/all-items", mapOf("date_from" to dateFrom)), token)
+
     /**
      * client_id, app-name and app-version go on every request as query parameters, which
      * is unusual but is what Simkl requires.

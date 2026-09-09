@@ -40,7 +40,11 @@ object SimklRepository {
         loaded = true
         store = runCatching { SimklStore(createDatabaseDriver()) }.getOrNull()
         accessToken = store?.let { runCatching { it.token() }.getOrNull() }
-        if (accessToken != null) _authState.value = SimklAuthState.SignedIn
+        if (accessToken != null) {
+            _authState.value = SimklAuthState.SignedIn
+            SimklSync.load()
+            SimklSync.sync(SyncTrigger.Startup, currentTimeMillis())
+        }
     }
 
     fun signIn() {
@@ -143,6 +147,7 @@ object SimklRepository {
         pollJob = null
         accessToken = null
         store?.let { runCatching { it.clear() } }
+        SimklSync.clear()
         _authState.value = SimklAuthState.SignedOut
     }
 
@@ -153,6 +158,8 @@ object SimklRepository {
         accessToken = token
         store?.let { runCatching { it.save(token) } }
         _authState.value = SimklAuthState.SignedIn
+        // Signing in is user interaction, so a sync here is a trigger rather than a poll.
+        SimklSync.sync(SyncTrigger.Manual, currentTimeMillis())
     }
 
     private const val DefaultPollSeconds = 5
