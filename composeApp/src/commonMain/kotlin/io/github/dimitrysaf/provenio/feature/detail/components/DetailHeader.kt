@@ -35,21 +35,31 @@ import io.github.dimitrysaf.provenio.stremio.model.Meta
  */
 @Composable
 fun DetailHeader(meta: Meta, backdropHeight: Dp) {
+    // Tied to the backdrop rather than fixed, exactly as the hero sizes its own.
+    val logoHeight = minOf(backdropHeight * 0.22f, 110.dp)
+
     Column {
         // topScrim because a back button floats over this one, which the hero has no
         // equivalent of — without it the icon disappears into a bright still.
         Backdrop(url = meta.background, height = backdropHeight, topScrim = true) {
             if (meta.logo != null) {
-                AsyncImage(
-                    model = meta.logo,
-                    contentDescription = meta.name,
-                    contentScale = ContentScale.Fit,
+                // The padding goes on the box, not the image: constraints flow outside
+                // in, so padding under a heightIn eats into the height the image is
+                // allowed rather than sitting beneath it, and the logo comes out short.
+                Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .fillMaxWidth(0.75f)
-                        .heightIn(max = minOf(backdropHeight * 0.22f, 110.dp))
-                        .padding(bottom = 24.dp),
-                )
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AsyncImage(
+                        model = meta.logo,
+                        contentDescription = meta.name,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxWidth(0.75f).heightIn(max = logoHeight),
+                    )
+                }
             }
         }
 
