@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -38,7 +39,12 @@ import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaf
 import com.alorma.compose.settings.ui.expressive.SettingsGroup
 import io.github.dimitrysaf.provenio.theme.ThemeMode
 import kotlinx.coroutines.launch
-import io.github.dimitrysaf.provenio.ui.backhandler.SystemBackHandler
+import io.github.dimitrysaf.provenio.core.platform.SystemBackHandler
+import io.github.dimitrysaf.provenio.pages.settings.AddonsContent
+import io.github.dimitrysaf.provenio.pages.settings.AppearanceContent
+import io.github.dimitrysaf.provenio.pages.settings.P2pContent
+import io.github.dimitrysaf.provenio.pages.settings.SimklContent
+import io.github.dimitrysaf.provenio.pages.settings.VideoPlayerContent
 import io.github.dimitrysaf.provenio.ui.components.BackTopBar
 import io.github.dimitrysaf.provenio.ui.components.SettingsTile
 import io.github.dimitrysaf.provenio.ui.components.SettingsTileSpacing
@@ -84,7 +90,6 @@ enum class SettingsCategory(
 @Composable
 fun SettingsPage(
     modifier: Modifier = Modifier,
-    onBack: () -> Unit,
     initialCategory: SettingsCategory? = null,
     themeMode: ThemeMode,
     onThemeModeChange: (ThemeMode) -> Unit,
@@ -106,15 +111,24 @@ fun SettingsPage(
     val selected = SettingsCategory.entries.firstOrNull { it.name == selectedName }
         ?: SettingsCategory.entries.first()
 
-    // One definition of "back" for both the gesture and the top bar's arrow. While a
-    // category is open on a single pane, back closes that category; only once there is
-    // no pane left to close does it leave settings. canNavigateBack() reports false when
-    // popping would not change what is on screen, so on a two-pane window the arrow
-    // leaves settings directly rather than silently doing nothing.
+    // Settings is a tab, so back never leaves it: while a category is open on a single
+    // pane, back closes that category, and with nothing left to close there is no arrow
+    // to draw at all. canNavigateBack() reports false when popping would not change what
+    // is on screen, which on a two-pane window is always.
     val canClosePane = navigator.canNavigateBack()
     val closePane: () -> Unit = { scope.launch { navigator.navigateBack() } }
 
     SystemBackHandler(enabled = canClosePane, onBack = closePane)
+
+    // Arriving from an "Add an add-on" or "Sign in to Simkl" button, which name the
+    // category they mean. Keyed on the request so tapping the tab itself, which sends
+    // null, leaves whatever category was last open alone.
+    LaunchedEffect(initialCategory) {
+        if (initialCategory != null) {
+            selectedName = initialCategory.name
+            navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, initialCategory.name)
+        }
+    }
 
     Column(
         modifier = modifier
@@ -123,7 +137,7 @@ fun SettingsPage(
     ) {
         BackTopBar(
             title = if (canClosePane) selected.title else "Settings",
-            onBack = { if (canClosePane) closePane() else onBack() },
+            onBack = if (canClosePane) closePane else null,
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
             ),

@@ -1,4 +1,4 @@
-package io.github.dimitrysaf.provenio.pages
+package io.github.dimitrysaf.provenio.pages.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.width
@@ -31,7 +31,7 @@ import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.ui.components.SettingsTile
 import io.github.dimitrysaf.provenio.ui.components.SettingsTileSpacing
 import io.github.dimitrysaf.provenio.ui.components.TilePosition
-import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
+import io.github.dimitrysaf.provenio.core.platform.rememberUrlOpener
 
 // LocalClipboard replaces this, but its API is suspend and takes a ClipEntry whose
 // multiplatform construction differs by version. Not worth the risk for one copy button.

@@ -32,7 +32,6 @@ import androidx.navigation.toRoute
 import io.github.dimitrysaf.provenio.navigation.DetailRoute
 import io.github.dimitrysaf.provenio.navigation.PlayerRoute
 import io.github.dimitrysaf.provenio.navigation.Routes
-import io.github.dimitrysaf.provenio.navigation.SearchFilter
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.PlayerScreen
@@ -42,14 +41,11 @@ import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.SearchRepository
 import io.github.dimitrysaf.provenio.pages.DetailPage
-import io.github.dimitrysaf.provenio.pages.SearchPage
-import io.github.dimitrysaf.provenio.pages.SettingsCategory
-import io.github.dimitrysaf.provenio.pages.SettingsPage
 import io.github.dimitrysaf.provenio.theme.AppTheme
 import io.github.dimitrysaf.provenio.theme.MotionTokens
 import io.github.dimitrysaf.provenio.theme.ThemeMode
 import io.github.dimitrysaf.provenio.theme.isDynamicColorSupported
-import io.github.dimitrysaf.provenio.ui.HomeScreen
+import io.github.dimitrysaf.provenio.shell.MainScaffold
 import io.github.dimitrysaf.provenio.watch.EpisodeWatchedRepository
 
 /**
@@ -115,21 +111,15 @@ fun App() {
         ) {
             composable(Routes.Home) {
                 PageSurface(applyBottomInset = false) {
-                    HomeScreen(
-                        onOpenSearch = { filter ->
-                            navController.navigate(
-                                when (filter) {
-                                    SearchFilter.Movies -> Routes.SearchMovies
-                                    SearchFilter.Tv -> Routes.SearchTv
-                                    else -> Routes.Search
-                                },
-                            )
-                        },
-                        onOpenSettings = { navController.navigate(Routes.Settings) },
-                        onAddAddons = { navController.navigate(Routes.SettingsAddons) },
+                    MainScaffold(
                         onOpenDetail = { type, id ->
                             navController.navigate(DetailRoute(type, id))
                         },
+                        themeMode = themeMode,
+                        onThemeModeChange = { themeMode = it },
+                        useDynamicColor = useDynamicColor,
+                        onUseDynamicColorChange = { useDynamicColor = it },
+                        dynamicColorAvailable = isDynamicColorSupported(),
                     )
                 }
             }
@@ -151,15 +141,6 @@ fun App() {
                         )
                     },
                     onBack = { navController.popBackStack() },
-                )
-            }
-
-            val search: @Composable (SearchFilter) -> Unit = { filter ->
-                SearchPage(
-                    onBack = { navController.popBackStack() },
-                    onAddAddons = { navController.navigate(Routes.SettingsAddons) },
-                    onOpenDetail = { type, id -> navController.navigate(DetailRoute(type, id)) },
-                    initialFilter = filter,
                 )
             }
 
@@ -186,29 +167,6 @@ fun App() {
                 }
             }
 
-            composable(Routes.Search) { PageSurface { search(SearchFilter.All) } }
-            composable(Routes.SearchMovies) { PageSurface { search(SearchFilter.Movies) } }
-            composable(Routes.SearchTv) { PageSurface { search(SearchFilter.Tv) } }
-
-            val settings: @Composable (SettingsCategory?) -> Unit = { category ->
-                SettingsPage(
-                    onBack = { navController.popBackStack() },
-                    initialCategory = category,
-                    themeMode = themeMode,
-                    onThemeModeChange = { themeMode = it },
-                    useDynamicColor = useDynamicColor,
-                    onUseDynamicColorChange = { useDynamicColor = it },
-                    dynamicColorAvailable = isDynamicColorSupported(),
-                )
-            }
-
-            composable(Routes.Settings) {
-                PageSurface { settings(null) }
-            }
-
-            composable(Routes.SettingsAddons) {
-                PageSurface { settings(SettingsCategory.Addons) }
-            }
         }
     }
 }

@@ -1,4 +1,4 @@
-package io.github.dimitrysaf.provenio.pages
+package io.github.dimitrysaf.provenio.pages.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -51,7 +51,7 @@ import io.github.dimitrysaf.provenio.ui.components.SettingsTile
 import io.github.dimitrysaf.provenio.ui.components.SettingsTileSpacing
 import io.github.dimitrysaf.provenio.ui.components.TilePosition
 import io.github.dimitrysaf.provenio.ui.components.tilePositionOf
-import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
+import io.github.dimitrysaf.provenio.core.platform.rememberUrlOpener
 import kotlinx.coroutines.delay
 
 

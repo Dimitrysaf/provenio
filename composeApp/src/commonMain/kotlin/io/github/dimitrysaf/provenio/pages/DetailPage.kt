@@ -80,7 +80,7 @@ import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.Video
 import io.github.dimitrysaf.provenio.ui.SourcesSheet
-import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
+import io.github.dimitrysaf.provenio.core.platform.rememberUrlOpener
 import io.github.dimitrysaf.provenio.watch.EpisodeWatchedRepository
 
 /**

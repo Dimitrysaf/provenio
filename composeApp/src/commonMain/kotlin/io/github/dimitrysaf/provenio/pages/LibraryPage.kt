@@ -15,7 +15,7 @@ import io.github.dimitrysaf.provenio.ui.components.PageScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ListsPage(
+fun LibraryPage(
     modifier: Modifier = Modifier,
     onSearchClick: () -> Unit,
     onFilterClick: () -> Unit,
@@ -24,7 +24,7 @@ fun ListsPage(
         modifier = modifier,
         topBar = { scrollBehavior ->
             AppTopBar(
-                title = "Lists",
+                title = "Library",
                 scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(onClick = onSearchClick) {
@@ -37,6 +37,6 @@ fun ListsPage(
             )
         },
     ) {
-        Text(text = "Lists", style = MaterialTheme.typography.headlineLarge)
+        Text(text = "Library", style = MaterialTheme.typography.headlineLarge)
     }
 }

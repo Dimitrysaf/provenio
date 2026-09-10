@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -26,7 +26,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,43 +48,31 @@ import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
 private const val PrefetchDistance = 5
 
 /**
- * Every browsable catalog of one type, as a shelf each.
+ * Every browsable catalog, as a shelf each, emitted into the caller's own list.
+ *
+ * A [LazyListScope] extension rather than a page of its own, because Discover shares one
+ * scroll with whatever sits above it — a LazyColumn inside a LazyColumn has no height to
+ * measure against and throws.
  *
  * Shelves are independent: each owns its paging and one failing does not empty the page.
  * Two addons offering a catalog with the same name produce two shelves, labelled by addon,
  * rather than being merged. Merging would mean deciding whose copy of a title wins, which
  * is the seat cascade and is not designed yet.
  */
-@Composable
-fun CatalogPage(
-    type: String,
-    modifier: Modifier = Modifier,
+fun LazyListScope.discoverShelves(
+    shelves: List<Pair<InstalledAddon, ManifestCatalog>>,
     onOpenDetail: (type: String, id: String) -> Unit,
-    onAddAddons: () -> Unit,
 ) {
-    val collection by AddonRepository.collection.collectAsState()
-    val shelves = collection.browsableCatalogs(type)
-
-    if (shelves.isEmpty()) {
-        NoCatalogs(onAddAddons = onAddAddons, modifier = modifier)
-        return
-    }
-
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 24.dp),
-    ) {
-        items(
-            items = shelves,
-            key = { (addon, catalog) -> "${addon.manifest.id}:${catalog.type}:${catalog.id}" },
-        ) { (addon, catalog) ->
-            CatalogShelf(
-                addon = addon,
-                catalog = catalog,
-                showAddonName = shelves.count { it.second.name == catalog.name } > 1,
-                onOpenDetail = onOpenDetail,
-            )
-        }
+    items(
+        items = shelves,
+        key = { (addon, catalog) -> "${addon.manifest.id}:${catalog.type}:${catalog.id}" },
+    ) { (addon, catalog) ->
+        CatalogShelf(
+            addon = addon,
+            catalog = catalog,
+            showAddonName = shelves.count { it.second.name == catalog.name } > 1,
+            onOpenDetail = onOpenDetail,
+        )
     }
 }
 
@@ -206,10 +193,11 @@ private fun CatalogCard(meta: MetaPreview, onClick: () -> Unit) {
     }
 }
 
+/** Sits inside the caller's scrolling list, so it takes width but never unbounded height. */
 @Composable
-private fun NoCatalogs(onAddAddons: () -> Unit, modifier: Modifier = Modifier) {
+fun NoCatalogs(onAddAddons: () -> Unit, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.fillMaxSize().padding(32.dp),
+        modifier = modifier.fillMaxWidth().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

@@ -6,7 +6,7 @@ import io.github.dimitrysaf.provenio.simkl.SimklClient
 import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.simkl.singleEpisodeHistoryRequest
 import io.github.dimitrysaf.provenio.stremio.model.Video
-import io.github.dimitrysaf.provenio.util.currentTimeMillis
+import io.github.dimitrysaf.provenio.core.platform.currentTimeMillis
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

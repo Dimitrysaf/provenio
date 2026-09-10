@@ -20,13 +20,13 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.History
@@ -58,7 +58,9 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.navigation.SearchFilter
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
+import io.github.dimitrysaf.provenio.stremio.InstalledAddon
 import io.github.dimitrysaf.provenio.stremio.SearchRepository
+import io.github.dimitrysaf.provenio.stremio.model.ManifestCatalog
 import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
 import kotlinx.coroutines.delay
 
@@ -66,17 +68,20 @@ import kotlinx.coroutines.delay
 private const val SearchDebounceMillis = 350L
 
 /**
- * A search screen, not a search box.
+ * Search and Discover, in that order down one page.
  *
- * The field sits in the chrome and the results own the rest of the window from the moment
- * the screen opens. Nothing expands on tap, because there is no collapsed state to expand
- * from once search is a destination of its own.
+ * A top-level destination, so the field never collapses and there is no back arrow to
+ * draw. With the field empty the page is somewhere to browse: recent searches, then every
+ * browsable catalog as a shelf. A query replaces all of it with results — someone who has
+ * typed is looking for one title, not for something to scroll past.
+ *
+ * The filter chips narrow both halves, which is what the old TV and Movies tabs did before
+ * Discover absorbed them.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchPage(
     modifier: Modifier = Modifier,
-    onBack: () -> Unit,
     onAddAddons: () -> Unit,
     onOpenDetail: (type: String, id: String) -> Unit,
     initialFilter: SearchFilter = SearchFilter.All,
@@ -89,6 +94,7 @@ fun SearchPage(
     val searchable = allSearchable.filter { (_, catalog) ->
         activeFilter.type == null || catalog.type == activeFilter.type
     }
+    val shelves = collection.browsableCatalogs(activeFilter.type)
 
     // Seeded from the repository so returning from a title restores what was found.
     var query by remember { mutableStateOf(SearchRepository.lastQuery) }
@@ -140,9 +146,7 @@ fun SearchPage(
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Search movies and shows") },
                 leadingIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
+                    Icon(Icons.Outlined.Search, contentDescription = null)
                 },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
@@ -172,67 +176,113 @@ fun SearchPage(
 
         Box(modifier = Modifier.fillMaxSize()) {
             when {
-                searchable.isEmpty() -> NoSearchableAddons(onAddAddons)
                 searching -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 results.isNotEmpty() -> ResultGrid(results, onOpenDetail)
+                searched && searchable.isEmpty() -> NoSearchableAddons(onAddAddons)
                 searched -> CentredNote("No results for \"$query\"")
-                history.isNotEmpty() -> RecentSearches(
+                else -> Browse(
                     history = history,
+                    shelves = shelves,
                     onPick = { query = it },
                     onRemove = { SearchRepository.remove(it) },
                     onClear = { SearchRepository.clear() },
+                    onOpenDetail = onOpenDetail,
+                    onAddAddons = onAddAddons,
                 )
-                else -> CentredNote("Search across ${searchable.size} catalogs")
             }
         }
     }
 }
 
-/** Shown while the field is empty, the way a search screen normally fills that space. */
+/**
+ * What the page is when nothing has been typed: recent searches over Discover, sharing one
+ * scroll so browsing runs on past the end of the history rather than stopping at it.
+ */
 @Composable
-private fun RecentSearches(
+private fun Browse(
+    history: List<String>,
+    shelves: List<Pair<InstalledAddon, ManifestCatalog>>,
+    onPick: (String) -> Unit,
+    onRemove: (String) -> Unit,
+    onClear: () -> Unit,
+    onOpenDetail: (type: String, id: String) -> Unit,
+    onAddAddons: () -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp),
+    ) {
+        if (history.isNotEmpty()) {
+            recentSearches(
+                history = history,
+                onPick = onPick,
+                onRemove = onRemove,
+                onClear = onClear,
+            )
+        }
+
+        item(key = "discover-header") { SectionHeader("Discover") }
+
+        if (shelves.isEmpty()) {
+            item(key = "discover-empty") { NoCatalogs(onAddAddons = onAddAddons) }
+        } else {
+            discoverShelves(shelves = shelves, onOpenDetail = onOpenDetail)
+        }
+    }
+}
+
+@Composable
+private fun SectionHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+    )
+}
+
+/** Shown while the field is empty, the way a search screen normally fills that space. */
+private fun LazyListScope.recentSearches(
     history: List<String>,
     onPick: (String) -> Unit,
     onRemove: (String) -> Unit,
     onClear: () -> Unit,
 ) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Recent searches",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(onClick = onClear) { Text("Clear") }
-            }
+    item(key = "history-header") {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Recent searches",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onClear) { Text("Clear") }
         }
-        items(history, key = { it }) { term ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onPick(term) }
-                    .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+    }
+    items(history, key = { "history:$it" }) { term ->
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onPick(term) }
+                .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.History,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.width(16.dp))
+            Text(text = term, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            IconButton(onClick = { onRemove(term) }) {
                 Icon(
-                    imageVector = Icons.Outlined.History,
-                    contentDescription = null,
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = "Remove \"$term\" from history",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(Modifier.width(16.dp))
-                Text(text = term, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                IconButton(onClick = { onRemove(term) }) {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = "Remove \"$term\" from history",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
         }
     }

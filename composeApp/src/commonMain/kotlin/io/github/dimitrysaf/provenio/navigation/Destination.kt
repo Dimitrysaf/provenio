@@ -1,14 +1,14 @@
 package io.github.dimitrysaf.provenio.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Movie
-import androidx.compose.material.icons.outlined.Tv
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class Destination(
@@ -17,7 +17,7 @@ enum class Destination(
     val unselectedIcon: ImageVector,
 ) {
     Home("Home", Icons.Filled.Home, Icons.Outlined.Home),
-    Tv("TV", Icons.Filled.Tv, Icons.Outlined.Tv),
-    Movies("Movies", Icons.Filled.Movie, Icons.Outlined.Movie),
-    Lists("Lists", Icons.AutoMirrored.Filled.List, Icons.AutoMirrored.Outlined.List),
+    Search("Search", Icons.Filled.Search, Icons.Outlined.Search),
+    Library("Library", Icons.Filled.VideoLibrary, Icons.Outlined.VideoLibrary),
+    Settings("Settings", Icons.Filled.Settings, Icons.Outlined.Settings),
 }

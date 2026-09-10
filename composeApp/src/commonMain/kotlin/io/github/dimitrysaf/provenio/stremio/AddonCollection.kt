@@ -46,15 +46,17 @@ class AddonCollection(private val addons: List<InstalledAddon> = emptyList()) {
         active.flatMap { addon -> addon.manifest.catalogs.map { addon to it } }
 
     /**
-     * Catalogs that can be browsed without the caller supplying anything.
+     * Catalogs that can be browsed without the caller supplying anything, of [type] or of
+     * every type when it is null.
      *
      * A catalog with a required extra needs data we do not have. Cinemeta's `last-videos`
      * and `calendar-videos` want a list of ids the user is already following, so they are
      * feeds for a signed in client rather than shelves to browse.
      */
-    fun browsableCatalogs(type: String): List<Pair<InstalledAddon, ManifestCatalog>> =
+    fun browsableCatalogs(type: String? = null): List<Pair<InstalledAddon, ManifestCatalog>> =
         catalogs().filter { (_, catalog) ->
-            catalog.type == type && catalog.normalizedExtra().none { it.isRequired == true }
+            (type == null || catalog.type == type) &&
+                catalog.normalizedExtra().none { it.isRequired == true }
         }
 
     /** Catalogs that accept a `search` extra, which is what a search query can query. */

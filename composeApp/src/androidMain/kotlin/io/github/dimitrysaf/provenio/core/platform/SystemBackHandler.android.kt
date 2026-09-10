@@ -1,4 +1,4 @@
-package io.github.dimitrysaf.provenio.ui.backhandler
+package io.github.dimitrysaf.provenio.core.platform
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable

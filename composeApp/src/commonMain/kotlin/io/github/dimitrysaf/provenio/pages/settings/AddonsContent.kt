@@ -1,4 +1,4 @@
-package io.github.dimitrysaf.provenio.pages
+package io.github.dimitrysaf.provenio.pages.settings
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.CircleShape
@@ -53,7 +53,7 @@ import io.github.dimitrysaf.provenio.stremio.AddonUrl
 import io.github.dimitrysaf.provenio.stremio.AddonResult
 import io.github.dimitrysaf.provenio.stremio.InstalledAddon
 import io.github.dimitrysaf.provenio.stremio.model.Manifest
-import io.github.dimitrysaf.provenio.ui.rememberUrlOpener
+import io.github.dimitrysaf.provenio.core.platform.rememberUrlOpener
 import coil3.compose.AsyncImage
 import com.alorma.compose.settings.ui.expressive.SettingsGroup
 import io.github.dimitrysaf.provenio.ui.components.SettingsTile

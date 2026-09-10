@@ -1,4 +1,4 @@
-package io.github.dimitrysaf.provenio.ui
+package io.github.dimitrysaf.provenio.shell
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExitTransition
@@ -21,17 +21,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.Modifier
 import io.github.dimitrysaf.provenio.navigation.Destination
-import io.github.dimitrysaf.provenio.navigation.SearchFilter
 import io.github.dimitrysaf.provenio.pages.HomePage
-import io.github.dimitrysaf.provenio.pages.ListsPage
-import io.github.dimitrysaf.provenio.pages.MoviesPage
-import io.github.dimitrysaf.provenio.pages.TvPage
+import io.github.dimitrysaf.provenio.pages.LibraryPage
+import io.github.dimitrysaf.provenio.pages.SearchPage
+import io.github.dimitrysaf.provenio.pages.SettingsCategory
+import io.github.dimitrysaf.provenio.pages.SettingsPage
 import io.github.dimitrysaf.provenio.theme.MotionTokens
+import io.github.dimitrysaf.provenio.theme.ThemeMode
 import io.github.dimitrysaf.provenio.ui.responsive.usesExpandedRail
 import io.github.dimitrysaf.provenio.ui.responsive.usesRail
 import io.github.dimitrysaf.provenio.ui.responsive.windowSizeClassOf
@@ -49,20 +52,42 @@ private fun DestinationIcon(entry: Destination, selected: Boolean) {
  *
  * Laid out with plain weights and no animated insets. A sub-page covers this screen
  * rather than asking the navigation to move aside, so nothing here ever re-measures.
+ *
+ * Search and Settings are tabs rather than pushed pages, so neither draws a back arrow and
+ * neither covers the navigation. Anything that wants a particular settings category asks
+ * for it through [openSettings], which switches tab and names the category in one go.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
+fun MainScaffold(
     modifier: Modifier = Modifier,
-    onOpenSearch: (SearchFilter) -> Unit,
-    onOpenSettings: () -> Unit,
-    onAddAddons: () -> Unit,
     onOpenDetail: (type: String, id: String) -> Unit,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
+    useDynamicColor: Boolean,
+    onUseDynamicColorChange: (Boolean) -> Unit,
+    dynamicColorAvailable: Boolean,
 ) {
     // Saved rather than remembered: navigating to a sub-page disposes this screen's
     // composition, and the selected tab has to survive coming back.
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
     val selectedTab = Destination.entries[selectedIndex]
+
+    // Set only when a button names the category it means. Cleared as soon as a tab is
+    // picked by hand, so opening Settings that way reopens wherever it was left.
+    var pendingSettingsCategory by remember { mutableStateOf<SettingsCategory?>(null) }
+
+    val selectTab: (Int) -> Unit = { index ->
+        selectedIndex = index
+        pendingSettingsCategory = null
+    }
+    val openSearch: () -> Unit = {
+        selectTab(Destination.entries.indexOf(Destination.Search))
+    }
+    val openSettings: (SettingsCategory) -> Unit = { category ->
+        pendingSettingsCategory = category
+        selectedIndex = Destination.entries.indexOf(Destination.Settings)
+    }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val sizeClass = windowSizeClassOf(maxWidth)
@@ -86,7 +111,7 @@ fun HomeScreen(
                         val selected = index == selectedIndex
                         WideNavigationRailItem(
                             selected = selected,
-                            onClick = { selectedIndex = index },
+                            onClick = { selectTab(index) },
                             icon = { DestinationIcon(entry, selected) },
                             label = { Text(entry.label) },
                             railExpanded = expandRail,
@@ -115,29 +140,29 @@ fun HomeScreen(
                     when (tab) {
                         Destination.Home -> HomePage(
                             modifier = Modifier.fillMaxSize(),
-                            onSearchClick = { onOpenSearch(SearchFilter.All) },
-                            onSettingsClick = onOpenSettings,
-                            onAddAddons = onAddAddons,
+                            onSearchClick = openSearch,
+                            onSettingsClick = { openSettings(SettingsCategory.Simkl) },
+                            onAddAddons = { openSettings(SettingsCategory.Addons) },
                             onOpenDetail = onOpenDetail,
                         )
-                        Destination.Tv -> TvPage(
+                        Destination.Search -> SearchPage(
                             modifier = Modifier.fillMaxSize(),
-                            onSearchClick = { onOpenSearch(SearchFilter.Tv) },
-                            onFilterClick = {},
+                            onAddAddons = { openSettings(SettingsCategory.Addons) },
                             onOpenDetail = onOpenDetail,
-                            onAddAddons = onAddAddons,
                         )
-                        Destination.Movies -> MoviesPage(
+                        Destination.Library -> LibraryPage(
                             modifier = Modifier.fillMaxSize(),
-                            onSearchClick = { onOpenSearch(SearchFilter.Movies) },
+                            onSearchClick = openSearch,
                             onFilterClick = {},
-                            onOpenDetail = onOpenDetail,
-                            onAddAddons = onAddAddons,
                         )
-                        Destination.Lists -> ListsPage(
+                        Destination.Settings -> SettingsPage(
                             modifier = Modifier.fillMaxSize(),
-                            onSearchClick = { onOpenSearch(SearchFilter.All) },
-                            onFilterClick = {},
+                            initialCategory = pendingSettingsCategory,
+                            themeMode = themeMode,
+                            onThemeModeChange = onThemeModeChange,
+                            useDynamicColor = useDynamicColor,
+                            onUseDynamicColorChange = onUseDynamicColorChange,
+                            dynamicColorAvailable = dynamicColorAvailable,
                         )
                     }
                 }
@@ -148,7 +173,7 @@ fun HomeScreen(
                             val selected = index == selectedIndex
                             ShortNavigationBarItem(
                                 selected = selected,
-                                onClick = { selectedIndex = index },
+                                onClick = { selectTab(index) },
                                 icon = { DestinationIcon(entry, selected) },
                                 label = { Text(entry.label) },
                             )

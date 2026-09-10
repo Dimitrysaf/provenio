@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import io.github.dimitrysaf.provenio.core.platform.rememberUrlOpener
 import kotlinx.coroutines.delay
 
 internal const val VpnExplainerUrl = "https://en.wikipedia.org/wiki/Virtual_private_network"

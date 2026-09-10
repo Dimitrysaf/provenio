@@ -1,4 +1,4 @@
-package io.github.dimitrysaf.provenio.ui
+package io.github.dimitrysaf.provenio.core.platform
 
 import android.content.Intent
 import android.net.Uri

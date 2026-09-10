@@ -1,3 +1,3 @@
-package io.github.dimitrysaf.provenio.util
+package io.github.dimitrysaf.provenio.core.platform
 
 actual fun currentTimeMillis(): Long = System.currentTimeMillis()

@@ -19,7 +19,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Bookmarks
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.CloudSync
@@ -60,7 +59,7 @@ import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.simkl.SyncState
 import io.github.dimitrysaf.provenio.simkl.SyncTrigger
-import io.github.dimitrysaf.provenio.util.currentTimeMillis
+import io.github.dimitrysaf.provenio.core.platform.currentTimeMillis
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.ui.components.AppTopBar
 import io.github.dimitrysaf.provenio.ui.components.PageScaffold
@@ -111,9 +110,6 @@ fun HomePage(
                 actions = {
                     IconButton(onClick = onSearchClick) {
                         Icon(Icons.Filled.Search, contentDescription = "Search")
-                    }
-                    IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
                 },
             )

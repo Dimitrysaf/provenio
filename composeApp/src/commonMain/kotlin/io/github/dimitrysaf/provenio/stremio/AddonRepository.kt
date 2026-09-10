@@ -2,7 +2,7 @@ package io.github.dimitrysaf.provenio.stremio
 
 import io.github.dimitrysaf.provenio.data.AddonStore
 import io.github.dimitrysaf.provenio.data.createDatabaseDriver
-import io.github.dimitrysaf.provenio.util.currentTimeMillis
+import io.github.dimitrysaf.provenio.core.platform.currentTimeMillis
 import io.github.dimitrysaf.provenio.stremio.model.Manifest
 import io.github.dimitrysaf.provenio.stremio.model.ManifestCatalog
 import io.github.dimitrysaf.provenio.stremio.model.Meta

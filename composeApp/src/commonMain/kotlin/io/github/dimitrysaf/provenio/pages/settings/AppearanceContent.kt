@@ -1,4 +1,4 @@
-package io.github.dimitrysaf.provenio.pages
+package io.github.dimitrysaf.provenio.pages.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

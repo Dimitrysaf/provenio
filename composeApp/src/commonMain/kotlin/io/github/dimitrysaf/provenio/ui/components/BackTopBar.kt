@@ -14,11 +14,12 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
+/** A null [onBack] draws no arrow, for a page sitting at a root destination. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BackTopBar(
     title: String,
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     modifier: Modifier = Modifier,
     scrollBehavior: TopAppBarScrollBehavior? = null,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
@@ -27,8 +28,10 @@ fun BackTopBar(
     TopAppBar(
         modifier = modifier,
         navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            if (onBack != null) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                }
             }
         },
         title = { Text(title) },
