@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.designsystem.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,6 +45,7 @@ fun PosterCard(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     placeholder: ImageVector? = null,
+    overlay: (@Composable BoxScope.() -> Unit)? = null,
 ) {
     Column(modifier = modifier.clickable(onClick = onClick)) {
         Box(
@@ -68,6 +70,8 @@ fun PosterCard(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            // Anything a caller wants to sit on the art itself — a watched tick, a badge.
+            overlay?.invoke(this)
         }
         Text(
             text = title,

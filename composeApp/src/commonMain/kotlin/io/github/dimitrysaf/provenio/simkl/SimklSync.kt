@@ -53,6 +53,9 @@ object SimklSync {
     private val _planToWatch = MutableStateFlow<List<SimklItem>>(emptyList())
     val planToWatch: StateFlow<List<SimklItem>> = _planToWatch.asStateFlow()
 
+    private val _completed = MutableStateFlow<List<SimklItem>>(emptyList())
+    val completed: StateFlow<List<SimklItem>> = _completed.asStateFlow()
+
     private var store: SimklLibraryStore? = null
     private var loaded = false
     private var job: Job? = null
@@ -179,6 +182,7 @@ object SimklSync {
     private fun publish() {
         _watching.value = withStore { it.itemsWithStatus(SimklStatus.Watching) }.orEmpty()
         _planToWatch.value = withStore { it.itemsWithStatus(SimklStatus.PlanToWatch) }.orEmpty()
+        _completed.value = withStore { it.itemsWithStatus(SimklStatus.Completed) }.orEmpty()
     }
 
     /** The synced Simkl row for one title, by its imdb id, or null if Simkl has no record. */

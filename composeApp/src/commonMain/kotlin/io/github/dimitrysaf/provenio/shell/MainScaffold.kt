@@ -148,7 +148,8 @@ fun MainScaffold(
                         )
                         Destination.Library -> LibraryScreen(
                             modifier = Modifier.fillMaxSize(),
-                            onFilterClick = {},
+                            onOpenDetail = onOpenDetail,
+                            onSettingsClick = { openSettings(SettingsCategory.Simkl) },
                         )
                         Destination.Settings -> SettingsScreen(
                             modifier = Modifier.fillMaxSize(),

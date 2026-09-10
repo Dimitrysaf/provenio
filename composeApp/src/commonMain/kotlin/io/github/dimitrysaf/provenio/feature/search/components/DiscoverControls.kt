@@ -7,21 +7,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import io.github.dimitrysaf.provenio.designsystem.components.OptionSheet
+import io.github.dimitrysaf.provenio.designsystem.components.PickerChip
 import io.github.dimitrysaf.provenio.stremio.InstalledAddon
 import io.github.dimitrysaf.provenio.stremio.model.ManifestCatalog
 
@@ -96,35 +88,6 @@ fun DiscoverControls(
                 modifier = Modifier.padding(top = 12.dp),
             )
         }
-    }
-}
-
-/** A chip that opens its own sheet, so each picker owns one piece of state and no more. */
-@Composable
-private fun <T> PickerChip(
-    sheetTitle: String,
-    label: String,
-    options: List<Pair<T, String>>,
-    selected: T?,
-    onPick: (T) -> Unit,
-) {
-    var open by remember { mutableStateOf(false) }
-
-    SuggestionChip(
-        onClick = { open = true },
-        enabled = options.isNotEmpty(),
-        label = { Text(label) },
-        icon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
-    )
-
-    if (open) {
-        OptionSheet(
-            title = sheetTitle,
-            options = options,
-            selected = selected,
-            onPick = onPick,
-            onDismiss = { open = false },
-        )
     }
 }
 
