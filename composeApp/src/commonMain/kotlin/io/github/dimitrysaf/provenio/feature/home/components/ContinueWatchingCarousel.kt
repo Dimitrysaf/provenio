@@ -29,8 +29,10 @@ import io.github.dimitrysaf.provenio.db.SimklItem
 import io.github.dimitrysaf.provenio.simkl.SimklImages
 import io.github.dimitrysaf.provenio.simkl.SimklPlaybackSession
 
-private val ContinueWatchingItemWidth = 280.dp
-private val ContinueWatchingItemHeight = 380.dp
+// Sized to sit inside the page margin rather than bleed past it, and shorter than the
+// shelf it leads so it reads as one row among several rather than a hero.
+private val ContinueWatchingItemWidth = 220.dp
+private val ContinueWatchingItemHeight = 300.dp
 
 /**
  * The lead shelf: Simkl's "watching" list, so it is never empty just because nothing has a

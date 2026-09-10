@@ -39,6 +39,8 @@ fun CentredNote(text: String) {
 /**
  * What the field offers before anything is typed, emitted as full width rows into the
  * Discover grid so the history and the catalog below it share one scroll.
+ *
+ * No side padding of its own: the grid already pads to the page margin.
  */
 fun LazyGridScope.recentSearches(
     history: List<String>,
@@ -48,7 +50,7 @@ fun LazyGridScope.recentSearches(
 ) {
     item(key = "history-header", span = { GridItemSpan(maxLineSpan) }) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -69,7 +71,7 @@ fun LazyGridScope.recentSearches(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onPick(term) }
-                .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(

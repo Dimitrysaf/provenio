@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
@@ -23,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.dimitrysaf.provenio.designsystem.components.OptionSheet
 import io.github.dimitrysaf.provenio.stremio.InstalledAddon
 import io.github.dimitrysaf.provenio.stremio.model.ManifestCatalog
 
@@ -33,7 +32,10 @@ const val AllGenres = "All Genres"
  * The three things that decide what Discover is showing: a type, a catalog of that type,
  * and optionally one of that catalog's own genres.
  *
- * The genre row is absent rather than disabled for a catalog that advertises none — a
+ * Draws no side padding of its own — it sits inside the Discover grid, which already pads
+ * to the page margin, and padding again here would indent it twice.
+ *
+ * The genre picker is absent rather than disabled for a catalog that advertises none: a
  * control that can never do anything is worse than no control.
  */
 @Composable
@@ -54,30 +56,33 @@ fun DiscoverControls(
             text = "Discover",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.padding(bottom = 12.dp),
         )
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             PickerChip(
+                sheetTitle = "Type",
                 label = selectedType?.let(::typeLabel) ?: "Type",
                 options = types.map { it to typeLabel(it) },
+                selected = selectedType,
                 onPick = onSelectType,
             )
             PickerChip(
+                sheetTitle = "Catalog",
                 label = selected?.second?.displayName() ?: "Catalog",
                 options = catalogs.map { it to it.second.displayName() },
+                selected = selected,
                 onPick = onSelectCatalog,
             )
             if (genres.isNotEmpty()) {
                 PickerChip(
+                    sheetTitle = "Genre",
                     label = selectedGenre ?: AllGenres,
                     options = (listOf(AllGenres) + genres).map { it to it },
+                    selected = selectedGenre ?: AllGenres,
                     onPick = { onSelectGenre(it.takeIf { g -> g != AllGenres }) },
                 )
             }
@@ -88,39 +93,38 @@ fun DiscoverControls(
                 text = "${selected.first.manifest.name} · ${typeLabel(selected.second.type)}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp),
+                modifier = Modifier.padding(top = 12.dp),
             )
         }
     }
 }
 
-/** A chip that opens its own menu, so each picker owns one piece of state and no more. */
+/** A chip that opens its own sheet, so each picker owns one piece of state and no more. */
 @Composable
 private fun <T> PickerChip(
+    sheetTitle: String,
     label: String,
     options: List<Pair<T, String>>,
+    selected: T?,
     onPick: (T) -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
 
-    Column {
-        SuggestionChip(
-            onClick = { open = true },
-            enabled = options.isNotEmpty(),
-            label = { Text(label) },
-            icon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+    SuggestionChip(
+        onClick = { open = true },
+        enabled = options.isNotEmpty(),
+        label = { Text(label) },
+        icon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+    )
+
+    if (open) {
+        OptionSheet(
+            title = sheetTitle,
+            options = options,
+            selected = selected,
+            onPick = onPick,
+            onDismiss = { open = false },
         )
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            options.forEach { (value, text) ->
-                DropdownMenuItem(
-                    text = { Text(text) },
-                    onClick = {
-                        open = false
-                        onPick(value)
-                    },
-                )
-            }
-        }
     }
 }
 

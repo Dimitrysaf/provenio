@@ -1,6 +1,5 @@
 package io.github.dimitrysaf.provenio.feature.search
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,14 +17,14 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +49,7 @@ import io.github.dimitrysaf.provenio.designsystem.components.PosterCard
 import io.github.dimitrysaf.provenio.feature.search.components.CentredNote
 import io.github.dimitrysaf.provenio.feature.search.components.DiscoverControls
 import io.github.dimitrysaf.provenio.feature.search.components.ResultGrid
+import io.github.dimitrysaf.provenio.feature.search.components.SearchFilterSheet
 import io.github.dimitrysaf.provenio.feature.search.components.displayName
 import io.github.dimitrysaf.provenio.feature.search.components.recentSearches
 import io.github.dimitrysaf.provenio.navigation.SearchFilter
@@ -66,6 +66,12 @@ private const val SearchDebounceMillis = 350L
 /** How close to the end of the grid the user gets before the next page is asked for. */
 private const val PrefetchDistance = 8
 
+/** A release year is four digits or it is not a year. */
+private const val YearLength = 4
+
+/** The page margin every row on this screen lines up against. */
+private val PageMargin = 16.dp
+
 /**
  * Search above, Discover below.
  *
@@ -75,8 +81,9 @@ private const val PrefetchDistance = 8
  * with results — someone who has typed is looking for one title, not for something to
  * scroll past.
  *
- * The chips narrow a typed query; the pickers below drive Discover. They control different
- * things, which is why both exist.
+ * The field runs edge to edge and is closed off by a rule, so the chrome reads as one
+ * band rather than a floating box. What narrows a query lives behind the filter button
+ * inside it; what drives Discover lives with Discover.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,6 +98,10 @@ fun SearchScreen(
 
     var filter by rememberSaveable { mutableStateOf(initialFilter.name) }
     val activeFilter = SearchFilter.entries.firstOrNull { it.name == filter } ?: SearchFilter.All
+    var year by rememberSaveable { mutableStateOf("") }
+    var showFilters by remember { mutableStateOf(false) }
+    val filtersActive = activeFilter != SearchFilter.All || year.length == YearLength
+
     val searchable = allSearchable.filter { (_, catalog) ->
         activeFilter.type == null || catalog.type == activeFilter.type
     }
@@ -101,6 +112,13 @@ fun SearchScreen(
     var searching by remember { mutableStateOf(false) }
     var searched by remember { mutableStateOf(SearchRepository.lastResults.isNotEmpty()) }
     val history by SearchRepository.history.collectAsState()
+
+    // Applied here rather than sent with the request: the protocol's `search` extra carries
+    // the query and nothing else, so no addon can be asked for one year in particular.
+    val shown = remember(results, year) {
+        if (year.length != YearLength) results
+        else results.filter { it.releaseInfo?.startsWith(year) == true }
+    }
 
     LaunchedEffect(query, activeFilter, allSearchable.size) {
         if (query.isBlank()) {
@@ -128,12 +146,22 @@ fun SearchScreen(
         if (found.isNotEmpty()) SearchRepository.record(query)
     }
 
+    if (showFilters) {
+        SearchFilterSheet(
+            selectedType = activeFilter,
+            onSelectType = { filter = it.name },
+            year = year,
+            onYearChange = { year = it },
+            onDismiss = { showFilters = false },
+        )
+    }
+
     Column(modifier = modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(vertical = 8.dp),
         ) {
             SearchBarDefaults.InputField(
                 query = query,
@@ -146,35 +174,36 @@ fun SearchScreen(
                 placeholder = { Text("Search movies and shows") },
                 leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                 trailingIcon = {
-                    if (query.isNotEmpty()) {
-                        IconButton(onClick = { query = "" }) {
-                            Icon(Icons.Filled.Close, contentDescription = "Clear search")
+                    Row {
+                        if (query.isNotEmpty()) {
+                            IconButton(onClick = { query = "" }) {
+                                Icon(Icons.Filled.Close, contentDescription = "Clear search")
+                            }
+                        }
+                        IconButton(onClick = { showFilters = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.FilterList,
+                                contentDescription = "Filters",
+                                // Tinted while something is set, so an active filter is
+                                // visible without opening the sheet to check.
+                                tint = if (filtersActive) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                            )
                         }
                     }
                 },
             )
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SearchFilter.entries.forEach { option ->
-                FilterChip(
-                    selected = option == activeFilter,
-                    onClick = { filter = option.name },
-                    label = { Text(option.label) },
-                )
-            }
-        }
+        HorizontalDivider()
 
         Box(modifier = Modifier.fillMaxSize()) {
             when {
                 searching -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                results.isNotEmpty() -> ResultGrid(results, onOpenDetail)
+                shown.isNotEmpty() -> ResultGrid(shown, onOpenDetail)
                 searched && searchable.isEmpty() -> EmptyState(
                     modifier = Modifier.align(Alignment.Center),
                     icon = Icons.Outlined.Extension,
@@ -200,6 +229,9 @@ fun SearchScreen(
 
 /**
  * One catalog at a time, as a grid, with the history above it in the same scroll.
+ *
+ * The grid owns the page margin for everything in it, so the controls and the history
+ * rows draw no side padding of their own.
  *
  * Selection is held by name rather than by object so it survives the collection being
  * reloaded: an addon refresh produces new [ManifestCatalog] instances for the same
@@ -280,7 +312,12 @@ private fun Discover(
         columns = GridCells.Adaptive(minSize = 120.dp),
         state = gridState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+        contentPadding = PaddingValues(
+            start = PageMargin,
+            end = PageMargin,
+            top = PageMargin,
+            bottom = 24.dp,
+        ),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
