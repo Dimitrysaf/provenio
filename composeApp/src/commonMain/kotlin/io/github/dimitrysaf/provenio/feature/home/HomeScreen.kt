@@ -27,6 +27,8 @@ import io.github.dimitrysaf.provenio.core.platform.currentTimeMillis
 import io.github.dimitrysaf.provenio.designsystem.components.AppTopBar
 import io.github.dimitrysaf.provenio.designsystem.components.EmptyState
 import io.github.dimitrysaf.provenio.designsystem.components.backdropHeightFor
+import io.github.dimitrysaf.provenio.designsystem.layout.isLargeScreen
+import io.github.dimitrysaf.provenio.designsystem.layout.windowSizeClassOf
 import io.github.dimitrysaf.provenio.feature.home.components.ContinueWatchingCarousel
 import io.github.dimitrysaf.provenio.feature.home.components.HeroCarousel
 import io.github.dimitrysaf.provenio.feature.home.components.LibraryEmptyState
@@ -105,17 +107,23 @@ fun HomeScreen(
         }
     }
 
-    // The bar sits above the status bar inset, so clearing it means clearing both. The
-    // hero is the exception: it is meant to run under the bar and the status bar both, so
-    // when there is one the list starts flush against the top instead.
     val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val topPadding = if (heroItems.isEmpty()) TopBarHeight + topInset else 0.dp
 
     // BoxWithConstraints rather than Box: the hero has to be sized against the window,
     // and inside a lazy list the vertical space is unbounded, so this is the last place
     // that still knows how tall the window actually is.
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val heroHeight = backdropHeightFor(width = maxWidth, viewportHeight = maxHeight)
+
+        // A window this wide is short relative to its width, and the hero spends height
+        // the shelves need more — the same trade the details page makes with its own
+        // backdrop.
+        val showHero = heroItems.isNotEmpty() && !windowSizeClassOf(maxWidth).isLargeScreen()
+
+        // The bar sits above the status bar inset, so clearing it means clearing both.
+        // The hero is the exception: it is meant to run under the bar and the status bar
+        // both, so when there is one the list starts flush against the top instead.
+        val topPadding = if (showHero) 0.dp else TopBarHeight + topInset
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -134,7 +142,9 @@ fun HomeScreen(
                 return@LazyColumn
             }
 
-            item { HeroCarousel(heroItems, heroHeight, onOpenDetail) }
+            if (showHero) {
+                item { HeroCarousel(heroItems, heroHeight, onOpenDetail) }
+            }
             item { ContinueWatchingCarousel(watching, timeProgressByImdbId, onOpenDetail) }
             item { Shelf("Plan to watch", planToWatch, onOpenDetail) }
 
