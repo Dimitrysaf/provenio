@@ -1,6 +1,19 @@
 package io.github.dimitrysaf.provenio.feature.home.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,13 +29,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +49,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
+import io.github.dimitrysaf.provenio.designsystem.theme.MotionTokens
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
@@ -44,6 +61,9 @@ private const val HeroAspectRatio = 0.9f
 /** Past this the hero stops growing, so a tablet does not get a full page of one title. */
 private val HeroMaxHeight = 560.dp
 
+private val DotSize = 8.dp
+private val ActiveDotWidth = 24.dp
+
 /**
  * The spotlight at the top of Home: one title at a time, swiped through.
  *
@@ -53,7 +73,11 @@ private val HeroMaxHeight = 560.dp
  * rather than one per title, and swiping back never refetches.
  *
  * Everything the preview already knows — name, genre, year — draws immediately, and the
- * artwork upgrades in place when it arrives. Nothing waits on the network to appear.
+ * artwork fades in over a placeholder when it arrives. Nothing waits on the network to
+ * appear, and nothing pops.
+ *
+ * The whole page is the target: a hero that fills half the screen does not need a button
+ * to say it can be tapped.
  */
 @Composable
 fun HeroCarousel(
@@ -85,7 +109,7 @@ fun HeroCarousel(
             HeroPage(
                 item = item,
                 meta = full[item.id],
-                onOpenDetail = onOpenDetail,
+                onClick = { onOpenDetail(item.type, item.id) },
             )
         }
 
@@ -99,7 +123,7 @@ fun HeroCarousel(
 private fun HeroPage(
     item: MetaPreview,
     meta: Meta?,
-    onOpenDetail: (type: String, id: String) -> Unit,
+    onClick: () -> Unit,
 ) {
     // The catalog preview carries a banner but never a backdrop, so the wide art is only
     // right once the full meta lands; the poster keeps something on screen until then.
@@ -111,15 +135,8 @@ private fun HeroPage(
         item.releaseInfo?.take(4)?.takeIf { it.length == 4 },
     )
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (backdrop != null) {
-            AsyncImage(
-                model = backdrop,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        }
+    Box(modifier = Modifier.fillMaxSize().clickable(onClick = onClick)) {
+        Artwork(url = backdrop)
 
         // Resolves to the page's own background before the text starts, so everything
         // below sits on a real surface and can use scheme colours rather than a fixed
@@ -141,26 +158,40 @@ private fun HeroPage(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(start = 24.dp, end = 24.dp, bottom = 32.dp),
+                .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            if (logo != null) {
-                AsyncImage(
-                    model = logo,
-                    contentDescription = item.name,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth(0.75f).heightIn(max = 110.dp),
-                )
-            } else {
-                Text(
-                    text = item.name ?: item.id,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+            // The logo only exists once the full meta lands, so the name holds the space
+            // until then and the two crossfade rather than one replacing the other.
+            AnimatedContent(
+                targetState = logo,
+                transitionSpec = {
+                    val spec = tween<Float>(
+                        durationMillis = MotionTokens.DurationMedium2,
+                        easing = MotionTokens.Standard,
+                    )
+                    fadeIn(spec) togetherWith fadeOut(spec)
+                },
+                label = "heroTitle",
+            ) { current ->
+                if (current != null) {
+                    AsyncImage(
+                        model = current,
+                        contentDescription = item.name,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxWidth(0.75f).heightIn(max = 110.dp),
+                    )
+                } else {
+                    Text(
+                        text = item.name ?: item.id,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
 
             if (facts.isNotEmpty()) {
@@ -169,28 +200,75 @@ private fun HeroPage(
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 16.dp),
-                )
-            }
-
-            // No colour override: the filled button's own primary/onPrimary is what
-            // carries the wallpaper palette through, which a fixed white never would.
-            Button(
-                onClick = { onOpenDetail(item.type, item.id) },
-                shape = CircleShape,
-                modifier = Modifier.padding(top = 20.dp),
-            ) {
-                Text(
-                    text = "View Details",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(top = 12.dp),
                 )
             }
         }
     }
 }
 
-/** The current page reads as a bar, the rest as dots. */
+/**
+ * A filled container that breathes while the image is on its way, then hands over to the
+ * artwork on a fade. A spinner over half a screen of colour reads as an error; a container
+ * that is visibly waiting does not.
+ */
+@Composable
+private fun Artwork(url: String?) {
+    var loaded by remember(url) { mutableStateOf(false) }
+
+    val pulse = rememberInfiniteTransition(label = "artworkPulse")
+    val placeholderAlpha by pulse.animateFloat(
+        initialValue = 0.45f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = MotionTokens.DurationLong2,
+                easing = MotionTokens.Standard,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "artworkPulseAlpha",
+    )
+
+    val artworkAlpha by animateFloatAsState(
+        targetValue = if (loaded) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = MotionTokens.DurationMedium2,
+            easing = MotionTokens.Standard,
+        ),
+        label = "artworkFade",
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (!loaded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        MaterialTheme.colorScheme.surfaceContainerHighest
+                            .copy(alpha = placeholderAlpha),
+                    ),
+            )
+        }
+        if (url != null) {
+            AsyncImage(
+                model = url,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                alpha = artworkAlpha,
+                onState = { state -> loaded = state is AsyncImagePainter.State.Success },
+            )
+        }
+    }
+}
+
+/**
+ * The current page reads as a bar, the rest as dots.
+ *
+ * Width and colour are animated rather than swapped, so the bar grows into place as the
+ * page settles instead of jumping between two states.
+ */
 @Composable
 private fun PageDots(count: Int, current: Int) {
     Row(
@@ -200,18 +278,34 @@ private fun PageDots(count: Int, current: Int) {
     ) {
         repeat(count) { index ->
             val active = index == current
+
+            val width by animateDpAsState(
+                targetValue = if (active) ActiveDotWidth else DotSize,
+                animationSpec = tween(
+                    durationMillis = MotionTokens.DurationMedium1,
+                    easing = MotionTokens.Emphasized,
+                ),
+                label = "dotWidth",
+            )
+            val color by animateColorAsState(
+                targetValue = if (active) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.outlineVariant
+                },
+                animationSpec = tween(
+                    durationMillis = MotionTokens.DurationMedium1,
+                    easing = MotionTokens.Standard,
+                ),
+                label = "dotColor",
+            )
+
             Box(
                 modifier = Modifier
-                    .height(8.dp)
-                    .width(if (active) 24.dp else 8.dp)
+                    .height(DotSize)
+                    .width(width)
                     .clip(CircleShape)
-                    .background(
-                        if (active) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
-                        },
-                    ),
+                    .background(color),
             )
         }
     }
