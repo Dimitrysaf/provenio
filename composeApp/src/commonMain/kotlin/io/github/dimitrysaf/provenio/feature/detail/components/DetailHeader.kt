@@ -44,14 +44,15 @@ fun DetailHeader(meta: Meta) {
                         .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 )
             }
-            // Keeps the back button and the title legible over a bright still.
+            // Keeps the back button and the title legible over a bright still. `scrim` is
+            // the role for darkening media, so a scheme override carries through here.
             Box(
                 modifier = Modifier.fillMaxSize().background(
                     Brush.verticalGradient(
                         listOf(
-                            Color.Black.copy(alpha = 0.45f),
+                            MaterialTheme.colorScheme.scrim.copy(alpha = 0.45f),
                             Color.Transparent,
-                            Color.Black.copy(alpha = 0.55f),
+                            MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f),
                         ),
                     ),
                 ),

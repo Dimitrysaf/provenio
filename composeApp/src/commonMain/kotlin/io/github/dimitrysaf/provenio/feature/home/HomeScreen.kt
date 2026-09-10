@@ -27,6 +27,7 @@ import io.github.dimitrysaf.provenio.core.platform.currentTimeMillis
 import io.github.dimitrysaf.provenio.designsystem.components.AppTopBar
 import io.github.dimitrysaf.provenio.designsystem.components.EmptyState
 import io.github.dimitrysaf.provenio.feature.home.components.ContinueWatchingCarousel
+import io.github.dimitrysaf.provenio.feature.home.components.HeroCarousel
 import io.github.dimitrysaf.provenio.feature.home.components.LibraryEmptyState
 import io.github.dimitrysaf.provenio.feature.home.components.Shelf
 import io.github.dimitrysaf.provenio.feature.home.components.catalogShelves
@@ -37,9 +38,13 @@ import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.simkl.SyncTrigger
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
+import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
 
 /** Clears the floating brand mark, so the first shelf does not start underneath it. */
 private val TopBarHeight = 64.dp
+
+/** How many titles the hero cycles through before it repeats. */
+private const val HeroCount = 10
 
 /**
  * Continue watching, then the library, then everything the add-ons offer.
@@ -73,6 +78,18 @@ fun HomeScreen(
     }
     val shelves = collection.browsableCatalogs()
 
+    // The spotlight comes off the first browsable catalog, which is the first catalog of
+    // the highest priority addon — so reordering add-ons in settings changes what leads
+    // the screen, the same control that orders the shelves below.
+    val featured = shelves.firstOrNull()
+    var heroItems by remember { mutableStateOf<List<MetaPreview>>(emptyList()) }
+    LaunchedEffect(featured?.let { "${it.first.manifest.id}:${it.second.id}" }) {
+        heroItems = featured
+            ?.let { (addon, catalog) -> AddonRepository.catalogPage(addon, catalog, skip = 0) }
+            ?.take(HeroCount)
+            .orEmpty()
+    }
+
     // Per card, a matching playback session (when Simkl has one) supplies the one thing
     // the watching list itself cannot: real time-into-this-episode progress, keyed by
     // imdb id so each card can look up its own without a second round trip.
@@ -87,13 +104,16 @@ fun HomeScreen(
         }
     }
 
-    // The bar sits above the status bar inset, so clearing it means clearing both.
+    // The bar sits above the status bar inset, so clearing it means clearing both. The
+    // hero is the exception: it is meant to run under the bar and the status bar both, so
+    // when there is one the list starts flush against the top instead.
     val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val topPadding = if (heroItems.isEmpty()) TopBarHeight + topInset else 0.dp
 
     Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = TopBarHeight + topInset, bottom = 24.dp),
+            contentPadding = PaddingValues(top = topPadding, bottom = 24.dp),
         ) {
             if (!hasMetadata) {
                 item {
@@ -108,6 +128,7 @@ fun HomeScreen(
                 return@LazyColumn
             }
 
+            item { HeroCarousel(heroItems, onOpenDetail) }
             item { ContinueWatchingCarousel(watching, timeProgressByImdbId, onOpenDetail) }
             item { Shelf("Plan to watch", planToWatch, onOpenDetail) }
 
