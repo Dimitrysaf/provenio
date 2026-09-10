@@ -172,13 +172,13 @@ private fun BackdropArtwork(url: String?) {
  * a soft transparent border where there is nothing to sample. Growing the artwork past the
  * window pushes that border off screen.
  */
-private val WashBlurRadius = 40.dp
+private val WashBlurRadius = 56.dp
 private const val WashOverscale = 1.15f
 
 /**
  * The same artwork as [Backdrop], but as the page's own background rather than a band
- * across the top of it: blurred hard, faded until it is a tint on the surface, and gone
- * entirely by the time the dense part of the page starts.
+ * across the top of it: blurred hard and faded until it is a tint on the surface, across
+ * the whole window rather than only the top of it.
  *
  * The fade is not a matter of taste. Body text needs real contrast against what is behind
  * it, and an image is not one colour — a still with a bright sky in one corner and shadow
@@ -212,17 +212,19 @@ fun BackdropWash(url: String?, modifier: Modifier = Modifier) {
 }
 
 /**
- * Strongest at the top, where the page is sparse and the artwork is worth having, and
- * resolved to the flat background before the episode lists and cast rows begin. Atmosphere
- * where there is room for it, a plain surface where the page gets busy.
+ * A veil over the whole window, never reaching the flat background.
+ *
+ * It leans a little heavier towards the bottom, where the page is dense with episode lists
+ * and cast rows, and a little lighter at the top where there is room to see the artwork —
+ * but the difference is depth, not a cutoff. Anywhere it resolved to plain background the
+ * page would visibly stop being a background and start being a band.
  */
 @Composable
 private fun washBrush(): Brush {
     val background = MaterialTheme.colorScheme.background
     return Brush.verticalGradient(
-        0f to background.copy(alpha = 0.78f),
-        0.45f to background.copy(alpha = 0.94f),
-        0.70f to background,
-        1f to background,
+        0f to background.copy(alpha = 0.74f),
+        0.5f to background.copy(alpha = 0.82f),
+        1f to background.copy(alpha = 0.88f),
     )
 }
