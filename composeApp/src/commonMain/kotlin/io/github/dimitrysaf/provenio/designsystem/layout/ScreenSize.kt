@@ -24,11 +24,19 @@ fun windowSizeClassOf(width: Dp): WindowSizeClass = when {
 fun WindowSizeClass.usesRail(): Boolean = this != WindowSizeClass.Compact
 
 /**
- * True once the window is a tablet, a desktop or an unfolded foldable rather than a
- * phone — Android's own boundary for a large screen, and the width past which a
- * full-bleed backdrop costs more height than it earns.
+ * True only on a phone held upright.
+ *
+ * Width alone almost says it — a phone in landscape is 640dp or wider, so it leaves
+ * [WindowSizeClass.Compact] the moment it turns — but almost is not enough: a small
+ * window on a desktop, or one half of a tablet split screen, is compact and wide-ish
+ * too. The orientation check is what makes it mean the device rather than the size.
+ *
+ * Used for the treatments that only work in a tall window: the hero on Home and the
+ * backdrop on a title. Both trade height for atmosphere, which a phone lying down does
+ * not have to spend.
  */
-fun WindowSizeClass.isLargeScreen(): Boolean = this >= WindowSizeClass.Expanded
+fun isPortraitPhone(width: Dp, height: Dp): Boolean =
+    windowSizeClassOf(width) == WindowSizeClass.Compact && height > width
 
 /** M3 recommends an expanded rail (or drawer) once there is this much width to spare. */
 fun WindowSizeClass.usesExpandedRail(): Boolean =

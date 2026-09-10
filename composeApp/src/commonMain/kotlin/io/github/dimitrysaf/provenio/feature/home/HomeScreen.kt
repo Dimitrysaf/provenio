@@ -27,8 +27,7 @@ import io.github.dimitrysaf.provenio.core.platform.currentTimeMillis
 import io.github.dimitrysaf.provenio.designsystem.components.AppTopBar
 import io.github.dimitrysaf.provenio.designsystem.components.EmptyState
 import io.github.dimitrysaf.provenio.designsystem.components.backdropHeightFor
-import io.github.dimitrysaf.provenio.designsystem.layout.isLargeScreen
-import io.github.dimitrysaf.provenio.designsystem.layout.windowSizeClassOf
+import io.github.dimitrysaf.provenio.designsystem.layout.isPortraitPhone
 import io.github.dimitrysaf.provenio.feature.home.components.ContinueWatchingCarousel
 import io.github.dimitrysaf.provenio.feature.home.components.HeroCarousel
 import io.github.dimitrysaf.provenio.feature.home.components.LibraryEmptyState
@@ -115,10 +114,9 @@ fun HomeScreen(
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val heroHeight = backdropHeightFor(width = maxWidth, viewportHeight = maxHeight)
 
-        // A window this wide is short relative to its width, and the hero spends height
-        // the shelves need more — the same trade the details page makes with its own
-        // backdrop.
-        val showHero = heroItems.isNotEmpty() && !windowSizeClassOf(maxWidth).isLargeScreen()
+        // The hero is a portrait-phone treatment, like the backdrop on a title: it trades
+        // height for atmosphere, which is only affordable in a tall window.
+        val showHero = heroItems.isNotEmpty() && isPortraitPhone(maxWidth, maxHeight)
 
         // The bar sits above the status bar inset, so clearing it means clearing both.
         // The hero is the exception: it is meant to run under the bar and the status bar

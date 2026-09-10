@@ -43,8 +43,7 @@ import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.platform.rememberUrlOpener
 import io.github.dimitrysaf.provenio.db.SimklItem
 import io.github.dimitrysaf.provenio.designsystem.components.backdropHeightFor
-import io.github.dimitrysaf.provenio.designsystem.layout.isLargeScreen
-import io.github.dimitrysaf.provenio.designsystem.layout.windowSizeClassOf
+import io.github.dimitrysaf.provenio.designsystem.layout.isPortraitPhone
 import io.github.dimitrysaf.provenio.feature.detail.components.DetailHeader
 import io.github.dimitrysaf.provenio.feature.detail.components.Ratings
 import io.github.dimitrysaf.provenio.feature.detail.components.SourcesSheet
@@ -105,10 +104,10 @@ fun DetailScreen(
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val backdropHeight = backdropHeightFor(width = maxWidth, viewportHeight = maxHeight)
 
-        // A window this wide is short relative to its width, and a full-bleed backdrop
-        // spends height the content needs more. So there is no backdrop to collapse, the
-        // bar is simply always there, and the list starts below it rather than under it.
-        val largeScreen = windowSizeClassOf(maxWidth).isLargeScreen()
+        // The backdrop is a portrait-phone treatment. Anywhere else — a phone lying down
+        // included — there is nothing to collapse: the bar is simply always there, and
+        // the list starts below it rather than under it.
+        val showBackdrop = isPortraitPhone(maxWidth, maxHeight)
 
         // The bar is not a Material scroll behaviour: those collapse a headline the bar
         // owns, and what collapses here is the first item of the list. So the state is
@@ -117,11 +116,11 @@ fun DetailScreen(
         val collapseDistance = with(LocalDensity.current) {
             (backdropHeight - TopBarHeight).coerceAtLeast(0.dp).toPx()
         }
-        val collapse by remember(collapseDistance, largeScreen) {
+        val collapse by remember(collapseDistance, showBackdrop) {
             derivedStateOf {
                 when {
                     // Nothing to collapse: the bar starts solid and stays that way.
-                    largeScreen -> 1f
+                    !showBackdrop -> 1f
                     // Past the backdrop entirely: nothing left of it to reveal.
                     listState.firstVisibleItemIndex > 0 -> 1f
                     collapseDistance <= 0f -> 1f
@@ -133,7 +132,7 @@ fun DetailScreen(
 
         // The bar sits above the status bar inset, so clearing it means clearing both.
         val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        val topPadding = if (largeScreen) TopBarHeight + topInset else 0.dp
+        val topPadding = if (showBackdrop) 0.dp else TopBarHeight + topInset
 
         val current = meta
         when {
@@ -149,7 +148,7 @@ fun DetailScreen(
                 backdropHeight = backdropHeight,
                 listState = listState,
                 backdropAlpha = 1f - collapse,
-                showBackdrop = !largeScreen,
+                showBackdrop = showBackdrop,
                 topPadding = topPadding,
                 onChooseSource = { videoId, resumeProgress ->
                     sourcesFor = SourcesTarget(videoId, resumeProgress)
