@@ -1,11 +1,18 @@
 package io.github.dimitrysaf.provenio.feature.home
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,13 +21,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.platform.currentTimeMillis
 import io.github.dimitrysaf.provenio.designsystem.components.AppTopBar
 import io.github.dimitrysaf.provenio.designsystem.components.EmptyState
-import io.github.dimitrysaf.provenio.designsystem.components.ScreenScaffold
 import io.github.dimitrysaf.provenio.feature.home.components.ContinueWatchingCarousel
 import io.github.dimitrysaf.provenio.feature.home.components.LibraryEmptyState
 import io.github.dimitrysaf.provenio.feature.home.components.Shelf
+import io.github.dimitrysaf.provenio.feature.home.components.catalogShelves
 import io.github.dimitrysaf.provenio.simkl.SimklAuthState
 import io.github.dimitrysaf.provenio.simkl.SimklPlaybackRepository
 import io.github.dimitrysaf.provenio.simkl.SimklPlaybackSession
@@ -29,11 +38,24 @@ import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.simkl.SyncTrigger
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 
+/** Clears the floating brand mark, so the first shelf does not start underneath it. */
+private val TopBarHeight = 64.dp
+
+/**
+ * Continue watching, then the library, then everything the add-ons offer.
+ *
+ * The brand mark floats over the content rather than sitting in a bar above it — the same
+ * arrangement as the details screen's back button — so the shelves run the full height of
+ * the window and nothing reserves a strip at the top.
+ *
+ * Simkl rows draw only when they have something in them. An empty or signed-out library
+ * used to replace this whole screen with a prompt, which also hid every add-on shelf; the
+ * prompt now appears only when there is nothing else to show at all.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onSearchClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onAddAddons: () -> Unit,
     onOpenDetail: (type: String, id: String) -> Unit,
@@ -49,9 +71,8 @@ fun HomeScreen(
     val hasMetadata = collection.active.any { addon ->
         addon.manifest.resources.any { it.name == "meta" }
     }
+    val shelves = collection.browsableCatalogs()
 
-    // The shelf itself is Simkl's "watching" list — the same one this screen has always
-    // shown — so it is never empty just because nothing has a live scrobble session yet.
     // Per card, a matching playback session (when Simkl has one) supplies the one thing
     // the watching list itself cannot: real time-into-this-episode progress, keyed by
     // imdb id so each card can look up its own without a second round trip.
@@ -66,43 +87,50 @@ fun HomeScreen(
         }
     }
 
-    ScreenScaffold(
-        modifier = modifier,
-        topBar = { scrollBehavior ->
-            AppTopBar(
-                title = "Home",
-                scrollBehavior = scrollBehavior,
-                actions = {
-                    IconButton(onClick = onSearchClick) {
-                        Icon(Icons.Filled.Search, contentDescription = "Search")
-                    }
-                },
-            )
-        },
-    ) {
-        if (!hasMetadata) {
-            EmptyState(
-                icon = Icons.Outlined.Extension,
-                title = "No metadata available",
-                description = "Add an add-on to get started.",
-                actionLabel = "Add an add-on",
-                onAction = onAddAddons,
-            )
-            return@ScreenScaffold
+    // The bar sits above the status bar inset, so clearing it means clearing both.
+    val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = TopBarHeight + topInset, bottom = 24.dp),
+        ) {
+            if (!hasMetadata) {
+                item {
+                    EmptyState(
+                        icon = Icons.Outlined.Extension,
+                        title = "No metadata available",
+                        description = "Add an add-on to get started.",
+                        actionLabel = "Add an add-on",
+                        onAction = onAddAddons,
+                    )
+                }
+                return@LazyColumn
+            }
+
+            item { ContinueWatchingCarousel(watching, timeProgressByImdbId, onOpenDetail) }
+            item { Shelf("Plan to watch", planToWatch, onOpenDetail) }
+
+            // Only worth explaining the empty library when it is the only thing missing.
+            // With shelves to browse, a sign-in prompt on top of them is just noise.
+            if (libraryEmpty && shelves.isEmpty()) {
+                item {
+                    LibraryEmptyState(
+                        signedIn = signedIn,
+                        syncState = syncState,
+                        onOpenSettings = onSettingsClick,
+                        onRetry = { SimklSync.sync(SyncTrigger.Manual, currentTimeMillis()) },
+                    )
+                }
+            }
+
+            catalogShelves(shelves = shelves, onOpenDetail = onOpenDetail)
+
+            item { Spacer(Modifier.height(8.dp)) }
         }
 
-        // Two shelves both saying "nothing" is a worse answer than one that explains why.
-        if (libraryEmpty) {
-            LibraryEmptyState(
-                signedIn = signedIn,
-                syncState = syncState,
-                onOpenSettings = onSettingsClick,
-                onRetry = { SimklSync.sync(SyncTrigger.Manual, currentTimeMillis()) },
-            )
-            return@ScreenScaffold
-        }
-
-        ContinueWatchingCarousel(watching, timeProgressByImdbId, onOpenDetail)
-        Shelf("Plan to watch", planToWatch, onOpenDetail)
+        AppTopBar(
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+        )
     }
 }

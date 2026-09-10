@@ -8,8 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.History
@@ -23,17 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-/** A quiet label marking off one section of the search screen from the next. */
-@Composable
-fun SectionHeader(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
-    )
-}
-
 /** One line of explanation, centred in whatever space is left. */
 @Composable
 fun CentredNote(text: String) {
@@ -46,14 +36,17 @@ fun CentredNote(text: String) {
     }
 }
 
-/** What the field offers before anything is typed, emitted into the screen's own list. */
-fun LazyListScope.recentSearches(
+/**
+ * What the field offers before anything is typed, emitted as full width rows into the
+ * Discover grid so the history and the catalog below it share one scroll.
+ */
+fun LazyGridScope.recentSearches(
     history: List<String>,
     onPick: (String) -> Unit,
     onRemove: (String) -> Unit,
     onClear: () -> Unit,
 ) {
-    item(key = "history-header") {
+    item(key = "history-header", span = { GridItemSpan(maxLineSpan) }) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -67,7 +60,11 @@ fun LazyListScope.recentSearches(
             TextButton(onClick = onClear) { Text("Clear") }
         }
     }
-    items(history, key = { "history:$it" }) { term ->
+    items(
+        items = history,
+        key = { "history:$it" },
+        span = { GridItemSpan(maxLineSpan) },
+    ) { term ->
         Row(
             modifier = Modifier
                 .fillMaxWidth()

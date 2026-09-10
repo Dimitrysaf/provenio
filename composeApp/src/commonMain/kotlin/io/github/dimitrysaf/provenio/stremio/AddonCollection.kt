@@ -59,6 +59,20 @@ class AddonCollection(private val addons: List<InstalledAddon> = emptyList()) {
                 catalog.normalizedExtra().none { it.isRequired == true }
         }
 
+    /**
+     * Catalogs Discover can browse, given that it supplies a genre.
+     *
+     * Wider than [browsableCatalogs]: a catalog whose only required extra is `genre` is
+     * unusable as an unattended shelf but perfectly usable behind a genre picker, so those
+     * appear here and nowhere else.
+     */
+    fun discoverCatalogs(): List<Pair<InstalledAddon, ManifestCatalog>> =
+        catalogs().filter { (_, catalog) ->
+            catalog.normalizedExtra()
+                .filter { it.isRequired == true }
+                .all { it.name in SuppliableExtras }
+        }
+
     /** Catalogs that accept a `search` extra, which is what a search query can query. */
     fun searchableCatalogs(): List<Pair<InstalledAddon, ManifestCatalog>> =
         catalogs().filter { (_, catalog) ->
@@ -86,4 +100,9 @@ class AddonCollection(private val addons: List<InstalledAddon> = emptyList()) {
         AddonCollection(
             addons.map { if (it.manifest.id == addonId) it.copy(enabled = enabled) else it },
         )
+
+    private companion object {
+        /** Required extras Discover can answer for itself, rather than skipping. */
+        val SuppliableExtras = setOf("genre")
+    }
 }

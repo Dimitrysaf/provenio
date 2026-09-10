@@ -1,4 +1,4 @@
-package io.github.dimitrysaf.provenio.feature.search.components
+package io.github.dimitrysaf.provenio.feature.home.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,16 +39,17 @@ private const val PrefetchDistance = 5
 /**
  * Every browsable catalog, as a shelf each, emitted into the caller's own list.
  *
- * A [LazyListScope] extension rather than a screen of its own, because Discover shares one
- * scroll with whatever sits above it — a LazyColumn inside a LazyColumn has no height to
- * measure against and throws.
+ * A [LazyListScope] extension rather than a screen of its own, because the shelves share
+ * one scroll with the Simkl rows above them — a LazyColumn inside a LazyColumn has no
+ * height to measure against and throws.
  *
  * Shelves are independent: each owns its paging and one failing does not empty the screen.
+ * They arrive in addon priority order, so reordering add-ons in settings reorders Home.
  * Two addons offering a catalog with the same name produce two shelves, labelled by addon,
  * rather than being merged. Merging would mean deciding whose copy of a title wins, which
  * is the seat cascade and is not designed yet.
  */
-fun LazyListScope.discoverShelves(
+fun LazyListScope.catalogShelves(
     shelves: List<Pair<InstalledAddon, ManifestCatalog>>,
     onOpenDetail: (type: String, id: String) -> Unit,
 ) {

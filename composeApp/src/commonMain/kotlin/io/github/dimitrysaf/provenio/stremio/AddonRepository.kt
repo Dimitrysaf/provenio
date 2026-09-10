@@ -102,13 +102,20 @@ object AddonRepository {
      *
      * `skip` is how the protocol paginates. Without it a shelf silently stops at whatever
      * the addon returns first and looks like the end of the catalog.
+     *
+     * [genre] narrows the catalog to one of the values it advertises in its `genre` extra.
+     * Some catalogs require it, which is what makes them browsable at all.
      */
     suspend fun catalogPage(
         addon: InstalledAddon,
         catalog: ManifestCatalog,
         skip: Int,
+        genre: String? = null,
     ): List<MetaPreview>? {
-        val extra = if (skip > 0) mapOf("skip" to skip.toString()) else emptyMap()
+        val extra = buildMap {
+            if (skip > 0) put("skip", skip.toString())
+            if (genre != null) put("genre", genre)
+        }
         return client.fetchCatalog(
             addonUrl = addon.transportUrl,
             type = catalog.type,

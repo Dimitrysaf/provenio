@@ -81,9 +81,6 @@ fun MainScaffold(
         selectedIndex = index
         pendingSettingsCategory = null
     }
-    val openSearch: () -> Unit = {
-        selectTab(Destination.entries.indexOf(Destination.Search))
-    }
     val openSettings: (SettingsCategory) -> Unit = { category ->
         pendingSettingsCategory = category
         selectedIndex = Destination.entries.indexOf(Destination.Settings)
@@ -140,7 +137,6 @@ fun MainScaffold(
                     when (tab) {
                         Destination.Home -> HomeScreen(
                             modifier = Modifier.fillMaxSize(),
-                            onSearchClick = openSearch,
                             onSettingsClick = { openSettings(SettingsCategory.Simkl) },
                             onAddAddons = { openSettings(SettingsCategory.Addons) },
                             onOpenDetail = onOpenDetail,
@@ -152,7 +148,6 @@ fun MainScaffold(
                         )
                         Destination.Library -> LibraryScreen(
                             modifier = Modifier.fillMaxSize(),
-                            onSearchClick = openSearch,
                             onFilterClick = {},
                         )
                         Destination.Settings -> SettingsScreen(
