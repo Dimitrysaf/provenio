@@ -73,6 +73,17 @@ class SimklClient(
         postAndCheck(endpoint("/sync/history/remove"), token, request)
 
     /**
+     * Moves whole titles between the user's lists — plan to watch, completed, on hold,
+     * dropped. Covered by Simkl's write rate limit like every other `sync` write.
+     */
+    suspend fun addToList(token: String, request: SimklListRequest): Boolean =
+        postAndCheck(endpoint("/sync/add-to-list"), token, request)
+
+    /** Takes a title out of every list, rather than moving it between them. */
+    suspend fun removeFromList(token: String, request: SimklListRequest): Boolean =
+        postAndCheck(endpoint("/sync/history/remove"), token, request)
+
+    /**
      * One library, fetched whole, from `/sync/all-items/{type}`. Phase 1 only.
      *
      * Simkl requires these to be called one at a time rather than in parallel, so nothing

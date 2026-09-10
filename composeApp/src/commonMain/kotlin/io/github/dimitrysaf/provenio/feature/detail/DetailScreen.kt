@@ -22,6 +22,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -36,6 +37,7 @@ import io.github.dimitrysaf.provenio.feature.detail.components.SourcesSheet
 import io.github.dimitrysaf.provenio.feature.detail.components.Synopsis
 import io.github.dimitrysaf.provenio.feature.detail.components.WatchAction
 import io.github.dimitrysaf.provenio.feature.detail.components.WatchProgress
+import io.github.dimitrysaf.provenio.feature.detail.components.WatchlistAction
 import io.github.dimitrysaf.provenio.feature.detail.components.backdropsSection
 import io.github.dimitrysaf.provenio.feature.detail.components.castAndCrew
 import io.github.dimitrysaf.provenio.feature.detail.components.commentsSection
@@ -43,14 +45,18 @@ import io.github.dimitrysaf.provenio.feature.detail.components.factsSection
 import io.github.dimitrysaf.provenio.feature.detail.components.seasonSection
 import io.github.dimitrysaf.provenio.feature.detail.components.tagsAndThemes
 import io.github.dimitrysaf.provenio.feature.detail.components.trailersSection
+import io.github.dimitrysaf.provenio.core.platform.currentTimeMillis
+import io.github.dimitrysaf.provenio.simkl.SimklAuthState
 import io.github.dimitrysaf.provenio.simkl.SimklPlaybackRepository
 import io.github.dimitrysaf.provenio.simkl.SimklPlaybackSession
+import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.simkl.SyncState
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.Video
 import io.github.dimitrysaf.provenio.watch.EpisodeWatchedRepository
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -177,9 +183,35 @@ private fun MetaContent(meta: Meta, onChooseSource: (String, Float?) -> Unit) {
         EpisodeWatchedRepository.setWatched(meta.id, video, video.id !in watchedIds)
     }
 
+    // Moving a title between lists is a write plus the sync that reads the result back,
+    // so the button reports itself busy until both have finished.
+    val authState by SimklRepository.authState.collectAsState()
+    val scope = rememberCoroutineScope()
+    var movingList by remember(meta.id) { mutableStateOf(false) }
+
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item { DetailHeader(meta) }
         item { WatchAction(meta, simklWatchedEpisodes, resumeSession, onChooseSource) }
+        if (authState is SimklAuthState.SignedIn) {
+            item {
+                WatchlistAction(
+                    currentStatus = simklItem?.status,
+                    working = movingList,
+                    onSelect = { status ->
+                        scope.launch {
+                            movingList = true
+                            SimklSync.setListStatus(
+                                imdbId = meta.id,
+                                isMovie = meta.type == "movie",
+                                status = status,
+                                nowMillis = currentTimeMillis(),
+                            )
+                            movingList = false
+                        }
+                    },
+                )
+            }
+        }
         item { WatchProgress(meta, simklItem, watchedIds) }
         item { Ratings(meta) }
         item { Synopsis(meta) }

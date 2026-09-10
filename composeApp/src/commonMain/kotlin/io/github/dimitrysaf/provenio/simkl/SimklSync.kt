@@ -185,6 +185,32 @@ object SimklSync {
         _completed.value = withStore { it.itemsWithStatus(SimklStatus.Completed) }.orEmpty()
     }
 
+    /**
+     * Moves one title between the user's lists, or takes it out of them when [status] is
+     * null.
+     *
+     * The local copy is not edited directly. This table is keyed by Simkl's own id, which
+     * a title being added for the first time does not have here yet, so inventing a row
+     * would mean inventing a primary key. A successful write is followed by a manual sync
+     * instead, and what lands locally is what Simkl actually recorded.
+     */
+    suspend fun setListStatus(
+        imdbId: String,
+        isMovie: Boolean,
+        status: String?,
+        nowMillis: Long,
+    ): Boolean {
+        val token = SimklRepository.accessToken ?: return false
+        val request = singleTitleListRequest(imdbId, isMovie, status)
+        val ok = if (status == null) {
+            client.removeFromList(token, request)
+        } else {
+            client.addToList(token, request)
+        }
+        if (ok) sync(SyncTrigger.Manual, nowMillis)
+        return ok
+    }
+
     /** The synced Simkl row for one title, by its imdb id, or null if Simkl has no record. */
     fun progressFor(imdbId: String): SimklItem? = withStore { it.itemByImdbId(imdbId) }
 
