@@ -95,7 +95,11 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Deb)
             packageName = "Provenio"
-            packageVersion = "1.0.0"
+            // CI overrides this with the prerelease version (see prerelease.yml); a local
+            // build falls back to the global provenioVersion in the root gradle.properties.
+            packageVersion = (findProperty("appVersionName") as String?)
+                ?: (findProperty("provenioVersion") as String?)
+                ?: "1.0.0"
         }
     }
 }

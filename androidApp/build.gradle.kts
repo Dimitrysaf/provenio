@@ -38,7 +38,11 @@ android {
         targetSdk = 37
         // Supplied by CI from the commit count so each build supersedes the last.
         versionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 1
-        versionName = (findProperty("appVersionName") as String?) ?: "1.0.0"
+        // CI overrides this with the prerelease version (see prerelease.yml); a local
+        // build falls back to the global provenioVersion in the root gradle.properties.
+        versionName = (findProperty("appVersionName") as String?)
+            ?: (findProperty("provenioVersion") as String?)
+            ?: "1.0.0"
     }
 
     compileOptions {

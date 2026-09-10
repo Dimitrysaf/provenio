@@ -49,8 +49,9 @@ jobs:
       - name: Determine version
         run: |
           BUILD=$(git rev-list --count HEAD)
+          BASE_VERSION=$(sed -n 's/^provenioVersion=//p' gradle.properties)
           echo "BUILD=$BUILD" >> "$GITHUB_ENV"
-          echo "VERSION=0.0.1-$BUILD" >> "$GITHUB_ENV"
+          echo "VERSION=$BASE_VERSION-$BUILD" >> "$GITHUB_ENV"
 
       - name: Install Android SDK
         uses: android-actions/setup-android@v3
@@ -67,7 +68,7 @@ jobs:
 
       - name: Build with Gradle (Desktop)
         run: |
-          ./gradlew :composeApp:packageDeb
+          ./gradlew :composeApp:packageDeb -PappVersionName="$VERSION"
           cp composeApp/build/compose/binaries/main/deb/*.deb dist/package.deb
 
       - name: Verify build output
