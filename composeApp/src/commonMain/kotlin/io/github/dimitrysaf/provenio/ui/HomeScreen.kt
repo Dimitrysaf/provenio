@@ -27,9 +27,9 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.Modifier
 import io.github.dimitrysaf.provenio.navigation.Destination
 import io.github.dimitrysaf.provenio.navigation.SearchFilter
+import io.github.dimitrysaf.provenio.pages.HomePage
 import io.github.dimitrysaf.provenio.pages.ListsPage
 import io.github.dimitrysaf.provenio.pages.MoviesPage
-import io.github.dimitrysaf.provenio.pages.ProfilePage
 import io.github.dimitrysaf.provenio.pages.TvPage
 import io.github.dimitrysaf.provenio.theme.MotionTokens
 import io.github.dimitrysaf.provenio.ui.responsive.usesExpandedRail
@@ -113,7 +113,7 @@ fun HomeScreen(
                     label = "tab",
                 ) { tab ->
                     when (tab) {
-                        Destination.Profile -> ProfilePage(
+                        Destination.Home -> HomePage(
                             modifier = Modifier.fillMaxSize(),
                             onSearchClick = { onOpenSearch(SearchFilter.All) },
                             onSettingsClick = onOpenSettings,

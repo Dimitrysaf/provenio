@@ -194,5 +194,5 @@ object SimklRepository {
     private const val DefaultExpirySeconds = 900
 }
 
-/** The signed in Simkl account, as shown on the profile page. */
+/** The signed in Simkl account, as shown on the home page. */
 data class SimklProfile(val name: String, val avatarUrl: String?)

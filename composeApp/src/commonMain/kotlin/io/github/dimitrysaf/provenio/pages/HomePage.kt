@@ -67,7 +67,7 @@ import io.github.dimitrysaf.provenio.ui.components.PageScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfilePage(
+fun HomePage(
     modifier: Modifier = Modifier,
     onSearchClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -106,7 +106,7 @@ fun ProfilePage(
         modifier = modifier,
         topBar = { scrollBehavior ->
             AppTopBar(
-                title = "Profile",
+                title = "Home",
                 scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(onClick = onSearchClick) {
