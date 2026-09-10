@@ -2,11 +2,17 @@ package io.github.dimitrysaf.provenio.feature.detail
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
@@ -20,6 +26,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,12 +35,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.platform.rememberUrlOpener
 import io.github.dimitrysaf.provenio.db.SimklItem
 import io.github.dimitrysaf.provenio.designsystem.components.backdropHeightFor
+import io.github.dimitrysaf.provenio.designsystem.layout.isLargeScreen
+import io.github.dimitrysaf.provenio.designsystem.layout.windowSizeClassOf
 import io.github.dimitrysaf.provenio.feature.detail.components.DetailHeader
 import io.github.dimitrysaf.provenio.feature.detail.components.Ratings
 import io.github.dimitrysaf.provenio.feature.detail.components.SourcesSheet
@@ -61,6 +72,13 @@ import io.github.dimitrysaf.provenio.stremio.model.Video
 import io.github.dimitrysaf.provenio.watch.EpisodeWatchedRepository
 import kotlinx.coroutines.launch
 
+/**
+ * How much of the backdrop has to scroll away before the bar is fully solid. A collapsing
+ * bar that finishes early leaves the title sitting on artwork; one that finishes late
+ * pops.
+ */
+private val TopBarHeight = 64.dp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
@@ -86,6 +104,37 @@ fun DetailScreen(
     // place that still knows how tall the window actually is.
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val backdropHeight = backdropHeightFor(width = maxWidth, viewportHeight = maxHeight)
+
+        // A window this wide is short relative to its width, and a full-bleed backdrop
+        // spends height the content needs more. So there is no backdrop to collapse, the
+        // bar is simply always there, and the list starts below it rather than under it.
+        val largeScreen = windowSizeClassOf(maxWidth).isLargeScreen()
+
+        // The bar is not a Material scroll behaviour: those collapse a headline the bar
+        // owns, and what collapses here is the first item of the list. So the state is
+        // read straight off the list instead, and drives the fade by hand.
+        val listState = rememberLazyListState()
+        val collapseDistance = with(LocalDensity.current) {
+            (backdropHeight - TopBarHeight).coerceAtLeast(0.dp).toPx()
+        }
+        val collapse by remember(collapseDistance, largeScreen) {
+            derivedStateOf {
+                when {
+                    // Nothing to collapse: the bar starts solid and stays that way.
+                    largeScreen -> 1f
+                    // Past the backdrop entirely: nothing left of it to reveal.
+                    listState.firstVisibleItemIndex > 0 -> 1f
+                    collapseDistance <= 0f -> 1f
+                    else -> (listState.firstVisibleItemScrollOffset / collapseDistance)
+                        .coerceIn(0f, 1f)
+                }
+            }
+        }
+
+        // The bar sits above the status bar inset, so clearing it means clearing both.
+        val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        val topPadding = if (largeScreen) TopBarHeight + topInset else 0.dp
+
         val current = meta
         when {
             loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -95,19 +144,40 @@ fun DetailScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.Center).padding(32.dp),
             )
-            else -> MetaContent(current, backdropHeight) { videoId, resumeProgress ->
-                sourcesFor = SourcesTarget(videoId, resumeProgress)
-            }
+            else -> MetaContent(
+                meta = current,
+                backdropHeight = backdropHeight,
+                listState = listState,
+                backdropAlpha = 1f - collapse,
+                showBackdrop = !largeScreen,
+                topPadding = topPadding,
+                onChooseSource = { videoId, resumeProgress ->
+                    sourcesFor = SourcesTarget(videoId, resumeProgress)
+                },
+            )
         }
 
+        // Transparent over the artwork, solid once the backdrop has gone, and the title
+        // arrives with it — the name is already spelled out below while the backdrop is
+        // still on screen, so showing it twice at once would be the odd state.
         TopAppBar(
-            title = {},
+            title = {
+                Text(
+                    text = meta?.name.orEmpty(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.graphicsLayer { alpha = collapse },
+                )
+            },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    .copy(alpha = collapse),
+            ),
         )
     }
 
@@ -145,6 +215,10 @@ private data class SourcesTarget(val videoId: String, val resumeProgressPercent:
 private fun MetaContent(
     meta: Meta,
     backdropHeight: Dp,
+    listState: LazyListState,
+    backdropAlpha: Float,
+    showBackdrop: Boolean,
+    topPadding: Dp,
     onChooseSource: (String, Float?) -> Unit,
 ) {
     val openUrl = rememberUrlOpener()
@@ -200,8 +274,12 @@ private fun MetaContent(
     val scope = rememberCoroutineScope()
     var movingList by remember(meta.id) { mutableStateOf(false) }
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        item { DetailHeader(meta, backdropHeight) }
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(top = topPadding),
+    ) {
+        item { DetailHeader(meta, backdropHeight, backdropAlpha, showBackdrop) }
         item { WatchAction(meta, simklWatchedEpisodes, resumeSession, onChooseSource) }
         if (authState is SimklAuthState.SignedIn) {
             item {

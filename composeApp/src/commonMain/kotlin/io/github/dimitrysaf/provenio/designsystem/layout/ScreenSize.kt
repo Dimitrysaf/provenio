@@ -23,6 +23,13 @@ fun windowSizeClassOf(width: Dp): WindowSizeClass = when {
 /** True once the window is wide enough for a rail instead of a bottom bar. */
 fun WindowSizeClass.usesRail(): Boolean = this != WindowSizeClass.Compact
 
+/**
+ * True once the window is a tablet, a desktop or an unfolded foldable rather than a
+ * phone — Android's own boundary for a large screen, and the width past which a
+ * full-bleed backdrop costs more height than it earns.
+ */
+fun WindowSizeClass.isLargeScreen(): Boolean = this >= WindowSizeClass.Expanded
+
 /** M3 recommends an expanded rail (or drawer) once there is this much width to spare. */
 fun WindowSizeClass.usesExpandedRail(): Boolean =
     this == WindowSizeClass.Large || this == WindowSizeClass.ExtraLarge

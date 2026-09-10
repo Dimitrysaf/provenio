@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -32,33 +33,52 @@ import io.github.dimitrysaf.provenio.stremio.model.Meta
  * The backdrop is the same component and the same height math as the hero on Home, minus
  * everything written over it there: the logo only, since the year, type and genre already
  * have their own place in the row below.
+ *
+ * [backdropAlpha] comes from how far the page has scrolled, so the artwork dissolves on
+ * its way out rather than sliding under the bar still at full strength. Only the backdrop
+ * takes it — the poster and title below scroll normally.
+ *
+ * [showBackdrop] is false on a large screen, where the artwork is dropped altogether and
+ * the page opens on the poster row under a bar that is always there.
  */
 @Composable
-fun DetailHeader(meta: Meta, backdropHeight: Dp) {
+fun DetailHeader(
+    meta: Meta,
+    backdropHeight: Dp,
+    backdropAlpha: Float = 1f,
+    showBackdrop: Boolean = true,
+) {
     // Tied to the backdrop rather than fixed, exactly as the hero sizes its own.
     val logoHeight = minOf(backdropHeight * 0.22f, 110.dp)
 
     Column {
-        // topScrim because a back button floats over this one, which the hero has no
-        // equivalent of — without it the icon disappears into a bright still.
-        Backdrop(url = meta.background, height = backdropHeight, topScrim = true) {
-            if (meta.logo != null) {
-                // The padding goes on the box, not the image: constraints flow outside
-                // in, so padding under a heightIn eats into the height the image is
-                // allowed rather than sitting beneath it, and the logo comes out short.
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    AsyncImage(
-                        model = meta.logo,
-                        contentDescription = meta.name,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxWidth(0.75f).heightIn(max = logoHeight),
-                    )
+        if (showBackdrop) {
+            // topScrim because a back button floats over this one, which the hero has no
+            // equivalent of — without it the icon disappears into a bright still.
+            Backdrop(
+                url = meta.background,
+                height = backdropHeight,
+                topScrim = true,
+                modifier = Modifier.graphicsLayer { alpha = backdropAlpha },
+            ) {
+                if (meta.logo != null) {
+                    // The padding goes on the box, not the image: constraints flow outside
+                    // in, so padding under a heightIn eats into the height the image is
+                    // allowed rather than sitting beneath it, and the logo comes out short.
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AsyncImage(
+                            model = meta.logo,
+                            contentDescription = meta.name,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxWidth(0.75f).heightIn(max = logoHeight),
+                        )
+                    }
                 }
             }
         }
