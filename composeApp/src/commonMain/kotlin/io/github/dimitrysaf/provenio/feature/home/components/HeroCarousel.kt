@@ -61,11 +61,11 @@ private val DotSize = 8.dp
 private val ActiveDotWidth = 24.dp
 
 /**
- * The hero never takes more than this much of the window, so a shelf always peeks below
- * it. Without the bound a wide window asks for more height than the window has, and the
- * spotlight becomes the whole screen.
+ * The hero never takes more than this much of the window, so the first shelf below it
+ * lands whole rather than clipped. Without the bound a wide window asks for more height
+ * than the window has, and the spotlight becomes the whole screen.
  */
-private const val HeroViewportFraction = 0.62f
+private const val HeroViewportFraction = 0.50f
 
 /**
  * How tall the hero should be in a window this size.
@@ -79,9 +79,11 @@ private const val HeroViewportFraction = 0.62f
  * unbounded, so nothing here can measure the window on its own.
  */
 fun heroHeightFor(width: Dp, viewportHeight: Dp): Dp {
+    // On a phone the aspect decides, not the cap — the window is tall enough that the
+    // fraction never bites — so making the hero shorter there means a wider ratio.
     val aspect = when (windowSizeClassOf(width)) {
-        WindowSizeClass.Compact -> 0.9f
-        WindowSizeClass.Medium -> 1.4f
+        WindowSizeClass.Compact -> 1.05f
+        WindowSizeClass.Medium -> 1.5f
         else -> 16f / 9f
     }
     return minOf(width / aspect, viewportHeight * HeroViewportFraction)
