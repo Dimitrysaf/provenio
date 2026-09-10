@@ -28,16 +28,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.Modifier
 import io.github.dimitrysaf.provenio.navigation.Destination
-import io.github.dimitrysaf.provenio.pages.HomePage
-import io.github.dimitrysaf.provenio.pages.LibraryPage
-import io.github.dimitrysaf.provenio.pages.SearchPage
-import io.github.dimitrysaf.provenio.pages.SettingsCategory
-import io.github.dimitrysaf.provenio.pages.SettingsPage
-import io.github.dimitrysaf.provenio.theme.MotionTokens
-import io.github.dimitrysaf.provenio.theme.ThemeMode
-import io.github.dimitrysaf.provenio.ui.responsive.usesExpandedRail
-import io.github.dimitrysaf.provenio.ui.responsive.usesRail
-import io.github.dimitrysaf.provenio.ui.responsive.windowSizeClassOf
+import io.github.dimitrysaf.provenio.feature.home.HomeScreen
+import io.github.dimitrysaf.provenio.feature.library.LibraryScreen
+import io.github.dimitrysaf.provenio.feature.search.SearchScreen
+import io.github.dimitrysaf.provenio.feature.settings.SettingsCategory
+import io.github.dimitrysaf.provenio.feature.settings.SettingsScreen
+import io.github.dimitrysaf.provenio.designsystem.theme.MotionTokens
+import io.github.dimitrysaf.provenio.designsystem.theme.ThemeMode
+import io.github.dimitrysaf.provenio.designsystem.layout.usesExpandedRail
+import io.github.dimitrysaf.provenio.designsystem.layout.usesRail
+import io.github.dimitrysaf.provenio.designsystem.layout.windowSizeClassOf
 
 @Composable
 private fun DestinationIcon(entry: Destination, selected: Boolean) {
@@ -138,24 +138,24 @@ fun MainScaffold(
                     label = "tab",
                 ) { tab ->
                     when (tab) {
-                        Destination.Home -> HomePage(
+                        Destination.Home -> HomeScreen(
                             modifier = Modifier.fillMaxSize(),
                             onSearchClick = openSearch,
                             onSettingsClick = { openSettings(SettingsCategory.Simkl) },
                             onAddAddons = { openSettings(SettingsCategory.Addons) },
                             onOpenDetail = onOpenDetail,
                         )
-                        Destination.Search -> SearchPage(
+                        Destination.Search -> SearchScreen(
                             modifier = Modifier.fillMaxSize(),
                             onAddAddons = { openSettings(SettingsCategory.Addons) },
                             onOpenDetail = onOpenDetail,
                         )
-                        Destination.Library -> LibraryPage(
+                        Destination.Library -> LibraryScreen(
                             modifier = Modifier.fillMaxSize(),
                             onSearchClick = openSearch,
                             onFilterClick = {},
                         )
-                        Destination.Settings -> SettingsPage(
+                        Destination.Settings -> SettingsScreen(
                             modifier = Modifier.fillMaxSize(),
                             initialCategory = pendingSettingsCategory,
                             themeMode = themeMode,

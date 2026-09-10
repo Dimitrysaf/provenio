@@ -34,17 +34,17 @@ import io.github.dimitrysaf.provenio.navigation.PlayerRoute
 import io.github.dimitrysaf.provenio.navigation.Routes
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlayerRepository
-import io.github.dimitrysaf.provenio.player.PlayerScreen
+import io.github.dimitrysaf.provenio.feature.player.PlayerScreen
 import io.github.dimitrysaf.provenio.player.ScrobbleTarget
 import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.SearchRepository
-import io.github.dimitrysaf.provenio.pages.DetailPage
-import io.github.dimitrysaf.provenio.theme.AppTheme
-import io.github.dimitrysaf.provenio.theme.MotionTokens
-import io.github.dimitrysaf.provenio.theme.ThemeMode
-import io.github.dimitrysaf.provenio.theme.isDynamicColorSupported
+import io.github.dimitrysaf.provenio.feature.detail.DetailScreen
+import io.github.dimitrysaf.provenio.designsystem.theme.AppTheme
+import io.github.dimitrysaf.provenio.designsystem.theme.MotionTokens
+import io.github.dimitrysaf.provenio.designsystem.theme.ThemeMode
+import io.github.dimitrysaf.provenio.designsystem.theme.isDynamicColorSupported
 import io.github.dimitrysaf.provenio.shell.MainScaffold
 import io.github.dimitrysaf.provenio.watch.EpisodeWatchedRepository
 
@@ -147,7 +147,7 @@ fun App() {
             composable<DetailRoute> { entry ->
                 val route = entry.toRoute<DetailRoute>()
                 PageSurface {
-                    DetailPage(
+                    DetailScreen(
                         type = route.type,
                         id = route.id,
                         onBack = { navController.popBackStack() },

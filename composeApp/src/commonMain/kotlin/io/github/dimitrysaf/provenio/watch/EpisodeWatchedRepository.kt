@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
  *
  * Simkl's synced library only reports a watched/total count and a next-to-watch marker per
  * show, never a full per-episode list, so the details page derives a default tick state
- * from that (see `DetailPage.kt`'s `simklWatchedIds`). [overrides] is layered on top of
+ * from that (see `DetailScreen.kt`'s `simklWatchedIds`). [overrides] is layered on top of
  * that default: a video id present here always wins, in either direction, over the
  * Simkl-derived guess. An id absent here means "no local opinion", not "not watched" — so
  * un-watching an episode Simkl otherwise infers as watched is recorded the same way as
