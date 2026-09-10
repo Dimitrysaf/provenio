@@ -97,7 +97,7 @@ fun LibraryScreen(
             .windowInsetsPadding(WindowInsets.statusBars),
     ) {
         Text(
-            text = "Simkl Watchlist",
+            text = "Library",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(
