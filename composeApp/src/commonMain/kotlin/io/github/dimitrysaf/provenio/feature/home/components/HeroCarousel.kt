@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -47,22 +46,46 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
+import io.github.dimitrysaf.provenio.designsystem.layout.WindowSizeClass
+import io.github.dimitrysaf.provenio.designsystem.layout.windowSizeClassOf
 import io.github.dimitrysaf.provenio.designsystem.theme.MotionTokens
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
 
-/** Taller than it is wide, the way a phone hero fills the top of a screen. */
-private const val HeroAspectRatio = 0.9f
-
-/** Past this the hero stops growing, so a tablet does not get a full page of one title. */
-private val HeroMaxHeight = 560.dp
-
 private val DotSize = 8.dp
 private val ActiveDotWidth = 24.dp
+
+/**
+ * The hero never takes more than this much of the window, so a shelf always peeks below
+ * it. Without the bound a wide window asks for more height than the window has, and the
+ * spotlight becomes the whole screen.
+ */
+private const val HeroViewportFraction = 0.62f
+
+/**
+ * How tall the hero should be in a window this size.
+ *
+ * The shape follows the window rather than being clamped into it: portrait on a phone,
+ * squarer on a small tablet, cinematic once there is real width. A single ratio cannot do
+ * all three — asking a portrait ratio to fill a landscape window is what made the hero
+ * taller than the screen.
+ *
+ * [viewportHeight] has to come from the caller: inside a lazy list the vertical space is
+ * unbounded, so nothing here can measure the window on its own.
+ */
+fun heroHeightFor(width: Dp, viewportHeight: Dp): Dp {
+    val aspect = when (windowSizeClassOf(width)) {
+        WindowSizeClass.Compact -> 0.9f
+        WindowSizeClass.Medium -> 1.4f
+        else -> 16f / 9f
+    }
+    return minOf(width / aspect, viewportHeight * HeroViewportFraction)
+}
 
 /**
  * The spotlight at the top of Home: one title at a time, swiped through.
@@ -82,6 +105,7 @@ private val ActiveDotWidth = 24.dp
 @Composable
 fun HeroCarousel(
     items: List<MetaPreview>,
+    height: Dp,
     onOpenDetail: (type: String, id: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -93,10 +117,10 @@ fun HeroCarousel(
     Column(modifier = modifier.fillMaxWidth()) {
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(HeroAspectRatio)
-                .heightIn(max = HeroMaxHeight),
+            // An explicit height, not an aspect ratio with a cap after it: a cap placed
+            // inside aspectRatio constrains the child but cannot shrink what aspectRatio
+            // reports, so the hero grew past the window however low the maximum was set.
+            modifier = Modifier.fillMaxWidth().height(height),
         ) { page ->
             val item = items[page]
 
@@ -109,6 +133,7 @@ fun HeroCarousel(
             HeroPage(
                 item = item,
                 meta = full[item.id],
+                height = height,
                 onClick = { onOpenDetail(item.type, item.id) },
             )
         }
@@ -123,8 +148,13 @@ fun HeroCarousel(
 private fun HeroPage(
     item: MetaPreview,
     meta: Meta?,
+    height: Dp,
     onClick: () -> Unit,
 ) {
+    // Tied to the hero rather than fixed: a cinematic hero on a tablet is far shorter
+    // than a portrait one, and a 110dp logo inside it would crowd out everything else.
+    val logoHeight = minOf(height * 0.22f, 110.dp)
+
     // The catalog preview carries a banner but never a backdrop, so the wide art is only
     // right once the full meta lands; the poster keeps something on screen until then.
     val backdrop = meta?.background ?: item.banner ?: item.poster
@@ -179,7 +209,7 @@ private fun HeroPage(
                         model = current,
                         contentDescription = item.name,
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxWidth(0.75f).heightIn(max = 110.dp),
+                        modifier = Modifier.fillMaxWidth(0.75f).heightIn(max = logoHeight),
                     )
                 } else {
                     Text(

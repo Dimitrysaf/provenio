@@ -1,6 +1,6 @@
 package io.github.dimitrysaf.provenio.feature.home
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -29,6 +29,7 @@ import io.github.dimitrysaf.provenio.designsystem.components.EmptyState
 import io.github.dimitrysaf.provenio.feature.home.components.ContinueWatchingCarousel
 import io.github.dimitrysaf.provenio.feature.home.components.HeroCarousel
 import io.github.dimitrysaf.provenio.feature.home.components.LibraryEmptyState
+import io.github.dimitrysaf.provenio.feature.home.components.heroHeightFor
 import io.github.dimitrysaf.provenio.feature.home.components.Shelf
 import io.github.dimitrysaf.provenio.feature.home.components.catalogShelves
 import io.github.dimitrysaf.provenio.simkl.SimklAuthState
@@ -110,7 +111,12 @@ fun HomeScreen(
     val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val topPadding = if (heroItems.isEmpty()) TopBarHeight + topInset else 0.dp
 
-    Box(modifier = modifier.fillMaxSize()) {
+    // BoxWithConstraints rather than Box: the hero has to be sized against the window,
+    // and inside a lazy list the vertical space is unbounded, so this is the last place
+    // that still knows how tall the window actually is.
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val heroHeight = heroHeightFor(width = maxWidth, viewportHeight = maxHeight)
+
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = topPadding, bottom = 24.dp),
@@ -128,7 +134,7 @@ fun HomeScreen(
                 return@LazyColumn
             }
 
-            item { HeroCarousel(heroItems, onOpenDetail) }
+            item { HeroCarousel(heroItems, heroHeight, onOpenDetail) }
             item { ContinueWatchingCarousel(watching, timeProgressByImdbId, onOpenDetail) }
             item { Shelf("Plan to watch", planToWatch, onOpenDetail) }
 
