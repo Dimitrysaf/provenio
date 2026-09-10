@@ -49,6 +49,16 @@ import io.github.dimitrysaf.provenio.simkl.SimklImages
 import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.simkl.SimklStatus
 import io.github.dimitrysaf.provenio.simkl.SimklSync
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.library_empty_list_body
+import io.github.dimitrysaf.provenio.resources.library_lives_on_simkl
+import io.github.dimitrysaf.provenio.resources.library_lives_on_simkl_body
+import io.github.dimitrysaf.provenio.resources.library_no_items_of_type
+import io.github.dimitrysaf.provenio.resources.library_nothing_in_list
+import io.github.dimitrysaf.provenio.resources.library_sign_in
+import io.github.dimitrysaf.provenio.resources.library_title
+import io.github.dimitrysaf.provenio.resources.watched
+import org.jetbrains.compose.resources.stringResource
 
 /** The page margin everything on this screen lines up against. */
 private val PageMargin = 16.dp
@@ -97,7 +107,7 @@ fun LibraryScreen(
             .windowInsetsPadding(WindowInsets.statusBars),
     ) {
         Text(
-            text = "Library",
+            text = stringResource(Res.string.library_title),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(
@@ -112,10 +122,9 @@ fun LibraryScreen(
             EmptyState(
                 modifier = Modifier.fillMaxWidth(),
                 icon = Icons.Outlined.CloudSync,
-                title = "Your library lives on Simkl",
-                description = "Sign in to bring what you are watching and planning to " +
-                    "watch into Provenio.",
-                actionLabel = "Sign in to Simkl",
+                title = stringResource(Res.string.library_lives_on_simkl),
+                description = stringResource(Res.string.library_lives_on_simkl_body),
+                actionLabel = stringResource(Res.string.library_sign_in),
                 onAction = onSettingsClick,
             )
             return@Column
@@ -136,11 +145,14 @@ fun LibraryScreen(
             EmptyState(
                 modifier = Modifier.fillMaxWidth(),
                 icon = Icons.Outlined.Bookmarks,
-                title = "Nothing in ${listLabel(list)}",
+                title = stringResource(Res.string.library_nothing_in_list, listLabel(list)),
                 description = if (mediaType == null) {
-                    "Anything you add to this list on Simkl shows up here."
+                    stringResource(Res.string.library_empty_list_body)
                 } else {
-                    "No ${mediaTypeLabel(mediaType).lowercase()} in this list."
+                    stringResource(
+                        Res.string.library_no_items_of_type,
+                        mediaTypeLabel(mediaType).lowercase(),
+                    )
                 },
             )
             return@Column
@@ -187,7 +199,7 @@ private fun BoxScope.WatchedBadge() {
     ) {
         Icon(
             imageVector = Icons.Filled.Check,
-            contentDescription = "Watched",
+            contentDescription = stringResource(Res.string.watched),
             tint = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier.size(16.dp),
         )

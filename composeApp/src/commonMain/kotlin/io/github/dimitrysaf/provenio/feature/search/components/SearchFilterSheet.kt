@@ -22,6 +22,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.navigation.SearchFilter
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.clear
+import io.github.dimitrysaf.provenio.resources.done
+import io.github.dimitrysaf.provenio.resources.search_filter_any_year
+import io.github.dimitrysaf.provenio.resources.search_filter_release_year
+import io.github.dimitrysaf.provenio.resources.search_filter_type
+import io.github.dimitrysaf.provenio.resources.search_filters
+import org.jetbrains.compose.resources.stringResource
 
 /** A release year is four digits or it is not a year. */
 private const val YearLength = 4
@@ -48,10 +56,13 @@ fun SearchFilterSheet(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
         ) {
-            Text(text = "Filters", style = MaterialTheme.typography.titleLarge)
+            Text(
+                text = stringResource(Res.string.search_filters),
+                style = MaterialTheme.typography.titleLarge,
+            )
 
             Text(
-                text = "Type",
+                text = stringResource(Res.string.search_filter_type),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 20.dp, bottom = 8.dp),
@@ -61,13 +72,13 @@ fun SearchFilterSheet(
                     FilterChip(
                         selected = option == selectedType,
                         onClick = { onSelectType(option) },
-                        label = { Text(option.label) },
+                        label = { Text(stringResource(option.label)) },
                     )
                 }
             }
 
             Text(
-                text = "Release year",
+                text = stringResource(Res.string.search_filter_release_year),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 20.dp, bottom = 8.dp),
@@ -79,7 +90,7 @@ fun SearchFilterSheet(
                 onValueChange = { typed ->
                     onYearChange(typed.filter { it.isDigit() }.take(YearLength))
                 },
-                placeholder = { Text("Any year") },
+                placeholder = { Text(stringResource(Res.string.search_filter_any_year)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
@@ -95,9 +106,9 @@ fun SearchFilterSheet(
                         onYearChange("")
                     },
                 ) {
-                    Text("Clear")
+                    Text(stringResource(Res.string.clear))
                 }
-                TextButton(onClick = onDismiss) { Text("Done") }
+                TextButton(onClick = onDismiss) { Text(stringResource(Res.string.done)) }
             }
 
             Spacer(Modifier.height(24.dp))

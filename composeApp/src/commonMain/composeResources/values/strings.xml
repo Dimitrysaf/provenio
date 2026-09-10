@@ -1,0 +1,305 @@
+<resources>
+    <!-- Shared -->
+    <string name="back">Back</string>
+    <string name="cancel">Cancel</string>
+    <string name="clear">Clear</string>
+    <string name="done">Done</string>
+    <string name="add">Add</string>
+    <string name="remove">Remove</string>
+    <string name="try_again">Try again</string>
+    <string name="refresh">Refresh</string>
+    <string name="unknown">Unknown</string>
+    <string name="watched">Watched</string>
+    <string name="not_watched">Not watched</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_library">Library</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Theme -->
+    <string name="theme_device">Device theme</string>
+    <string name="theme_light">Light mode</string>
+    <string name="theme_dark">Dark mode</string>
+    <string name="theme_amoled">AMOLED mode</string>
+
+    <!-- Language -->
+    <string name="language">Language</string>
+    <string name="language_system">System language</string>
+
+    <!-- Settings index -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_appearance_summary">Theme, colour and language</string>
+    <string name="settings_addons">Add-ons</string>
+    <string name="settings_addons_summary">Catalogs, metadata and streams</string>
+    <string name="settings_p2p">Peer-to-peer</string>
+    <string name="settings_p2p_summary">Sharing, cache and status</string>
+    <string name="settings_video_player">Video player</string>
+    <string name="settings_video_player_summary">Which player opens a stream</string>
+    <string name="settings_simkl">Simkl</string>
+    <string name="settings_simkl_summary">Sync your watchlist and progress</string>
+
+    <!-- Appearance -->
+    <string name="appearance_theme">Theme</string>
+    <string name="appearance_dynamic_color">Dynamic color</string>
+    <string name="appearance_dynamic_color_on">Use colors from your wallpaper</string>
+    <string name="appearance_dynamic_color_off">Not available on this device</string>
+
+    <!-- Home -->
+    <string name="home_no_metadata">No metadata available</string>
+    <string name="home_no_metadata_body">Add an add-on to get started.</string>
+    <string name="home_add_addon">Add an add-on</string>
+    <string name="home_plan_to_watch">Plan to watch</string>
+    <string name="home_continue_watching">Continue watching</string>
+
+    <!-- Hero carousel -->
+    <string name="type_movie">Movie</string>
+    <string name="type_series">Series</string>
+    <string name="type_channel">Channel</string>
+    <string name="type_tv">TV</string>
+
+    <!-- Library empty states -->
+    <string name="library_lives_on_simkl">Your library lives on Simkl</string>
+    <string name="library_lives_on_simkl_body">Sign in to bring what you are watching and planning to watch into Provenio.</string>
+    <string name="library_sign_in">Sign in to Simkl</string>
+    <string name="library_syncing">Syncing your library</string>
+    <string name="library_sync_failed">Sync did not finish</string>
+    <string name="library_nothing_tracked">Nothing tracked yet</string>
+    <string name="library_nothing_tracked_body">Anything you mark as watching or plan to watch on Simkl shows up here.</string>
+
+    <!-- Library -->
+    <string name="library_title">Library</string>
+    <string name="library_empty_list_body">Anything you add to this list on Simkl shows up here.</string>
+    <string name="library_nothing_in_list">Nothing in %1$s</string>
+    <string name="library_no_items_of_type">No %1$s in this list.</string>
+    <string name="library_all_types">All types</string>
+    <string name="library_sort_recently_watched">Recently watched</string>
+    <string name="library_sort_least_recently_watched">Least recently watched</string>
+    <string name="library_sort_title_ascending">Title A–Z</string>
+    <string name="library_sort_title_descending">Title Z–A</string>
+    <string name="library_list_plan_to_watch">Plan to Watch</string>
+    <string name="library_list_completed">Completed</string>
+    <string name="library_list_watching">Watching</string>
+    <string name="library_type_series">Series</string>
+    <string name="library_type_movies">Movies</string>
+    <string name="library_type_anime">Anime</string>
+    <string name="library_select_list">Select list</string>
+    <string name="library_select_type">Select type</string>
+    <string name="library_sort_action">Sort library</string>
+
+    <!-- Search -->
+    <string name="search_placeholder">Search movies and shows</string>
+    <string name="search_clear">Clear search</string>
+    <string name="search_filters">Filters</string>
+    <string name="search_nothing_to_search">Nothing to search</string>
+    <string name="search_nothing_to_search_body">Add an add-on with a searchable catalog to get started.</string>
+    <string name="search_add_addon">Add an add-on</string>
+    <string name="search_nothing_to_browse">Nothing to browse</string>
+    <string name="search_nothing_to_browse_body">Add an add-on with a catalog to get started.</string>
+    <string name="search_recent">Recent searches</string>
+    <string name="search_no_results">No results for "%1$s"</string>
+    <string name="search_remove_from_history">Remove "%1$s" from history</string>
+    <string name="search_catalog_returned_nothing">%1$s returned nothing.</string>
+    <string name="search_filter_type">Type</string>
+    <string name="search_filter_release_year">Release year</string>
+    <string name="search_filter_any_year">Any year</string>
+    <string name="search_filter_all">All</string>
+    <string name="search_filter_movies">Movies</string>
+    <string name="search_filter_tv">TV</string>
+    <string name="search_filter_people">People</string>
+
+    <!-- Discover -->
+    <string name="discover_title">Discover</string>
+    <string name="discover_all_genres">All Genres</string>
+    <string name="discover_type">Type</string>
+    <string name="discover_catalog">Catalog</string>
+    <string name="discover_genre">Genre</string>
+    <string name="discover_type_movies">Movies</string>
+    <string name="discover_type_series">Series</string>
+    <string name="discover_type_channels">Channels</string>
+    <string name="discover_type_tv">TV</string>
+
+    <!-- Detail -->
+    <string name="detail_no_addon">No add-on could describe this title.</string>
+    <string name="detail_ratings">Ratings</string>
+    <string name="detail_not_rated">Not rated</string>
+    <string name="detail_plot">Plot</string>
+    <string name="detail_no_description">No description provided</string>
+    <string name="detail_cast_and_crew">Cast and crew</string>
+    <string name="detail_cast">Cast</string>
+    <string name="detail_director">Director</string>
+    <string name="detail_no_cast">This add-on did not list any cast or crew.</string>
+    <string name="detail_tags">Tags</string>
+    <string name="detail_no_tags">No tags provided.</string>
+    <string name="detail_themes">Themes</string>
+    <string name="detail_no_themes">Themes are not available from add-ons.</string>
+    <string name="detail_comments">Comments</string>
+    <string name="detail_no_comments">Comments arrive with account sign-in.</string>
+    <string name="detail_facts">Facts</string>
+    <string name="detail_fact_air_date">Air date</string>
+    <string name="detail_fact_country">Country</string>
+    <string name="detail_fact_language">Language</string>
+    <string name="detail_fact_runtime">Runtime</string>
+    <string name="detail_fact_awards">Awards</string>
+    <string name="detail_fact_website">Website</string>
+    <string name="detail_no_facts">No facts provided.</string>
+    <string name="detail_trailers">Trailers</string>
+    <string name="detail_no_trailers">No trailers provided.</string>
+    <string name="detail_trailer">Trailer</string>
+    <string name="detail_backdrops">Backdrops</string>
+    <string name="detail_no_backdrops">No artwork provided.</string>
+    <string name="detail_episodes">Episodes</string>
+    <string name="detail_no_episodes">No episodes listed for this title.</string>
+    <string name="detail_specials">Specials</string>
+    <string name="detail_season">Season %1$d</string>
+    <string name="detail_episode">Episode</string>
+    <string name="detail_episode_count_short">%1$d eps</string>
+    <string name="detail_watch_progress">Watch progress</string>
+    <string name="detail_not_tracked_yet">Not tracked yet</string>
+    <string name="detail_not_started">Not started, %1$d episodes</string>
+    <string name="detail_watched_of">%1$d of %2$d episodes watched</string>
+    <string name="detail_resume_episode">Resume S%1$sE%2$s now</string>
+    <string name="detail_resume_now">Resume now</string>
+    <string name="detail_watch_episode">Watch S%1$sE%2$s now</string>
+    <string name="detail_watch_first_episode">Watch first episode now</string>
+    <string name="detail_watch_now">Watch now</string>
+
+    <!-- Watchlist -->
+    <string name="watchlist_add">Add to Watchlist</string>
+    <string name="watchlist_in">In %1$s</string>
+    <string name="watchlist_remove">Remove from list</string>
+    <string name="watchlist_plan_to_watch">Plan to watch</string>
+    <string name="watchlist_completed">Completed</string>
+    <string name="watchlist_on_hold">On hold</string>
+    <string name="watchlist_dropped">Dropped</string>
+    <string name="watchlist_watching">Watching</string>
+
+    <!-- Sources -->
+    <string name="sources_title">Sources</string>
+    <string name="sources_refresh">Refresh sources</string>
+    <string name="sources_search">Search sources</string>
+    <string name="sources_quality_filter">Quality filter</string>
+    <string name="sources_nothing_matches">Nothing matches</string>
+    <string name="sources_nothing_matches_body">No source mentions that. Clear the search to see all of them.</string>
+    <string name="sources_none_from_addon">No sources from this add-on.</string>
+    <string name="sources_no_addon_offers">No add-on offers sources</string>
+    <string name="sources_no_addon_offers_body">None of your installed add-ons serve streams for this kind of title.</string>
+    <string name="sources_none_found">No sources found</string>
+    <string name="sources_none_found_body">Your add-ons answered, but none had a stream for this title.</string>
+    <string name="sources_p2p_failed">The peer-to-peer service could not open this source.</string>
+    <string name="source_fallback_name">Source</string>
+    <string name="source_kind_direct">Direct</string>
+    <string name="source_kind_p2p">Peer-to-peer</string>
+    <string name="source_kind_youtube">YouTube</string>
+    <string name="source_kind_external">Opens elsewhere</string>
+    <string name="source_kind_unsupported">Unsupported</string>
+
+    <!-- Add-ons -->
+    <string name="addons_intro">Add-ons supply the catalogs, metadata and streams.</string>
+    <string name="addons_order">Add-ons are asked in this order.</string>
+    <string name="addons_add">Add an add-on</string>
+    <string name="addons_version">Version %1$s</string>
+    <string name="addons_more_options">More options for %1$s</string>
+    <string name="addons_configure">Configure</string>
+    <string name="addons_move_up">Move up</string>
+    <string name="addons_move_down">Move down</string>
+    <string name="addons_manifest_url">Manifest URL</string>
+    <string name="addons_add_body">Paste the add-on’s manifest URL. A stremio:// install link works too.</string>
+    <string name="addons_answered_with">The add-on answered with %1$d.</string>
+    <string name="addons_invalid_manifest">That address did not return a valid manifest.</string>
+    <string name="addons_unreachable">Could not reach that address.</string>
+    <string name="addons_needs_configuring">%1$s needs configuring</string>
+    <string name="addons_needs_configuring_body">This add-on cannot be used until it is set up. Opening its configuration page will give you a personalised install link — paste that link here instead.</string>
+    <string name="addons_open_configuration">Open configuration</string>
+
+    <!-- Peer-to-peer -->
+    <string name="p2p_title">Peer-to-peer</string>
+    <string name="p2p_status">Status</string>
+    <string name="p2p_listening_port">Listening port</string>
+    <string name="p2p_port_in_use">Port already in use</string>
+    <string name="p2p_not_assigned">Not assigned</string>
+    <string name="p2p_this_device">This device</string>
+    <string name="p2p_not_found">Not found</string>
+    <string name="p2p_seeding">Seeding</string>
+    <string name="p2p_seeding_body">Seeding means uploading what you already have downloaded from torrents. Check with local laws.</string>
+    <string name="p2p_connection_profile">Connection profile</string>
+    <string name="p2p_cache_size">Cache size</string>
+    <string name="p2p_clear_cache">Clear cache</string>
+    <string name="p2p_hide_stats">Hide torrent statistics</string>
+    <string name="p2p_hide_stats_body">Hide information on speed, peer and seed counts from the video player</string>
+    <string name="p2p_vpn_info">Information about VPNs</string>
+    <string name="p2p_vpn_info_summary">Virtual Private Networks</string>
+    <string name="p2p_profile_slow">Slow</string>
+    <string name="p2p_profile_balanced">Balanced</string>
+    <string name="p2p_profile_fast">Fast</string>
+    <string name="p2p_cache_none">No caching</string>
+    <string name="p2p_cache_2g">2G</string>
+    <string name="p2p_cache_5g">5G</string>
+    <string name="p2p_cache_10g">10G</string>
+    <string name="p2p_state_disabled">Disabled</string>
+    <string name="p2p_state_not_built">Not built</string>
+    <string name="p2p_state_offline">Offline</string>
+    <string name="p2p_state_online">Online</string>
+
+    <!-- Peer-to-peer consent -->
+    <string name="p2p_consent_title">Enable P2P Streaming?</string>
+    <string name="p2p_consent_intro">This stream uses peer-to-peer technology. By enabling it you agree that:</string>
+    <string name="p2p_consent_ip">Your IP address is visible to other peers and to your ISP.</string>
+    <string name="p2p_consent_responsible">You are responsible for your use of peer-to-peer connections and any content accessed through them.</string>
+    <string name="p2p_consent_no_hosting">This app does not host or control content. It connects to third-party networks.</string>
+    <string name="p2p_consent_no_liability">The developers accept no liability for your use of this feature.</string>
+    <string name="p2p_consent_uploading">Uploading is off by default. Distributing copyrighted material is treated far more seriously than downloading it. Check your local law before enabling it.</string>
+    <string name="p2p_consent_vpn">A VPN prevents peers from seeing your address. You can turn this off any time in Settings.</string>
+    <string name="p2p_consent_what_is_vpn">What is a VPN?</string>
+    <string name="p2p_consent_enable">Enable P2P</string>
+    <string name="p2p_consent_enable_countdown">Enable P2P (%1$d)</string>
+
+    <!-- Video player -->
+    <string name="player_title">Player</string>
+    <string name="player_none_available">No player available</string>
+    <string name="player_backend_builtin">Built-in</string>
+    <string name="player_backend_builtin_summary">Hardware decoding for common formats</string>
+    <string name="player_backend_external">External app</string>
+    <string name="player_backend_external_summary">Hand off to any player installed on the device</string>
+
+    <!-- Simkl -->
+    <string name="simkl_asking_for_code">Asking Simkl for a code...</string>
+    <string name="simkl_sign_in_body">Sign in to sync your watchlist, progress and ratings with Simkl.</string>
+    <string name="simkl_sign_in">Sign in with Simkl</string>
+    <string name="simkl_go_to_page">Go to %1$s and enter this code.</string>
+    <string name="simkl_copy_code">Copy code</string>
+    <string name="simkl_expires_in">Expires in %1$dm %2$ds</string>
+    <string name="simkl_open">Open Simkl</string>
+    <string name="simkl_entered_code">I entered the code</string>
+    <string name="simkl_account">Account</string>
+    <string name="simkl_signed_in">Signed in</string>
+    <string name="simkl_sign_out">Sign out</string>
+    <string name="simkl_sign_out_summary">Removes the token from this device</string>
+    <string name="simkl_no_client_id">This build has no Simkl client id.</string>
+    <string name="simkl_no_code">Simkl did not issue a code.</string>
+    <string name="simkl_refused_code">Simkl refused the code.</string>
+    <string name="simkl_waiting">Waiting for a connection, still trying.</string>
+    <string name="simkl_code_expired">The code expired. Try again.</string>
+    <string name="simkl_unreachable">Could not reach Simkl.</string>
+    <string name="simkl_sync_did_not_finish">Sync did not finish.</string>
+
+    <!-- Video playback -->
+    <string name="player_playback_failed">Playback failed</string>
+    <string name="player_error">Error</string>
+    <string name="player_message">Message</string>
+    <string name="player_cause">Cause</string>
+    <string name="player_source">Source</string>
+    <string name="player_no_message">No message</string>
+    <string name="player_copy">Copy</string>
+    <string name="player_close">Close</string>
+    <string name="player_back_10">Back 10 seconds</string>
+    <string name="player_forward_10">Forward 10 seconds</string>
+    <string name="player_pause">Pause</string>
+    <string name="player_play">Play</string>
+    <string name="player_play_with">Play with</string>
+    <string name="player_not_available_desktop">Playback is not available on desktop yet.</string>
+    <string name="simkl_answered_with">Simkl answered %1$d.</string>
+    <string name="simkl_unreadable_reply">Unreadable reply: %1$s</string>
+</resources>

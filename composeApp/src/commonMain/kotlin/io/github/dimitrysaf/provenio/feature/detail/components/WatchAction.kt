@@ -22,6 +22,17 @@ import io.github.dimitrysaf.provenio.feature.detail.firstUnwatchedEpisode
 import io.github.dimitrysaf.provenio.feature.detail.trackedEpisodeCount
 import io.github.dimitrysaf.provenio.simkl.SimklPlaybackSession
 import io.github.dimitrysaf.provenio.stremio.model.Meta
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.detail_not_started
+import io.github.dimitrysaf.provenio.resources.detail_not_tracked_yet
+import io.github.dimitrysaf.provenio.resources.detail_resume_episode
+import io.github.dimitrysaf.provenio.resources.detail_resume_now
+import io.github.dimitrysaf.provenio.resources.detail_watch_episode
+import io.github.dimitrysaf.provenio.resources.detail_watch_first_episode
+import io.github.dimitrysaf.provenio.resources.detail_watch_now
+import io.github.dimitrysaf.provenio.resources.detail_watch_progress
+import io.github.dimitrysaf.provenio.resources.detail_watched_of
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * The primary action. Prefers resuming Simkl's saved playback position, when it has one
@@ -47,14 +58,25 @@ fun WatchAction(
     val next = resumeEpisode
         ?: meta.firstUnwatchedEpisode(simklWatchedEpisodes)
         ?: meta.firstRegularEpisode()
+    // The season and episode numbers are padded before they are handed over, so the
+    // translated string carries them as text and no locale reformats them into something
+    // an episode label should not be.
     val label = when {
         resumeProgress != null && next?.season != null && next.episode != null ->
-            "Resume S${pad(next.season)}E${pad(next.episode)} now"
-        resumeProgress != null -> "Resume now"
+            stringResource(
+                Res.string.detail_resume_episode,
+                pad(next.season),
+                pad(next.episode),
+            )
+        resumeProgress != null -> stringResource(Res.string.detail_resume_now)
         next?.season != null && next.episode != null ->
-            "Watch S${pad(next.season)}E${pad(next.episode)} now"
-        meta.videos.isNotEmpty() -> "Watch first episode now"
-        else -> "Watch now"
+            stringResource(
+                Res.string.detail_watch_episode,
+                pad(next.season),
+                pad(next.episode),
+            )
+        meta.videos.isNotEmpty() -> stringResource(Res.string.detail_watch_first_episode)
+        else -> stringResource(Res.string.detail_watch_now)
     }
 
     // A series plays its first episode; a film plays itself. Either way the id decides
@@ -86,7 +108,10 @@ fun WatchProgress(meta: Meta, simklItem: SimklItem?, watchedIds: Set<String>) {
     val total = fromSimkl?.totalEpisodes?.toInt() ?: meta.trackedEpisodeCount()
     val watched = fromSimkl?.watchedEpisodes?.toInt() ?: localWatched
 
-    SectionCard(title = "Watch progress", icon = Icons.Outlined.Visibility) {
+    SectionCard(
+        title = stringResource(Res.string.detail_watch_progress),
+        icon = Icons.Outlined.Visibility,
+    ) {
         // A bar pinned at zero says nothing that the text below it does not.
         if (watched > 0 && total > 0) {
             LinearProgressIndicator(
@@ -96,9 +121,9 @@ fun WatchProgress(meta: Meta, simklItem: SimklItem?, watchedIds: Set<String>) {
         }
         Text(
             text = when {
-                total == 0 -> "Not tracked yet"
-                watched == 0 -> "Not started, $total episodes"
-                else -> "$watched of $total episodes watched"
+                total == 0 -> stringResource(Res.string.detail_not_tracked_yet)
+                watched == 0 -> stringResource(Res.string.detail_not_started, total)
+                else -> stringResource(Res.string.detail_watched_of, watched, total)
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

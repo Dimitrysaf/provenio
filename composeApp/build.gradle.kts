@@ -37,6 +37,7 @@ kotlin {
             implementation(compose.materialIconsExtended)
             implementation(compose.animation)
             implementation(compose.ui)
+            implementation(compose.components.resources)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
@@ -78,6 +79,14 @@ kotlin {
             implementation(libs.sqldelight.sqlite.driver)
         }
     }
+}
+
+// Localized UI text lives in commonMain/composeResources/values*/strings.xml. The package
+// is pinned rather than left to default to "{group}.{module}.generated.resources" so the
+// import in every file is stable and says where it comes from.
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "io.github.dimitrysaf.provenio.resources"
 }
 
 sqldelight {

@@ -31,6 +31,11 @@ import io.github.dimitrysaf.provenio.player.availablePlayerBackends
 import io.github.dimitrysaf.provenio.designsystem.components.SettingsTile
 import io.github.dimitrysaf.provenio.designsystem.components.SettingsTileSpacing
 import io.github.dimitrysaf.provenio.designsystem.components.TilePosition
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.cancel
+import io.github.dimitrysaf.provenio.resources.player_none_available
+import io.github.dimitrysaf.provenio.resources.player_title
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun VideoPlayerContent() {
@@ -40,9 +45,14 @@ fun VideoPlayerContent() {
 
     SettingsGroup(verticalArrangement = Arrangement.spacedBy(SettingsTileSpacing)) {
         SettingsTile(
-            title = { Text("Player") },
+            title = { Text(stringResource(Res.string.player_title)) },
             subtitle = {
-                Text(if (available.isEmpty()) "No player available" else backend.label)
+                Text(
+                    stringResource(
+                        if (available.isEmpty()) Res.string.player_none_available
+                        else backend.label,
+                    ),
+                )
             },
             position = TilePosition.Single,
             enabled = available.isNotEmpty(),
@@ -72,7 +82,7 @@ private fun BackendDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Player") },
+        title = { Text(stringResource(Res.string.player_title)) },
         text = {
             Column(modifier = Modifier.selectableGroup()) {
                 options.forEach { option ->
@@ -91,9 +101,12 @@ private fun BackendDialog(
                         RadioButton(selected = option == selected, onClick = null)
                         Spacer(Modifier.width(16.dp))
                         Column {
-                            Text(option.label, style = MaterialTheme.typography.bodyLarge)
                             Text(
-                                text = option.summary,
+                                text = stringResource(option.label),
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            Text(
+                                text = stringResource(option.summary),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -103,7 +116,7 @@ private fun BackendDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) }
         },
     )
 }

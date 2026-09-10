@@ -13,6 +13,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.back
+import org.jetbrains.compose.resources.stringResource
 
 /** A null [onBack] draws no arrow, for a page sitting at a root destination. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,7 +33,10 @@ fun BackTopBar(
         navigationIcon = {
             if (onBack != null) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(Res.string.back),
+                    )
                 }
             }
         },

@@ -36,6 +36,15 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.feature.detail.SpecialsSeason
 import io.github.dimitrysaf.provenio.stremio.model.Video
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.detail_episode
+import io.github.dimitrysaf.provenio.resources.detail_episodes
+import io.github.dimitrysaf.provenio.resources.detail_no_episodes
+import io.github.dimitrysaf.provenio.resources.detail_season
+import io.github.dimitrysaf.provenio.resources.detail_specials
+import io.github.dimitrysaf.provenio.resources.not_watched
+import io.github.dimitrysaf.provenio.resources.watched
+import org.jetbrains.compose.resources.stringResource
 
 fun LazyListScope.seasonSection(
     seasons: List<Pair<Int, List<Video>>>,
@@ -44,10 +53,10 @@ fun LazyListScope.seasonSection(
     onChooseSource: (String) -> Unit,
     onToggleWatched: (Video) -> Unit,
 ) {
-    item { SectionHeader("Episodes", Icons.Outlined.Tv) }
+    item { SectionHeader(stringResource(Res.string.detail_episodes), Icons.Outlined.Tv) }
 
     if (seasons.isEmpty()) {
-        item { EmptyNote("No episodes listed for this title.") }
+        item { EmptyNote(stringResource(Res.string.detail_no_episodes)) }
         return
     }
 
@@ -97,7 +106,11 @@ private fun SeasonHeader(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = if (season == SpecialsSeason) "Specials" else "Season $season",
+                text = if (season == SpecialsSeason) {
+                    stringResource(Res.string.detail_specials)
+                } else {
+                    stringResource(Res.string.detail_season, season)
+                },
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
             )
@@ -166,7 +179,7 @@ private fun EpisodeRow(
                 )
             }
             Text(
-                text = video.title ?: "Episode",
+                text = video.title ?: stringResource(Res.string.detail_episode),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
@@ -180,7 +193,9 @@ private fun EpisodeRow(
         IconButton(onClick = onToggleWatched) {
             Icon(
                 imageVector = if (watched) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
-                contentDescription = if (watched) "Watched" else "Not watched",
+                contentDescription = stringResource(
+                    if (watched) Res.string.watched else Res.string.not_watched,
+                ),
                 tint = if (watched) {
                     MaterialTheme.colorScheme.primary
                 } else {

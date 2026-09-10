@@ -14,6 +14,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.simkl_code_expired
+import io.github.dimitrysaf.provenio.resources.simkl_no_client_id
+import io.github.dimitrysaf.provenio.resources.simkl_no_code
+import io.github.dimitrysaf.provenio.resources.simkl_refused_code
+import io.github.dimitrysaf.provenio.resources.simkl_waiting
+import org.jetbrains.compose.resources.getString
 
 /**
  * Simkl sign in and the resulting token.
@@ -63,7 +70,12 @@ object SimklRepository {
 
     fun signIn() {
         if (!SimklConfig.isConfigured) {
-            _authState.value = SimklAuthState.Error("This build has no Simkl client id.")
+            // Launched rather than assigned directly: reading a string resource suspends,
+            // and this is the one failure path that is not already inside a coroutine.
+            scope.launch {
+                _authState.value =
+                    SimklAuthState.Error(getString(Res.string.simkl_no_client_id))
+            }
             return
         }
         pollJob?.cancel()
@@ -74,7 +86,7 @@ object SimklRepository {
             val code = pin?.userCode
             if (pin == null || code == null) {
                 _authState.value = SimklAuthState.Error(
-                    client.lastRequestFailure() ?: "Simkl did not issue a code.",
+                    client.lastRequestFailure() ?: getString(Res.string.simkl_no_code),
                 )
                 return@launch
             }
@@ -100,7 +112,7 @@ object SimklRepository {
                     // Simkl said no. Nothing to wait for.
                     is PinStatus.Rejected -> {
                         _authState.value = SimklAuthState.Error(
-                            status.message ?: "Simkl refused the code.",
+                            status.message ?: getString(Res.string.simkl_refused_code),
                         )
                         return@launch
                     }
@@ -110,7 +122,7 @@ object SimklRepository {
                         userCode = code,
                         verificationPage = pin.verificationPage,
                         secondsRemaining = remaining.coerceAtLeast(0),
-                        note = "Waiting for a connection, still trying.",
+                        note = getString(Res.string.simkl_waiting),
                     )
                     PinStatus.Pending -> _authState.value = SimklAuthState.AwaitingUser(
                         userCode = code,
@@ -121,7 +133,8 @@ object SimklRepository {
             }
 
             if (isActive) {
-                _authState.value = SimklAuthState.Error("The code expired. Try again.")
+                _authState.value =
+                    SimklAuthState.Error(getString(Res.string.simkl_code_expired))
             }
         }
     }
@@ -139,7 +152,7 @@ object SimklRepository {
             when (val status = client.pollPin(current.userCode)) {
                 is PinStatus.Authorized -> completeSignIn(status.accessToken)
                 is PinStatus.Rejected -> _authState.value = SimklAuthState.Error(
-                    status.message ?: "Simkl refused the code.",
+                    status.message ?: getString(Res.string.simkl_refused_code),
                 )
                 else -> Unit
             }

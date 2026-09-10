@@ -26,6 +26,10 @@ import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.designsystem.components.Backdrop
 import io.github.dimitrysaf.provenio.feature.detail.trackedEpisodeCount
 import io.github.dimitrysaf.provenio.stremio.model.Meta
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.detail_episode_count_short
+import io.github.dimitrysaf.provenio.resources.unknown
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Backdrop behind, poster and title in front.
@@ -106,7 +110,7 @@ fun DetailHeader(
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = meta.name ?: "Unknown",
+                    text = meta.name ?: stringResource(Res.string.unknown),
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 val facts = listOfNotNull(
@@ -114,7 +118,7 @@ fun DetailHeader(
                     meta.runtime,
                     meta.trackedEpisodeCount()
                         .takeIf { it > 0 }
-                        ?.let { "$it eps" },
+                        ?.let { stringResource(Res.string.detail_episode_count_short, it) },
                 )
                 if (facts.isNotEmpty()) {
                     Text(

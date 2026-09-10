@@ -28,6 +28,9 @@ import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.db.SimklItem
 import io.github.dimitrysaf.provenio.simkl.SimklImages
 import io.github.dimitrysaf.provenio.simkl.SimklPlaybackSession
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.home_continue_watching
+import org.jetbrains.compose.resources.stringResource
 
 // Sized to sit inside the page margin rather than bleed past it, and shorter than the
 // shelf it leads so it reads as one row among several rather than a hero.
@@ -58,7 +61,7 @@ fun ContinueWatchingCarousel(
 
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 28.dp)) {
         Text(
-            text = "Continue watching",
+            text = stringResource(Res.string.home_continue_watching),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )

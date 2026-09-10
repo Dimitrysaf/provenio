@@ -16,9 +16,25 @@ import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.designsystem.components.PickerChip
 import io.github.dimitrysaf.provenio.stremio.InstalledAddon
 import io.github.dimitrysaf.provenio.stremio.model.ManifestCatalog
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.discover_all_genres
+import io.github.dimitrysaf.provenio.resources.discover_catalog
+import io.github.dimitrysaf.provenio.resources.discover_genre
+import io.github.dimitrysaf.provenio.resources.discover_title
+import io.github.dimitrysaf.provenio.resources.discover_type
+import io.github.dimitrysaf.provenio.resources.discover_type_channels
+import io.github.dimitrysaf.provenio.resources.discover_type_movies
+import io.github.dimitrysaf.provenio.resources.discover_type_series
+import io.github.dimitrysaf.provenio.resources.discover_type_tv
+import org.jetbrains.compose.resources.stringResource
 
-/** What "no genre chosen" reads as, and what the picker resets to. */
-const val AllGenres = "All Genres"
+/**
+ * The value the genre picker carries for "every genre".
+ *
+ * A sentinel rather than a label, for the same reason as AllTypes in the library: it is
+ * compared against and sent to addons, so it must not move with the language.
+ */
+const val AllGenres = "all-genres"
 
 /**
  * The three things that decide what Discover is showing: a type, a catalog of that type,
@@ -45,7 +61,7 @@ fun DiscoverControls(
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "Discover",
+            text = stringResource(Res.string.discover_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 12.dp),
@@ -56,24 +72,31 @@ fun DiscoverControls(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             PickerChip(
-                sheetTitle = "Type",
-                label = selectedType?.let(::typeLabel) ?: "Type",
+                sheetTitle = stringResource(Res.string.discover_type),
+                label = selectedType?.let { typeLabel(it) }
+                    ?: stringResource(Res.string.discover_type),
                 options = types.map { it to typeLabel(it) },
                 selected = selectedType,
                 onPick = onSelectType,
             )
             PickerChip(
-                sheetTitle = "Catalog",
-                label = selected?.second?.displayName() ?: "Catalog",
+                sheetTitle = stringResource(Res.string.discover_catalog),
+                label = selected?.second?.displayName()
+                    ?: stringResource(Res.string.discover_catalog),
                 options = catalogs.map { it to it.second.displayName() },
                 selected = selected,
                 onPick = onSelectCatalog,
             )
             if (genres.isNotEmpty()) {
+                // Genre names come from the addon and are shown as it wrote them. Only the
+                // "every genre" entry is ours, so only it is translated.
+                val everyGenre = stringResource(Res.string.discover_all_genres)
                 PickerChip(
-                    sheetTitle = "Genre",
-                    label = selectedGenre ?: AllGenres,
-                    options = (listOf(AllGenres) + genres).map { it to it },
+                    sheetTitle = stringResource(Res.string.discover_genre),
+                    label = selectedGenre ?: everyGenre,
+                    options = (listOf(AllGenres) + genres).map { genre ->
+                        genre to if (genre == AllGenres) everyGenre else genre
+                    },
                     selected = selectedGenre ?: AllGenres,
                     onPick = { onSelectGenre(it.takeIf { g -> g != AllGenres }) },
                 )
@@ -92,11 +115,12 @@ fun DiscoverControls(
 }
 
 /** The protocol's type strings are lowercase and terse; these are what a person reads. */
+@Composable
 internal fun typeLabel(type: String): String = when (type) {
-    "movie" -> "Movies"
-    "series" -> "Series"
-    "channel" -> "Channels"
-    "tv" -> "TV"
+    "movie" -> stringResource(Res.string.discover_type_movies)
+    "series" -> stringResource(Res.string.discover_type_series)
+    "channel" -> stringResource(Res.string.discover_type_channels)
+    "tv" -> stringResource(Res.string.discover_type_tv)
     else -> type.replaceFirstChar { it.uppercase() }
 }
 

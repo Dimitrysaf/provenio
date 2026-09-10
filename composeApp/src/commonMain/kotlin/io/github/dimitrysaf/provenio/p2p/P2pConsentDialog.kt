@@ -32,6 +32,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.platform.rememberUrlOpener
 import kotlinx.coroutines.delay
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.cancel
+import io.github.dimitrysaf.provenio.resources.p2p_consent_enable
+import io.github.dimitrysaf.provenio.resources.p2p_consent_enable_countdown
+import io.github.dimitrysaf.provenio.resources.p2p_consent_intro
+import io.github.dimitrysaf.provenio.resources.p2p_consent_ip
+import io.github.dimitrysaf.provenio.resources.p2p_consent_no_hosting
+import io.github.dimitrysaf.provenio.resources.p2p_consent_no_liability
+import io.github.dimitrysaf.provenio.resources.p2p_consent_responsible
+import io.github.dimitrysaf.provenio.resources.p2p_consent_title
+import io.github.dimitrysaf.provenio.resources.p2p_consent_uploading
+import io.github.dimitrysaf.provenio.resources.p2p_consent_vpn
+import io.github.dimitrysaf.provenio.resources.p2p_consent_what_is_vpn
+import org.jetbrains.compose.resources.stringResource
 
 internal const val VpnExplainerUrl = "https://en.wikipedia.org/wiki/Virtual_private_network"
 
@@ -64,40 +78,28 @@ fun P2pConsentDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Outlined.Warning, contentDescription = null) },
-        title = { Text("Enable P2P Streaming?") },
+        title = { Text(stringResource(Res.string.p2p_consent_title)) },
         text = {
             // Still long enough to overflow a short window, so it scrolls rather than
             // pushing the buttons off screen.
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Text(
-                    text = "This stream uses peer-to-peer technology. By enabling it " +
-                        "you agree that:",
+                    text = stringResource(Res.string.p2p_consent_intro),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(12.dp))
-                ConsentPoint("Your IP address is visible to other peers and to your ISP.")
-                ConsentPoint(
-                    "You are responsible for your use of peer-to-peer connections and " +
-                        "any content accessed through them.",
-                )
-                ConsentPoint(
-                    "This app does not host or control content. It connects to " +
-                        "third-party networks.",
-                )
-                ConsentPoint(
-                    "The developers accept no liability for your use of this feature.",
-                )
+                ConsentPoint(stringResource(Res.string.p2p_consent_ip))
+                ConsentPoint(stringResource(Res.string.p2p_consent_responsible))
+                ConsentPoint(stringResource(Res.string.p2p_consent_no_hosting))
+                ConsentPoint(stringResource(Res.string.p2p_consent_no_liability))
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Uploading is off by default. Distributing copyrighted " +
-                        "material is treated far more seriously than downloading it. " +
-                        "Check your local law before enabling it.",
+                    text = stringResource(Res.string.p2p_consent_uploading),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "A VPN prevents peers from seeing your address. You can turn " +
-                        "this off any time in Settings.",
+                    text = stringResource(Res.string.p2p_consent_vpn),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -116,12 +118,18 @@ fun P2pConsentDialog(
             ) {
                 // Cancel carries the emphasis. Declining is the safe outcome here, so it
                 // should be the easiest thing to hit and the obvious default.
-                Button(onClick = onDismiss) { Text("Cancel") }
+                Button(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) }
                 TextButton(onClick = { openUrl(VpnExplainerUrl) }) {
-                    Text("What is a VPN?")
+                    Text(stringResource(Res.string.p2p_consent_what_is_vpn))
                 }
                 TextButton(enabled = remaining == 0, onClick = onAccept) {
-                    Text(if (remaining == 0) "Enable P2P" else "Enable P2P ($remaining)")
+                    Text(
+                        if (remaining == 0) {
+                            stringResource(Res.string.p2p_consent_enable)
+                        } else {
+                            stringResource(Res.string.p2p_consent_enable_countdown, remaining)
+                        },
+                    )
                 }
             }
         },

@@ -1,6 +1,13 @@
 package io.github.dimitrysaf.provenio.stremio
 
 import io.github.dimitrysaf.provenio.stremio.model.Stream
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.source_kind_direct
+import io.github.dimitrysaf.provenio.resources.source_kind_external
+import io.github.dimitrysaf.provenio.resources.source_kind_p2p
+import io.github.dimitrysaf.provenio.resources.source_kind_unsupported
+import io.github.dimitrysaf.provenio.resources.source_kind_youtube
+import org.jetbrains.compose.resources.StringResource
 
 /** A stream together with the addon that produced it. */
 data class SourceOption(
@@ -19,12 +26,16 @@ data class SourceOption(
             else -> SourceKind.Unsupported
         }
 
-    /** The short label. Addons put quality and release group here. */
-    val label: String
+    /**
+     * The short label. Addons put quality and release group here.
+     *
+     * Null when the addon named the source nothing at all — the stand-in for that is a
+     * translated string, so it belongs to whoever is drawing this, not here.
+     */
+    val label: String?
         get() = stream.name
             ?: stream.title
             ?: stream.behaviorHints?.filename
-            ?: "Source"
 
     /** The long line under it. Usually filename, size and seed count. */
     val detail: String?
@@ -41,7 +52,7 @@ data class SourceOption(
 
 /** The text a filter looks at: whatever the addon wrote about this source. */
 val SourceOption.searchText: String
-    get() = (label + " " + detail.orEmpty()).lowercase()
+    get() = (label.orEmpty() + " " + detail.orEmpty()).lowercase()
 
 /** True when every whitespace separated term in [query] appears somewhere in the text. */
 fun SourceOption.matches(query: String): Boolean {
@@ -66,10 +77,10 @@ fun SourceOption.hasAny(terms: Collection<String>): Boolean {
  */
 val QualityTerms = listOf("2160p", "4K", "1080p", "720p", "480p", "HDR")
 
-enum class SourceKind(val label: String) {
-    Direct("Direct"),
-    Torrent("Peer-to-peer"),
-    YouTube("YouTube"),
-    External("Opens elsewhere"),
-    Unsupported("Unsupported"),
+enum class SourceKind(val label: StringResource) {
+    Direct(Res.string.source_kind_direct),
+    Torrent(Res.string.source_kind_p2p),
+    YouTube(Res.string.source_kind_youtube),
+    External(Res.string.source_kind_external),
+    Unsupported(Res.string.source_kind_unsupported),
 }

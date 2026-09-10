@@ -1,0 +1,6 @@
+-- Adds the in-app language choice. Existing installs get the empty default, which means
+-- "follow the system" — the behaviour they already had before there was a picker.
+CREATE TABLE IF NOT EXISTS languageSettings (
+    id INTEGER NOT NULL PRIMARY KEY,
+    language TEXT NOT NULL DEFAULT ''
+);

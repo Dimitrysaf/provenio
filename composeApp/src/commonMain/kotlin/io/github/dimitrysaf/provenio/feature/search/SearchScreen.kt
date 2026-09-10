@@ -59,6 +59,18 @@ import io.github.dimitrysaf.provenio.stremio.SearchRepository
 import io.github.dimitrysaf.provenio.stremio.model.ManifestCatalog
 import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
 import kotlinx.coroutines.delay
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.search_add_addon
+import io.github.dimitrysaf.provenio.resources.search_catalog_returned_nothing
+import io.github.dimitrysaf.provenio.resources.search_clear
+import io.github.dimitrysaf.provenio.resources.search_filters
+import io.github.dimitrysaf.provenio.resources.search_no_results
+import io.github.dimitrysaf.provenio.resources.search_nothing_to_browse
+import io.github.dimitrysaf.provenio.resources.search_nothing_to_browse_body
+import io.github.dimitrysaf.provenio.resources.search_nothing_to_search
+import io.github.dimitrysaf.provenio.resources.search_nothing_to_search_body
+import io.github.dimitrysaf.provenio.resources.search_placeholder
+import org.jetbrains.compose.resources.stringResource
 
 /** Wait after the last keystroke before asking every addon. */
 private const val SearchDebounceMillis = 350L
@@ -171,19 +183,22 @@ fun SearchScreen(
                 expanded = false,
                 onExpandedChange = {},
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search movies and shows") },
+                placeholder = { Text(stringResource(Res.string.search_placeholder)) },
                 leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                 trailingIcon = {
                     Row {
                         if (query.isNotEmpty()) {
                             IconButton(onClick = { query = "" }) {
-                                Icon(Icons.Filled.Close, contentDescription = "Clear search")
+                                Icon(
+                                    Icons.Filled.Close,
+                                    contentDescription = stringResource(Res.string.search_clear),
+                                )
                             }
                         }
                         IconButton(onClick = { showFilters = true }) {
                             Icon(
                                 imageVector = Icons.Filled.FilterList,
-                                contentDescription = "Filters",
+                                contentDescription = stringResource(Res.string.search_filters),
                                 // Tinted while something is set, so an active filter is
                                 // visible without opening the sheet to check.
                                 tint = if (filtersActive) {
@@ -207,12 +222,12 @@ fun SearchScreen(
                 searched && searchable.isEmpty() -> EmptyState(
                     modifier = Modifier.align(Alignment.Center),
                     icon = Icons.Outlined.Extension,
-                    title = "Nothing to search",
-                    description = "Add an add-on with a searchable catalog to get started.",
-                    actionLabel = "Add an add-on",
+                    title = stringResource(Res.string.search_nothing_to_search),
+                    description = stringResource(Res.string.search_nothing_to_search_body),
+                    actionLabel = stringResource(Res.string.search_add_addon),
                     onAction = onAddAddons,
                 )
-                searched -> CentredNote("No results for \"$query\"")
+                searched -> CentredNote(stringResource(Res.string.search_no_results, query))
                 else -> Discover(
                     catalogs = collection.discoverCatalogs(),
                     history = history,
@@ -351,9 +366,9 @@ private fun Discover(
             item(key = "discover-empty", span = { GridItemSpan(maxLineSpan) }) {
                 EmptyState(
                     icon = Icons.Outlined.Extension,
-                    title = "Nothing to browse",
-                    description = "Add an add-on with a catalog to get started.",
-                    actionLabel = "Add an add-on",
+                    title = stringResource(Res.string.search_nothing_to_browse),
+                    description = stringResource(Res.string.search_nothing_to_browse_body),
+                    actionLabel = stringResource(Res.string.search_add_addon),
                     onAction = onAddAddons,
                 )
             }
@@ -382,7 +397,10 @@ private fun Discover(
             item(key = "discover-none", span = { GridItemSpan(maxLineSpan) }) {
                 // Not CentredNote: that fills its height, which a grid item does not have.
                 Text(
-                    text = "${selected.second.displayName()} returned nothing.",
+                    text = stringResource(
+                        Res.string.search_catalog_returned_nothing,
+                        selected.second.displayName(),
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),

@@ -50,21 +50,55 @@ import io.github.dimitrysaf.provenio.designsystem.components.SettingsTile
 import io.github.dimitrysaf.provenio.designsystem.components.SettingsTileSpacing
 import io.github.dimitrysaf.provenio.designsystem.components.tilePositionOf
 import io.github.dimitrysaf.provenio.designsystem.components.ResponsiveBody
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.settings_addons
+import io.github.dimitrysaf.provenio.resources.settings_addons_summary
+import io.github.dimitrysaf.provenio.resources.settings_appearance
+import io.github.dimitrysaf.provenio.resources.settings_appearance_summary
+import io.github.dimitrysaf.provenio.resources.settings_p2p
+import io.github.dimitrysaf.provenio.resources.settings_p2p_summary
+import io.github.dimitrysaf.provenio.resources.settings_simkl
+import io.github.dimitrysaf.provenio.resources.settings_simkl_summary
+import io.github.dimitrysaf.provenio.resources.settings_title
+import io.github.dimitrysaf.provenio.resources.settings_video_player
+import io.github.dimitrysaf.provenio.resources.settings_video_player_summary
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * A settings category. Adding one here is the whole job — both layouts read this list, so
  * a category cannot exist in one and not the other.
  */
 enum class SettingsCategory(
-    val title: String,
-    val summary: String,
+    val title: StringResource,
+    val summary: StringResource,
     val icon: ImageVector,
 ) {
-    Appearance("Appearance", "Theme and dynamic color", Icons.Outlined.Palette),
-    Addons("Add-ons", "Catalogs, metadata and streams", Icons.Outlined.Extension),
-    PeerToPeer("Peer-to-peer", "Sharing, cache and status", Icons.Outlined.Share),
-    VideoPlayer("Video player", "Which player opens a stream", Icons.Outlined.PlayCircle),
-    Simkl("Simkl", "Sync your watchlist and progress", Icons.Outlined.CloudSync),
+    Appearance(
+        Res.string.settings_appearance,
+        Res.string.settings_appearance_summary,
+        Icons.Outlined.Palette,
+    ),
+    Addons(
+        Res.string.settings_addons,
+        Res.string.settings_addons_summary,
+        Icons.Outlined.Extension,
+    ),
+    PeerToPeer(
+        Res.string.settings_p2p,
+        Res.string.settings_p2p_summary,
+        Icons.Outlined.Share,
+    ),
+    VideoPlayer(
+        Res.string.settings_video_player,
+        Res.string.settings_video_player_summary,
+        Icons.Outlined.PlayCircle,
+    ),
+    Simkl(
+        Res.string.settings_simkl,
+        Res.string.settings_simkl_summary,
+        Icons.Outlined.CloudSync,
+    ),
 }
 
 /**
@@ -136,7 +170,7 @@ fun SettingsScreen(
             .background(MaterialTheme.colorScheme.surfaceContainer),
     ) {
         BackTopBar(
-            title = if (canClosePane) selected.title else "Settings",
+            title = stringResource(if (canClosePane) selected.title else Res.string.settings_title),
             onBack = if (canClosePane) closePane else null,
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -169,7 +203,7 @@ fun SettingsScreen(
                 AnimatedPane {
                     ResponsiveBody(modifier = Modifier.fillMaxSize()) {
                         Text(
-                            text = selected.title,
+                            text = stringResource(selected.title),
                             style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         )
@@ -198,8 +232,8 @@ private fun CategoryList(
         val categories = SettingsCategory.entries
         categories.forEachIndexed { index, category ->
             SettingsTile(
-                title = { Text(category.title) },
-                subtitle = { Text(category.summary) },
+                title = { Text(stringResource(category.title)) },
+                subtitle = { Text(stringResource(category.summary)) },
                 icon = { CategoryIcon(category) },
                 position = tilePositionOf(index, categories.size),
                 onClick = { onSelect(category) },

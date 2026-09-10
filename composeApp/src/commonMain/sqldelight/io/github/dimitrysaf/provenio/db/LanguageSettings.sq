@@ -1,0 +1,12 @@
+-- Single row, id is always 1. An empty language means "follow the system", which is what a
+-- fresh install does; a value is a language tag such as 'en' or 'el'.
+CREATE TABLE languageSettings (
+    id INTEGER NOT NULL PRIMARY KEY,
+    language TEXT NOT NULL DEFAULT ''
+);
+
+select:
+SELECT * FROM languageSettings WHERE id = 1;
+
+upsert:
+INSERT OR REPLACE INTO languageSettings(id, language) VALUES (1, ?);

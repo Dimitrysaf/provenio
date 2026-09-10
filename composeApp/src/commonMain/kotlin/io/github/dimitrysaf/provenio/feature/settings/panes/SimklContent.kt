@@ -32,6 +32,22 @@ import io.github.dimitrysaf.provenio.designsystem.components.SettingsTile
 import io.github.dimitrysaf.provenio.designsystem.components.SettingsTileSpacing
 import io.github.dimitrysaf.provenio.designsystem.components.TilePosition
 import io.github.dimitrysaf.provenio.core.platform.rememberUrlOpener
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.cancel
+import io.github.dimitrysaf.provenio.resources.simkl_account
+import io.github.dimitrysaf.provenio.resources.simkl_asking_for_code
+import io.github.dimitrysaf.provenio.resources.simkl_copy_code
+import io.github.dimitrysaf.provenio.resources.simkl_entered_code
+import io.github.dimitrysaf.provenio.resources.simkl_expires_in
+import io.github.dimitrysaf.provenio.resources.simkl_go_to_page
+import io.github.dimitrysaf.provenio.resources.simkl_open
+import io.github.dimitrysaf.provenio.resources.simkl_sign_in
+import io.github.dimitrysaf.provenio.resources.simkl_sign_in_body
+import io.github.dimitrysaf.provenio.resources.simkl_sign_out
+import io.github.dimitrysaf.provenio.resources.simkl_sign_out_summary
+import io.github.dimitrysaf.provenio.resources.simkl_signed_in
+import io.github.dimitrysaf.provenio.resources.try_again
+import org.jetbrains.compose.resources.stringResource
 
 // LocalClipboard replaces this, but its API is suspend and takes a ClipEntry whose
 // multiplatform construction differs by version. Not worth the risk for one copy button.
@@ -44,7 +60,7 @@ fun SimklContent() {
 
     when (val current = state) {
         SimklAuthState.SignedOut -> SignedOut()
-        SimklAuthState.Starting -> Note("Asking Simkl for a code...")
+        SimklAuthState.Starting -> Note(stringResource(Res.string.simkl_asking_for_code))
         is SimklAuthState.AwaitingUser -> AwaitingUser(
             code = current.userCode,
             page = current.verificationPage,
@@ -62,7 +78,7 @@ fun SimklContent() {
 private fun SignedOut() {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Text(
-            text = "Sign in to sync your watchlist, progress and ratings with Simkl.",
+            text = stringResource(Res.string.simkl_sign_in_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -71,7 +87,7 @@ private fun SignedOut() {
             onClick = { SimklRepository.signIn() },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Sign in with Simkl")
+            Text(stringResource(Res.string.simkl_sign_in))
         }
     }
 }
@@ -95,7 +111,7 @@ private fun AwaitingUser(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            text = "Go to $page and enter this code.",
+            text = stringResource(Res.string.simkl_go_to_page, page),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -108,10 +124,14 @@ private fun AwaitingUser(
         OutlinedButton(onClick = onCopy) {
             Icon(Icons.Outlined.ContentCopy, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Copy code")
+            Text(stringResource(Res.string.simkl_copy_code))
         }
         Text(
-            text = "Expires in ${secondsRemaining / 60}m ${secondsRemaining % 60}s",
+            text = stringResource(
+                Res.string.simkl_expires_in,
+                secondsRemaining / 60,
+                secondsRemaining % 60,
+            ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -124,7 +144,7 @@ private fun AwaitingUser(
             )
         }
         Button(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
-            Text("Open Simkl")
+            Text(stringResource(Res.string.simkl_open))
         }
         // The moment the user returns from the browser is both when they are most likely
         // authorised and when background network restrictions lift.
@@ -132,9 +152,11 @@ private fun AwaitingUser(
             onClick = { SimklRepository.checkNow() },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("I entered the code")
+            Text(stringResource(Res.string.simkl_entered_code))
         }
-        TextButton(onClick = { SimklRepository.cancelSignIn() }) { Text("Cancel") }
+        TextButton(onClick = { SimklRepository.cancelSignIn() }) {
+            Text(stringResource(Res.string.cancel))
+        }
     }
 }
 
@@ -142,14 +164,14 @@ private fun AwaitingUser(
 private fun SignedIn() {
     SettingsGroup(verticalArrangement = Arrangement.spacedBy(SettingsTileSpacing)) {
         SettingsTile(
-            title = { Text("Account") },
-            subtitle = { Text("Signed in") },
+            title = { Text(stringResource(Res.string.simkl_account)) },
+            subtitle = { Text(stringResource(Res.string.simkl_signed_in)) },
             position = TilePosition.First,
             onClick = {},
         )
         SettingsTile(
-            title = { Text("Sign out") },
-            subtitle = { Text("Removes the token from this device") },
+            title = { Text(stringResource(Res.string.simkl_sign_out)) },
+            subtitle = { Text(stringResource(Res.string.simkl_sign_out_summary)) },
             position = TilePosition.Last,
             onClick = { SimklRepository.signOut() },
         )
@@ -161,7 +183,9 @@ private fun ErrorState(message: String) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Text(text = message, style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(12.dp))
-        OutlinedButton(onClick = { SimklRepository.signIn() }) { Text("Try again") }
+        OutlinedButton(onClick = { SimklRepository.signIn() }) {
+            Text(stringResource(Res.string.try_again))
+        }
     }
 }
 

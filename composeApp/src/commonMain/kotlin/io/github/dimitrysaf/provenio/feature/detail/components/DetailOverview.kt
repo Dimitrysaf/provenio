@@ -11,10 +11,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.stremio.model.Meta
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.detail_no_description
+import io.github.dimitrysaf.provenio.resources.detail_not_rated
+import io.github.dimitrysaf.provenio.resources.detail_plot
+import io.github.dimitrysaf.provenio.resources.detail_ratings
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun Ratings(meta: Meta) {
-    SectionCard(title = "Ratings", icon = Icons.Outlined.StarOutline) {
+    SectionCard(
+        title = stringResource(Res.string.detail_ratings),
+        icon = Icons.Outlined.StarOutline,
+    ) {
         Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
             RatingBlock("IMDb", meta.imdbRating)
             RatingBlock("Simkl", null)
@@ -31,7 +40,7 @@ private fun RatingBlock(source: String, value: String?) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = value ?: "Not rated",
+            text = value ?: stringResource(Res.string.detail_not_rated),
             style = MaterialTheme.typography.titleLarge,
         )
     }
@@ -39,9 +48,12 @@ private fun RatingBlock(source: String, value: String?) {
 
 @Composable
 fun Synopsis(meta: Meta) {
-    SectionCard(title = "Plot", icon = Icons.AutoMirrored.Outlined.Subject) {
+    SectionCard(
+        title = stringResource(Res.string.detail_plot),
+        icon = Icons.AutoMirrored.Outlined.Subject,
+    ) {
         Text(
-            text = meta.description ?: "No description provided",
+            text = meta.description ?: stringResource(Res.string.detail_no_description),
             style = MaterialTheme.typography.bodyMedium,
         )
     }

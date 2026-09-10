@@ -8,6 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import io.github.dimitrysaf.provenio.player.ScrobbleTarget
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.player_not_available_desktop
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Desktop has no player yet. media3 is Android only, so this target needs a separate
@@ -22,7 +25,7 @@ actual fun PlayerScreen(
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
-            text = "Playback is not available on desktop yet.",
+            text = stringResource(Res.string.player_not_available_desktop),
             style = MaterialTheme.typography.bodyLarge,
         )
     }

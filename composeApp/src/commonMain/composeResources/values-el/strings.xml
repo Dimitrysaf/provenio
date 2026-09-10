@@ -1,0 +1,305 @@
+<resources>
+    <!-- Shared -->
+    <string name="back">Πίσω</string>
+    <string name="cancel">Άκυρο</string>
+    <string name="clear">Καθαρισμός</string>
+    <string name="done">Τέλος</string>
+    <string name="add">Προσθήκη</string>
+    <string name="remove">Αφαίρεση</string>
+    <string name="try_again">Δοκιμάστε ξανά</string>
+    <string name="refresh">Ανανέωση</string>
+    <string name="unknown">Άγνωστο</string>
+    <string name="watched">Το είδατε</string>
+    <string name="not_watched">Δεν το είδατε</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Αρχική</string>
+    <string name="nav_search">Αναζήτηση</string>
+    <string name="nav_library">Βιβλιοθήκη</string>
+    <string name="nav_settings">Ρυθμίσεις</string>
+
+    <!-- Theme -->
+    <string name="theme_device">Θέμα συσκευής</string>
+    <string name="theme_light">Φωτεινό θέμα</string>
+    <string name="theme_dark">Σκοτεινό θέμα</string>
+    <string name="theme_amoled">Θέμα AMOLED</string>
+
+    <!-- Language -->
+    <string name="language">Γλώσσα</string>
+    <string name="language_system">Γλώσσα συστήματος</string>
+
+    <!-- Settings index -->
+    <string name="settings_title">Ρυθμίσεις</string>
+    <string name="settings_appearance">Εμφάνιση</string>
+    <string name="settings_appearance_summary">Θέμα, χρώμα και γλώσσα</string>
+    <string name="settings_addons">Πρόσθετα</string>
+    <string name="settings_addons_summary">Κατάλογοι, μεταδεδομένα και ροές</string>
+    <string name="settings_p2p">Peer-to-peer</string>
+    <string name="settings_p2p_summary">Διαμοιρασμός, προσωρινή μνήμη και κατάσταση</string>
+    <string name="settings_video_player">Πρόγραμμα αναπαραγωγής</string>
+    <string name="settings_video_player_summary">Ποιο πρόγραμμα ανοίγει μια ροή</string>
+    <string name="settings_simkl">Simkl</string>
+    <string name="settings_simkl_summary">Συγχρονισμός λίστας και προόδου</string>
+
+    <!-- Appearance -->
+    <string name="appearance_theme">Θέμα</string>
+    <string name="appearance_dynamic_color">Δυναμικό χρώμα</string>
+    <string name="appearance_dynamic_color_on">Χρήση χρωμάτων από την ταπετσαρία σας</string>
+    <string name="appearance_dynamic_color_off">Μη διαθέσιμο σε αυτή τη συσκευή</string>
+
+    <!-- Home -->
+    <string name="home_no_metadata">Δεν υπάρχουν διαθέσιμα μεταδεδομένα</string>
+    <string name="home_no_metadata_body">Προσθέστε ένα πρόσθετο για να ξεκινήσετε.</string>
+    <string name="home_add_addon">Προσθήκη πρόσθετου</string>
+    <string name="home_plan_to_watch">Σκοπεύετε να δείτε</string>
+    <string name="home_continue_watching">Συνεχίστε την προβολή</string>
+
+    <!-- Hero carousel -->
+    <string name="type_movie">Ταινία</string>
+    <string name="type_series">Σειρά</string>
+    <string name="type_channel">Κανάλι</string>
+    <string name="type_tv">Τηλεόραση</string>
+
+    <!-- Library empty states -->
+    <string name="library_lives_on_simkl">Η βιβλιοθήκη σας βρίσκεται στο Simkl</string>
+    <string name="library_lives_on_simkl_body">Συνδεθείτε για να φέρετε στο Provenio όσα βλέπετε και όσα σκοπεύετε να δείτε.</string>
+    <string name="library_sign_in">Σύνδεση στο Simkl</string>
+    <string name="library_syncing">Συγχρονισμός της βιβλιοθήκης σας</string>
+    <string name="library_sync_failed">Ο συγχρονισμός δεν ολοκληρώθηκε</string>
+    <string name="library_nothing_tracked">Δεν παρακολουθείται τίποτα ακόμη</string>
+    <string name="library_nothing_tracked_body">Ό,τι σημειώνετε στο Simkl ως «σε προβολή» ή «σκοπεύω να το δω» εμφανίζεται εδώ.</string>
+
+    <!-- Library -->
+    <string name="library_title">Βιβλιοθήκη</string>
+    <string name="library_empty_list_body">Ό,τι προσθέτετε σε αυτή τη λίστα στο Simkl εμφανίζεται εδώ.</string>
+    <string name="library_nothing_in_list">Τίποτα στη λίστα %1$s</string>
+    <string name="library_no_items_of_type">Κανένα περιεχόμενο τύπου %1$s σε αυτή τη λίστα.</string>
+    <string name="library_all_types">Όλοι οι τύποι</string>
+    <string name="library_sort_recently_watched">Πρόσφατα σε προβολή</string>
+    <string name="library_sort_least_recently_watched">Λιγότερο πρόσφατα σε προβολή</string>
+    <string name="library_sort_title_ascending">Τίτλος Α–Ω</string>
+    <string name="library_sort_title_descending">Τίτλος Ω–Α</string>
+    <string name="library_list_plan_to_watch">Σκοπεύετε να δείτε</string>
+    <string name="library_list_completed">Ολοκληρωμένα</string>
+    <string name="library_list_watching">Σε προβολή</string>
+    <string name="library_type_series">Σειρές</string>
+    <string name="library_type_movies">Ταινίες</string>
+    <string name="library_type_anime">Anime</string>
+    <string name="library_select_list">Επιλογή λίστας</string>
+    <string name="library_select_type">Επιλογή τύπου</string>
+    <string name="library_sort_action">Ταξινόμηση βιβλιοθήκης</string>
+
+    <!-- Search -->
+    <string name="search_placeholder">Αναζήτηση ταινιών και σειρών</string>
+    <string name="search_clear">Καθαρισμός αναζήτησης</string>
+    <string name="search_filters">Φίλτρα</string>
+    <string name="search_nothing_to_search">Τίποτα για αναζήτηση</string>
+    <string name="search_nothing_to_search_body">Προσθέστε ένα πρόσθετο με κατάλογο αναζήτησης για να ξεκινήσετε.</string>
+    <string name="search_add_addon">Προσθήκη πρόσθετου</string>
+    <string name="search_nothing_to_browse">Τίποτα για περιήγηση</string>
+    <string name="search_nothing_to_browse_body">Προσθέστε ένα πρόσθετο με κατάλογο για να ξεκινήσετε.</string>
+    <string name="search_recent">Πρόσφατες αναζητήσεις</string>
+    <string name="search_no_results">Δεν βρέθηκαν αποτελέσματα για «%1$s»</string>
+    <string name="search_remove_from_history">Αφαίρεση του «%1$s» από το ιστορικό</string>
+    <string name="search_catalog_returned_nothing">Ο κατάλογος %1$s δεν επέστρεψε αποτελέσματα.</string>
+    <string name="search_filter_type">Τύπος</string>
+    <string name="search_filter_release_year">Έτος κυκλοφορίας</string>
+    <string name="search_filter_any_year">Οποιοδήποτε έτος</string>
+    <string name="search_filter_all">Όλα</string>
+    <string name="search_filter_movies">Ταινίες</string>
+    <string name="search_filter_tv">Τηλεόραση</string>
+    <string name="search_filter_people">Άτομα</string>
+
+    <!-- Discover -->
+    <string name="discover_title">Ανακαλύψτε</string>
+    <string name="discover_all_genres">Όλα τα είδη</string>
+    <string name="discover_type">Τύπος</string>
+    <string name="discover_catalog">Κατάλογος</string>
+    <string name="discover_genre">Είδος</string>
+    <string name="discover_type_movies">Ταινίες</string>
+    <string name="discover_type_series">Σειρές</string>
+    <string name="discover_type_channels">Κανάλια</string>
+    <string name="discover_type_tv">Τηλεόραση</string>
+
+    <!-- Detail -->
+    <string name="detail_no_addon">Κανένα πρόσθετο δεν μπόρεσε να περιγράψει αυτόν τον τίτλο.</string>
+    <string name="detail_ratings">Βαθμολογίες</string>
+    <string name="detail_not_rated">Χωρίς βαθμολογία</string>
+    <string name="detail_plot">Υπόθεση</string>
+    <string name="detail_no_description">Δεν δόθηκε περιγραφή</string>
+    <string name="detail_cast_and_crew">Ηθοποιοί και συντελεστές</string>
+    <string name="detail_cast">Ηθοποιοί</string>
+    <string name="detail_director">Σκηνοθεσία</string>
+    <string name="detail_no_cast">Αυτό το πρόσθετο δεν ανέφερε ηθοποιούς ή συντελεστές.</string>
+    <string name="detail_tags">Ετικέτες</string>
+    <string name="detail_no_tags">Δεν δόθηκαν ετικέτες.</string>
+    <string name="detail_themes">Θεματικές</string>
+    <string name="detail_no_themes">Οι θεματικές δεν είναι διαθέσιμες από τα πρόσθετα.</string>
+    <string name="detail_comments">Σχόλια</string>
+    <string name="detail_no_comments">Τα σχόλια θα έρθουν με τη σύνδεση λογαριασμού.</string>
+    <string name="detail_facts">Στοιχεία</string>
+    <string name="detail_fact_air_date">Ημερομηνία προβολής</string>
+    <string name="detail_fact_country">Χώρα</string>
+    <string name="detail_fact_language">Γλώσσα</string>
+    <string name="detail_fact_runtime">Διάρκεια</string>
+    <string name="detail_fact_awards">Βραβεία</string>
+    <string name="detail_fact_website">Ιστότοπος</string>
+    <string name="detail_no_facts">Δεν δόθηκαν στοιχεία.</string>
+    <string name="detail_trailers">Τρέιλερ</string>
+    <string name="detail_no_trailers">Δεν δόθηκαν τρέιλερ.</string>
+    <string name="detail_trailer">Τρέιλερ</string>
+    <string name="detail_backdrops">Εικόνες φόντου</string>
+    <string name="detail_no_backdrops">Δεν δόθηκαν εικόνες.</string>
+    <string name="detail_episodes">Επεισόδια</string>
+    <string name="detail_no_episodes">Δεν αναφέρονται επεισόδια για αυτόν τον τίτλο.</string>
+    <string name="detail_specials">Ειδικά επεισόδια</string>
+    <string name="detail_season">Σεζόν %1$d</string>
+    <string name="detail_episode">Επεισόδιο</string>
+    <string name="detail_episode_count_short">%1$d επ.</string>
+    <string name="detail_watch_progress">Πρόοδος προβολής</string>
+    <string name="detail_not_tracked_yet">Δεν παρακολουθείται ακόμη</string>
+    <string name="detail_not_started">Δεν ξεκίνησε, %1$d επεισόδια</string>
+    <string name="detail_watched_of">Είδατε %1$d από %2$d επεισόδια</string>
+    <string name="detail_resume_episode">Συνέχιση S%1$sE%2$s τώρα</string>
+    <string name="detail_resume_now">Συνέχιση τώρα</string>
+    <string name="detail_watch_episode">Δείτε S%1$sE%2$s τώρα</string>
+    <string name="detail_watch_first_episode">Δείτε το πρώτο επεισόδιο τώρα</string>
+    <string name="detail_watch_now">Δείτε το τώρα</string>
+
+    <!-- Watchlist -->
+    <string name="watchlist_add">Προσθήκη στη λίστα</string>
+    <string name="watchlist_in">Στη λίστα: %1$s</string>
+    <string name="watchlist_remove">Αφαίρεση από τη λίστα</string>
+    <string name="watchlist_plan_to_watch">Σκοπεύω να το δω</string>
+    <string name="watchlist_completed">Ολοκληρωμένο</string>
+    <string name="watchlist_on_hold">Σε αναμονή</string>
+    <string name="watchlist_dropped">Εγκαταλείφθηκε</string>
+    <string name="watchlist_watching">Σε προβολή</string>
+
+    <!-- Sources -->
+    <string name="sources_title">Πηγές</string>
+    <string name="sources_refresh">Ανανέωση πηγών</string>
+    <string name="sources_search">Αναζήτηση πηγών</string>
+    <string name="sources_quality_filter">Φίλτρο ποιότητας</string>
+    <string name="sources_nothing_matches">Καμία αντιστοιχία</string>
+    <string name="sources_nothing_matches_body">Καμία πηγή δεν το αναφέρει. Καθαρίστε την αναζήτηση για να τις δείτε όλες.</string>
+    <string name="sources_none_from_addon">Καμία πηγή από αυτό το πρόσθετο.</string>
+    <string name="sources_no_addon_offers">Κανένα πρόσθετο δεν προσφέρει πηγές</string>
+    <string name="sources_no_addon_offers_body">Κανένα από τα εγκατεστημένα πρόσθετα δεν δίνει ροές για τέτοιου είδους τίτλο.</string>
+    <string name="sources_none_found">Δεν βρέθηκαν πηγές</string>
+    <string name="sources_none_found_body">Τα πρόσθετα απάντησαν, αλλά κανένα δεν είχε ροή για αυτόν τον τίτλο.</string>
+    <string name="sources_p2p_failed">Η υπηρεσία peer-to-peer δεν μπόρεσε να ανοίξει αυτή την πηγή.</string>
+    <string name="source_fallback_name">Πηγή</string>
+    <string name="source_kind_direct">Απευθείας</string>
+    <string name="source_kind_p2p">Peer-to-peer</string>
+    <string name="source_kind_youtube">YouTube</string>
+    <string name="source_kind_external">Ανοίγει αλλού</string>
+    <string name="source_kind_unsupported">Μη υποστηριζόμενο</string>
+
+    <!-- Add-ons -->
+    <string name="addons_intro">Τα πρόσθετα παρέχουν τους καταλόγους, τα μεταδεδομένα και τις ροές.</string>
+    <string name="addons_order">Τα πρόσθετα ερωτώνται με αυτή τη σειρά.</string>
+    <string name="addons_add">Προσθήκη πρόσθετου</string>
+    <string name="addons_version">Έκδοση %1$s</string>
+    <string name="addons_more_options">Περισσότερες επιλογές για %1$s</string>
+    <string name="addons_configure">Ρύθμιση</string>
+    <string name="addons_move_up">Μετακίνηση πάνω</string>
+    <string name="addons_move_down">Μετακίνηση κάτω</string>
+    <string name="addons_manifest_url">URL μανιφέστου</string>
+    <string name="addons_add_body">Επικολλήστε το URL μανιφέστου του πρόσθετου. Λειτουργεί και σύνδεσμος εγκατάστασης stremio://.</string>
+    <string name="addons_answered_with">Το πρόσθετο απάντησε με %1$d.</string>
+    <string name="addons_invalid_manifest">Αυτή η διεύθυνση δεν επέστρεψε έγκυρο μανιφέστο.</string>
+    <string name="addons_unreachable">Δεν ήταν δυνατή η πρόσβαση σε αυτή τη διεύθυνση.</string>
+    <string name="addons_needs_configuring">Το %1$s χρειάζεται ρύθμιση</string>
+    <string name="addons_needs_configuring_body">Αυτό το πρόσθετο δεν μπορεί να χρησιμοποιηθεί πριν ρυθμιστεί. Ανοίγοντας τη σελίδα ρύθμισής του θα λάβετε έναν προσωποποιημένο σύνδεσμο εγκατάστασης — επικολλήστε εκείνον εδώ.</string>
+    <string name="addons_open_configuration">Άνοιγμα ρυθμίσεων</string>
+
+    <!-- Peer-to-peer -->
+    <string name="p2p_title">Peer-to-peer</string>
+    <string name="p2p_status">Κατάσταση</string>
+    <string name="p2p_listening_port">Θύρα ακρόασης</string>
+    <string name="p2p_port_in_use">Η θύρα χρησιμοποιείται ήδη</string>
+    <string name="p2p_not_assigned">Δεν έχει εκχωρηθεί</string>
+    <string name="p2p_this_device">Αυτή η συσκευή</string>
+    <string name="p2p_not_found">Δεν βρέθηκε</string>
+    <string name="p2p_seeding">Διαμοιρασμός</string>
+    <string name="p2p_seeding_body">Ο διαμοιρασμός σημαίνει αποστολή όσων έχετε ήδη κατεβάσει από torrent. Ελέγξτε την τοπική νομοθεσία.</string>
+    <string name="p2p_connection_profile">Προφίλ σύνδεσης</string>
+    <string name="p2p_cache_size">Μέγεθος προσωρινής μνήμης</string>
+    <string name="p2p_clear_cache">Εκκαθάριση προσωρινής μνήμης</string>
+    <string name="p2p_hide_stats">Απόκρυψη στατιστικών torrent</string>
+    <string name="p2p_hide_stats_body">Απόκρυψη πληροφοριών ταχύτητας και αριθμού peer και seed από το πρόγραμμα αναπαραγωγής</string>
+    <string name="p2p_vpn_info">Πληροφορίες για τα VPN</string>
+    <string name="p2p_vpn_info_summary">Εικονικά ιδιωτικά δίκτυα</string>
+    <string name="p2p_profile_slow">Αργό</string>
+    <string name="p2p_profile_balanced">Ισορροπημένο</string>
+    <string name="p2p_profile_fast">Γρήγορο</string>
+    <string name="p2p_cache_none">Χωρίς προσωρινή μνήμη</string>
+    <string name="p2p_cache_2g">2G</string>
+    <string name="p2p_cache_5g">5G</string>
+    <string name="p2p_cache_10g">10G</string>
+    <string name="p2p_state_disabled">Απενεργοποιημένο</string>
+    <string name="p2p_state_not_built">Δεν έχει ενσωματωθεί</string>
+    <string name="p2p_state_offline">Εκτός σύνδεσης</string>
+    <string name="p2p_state_online">Σε σύνδεση</string>
+
+    <!-- Peer-to-peer consent -->
+    <string name="p2p_consent_title">Ενεργοποίηση ροής P2P;</string>
+    <string name="p2p_consent_intro">Αυτή η ροή χρησιμοποιεί τεχνολογία peer-to-peer. Ενεργοποιώντας την συμφωνείτε ότι:</string>
+    <string name="p2p_consent_ip">Η διεύθυνση IP σας είναι ορατή σε άλλους χρήστες και στον πάροχό σας.</string>
+    <string name="p2p_consent_responsible">Είστε υπεύθυνοι για τη χρήση των συνδέσεων peer-to-peer και για κάθε περιεχόμενο στο οποίο αποκτάτε πρόσβαση μέσω αυτών.</string>
+    <string name="p2p_consent_no_hosting">Η εφαρμογή δεν φιλοξενεί ούτε ελέγχει περιεχόμενο. Συνδέεται σε δίκτυα τρίτων.</string>
+    <string name="p2p_consent_no_liability">Οι δημιουργοί δεν φέρουν καμία ευθύνη για τη χρήση αυτής της λειτουργίας.</string>
+    <string name="p2p_consent_uploading">Η αποστολή είναι απενεργοποιημένη από προεπιλογή. Η διανομή υλικού με πνευματικά δικαιώματα αντιμετωπίζεται πολύ πιο αυστηρά από τη λήψη. Ελέγξτε την τοπική νομοθεσία πριν την ενεργοποιήσετε.</string>
+    <string name="p2p_consent_vpn">Ένα VPN εμποδίζει τους άλλους χρήστες να δουν τη διεύθυνσή σας. Μπορείτε να το απενεργοποιήσετε οποιαδήποτε στιγμή από τις Ρυθμίσεις.</string>
+    <string name="p2p_consent_what_is_vpn">Τι είναι το VPN;</string>
+    <string name="p2p_consent_enable">Ενεργοποίηση P2P</string>
+    <string name="p2p_consent_enable_countdown">Ενεργοποίηση P2P (%1$d)</string>
+
+    <!-- Video player -->
+    <string name="player_title">Πρόγραμμα αναπαραγωγής</string>
+    <string name="player_none_available">Δεν υπάρχει διαθέσιμο πρόγραμμα</string>
+    <string name="player_backend_builtin">Ενσωματωμένο</string>
+    <string name="player_backend_builtin_summary">Αποκωδικοποίηση υλικού για κοινές μορφές</string>
+    <string name="player_backend_external">Εξωτερική εφαρμογή</string>
+    <string name="player_backend_external_summary">Παράδοση σε όποιο πρόγραμμα είναι εγκατεστημένο στη συσκευή</string>
+
+    <!-- Simkl -->
+    <string name="simkl_asking_for_code">Αίτημα κωδικού από το Simkl...</string>
+    <string name="simkl_sign_in_body">Συνδεθείτε για να συγχρονίσετε λίστα, πρόοδο και βαθμολογίες με το Simkl.</string>
+    <string name="simkl_sign_in">Σύνδεση με Simkl</string>
+    <string name="simkl_go_to_page">Μεταβείτε στο %1$s και εισαγάγετε αυτόν τον κωδικό.</string>
+    <string name="simkl_copy_code">Αντιγραφή κωδικού</string>
+    <string name="simkl_expires_in">Λήγει σε %1$dλ %2$dδ</string>
+    <string name="simkl_open">Άνοιγμα Simkl</string>
+    <string name="simkl_entered_code">Καταχώρησα τον κωδικό</string>
+    <string name="simkl_account">Λογαριασμός</string>
+    <string name="simkl_signed_in">Συνδεδεμένος</string>
+    <string name="simkl_sign_out">Αποσύνδεση</string>
+    <string name="simkl_sign_out_summary">Αφαιρεί το διακριτικό από αυτή τη συσκευή</string>
+    <string name="simkl_no_client_id">Αυτή η έκδοση δεν έχει client id για το Simkl.</string>
+    <string name="simkl_no_code">Το Simkl δεν εξέδωσε κωδικό.</string>
+    <string name="simkl_refused_code">Το Simkl απέρριψε τον κωδικό.</string>
+    <string name="simkl_waiting">Αναμονή σύνδεσης, η προσπάθεια συνεχίζεται.</string>
+    <string name="simkl_code_expired">Ο κωδικός έληξε. Δοκιμάστε ξανά.</string>
+    <string name="simkl_unreachable">Δεν ήταν δυνατή η επικοινωνία με το Simkl.</string>
+    <string name="simkl_sync_did_not_finish">Ο συγχρονισμός δεν ολοκληρώθηκε.</string>
+
+    <!-- Video playback -->
+    <string name="player_playback_failed">Η αναπαραγωγή απέτυχε</string>
+    <string name="player_error">Σφάλμα</string>
+    <string name="player_message">Μήνυμα</string>
+    <string name="player_cause">Αιτία</string>
+    <string name="player_source">Πηγή</string>
+    <string name="player_no_message">Χωρίς μήνυμα</string>
+    <string name="player_copy">Αντιγραφή</string>
+    <string name="player_close">Κλείσιμο</string>
+    <string name="player_back_10">Πίσω 10 δευτερόλεπτα</string>
+    <string name="player_forward_10">Μπροστά 10 δευτερόλεπτα</string>
+    <string name="player_pause">Παύση</string>
+    <string name="player_play">Αναπαραγωγή</string>
+    <string name="player_play_with">Αναπαραγωγή με</string>
+    <string name="player_not_available_desktop">Η αναπαραγωγή δεν είναι ακόμη διαθέσιμη στον υπολογιστή.</string>
+    <string name="simkl_answered_with">Το Simkl απάντησε με %1$d.</string>
+    <string name="simkl_unreadable_reply">Μη αναγνώσιμη απάντηση: %1$s</string>
+</resources>

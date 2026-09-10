@@ -60,6 +60,28 @@ import io.github.dimitrysaf.provenio.designsystem.components.SettingsTile
 import io.github.dimitrysaf.provenio.designsystem.components.SettingsTileSpacing
 import io.github.dimitrysaf.provenio.designsystem.components.TilePosition
 import io.github.dimitrysaf.provenio.designsystem.components.tilePositionOf
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.add
+import io.github.dimitrysaf.provenio.resources.addons_add
+import io.github.dimitrysaf.provenio.resources.addons_add_body
+import io.github.dimitrysaf.provenio.resources.addons_answered_with
+import io.github.dimitrysaf.provenio.resources.addons_configure
+import io.github.dimitrysaf.provenio.resources.addons_intro
+import io.github.dimitrysaf.provenio.resources.addons_invalid_manifest
+import io.github.dimitrysaf.provenio.resources.addons_manifest_url
+import io.github.dimitrysaf.provenio.resources.addons_more_options
+import io.github.dimitrysaf.provenio.resources.addons_move_down
+import io.github.dimitrysaf.provenio.resources.addons_move_up
+import io.github.dimitrysaf.provenio.resources.addons_needs_configuring
+import io.github.dimitrysaf.provenio.resources.addons_needs_configuring_body
+import io.github.dimitrysaf.provenio.resources.addons_open_configuration
+import io.github.dimitrysaf.provenio.resources.addons_order
+import io.github.dimitrysaf.provenio.resources.addons_unreachable
+import io.github.dimitrysaf.provenio.resources.addons_version
+import io.github.dimitrysaf.provenio.resources.cancel
+import io.github.dimitrysaf.provenio.resources.remove
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 import kotlinx.coroutines.launch
 
 /**
@@ -76,9 +98,9 @@ fun AddonsContent() {
 
     Text(
         text = if (addons.isEmpty()) {
-            "Add-ons supply the catalogs, metadata and streams."
+            stringResource(Res.string.addons_intro)
         } else {
-            "Add-ons are asked in this order."
+            stringResource(Res.string.addons_order)
         },
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -98,7 +120,7 @@ fun AddonsContent() {
             )
         }
         SettingsTile(
-            title = { Text("Add an add-on") },
+            title = { Text(stringResource(Res.string.addons_add)) },
             icon = { Icon(Icons.Filled.Add, contentDescription = null) },
             position = tilePositionOf(addons.size, rowCount),
             onClick = { showAddDialog = true },
@@ -127,7 +149,8 @@ private fun AddonRow(
         subtitle = {
             Column {
                 Text(
-                    text = manifest.description ?: "Version ${manifest.version}",
+                    text = manifest.description
+                        ?: stringResource(Res.string.addons_version, manifest.version),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -158,13 +181,14 @@ private fun AddonRow(
                     IconButton(onClick = { menuOpen = true }) {
                         Icon(
                             Icons.Filled.MoreVert,
-                            contentDescription = "More options for ${manifest.name}",
+                            contentDescription =
+                                stringResource(Res.string.addons_more_options, manifest.name),
                         )
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         if (manifest.behaviorHints?.configurable == true) {
                             DropdownMenuItem(
-                                text = { Text("Configure") },
+                                text = { Text(stringResource(Res.string.addons_configure)) },
                                 leadingIcon = {
                                     Icon(Icons.Outlined.Tune, contentDescription = null)
                                 },
@@ -175,7 +199,7 @@ private fun AddonRow(
                             )
                         }
                         DropdownMenuItem(
-                            text = { Text("Move up") },
+                            text = { Text(stringResource(Res.string.addons_move_up)) },
                             enabled = !isFirst,
                             leadingIcon = {
                                 Icon(Icons.Outlined.KeyboardArrowUp, contentDescription = null)
@@ -186,7 +210,7 @@ private fun AddonRow(
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Move down") },
+                            text = { Text(stringResource(Res.string.addons_move_down)) },
                             enabled = !isLast,
                             leadingIcon = {
                                 Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null)
@@ -197,7 +221,7 @@ private fun AddonRow(
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Remove") },
+                            text = { Text(stringResource(Res.string.remove)) },
                             leadingIcon = {
                                 Icon(Icons.Outlined.Delete, contentDescription = null)
                             },
@@ -260,12 +284,11 @@ private fun AddAddonDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
         icon = { Icon(Icons.Outlined.Extension, contentDescription = null) },
-        title = { Text("Add an add-on") },
+        title = { Text(stringResource(Res.string.addons_add)) },
         text = {
             Column {
                 Text(
-                    text = "Paste the add-on's manifest URL. A stremio:// install link " +
-                        "works too.",
+                    text = stringResource(Res.string.addons_add_body),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(16.dp))
@@ -276,7 +299,7 @@ private fun AddAddonDialog(onDismiss: () -> Unit) {
                         error = null
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Manifest URL") },
+                    label = { Text(stringResource(Res.string.addons_manifest_url)) },
                     placeholder = { Text("https://example.com/manifest.json") },
                     singleLine = true,
                     enabled = !busy,
@@ -303,15 +326,15 @@ private fun AddAddonDialog(onDismiss: () -> Unit) {
                                 }
                             }
                             is AddonResult.HttpError -> {
-                                error = "The add-on answered with ${result.code}."
+                                error = getString(Res.string.addons_answered_with, result.code)
                                 busy = false
                             }
                             is AddonResult.ParseError -> {
-                                error = "That address did not return a valid manifest."
+                                error = getString(Res.string.addons_invalid_manifest)
                                 busy = false
                             }
                             is AddonResult.NetworkError -> {
-                                error = "Could not reach that address."
+                                error = getString(Res.string.addons_unreachable)
                                 busy = false
                             }
                         }
@@ -321,12 +344,14 @@ private fun AddAddonDialog(onDismiss: () -> Unit) {
                 if (busy) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp))
                 } else {
-                    Text("Add")
+                    Text(stringResource(Res.string.add))
                 }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancel") }
+            TextButton(onClick = onDismiss, enabled = !busy) {
+                Text(stringResource(Res.string.cancel))
+            }
         },
     )
 }
@@ -345,20 +370,20 @@ private fun ConfigurationRequiredDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Outlined.Tune, contentDescription = null) },
-        title = { Text("${manifest.name} needs configuring") },
+        title = { Text(stringResource(Res.string.addons_needs_configuring, manifest.name)) },
         text = {
             Text(
-                text = "This add-on cannot be used until it is set up. Opening its " +
-                    "configuration page will give you a personalised install link — paste " +
-                    "that link here instead.",
+                text = stringResource(Res.string.addons_needs_configuring_body),
                 style = MaterialTheme.typography.bodyMedium,
             )
         },
         confirmButton = {
-            TextButton(onClick = onConfigure) { Text("Open configuration") }
+            TextButton(onClick = onConfigure) {
+                Text(stringResource(Res.string.addons_open_configuration))
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) }
         },
     )
 }

@@ -17,6 +17,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.designsystem.components.EmptyState
 import io.github.dimitrysaf.provenio.simkl.SyncState
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.library_lives_on_simkl
+import io.github.dimitrysaf.provenio.resources.library_lives_on_simkl_body
+import io.github.dimitrysaf.provenio.resources.library_nothing_tracked
+import io.github.dimitrysaf.provenio.resources.library_nothing_tracked_body
+import io.github.dimitrysaf.provenio.resources.library_sign_in
+import io.github.dimitrysaf.provenio.resources.library_sync_failed
+import io.github.dimitrysaf.provenio.resources.library_syncing
+import io.github.dimitrysaf.provenio.resources.refresh
+import io.github.dimitrysaf.provenio.resources.try_again
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Says why the shelves are empty.
@@ -36,10 +47,9 @@ fun LibraryEmptyState(
         !signedIn -> EmptyState(
             modifier = modifier,
             icon = Icons.Outlined.CloudSync,
-            title = "Your library lives on Simkl",
-            description = "Sign in to bring what you are watching and planning to watch " +
-                "into Provenio.",
-            actionLabel = "Sign in to Simkl",
+            title = stringResource(Res.string.library_lives_on_simkl),
+            description = stringResource(Res.string.library_lives_on_simkl_body),
+            actionLabel = stringResource(Res.string.library_sign_in),
             onAction = onOpenSettings,
         )
         // A spinner with a line under it, not an empty state: there is nothing to act on
@@ -51,7 +61,7 @@ fun LibraryEmptyState(
         ) {
             CircularProgressIndicator()
             Text(
-                text = "Syncing your library",
+                text = stringResource(Res.string.library_syncing),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -60,18 +70,17 @@ fun LibraryEmptyState(
             modifier = modifier,
             icon = Icons.Outlined.CloudOff,
             iconTint = MaterialTheme.colorScheme.error,
-            title = "Sync did not finish",
+            title = stringResource(Res.string.library_sync_failed),
             description = syncState.message,
-            actionLabel = "Try again",
+            actionLabel = stringResource(Res.string.try_again),
             onAction = onRetry,
         )
         else -> EmptyState(
             modifier = modifier,
             icon = Icons.Outlined.Bookmarks,
-            title = "Nothing tracked yet",
-            description = "Anything you mark as watching or plan to watch on Simkl shows " +
-                "up here.",
-            actionLabel = "Refresh",
+            title = stringResource(Res.string.library_nothing_tracked),
+            description = stringResource(Res.string.library_nothing_tracked_body),
+            actionLabel = stringResource(Res.string.refresh),
             onAction = onRetry,
         )
     }

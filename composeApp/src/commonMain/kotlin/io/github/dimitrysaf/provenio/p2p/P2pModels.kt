@@ -1,16 +1,32 @@
 package io.github.dimitrysaf.provenio.p2p
 
-enum class TorrentProfile(val label: String) {
-    Slow("Slow"),
-    Balanced("Balanced"),
-    Fast("Fast"),
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.p2p_cache_10g
+import io.github.dimitrysaf.provenio.resources.p2p_cache_2g
+import io.github.dimitrysaf.provenio.resources.p2p_cache_5g
+import io.github.dimitrysaf.provenio.resources.p2p_cache_none
+import io.github.dimitrysaf.provenio.resources.p2p_profile_balanced
+import io.github.dimitrysaf.provenio.resources.p2p_profile_fast
+import io.github.dimitrysaf.provenio.resources.p2p_profile_slow
+import io.github.dimitrysaf.provenio.resources.p2p_state_disabled
+import io.github.dimitrysaf.provenio.resources.p2p_state_not_built
+import io.github.dimitrysaf.provenio.resources.p2p_state_offline
+import io.github.dimitrysaf.provenio.resources.p2p_state_online
+import org.jetbrains.compose.resources.StringResource
+
+enum class TorrentProfile(val label: StringResource) {
+    Slow(Res.string.p2p_profile_slow),
+    Balanced(Res.string.p2p_profile_balanced),
+    Fast(Res.string.p2p_profile_fast),
 }
 
-enum class CacheSize(val label: String, val bytes: Long) {
-    None("No caching", 0L),
-    Gb2("2G", 2L * 1024 * 1024 * 1024),
-    Gb5("5G", 5L * 1024 * 1024 * 1024),
-    Gb10("10G", 10L * 1024 * 1024 * 1024),
+// The sizes read the same in every language, but they still come from the resources so
+// every label in the app is looked up the same way and none can be missed.
+enum class CacheSize(val label: StringResource, val bytes: Long) {
+    None(Res.string.p2p_cache_none, 0L),
+    Gb2(Res.string.p2p_cache_2g, 2L * 1024 * 1024 * 1024),
+    Gb5(Res.string.p2p_cache_5g, 5L * 1024 * 1024 * 1024),
+    Gb10(Res.string.p2p_cache_10g, 10L * 1024 * 1024 * 1024),
 }
 
 /**
@@ -32,11 +48,11 @@ data class P2pSettings(
     val hideStats: Boolean = false,
 )
 
-enum class P2pServiceState(val label: String) {
-    Disabled("Disabled"),
-    NotBuilt("Not built"),
-    Offline("Offline"),
-    Online("Online"),
+enum class P2pServiceState(val label: StringResource) {
+    Disabled(Res.string.p2p_state_disabled),
+    NotBuilt(Res.string.p2p_state_not_built),
+    Offline(Res.string.p2p_state_offline),
+    Online(Res.string.p2p_state_online),
 }
 
 /** Live engine readings. All zeroed while the service is not running. */

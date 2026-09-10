@@ -41,6 +41,12 @@ import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.simkl.SyncTrigger
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.home_add_addon
+import io.github.dimitrysaf.provenio.resources.home_no_metadata
+import io.github.dimitrysaf.provenio.resources.home_no_metadata_body
+import io.github.dimitrysaf.provenio.resources.home_plan_to_watch
+import org.jetbrains.compose.resources.stringResource
 
 /** Clears the floating brand mark, so the first shelf does not start underneath it. */
 private val TopBarHeight = 64.dp
@@ -131,9 +137,9 @@ fun HomeScreen(
                 item {
                     EmptyState(
                         icon = Icons.Outlined.Extension,
-                        title = "No metadata available",
-                        description = "Add an add-on to get started.",
-                        actionLabel = "Add an add-on",
+                        title = stringResource(Res.string.home_no_metadata),
+                        description = stringResource(Res.string.home_no_metadata_body),
+                        actionLabel = stringResource(Res.string.home_add_addon),
                         onAction = onAddAddons,
                     )
                 }
@@ -144,7 +150,13 @@ fun HomeScreen(
                 item { HeroCarousel(heroItems, heroHeight, onOpenDetail) }
             }
             item { ContinueWatchingCarousel(watching, timeProgressByImdbId, onOpenDetail) }
-            item { Shelf("Plan to watch", planToWatch, onOpenDetail) }
+            item {
+                Shelf(
+                    title = stringResource(Res.string.home_plan_to_watch),
+                    items = planToWatch,
+                    onOpenDetail = onOpenDetail,
+                )
+            }
 
             // Only worth explaining the empty library when it is the only thing missing.
             // With shelves to browse, a sign-in prompt on top of them is just noise.

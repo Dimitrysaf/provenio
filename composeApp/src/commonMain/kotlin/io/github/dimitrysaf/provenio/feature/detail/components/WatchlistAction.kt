@@ -39,6 +39,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.simkl.SimklStatus
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.watchlist_add
+import io.github.dimitrysaf.provenio.resources.watchlist_completed
+import io.github.dimitrysaf.provenio.resources.watchlist_dropped
+import io.github.dimitrysaf.provenio.resources.watchlist_in
+import io.github.dimitrysaf.provenio.resources.watchlist_on_hold
+import io.github.dimitrysaf.provenio.resources.watchlist_plan_to_watch
+import io.github.dimitrysaf.provenio.resources.watchlist_remove
+import io.github.dimitrysaf.provenio.resources.watchlist_watching
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * The lists a title can be moved to from here, in the order they are offered.
@@ -47,16 +58,27 @@ import io.github.dimitrysaf.provenio.simkl.SimklStatus
  * and Simkl moves a title there itself once an episode is scrobbled.
  */
 private val WatchlistOptions = listOf(
-    Triple(SimklStatus.PlanToWatch, "Plan to watch", Icons.Outlined.WatchLater),
-    Triple(SimklStatus.Completed, "Completed", Icons.Outlined.CheckCircle),
-    Triple(SimklStatus.Hold, "On hold", Icons.Outlined.PauseCircle),
-    Triple(SimklStatus.Dropped, "Dropped", Icons.Outlined.Cancel),
+    Triple(
+        SimklStatus.PlanToWatch,
+        Res.string.watchlist_plan_to_watch,
+        Icons.Outlined.WatchLater,
+    ),
+    Triple(SimklStatus.Completed, Res.string.watchlist_completed, Icons.Outlined.CheckCircle),
+    Triple(SimklStatus.Hold, Res.string.watchlist_on_hold, Icons.Outlined.PauseCircle),
+    Triple(SimklStatus.Dropped, Res.string.watchlist_dropped, Icons.Outlined.Cancel),
 )
 
 /** What one of Simkl's status strings reads as. */
-fun watchlistLabel(status: String): String =
-    WatchlistOptions.firstOrNull { it.first == status }?.second
-        ?: if (status == SimklStatus.Watching) "Watching" else status
+@Composable
+fun watchlistLabel(status: String): String {
+    val offered = WatchlistOptions.firstOrNull { it.first == status }?.second
+    return when {
+        offered != null -> stringResource(offered)
+        status == SimklStatus.Watching -> stringResource(Res.string.watchlist_watching)
+        // Simkl could name a list this build does not offer; its own name is all there is.
+        else -> status
+    }
+}
 
 /**
  * Which of the user's Simkl lists this title is on, and a way to change it.
@@ -95,7 +117,9 @@ fun WatchlistAction(
         }
         Spacer(Modifier.width(8.dp))
         Text(
-            text = currentStatus?.let { "In ${watchlistLabel(it)}" } ?: "Add to Watchlist",
+            text = currentStatus
+                ?.let { stringResource(Res.string.watchlist_in, watchlistLabel(it)) }
+                ?: stringResource(Res.string.watchlist_add),
         )
     }
 
@@ -128,7 +152,7 @@ private fun WatchlistSheet(
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             WatchlistOptions.forEach { (status, label, icon) ->
                 WatchlistRow(
-                    label = label,
+                    label = stringResource(label),
                     icon = icon,
                     selected = status == currentStatus,
                     onClick = { onSelect(status) },
@@ -138,7 +162,7 @@ private fun WatchlistSheet(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             WatchlistRow(
-                label = "Remove from list",
+                label = stringResource(Res.string.watchlist_remove),
                 icon = Icons.Outlined.Delete,
                 destructive = true,
                 onClick = { onSelect(null) },

@@ -12,6 +12,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.simkl_sync_did_not_finish
+import io.github.dimitrysaf.provenio.resources.simkl_unreachable
+import org.jetbrains.compose.resources.getString
 
 /** Why a sync was asked for. Manual runs skip the throttle, automatic ones do not. */
 enum class SyncTrigger { Startup, Manual }
@@ -103,7 +107,7 @@ object SimklSync {
 
         val activities = client.activities(token)
         if (activities == null) {
-            _state.value = SyncState.Failed("Could not reach Simkl.")
+            _state.value = SyncState.Failed(getString(Res.string.simkl_unreachable))
             return
         }
 
@@ -134,7 +138,7 @@ object SimklSync {
         }
 
         if (!ok) {
-            _state.value = SyncState.Failed("Sync did not finish.")
+            _state.value = SyncState.Failed(getString(Res.string.simkl_sync_did_not_finish))
             return
         }
 

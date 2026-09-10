@@ -64,6 +64,23 @@ import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.ScrobbleTarget
 import io.github.dimitrysaf.provenio.simkl.SimklScrobbler
 import kotlinx.coroutines.delay
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.back
+import io.github.dimitrysaf.provenio.resources.player_back_10
+import io.github.dimitrysaf.provenio.resources.player_cause
+import io.github.dimitrysaf.provenio.resources.player_close
+import io.github.dimitrysaf.provenio.resources.player_copy
+import io.github.dimitrysaf.provenio.resources.player_error
+import io.github.dimitrysaf.provenio.resources.player_forward_10
+import io.github.dimitrysaf.provenio.resources.player_message
+import io.github.dimitrysaf.provenio.resources.player_no_message
+import io.github.dimitrysaf.provenio.resources.player_pause
+import io.github.dimitrysaf.provenio.resources.player_play
+import io.github.dimitrysaf.provenio.resources.player_play_with
+import io.github.dimitrysaf.provenio.resources.player_playback_failed
+import io.github.dimitrysaf.provenio.resources.player_source
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 actual fun PlayerScreen(
@@ -149,7 +166,7 @@ private fun BuiltinPlayer(
 
     playbackError?.let { error ->
         PlaybackErrorDialog(
-            info = error.toDebugInfo(url),
+            info = error.toDebugInfo(url, stringResource(Res.string.player_no_message)),
             onDismiss = { playbackError = null },
         )
     }
@@ -163,7 +180,13 @@ private data class PlaybackDebugInfo(
     val causeSummary: String?,
     val url: String,
 ) {
-    /** Plain text, so "Copy" hands over exactly what the dialog shows. */
+    /**
+     * Plain text, so "Copy" hands over exactly what the dialog shows.
+     *
+     * Deliberately not translated. This is pasted into a bug report or a logcat search,
+     * where it is read by whoever is fixing the problem rather than by the person who hit
+     * it, and an English report is the one they can act on.
+     */
     fun toClipboardText(): String = buildString {
         appendLine("Playback failed")
         appendLine("Error: $errorCodeName ($errorCode)")
@@ -173,7 +196,10 @@ private data class PlaybackDebugInfo(
     }
 }
 
-private fun PlaybackException.toDebugInfo(url: String): PlaybackDebugInfo {
+private fun PlaybackException.toDebugInfo(
+    url: String,
+    fallbackMessage: String,
+): PlaybackDebugInfo {
     // The immediate cause is usually a wrapper (an ExoPlaybackException, say); the root
     // cause is the one that actually names what went wrong — a 404, a codec the device
     // does not have, a malformed container.
@@ -181,7 +207,7 @@ private fun PlaybackException.toDebugInfo(url: String): PlaybackDebugInfo {
     return PlaybackDebugInfo(
         errorCodeName = errorCodeName,
         errorCode = errorCode,
-        message = message ?: "No message",
+        message = message ?: fallbackMessage,
         causeSummary = root?.let { "${it::class.simpleName}: ${it.message ?: "no detail"}" },
         url = url,
     )
@@ -198,24 +224,27 @@ private fun PlaybackErrorDialog(info: PlaybackDebugInfo, onDismiss: () -> Unit) 
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Outlined.ErrorOutline, contentDescription = null) },
-        title = { Text("Playback failed") },
+        title = { Text(stringResource(Res.string.player_playback_failed)) },
         text = {
             Column(
                 modifier = Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()),
             ) {
-                DebugRow("Error", "${info.errorCodeName} (${info.errorCode})")
-                DebugRow("Message", info.message)
-                info.causeSummary?.let { DebugRow("Cause", it) }
-                DebugRow("Source", info.url)
+                DebugRow(
+                    stringResource(Res.string.player_error),
+                    "${info.errorCodeName} (${info.errorCode})",
+                )
+                DebugRow(stringResource(Res.string.player_message), info.message)
+                info.causeSummary?.let { DebugRow(stringResource(Res.string.player_cause), it) }
+                DebugRow(stringResource(Res.string.player_source), info.url)
             }
         },
         confirmButton = {
             TextButton(onClick = { clipboard.setText(AnnotatedString(info.toClipboardText())) }) {
-                Text("Copy")
+                Text(stringResource(Res.string.player_copy))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.player_close)) }
         },
     )
 }
@@ -371,7 +400,7 @@ private fun PlayerControls(player: ExoPlayer, onBack: () -> Unit) {
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(Res.string.back),
                         tint = Color.White,
                     )
                 }
@@ -392,7 +421,7 @@ private fun PlayerControls(player: ExoPlayer, onBack: () -> Unit) {
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Replay10,
-                            contentDescription = "Back 10 seconds",
+                            contentDescription = stringResource(Res.string.player_back_10),
                             tint = Color.White,
                             modifier = Modifier.size(36.dp),
                         )
@@ -403,7 +432,9 @@ private fun PlayerControls(player: ExoPlayer, onBack: () -> Unit) {
                     ) {
                         Icon(
                             imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            contentDescription = stringResource(
+                                if (isPlaying) Res.string.player_pause else Res.string.player_play,
+                            ),
                             tint = Color.White,
                             modifier = Modifier.size(48.dp),
                         )
@@ -419,7 +450,7 @@ private fun PlayerControls(player: ExoPlayer, onBack: () -> Unit) {
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Forward10,
-                            contentDescription = "Forward 10 seconds",
+                            contentDescription = stringResource(Res.string.player_forward_10),
                             tint = Color.White,
                             modifier = Modifier.size(36.dp),
                         )
@@ -519,7 +550,8 @@ private fun ExternalPlayer(url: String, onBack: () -> Unit) {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         runCatching {
-            context.startActivity(Intent.createChooser(view, "Play with"))
+            val title = getString(Res.string.player_play_with)
+            context.startActivity(Intent.createChooser(view, title))
         }
         onBack()
     }

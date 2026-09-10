@@ -23,6 +23,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.clear
+import io.github.dimitrysaf.provenio.resources.search_recent
+import io.github.dimitrysaf.provenio.resources.search_remove_from_history
+import org.jetbrains.compose.resources.stringResource
 
 /** One line of explanation, centred in whatever space is left. */
 @Composable
@@ -54,12 +59,12 @@ fun LazyGridScope.recentSearches(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Recent searches",
+                text = stringResource(Res.string.search_recent),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onClear) { Text("Clear") }
+            TextButton(onClick = onClear) { Text(stringResource(Res.string.clear)) }
         }
     }
     items(
@@ -88,7 +93,8 @@ fun LazyGridScope.recentSearches(
             IconButton(onClick = { onRemove(term) }) {
                 Icon(
                     imageVector = Icons.Filled.Close,
-                    contentDescription = "Remove \"$term\" from history",
+                    contentDescription =
+                        stringResource(Res.string.search_remove_from_history, term),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

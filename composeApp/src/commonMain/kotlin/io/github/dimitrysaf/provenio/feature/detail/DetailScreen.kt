@@ -71,6 +71,10 @@ import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.Video
 import io.github.dimitrysaf.provenio.watch.EpisodeWatchedRepository
 import kotlinx.coroutines.launch
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.back
+import io.github.dimitrysaf.provenio.resources.detail_no_addon
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * How much of the backdrop has to scroll away before the bar is fully solid. A collapsing
@@ -147,7 +151,7 @@ fun DetailScreen(
         when {
             loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
             current == null -> Text(
-                text = "No add-on could describe this title.",
+                text = stringResource(Res.string.detail_no_addon),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.Center).padding(32.dp),
@@ -179,7 +183,10 @@ fun DetailScreen(
             },
             navigationIcon = {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(Res.string.back),
+                    )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(

@@ -15,6 +15,10 @@ import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.simkl_answered_with
+import io.github.dimitrysaf.provenio.resources.simkl_unreadable_reply
+import org.jetbrains.compose.resources.getString
 
 /**
  * Client for the Simkl API.
@@ -160,7 +164,7 @@ class SimklClient(
                 setBody("{}")
             }
             if (!response.status.isSuccess()) {
-                lastFailure = "Simkl answered ${response.status.value}."
+                lastFailure = getString(Res.string.simkl_answered_with, response.status.value)
                 return null
             }
             response.bodyAsText()
@@ -198,7 +202,7 @@ class SimklClient(
                 setBody(simklJson.encodeToString(request))
             }
             if (!response.status.isSuccess()) {
-                lastFailure = "Simkl answered ${response.status.value}."
+                lastFailure = getString(Res.string.simkl_answered_with, response.status.value)
             }
             response.status.isSuccess()
         } catch (cancellation: CancellationException) {
@@ -224,7 +228,7 @@ class SimklClient(
                 setBody(simklJson.encodeToString(request))
             }
             if (!response.status.isSuccess()) {
-                lastFailure = "Simkl answered ${response.status.value}."
+                lastFailure = getString(Res.string.simkl_answered_with, response.status.value)
                 return null
             }
             response.bodyAsText()
@@ -239,7 +243,7 @@ class SimklClient(
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (failure: Exception) {
-            lastFailure = "Unreadable reply: " + text.take(120)
+            lastFailure = getString(Res.string.simkl_unreadable_reply, text.take(120))
             null
         }
     }
@@ -259,7 +263,7 @@ class SimklClient(
             // A pending PIN is answered with a non-2xx by some deployments, so the body is
             // still worth reading before giving up on it.
             if (!response.status.isSuccess() && response.status.value >= 500) {
-                lastFailure = "Simkl answered ${response.status.value}."
+                lastFailure = getString(Res.string.simkl_answered_with, response.status.value)
                 return null
             }
             response.bodyAsText()
@@ -275,7 +279,7 @@ class SimklClient(
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (failure: Exception) {
-            lastFailure = "Unreadable reply: " + text.take(120)
+            lastFailure = getString(Res.string.simkl_unreadable_reply, text.take(120))
             null
         }
     }

@@ -38,6 +38,7 @@ import io.github.dimitrysaf.provenio.designsystem.theme.ThemeMode
 import io.github.dimitrysaf.provenio.designsystem.layout.usesExpandedRail
 import io.github.dimitrysaf.provenio.designsystem.layout.usesRail
 import io.github.dimitrysaf.provenio.designsystem.layout.windowSizeClassOf
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 private fun DestinationIcon(entry: Destination, selected: Boolean) {
@@ -110,7 +111,7 @@ fun MainScaffold(
                             selected = selected,
                             onClick = { selectTab(index) },
                             icon = { DestinationIcon(entry, selected) },
-                            label = { Text(entry.label) },
+                            label = { Text(stringResource(entry.label)) },
                             railExpanded = expandRail,
                         )
                     }
@@ -171,7 +172,7 @@ fun MainScaffold(
                                 selected = selected,
                                 onClick = { selectTab(index) },
                                 icon = { DestinationIcon(entry, selected) },
-                                label = { Text(entry.label) },
+                                label = { Text(stringResource(entry.label)) },
                             )
                         }
                     }

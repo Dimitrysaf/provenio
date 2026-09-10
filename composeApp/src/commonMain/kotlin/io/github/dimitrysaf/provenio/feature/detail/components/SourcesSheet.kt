@@ -65,6 +65,23 @@ import io.github.dimitrysaf.provenio.stremio.hasAny
 import io.github.dimitrysaf.provenio.stremio.matches
 import io.github.dimitrysaf.provenio.stremio.searchText
 import kotlinx.coroutines.launch
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.search_clear
+import io.github.dimitrysaf.provenio.resources.source_fallback_name
+import io.github.dimitrysaf.provenio.resources.sources_no_addon_offers
+import io.github.dimitrysaf.provenio.resources.sources_no_addon_offers_body
+import io.github.dimitrysaf.provenio.resources.sources_none_found
+import io.github.dimitrysaf.provenio.resources.sources_none_found_body
+import io.github.dimitrysaf.provenio.resources.sources_none_from_addon
+import io.github.dimitrysaf.provenio.resources.sources_nothing_matches
+import io.github.dimitrysaf.provenio.resources.sources_nothing_matches_body
+import io.github.dimitrysaf.provenio.resources.sources_p2p_failed
+import io.github.dimitrysaf.provenio.resources.sources_quality_filter
+import io.github.dimitrysaf.provenio.resources.sources_refresh
+import io.github.dimitrysaf.provenio.resources.sources_search
+import io.github.dimitrysaf.provenio.resources.sources_title
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 
 /** One addon's contribution, and whether it has finished contributing. */
 private data class AddonSources(
@@ -148,7 +165,7 @@ fun SourcesSheet(
             if (url != null) {
                 onPlay(source.copy(resolvedUrl = url))
             } else {
-                failure = "The peer-to-peer service could not open this source."
+                failure = getString(Res.string.sources_p2p_failed)
             }
         }
     }
@@ -199,7 +216,10 @@ fun SourcesSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Sources", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        text = stringResource(Res.string.sources_title),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
                     if (title != null) {
                         Text(
                             text = title,
@@ -216,7 +236,10 @@ fun SourcesSheet(
                         reloads += 1
                     },
                 ) {
-                    Icon(Icons.Outlined.Refresh, contentDescription = "Refresh sources")
+                    Icon(
+                        Icons.Outlined.Refresh,
+                        contentDescription = stringResource(Res.string.sources_refresh),
+                    )
                 }
             }
             // One flat field above the list, so it applies to every section. No outline
@@ -227,13 +250,17 @@ fun SourcesSheet(
                     onValueChange = { query = it },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
                     singleLine = true,
-                    placeholder = { Text("Search sources") },
+                    placeholder = { Text(stringResource(Res.string.sources_search)) },
                     leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                     trailingIcon = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             if (query.isNotEmpty()) {
                                 IconButton(onClick = { query = "" }) {
-                                    Icon(Icons.Filled.Close, contentDescription = "Clear search")
+                                    Icon(
+                                        Icons.Filled.Close,
+                                        contentDescription =
+                                            stringResource(Res.string.search_clear),
+                                    )
                                 }
                             }
                             if (offered.isNotEmpty()) {
@@ -241,7 +268,8 @@ fun SourcesSheet(
                                     IconButton(onClick = { filterOpen = true }) {
                                         Icon(
                                             imageVector = Icons.Outlined.FilterList,
-                                            contentDescription = "Quality filter",
+                                            contentDescription =
+                                                stringResource(Res.string.sources_quality_filter),
                                             tint = if (picked.isEmpty()) {
                                                 MaterialTheme.colorScheme.onSurfaceVariant
                                             } else {
@@ -306,8 +334,8 @@ fun SourcesSheet(
             }
             if (filtering && matches == 0) {
                 Message(
-                    title = "Nothing matches",
-                    body = "No source mentions that. Clear the search to see all of them.",
+                    title = stringResource(Res.string.sources_nothing_matches),
+                    body = stringResource(Res.string.sources_nothing_matches_body),
                 )
                 return@Column
             }
@@ -337,7 +365,7 @@ fun SourcesSheet(
                                 }
                                 if (!group.loading && group.sources.isEmpty()) {
                                     Text(
-                                        text = "No sources from this add-on.",
+                                        text = stringResource(Res.string.sources_none_from_addon),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(
@@ -417,7 +445,7 @@ private fun SourceRow(source: SourceOption, onClick: () -> Unit) {
         // carried the same glyph, which distinguishes nothing and only narrows the text.
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = source.label,
+                text = source.label ?: stringResource(Res.string.source_fallback_name),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
                 maxLines = 2,
@@ -440,16 +468,16 @@ private fun SourceRow(source: SourceOption, onClick: () -> Unit) {
 @Composable
 private fun NoProviders() {
     Message(
-        title = "No add-on offers sources",
-        body = "None of your installed add-ons serve streams for this kind of title.",
+        title = stringResource(Res.string.sources_no_addon_offers),
+        body = stringResource(Res.string.sources_no_addon_offers_body),
     )
 }
 
 @Composable
 private fun NoSources() {
     Message(
-        title = "No sources found",
-        body = "Your add-ons answered, but none had a stream for this title.",
+        title = stringResource(Res.string.sources_none_found),
+        body = stringResource(Res.string.sources_none_found_body),
     )
 }
 

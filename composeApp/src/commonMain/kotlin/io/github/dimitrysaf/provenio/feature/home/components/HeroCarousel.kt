@@ -44,6 +44,12 @@ import io.github.dimitrysaf.provenio.designsystem.theme.MotionTokens
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
+import io.github.dimitrysaf.provenio.resources.Res
+import io.github.dimitrysaf.provenio.resources.type_channel
+import io.github.dimitrysaf.provenio.resources.type_movie
+import io.github.dimitrysaf.provenio.resources.type_series
+import io.github.dimitrysaf.provenio.resources.type_tv
+import org.jetbrains.compose.resources.stringResource
 
 private val DotSize = 8.dp
 private val ActiveDotWidth = 24.dp
@@ -233,10 +239,13 @@ private fun PageDots(count: Int, current: Int) {
 }
 
 /** Singular here: the hero names one title, not a category of them. */
+@Composable
 private fun heroTypeLabel(type: String): String = when (type) {
-    "movie" -> "Movie"
-    "series" -> "Series"
-    "channel" -> "Channel"
-    "tv" -> "TV"
+    "movie" -> stringResource(Res.string.type_movie)
+    "series" -> stringResource(Res.string.type_series)
+    "channel" -> stringResource(Res.string.type_channel)
+    "tv" -> stringResource(Res.string.type_tv)
+    // An addon is free to invent a type. Nothing to translate it to, so it is shown as
+    // the addon wrote it.
     else -> type.replaceFirstChar { it.uppercase() }
 }

@@ -29,6 +29,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import io.github.dimitrysaf.provenio.core.i18n.AppEnvironment
+import io.github.dimitrysaf.provenio.core.i18n.LanguageRepository
 import io.github.dimitrysaf.provenio.navigation.DetailRoute
 import io.github.dimitrysaf.provenio.navigation.PlayerRoute
 import io.github.dimitrysaf.provenio.navigation.Routes
@@ -88,6 +90,7 @@ fun App() {
     var useDynamicColor by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
+        LanguageRepository.load()
         AddonRepository.load()
         P2pRepository.load()
         PlayerRepository.load()
@@ -97,76 +100,80 @@ fun App() {
         EpisodeWatchedRepository.load()
     }
 
-    AppTheme(themeMode = themeMode, useDynamicColor = useDynamicColor) {
-        val navController = rememberNavController()
+    // Outside the theme: a language change re-keys everything under it, and the theme has
+    // no reason to be thrown away and rebuilt when only the words change.
+    AppEnvironment {
+        AppTheme(themeMode = themeMode, useDynamicColor = useDynamicColor) {
+            val navController = rememberNavController()
 
-        NavHost(
-            navController = navController,
-            startDestination = Routes.Home,
-            modifier = Modifier.fillMaxSize(),
-            enterTransition = { pushEnter },
-            exitTransition = { pushExit },
-            popEnterTransition = { popEnter },
-            popExitTransition = { popExit },
-        ) {
-            composable(Routes.Home) {
-                PageSurface(applyBottomInset = false) {
-                    MainScaffold(
-                        onOpenDetail = { type, id ->
-                            navController.navigate(DetailRoute(type, id))
-                        },
-                        themeMode = themeMode,
-                        onThemeModeChange = { themeMode = it },
-                        useDynamicColor = useDynamicColor,
-                        onUseDynamicColorChange = { useDynamicColor = it },
-                        dynamicColorAvailable = isDynamicColorSupported(),
-                    )
-                }
-            }
-
-            // Deliberately not wrapped in PageSurface. That applies a shape, and a shape
-            // on a Surface always clips, which a SurfaceView cannot survive. The player
-            // paints its own black background instead.
-            composable<PlayerRoute> { entry ->
-                val route = entry.toRoute<PlayerRoute>()
-                PlayerScreen(
-                    url = route.url,
-                    scrobbleTarget = route.imdbId?.let { imdbId ->
-                        ScrobbleTarget(
-                            mediaType = route.mediaType ?: "movie",
-                            imdbId = imdbId,
-                            season = route.season,
-                            episode = route.episode,
-                            resumeProgressPercent = route.resumeProgressPercent,
+            NavHost(
+                navController = navController,
+                startDestination = Routes.Home,
+                modifier = Modifier.fillMaxSize(),
+                enterTransition = { pushEnter },
+                exitTransition = { pushExit },
+                popEnterTransition = { popEnter },
+                popExitTransition = { popExit },
+            ) {
+                composable(Routes.Home) {
+                    PageSurface(applyBottomInset = false) {
+                        MainScaffold(
+                            onOpenDetail = { type, id ->
+                                navController.navigate(DetailRoute(type, id))
+                            },
+                            themeMode = themeMode,
+                            onThemeModeChange = { themeMode = it },
+                            useDynamicColor = useDynamicColor,
+                            onUseDynamicColorChange = { useDynamicColor = it },
+                            dynamicColorAvailable = isDynamicColorSupported(),
                         )
-                    },
-                    onBack = { navController.popBackStack() },
-                )
-            }
+                    }
+                }
 
-            composable<DetailRoute> { entry ->
-                val route = entry.toRoute<DetailRoute>()
-                PageSurface {
-                    DetailScreen(
-                        type = route.type,
-                        id = route.id,
-                        onBack = { navController.popBackStack() },
-                        onPlay = { request ->
-                            navController.navigate(
-                                PlayerRoute(
-                                    url = request.url,
-                                    mediaType = request.type,
-                                    imdbId = request.imdbId,
-                                    season = request.season,
-                                    episode = request.episode,
-                                    resumeProgressPercent = request.resumeProgressPercent,
-                                ),
+                // Deliberately not wrapped in PageSurface. That applies a shape, and a shape
+                // on a Surface always clips, which a SurfaceView cannot survive. The player
+                // paints its own black background instead.
+                composable<PlayerRoute> { entry ->
+                    val route = entry.toRoute<PlayerRoute>()
+                    PlayerScreen(
+                        url = route.url,
+                        scrobbleTarget = route.imdbId?.let { imdbId ->
+                            ScrobbleTarget(
+                                mediaType = route.mediaType ?: "movie",
+                                imdbId = imdbId,
+                                season = route.season,
+                                episode = route.episode,
+                                resumeProgressPercent = route.resumeProgressPercent,
                             )
                         },
+                        onBack = { navController.popBackStack() },
                     )
                 }
-            }
 
+                composable<DetailRoute> { entry ->
+                    val route = entry.toRoute<DetailRoute>()
+                    PageSurface {
+                        DetailScreen(
+                            type = route.type,
+                            id = route.id,
+                            onBack = { navController.popBackStack() },
+                            onPlay = { request ->
+                                navController.navigate(
+                                    PlayerRoute(
+                                        url = request.url,
+                                        mediaType = request.type,
+                                        imdbId = request.imdbId,
+                                        season = request.season,
+                                        episode = request.episode,
+                                        resumeProgressPercent = request.resumeProgressPercent,
+                                    ),
+                                )
+                            },
+                        )
+                    }
+                }
+
+            }
         }
     }
 }
