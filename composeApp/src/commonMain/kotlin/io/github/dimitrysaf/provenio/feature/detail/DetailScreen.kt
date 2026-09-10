@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.feature.detail
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -29,8 +30,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import io.github.dimitrysaf.provenio.core.platform.rememberUrlOpener
 import io.github.dimitrysaf.provenio.db.SimklItem
+import io.github.dimitrysaf.provenio.designsystem.components.backdropHeightFor
 import io.github.dimitrysaf.provenio.feature.detail.components.DetailHeader
 import io.github.dimitrysaf.provenio.feature.detail.components.Ratings
 import io.github.dimitrysaf.provenio.feature.detail.components.SourcesSheet
@@ -78,7 +81,11 @@ fun DetailScreen(
         loading = false
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    // BoxWithConstraints rather than Box: the backdrop is sized against the window, and
+    // inside the lazy list below the vertical space is unbounded, so this is the last
+    // place that still knows how tall the window actually is.
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val backdropHeight = backdropHeightFor(width = maxWidth, viewportHeight = maxHeight)
         val current = meta
         when {
             loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -88,7 +95,7 @@ fun DetailScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.Center).padding(32.dp),
             )
-            else -> MetaContent(current) { videoId, resumeProgress ->
+            else -> MetaContent(current, backdropHeight) { videoId, resumeProgress ->
                 sourcesFor = SourcesTarget(videoId, resumeProgress)
             }
         }
@@ -135,7 +142,11 @@ fun DetailScreen(
 private data class SourcesTarget(val videoId: String, val resumeProgressPercent: Float? = null)
 
 @Composable
-private fun MetaContent(meta: Meta, onChooseSource: (String, Float?) -> Unit) {
+private fun MetaContent(
+    meta: Meta,
+    backdropHeight: Dp,
+    onChooseSource: (String, Float?) -> Unit,
+) {
     val openUrl = rememberUrlOpener()
     // Specials last. They routinely spoil the run they belong to, so leading with them is
     // the wrong default even though their season number sorts first.
@@ -190,7 +201,7 @@ private fun MetaContent(meta: Meta, onChooseSource: (String, Float?) -> Unit) {
     var movingList by remember(meta.id) { mutableStateOf(false) }
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        item { DetailHeader(meta) }
+        item { DetailHeader(meta, backdropHeight) }
         item { WatchAction(meta, simklWatchedEpisodes, resumeSession, onChooseSource) }
         if (authState is SimklAuthState.SignedIn) {
             item {

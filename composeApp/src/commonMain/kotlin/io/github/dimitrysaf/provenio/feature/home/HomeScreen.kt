@@ -26,10 +26,10 @@ import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.platform.currentTimeMillis
 import io.github.dimitrysaf.provenio.designsystem.components.AppTopBar
 import io.github.dimitrysaf.provenio.designsystem.components.EmptyState
+import io.github.dimitrysaf.provenio.designsystem.components.backdropHeightFor
 import io.github.dimitrysaf.provenio.feature.home.components.ContinueWatchingCarousel
 import io.github.dimitrysaf.provenio.feature.home.components.HeroCarousel
 import io.github.dimitrysaf.provenio.feature.home.components.LibraryEmptyState
-import io.github.dimitrysaf.provenio.feature.home.components.heroHeightFor
 import io.github.dimitrysaf.provenio.feature.home.components.Shelf
 import io.github.dimitrysaf.provenio.feature.home.components.catalogShelves
 import io.github.dimitrysaf.provenio.simkl.SimklAuthState
@@ -115,7 +115,7 @@ fun HomeScreen(
     // and inside a lazy list the vertical space is unbounded, so this is the last place
     // that still knows how tall the window actually is.
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        val heroHeight = heroHeightFor(width = maxWidth, viewportHeight = maxHeight)
+        val heroHeight = backdropHeightFor(width = maxWidth, viewportHeight = maxHeight)
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),

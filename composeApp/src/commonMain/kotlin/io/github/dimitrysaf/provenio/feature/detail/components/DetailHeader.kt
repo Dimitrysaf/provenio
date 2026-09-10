@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,46 +18,39 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import io.github.dimitrysaf.provenio.designsystem.components.Backdrop
 import io.github.dimitrysaf.provenio.feature.detail.trackedEpisodeCount
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 
-/** Backdrop behind, poster and title in front. */
+/**
+ * Backdrop behind, poster and title in front.
+ *
+ * The backdrop is the same component and the same height math as the hero on Home, minus
+ * everything written over it there: the logo only, since the year, type and genre already
+ * have their own place in the row below.
+ */
 @Composable
-fun DetailHeader(meta: Meta) {
+fun DetailHeader(meta: Meta, backdropHeight: Dp) {
     Column {
-        Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
-            if (meta.background != null) {
+        // topScrim because a back button floats over this one, which the hero has no
+        // equivalent of — without it the icon disappears into a bright still.
+        Backdrop(url = meta.background, height = backdropHeight, topScrim = true) {
+            if (meta.logo != null) {
                 AsyncImage(
-                    model = meta.background,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
-            } else {
-                Box(
+                    model = meta.logo,
+                    contentDescription = meta.name,
+                    contentScale = ContentScale.Fit,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(0.75f)
+                        .heightIn(max = minOf(backdropHeight * 0.22f, 110.dp))
+                        .padding(bottom = 24.dp),
                 )
             }
-            // Keeps the back button and the title legible over a bright still. `scrim` is
-            // the role for darkening media, so a scheme override carries through here.
-            Box(
-                modifier = Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.scrim.copy(alpha = 0.45f),
-                            Color.Transparent,
-                            MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f),
-                        ),
-                    ),
-                ),
-            )
         }
 
         Row(

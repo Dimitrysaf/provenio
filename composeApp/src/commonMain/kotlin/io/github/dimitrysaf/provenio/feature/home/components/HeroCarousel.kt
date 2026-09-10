@@ -2,12 +2,7 @@ package io.github.dimitrysaf.provenio.feature.home.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -19,7 +14,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -34,14 +28,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -49,9 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.compose.AsyncImagePainter
-import io.github.dimitrysaf.provenio.designsystem.layout.WindowSizeClass
-import io.github.dimitrysaf.provenio.designsystem.layout.windowSizeClassOf
+import io.github.dimitrysaf.provenio.designsystem.components.Backdrop
 import io.github.dimitrysaf.provenio.designsystem.theme.MotionTokens
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.model.Meta
@@ -59,35 +47,6 @@ import io.github.dimitrysaf.provenio.stremio.model.MetaPreview
 
 private val DotSize = 8.dp
 private val ActiveDotWidth = 24.dp
-
-/**
- * The hero never takes more than this much of the window, so the first shelf below it
- * lands whole rather than clipped. Without the bound a wide window asks for more height
- * than the window has, and the spotlight becomes the whole screen.
- */
-private const val HeroViewportFraction = 0.50f
-
-/**
- * How tall the hero should be in a window this size.
- *
- * The shape follows the window rather than being clamped into it: portrait on a phone,
- * squarer on a small tablet, cinematic once there is real width. A single ratio cannot do
- * all three — asking a portrait ratio to fill a landscape window is what made the hero
- * taller than the screen.
- *
- * [viewportHeight] has to come from the caller: inside a lazy list the vertical space is
- * unbounded, so nothing here can measure the window on its own.
- */
-fun heroHeightFor(width: Dp, viewportHeight: Dp): Dp {
-    // On a phone the aspect decides, not the cap — the window is tall enough that the
-    // fraction never bites — so making the hero shorter there means a wider ratio.
-    val aspect = when (windowSizeClassOf(width)) {
-        WindowSizeClass.Compact -> 1.05f
-        WindowSizeClass.Medium -> 1.5f
-        else -> 16f / 9f
-    }
-    return minOf(width / aspect, viewportHeight * HeroViewportFraction)
-}
 
 /**
  * The spotlight at the top of Home: one title at a time, swiped through.
@@ -167,25 +126,11 @@ private fun HeroPage(
         item.releaseInfo?.take(4)?.takeIf { it.length == 4 },
     )
 
-    Box(modifier = Modifier.fillMaxSize().clickable(onClick = onClick)) {
-        Artwork(url = backdrop)
-
-        // Resolves to the page's own background before the text starts, so everything
-        // below sits on a real surface and can use scheme colours rather than a fixed
-        // white that would ignore the wallpaper palette. `scrim` is the role for
-        // darkening media, so the fade honours a scheme override too.
-        Box(
-            modifier = Modifier.fillMaxSize().background(
-                Brush.verticalGradient(
-                    0f to Color.Transparent,
-                    0.30f to MaterialTheme.colorScheme.scrim.copy(alpha = 0.35f),
-                    0.52f to MaterialTheme.colorScheme.background.copy(alpha = 0.92f),
-                    0.62f to MaterialTheme.colorScheme.background,
-                    1f to MaterialTheme.colorScheme.background,
-                ),
-            ),
-        )
-
+    Backdrop(
+        url = backdrop,
+        height = height,
+        modifier = Modifier.clickable(onClick = onClick),
+    ) {
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -235,62 +180,6 @@ private fun HeroPage(
                     modifier = Modifier.padding(top = 12.dp),
                 )
             }
-        }
-    }
-}
-
-/**
- * A filled container that breathes while the image is on its way, then hands over to the
- * artwork on a fade. A spinner over half a screen of colour reads as an error; a container
- * that is visibly waiting does not.
- */
-@Composable
-private fun Artwork(url: String?) {
-    var loaded by remember(url) { mutableStateOf(false) }
-
-    val pulse = rememberInfiniteTransition(label = "artworkPulse")
-    val placeholderAlpha by pulse.animateFloat(
-        initialValue = 0.45f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = MotionTokens.DurationLong2,
-                easing = MotionTokens.Standard,
-            ),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "artworkPulseAlpha",
-    )
-
-    val artworkAlpha by animateFloatAsState(
-        targetValue = if (loaded) 1f else 0f,
-        animationSpec = tween(
-            durationMillis = MotionTokens.DurationMedium2,
-            easing = MotionTokens.Standard,
-        ),
-        label = "artworkFade",
-    )
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (!loaded) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                            .copy(alpha = placeholderAlpha),
-                    ),
-            )
-        }
-        if (url != null) {
-            AsyncImage(
-                model = url,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-                alpha = artworkAlpha,
-                onState = { state -> loaded = state is AsyncImagePainter.State.Success },
-            )
         }
     }
 }
