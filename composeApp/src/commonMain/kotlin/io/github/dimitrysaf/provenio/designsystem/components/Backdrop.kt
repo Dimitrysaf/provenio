@@ -19,10 +19,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import io.github.dimitrysaf.provenio.designsystem.layout.WindowSizeClass
@@ -160,4 +163,66 @@ private fun BackdropArtwork(url: String?) {
             )
         }
     }
+}
+
+/**
+ * How hard the wash is blurred, and how far past its bounds it is scaled.
+ *
+ * The overscale is not decoration: a blur samples beyond the edge of the image and leaves
+ * a soft transparent border where there is nothing to sample. Growing the artwork past the
+ * window pushes that border off screen.
+ */
+private val WashBlurRadius = 40.dp
+private const val WashOverscale = 1.15f
+
+/**
+ * The same artwork as [Backdrop], but as the page's own background rather than a band
+ * across the top of it: blurred hard, faded until it is a tint on the surface, and gone
+ * entirely by the time the dense part of the page starts.
+ *
+ * The fade is not a matter of taste. Body text needs real contrast against what is behind
+ * it, and an image is not one colour — a still with a bright sky in one corner and shadow
+ * in the other passes on one line and fails on the next. Held down to a fraction of the
+ * surface it cannot do that, and what survives is the colour of the title rather than a
+ * picture competing with the words on top of it.
+ *
+ * On Android below 12 the blur is silently a no-op. At this opacity a sharp still and a
+ * blurred one are close to indistinguishable, so that reads as the same design rather
+ * than a broken one.
+ */
+@Composable
+fun BackdropWash(url: String?, modifier: Modifier = Modifier) {
+    if (url == null) return
+
+    Box(modifier = modifier.fillMaxSize()) {
+        AsyncImage(
+            model = url,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = WashOverscale
+                    scaleY = WashOverscale
+                }
+                .blur(WashBlurRadius),
+        )
+        Box(modifier = Modifier.fillMaxSize().background(washBrush()))
+    }
+}
+
+/**
+ * Strongest at the top, where the page is sparse and the artwork is worth having, and
+ * resolved to the flat background before the episode lists and cast rows begin. Atmosphere
+ * where there is room for it, a plain surface where the page gets busy.
+ */
+@Composable
+private fun washBrush(): Brush {
+    val background = MaterialTheme.colorScheme.background
+    return Brush.verticalGradient(
+        0f to background.copy(alpha = 0.78f),
+        0.45f to background.copy(alpha = 0.94f),
+        0.70f to background,
+        1f to background,
+    )
 }

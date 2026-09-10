@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.platform.rememberUrlOpener
 import io.github.dimitrysaf.provenio.db.SimklItem
+import io.github.dimitrysaf.provenio.designsystem.components.BackdropWash
 import io.github.dimitrysaf.provenio.designsystem.components.backdropHeightFor
 import io.github.dimitrysaf.provenio.designsystem.layout.isPortraitPhone
 import io.github.dimitrysaf.provenio.feature.detail.components.DetailHeader
@@ -133,6 +134,14 @@ fun DetailScreen(
         // The bar sits above the status bar inset, so clearing it means clearing both.
         val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         val topPadding = if (showBackdrop) 0.dp else TopBarHeight + topInset
+
+        // Where the backdrop is not a band across the top, the artwork becomes the page's
+        // own background instead of being dropped. Drawn first, so everything else sits
+        // over it, and fixed rather than scrolling — a wash that scrolls away is just the
+        // backdrop again, moved.
+        if (!showBackdrop) {
+            BackdropWash(meta?.background)
+        }
 
         val current = meta
         when {
