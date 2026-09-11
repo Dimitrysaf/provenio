@@ -39,6 +39,20 @@ class StreamingTorrent(
     val fileName: String = files.fileName(index)
 
     /**
+     * Where the bytes are meant to be, and whether they are.
+     *
+     * Serving reads through the filesystem, so a path that does not match where libtorrent
+     * actually wrote — or a volume that ran out of room part way — ends as an empty
+     * response body while the download itself reports finished. The two look identical
+     * from the player's side, so both are printed once per stream.
+     */
+    fun describeStorage(): String {
+        val free = path.parentFile?.usableSpace ?: -1L
+        return "file=$path exists=${path.exists()} onDisk=${path.length()} " +
+            "expected=$length freeOnVolume=$free"
+    }
+
+    /**
      * Everything that only has to happen once: ignore the other files, switch to
      * sequential, and pull in both ends.
      *

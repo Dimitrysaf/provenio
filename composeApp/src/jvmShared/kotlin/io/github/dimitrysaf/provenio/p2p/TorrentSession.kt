@@ -161,6 +161,7 @@ class TorrentSession(private val cacheDir: File) {
             )
             stream.prepare()
             p2pLog("streaming \"${stream.fileName}\" (${stream.length} bytes)")
+            p2pLog("  storage: ${stream.describeStorage()}")
             streams[key] = stream
             stream
         }
