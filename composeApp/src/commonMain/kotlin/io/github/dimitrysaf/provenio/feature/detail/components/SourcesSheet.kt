@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.p2p.P2pConsentDialog
+import io.github.dimitrysaf.provenio.core.platform.MatchHostSystemBars
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.p2p.TorrentRequest
 import io.github.dimitrysaf.provenio.p2p.canRun
@@ -217,6 +218,8 @@ fun SourcesSheet(
     val matches = groups.sumOf { visibleIn(it).size }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        // The sheet has its own window; keep it in step with the one it opened over.
+        MatchHostSystemBars()
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 8.dp),
