@@ -48,6 +48,23 @@ internal fun Meta.firstUnwatchedEpisode(watchedEpisodes: Set<Pair<Int, Int>>): V
         }
 }
 
+/**
+ * The season a viewer is part way through, if there is one.
+ *
+ * Part way means at least one episode watched and at least one not — a season not started
+ * and a season finished are both places there is nothing left to carry on with. Specials
+ * are skipped for the same reason they are skipped everywhere else: they are not part of
+ * the run being worked through.
+ */
+internal fun inProgressSeason(
+    seasons: List<Pair<Int, List<Video>>>,
+    watchedIds: Set<String>,
+): Int? = seasons.firstOrNull { (season, episodes) ->
+    season != SpecialsSeason &&
+        episodes.isNotEmpty() &&
+        episodes.count { it.id in watchedIds } in 1 until episodes.size
+}?.first
+
 /** Regular episode ids covered by Simkl's own watched-episode list for this title. */
 internal fun simklWatchedIds(meta: Meta, watchedEpisodes: Set<Pair<Int, Int>>): Set<String> {
     if (watchedEpisodes.isEmpty()) return emptySet()

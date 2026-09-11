@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.feature.detail.components
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,6 +21,7 @@ import io.github.dimitrysaf.provenio.feature.detail.SpecialsSeason
 import io.github.dimitrysaf.provenio.feature.detail.firstRegularEpisode
 import io.github.dimitrysaf.provenio.feature.detail.firstUnwatchedEpisode
 import io.github.dimitrysaf.provenio.feature.detail.trackedEpisodeCount
+import io.github.dimitrysaf.provenio.player.PlaybackPosition
 import io.github.dimitrysaf.provenio.simkl.SimklPlaybackSession
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.resources.Res
@@ -45,8 +47,19 @@ fun WatchAction(
     meta: Meta,
     simklWatchedEpisodes: Set<Pair<Int, Int>>,
     resumeSession: SimklPlaybackSession?,
+    /** Locally saved positions, keyed by video id. These outrank Simkl's. */
+    positions: Map<String, PlaybackPosition>,
     onChooseSource: (String, Float?) -> Unit,
 ) {
+    // What this device was last part way through, film or episode. More recent and more
+    // exact than anything Simkl reports, so it decides both the button and where playback
+    // picks up; the player reads the same row again by video id when it starts.
+    val localResume = positions.entries
+        .filter { (id, _) -> id == meta.id || meta.videos.any { it.id == id } }
+        .maxByOrNull { it.value.updatedAtMillis }
+    val localEpisode = localResume?.let { entry -> meta.videos.firstOrNull { it.id == entry.key } }
+    val localIsThisFilm = localResume != null && localResume.key == meta.id
+
     // Only trusted once matched back to a video this title actually lists — a season and
     // episode number alone say nothing about whether the addon agrees they exist.
     val resumeEpisode = resumeSession?.episode?.let { ep ->
@@ -55,20 +68,22 @@ fun WatchAction(
     val isMovieResume = resumeSession != null && resumeSession.episode == null
     val resumeProgress = resumeSession?.progress?.takeIf { resumeEpisode != null || isMovieResume }
 
-    val next = resumeEpisode
+    val next = localEpisode
+        ?: resumeEpisode
         ?: meta.firstUnwatchedEpisode(simklWatchedEpisodes)
         ?: meta.firstRegularEpisode()
     // The season and episode numbers are padded before they are handed over, so the
     // translated string carries them as text and no locale reformats them into something
     // an episode label should not be.
+    val resuming = localEpisode != null || localIsThisFilm || resumeProgress != null
     val label = when {
-        resumeProgress != null && next?.season != null && next.episode != null ->
+        resuming && next?.season != null && next.episode != null ->
             stringResource(
                 Res.string.detail_resume_episode,
                 pad(next.season),
                 pad(next.episode),
             )
-        resumeProgress != null -> stringResource(Res.string.detail_resume_now)
+        resuming -> stringResource(Res.string.detail_resume_now)
         next?.season != null && next.episode != null ->
             stringResource(
                 Res.string.detail_watch_episode,
@@ -83,13 +98,25 @@ fun WatchAction(
     // which streams the addons are asked for.
     val playId = next?.id ?: meta.id
 
-    Button(
-        onClick = { onChooseSource(playId, resumeProgress) },
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-    ) {
-        Icon(Icons.Filled.PlayArrow, contentDescription = null)
-        Spacer(Modifier.width(8.dp))
-        Text(label)
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Button(
+            onClick = { onChooseSource(playId, resumeProgress) },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(Icons.Filled.PlayArrow, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(label)
+        }
+
+        // Only a film gets a bar here. An episode has its own row further down the page,
+        // and drawing the same progress twice on one screen reads as two things.
+        val filmProgress = localResume?.value?.fraction?.takeIf { localIsThisFilm && it > 0f }
+        if (filmProgress != null) {
+            LinearProgressIndicator(
+                progress = { filmProgress },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
+        }
     }
 }
 

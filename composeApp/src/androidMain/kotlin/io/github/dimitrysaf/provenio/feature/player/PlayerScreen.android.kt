@@ -114,6 +114,7 @@ import io.github.dimitrysaf.provenio.core.platform.MatchHostSystemBars
 import io.github.dimitrysaf.provenio.designsystem.theme.dynamicColorScheme
 import io.github.dimitrysaf.provenio.feature.detail.components.SourcesSheet
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
+import io.github.dimitrysaf.provenio.player.PlaybackPositionRepository
 import io.github.dimitrysaf.provenio.player.PlayerBackend
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.ScrobbleTarget
@@ -272,6 +273,13 @@ private fun BuiltinPlayer(
     }
 
     ImmersiveLandscapeEffect()
+    ResumeWhereItStopped(
+        player = player,
+        streamUrl = streamUrl,
+        videoId = videoId,
+        fallbackPercent = scrobbleTarget?.resumeProgressPercent,
+    )
+    PlaybackPositionRecorder(player = player, videoId = videoId)
 
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         AndroidView(
@@ -329,6 +337,79 @@ private fun BuiltinPlayer(
             info = error.toDebugInfo(url, stringResource(Res.string.player_no_message)),
             onDismiss = { playbackError = null },
         )
+    }
+}
+
+/**
+ * Starts a title where it was left off.
+ *
+ * The local position wins over [fallbackPercent], which is what Simkl last recorded: the
+ * local one is exact rather than a percentage, is written as recently as a few seconds
+ * ago, and exists whether or not anyone is signed in. Simkl's is the fallback for a title
+ * watched on another device.
+ *
+ * Seeks once per source. Doing it on every ready state would drag playback back to the
+ * resume point every time the swarm stalled long enough to rebuffer.
+ */
+@Composable
+private fun ResumeWhereItStopped(
+    player: ExoPlayer,
+    streamUrl: String,
+    videoId: String?,
+    fallbackPercent: Float?,
+) {
+    DisposableEffect(player, streamUrl, videoId, fallbackPercent) {
+        var seeked = false
+        val listener = object : Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                if (state != Player.STATE_READY || seeked) return
+                seeked = true
+
+                val saved = PlaybackPositionRepository.positionFor(videoId)
+                if (saved != null && saved.positionMillis > 0) {
+                    player.seekTo(saved.positionMillis)
+                    return
+                }
+
+                val duration = player.duration
+                if (fallbackPercent != null && fallbackPercent > 0f && duration > 0) {
+                    player.seekTo((duration * (fallbackPercent / 100f)).toLong())
+                }
+            }
+        }
+        player.addListener(listener)
+        onDispose { player.removeListener(listener) }
+    }
+}
+
+/**
+ * Keeps a local resume point for what is playing.
+ *
+ * Written on a timer rather than only on the way out, because the way out is not always
+ * taken: a process killed in the background, a battery running flat and a crash all skip
+ * every tidy-up path there is. A row written every few seconds costs one upsert and means
+ * the worst case is losing that handful of seconds rather than the whole position.
+ *
+ * Seeking is deliberately not a trigger of its own — the timer catches it within a few
+ * seconds, and writing on every scrub would hammer the database while a thumb is moving.
+ */
+@Composable
+private fun PlaybackPositionRecorder(player: ExoPlayer, videoId: String?) {
+    if (videoId == null) return
+
+    DisposableEffect(player, videoId) {
+        onDispose {
+            PlaybackPositionRepository.save(videoId, player.currentPosition, player.duration)
+        }
+    }
+
+    LaunchedEffect(player, videoId) {
+        while (true) {
+            delay(PositionSaveMillis)
+            if (player.isPlaying) {
+                PlaybackPositionRepository.save(videoId, player.currentPosition, player.duration)
+            }
+        }
     }
 }
 
@@ -519,7 +600,6 @@ private fun DebugRow(label: String, value: String) {
 @Composable
 private fun ScrobbleReporter(player: ExoPlayer, target: ScrobbleTarget) {
     DisposableEffect(player, target) {
-        var seeked = false
         var hasStarted = false
 
         fun progressPercent(): Float {
@@ -530,16 +610,6 @@ private fun ScrobbleReporter(player: ExoPlayer, target: ScrobbleTarget) {
         }
 
         val listener = object : Player.Listener {
-            override fun onPlaybackStateChanged(state: Int) {
-                if (state != Player.STATE_READY || seeked) return
-                seeked = true
-                val resumePercent = target.resumeProgressPercent
-                val duration = player.duration
-                if (resumePercent != null && resumePercent > 0f && duration > 0) {
-                    player.seekTo((duration * (resumePercent / 100f)).toLong())
-                }
-            }
-
             override fun onIsPlayingChanged(playing: Boolean) {
                 if (playing) {
                     hasStarted = true
@@ -1373,6 +1443,9 @@ private const val StreamTimeoutMillis = 60_000
 private const val SeekStepMillis = 10_000L
 private const val SeekBarPollMillis = 200L
 private const val AutoHideMillis = 3_500L
+
+/** How often the resume point is written while playing. */
+private const val PositionSaveMillis = 5_000L
 
 /** `m:ss`, or `h:mm:ss` once the video runs an hour or longer. */
 private fun formatPlaybackTime(millis: Long): String {

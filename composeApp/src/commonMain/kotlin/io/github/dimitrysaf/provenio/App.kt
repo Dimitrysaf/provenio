@@ -35,6 +35,7 @@ import io.github.dimitrysaf.provenio.navigation.DetailRoute
 import io.github.dimitrysaf.provenio.navigation.PlayerRoute
 import io.github.dimitrysaf.provenio.navigation.Routes
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
+import io.github.dimitrysaf.provenio.player.PlaybackPositionRepository
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.feature.player.PlayerScreen
 import io.github.dimitrysaf.provenio.player.ScrobbleTarget
@@ -94,6 +95,7 @@ fun App() {
         AddonRepository.load()
         P2pRepository.load()
         PlayerRepository.load()
+        PlaybackPositionRepository.load()
         SearchRepository.load()
         SimklSync.load()
         SimklRepository.load()

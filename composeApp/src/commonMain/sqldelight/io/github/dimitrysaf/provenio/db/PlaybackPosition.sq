@@ -1,0 +1,28 @@
+-- Where playback of a title was left off, kept locally so resuming works without Simkl.
+--
+-- Keyed by the addon's own video id: an imdb id for a film, "tt0108778:1:1" for an
+-- episode. Simkl also reports a position, but only for titles it knows, only while signed
+-- in, and only as a percentage refreshed on sync — this is the live one, written by the
+-- player as it goes, and it is what the resume point and the progress bars read.
+--
+-- A row is deleted rather than kept at 100%: a title watched to the end has nothing to
+-- resume and nothing worth drawing a bar for.
+CREATE TABLE playbackPosition (
+    videoId TEXT NOT NULL PRIMARY KEY,
+    positionMillis INTEGER NOT NULL,
+    durationMillis INTEGER NOT NULL,
+    updatedAtMillis INTEGER NOT NULL
+);
+
+selectAll:
+SELECT * FROM playbackPosition;
+
+save:
+INSERT OR REPLACE INTO playbackPosition(videoId, positionMillis, durationMillis, updatedAtMillis)
+VALUES (?, ?, ?, ?);
+
+delete:
+DELETE FROM playbackPosition WHERE videoId = ?;
+
+clearAll:
+DELETE FROM playbackPosition;

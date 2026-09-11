@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.feature.detail.SpecialsSeason
+import io.github.dimitrysaf.provenio.player.PlaybackPosition
 import io.github.dimitrysaf.provenio.stremio.model.Video
 import io.github.dimitrysaf.provenio.resources.Res
 import io.github.dimitrysaf.provenio.resources.detail_episode
@@ -49,7 +50,11 @@ import org.jetbrains.compose.resources.stringResource
 fun LazyListScope.seasonSection(
     seasons: List<Pair<Int, List<Video>>>,
     expanded: MutableState<Int>,
+    /** Called when the viewer opens a season themselves, so nothing reopens one later. */
+    onSeasonToggled: () -> Unit,
     watchedIds: Set<String>,
+    /** How far into each episode playback got, keyed by video id. Bars come from this. */
+    positions: Map<String, PlaybackPosition>,
     onChooseSource: (String) -> Unit,
     onToggleWatched: (Video) -> Unit,
 ) {
@@ -68,6 +73,7 @@ fun LazyListScope.seasonSection(
                 watched = episodes.count { it.id in watchedIds },
                 expanded = expanded.value == season,
                 onToggle = {
+                    onSeasonToggled()
                     expanded.value = if (expanded.value == season) -1 else season
                 },
             )
@@ -78,6 +84,7 @@ fun LazyListScope.seasonSection(
                     episodes.forEach { video ->
                         EpisodeRow(
                             video = video,
+                            progress = positions[video.id]?.fraction,
                             watched = video.id in watchedIds,
                             onClick = { onChooseSource(video.id) },
                             onToggleWatched = { onToggleWatched(video) },
@@ -119,6 +126,17 @@ private fun SeasonHeader(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            // A finished season says so with a tick rather than a full-width bar. A bar
+            // pinned at 100% on every season a viewer has ever completed is a row of
+            // identical lines carrying no information.
+            if (episodeCount > 0 && watched == episodeCount) {
+                Spacer(Modifier.width(8.dp))
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = stringResource(Res.string.watched),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
             Spacer(Modifier.width(8.dp))
             Icon(
                 imageVector = if (expanded) {
@@ -129,7 +147,9 @@ private fun SeasonHeader(
                 contentDescription = null,
             )
         }
-        if (watched > 0) {
+        // Only where the bar means something: part way through. Untouched seasons and
+        // finished ones both draw nothing here.
+        if (watched in 1 until episodeCount) {
             LinearProgressIndicator(
                 progress = { watched.toFloat() / episodeCount },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -142,65 +162,82 @@ private fun SeasonHeader(
 private fun EpisodeRow(
     video: Video,
     watched: Boolean,
+    /** 0..1 where playback stopped part way, null when there is nothing to resume. */
+    progress: Float?,
     onClick: () -> Unit,
     onToggleWatched: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
+    Column(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Row(
             modifier = Modifier
-                .width(110.dp)
-                .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (video.thumbnail != null) {
-                AsyncImage(
-                    model = video.thumbnail,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
+            Box(
+                modifier = Modifier
+                    .width(110.dp)
+                    .aspectRatio(16f / 9f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+            ) {
+                if (video.thumbnail != null) {
+                    AsyncImage(
+                        model = video.thumbnail,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
             }
-        }
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            val season = video.season
-            val episode = video.episode
-            if (season != null && episode != null) {
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                val season = video.season
+                val episode = video.episode
+                if (season != null && episode != null) {
+                    Text(
+                        text = "S${pad(season)} | E${pad(episode)}",
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                }
                 Text(
-                    text = "S${pad(season)} | E${pad(episode)}",
-                    style = MaterialTheme.typography.titleSmall,
+                    text = video.title ?: stringResource(Res.string.detail_episode),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
-            Text(
-                text = video.title ?: stringResource(Res.string.detail_episode),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Spacer(Modifier.width(8.dp))
+            // A dedicated touch target, nested inside the row's own click target. Compose
+            // resolves nested clickables front-to-back, so pressing the tick box toggles
+            // watched state instead of also opening the sources sheet underneath it.
+            IconButton(onClick = onToggleWatched) {
+                Icon(
+                    imageVector = if (watched) {
+                        Icons.Filled.CheckCircle
+                    } else {
+                        Icons.Outlined.CheckCircle
+                    },
+                    contentDescription = stringResource(
+                        if (watched) Res.string.watched else Res.string.not_watched,
+                    ),
+                    tint = if (watched) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+            }
         }
-        Spacer(Modifier.width(8.dp))
-        // A dedicated touch target, nested inside the row's own click target. Compose
-        // resolves nested clickables front-to-back, so pressing the tick box toggles
-        // watched state instead of also opening the sources sheet underneath it.
-        IconButton(onClick = onToggleWatched) {
-            Icon(
-                imageVector = if (watched) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
-                contentDescription = stringResource(
-                    if (watched) Res.string.watched else Res.string.not_watched,
-                ),
-                tint = if (watched) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
+        // Only for an episode stopped part way. A finished one has its tick and an untouched
+        // one has nothing to say, so a bar on either would be decoration.
+        if (progress != null && progress > 0f) {
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
             )
         }
     }

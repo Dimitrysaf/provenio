@@ -1,0 +1,9 @@
+-- Adds locally kept playback positions. Existing installs start with none, which reads as
+-- "nothing part way through" — the behaviour they already had, since resume came only from
+-- Simkl before this.
+CREATE TABLE IF NOT EXISTS playbackPosition (
+    videoId TEXT NOT NULL PRIMARY KEY,
+    positionMillis INTEGER NOT NULL,
+    durationMillis INTEGER NOT NULL,
+    updatedAtMillis INTEGER NOT NULL
+);

@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.platform.rememberUrlOpener
+import io.github.dimitrysaf.provenio.player.PlaybackPositionRepository
 import io.github.dimitrysaf.provenio.db.SimklItem
 import io.github.dimitrysaf.provenio.designsystem.components.BackdropWash
 import io.github.dimitrysaf.provenio.designsystem.components.backdropHeightFor
@@ -247,6 +248,10 @@ private fun MetaContent(
         .toList()
         .sortedWith(compareBy({ (season, _) -> season == SpecialsSeason }, { it.first }))
     val expanded = rememberSaveable { mutableStateOf(seasons.firstOrNull()?.first ?: 1) }
+    // Set once Simkl's watched list has landed, which it does after the page is already
+    // drawn — and never again after the viewer has opened a season themselves, since at
+    // that point they have said which one they want open.
+    var seasonChosenByViewer by rememberSaveable { mutableStateOf(false) }
 
     // Simkl only reports a watched/total count per show, refreshed whenever a sync lands,
     // so this re-checks it once on open and again whenever a sync finishes.
@@ -282,6 +287,19 @@ private fun MetaContent(
         }
         watched
     }
+
+    // The one a viewer is part way through is the one worth opening; failing that the
+    // first, which is what a series nobody has started should show.
+    LaunchedEffect(seasons, watchedIds, seasonChosenByViewer) {
+        if (seasonChosenByViewer) return@LaunchedEffect
+        expanded.value = inProgressSeason(seasons, watchedIds)
+            ?: seasons.firstOrNull()?.first
+            ?: return@LaunchedEffect
+    }
+    // How far into each episode or film this device got, so a part-watched entry shows a
+    // bar and the play button knows to say "resume".
+    val positions by PlaybackPositionRepository.positions.collectAsState()
+
     val onToggleWatched: (Video) -> Unit = { video ->
         EpisodeWatchedRepository.setWatched(meta.id, video, video.id !in watchedIds)
     }
@@ -298,7 +316,15 @@ private fun MetaContent(
         contentPadding = PaddingValues(top = topPadding),
     ) {
         item { DetailHeader(meta, backdropHeight, backdropAlpha, showBackdrop) }
-        item { WatchAction(meta, simklWatchedEpisodes, resumeSession, onChooseSource) }
+        item {
+            WatchAction(
+                meta = meta,
+                simklWatchedEpisodes = simklWatchedEpisodes,
+                resumeSession = resumeSession,
+                positions = positions,
+                onChooseSource = onChooseSource,
+            )
+        }
         if (authState is SimklAuthState.SignedIn) {
             item {
                 WatchlistAction(
@@ -326,7 +352,9 @@ private fun MetaContent(
         seasonSection(
             seasons = seasons,
             expanded = expanded,
+            onSeasonToggled = { seasonChosenByViewer = true },
             watchedIds = watchedIds,
+            positions = positions,
             onChooseSource = { videoId -> onChooseSource(videoId, null) },
             onToggleWatched = onToggleWatched,
         )
