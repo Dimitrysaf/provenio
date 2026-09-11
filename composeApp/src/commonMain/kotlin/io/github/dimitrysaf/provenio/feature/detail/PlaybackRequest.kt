@@ -11,6 +11,8 @@ data class PlaybackRequest(
     val imdbId: String,
     /** What the player puts in its title bar: the show or film, and the episode if any. */
     val title: String? = null,
+    /** The add-on's own id for this video, so the player can ask for its sources again. */
+    val videoId: String? = null,
     val episodeTitle: String? = null,
     val season: Int? = null,
     val episode: Int? = null,

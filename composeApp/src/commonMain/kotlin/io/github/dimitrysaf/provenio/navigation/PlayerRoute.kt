@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
 data class PlayerRoute(
     val url: String,
     val title: String? = null,
+    val videoId: String? = null,
     val episodeTitle: String? = null,
     val mediaType: String? = null,
     val imdbId: String? = null,

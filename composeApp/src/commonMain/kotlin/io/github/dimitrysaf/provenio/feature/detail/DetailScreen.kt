@@ -214,6 +214,7 @@ fun DetailScreen(
                         type = currentMeta?.type ?: type,
                         imdbId = currentMeta?.id ?: id,
                         title = currentMeta?.name,
+                        videoId = openFor.videoId,
                         episodeTitle = video?.title,
                         season = video?.season,
                         episode = video?.episode,

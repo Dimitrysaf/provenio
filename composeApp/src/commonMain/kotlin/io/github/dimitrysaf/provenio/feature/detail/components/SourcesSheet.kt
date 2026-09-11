@@ -78,6 +78,7 @@ import io.github.dimitrysaf.provenio.resources.sources_nothing_matches
 import io.github.dimitrysaf.provenio.resources.sources_nothing_matches_body
 import io.github.dimitrysaf.provenio.resources.sources_p2p_failed
 import io.github.dimitrysaf.provenio.resources.sources_quality_filter
+import io.github.dimitrysaf.provenio.resources.player_close
 import io.github.dimitrysaf.provenio.resources.sources_refresh
 import io.github.dimitrysaf.provenio.resources.sources_search
 import io.github.dimitrysaf.provenio.resources.sources_title
@@ -111,6 +112,37 @@ fun SourcesSheet(
     onPlay: (SourceOption) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    SourcesSheetContent(
+        type = type,
+        id = id,
+        title = title,
+        onDismiss = onDismiss,
+        onPlay = onPlay,
+    ) { content ->
+        container { content() }
+    }
+}
+
+/**
+ * The list itself, independent of what is holding it.
+ *
+ * [container] is what wraps it — a modal sheet on the details page, a side column beside
+ * the video in the player. Everything else is identical, so the two hosts share one
+ * implementation rather than drifting apart.
+ *
+ * [onClose] adds an explicit close button to the header. A side sheet has no drag handle
+ * to dismiss it with, so it needs one; a modal sheet does not, and passes null.
+ */
+@Composable
+fun SourcesSheetContent(
+    type: String,
+    id: String,
+    title: String?,
+    onDismiss: () -> Unit,
+    onPlay: (SourceOption) -> Unit,
+    onClose: (() -> Unit)? = null,
+    container: @Composable (@Composable () -> Unit) -> Unit,
+) {
     val groups = remember { mutableStateListOf<AddonSources>() }
     val collapsed = remember { mutableStateMapOf<String, Boolean>() }
 
@@ -247,6 +279,14 @@ fun SourcesSheet(
                         Icons.Outlined.Refresh,
                         contentDescription = stringResource(Res.string.sources_refresh),
                     )
+                }
+                if (onClose != null) {
+                    IconButton(onClick = onClose) {
+                        Icon(
+                            Icons.Filled.Close,
+                            contentDescription = stringResource(Res.string.player_close),
+                        )
+                    }
                 }
             }
             // One flat field above the list, so it applies to every section. No outline

@@ -23,6 +23,7 @@ actual fun PlayerScreen(
     onBack: () -> Unit,
     modifier: Modifier,
     title: String?,
+    videoId: String?,
     season: Int?,
     episode: Int?,
     episodeTitle: String?,

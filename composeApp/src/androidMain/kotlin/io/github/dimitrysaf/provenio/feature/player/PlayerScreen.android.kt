@@ -7,6 +7,8 @@ import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -49,6 +51,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -61,6 +64,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -106,6 +110,7 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
 import io.github.dimitrysaf.provenio.designsystem.theme.dynamicColorScheme
+import io.github.dimitrysaf.provenio.feature.detail.components.SourcesSheetContent
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlayerBackend
 import io.github.dimitrysaf.provenio.player.PlayerRepository
@@ -155,6 +160,7 @@ actual fun PlayerScreen(
     onBack: () -> Unit,
     modifier: Modifier,
     title: String?,
+    videoId: String?,
     season: Int?,
     episode: Int?,
     episodeTitle: String?,
@@ -170,6 +176,7 @@ actual fun PlayerScreen(
             onBack = onBack,
             modifier = modifier,
             title = title,
+            videoId = videoId,
             season = season,
             episode = episode,
             episodeTitle = episodeTitle,
@@ -185,6 +192,7 @@ private fun BuiltinPlayer(
     onBack: () -> Unit,
     modifier: Modifier,
     title: String?,
+    videoId: String?,
     season: Int?,
     episode: Int?,
     episodeTitle: String?,
@@ -222,10 +230,14 @@ private fun BuiltinPlayer(
     }
     var playbackError by remember { mutableStateOf<PlaybackException?>(null) }
     var resizeMode by remember { mutableIntStateOf(AspectRatioFrameLayout.RESIZE_MODE_FIT) }
+    var sourcesOpen by remember { mutableStateOf(false) }
+    // The stream the player is on, which starts as the one navigated to and changes when
+    // a different source is picked from the side sheet.
+    var streamUrl by remember(url) { mutableStateOf(url) }
 
-    DisposableEffect(url) {
+    DisposableEffect(streamUrl) {
         playbackError = null
-        player.setMediaItem(MediaItem.fromUri(url))
+        player.setMediaItem(MediaItem.fromUri(streamUrl))
         player.prepare()
         player.playWhenReady = true
 
@@ -246,32 +258,63 @@ private fun BuiltinPlayer(
 
     ImmersiveLandscapeEffect()
 
-    Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { viewContext ->
-                PlayerView(viewContext).apply {
-                    this.player = player
-                    // media3's own overlay is switched off entirely; PlayerControls below
-                    // draws the whole thing in Compose instead, sharing the app's own
-                    // theme and touch targets rather than the stock media3 skin.
-                    useController = false
-                }
-            },
-            update = { it.resizeMode = resizeMode },
-        )
-        PlayerChrome {
-            PlayerControls(
-                player = player,
-                onBack = onBack,
-                streamUrl = url,
-                title = title,
-                season = season,
-                episode = episode,
-                episodeTitle = episodeTitle,
-                resizeMode = resizeMode,
-                onResizeMode = { resizeMode = it },
+    // Two columns, as YouTube does it in landscape: the sheet does not float over the
+    // video, it takes its own space and the picture gives way. Nothing is ever hidden
+    // behind the panel that way, and the controls stay reachable beside it.
+    Row(modifier = modifier.fillMaxSize().background(Color.Black)) {
+        Box(modifier = Modifier.weight(1f).fillMaxSize()) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { viewContext ->
+                    PlayerView(viewContext).apply {
+                        this.player = player
+                        // media3's own overlay is switched off entirely; PlayerControls
+                        // below draws the whole thing in Compose instead, sharing the
+                        // app's own theme and touch targets rather than the stock skin.
+                        useController = false
+                    }
+                },
+                update = { it.resizeMode = resizeMode },
             )
+            PlayerChrome {
+                PlayerControls(
+                    player = player,
+                    onBack = onBack,
+                    streamUrl = streamUrl,
+                    title = title,
+                    season = season,
+                    episode = episode,
+                    episodeTitle = episodeTitle,
+                    resizeMode = resizeMode,
+                    onResizeMode = { resizeMode = it },
+                    onOpenSources = if (videoId != null) {
+                        { sourcesOpen = true }
+                    } else {
+                        null
+                    },
+                )
+            }
+        }
+        AnimatedVisibility(
+            visible = sourcesOpen && videoId != null,
+            enter = expandHorizontally(expandFrom = Alignment.Start),
+            exit = shrinkHorizontally(shrinkTowards = Alignment.Start),
+        ) {
+            PlayerChrome {
+                SideSheet {
+                    SourcesSheetContent(
+                        type = scrobbleTarget?.mediaType ?: MovieType,
+                        id = videoId.orEmpty(),
+                        title = title,
+                        onDismiss = { sourcesOpen = false },
+                        onPlay = { source ->
+                            source.playableUrl?.let { streamUrl = it }
+                            sourcesOpen = false
+                        },
+                        onClose = { sourcesOpen = false },
+                    ) { content -> content() }
+                }
+            }
         }
         if (scrobbleTarget != null) {
             ScrobbleReporter(player = player, target = scrobbleTarget)
@@ -283,6 +326,24 @@ private fun BuiltinPlayer(
             info = error.toDebugInfo(url, stringResource(Res.string.player_no_message)),
             onDismiss = { playbackError = null },
         )
+    }
+}
+
+/**
+ * A standard side sheet: it sits beside the video rather than over it, so it is opaque
+ * and takes its own width. No drag handle — the content carries a close button instead,
+ * because a sheet that is part of the layout has no gesture to be dismissed by.
+ */
+@Composable
+private fun SideSheet(content: @Composable () -> Unit) {
+    Surface(
+        modifier = Modifier.width(SideSheetWidth).fillMaxSize(),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+    ) {
+        Column(modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
+            HorizontalDivider()
+            content()
+        }
     }
 }
 
@@ -512,6 +573,7 @@ private fun PlayerControls(
     episodeTitle: String?,
     resizeMode: Int,
     onResizeMode: (Int) -> Unit,
+    onOpenSources: (() -> Unit)?,
 ) {
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
     var playbackState by remember { mutableStateOf(player.playbackState) }
@@ -669,6 +731,7 @@ private fun PlayerControls(
                         player.trackSelectionParameters = builder.build()
                     },
                     onLock = { locked = true },
+                    onOpenSources = onOpenSources,
                     modifier = Modifier.align(Alignment.BottomStart),
                 )
             }
@@ -822,6 +885,7 @@ private fun BottomRows(
     tracks: Tracks,
     onSelectTrack: (Int, TrackSelectionOverride?) -> Unit,
     onLock: () -> Unit,
+    onOpenSources: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val maxValue = duration.coerceAtLeast(1L).toFloat()
@@ -867,7 +931,7 @@ private fun BottomRows(
                 onSelectTrack = onSelectTrack,
                 onLock = onLock,
             )
-            LibraryGroup()
+            LibraryGroup(onOpenSources = onOpenSources)
         }
     }
 }
@@ -1019,15 +1083,15 @@ private fun ViewingGroup(
 
 /** Where else this could be played from, and what is next. Both still inert. */
 @Composable
-private fun LibraryGroup() {
+private fun LibraryGroup(onOpenSources: (() -> Unit)?) {
     ConnectedButtonGroup(count = 2) { index, shape ->
         if (index == 0) {
             GroupButton(
                 icon = Icons.Filled.VideoLibrary,
                 description = stringResource(Res.string.player_sources),
                 shape = shape,
-                onClick = {},
-                enabled = false,
+                onClick = { onOpenSources?.invoke() },
+                enabled = onOpenSources != null,
             )
         } else {
             GroupButton(
@@ -1216,6 +1280,12 @@ private val PausedCorner = 16.dp
 private val PlayIconSize = 26.dp
 private val SkipIconSize = 24.dp
 private val GroupButtonSize = 40.dp
+
+/** Wide enough for a source's name and badges without starving the picture. */
+private val SideSheetWidth = 340.dp
+
+/** What a stream is when nothing said otherwise — matches the add-on protocol's types. */
+private const val MovieType = "movie"
 
 // Dark enough to carry an icon, sheer enough to keep the frame behind it.
 private const val GroupContainerAlpha = 0.45f
