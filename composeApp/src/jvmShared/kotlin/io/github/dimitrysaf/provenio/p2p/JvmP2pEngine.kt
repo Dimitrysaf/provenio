@@ -42,6 +42,7 @@ class JvmP2pEngine : P2pEngine {
                 cacheUsedBytes = torrents.cacheBytes(),
             )
         } catch (conflict: BindException) {
+            p2pLog("port ${settings.listenPort} already in use")
             stopQuietly()
             _status.value = P2pStatus(
                 state = P2pServiceState.Offline,
@@ -49,6 +50,7 @@ class JvmP2pEngine : P2pEngine {
                 localAddresses = localNetworkAddresses(),
             )
         } catch (failure: Exception) {
+            p2pLog("engine failed to start: $failure")
             stopQuietly()
             _status.value = P2pStatus(
                 state = P2pServiceState.Offline,
@@ -85,11 +87,19 @@ class JvmP2pEngine : P2pEngine {
      * mysterious playback error.
      */
     override suspend fun streamUrl(request: TorrentRequest): String? {
-        val stream = server ?: return null
-        if (!torrents.isRunning) return null
+        val stream = server
+        if (stream == null || !torrents.isRunning) {
+            p2pLog("cannot stream: engine is not running")
+            return null
+        }
         val key = torrents.register(request)
-        torrents.open(key) ?: return null
-        return stream.urlFor(key)
+        if (torrents.open(key) == null) {
+            p2pLog("no stream for $key — giving up")
+            return null
+        }
+        val url = stream.urlFor(key)
+        p2pLog("ready: $url")
+        return url
     }
 
     private companion object {

@@ -44,6 +44,7 @@ class LocalStreamServer(
                     // when the URL was handed out, so this is a map lookup and the
                     // response headers go out immediately.
                     val key = call.parameters["key"]
+                    p2pLog("GET /stream/$key range=${call.request.header(HttpHeaders.Range)}")
                     val stream = key?.let { torrents.open(it) }
                     if (stream == null) {
                         // The engine was stopped underneath us, or this URL outlived the
@@ -61,6 +62,7 @@ class LocalStreamServer(
         engine.start(wait = false)
         server = engine
         port = engine.engine.resolvedConnectors().first().port
+        p2pLog("loopback server listening on $LoopbackHost:$port")
         return port
     }
 
@@ -95,6 +97,7 @@ class LocalStreamServer(
             call.response.header(HttpHeaders.ContentRange, "bytes $start-$endInclusive/$total")
         }
 
+        p2pLog("serving bytes $start-$endInclusive of $total")
         call.respondOutputStream(
             contentType = ContentType.Application.OctetStream,
             status = if (requested != null) HttpStatusCode.PartialContent else HttpStatusCode.OK,

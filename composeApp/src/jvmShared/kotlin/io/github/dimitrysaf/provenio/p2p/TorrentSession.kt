@@ -40,10 +40,16 @@ class TorrentSession(private val cacheDir: File) {
         if (session.isRunning) return
         current = settings
         cacheDir.mkdirs()
+        p2pLog(
+            "session starting: port=${settings.listenPort} profile=${settings.profile} " +
+                "upload=${settings.uploadEnabled} cache=${settings.cacheSize} dir=$cacheDir",
+        )
         session.start(SessionParams(settingsFor(settings)))
+        p2pLog("session started: running=${session.isRunning}")
     }
 
     fun stop() {
+        p2pLog("session stopping")
         streams.values.forEach { it.release() }
         streams.clear()
         requests.clear()
@@ -67,6 +73,11 @@ class TorrentSession(private val cacheDir: File) {
     fun register(request: TorrentRequest): String {
         val key = request.infoHash.trim().lowercase()
         requests[key] = request.copy(infoHash = key)
+        val trackers = request.sources.count { it.startsWith("tracker:") }
+        p2pLog(
+            "registered $key: trackers=$trackers of ${request.sources.size} sources, " +
+                "fileIndex=${request.fileIndex}",
+        )
         return key
     }
 
@@ -89,15 +100,37 @@ class TorrentSession(private val cacheDir: File) {
 
             evictTo(current.cacheSize.bytes)
 
+            val magnet = magnetUriOf(request)
+            p2pLog("fetching metadata for $key (up to ${MetadataTimeoutSeconds}s)")
+            p2pLog("magnet: $magnet")
+
+            val startedAt = System.currentTimeMillis()
             val data = runCatching {
-                session.fetchMagnet(magnetUriOf(request), MetadataTimeoutSeconds, cacheDir)
-            }.getOrNull() ?: return@withContext null
+                session.fetchMagnet(magnet, MetadataTimeoutSeconds, cacheDir)
+            }.onFailure { p2pLog("fetchMagnet threw: $it") }.getOrNull()
+            val elapsed = (System.currentTimeMillis() - startedAt) / 1000
 
-            val info = runCatching { TorrentInfo.bdecode(data) }.getOrNull()
-                ?: return@withContext null
+            if (data == null) {
+                p2pLog("no metadata after ${elapsed}s — no seeds answered, or the magnet is bad")
+                return@withContext null
+            }
+            p2pLog("metadata: ${data.size} bytes in ${elapsed}s")
 
+            val info = runCatching { TorrentInfo.bdecode(data) }
+                .onFailure { p2pLog("could not decode metadata: $it") }
+                .getOrNull() ?: return@withContext null
+
+            p2pLog(
+                "torrent \"${info.name()}\": " +
+                    "files=${info.numFiles()} pieces=${info.numPieces()}",
+            )
             session.download(info, cacheDir)
-            val handle = session.find(info.infoHash()) ?: return@withContext null
+
+            val handle = session.find(info.infoHash())
+            if (handle == null) {
+                p2pLog("torrent added but no handle came back")
+                return@withContext null
+            }
 
             val stream = StreamingTorrent(
                 handle = handle,
@@ -106,6 +139,7 @@ class TorrentSession(private val cacheDir: File) {
                 preferredFileIndex = request.fileIndex,
             )
             stream.prepare()
+            p2pLog("streaming \"${stream.fileName}\" (${stream.length} bytes)")
             streams[key] = stream
             stream
         }

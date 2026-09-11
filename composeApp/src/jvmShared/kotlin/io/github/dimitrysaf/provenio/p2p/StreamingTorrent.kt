@@ -126,8 +126,22 @@ class StreamingTorrent(
     private suspend fun awaitPiece(piece: Int) {
         if (handle.havePiece(piece)) return
         urgent(piece, DeadlineNowMillis)
+
+        val startedAt = System.currentTimeMillis()
         while (handle.isValid && !handle.havePiece(piece)) {
             delay(PollIntervalMillis)
+        }
+
+        // Only the waits worth knowing about. A piece that arrives promptly is the normal
+        // case and logging it would bury everything else.
+        val waited = System.currentTimeMillis() - startedAt
+        if (waited > SlowPieceMillis) {
+            val status = handle.status()
+            p2pLog(
+                "piece $piece took ${waited}ms " +
+                    "(peers=${status.numPeers()} seeds=${status.numSeeds()} " +
+                    "down=${status.downloadRate()}B/s)",
+            )
         }
     }
 
@@ -159,6 +173,7 @@ class StreamingTorrent(
         const val DeadlineNowMillis = 0
         const val DeadlineStepMillis = 300
         const val MaxEmptyReads = 200
+        const val SlowPieceMillis = 1_000L
     }
 }
 
