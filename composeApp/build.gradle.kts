@@ -65,7 +65,10 @@ kotlin {
         val jvmShared by creating {
             dependsOn(commonMain.get())
             dependencies {
-                implementation(libs.bt.core)
+                // The Java API only. Each target adds the native library for its own
+                // platform below — they are separate artifacts and pulling them all in
+                // would ship every architecture to every target.
+                implementation(libs.libtorrent4j)
                 implementation(libs.ktor.server.core)
                 implementation(libs.ktor.server.cio)
             }
@@ -79,6 +82,10 @@ kotlin {
             implementation(libs.media3.ui)
             implementation(libs.nextlib.media3ext)
             implementation(libs.sqldelight.android.driver)
+            // x86 (32-bit) is omitted: it is emulator-only and long deprecated.
+            implementation(libs.libtorrent4j.android.arm64)
+            implementation(libs.libtorrent4j.android.arm)
+            implementation(libs.libtorrent4j.android.x64)
         }
         val desktopMain by getting
         desktopMain.dependsOn(jvmShared)
@@ -86,6 +93,11 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.sqldelight.sqlite.driver)
+            // All three, because a desktop jar is not built per operating system the way
+            // an APK is built per architecture; libtorrent4j loads only the one it needs.
+            implementation(libs.libtorrent4j.linux)
+            implementation(libs.libtorrent4j.windows)
+            implementation(libs.libtorrent4j.macos)
         }
     }
 }

@@ -61,9 +61,9 @@ object P2pRepository {
      * Callers do not need to know whether that is because the feature is off, the user has
      * not consented, or no engine is bundled. They only need to know they have no URL.
      */
-    suspend fun streamUrl(infoHash: String): String? {
+    suspend fun streamUrl(request: TorrentRequest): String? {
         if (!_settings.value.canRun) return null
-        return engine.streamUrl(infoHash)
+        return engine.streamUrl(request)
     }
 
     fun clearCache() {
@@ -80,8 +80,11 @@ object P2pRepository {
         when {
             !next.canRun && previous.canRun -> stop()
             next.canRun && !previous.canRun -> start()
-            // Already running and something it depends on changed: restart to apply it.
-            next.canRun -> restart()
+            // A rebind is only needed when the port itself moved. Everything else is
+            // applied in place, because restarting would invalidate the loopback URL the
+            // player may already be reading from.
+            next.canRun && next.listenPort != previous.listenPort -> restart()
+            next.canRun -> apply()
         }
     }
 
@@ -91,6 +94,10 @@ object P2pRepository {
 
     private fun stop() {
         scope.launch { engine.stop() }
+    }
+
+    private fun apply() {
+        scope.launch { engine.apply(_settings.value) }
     }
 
     private fun restart() {

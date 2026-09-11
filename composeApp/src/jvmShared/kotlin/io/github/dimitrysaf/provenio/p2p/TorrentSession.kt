@@ -1,0 +1,183 @@
+package io.github.dimitrysaf.provenio.p2p
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.libtorrent4j.SessionManager
+import org.libtorrent4j.SessionParams
+import org.libtorrent4j.SettingsPack
+import org.libtorrent4j.TorrentInfo
+import java.io.File
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * The libtorrent session, and the torrents currently being streamed from it.
+ *
+ * Nothing here is started on its own — [P2pRepository] decides when the engine may run,
+ * and this only does what it is told. What it does own is the mapping from an addon's info
+ * hash to a live torrent, because the player asks for a URL long before it asks for bytes
+ * and the two have to find each other again in between.
+ */
+class TorrentSession(private val cacheDir: File) {
+
+    private val session = SessionManager()
+
+    /** Info hash to the magnet it came from, so a stream can be opened on first request. */
+    private val requests = ConcurrentHashMap<String, TorrentRequest>()
+
+    /** Info hash to the torrent being read, once metadata has arrived. */
+    private val streams = ConcurrentHashMap<String, StreamingTorrent>()
+
+    /** Guards the add-a-torrent path, which must not run twice for the same info hash. */
+    private val lock = Any()
+
+    /** The settings the session is currently running under. */
+    @Volatile
+    private var current: P2pSettings = P2pSettings()
+
+    val isRunning: Boolean get() = session.isRunning
+
+    fun start(settings: P2pSettings) {
+        if (session.isRunning) return
+        current = settings
+        cacheDir.mkdirs()
+        session.start(SessionParams(settingsFor(settings)))
+    }
+
+    fun stop() {
+        streams.values.forEach { it.release() }
+        streams.clear()
+        requests.clear()
+        if (session.isRunning) session.stop()
+    }
+
+    /** Re-applies settings that can change without tearing the session down. */
+    fun apply(settings: P2pSettings) {
+        current = settings
+        if (session.isRunning) session.applySettings(settingsFor(settings))
+    }
+
+    /**
+     * Remembers a torrent so [open] can find it later, and answers with the key the URL
+     * is built from.
+     *
+     * Deliberately does no network work: this runs while the user is still looking at the
+     * sources sheet, and fetching metadata here would freeze that sheet for as long as the
+     * swarm takes to answer.
+     */
+    fun register(request: TorrentRequest): String {
+        val key = request.infoHash.trim().lowercase()
+        requests[key] = request.copy(infoHash = key)
+        return key
+    }
+
+    /**
+     * The torrent for [key], fetching its metadata on first use.
+     *
+     * Blocking, and deliberately so — it is called from a request handler that has nothing
+     * to do until the metadata lands, and the player is already waiting on the response.
+     */
+    suspend fun open(key: String): StreamingTorrent? = withContext(Dispatchers.IO) {
+        streams[key]?.let { return@withContext it }
+        val request = requests[key] ?: return@withContext null
+        if (!session.isRunning) return@withContext null
+
+        // Two range requests for the same torrent almost always arrive together, and
+        // adding it twice would fetch the metadata twice. Nothing inside suspends — the
+        // libtorrent calls block — so holding a plain lock across them is safe.
+        synchronized(lock) {
+            streams[key]?.let { return@withContext it }
+
+            evictTo(current.cacheSize.bytes)
+
+            val data = runCatching {
+                session.fetchMagnet(magnetUriOf(request), MetadataTimeoutSeconds, cacheDir)
+            }.getOrNull() ?: return@withContext null
+
+            val info = runCatching { TorrentInfo.bdecode(data) }.getOrNull()
+                ?: return@withContext null
+
+            session.download(info, cacheDir)
+            val handle = session.find(info.infoHash()) ?: return@withContext null
+
+            val stream = StreamingTorrent(
+                handle = handle,
+                info = info,
+                savePath = cacheDir.absolutePath,
+                preferredFileIndex = request.fileIndex,
+            )
+            stream.prepare()
+            streams[key] = stream
+            stream
+        }
+    }
+
+    /** Bytes currently held on disk by torrent data. */
+    fun cacheBytes(): Long = cacheDir.walkBottomUp().filter { it.isFile }.sumOf { it.length() }
+
+    /** Drops every cached piece, and returns how much was reclaimed. */
+    fun clearCache(): Long {
+        val before = cacheBytes()
+        streams.values.forEach { it.release() }
+        streams.clear()
+        cacheDir.listFiles()?.forEach { it.deleteRecursively() }
+        cacheDir.mkdirs()
+        return before - cacheBytes()
+    }
+
+    /**
+     * Keeps the cache under its limit by deleting the least recently touched entries
+     * first. A limit of zero means the user asked for no caching at all.
+     */
+    private fun evictTo(limitBytes: Long) {
+        val entries = cacheDir.listFiles()?.toMutableList() ?: return
+        var total = cacheBytes()
+        if (total <= limitBytes) return
+
+        entries.sortBy { it.lastModified() }
+        for (entry in entries) {
+            if (total <= limitBytes) break
+            val size = entry.walkBottomUp().filter { it.isFile }.sumOf { it.length() }
+            if (entry.deleteRecursively()) total -= size
+        }
+    }
+
+    private fun settingsFor(settings: P2pSettings): SettingsPack {
+        val pack = SettingsPack()
+
+        // 0 is "ask the operating system for a free port", which is also libtorrent's
+        // default, so it is left alone rather than pinned to something arbitrary.
+        if (settings.listenPort != 0) {
+            pack.listenInterfaces("0.0.0.0:${settings.listenPort},[::]:${settings.listenPort}")
+        }
+
+        // libtorrent reads a rate limit of 0 as unlimited, so switching uploading off is
+        // the smallest non-zero rate rather than zero. A swarm still needs the occasional
+        // byte back or peers stop answering.
+        pack.uploadRateLimit(if (settings.uploadEnabled) UnlimitedRate else MinimalUploadRate)
+
+        pack.connectionsLimit(settings.profile.connections)
+        pack.activeDownloads(settings.profile.activeDownloads)
+        return pack
+    }
+
+    private companion object {
+        const val MetadataTimeoutSeconds = 60
+        const val UnlimitedRate = 0
+        const val MinimalUploadRate = 1
+    }
+}
+
+/** How hard to work the network. More connections find peers faster and cost more battery. */
+private val TorrentProfile.connections: Int
+    get() = when (this) {
+        TorrentProfile.Slow -> 40
+        TorrentProfile.Balanced -> 120
+        TorrentProfile.Fast -> 300
+    }
+
+private val TorrentProfile.activeDownloads: Int
+    get() = when (this) {
+        TorrentProfile.Slow -> 1
+        TorrentProfile.Balanced -> 3
+        TorrentProfile.Fast -> 6
+    }

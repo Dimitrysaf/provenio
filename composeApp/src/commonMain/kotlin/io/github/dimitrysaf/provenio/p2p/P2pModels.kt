@@ -55,6 +55,20 @@ enum class P2pServiceState(val label: StringResource) {
     Online(Res.string.p2p_state_online),
 }
 
+/**
+ * A torrent as an addon described it.
+ *
+ * Addons hand over an info hash rather than a magnet, usually with the trackers they know
+ * about and sometimes with the index of the file they mean. All three are worth carrying:
+ * the trackers save waiting on the DHT, and the index saves guessing which of the files in
+ * a release is the feature.
+ */
+data class TorrentRequest(
+    val infoHash: String,
+    val sources: List<String> = emptyList(),
+    val fileIndex: Int? = null,
+)
+
 /** Live engine readings. All zeroed while the service is not running. */
 data class P2pStatus(
     val state: P2pServiceState = P2pServiceState.Disabled,

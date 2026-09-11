@@ -17,19 +17,28 @@ interface P2pEngine {
 
     suspend fun start(settings: P2pSettings)
 
+    /**
+     * Applies settings to a running engine.
+     *
+     * Separate from a restart because a restart rebinds the local server, and any URL the
+     * player was already given points at the old one. Anything that can be changed without
+     * that — rates, connection limits, cache size — belongs here.
+     */
+    suspend fun apply(settings: P2pSettings)
+
     suspend fun stop()
 
     /** Drops cached piece data. Returns the number of bytes reclaimed. */
     suspend fun clearCache(): Long
 
     /**
-     * Registers a magnet and returns the localhost URL to play.
+     * Registers a torrent and returns the localhost URL to play.
      *
      * The URL is the whole contract between the engine and the player. A player cannot
      * tell one of these apart from any other HTTP source, which is what lets the two
      * platforms launch the engine differently without changing anything above them.
      */
-    suspend fun streamUrl(magnet: String): String?
+    suspend fun streamUrl(request: TorrentRequest): String?
 }
 
 /**
@@ -52,13 +61,15 @@ class UnavailableP2pEngine : P2pEngine {
         )
     }
 
+    override suspend fun apply(settings: P2pSettings) = Unit
+
     override suspend fun stop() {
         _status.value = P2pStatus()
     }
 
     override suspend fun clearCache(): Long = 0L
 
-    override suspend fun streamUrl(magnet: String): String? = null
+    override suspend fun streamUrl(request: TorrentRequest): String? = null
 }
 
 /** The engine for this platform. */

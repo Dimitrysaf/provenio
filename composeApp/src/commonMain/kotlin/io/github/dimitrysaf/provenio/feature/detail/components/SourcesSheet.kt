@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.p2p.P2pConsentDialog
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
+import io.github.dimitrysaf.provenio.p2p.TorrentRequest
 import io.github.dimitrysaf.provenio.p2p.canRun
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.InstalledAddon
@@ -160,7 +161,13 @@ fun SourcesSheet(
         val infoHash = source.stream.infoHash ?: return
         resolving = true
         scope.launch {
-            val url = P2pRepository.streamUrl(infoHash)
+            val url = P2pRepository.streamUrl(
+                TorrentRequest(
+                    infoHash = infoHash,
+                    sources = source.stream.sources,
+                    fileIndex = source.stream.fileIdx,
+                ),
+            )
             resolving = false
             if (url != null) {
                 onPlay(source.copy(resolvedUrl = url))
