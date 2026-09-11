@@ -322,4 +322,8 @@
     <string name="player_episodes">Επεισόδια</string>
     <string name="player_track_off">Ανενεργό</string>
     <string name="player_stats_progress">Ληφθέν</string>
+    <string name="player_stats_seed">Διαμ.</string>
+    <string name="player_stats_peer">Ομότ.</string>
+    <string name="player_stats_down">Λήψη</string>
+    <string name="player_stats_up">Αποστ.</string>
 </resources>

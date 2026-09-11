@@ -322,4 +322,8 @@
     <string name="player_episodes">Episodes</string>
     <string name="player_track_off">Off</string>
     <string name="player_stats_progress">Downloaded</string>
+    <string name="player_stats_seed">Seed</string>
+    <string name="player_stats_peer">Peer</string>
+    <string name="player_stats_down">Down</string>
+    <string name="player_stats_up">Up</string>
 </resources>

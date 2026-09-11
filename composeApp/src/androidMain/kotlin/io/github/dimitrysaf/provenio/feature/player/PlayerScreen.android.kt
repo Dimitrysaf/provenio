@@ -6,6 +6,7 @@ import android.net.Uri
 import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -31,17 +32,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.Cast
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.ClosedCaption
-import androidx.compose.material.icons.filled.Downloading
 import androidx.compose.material.icons.filled.Forward5
-import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.PlaylistPlay
@@ -52,8 +48,9 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
@@ -140,12 +137,13 @@ import io.github.dimitrysaf.provenio.resources.player_forward_5
 import io.github.dimitrysaf.provenio.resources.player_lock
 import io.github.dimitrysaf.provenio.resources.player_sources
 import io.github.dimitrysaf.provenio.resources.player_speed
-import io.github.dimitrysaf.provenio.resources.player_stats_downloaded
+import io.github.dimitrysaf.provenio.resources.player_stats_down
+import io.github.dimitrysaf.provenio.resources.player_stats_peer
+import io.github.dimitrysaf.provenio.resources.player_stats_seed
+import io.github.dimitrysaf.provenio.resources.player_stats_up
 import io.github.dimitrysaf.provenio.resources.player_subtitles
 import io.github.dimitrysaf.provenio.resources.player_track_off
 import io.github.dimitrysaf.provenio.resources.player_unlock
-import io.github.dimitrysaf.provenio.resources.player_stats_peers
-import io.github.dimitrysaf.provenio.resources.player_stats_seeds
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
@@ -732,6 +730,7 @@ private fun TopRow(
 }
 
 /** Back five, play or pause, forward five. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun TransportRow(
     isPlaying: Boolean,
@@ -762,11 +761,22 @@ private fun TransportRow(
             contentAlignment = Alignment.Center,
         ) {
             if (isBuffering) {
-                CircularProgressIndicator(modifier = Modifier.size(PlayIconSize))
+                // The expressive indicator, which morphs through the shape library while
+                // it spins rather than tracing a circle. This is what waiting should look
+                // like when the wait is a swarm rather than a spinner.
+                LoadingIndicator(modifier = Modifier.size(PlayButtonSize))
             } else {
+                // Playing is a circle; paused squares off. The shape carries the state, so
+                // the transport reads correctly even from across a room where the icon
+                // itself is too small to make out.
+                val corner by animateDpAsState(
+                    targetValue = if (isPlaying) PlayButtonSize / 2 else PausedCorner,
+                    label = "playButtonCorner",
+                )
                 FilledIconButton(
                     onClick = onPlayPause,
                     modifier = Modifier.size(PlayButtonSize),
+                    shape = RoundedCornerShape(corner),
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
@@ -1104,52 +1114,35 @@ private fun TorrentStats(url: String, modifier: Modifier = Modifier) {
         modifier = modifier.width(IntrinsicSize.Max),
         horizontalAlignment = Alignment.End,
     ) {
+        StatRow(stringResource(Res.string.player_stats_seed), status.seeds.toString())
+        StatRow(stringResource(Res.string.player_stats_peer), status.peers.toString())
         StatRow(
-            Icons.Filled.Group,
-            stringResource(Res.string.player_stats_peers),
-            status.peers.toString(),
-        )
-        StatRow(
-            Icons.Filled.CloudUpload,
-            stringResource(Res.string.player_stats_seeds),
-            status.seeds.toString(),
-        )
-        StatRow(
-            Icons.Filled.ArrowDownward,
-            null,
+            stringResource(Res.string.player_stats_down),
             formatTransferRate(status.downloadBytesPerSecond),
         )
         StatRow(
-            Icons.Filled.ArrowUpward,
-            null,
+            stringResource(Res.string.player_stats_up),
             formatTransferRate(status.uploadBytesPerSecond),
         )
-        StatRow(
-            Icons.Filled.Downloading,
-            stringResource(Res.string.player_stats_downloaded),
-            "${(status.progress * 100f).toInt()}%",
-        )
+        // No label: a percentage on its own is unambiguous, and naming it only adds a
+        // word to read.
+        StatRow(null, "${(status.progress * 100f).toInt()}%")
     }
 }
 
 @Composable
-private fun StatRow(
-    icon: ImageVector,
-    label: String?,
-    value: String,
-) {
+private fun StatRow(label: String?, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.End,
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            modifier = Modifier.size(StatIconSize),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        Text(
+            text = label.orEmpty(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(modifier = Modifier.width(6.dp))
+        Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = value,
             // Monospaced so the numbers do not shuffle sideways every time they tick.
@@ -1199,10 +1192,13 @@ private val NormalButtonSize = 48.dp
  * if you tried. The skip buttons beside it carry no container at all, so the filled
  * treatment is already doing the work of marking which one is the primary action.
  */
-private val PlayButtonSize = NormalButtonSize * 1.02f
+private val PlayButtonSize = 56.dp
+
+/** How square the play button goes when paused. */
+private val PausedCorner = 16.dp
 private val PlayIconSize = 26.dp
 private val SkipIconSize = 24.dp
-private val GroupButtonSize = NormalButtonSize
+private val GroupButtonSize = 40.dp
 private val StatIconSize = 14.dp
 // Connected group: 2dp between buttons at every size, the run's outer ends fully round,
 // every inner corner 8dp.
