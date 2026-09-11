@@ -48,10 +48,9 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DismissibleDrawerSheet
-import androidx.compose.material3.DismissibleNavigationDrawer
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -63,7 +62,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -86,13 +85,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowInsetsCompat
@@ -118,6 +115,7 @@ import io.github.dimitrysaf.provenio.player.PlayerBackend
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.ScrobbleTarget
 import io.github.dimitrysaf.provenio.simkl.SimklScrobbler
+import io.github.dimitrysaf.provenio.stremio.SourceOption
 import kotlinx.coroutines.delay
 import io.github.dimitrysaf.provenio.resources.Res
 import io.github.dimitrysaf.provenio.resources.back
@@ -260,88 +258,54 @@ private fun BuiltinPlayer(
 
     ImmersiveLandscapeEffect()
 
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
-    LaunchedEffect(sourcesOpen) {
-        if (sourcesOpen) drawerState.open() else drawerState.close()
-    }
-
-    // A dismissible drawer rather than a modal sheet: it is coplanar with the video and
-    // pushes it aside instead of floating over it, which is the whole point. Gestures are
-    // off, so it opens and closes only from the buttons — and a drawer sheet has no drag
-    // handle to begin with.
-    //
-    // Material anchors drawers to the start edge, so the scaffold is mirrored to put this
-    // one on the end edge, and each half is flipped back so its own contents still read
-    // left to right.
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        DismissibleNavigationDrawer(
-            modifier = modifier.fillMaxSize().background(Color.Black),
-            drawerState = drawerState,
-            gesturesEnabled = false,
-            drawerContent = {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    PlayerChrome {
-                        DismissibleDrawerSheet(
-                            drawerState = drawerState,
-                            modifier = Modifier.width(SideSheetWidth),
-                        ) {
-                            if (videoId != null) {
-                                SourcesSheetContent(
-                                    type = scrobbleTarget?.mediaType ?: MovieType,
-                                    id = videoId,
-                                    title = title,
-                                    onDismiss = { sourcesOpen = false },
-                                    onPlay = { source ->
-                                        source.playableUrl?.let { streamUrl = it }
-                                        sourcesOpen = false
-                                    },
-                                    onClose = { sourcesOpen = false },
-                                ) { content -> content() }
-                            }
-                        }
-                    }
+    Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { viewContext ->
+                PlayerView(viewContext).apply {
+                    this.player = player
+                    // media3's own overlay is switched off entirely; PlayerControls draws
+                    // the whole thing in Compose instead, sharing the app's own theme and
+                    // touch targets rather than the stock media3 skin.
+                    useController = false
                 }
             },
-        ) {
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    AndroidView(
-                        modifier = Modifier.fillMaxSize(),
-                        factory = { viewContext ->
-                            PlayerView(viewContext).apply {
-                                this.player = player
-                                // media3's own overlay is switched off entirely;
-                                // PlayerControls draws the whole thing in Compose instead,
-                                // sharing the app's theme rather than the stock skin.
-                                useController = false
-                            }
-                        },
-                        update = { it.resizeMode = resizeMode },
-                    )
-                    PlayerChrome {
-                        PlayerControls(
-                            player = player,
-                            onBack = onBack,
-                            streamUrl = streamUrl,
-                            title = title,
-                            season = season,
-                            episode = episode,
-                            episodeTitle = episodeTitle,
-                            resizeMode = resizeMode,
-                            onResizeMode = { resizeMode = it },
-                            onOpenSources = if (videoId != null) {
-                                { sourcesOpen = true }
-                            } else {
-                                null
-                            },
-                        )
-                    }
-                    if (scrobbleTarget != null) {
-                        ScrobbleReporter(player = player, target = scrobbleTarget)
-                    }
-                }
-            }
+            update = { it.resizeMode = resizeMode },
+        )
+        PlayerChrome {
+            PlayerControls(
+                player = player,
+                onBack = onBack,
+                streamUrl = streamUrl,
+                title = title,
+                season = season,
+                episode = episode,
+                episodeTitle = episodeTitle,
+                resizeMode = resizeMode,
+                onResizeMode = { resizeMode = it },
+                onOpenSources = if (videoId != null) {
+                    { sourcesOpen = true }
+                } else {
+                    null
+                },
+            )
         }
+        if (scrobbleTarget != null) {
+            ScrobbleReporter(player = player, target = scrobbleTarget)
+        }
+    }
+
+    if (sourcesOpen && videoId != null) {
+        SourcesPanel(
+            type = scrobbleTarget?.mediaType ?: MovieType,
+            videoId = videoId,
+            title = title,
+            onClose = { sourcesOpen = false },
+            onPlay = { source ->
+                source.playableUrl?.let { streamUrl = it }
+                sourcesOpen = false
+            },
+        )
     }
 
     playbackError?.let { error ->
@@ -349,6 +313,47 @@ private fun BuiltinPlayer(
             info = error.toDebugInfo(url, stringResource(Res.string.player_no_message)),
             onDismiss = { playbackError = null },
         )
+    }
+}
+
+/**
+ * Sources, rising from the bottom over the video.
+ *
+ * Full width rather than a column down one side: a source's name carries resolution,
+ * codec, group and size, and none of that survives being folded into a narrow panel.
+ *
+ * Gestures are off and there is no drag handle, so nothing can be flicked away by accident
+ * mid-film — the close button in the header is the only way out, which is also the only
+ * affordance a video player can afford to have here.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SourcesPanel(
+    type: String,
+    videoId: String,
+    title: String?,
+    onClose: () -> Unit,
+    onPlay: (SourceOption) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    PlayerChrome {
+        SourcesSheetContent(
+            type = type,
+            id = videoId,
+            title = title,
+            onDismiss = onClose,
+            onPlay = onPlay,
+            onClose = onClose,
+        ) { content ->
+            ModalBottomSheet(
+                onDismissRequest = onClose,
+                sheetState = sheetState,
+                sheetGesturesEnabled = false,
+                dragHandle = null,
+            ) {
+                content()
+            }
+        }
     }
 }
 
