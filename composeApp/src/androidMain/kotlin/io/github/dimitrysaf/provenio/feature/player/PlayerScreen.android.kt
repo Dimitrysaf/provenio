@@ -57,8 +57,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.Surface
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -67,6 +66,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -302,8 +302,16 @@ private fun PlayerChrome(content: @Composable () -> Unit) {
         colorScheme = scheme,
         typography = MaterialTheme.typography,
         shapes = MaterialTheme.shapes,
-        content = content,
-    )
+    ) {
+        // A bare IconButton takes its colour from LocalContentColor, which outside a
+        // Surface is black — which is how the back arrow ended up painting black on a
+        // dark picture and looking like a missing icon. Nothing here draws on a Surface,
+        // so the content colour has to be stated once for the whole overlay.
+        CompositionLocalProvider(
+            LocalContentColor provides scheme.onSurface,
+            content = content,
+        )
+    }
 }
 
 /**
@@ -737,13 +745,14 @@ private fun TransportRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        FilledTonalIconButton(
+        IconButton(
             onClick = { onSeekBy(-SeekStepMillis) },
-            modifier = Modifier.size(IconButtonDefaults.largeContainerSize().width),
+            modifier = Modifier.size(NormalButtonSize),
         ) {
             Icon(
                 imageVector = Icons.Filled.Replay5,
                 contentDescription = stringResource(Res.string.player_back_5),
+                modifier = Modifier.size(SkipIconSize),
             )
         }
         // The loading state takes the play button's place rather than sitting beside it,
@@ -753,7 +762,7 @@ private fun TransportRow(
             contentAlignment = Alignment.Center,
         ) {
             if (isBuffering) {
-                CircularProgressIndicator(modifier = Modifier.size(PlayButtonSize / 2))
+                CircularProgressIndicator(modifier = Modifier.size(PlayIconSize))
             } else {
                 FilledIconButton(
                     onClick = onPlayPause,
@@ -769,13 +778,14 @@ private fun TransportRow(
                 }
             }
         }
-        FilledTonalIconButton(
+        IconButton(
             onClick = { onSeekBy(SeekStepMillis) },
-            modifier = Modifier.size(IconButtonDefaults.largeContainerSize().width),
+            modifier = Modifier.size(NormalButtonSize),
         ) {
             Icon(
                 imageVector = Icons.Filled.Forward5,
                 contentDescription = stringResource(Res.string.player_forward_5),
+                modifier = Modifier.size(SkipIconSize),
             )
         }
     }
@@ -846,25 +856,42 @@ private fun BottomRows(
 }
 
 /**
- * A connected run of icon buttons.
+ * A connected button group.
  *
- * M3's own `ButtonGroup` is expressive-only and `internal` in the material3 build Compose
- * Multiplatform 1.12.0 resolves, so the spec's shape is built here from stable parts: one
- * container, one shape, the buttons sharing it.
+ * The spec calls a button group an invisible container with no colour of its own: it adds
+ * padding and it reshapes the buttons, and the buttons themselves carry the container
+ * treatment. So there is no surface here — 2dp between items, the run's outer ends fully
+ * round and every inner corner 8dp, which is what makes a row of buttons read as one
+ * connected control rather than six loose ones.
+ *
+ * M3's own `ButtonGroup` would do this, but it is expressive-only and `internal` in the
+ * material3 build Compose Multiplatform 1.12.0 resolves, so the shape is assembled here.
  */
 @Composable
-private fun IconButtonGroup(content: @Composable () -> Unit) {
-    Surface(
-        shape = RoundedCornerShape(GroupCorner),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
-        contentColor = MaterialTheme.colorScheme.onSurface,
+private fun ConnectedButtonGroup(
+    count: Int,
+    item: @Composable (index: Int, shape: RoundedCornerShape) -> Unit,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(GroupInnerPadding),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            content = { content() },
-        )
+        for (index in 0 until count) {
+            item(index, connectedShape(index, count))
+        }
     }
+}
+
+/** Fully round where the run ends, square-ish where it meets the next button. */
+private fun connectedShape(index: Int, count: Int): RoundedCornerShape {
+    val start = if (index == 0) GroupOuterCorner else GroupInnerCorner
+    val end = if (index == count - 1) GroupOuterCorner else GroupInnerCorner
+    return RoundedCornerShape(
+        topStart = start,
+        bottomStart = start,
+        topEnd = end,
+        bottomEnd = end,
+    )
 }
 
 /** How the picture is shown, and who is speaking. */
@@ -882,87 +909,92 @@ private fun ViewingGroup(
     var subtitlesOpen by remember { mutableStateOf(false) }
     var audioOpen by remember { mutableStateOf(false) }
 
-    IconButtonGroup {
-        Box {
-            val aspectLabel = when (resizeMode) {
-                AspectRatioFrameLayout.RESIZE_MODE_FILL ->
-                    stringResource(Res.string.player_aspect_fill)
-                AspectRatioFrameLayout.RESIZE_MODE_ZOOM ->
-                    stringResource(Res.string.player_aspect_zoom)
-                else -> stringResource(Res.string.player_aspect_fit)
-            }
-            val aspectDescription = stringResource(Res.string.player_aspect)
-            IconButton(onClick = { onResizeMode(nextResizeMode(resizeMode)) }) {
-                Icon(
-                    imageVector = Icons.Filled.AspectRatio,
-                    contentDescription = "$aspectDescription: $aspectLabel",
+    // Order matches the spec's reading direction: how it looks, how fast, who is
+    // speaking, where it goes, and finally the one that turns the rest off.
+    ConnectedButtonGroup(count = 6) { index, shape ->
+        when (index) {
+            0 -> {
+                val aspectLabel = when (resizeMode) {
+                    AspectRatioFrameLayout.RESIZE_MODE_FILL ->
+                        stringResource(Res.string.player_aspect_fill)
+                    AspectRatioFrameLayout.RESIZE_MODE_ZOOM ->
+                        stringResource(Res.string.player_aspect_zoom)
+                    else -> stringResource(Res.string.player_aspect_fit)
+                }
+                val aspectDescription = stringResource(Res.string.player_aspect)
+                GroupButton(
+                    icon = Icons.Filled.AspectRatio,
+                    description = "$aspectDescription: $aspectLabel",
+                    shape = shape,
+                    onClick = { onResizeMode(nextResizeMode(resizeMode)) },
                 )
             }
-        }
-        Box {
-            IconButton(onClick = { speedOpen = true }) {
-                Icon(
-                    imageVector = Icons.Filled.Speed,
-                    contentDescription = stringResource(Res.string.player_speed),
+            1 -> Box {
+                GroupButton(
+                    icon = Icons.Filled.Speed,
+                    description = stringResource(Res.string.player_speed),
+                    shape = shape,
+                    onClick = { speedOpen = true },
                 )
-            }
-            DropdownMenu(expanded = speedOpen, onDismissRequest = { speedOpen = false }) {
-                for (option in PlaybackSpeeds) {
-                    DropdownMenuItem(
-                        text = { Text(formatSpeed(option)) },
-                        onClick = {
-                            onSpeed(option)
-                            speedOpen = false
-                        },
-                        trailingIcon = if (option == speed) {
-                            { Icon(Icons.Filled.Check, contentDescription = null) }
-                        } else {
-                            null
-                        },
-                    )
+                DropdownMenu(expanded = speedOpen, onDismissRequest = { speedOpen = false }) {
+                    for (option in PlaybackSpeeds) {
+                        DropdownMenuItem(
+                            text = { Text(formatSpeed(option)) },
+                            onClick = {
+                                onSpeed(option)
+                                speedOpen = false
+                            },
+                            trailingIcon = if (option == speed) {
+                                { Icon(Icons.Filled.Check, contentDescription = null) }
+                            } else {
+                                null
+                            },
+                        )
+                    }
                 }
             }
-        }
-        Box {
-            IconButton(onClick = { subtitlesOpen = true }) {
-                Icon(
-                    imageVector = Icons.Filled.ClosedCaption,
-                    contentDescription = stringResource(Res.string.player_subtitles),
+            2 -> Box {
+                GroupButton(
+                    icon = Icons.Filled.ClosedCaption,
+                    description = stringResource(Res.string.player_subtitles),
+                    shape = shape,
+                    onClick = { subtitlesOpen = true },
+                )
+                TrackMenu(
+                    expanded = subtitlesOpen,
+                    onDismiss = { subtitlesOpen = false },
+                    tracks = tracks,
+                    trackType = C.TRACK_TYPE_TEXT,
+                    onSelectTrack = onSelectTrack,
                 )
             }
-            TrackMenu(
-                expanded = subtitlesOpen,
-                onDismiss = { subtitlesOpen = false },
-                tracks = tracks,
-                trackType = C.TRACK_TYPE_TEXT,
-                onSelectTrack = onSelectTrack,
-            )
-        }
-        Box {
-            IconButton(onClick = { audioOpen = true }) {
-                Icon(
-                    imageVector = Icons.Filled.Audiotrack,
-                    contentDescription = stringResource(Res.string.player_audio),
+            3 -> Box {
+                GroupButton(
+                    icon = Icons.Filled.Audiotrack,
+                    description = stringResource(Res.string.player_audio),
+                    shape = shape,
+                    onClick = { audioOpen = true },
+                )
+                TrackMenu(
+                    expanded = audioOpen,
+                    onDismiss = { audioOpen = false },
+                    tracks = tracks,
+                    trackType = C.TRACK_TYPE_AUDIO,
+                    onSelectTrack = onSelectTrack,
                 )
             }
-            TrackMenu(
-                expanded = audioOpen,
-                onDismiss = { audioOpen = false },
-                tracks = tracks,
-                trackType = C.TRACK_TYPE_AUDIO,
-                onSelectTrack = onSelectTrack,
+            4 -> GroupButton(
+                icon = Icons.Filled.Cast,
+                description = stringResource(Res.string.player_cast),
+                shape = shape,
+                onClick = {},
+                enabled = false,
             )
-        }
-        IconButton(onClick = {}, enabled = false) {
-            Icon(
-                imageVector = Icons.Filled.Cast,
-                contentDescription = stringResource(Res.string.player_cast),
-            )
-        }
-        IconButton(onClick = onLock) {
-            Icon(
-                imageVector = Icons.Filled.Lock,
-                contentDescription = stringResource(Res.string.player_lock),
+            else -> GroupButton(
+                icon = Icons.Filled.Lock,
+                description = stringResource(Res.string.player_lock),
+                shape = shape,
+                onClick = onLock,
             )
         }
     }
@@ -971,19 +1003,48 @@ private fun ViewingGroup(
 /** Where else this could be played from, and what is next. Both still inert. */
 @Composable
 private fun LibraryGroup() {
-    IconButtonGroup {
-        IconButton(onClick = {}, enabled = false) {
-            Icon(
-                imageVector = Icons.Filled.VideoLibrary,
-                contentDescription = stringResource(Res.string.player_sources),
+    ConnectedButtonGroup(count = 2) { index, shape ->
+        if (index == 0) {
+            GroupButton(
+                icon = Icons.Filled.VideoLibrary,
+                description = stringResource(Res.string.player_sources),
+                shape = shape,
+                onClick = {},
+                enabled = false,
+            )
+        } else {
+            GroupButton(
+                icon = Icons.Filled.PlaylistPlay,
+                description = stringResource(Res.string.player_episodes),
+                shape = shape,
+                onClick = {},
+                enabled = false,
             )
         }
-        IconButton(onClick = {}, enabled = false) {
-            Icon(
-                imageVector = Icons.Filled.PlaylistPlay,
-                contentDescription = stringResource(Res.string.player_episodes),
-            )
-        }
+    }
+}
+
+/**
+ * One button of a group.
+ *
+ * Tonal, because the spec rules out standard icon buttons inside a group — they have no
+ * container, so a group of them has nothing to connect.
+ */
+@Composable
+private fun GroupButton(
+    icon: ImageVector,
+    description: String,
+    shape: RoundedCornerShape,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+) {
+    FilledTonalIconButton(
+        onClick = onClick,
+        enabled = enabled,
+        shape = shape,
+        modifier = Modifier.size(GroupButtonSize),
+    ) {
+        Icon(imageVector = icon, contentDescription = description)
     }
 }
 
@@ -1128,10 +1189,26 @@ private fun nextResizeMode(current: Int): Int = when (current) {
 
 private val PlaybackSpeeds = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)
 
-private val PlayButtonSize = 72.dp
-private val PlayIconSize = 40.dp
+/** M3's standard icon button target, and what every control here is unless stated. */
+private val NormalButtonSize = 48.dp
+
+/**
+ * The play button, two percent over standard.
+ *
+ * Enough that the eye lands on it first without it becoming a target you could not miss
+ * if you tried. The skip buttons beside it carry no container at all, so the filled
+ * treatment is already doing the work of marking which one is the primary action.
+ */
+private val PlayButtonSize = NormalButtonSize * 1.02f
+private val PlayIconSize = 26.dp
+private val SkipIconSize = 24.dp
+private val GroupButtonSize = NormalButtonSize
 private val StatIconSize = 14.dp
-private val GroupCorner = 20.dp
+// Connected group: 2dp between buttons at every size, the run's outer ends fully round,
+// every inner corner 8dp.
+private val GroupInnerPadding = 2.dp
+private val GroupOuterCorner = 24.dp
+private val GroupInnerCorner = 8.dp
 private const val KilobyteBytes = 1_024L
 private const val MegabyteBytes = 1_024L * 1_024L
 
