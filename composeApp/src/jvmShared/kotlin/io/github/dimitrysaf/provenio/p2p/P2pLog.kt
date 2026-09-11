@@ -1,14 +1,15 @@
 package io.github.dimitrysaf.provenio.p2p
 
+import io.github.dimitrysaf.provenio.core.platform.logDebug
+
 /**
- * Peer-to-peer diagnostics.
+ * Peer-to-peer diagnostics, under one tag so they can be found in a wall of logcat.
  *
- * Plain stdout rather than a logging framework: Android surfaces it in logcat under
- * System.out and the desktop prints it to the console, which is all that is wanted from
- * something whose whole job is to explain why a swarm did not answer.
- *
- * Read it with: adb logcat | grep provenio-p2p
+ * Every line starts with "provenio-p2p" whether or not the reader can filter, because the
+ * person reading it may be scrolling a log viewer on the same phone that is running this.
  */
 internal fun p2pLog(message: String) {
-    println("provenio-p2p: $message")
+    logDebug(P2pLogTag, message)
 }
+
+const val P2pLogTag = "provenio-p2p"

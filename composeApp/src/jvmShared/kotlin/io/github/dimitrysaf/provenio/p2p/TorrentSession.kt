@@ -5,6 +5,8 @@ import kotlinx.coroutines.withContext
 import org.libtorrent4j.SessionManager
 import org.libtorrent4j.SessionParams
 import org.libtorrent4j.SettingsPack
+import org.libtorrent4j.Sha1Hash
+import org.libtorrent4j.TorrentHandle
 import org.libtorrent4j.TorrentInfo
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -126,9 +128,9 @@ class TorrentSession(private val cacheDir: File) {
             )
             session.download(info, cacheDir)
 
-            val handle = session.find(info.infoHash())
+            val handle = awaitHandle(info.infoHash())
             if (handle == null) {
-                p2pLog("torrent added but no handle came back")
+                p2pLog("torrent added but no handle came back within ${HandleTimeoutMillis}ms")
                 return@withContext null
             }
 
@@ -143,6 +145,23 @@ class TorrentSession(private val cacheDir: File) {
             streams[key] = stream
             stream
         }
+    }
+
+    /**
+     * Waits for a torrent to actually be in the session.
+     *
+     * [SessionManager.download] is `async_add_torrent` underneath, so the torrent is not
+     * there the instant it returns. Asking for the handle straight away almost always
+     * comes back empty, which looked exactly like a torrent nobody was seeding.
+     */
+    private fun awaitHandle(hash: Sha1Hash): TorrentHandle? {
+        val deadline = System.currentTimeMillis() + HandleTimeoutMillis
+        while (System.currentTimeMillis() < deadline) {
+            val handle = session.find(hash)
+            if (handle != null && handle.isValid) return handle
+            Thread.sleep(HandlePollMillis)
+        }
+        return null
     }
 
     /** Bytes currently held on disk by torrent data. */
@@ -198,6 +217,8 @@ class TorrentSession(private val cacheDir: File) {
         const val MetadataTimeoutSeconds = 60
         const val UnlimitedRate = 0
         const val MinimalUploadRate = 1
+        const val HandleTimeoutMillis = 15_000L
+        const val HandlePollMillis = 50L
     }
 }
 
