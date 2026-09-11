@@ -48,10 +48,11 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.LocalContentColor
@@ -60,6 +61,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -105,6 +107,7 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
+import io.github.dimitrysaf.provenio.core.platform.MatchHostSystemBars
 import io.github.dimitrysaf.provenio.designsystem.theme.dynamicColorScheme
 import io.github.dimitrysaf.provenio.feature.detail.components.SourcesSheet
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
@@ -547,6 +550,11 @@ private fun PlayerControls(
     var controlsVisible by remember { mutableStateOf(true) }
     var locked by remember { mutableStateOf(false) }
     var speed by remember { mutableFloatStateOf(1f) }
+    // Held here rather than inside the group: the sheets are drawn outside the fading
+    // controls, so one stays open when the controls time out underneath it.
+    var speedOpen by remember { mutableStateOf(false) }
+    var subtitlesOpen by remember { mutableStateOf(false) }
+    var audioOpen by remember { mutableStateOf(false) }
     var tracks by remember { mutableStateOf(player.currentTracks) }
     // Set only while the user is dragging the seek bar, so the position poll below does
     // not fight the thumb the user is holding.
@@ -584,8 +592,20 @@ private fun PlayerControls(
 
     // Controls fade out on their own during playback, as in every other video app, so the
     // video is not left permanently covered by a bar nobody is touching.
-    LaunchedEffect(controlsVisible, isPlaying, seekPreviewMillis) {
-        if (controlsVisible && isPlaying && seekPreviewMillis == null) {
+    val selectTrack: (Int, TrackSelectionOverride?) -> Unit = { type, override ->
+        val builder = player.trackSelectionParameters.buildUpon()
+        if (override == null) {
+            builder.setTrackTypeDisabled(type, true)
+        } else {
+            builder.setTrackTypeDisabled(type, false)
+            builder.setOverrideForType(override)
+        }
+        player.trackSelectionParameters = builder.build()
+    }
+
+    val anySheetOpen = speedOpen || subtitlesOpen || audioOpen
+    LaunchedEffect(controlsVisible, isPlaying, seekPreviewMillis, anySheetOpen) {
+        if (controlsVisible && isPlaying && seekPreviewMillis == null && !anySheetOpen) {
             delay(AutoHideMillis)
             controlsVisible = false
         }
@@ -679,27 +699,47 @@ private fun PlayerControls(
                     },
                     resizeMode = resizeMode,
                     onResizeMode = onResizeMode,
-                    speed = speed,
-                    onSpeed = {
-                        speed = it
-                        player.setPlaybackSpeed(it)
-                    },
-                    tracks = tracks,
-                    onSelectTrack = { type, override ->
-                        val builder = player.trackSelectionParameters.buildUpon()
-                        if (override == null) {
-                            builder.setTrackTypeDisabled(type, true)
-                        } else {
-                            builder.setTrackTypeDisabled(type, false)
-                            builder.setOverrideForType(override)
-                        }
-                        player.trackSelectionParameters = builder.build()
-                    },
                     onLock = { locked = true },
                     onOpenSources = onOpenSources,
+                    onOpenSpeed = { speedOpen = true },
+                    onOpenSubtitles = { subtitlesOpen = true },
+                    onOpenAudio = { audioOpen = true },
                     modifier = Modifier.align(Alignment.BottomStart),
                 )
             }
+        }
+
+        // Outside the AnimatedVisibility above: a sheet is its own window and should not
+        // be torn down because the controls behind it timed out.
+        if (speedOpen) {
+            ChoiceSheet(
+                title = stringResource(Res.string.player_speed),
+                choices = PlaybackSpeeds.map { option ->
+                    Choice(
+                        label = formatSpeed(option),
+                        selected = option == speed,
+                        onSelect = {
+                            speed = option
+                            player.setPlaybackSpeed(option)
+                        },
+                    )
+                },
+                onDismiss = { speedOpen = false },
+            )
+        }
+        if (subtitlesOpen) {
+            ChoiceSheet(
+                title = stringResource(Res.string.player_subtitles),
+                choices = trackChoices(tracks, C.TRACK_TYPE_TEXT, selectTrack),
+                onDismiss = { subtitlesOpen = false },
+            )
+        }
+        if (audioOpen) {
+            ChoiceSheet(
+                title = stringResource(Res.string.player_audio),
+                choices = trackChoices(tracks, C.TRACK_TYPE_AUDIO, selectTrack),
+                onDismiss = { audioOpen = false },
+            )
         }
     }
 }
@@ -845,12 +885,11 @@ private fun BottomRows(
     onSeekFinished: () -> Unit,
     resizeMode: Int,
     onResizeMode: (Int) -> Unit,
-    speed: Float,
-    onSpeed: (Float) -> Unit,
-    tracks: Tracks,
-    onSelectTrack: (Int, TrackSelectionOverride?) -> Unit,
     onLock: () -> Unit,
     onOpenSources: (() -> Unit)?,
+    onOpenSpeed: () -> Unit,
+    onOpenSubtitles: () -> Unit,
+    onOpenAudio: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val maxValue = duration.coerceAtLeast(1L).toFloat()
@@ -890,11 +929,10 @@ private fun BottomRows(
             ViewingGroup(
                 resizeMode = resizeMode,
                 onResizeMode = onResizeMode,
-                speed = speed,
-                onSpeed = onSpeed,
-                tracks = tracks,
-                onSelectTrack = onSelectTrack,
                 onLock = onLock,
+                onOpenSpeed = onOpenSpeed,
+                onOpenSubtitles = onOpenSubtitles,
+                onOpenAudio = onOpenAudio,
             )
             LibraryGroup(onOpenSources = onOpenSources)
         }
@@ -945,16 +983,11 @@ private fun connectedShape(index: Int, count: Int): RoundedCornerShape {
 private fun ViewingGroup(
     resizeMode: Int,
     onResizeMode: (Int) -> Unit,
-    speed: Float,
-    onSpeed: (Float) -> Unit,
-    tracks: Tracks,
-    onSelectTrack: (Int, TrackSelectionOverride?) -> Unit,
     onLock: () -> Unit,
+    onOpenSpeed: () -> Unit,
+    onOpenSubtitles: () -> Unit,
+    onOpenAudio: () -> Unit,
 ) {
-    var speedOpen by remember { mutableStateOf(false) }
-    var subtitlesOpen by remember { mutableStateOf(false) }
-    var audioOpen by remember { mutableStateOf(false) }
-
     // Order matches the spec's reading direction: how it looks, how fast, who is
     // speaking, where it goes, and finally the one that turns the rest off.
     ConnectedButtonGroup(count = 6) { index, shape ->
@@ -975,60 +1008,24 @@ private fun ViewingGroup(
                     onClick = { onResizeMode(nextResizeMode(resizeMode)) },
                 )
             }
-            1 -> Box {
-                GroupButton(
-                    icon = Icons.Filled.Speed,
-                    description = stringResource(Res.string.player_speed),
-                    shape = shape,
-                    onClick = { speedOpen = true },
-                )
-                DropdownMenu(expanded = speedOpen, onDismissRequest = { speedOpen = false }) {
-                    for (option in PlaybackSpeeds) {
-                        DropdownMenuItem(
-                            text = { Text(formatSpeed(option)) },
-                            onClick = {
-                                onSpeed(option)
-                                speedOpen = false
-                            },
-                            trailingIcon = if (option == speed) {
-                                { Icon(Icons.Filled.Check, contentDescription = null) }
-                            } else {
-                                null
-                            },
-                        )
-                    }
-                }
-            }
-            2 -> Box {
-                GroupButton(
-                    icon = Icons.Filled.ClosedCaption,
-                    description = stringResource(Res.string.player_subtitles),
-                    shape = shape,
-                    onClick = { subtitlesOpen = true },
-                )
-                TrackMenu(
-                    expanded = subtitlesOpen,
-                    onDismiss = { subtitlesOpen = false },
-                    tracks = tracks,
-                    trackType = C.TRACK_TYPE_TEXT,
-                    onSelectTrack = onSelectTrack,
-                )
-            }
-            3 -> Box {
-                GroupButton(
-                    icon = Icons.Filled.Audiotrack,
-                    description = stringResource(Res.string.player_audio),
-                    shape = shape,
-                    onClick = { audioOpen = true },
-                )
-                TrackMenu(
-                    expanded = audioOpen,
-                    onDismiss = { audioOpen = false },
-                    tracks = tracks,
-                    trackType = C.TRACK_TYPE_AUDIO,
-                    onSelectTrack = onSelectTrack,
-                )
-            }
+            1 -> GroupButton(
+                icon = Icons.Filled.Speed,
+                description = stringResource(Res.string.player_speed),
+                shape = shape,
+                onClick = onOpenSpeed,
+            )
+            2 -> GroupButton(
+                icon = Icons.Filled.ClosedCaption,
+                description = stringResource(Res.string.player_subtitles),
+                shape = shape,
+                onClick = onOpenSubtitles,
+            )
+            3 -> GroupButton(
+                icon = Icons.Filled.Audiotrack,
+                description = stringResource(Res.string.player_audio),
+                shape = shape,
+                onClick = onOpenAudio,
+            )
             4 -> GroupButton(
                 icon = Icons.Filled.Cast,
                 description = stringResource(Res.string.player_cast),
@@ -1104,47 +1101,88 @@ private fun GroupButton(
     }
 }
 
-/** Every track of one kind the file carries, plus the option of none at all. */
-@Composable
-private fun TrackMenu(
-    expanded: Boolean,
-    onDismiss: () -> Unit,
-    tracks: Tracks,
-    trackType: Int,
-    onSelectTrack: (Int, TrackSelectionOverride?) -> Unit,
-) {
-    val groups = tracks.groups.filter { it.type == trackType }
+/**
+ * One choice in a sheet: what it says, whether it is the current one, what picking it does.
+ */
+private data class Choice(
+    val label: String,
+    val selected: Boolean,
+    val onSelect: () -> Unit,
+)
 
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        DropdownMenuItem(
-            text = { Text(stringResource(Res.string.player_track_off)) },
-            onClick = {
-                onSelectTrack(trackType, null)
-                onDismiss()
-            },
+/**
+ * A list of choices, in the same sheet the sources use.
+ *
+ * A dropdown pinned to a 40dp button is a poor target on a phone held sideways, and it
+ * covers the video it is anchored over. A sheet gives the list the full width and puts it
+ * where a thumb already is.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ChoiceSheet(title: String, choices: List<Choice>, onDismiss: () -> Unit) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        // The sheet has its own window; keep it in step with the one it opened over.
+        MatchHostSystemBars()
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
         )
-        for (group in groups) {
-            for (index in 0 until group.length) {
-                val format = group.getTrackFormat(index)
-                val selected = group.isTrackSelected(index)
-                DropdownMenuItem(
-                    text = { Text(describeTrack(format.language, format.label, index)) },
-                    onClick = {
-                        onSelectTrack(
-                            trackType,
-                            TrackSelectionOverride(group.mediaTrackGroup, index),
-                        )
-                        onDismiss()
-                    },
-                    trailingIcon = if (selected) {
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 16.dp),
+        ) {
+            for (choice in choices) {
+                ListItem(
+                    headlineContent = { Text(choice.label) },
+                    trailingContent = if (choice.selected) {
                         { Icon(Icons.Filled.Check, contentDescription = null) }
                     } else {
                         null
+                    },
+                    modifier = Modifier.clickable {
+                        choice.onSelect()
+                        onDismiss()
                     },
                 )
             }
         }
     }
+}
+
+/** Every track of one kind the file carries, plus the option of none at all. */
+@Composable
+private fun trackChoices(
+    tracks: Tracks,
+    trackType: Int,
+    onSelectTrack: (Int, TrackSelectionOverride?) -> Unit,
+): List<Choice> {
+    val choices = mutableListOf(
+        Choice(
+            label = stringResource(Res.string.player_track_off),
+            selected = false,
+            onSelect = { onSelectTrack(trackType, null) },
+        ),
+    )
+    for (group in tracks.groups.filter { it.type == trackType }) {
+        for (index in 0 until group.length) {
+            val format = group.getTrackFormat(index)
+            choices += Choice(
+                label = describeTrack(format.language, format.label, index),
+                selected = group.isTrackSelected(index),
+                onSelect = {
+                    onSelectTrack(
+                        trackType,
+                        TrackSelectionOverride(group.mediaTrackGroup, index),
+                    )
+                },
+            )
+        }
+    }
+    return choices
 }
 
 /** What the swarm is doing, in icons rather than punctuation. */
