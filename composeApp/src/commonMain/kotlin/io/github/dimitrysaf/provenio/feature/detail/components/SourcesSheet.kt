@@ -399,14 +399,6 @@ fun SourcesSheet(
                 }
             }
         }
-        if (isPlaying) {
-            Icon(
-                imageVector = Icons.Filled.PlayArrow,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 12.dp),
-            )
-        }
     }
 }
 
@@ -493,6 +485,14 @@ private fun SourceRow(source: SourceOption, isPlaying: Boolean, onClick: () -> U
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+        }
+        if (isPlaying) {
+            Icon(
+                imageVector = Icons.Filled.PlayArrow,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 12.dp),
+            )
         }
     }
 }

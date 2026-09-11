@@ -1176,8 +1176,14 @@ private fun ChoiceSheet(title: String, choices: List<Choice>, onDismiss: () -> U
                 .padding(bottom = 16.dp),
         ) {
             for (choice in choices) {
+                // The clickable overload, not the headlineContent one: only this
+                // signature carries contentPadding, and it takes the click itself rather
+                // than needing a modifier for it.
                 ListItem(
-                    headlineContent = { Text(choice.label) },
+                    onClick = {
+                        choice.onSelect()
+                        onDismiss()
+                    },
                     trailingContent = if (choice.selected) {
                         { Icon(Icons.Filled.Check, contentDescription = null) }
                     } else {
@@ -1187,14 +1193,10 @@ private fun ChoiceSheet(title: String, choices: List<Choice>, onDismiss: () -> U
                     // role from the sheet's container — every row came out as a block in
                     // a slightly wrong colour. Transparent lets the sheet show through.
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    // A list item indents its content 16dp of its own accord, which left
-                    // every label sitting short of the 24dp the header and the sources
-                    // sheet use. Stated here so the column reads as one edge.
+                    // And it indents its content 16dp of its own accord, which left every
+                    // label short of the 24dp the header and the sources sheet use.
                     contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
-                    modifier = Modifier.clickable {
-                        choice.onSelect()
-                        onDismiss()
-                    },
+                    content = { Text(choice.label) },
                 )
             }
         }
