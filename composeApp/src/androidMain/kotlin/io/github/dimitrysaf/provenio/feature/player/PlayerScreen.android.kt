@@ -50,6 +50,7 @@ import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
@@ -1143,6 +1144,10 @@ private fun ChoiceSheet(title: String, choices: List<Choice>, onDismiss: () -> U
                     } else {
                         null
                     },
+                    // A list item paints its own surface by default, which is a different
+                    // role from the sheet's container — every row came out as a block in
+                    // a slightly wrong colour. Transparent lets the sheet show through.
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     modifier = Modifier.clickable {
                         choice.onSelect()
                         onDismiss()
