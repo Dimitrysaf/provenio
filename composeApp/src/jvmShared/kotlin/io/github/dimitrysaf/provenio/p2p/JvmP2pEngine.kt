@@ -75,16 +75,21 @@ class JvmP2pEngine : P2pEngine {
     }
 
     /**
-     * Registers the torrent and answers with the URL to play.
+     * Joins the swarm, waits for metadata, and only then answers with a URL.
      *
-     * No network work happens here — the swarm is only joined once the player asks for
-     * bytes. Returning promptly is what keeps the sources sheet responsive while a torrent
-     * with no seeds is being chosen.
+     * The waiting has to happen somewhere, and it cannot be in the request handler: a
+     * player expects response headers in a couple of seconds and finding a swarm takes
+     * far longer than that, so doing it there times the player out before a byte moves.
+     * Here the caller is the sources sheet, which already shows a spinner and can afford
+     * to wait — and a torrent nobody is seeding fails as "no source" instead of as a
+     * mysterious playback error.
      */
     override suspend fun streamUrl(request: TorrentRequest): String? {
         val stream = server ?: return null
         if (!torrents.isRunning) return null
-        return stream.urlFor(torrents.register(request))
+        val key = torrents.register(request)
+        torrents.open(key) ?: return null
+        return stream.urlFor(key)
     }
 
     private companion object {

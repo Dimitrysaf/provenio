@@ -58,6 +58,9 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
 import io.github.dimitrysaf.provenio.player.PlayerBackend
 import io.github.dimitrysaf.provenio.player.PlayerRepository
@@ -120,7 +123,22 @@ private fun BuiltinPlayer(
             .setExtensionRendererMode(
                 DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER,
             )
-        ExoPlayer.Builder(context, renderers).build()
+
+        // The eight second default is fine for a web server and far too short for a
+        // torrent: the loopback server answers a read only once the piece it covers has
+        // arrived, which after a seek means waiting on the swarm. Timing out there would
+        // end playback rather than buffer it.
+        val http = DefaultHttpDataSource.Factory()
+            .setConnectTimeoutMs(StreamTimeoutMillis)
+            .setReadTimeoutMs(StreamTimeoutMillis)
+
+        ExoPlayer.Builder(context, renderers)
+            // Wrapped rather than used directly so file and content URIs still resolve;
+            // only http goes through the factory above.
+            .setMediaSourceFactory(
+                DefaultMediaSourceFactory(DefaultDataSource.Factory(context, http)),
+            )
+            .build()
     }
     var playbackError by remember { mutableStateOf<PlaybackException?>(null) }
 
@@ -514,6 +532,14 @@ private fun SeekBar(
         }
     }
 }
+
+/**
+ * How long a read may take before the player gives up on it.
+ *
+ * Generous on purpose: behind a torrent, a read waits for the piece it needs, and the
+ * honest answer to a slow swarm is to keep waiting rather than to fail the playback.
+ */
+private const val StreamTimeoutMillis = 60_000
 
 private const val SeekStepMillis = 10_000L
 private const val SeekBarPollMillis = 200L

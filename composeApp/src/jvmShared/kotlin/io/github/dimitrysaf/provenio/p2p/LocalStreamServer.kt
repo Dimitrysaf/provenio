@@ -40,11 +40,14 @@ class LocalStreamServer(
                     call.respondText("ok")
                 }
                 get("/stream/{key}") {
+                    // Already open by the time a player asks: the metadata was fetched
+                    // when the URL was handed out, so this is a map lookup and the
+                    // response headers go out immediately.
                     val key = call.parameters["key"]
                     val stream = key?.let { torrents.open(it) }
                     if (stream == null) {
-                        // The swarm never answered, or the engine was stopped underneath
-                        // us. Either way there is nothing to play.
+                        // The engine was stopped underneath us, or this URL outlived the
+                        // session that issued it. Either way there is nothing to play.
                         call.respondText(
                             text = "No torrent for that id.",
                             status = HttpStatusCode.ServiceUnavailable,
