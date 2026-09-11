@@ -134,10 +134,15 @@ private fun BuiltinPlayer(
     val player = remember {
         // The default renderers only reach the device's own decoders, which on most
         // phones cannot handle AC-3, E-AC-3, DTS or TrueHD. This factory adds FFmpeg
-        // software decoders behind them, and prefers the hardware path when there is one.
+        // software decoders behind them.
+        //
+        // ON, not PREFER: PREFER puts FFmpeg ahead of the platform decoders for video as
+        // well, so a 4K stream that the phone has silicon for gets software decoded
+        // instead — which is what it was doing, and is no way to play a film. ON keeps
+        // hardware first and leaves FFmpeg as the fallback for the formats it is here for.
         val renderers = NextRenderersFactory(context)
             .setExtensionRendererMode(
-                DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER,
+                DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON,
             )
 
         // The eight second default is fine for a web server and far too short for a
