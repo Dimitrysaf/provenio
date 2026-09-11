@@ -50,6 +50,23 @@ data class SourceOption(
         }
 }
 
+/**
+ * Whether this is the source currently playing at [streamUrl].
+ *
+ * A torrent's playable URL is minted per session by the local server, so it cannot be
+ * compared with one from an earlier run — but that URL carries the info hash as its last
+ * path segment, and the info hash is the torrent's identity. Anything else is a plain
+ * address and compares directly.
+ */
+fun SourceOption.isPlayingAt(streamUrl: String?): Boolean {
+    if (streamUrl.isNullOrBlank()) return false
+    val hash = stream.infoHash?.trim()?.lowercase()
+    if (hash != null) {
+        return streamUrl.substringAfterLast('/').substringBefore('?').startsWith(hash)
+    }
+    return playableUrl != null && playableUrl == streamUrl
+}
+
 /** The text a filter looks at: whatever the addon wrote about this source. */
 val SourceOption.searchText: String
     get() = (label.orEmpty() + " " + detail.orEmpty()).lowercase()

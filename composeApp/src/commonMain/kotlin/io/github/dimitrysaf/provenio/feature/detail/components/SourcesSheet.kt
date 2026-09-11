@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -51,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.p2p.P2pConsentDialog
@@ -62,6 +64,7 @@ import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.InstalledAddon
 import io.github.dimitrysaf.provenio.stremio.SourceKind
 import io.github.dimitrysaf.provenio.stremio.SourceOption
+import io.github.dimitrysaf.provenio.stremio.isPlayingAt
 import io.github.dimitrysaf.provenio.stremio.QualityTerms
 import io.github.dimitrysaf.provenio.stremio.hasAny
 import io.github.dimitrysaf.provenio.stremio.matches
@@ -110,6 +113,8 @@ fun SourcesSheet(
     title: String?,
     onDismiss: () -> Unit,
     onPlay: (SourceOption) -> Unit,
+    /** What is playing right now, so the row for it can be marked. */
+    currentUrl: String? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val groups = remember { mutableStateListOf<AddonSources>() }
@@ -371,7 +376,10 @@ fun SourcesSheet(
                         AnimatedVisibility(visible = !isCollapsed) {
                             Column {
                                 shown.forEach { source ->
-                                    SourceRow(source) { choose(source) }
+                                    SourceRow(
+                                        source = source,
+                                        isPlaying = source.isPlayingAt(currentUrl),
+                                    ) { choose(source) }
                                 }
                                 if (!group.loading && group.sources.isEmpty()) {
                                     Text(
@@ -390,6 +398,14 @@ fun SourcesSheet(
                     }
                 }
             }
+        }
+        if (isPlaying) {
+            Icon(
+                imageVector = Icons.Filled.PlayArrow,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 12.dp),
+            )
         }
     }
 }
@@ -438,7 +454,7 @@ private fun AddonHeader(
 }
 
 @Composable
-private fun SourceRow(source: SourceOption, onClick: () -> Unit) {
+private fun SourceRow(source: SourceOption, isPlaying: Boolean, onClick: () -> Unit) {
     // A torrent is selectable whether or not peer-to-peer is on, because pressing it is
     // how the user is offered the switch.
     val playable = source.playableUrl != null || source.kind == SourceKind.Torrent
@@ -451,13 +467,19 @@ private fun SourceRow(source: SourceOption, onClick: () -> Unit) {
             .padding(start = 24.dp, end = 24.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // No leading icon. An addon returns one kind of source, so every row in a section
-        // carried the same glyph, which distinguishes nothing and only narrows the text.
+        // No leading icon for the ordinary case. An addon returns one kind of source, so
+        // every row in a section carried the same glyph, which distinguishes nothing and
+        // only narrows the text. The one that is playing is the exception worth marking.
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = source.label ?: stringResource(Res.string.source_fallback_name),
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
+                color = if (isPlaying) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = alpha)
+                },
+                fontWeight = if (isPlaying) FontWeight.Bold else null,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )

@@ -11,11 +11,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -83,6 +84,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -231,6 +233,7 @@ private fun BuiltinPlayer(
     var playbackError by remember { mutableStateOf<PlaybackException?>(null) }
     var resizeMode by remember { mutableIntStateOf(AspectRatioFrameLayout.RESIZE_MODE_FIT) }
     var sourcesOpen by remember { mutableStateOf(false) }
+    PauseWhileCovered(player = player, covered = sourcesOpen)
     // The stream the player is on, which starts as the one navigated to and changes when
     // a different source is picked from the side sheet.
     var streamUrl by remember(url) { mutableStateOf(url) }
@@ -305,6 +308,7 @@ private fun BuiltinPlayer(
                 source.playableUrl?.let { streamUrl = it }
                 sourcesOpen = false
             },
+            currentUrl = streamUrl,
         )
     }
 
@@ -313,6 +317,28 @@ private fun BuiltinPlayer(
             info = error.toDebugInfo(url, stringResource(Res.string.player_no_message)),
             onDismiss = { playbackError = null },
         )
+    }
+}
+
+/**
+ * Holds playback while something is covering the picture.
+ *
+ * A sheet sits on top of the video, so whatever plays behind it is missed. It pauses on
+ * the way in and picks up again on the way out — but only if it was playing to begin with,
+ * so a film someone paused deliberately stays paused when they close the sheet.
+ */
+@Composable
+private fun PauseWhileCovered(player: ExoPlayer, covered: Boolean) {
+    var resumeWhenUncovered by remember { mutableStateOf(false) }
+
+    LaunchedEffect(covered) {
+        if (covered) {
+            resumeWhenUncovered = player.isPlaying
+            player.pause()
+        } else if (resumeWhenUncovered) {
+            resumeWhenUncovered = false
+            player.play()
+        }
     }
 }
 
@@ -593,6 +619,13 @@ private fun PlayerControls(
 
     // Controls fade out on their own during playback, as in every other video app, so the
     // video is not left permanently covered by a bar nobody is touching.
+    val seekBy: (Long) -> Unit = { delta ->
+        val target = (player.currentPosition + delta).coerceAtLeast(0L)
+            .let { if (duration > 0) it.coerceAtMost(duration) else it }
+        player.seekTo(target)
+        position = target
+    }
+
     val selectTrack: (Int, TrackSelectionOverride?) -> Unit = { type, override ->
         val builder = player.trackSelectionParameters.buildUpon()
         if (override == null) {
@@ -605,6 +638,7 @@ private fun PlayerControls(
     }
 
     val anySheetOpen = speedOpen || subtitlesOpen || audioOpen
+    PauseWhileCovered(player = player, covered = anySheetOpen)
     LaunchedEffect(controlsVisible, isPlaying, seekPreviewMillis, anySheetOpen) {
         if (controlsVisible && isPlaying && seekPreviewMillis == null && !anySheetOpen) {
             delay(AutoHideMillis)
@@ -615,11 +649,21 @@ private fun PlayerControls(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = { controlsVisible = !controlsVisible },
-            ),
+            // A tap anywhere shows or hides the controls; a double tap on one side or the
+            // other skips, which is the gesture every video app has taught people to
+            // expect and which works without the controls being up at all. Locked means
+            // locked, so the skip is off then and only the toggle remains.
+            .pointerInput(locked) {
+                detectTapGestures(
+                    onTap = { controlsVisible = !controlsVisible },
+                    onDoubleTap = { offset ->
+                        if (!locked) {
+                            val forward = offset.x > size.width / 2f
+                            seekBy(if (forward) SeekStepMillis else -SeekStepMillis)
+                        }
+                    },
+                )
+            },
     ) {
         AnimatedVisibility(
             visible = controlsVisible,
@@ -678,12 +722,7 @@ private fun PlayerControls(
                     // answers.
                     isBuffering = playbackState == Player.STATE_IDLE ||
                         playbackState == Player.STATE_BUFFERING,
-                    onSeekBy = { delta ->
-                        val target = (player.currentPosition + delta).coerceAtLeast(0L)
-                            .let { if (duration > 0) it.coerceAtMost(duration) else it }
-                        player.seekTo(target)
-                        position = target
-                    },
+                    onSeekBy = seekBy,
                     onPlayPause = { if (player.isPlaying) player.pause() else player.play() },
                     modifier = Modifier.align(Alignment.Center),
                 )
@@ -1148,6 +1187,10 @@ private fun ChoiceSheet(title: String, choices: List<Choice>, onDismiss: () -> U
                     // role from the sheet's container — every row came out as a block in
                     // a slightly wrong colour. Transparent lets the sheet show through.
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    // A list item indents its content 16dp of its own accord, which left
+                    // every label sitting short of the 24dp the header and the sources
+                    // sheet use. Stated here so the column reads as one edge.
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
                     modifier = Modifier.clickable {
                         choice.onSelect()
                         onDismiss()
