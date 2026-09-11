@@ -300,6 +300,9 @@
     <string name="player_play">Αναπαραγωγή</string>
     <string name="player_play_with">Αναπαραγωγή με</string>
     <string name="player_not_available_desktop">Η αναπαραγωγή δεν είναι ακόμη διαθέσιμη στον υπολογιστή.</string>
+    <string name="player_stats_peers">Ομότιμοι</string>
+    <string name="player_stats_seeds">Διαμοιραστές</string>
+    <string name="player_stats_downloaded">Ληφθέν</string>
     <string name="simkl_answered_with">Το Simkl απάντησε με %1$d.</string>
     <string name="simkl_unreadable_reply">Μη αναγνώσιμη απάντηση: %1$s</string>
 </resources>

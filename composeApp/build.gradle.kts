@@ -78,6 +78,9 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.androidx.activity.compose)
+            // Imported directly for the player's system-bar control, rather than leaned on
+            // as a transitive of activity-compose.
+            implementation(libs.androidx.core)
             implementation(libs.media3.exoplayer)
             implementation(libs.media3.ui)
             implementation(libs.nextlib.media3ext)

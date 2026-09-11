@@ -3,6 +3,7 @@ agp = "9.4.0"
 kotlin = "2.4.0"
 compose-multiplatform = "1.12.0"
 androidx-activityCompose = "1.11.0"
+androidx-core = "1.19.0"
 ktor = "3.5.2"
 kotlinx-serialization = "1.11.0"
 navigation-compose = "2.9.2"
@@ -18,6 +19,7 @@ nextlib = "1.11.0-0.14.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
+androidx-core = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }

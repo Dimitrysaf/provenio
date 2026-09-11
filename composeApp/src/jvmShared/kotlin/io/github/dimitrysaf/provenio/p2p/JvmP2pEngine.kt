@@ -136,6 +136,7 @@ class JvmP2pEngine : P2pEngine {
                     sessionDownloadedBytes = sample.downloadedBytes,
                     sessionUploadedBytes = sample.uploadedBytes,
                     activeTorrents = sample.activeTorrents,
+                    progress = sample.progress,
                     cacheUsedBytes = cacheBytes,
                 )
             }

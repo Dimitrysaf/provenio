@@ -1,7 +1,10 @@
 package io.github.dimitrysaf.provenio.feature.player
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.net.Uri
+import android.view.WindowManager
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -11,13 +14,19 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -50,8 +59,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -62,6 +74,7 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
+import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlayerBackend
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.ScrobbleTarget
@@ -82,6 +95,9 @@ import io.github.dimitrysaf.provenio.resources.player_play
 import io.github.dimitrysaf.provenio.resources.player_play_with
 import io.github.dimitrysaf.provenio.resources.player_playback_failed
 import io.github.dimitrysaf.provenio.resources.player_source
+import io.github.dimitrysaf.provenio.resources.player_stats_downloaded
+import io.github.dimitrysaf.provenio.resources.player_stats_peers
+import io.github.dimitrysaf.provenio.resources.player_stats_seeds
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
@@ -163,6 +179,8 @@ private fun BuiltinPlayer(
         onDispose { player.removeListener(listener) }
     }
 
+    ImmersiveLandscapeEffect()
+
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
@@ -177,6 +195,12 @@ private fun BuiltinPlayer(
             },
         )
         PlayerControls(player = player, onBack = onBack)
+        // Outside PlayerControls on purpose, so it stays up after the controls fade. The
+        // whole point of it is watching the swarm while the video plays.
+        TorrentStats(
+            url = url,
+            modifier = Modifier.align(Alignment.TopEnd),
+        )
         if (scrobbleTarget != null) {
             ScrobbleReporter(player = player, target = scrobbleTarget)
         }
@@ -189,6 +213,113 @@ private fun BuiltinPlayer(
         )
     }
 }
+
+/**
+ * Turns the whole window over to the video: landscape, no system bars, and a screen that
+ * does not go dark on its own.
+ *
+ * All three are undone on the way out, so the rest of the app keeps the orientation the
+ * user was holding the phone in and goes back to sleeping normally. The bars are hidden
+ * rather than drawn behind because a video is the one screen where the clock and the
+ * gesture pill are pure subtraction — and they come back on a swipe from the edge, which
+ * is the behaviour every video app has trained people to expect.
+ *
+ * The keep-awake flag is a window flag rather than a wake lock on purpose: it needs no
+ * permission and Android drops it for us if the app is backgrounded or killed, so there is
+ * no way to leak a screen that never sleeps again.
+ */
+@Composable
+private fun ImmersiveLandscapeEffect() {
+    val activity = LocalActivity.current ?: return
+
+    DisposableEffect(activity) {
+        val window = activity.window
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        val previousOrientation = activity.requestedOrientation
+
+        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        onDispose {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            controller.show(WindowInsetsCompat.Type.systemBars())
+            activity.requestedOrientation = previousOrientation
+        }
+    }
+}
+
+/**
+ * What the swarm is doing, while it is doing it.
+ *
+ * Only for torrents: a debrid link or a plain HTTP file has no peers to report, so the
+ * readout is matched against the engine's own loopback address rather than shown for every
+ * stream. Hidden entirely when the user has switched torrent stats off in settings.
+ */
+@Composable
+private fun TorrentStats(url: String, modifier: Modifier = Modifier) {
+    val settings by P2pRepository.settings.collectAsState()
+    val status by P2pRepository.status.collectAsState()
+
+    val isTorrent = status.baseUrl?.let(url::startsWith) == true
+    if (settings.hideStats || !isTorrent) return
+
+    Column(
+        modifier = modifier
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(12.dp)
+            .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            // Without this the rows below would each fill the screen's width rather than
+            // the widest row's, and the readout would stretch across the whole video.
+            .width(IntrinsicSize.Max),
+    ) {
+        StatRow(stringResource(Res.string.player_stats_peers), status.peers.toString())
+        StatRow(stringResource(Res.string.player_stats_seeds), status.seeds.toString())
+        StatRow("↓", formatTransferRate(status.downloadBytesPerSecond))
+        StatRow("↑", formatTransferRate(status.uploadBytesPerSecond))
+        StatRow(
+            stringResource(Res.string.player_stats_downloaded),
+            "${(status.progress * 100f).toInt()}%",
+        )
+    }
+}
+
+@Composable
+private fun StatRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = label,
+            color = Color.White.copy(alpha = 0.7f),
+            style = MaterialTheme.typography.labelSmall,
+        )
+        Text(
+            text = value,
+            color = Color.White,
+            // Monospaced so the numbers do not shuffle sideways every time they tick.
+            style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+            modifier = Modifier.padding(start = 16.dp),
+        )
+    }
+}
+
+/** A transfer rate at the largest unit that still leaves a number worth reading. */
+private fun formatTransferRate(bytesPerSecond: Long): String = when {
+    bytesPerSecond >= MegabyteBytes -> {
+        val tenths = bytesPerSecond * 10 / MegabyteBytes
+        "${tenths / 10}.${tenths % 10} MB/s"
+    }
+    bytesPerSecond >= KilobyteBytes -> "${bytesPerSecond / KilobyteBytes} KB/s"
+    else -> "$bytesPerSecond B/s"
+}
+
+private const val KilobyteBytes = 1_024L
+private const val MegabyteBytes = 1_024L * 1_024L
 
 /** Everything worth showing about a failed load, in the order it's most useful to read. */
 private data class PlaybackDebugInfo(

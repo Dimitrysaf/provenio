@@ -23,6 +23,8 @@ data class TorrentSample(
     val downloadedBytes: Long = 0,
     val uploadedBytes: Long = 0,
     val activeTorrents: Int = 0,
+    /** How much of the file being streamed has arrived, 0..1. */
+    val progress: Float = 0f,
 )
 
 /**
@@ -310,6 +312,10 @@ class TorrentSession(private val cacheDir: File) {
             downloadedBytes = session.totalDownload(),
             uploadedBytes = session.totalUpload(),
             activeTorrents = live.size,
+            // Progress of the wanted data, not of the torrent: every file but the one being
+            // played is set to IGNORE, so this is how much of the video has arrived rather
+            // than how much of the release.
+            progress = live.firstOrNull()?.progress() ?: 0f,
         )
     }
 

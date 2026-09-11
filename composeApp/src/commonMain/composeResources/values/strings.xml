@@ -300,6 +300,9 @@
     <string name="player_play">Play</string>
     <string name="player_play_with">Play with</string>
     <string name="player_not_available_desktop">Playback is not available on desktop yet.</string>
+    <string name="player_stats_peers">Peers</string>
+    <string name="player_stats_seeds">Seeds</string>
+    <string name="player_stats_downloaded">Downloaded</string>
     <string name="simkl_answered_with">Simkl answered %1$d.</string>
     <string name="simkl_unreadable_reply">Unreadable reply: %1$s</string>
 </resources>

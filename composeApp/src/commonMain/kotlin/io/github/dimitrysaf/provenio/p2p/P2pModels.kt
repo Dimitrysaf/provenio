@@ -86,6 +86,8 @@ data class P2pStatus(
     val sessionUploadedBytes: Long = 0,
     val cacheUsedBytes: Long = 0,
     val activeTorrents: Int = 0,
+    /** How much of the file being streamed has arrived, 0..1. */
+    val progress: Float = 0f,
     /** Why the engine is in [P2pServiceState.Failed], or any note worth surfacing. */
     val detail: String? = null,
 )
