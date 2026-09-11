@@ -49,8 +49,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -62,7 +60,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -109,13 +106,12 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
 import io.github.dimitrysaf.provenio.designsystem.theme.dynamicColorScheme
-import io.github.dimitrysaf.provenio.feature.detail.components.SourcesSheetContent
+import io.github.dimitrysaf.provenio.feature.detail.components.SourcesSheet
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlayerBackend
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.ScrobbleTarget
 import io.github.dimitrysaf.provenio.simkl.SimklScrobbler
-import io.github.dimitrysaf.provenio.stremio.SourceOption
 import kotlinx.coroutines.delay
 import io.github.dimitrysaf.provenio.resources.Res
 import io.github.dimitrysaf.provenio.resources.back
@@ -296,11 +292,11 @@ private fun BuiltinPlayer(
     }
 
     if (sourcesOpen && videoId != null) {
-        SourcesPanel(
+        SourcesSheet(
             type = scrobbleTarget?.mediaType ?: MovieType,
-            videoId = videoId,
+            id = videoId,
             title = title,
-            onClose = { sourcesOpen = false },
+            onDismiss = { sourcesOpen = false },
             onPlay = { source ->
                 source.playableUrl?.let { streamUrl = it }
                 sourcesOpen = false
@@ -313,47 +309,6 @@ private fun BuiltinPlayer(
             info = error.toDebugInfo(url, stringResource(Res.string.player_no_message)),
             onDismiss = { playbackError = null },
         )
-    }
-}
-
-/**
- * Sources, rising from the bottom over the video.
- *
- * Full width rather than a column down one side: a source's name carries resolution,
- * codec, group and size, and none of that survives being folded into a narrow panel.
- *
- * Gestures are off and there is no drag handle, so nothing can be flicked away by accident
- * mid-film — the close button in the header is the only way out, which is also the only
- * affordance a video player can afford to have here.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SourcesPanel(
-    type: String,
-    videoId: String,
-    title: String?,
-    onClose: () -> Unit,
-    onPlay: (SourceOption) -> Unit,
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    PlayerChrome {
-        SourcesSheetContent(
-            type = type,
-            id = videoId,
-            title = title,
-            onDismiss = onClose,
-            onPlay = onPlay,
-            onClose = onClose,
-        ) { content ->
-            ModalBottomSheet(
-                onDismissRequest = onClose,
-                sheetState = sheetState,
-                sheetGesturesEnabled = false,
-                dragHandle = null,
-            ) {
-                content()
-            }
-        }
     }
 }
 
@@ -1290,9 +1245,6 @@ private val PausedCorner = 16.dp
 private val PlayIconSize = 26.dp
 private val SkipIconSize = 24.dp
 private val GroupButtonSize = 40.dp
-
-/** Wide enough for a source's name and badges without starving the picture. */
-private val SideSheetWidth = 340.dp
 
 /** What a stream is when nothing said otherwise — matches the add-on protocol's types. */
 private const val MovieType = "movie"
