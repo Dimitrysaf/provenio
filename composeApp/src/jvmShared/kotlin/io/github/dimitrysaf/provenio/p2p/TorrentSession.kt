@@ -48,6 +48,9 @@ class TorrentSession(private val cacheDir: File) {
     /** Guards the add-a-torrent path, which must not run twice for the same info hash. */
     private val lock = Any()
 
+    /** Who has answered, and who has failed to — see [SwarmDiagnostics]. */
+    private val diagnostics = SwarmDiagnostics()
+
     /** The settings the session is currently running under. */
     @Volatile
     private var current: P2pSettings = P2pSettings()
@@ -58,6 +61,9 @@ class TorrentSession(private val cacheDir: File) {
         if (session.isRunning) return
         current = settings
         cacheDir.mkdirs()
+        // Attached before the session starts so the listen-socket alerts, which are posted
+        // during startup and never again, are not missed.
+        session.addListener(diagnostics)
         p2pLog(
             "session starting: port=${settings.listenPort} profile=${settings.profile} " +
                 "upload=${settings.uploadEnabled} cache=${settings.cacheSize} dir=$cacheDir",
@@ -209,6 +215,7 @@ class TorrentSession(private val cacheDir: File) {
                         "peers=${status.numPeers()} seeds=${status.numSeeds()} " +
                         "known=${status.listPeers()} state=${status.state()}",
                 )
+                p2pLog("  who answered: ${diagnostics.summary()}")
             }
             Thread.sleep(MetadataPollMillis)
         }
@@ -298,7 +305,11 @@ class TorrentSession(private val cacheDir: File) {
     /** A reading of the session as a whole, for the status the settings screen shows. */
     fun sample(): TorrentSample {
         if (!session.isRunning) return TorrentSample()
-        val live = streams.keys.mapNotNull { key ->
+        // Every registered torrent, not just the ones with a stream attached. A torrent is
+        // registered the moment it is added and only gains a stream once its metadata has
+        // arrived, so reading from `streams` reported zero peers for the entire time the
+        // swarm was being searched — exactly when the number matters most.
+        val live = requests.keys.mapNotNull { key ->
             runCatching { Sha1Hash.parseHex(key) }.getOrNull()
                 ?.let { session.find(it) }
                 ?.takeIf { it.isValid }
