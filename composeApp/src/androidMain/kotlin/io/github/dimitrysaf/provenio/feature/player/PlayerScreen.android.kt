@@ -59,6 +59,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -622,7 +623,13 @@ private fun PlayerControls(
 
                 TransportRow(
                     isPlaying = isPlaying,
-                    isBuffering = playbackState == Player.STATE_BUFFERING,
+                    // Anything that is not a frame on screen reads as loading, not just a
+                    // mid-playback stall: IDLE is the player preparing, and BUFFERING is
+                    // also the long wait while the torrent's metadata is fetched, since
+                    // the loopback server holds that first request open until the swarm
+                    // answers.
+                    isBuffering = playbackState == Player.STATE_IDLE ||
+                        playbackState == Player.STATE_BUFFERING,
                     onSeekBy = { delta ->
                         val target = (player.currentPosition + delta).coerceAtLeast(0L)
                             .let { if (duration > 0) it.coerceAtMost(duration) else it }
@@ -1037,8 +1044,10 @@ private fun LibraryGroup() {
 /**
  * One button of a group.
  *
- * Tonal, because the spec rules out standard icon buttons inside a group — they have no
- * container, so a group of them has nothing to connect.
+ * Outlined: the spec rules out standard icon buttons inside a group because they have no
+ * container to connect, and of the treatments that do have one, the outline is the one
+ * that sits over a picture without blocking it — the seams between buttons stay legible
+ * and the video still shows through.
  */
 @Composable
 private fun GroupButton(
@@ -1048,7 +1057,7 @@ private fun GroupButton(
     onClick: () -> Unit,
     enabled: Boolean = true,
 ) {
-    FilledTonalIconButton(
+    OutlinedIconButton(
         onClick = onClick,
         enabled = enabled,
         shape = shape,
