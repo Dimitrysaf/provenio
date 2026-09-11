@@ -57,9 +57,9 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -1044,10 +1044,11 @@ private fun LibraryGroup() {
 /**
  * One button of a group.
  *
- * Outlined: the spec rules out standard icon buttons inside a group because they have no
- * container to connect, and of the treatments that do have one, the outline is the one
- * that sits over a picture without blocking it — the seams between buttons stay legible
- * and the video still shows through.
+ * A filled container, but filled with scrim rather than a palette colour: the picture
+ * still reads through it while the icon gets something dark to sit against. Scrim is the
+ * role Material already uses for darkening content under an overlay, so this stays a
+ * theme role rather than a literal black — and a group needs some container, since the
+ * spec rules out standard icon buttons inside one.
  */
 @Composable
 private fun GroupButton(
@@ -1057,11 +1058,18 @@ private fun GroupButton(
     onClick: () -> Unit,
     enabled: Boolean = true,
 ) {
-    OutlinedIconButton(
+    val scheme = MaterialTheme.colorScheme
+    FilledIconButton(
         onClick = onClick,
         enabled = enabled,
         shape = shape,
         modifier = Modifier.size(GroupButtonSize),
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = scheme.scrim.copy(alpha = GroupContainerAlpha),
+            contentColor = scheme.onSurface,
+            disabledContainerColor = scheme.scrim.copy(alpha = GroupDisabledContainerAlpha),
+            disabledContentColor = scheme.onSurface.copy(alpha = GroupDisabledContentAlpha),
+        ),
     ) {
         Icon(imageVector = icon, contentDescription = description)
     }
@@ -1208,6 +1216,11 @@ private val PausedCorner = 16.dp
 private val PlayIconSize = 26.dp
 private val SkipIconSize = 24.dp
 private val GroupButtonSize = 40.dp
+
+// Dark enough to carry an icon, sheer enough to keep the frame behind it.
+private const val GroupContainerAlpha = 0.45f
+private const val GroupDisabledContainerAlpha = 0.25f
+private const val GroupDisabledContentAlpha = 0.38f
 private val StatIconSize = 14.dp
 // Connected group: 2dp between buttons at every size, the run's outer ends fully round,
 // every inner corner 8dp.
