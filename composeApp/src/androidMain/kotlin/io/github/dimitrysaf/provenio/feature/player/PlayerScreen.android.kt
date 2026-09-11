@@ -7,8 +7,6 @@ import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -50,8 +48,10 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DismissibleDrawerSheet
+import androidx.compose.material3.DismissibleNavigationDrawer
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -63,8 +63,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -86,11 +86,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowInsetsCompat
@@ -258,66 +260,87 @@ private fun BuiltinPlayer(
 
     ImmersiveLandscapeEffect()
 
-    // Two columns, as YouTube does it in landscape: the sheet does not float over the
-    // video, it takes its own space and the picture gives way. Nothing is ever hidden
-    // behind the panel that way, and the controls stay reachable beside it.
-    Row(modifier = modifier.fillMaxSize().background(Color.Black)) {
-        Box(modifier = Modifier.weight(1f).fillMaxSize()) {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { viewContext ->
-                    PlayerView(viewContext).apply {
-                        this.player = player
-                        // media3's own overlay is switched off entirely; PlayerControls
-                        // below draws the whole thing in Compose instead, sharing the
-                        // app's own theme and touch targets rather than the stock skin.
-                        useController = false
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    LaunchedEffect(sourcesOpen) {
+        if (sourcesOpen) drawerState.open() else drawerState.close()
+    }
+
+    // A dismissible drawer rather than a modal sheet: it is coplanar with the video and
+    // pushes it aside instead of floating over it, which is the whole point. Gestures are
+    // off, so it opens and closes only from the buttons — and a drawer sheet has no drag
+    // handle to begin with.
+    //
+    // Material anchors drawers to the start edge, so the scaffold is mirrored to put this
+    // one on the end edge, and each half is flipped back so its own contents still read
+    // left to right.
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        DismissibleNavigationDrawer(
+            modifier = modifier.fillMaxSize().background(Color.Black),
+            drawerState = drawerState,
+            gesturesEnabled = false,
+            drawerContent = {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    PlayerChrome {
+                        DismissibleDrawerSheet(
+                            drawerState = drawerState,
+                            modifier = Modifier.width(SideSheetWidth),
+                        ) {
+                            if (videoId != null) {
+                                SourcesSheetContent(
+                                    type = scrobbleTarget?.mediaType ?: MovieType,
+                                    id = videoId,
+                                    title = title,
+                                    onDismiss = { sourcesOpen = false },
+                                    onPlay = { source ->
+                                        source.playableUrl?.let { streamUrl = it }
+                                        sourcesOpen = false
+                                    },
+                                    onClose = { sourcesOpen = false },
+                                ) { content -> content() }
+                            }
+                        }
                     }
-                },
-                update = { it.resizeMode = resizeMode },
-            )
-            PlayerChrome {
-                PlayerControls(
-                    player = player,
-                    onBack = onBack,
-                    streamUrl = streamUrl,
-                    title = title,
-                    season = season,
-                    episode = episode,
-                    episodeTitle = episodeTitle,
-                    resizeMode = resizeMode,
-                    onResizeMode = { resizeMode = it },
-                    onOpenSources = if (videoId != null) {
-                        { sourcesOpen = true }
-                    } else {
-                        null
-                    },
-                )
-            }
-        }
-        AnimatedVisibility(
-            visible = sourcesOpen && videoId != null,
-            enter = expandHorizontally(expandFrom = Alignment.Start),
-            exit = shrinkHorizontally(shrinkTowards = Alignment.Start),
+                }
+            },
         ) {
-            PlayerChrome {
-                SideSheet {
-                    SourcesSheetContent(
-                        type = scrobbleTarget?.mediaType ?: MovieType,
-                        id = videoId.orEmpty(),
-                        title = title,
-                        onDismiss = { sourcesOpen = false },
-                        onPlay = { source ->
-                            source.playableUrl?.let { streamUrl = it }
-                            sourcesOpen = false
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { viewContext ->
+                            PlayerView(viewContext).apply {
+                                this.player = player
+                                // media3's own overlay is switched off entirely;
+                                // PlayerControls draws the whole thing in Compose instead,
+                                // sharing the app's theme rather than the stock skin.
+                                useController = false
+                            }
                         },
-                        onClose = { sourcesOpen = false },
-                    ) { content -> content() }
+                        update = { it.resizeMode = resizeMode },
+                    )
+                    PlayerChrome {
+                        PlayerControls(
+                            player = player,
+                            onBack = onBack,
+                            streamUrl = streamUrl,
+                            title = title,
+                            season = season,
+                            episode = episode,
+                            episodeTitle = episodeTitle,
+                            resizeMode = resizeMode,
+                            onResizeMode = { resizeMode = it },
+                            onOpenSources = if (videoId != null) {
+                                { sourcesOpen = true }
+                            } else {
+                                null
+                            },
+                        )
+                    }
+                    if (scrobbleTarget != null) {
+                        ScrobbleReporter(player = player, target = scrobbleTarget)
+                    }
                 }
             }
-        }
-        if (scrobbleTarget != null) {
-            ScrobbleReporter(player = player, target = scrobbleTarget)
         }
     }
 
@@ -326,24 +349,6 @@ private fun BuiltinPlayer(
             info = error.toDebugInfo(url, stringResource(Res.string.player_no_message)),
             onDismiss = { playbackError = null },
         )
-    }
-}
-
-/**
- * A standard side sheet: it sits beside the video rather than over it, so it is opaque
- * and takes its own width. No drag handle — the content carries a close button instead,
- * because a sheet that is part of the layout has no gesture to be dismissed by.
- */
-@Composable
-private fun SideSheet(content: @Composable () -> Unit) {
-    Surface(
-        modifier = Modifier.width(SideSheetWidth).fillMaxSize(),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-    ) {
-        Column(modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
-            HorizontalDivider()
-            content()
-        }
     }
 }
 
