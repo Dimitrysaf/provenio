@@ -119,7 +119,7 @@ fun SourcesSheet(
         onDismiss = onDismiss,
         onPlay = onPlay,
     ) { content ->
-        container { content() }
+        ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) { content() }
     }
 }
 
@@ -248,7 +248,7 @@ fun SourcesSheetContent(
     val filtering = query.isNotBlank() || picked.isNotEmpty()
     val matches = groups.sumOf { visibleIn(it).size }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    container {
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 8.dp),
