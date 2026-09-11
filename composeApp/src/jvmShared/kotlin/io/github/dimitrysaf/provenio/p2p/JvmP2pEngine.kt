@@ -77,14 +77,11 @@ class JvmP2pEngine : P2pEngine {
     }
 
     /**
-     * Joins the swarm, waits for metadata, and only then answers with a URL.
+     * Registers the torrent and answers with the URL to play.
      *
-     * The waiting has to happen somewhere, and it cannot be in the request handler: a
-     * player expects response headers in a couple of seconds and finding a swarm takes
-     * far longer than that, so doing it there times the player out before a byte moves.
-     * Here the caller is the sources sheet, which already shows a spinner and can afford
-     * to wait — and a torrent nobody is seeding fails as "no source" instead of as a
-     * mysterious playback error.
+     * No network work happens here. The player opens straight away and shows its own
+     * buffering while the swarm is found, which is the whole reason the engine hands back
+     * a URL rather than bytes.
      */
     override suspend fun streamUrl(request: TorrentRequest): String? {
         val stream = server
@@ -92,12 +89,7 @@ class JvmP2pEngine : P2pEngine {
             p2pLog("cannot stream: engine is not running")
             return null
         }
-        val key = torrents.register(request)
-        if (torrents.open(key) == null) {
-            p2pLog("no stream for $key — giving up")
-            return null
-        }
-        val url = stream.urlFor(key)
+        val url = stream.urlFor(torrents.register(request))
         p2pLog("ready: $url")
         return url
     }

@@ -40,9 +40,9 @@ class LocalStreamServer(
                     call.respondText("ok")
                 }
                 get("/stream/{key}") {
-                    // Already open by the time a player asks: the metadata was fetched
-                    // when the URL was handed out, so this is a map lookup and the
-                    // response headers go out immediately.
+                    // Metadata is fetched here, on the first request, which is why the
+                    // player's read timeout has to be generous — see StreamTimeoutMillis
+                    // in the Android player.
                     val key = call.parameters["key"]
                     p2pLog("GET /stream/$key range=${call.request.header(HttpHeaders.Range)}")
                     val stream = key?.let { torrents.open(it) }
