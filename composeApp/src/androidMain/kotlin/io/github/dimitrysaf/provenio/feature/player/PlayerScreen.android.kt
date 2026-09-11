@@ -238,15 +238,20 @@ private fun BuiltinPlayer(
     // a different source is picked from the side sheet.
     var streamUrl by remember(url) { mutableStateOf(url) }
 
-    DisposableEffect(streamUrl) {
+    // Changing source only changes what is loaded. This used to be a DisposableEffect
+    // keyed on the URL, which meant picking a new source disposed the old effect first —
+    // releasing the player — and then prepared a player that no longer existed. Nothing
+    // happened at all: no buffering state, no new frame, the last one frozen on screen.
+    // The player's lifetime belongs to the effect below, which is keyed on the player.
+    LaunchedEffect(streamUrl) {
         playbackError = null
+        // Stop before swapping so the surface lets go of the frame it is holding; without
+        // it the previous source stays on screen until the new one has decoded enough to
+        // paint over it.
+        player.stop()
         player.setMediaItem(MediaItem.fromUri(streamUrl))
         player.prepare()
         player.playWhenReady = true
-
-        // Releasing is not optional. A leaked codec surfaces later as a decoder failure
-        // on an unrelated video, which looks random and is miserable to trace back.
-        onDispose { player.release() }
     }
 
     DisposableEffect(player) {
@@ -256,7 +261,14 @@ private fun BuiltinPlayer(
             }
         }
         player.addListener(listener)
-        onDispose { player.removeListener(listener) }
+        onDispose {
+            player.removeListener(listener)
+            // Releasing is not optional. A leaked codec surfaces later as a decoder
+            // failure on an unrelated video, which looks random and is miserable to trace
+            // back. Tied to the player itself, so it happens when the screen goes away and
+            // never merely because the source changed.
+            player.release()
+        }
     }
 
     ImmersiveLandscapeEffect()
