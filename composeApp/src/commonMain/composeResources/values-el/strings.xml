@@ -305,4 +305,21 @@
     <string name="player_stats_downloaded">Ληφθέν</string>
     <string name="simkl_answered_with">Το Simkl απάντησε με %1$d.</string>
     <string name="simkl_unreadable_reply">Μη αναγνώσιμη απάντηση: %1$s</string>
+    <string name="player_back_5">Πίσω 5 δευτερόλεπτα</string>
+    <string name="player_forward_5">Μπροστά 5 δευτερόλεπτα</string>
+    <string name="player_episode_number">Κ%1$d · Ε%2$d</string>
+    <string name="player_aspect">Αναλογία εικόνας</string>
+    <string name="player_aspect_fit">Προσαρμογή</string>
+    <string name="player_aspect_fill">Γέμισμα</string>
+    <string name="player_aspect_zoom">Ζουμ</string>
+    <string name="player_speed">Ταχύτητα αναπαραγωγής</string>
+    <string name="player_subtitles">Υπότιτλοι</string>
+    <string name="player_audio">Κομμάτι ήχου</string>
+    <string name="player_cast">Μετάδοση</string>
+    <string name="player_lock">Κλείδωμα χειριστηρίων</string>
+    <string name="player_unlock">Ξεκλείδωμα χειριστηρίων</string>
+    <string name="player_sources">Πηγές</string>
+    <string name="player_episodes">Επεισόδια</string>
+    <string name="player_track_off">Ανενεργό</string>
+    <string name="player_stats_progress">Ληφθέν</string>
 </resources>

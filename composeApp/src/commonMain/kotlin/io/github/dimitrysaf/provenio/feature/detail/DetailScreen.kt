@@ -213,6 +213,8 @@ fun DetailScreen(
                         url = url,
                         type = currentMeta?.type ?: type,
                         imdbId = currentMeta?.id ?: id,
+                        title = currentMeta?.name,
+                        episodeTitle = video?.title,
                         season = video?.season,
                         episode = video?.episode,
                         resumeProgressPercent = openFor.resumeProgressPercent,

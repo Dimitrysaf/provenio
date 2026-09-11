@@ -305,4 +305,21 @@
     <string name="player_stats_downloaded">Downloaded</string>
     <string name="simkl_answered_with">Simkl answered %1$d.</string>
     <string name="simkl_unreadable_reply">Unreadable reply: %1$s</string>
+    <string name="player_back_5">Back 5 seconds</string>
+    <string name="player_forward_5">Forward 5 seconds</string>
+    <string name="player_episode_number">S%1$d · E%2$d</string>
+    <string name="player_aspect">Aspect ratio</string>
+    <string name="player_aspect_fit">Fit</string>
+    <string name="player_aspect_fill">Fill</string>
+    <string name="player_aspect_zoom">Zoom</string>
+    <string name="player_speed">Playback speed</string>
+    <string name="player_subtitles">Subtitles</string>
+    <string name="player_audio">Audio track</string>
+    <string name="player_cast">Cast</string>
+    <string name="player_lock">Lock controls</string>
+    <string name="player_unlock">Unlock controls</string>
+    <string name="player_sources">Sources</string>
+    <string name="player_episodes">Episodes</string>
+    <string name="player_track_off">Off</string>
+    <string name="player_stats_progress">Downloaded</string>
 </resources>

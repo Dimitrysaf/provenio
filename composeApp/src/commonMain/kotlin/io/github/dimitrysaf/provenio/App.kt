@@ -147,6 +147,10 @@ fun App() {
                             )
                         },
                         onBack = { navController.popBackStack() },
+                        title = route.title,
+                        season = route.season,
+                        episode = route.episode,
+                        episodeTitle = route.episodeTitle,
                     )
                 }
 
@@ -161,6 +165,8 @@ fun App() {
                                 navController.navigate(
                                     PlayerRoute(
                                         url = request.url,
+                                        title = request.title,
+                                        episodeTitle = request.episodeTitle,
                                         mediaType = request.type,
                                         imdbId = request.imdbId,
                                         season = request.season,

@@ -22,6 +22,10 @@ actual fun PlayerScreen(
     scrobbleTarget: ScrobbleTarget?,
     onBack: () -> Unit,
     modifier: Modifier,
+    title: String?,
+    season: Int?,
+    episode: Int?,
+    episodeTitle: String?,
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(

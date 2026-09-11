@@ -20,4 +20,8 @@ expect fun PlayerScreen(
     scrobbleTarget: ScrobbleTarget?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    title: String? = null,
+    season: Int? = null,
+    episode: Int? = null,
+    episodeTitle: String? = null,
 )

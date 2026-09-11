@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,18 +31,39 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.AspectRatio
+import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.filled.Cast
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.ClosedCaption
+import androidx.compose.material.icons.filled.Downloading
+import androidx.compose.material.icons.filled.Forward5
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.Replay5
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,31 +71,43 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.C
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
+import io.github.dimitrysaf.provenio.designsystem.theme.dynamicColorScheme
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlayerBackend
 import io.github.dimitrysaf.provenio.player.PlayerRepository
@@ -82,12 +116,10 @@ import io.github.dimitrysaf.provenio.simkl.SimklScrobbler
 import kotlinx.coroutines.delay
 import io.github.dimitrysaf.provenio.resources.Res
 import io.github.dimitrysaf.provenio.resources.back
-import io.github.dimitrysaf.provenio.resources.player_back_10
 import io.github.dimitrysaf.provenio.resources.player_cause
 import io.github.dimitrysaf.provenio.resources.player_close
 import io.github.dimitrysaf.provenio.resources.player_copy
 import io.github.dimitrysaf.provenio.resources.player_error
-import io.github.dimitrysaf.provenio.resources.player_forward_10
 import io.github.dimitrysaf.provenio.resources.player_message
 import io.github.dimitrysaf.provenio.resources.player_no_message
 import io.github.dimitrysaf.provenio.resources.player_pause
@@ -95,7 +127,23 @@ import io.github.dimitrysaf.provenio.resources.player_play
 import io.github.dimitrysaf.provenio.resources.player_play_with
 import io.github.dimitrysaf.provenio.resources.player_playback_failed
 import io.github.dimitrysaf.provenio.resources.player_source
+import io.github.dimitrysaf.provenio.resources.player_aspect
+import io.github.dimitrysaf.provenio.resources.player_aspect_fill
+import io.github.dimitrysaf.provenio.resources.player_aspect_fit
+import io.github.dimitrysaf.provenio.resources.player_aspect_zoom
+import io.github.dimitrysaf.provenio.resources.player_audio
+import io.github.dimitrysaf.provenio.resources.player_back_5
+import io.github.dimitrysaf.provenio.resources.player_cast
+import io.github.dimitrysaf.provenio.resources.player_episode_number
+import io.github.dimitrysaf.provenio.resources.player_episodes
+import io.github.dimitrysaf.provenio.resources.player_forward_5
+import io.github.dimitrysaf.provenio.resources.player_lock
+import io.github.dimitrysaf.provenio.resources.player_sources
+import io.github.dimitrysaf.provenio.resources.player_speed
 import io.github.dimitrysaf.provenio.resources.player_stats_downloaded
+import io.github.dimitrysaf.provenio.resources.player_subtitles
+import io.github.dimitrysaf.provenio.resources.player_track_off
+import io.github.dimitrysaf.provenio.resources.player_unlock
 import io.github.dimitrysaf.provenio.resources.player_stats_peers
 import io.github.dimitrysaf.provenio.resources.player_stats_seeds
 import org.jetbrains.compose.resources.getString
@@ -107,6 +155,10 @@ actual fun PlayerScreen(
     scrobbleTarget: ScrobbleTarget?,
     onBack: () -> Unit,
     modifier: Modifier,
+    title: String?,
+    season: Int?,
+    episode: Int?,
+    episodeTitle: String?,
 ) {
     val backend by PlayerRepository.backend.collectAsState()
 
@@ -118,6 +170,10 @@ actual fun PlayerScreen(
             scrobbleTarget = scrobbleTarget,
             onBack = onBack,
             modifier = modifier,
+            title = title,
+            season = season,
+            episode = episode,
+            episodeTitle = episodeTitle,
         )
         PlayerBackend.External -> ExternalPlayer(url = url, onBack = onBack)
     }
@@ -129,6 +185,10 @@ private fun BuiltinPlayer(
     scrobbleTarget: ScrobbleTarget?,
     onBack: () -> Unit,
     modifier: Modifier,
+    title: String?,
+    season: Int?,
+    episode: Int?,
+    episodeTitle: String?,
 ) {
     val context = LocalContext.current
     val player = remember {
@@ -138,8 +198,8 @@ private fun BuiltinPlayer(
         //
         // ON, not PREFER: PREFER puts FFmpeg ahead of the platform decoders for video as
         // well, so a 4K stream that the phone has silicon for gets software decoded
-        // instead — which is what it was doing, and is no way to play a film. ON keeps
-        // hardware first and leaves FFmpeg as the fallback for the formats it is here for.
+        // instead. ON keeps hardware first and leaves FFmpeg as the fallback for the
+        // formats it is here for.
         val renderers = NextRenderersFactory(context)
             .setExtensionRendererMode(
                 DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON,
@@ -162,6 +222,7 @@ private fun BuiltinPlayer(
             .build()
     }
     var playbackError by remember { mutableStateOf<PlaybackException?>(null) }
+    var resizeMode by remember { mutableIntStateOf(AspectRatioFrameLayout.RESIZE_MODE_FIT) }
 
     DisposableEffect(url) {
         playbackError = null
@@ -198,14 +259,21 @@ private fun BuiltinPlayer(
                     useController = false
                 }
             },
+            update = { it.resizeMode = resizeMode },
         )
-        PlayerControls(player = player, onBack = onBack)
-        // Outside PlayerControls on purpose, so it stays up after the controls fade. The
-        // whole point of it is watching the swarm while the video plays.
-        TorrentStats(
-            url = url,
-            modifier = Modifier.align(Alignment.TopEnd),
-        )
+        PlayerChrome {
+            PlayerControls(
+                player = player,
+                onBack = onBack,
+                streamUrl = url,
+                title = title,
+                season = season,
+                episode = episode,
+                episodeTitle = episodeTitle,
+                resizeMode = resizeMode,
+                onResizeMode = { resizeMode = it },
+            )
+        }
         if (scrobbleTarget != null) {
             ScrobbleReporter(player = player, target = scrobbleTarget)
         }
@@ -217,6 +285,25 @@ private fun BuiltinPlayer(
             onDismiss = { playbackError = null },
         )
     }
+}
+
+/**
+ * The colour scheme the controls are drawn in.
+ *
+ * A video is always a dark surface whatever the rest of the app is set to, so the overlay
+ * takes the dark scheme rather than the ambient one — still the user's own wallpaper
+ * colours through [dynamicColorScheme], just the half of them that can be read on top of a
+ * picture. Nothing here picks a literal colour; the roles do the work.
+ */
+@Composable
+private fun PlayerChrome(content: @Composable () -> Unit) {
+    val scheme = dynamicColorScheme(useDarkTheme = true) ?: darkColorScheme()
+    MaterialTheme(
+        colorScheme = scheme,
+        typography = MaterialTheme.typography,
+        shapes = MaterialTheme.shapes,
+        content = content,
+    )
 }
 
 /**
@@ -255,76 +342,6 @@ private fun ImmersiveLandscapeEffect() {
         }
     }
 }
-
-/**
- * What the swarm is doing, while it is doing it.
- *
- * Only for torrents: a debrid link or a plain HTTP file has no peers to report, so the
- * readout is matched against the engine's own loopback address rather than shown for every
- * stream. Hidden entirely when the user has switched torrent stats off in settings.
- */
-@Composable
-private fun TorrentStats(url: String, modifier: Modifier = Modifier) {
-    val settings by P2pRepository.settings.collectAsState()
-    val status by P2pRepository.status.collectAsState()
-
-    val isTorrent = status.baseUrl?.let(url::startsWith) == true
-    if (settings.hideStats || !isTorrent) return
-
-    Column(
-        modifier = modifier
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(12.dp)
-            .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp)
-            // Without this the rows below would each fill the screen's width rather than
-            // the widest row's, and the readout would stretch across the whole video.
-            .width(IntrinsicSize.Max),
-    ) {
-        StatRow(stringResource(Res.string.player_stats_peers), status.peers.toString())
-        StatRow(stringResource(Res.string.player_stats_seeds), status.seeds.toString())
-        StatRow("↓", formatTransferRate(status.downloadBytesPerSecond))
-        StatRow("↑", formatTransferRate(status.uploadBytesPerSecond))
-        StatRow(
-            stringResource(Res.string.player_stats_downloaded),
-            "${(status.progress * 100f).toInt()}%",
-        )
-    }
-}
-
-@Composable
-private fun StatRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = label,
-            color = Color.White.copy(alpha = 0.7f),
-            style = MaterialTheme.typography.labelSmall,
-        )
-        Text(
-            text = value,
-            color = Color.White,
-            // Monospaced so the numbers do not shuffle sideways every time they tick.
-            style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-            modifier = Modifier.padding(start = 16.dp),
-        )
-    }
-}
-
-/** A transfer rate at the largest unit that still leaves a number worth reading. */
-private fun formatTransferRate(bytesPerSecond: Long): String = when {
-    bytesPerSecond >= MegabyteBytes -> {
-        val tenths = bytesPerSecond * 10 / MegabyteBytes
-        "${tenths / 10}.${tenths % 10} MB/s"
-    }
-    bytesPerSecond >= KilobyteBytes -> "${bytesPerSecond / KilobyteBytes} KB/s"
-    else -> "$bytesPerSecond B/s"
-}
-
-private const val KilobyteBytes = 1_024L
-private const val MegabyteBytes = 1_024L * 1_024L
 
 /** Everything worth showing about a failed load, in the order it's most useful to read. */
 private data class PlaybackDebugInfo(
@@ -471,17 +488,32 @@ private fun ScrobbleReporter(player: ExoPlayer, target: ScrobbleTarget) {
 }
 
 /**
- * The played-video overlay: back button, play/pause, +/-10s, and a seek bar with the
- * elapsed and total time. Everything media3's default [PlayerView] controller drew, redone
- * so it looks like the rest of the app instead of the stock Android styling.
+ * Everything drawn over the video.
+ *
+ * One visibility flag governs the lot — titles, transport, seek bar, the torrent readout.
+ * A tap toggles it. Nothing is exempt: a readout that stays up while the controls fade is
+ * a permanent smudge on the picture, and the person watching asked for a clean frame.
  */
 @Composable
-private fun PlayerControls(player: ExoPlayer, onBack: () -> Unit) {
+private fun PlayerControls(
+    player: ExoPlayer,
+    onBack: () -> Unit,
+    streamUrl: String,
+    title: String?,
+    season: Int?,
+    episode: Int?,
+    episodeTitle: String?,
+    resizeMode: Int,
+    onResizeMode: (Int) -> Unit,
+) {
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
     var playbackState by remember { mutableStateOf(player.playbackState) }
     var duration by remember { mutableLongStateOf(player.duration.coerceAtLeast(0L)) }
     var position by remember { mutableLongStateOf(player.currentPosition.coerceAtLeast(0L)) }
     var controlsVisible by remember { mutableStateOf(true) }
+    var locked by remember { mutableStateOf(false) }
+    var speed by remember { mutableFloatStateOf(1f) }
+    var tracks by remember { mutableStateOf(player.currentTracks) }
     // Set only while the user is dragging the seek bar, so the position poll below does
     // not fight the thumb the user is holding.
     var seekPreviewMillis by remember { mutableStateOf<Long?>(null) }
@@ -497,6 +529,10 @@ private fun PlayerControls(player: ExoPlayer, onBack: () -> Unit) {
                 if (state == Player.STATE_READY) {
                     duration = player.duration.coerceAtLeast(0L)
                 }
+            }
+
+            override fun onTracksChanged(newTracks: Tracks) {
+                tracks = newTracks
             }
         }
         player.addListener(listener)
@@ -530,144 +566,574 @@ private fun PlayerControls(player: ExoPlayer, onBack: () -> Unit) {
                 onClick = { controlsVisible = !controlsVisible },
             ),
     ) {
-        if (playbackState == Player.STATE_BUFFERING) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = Color.White,
-            )
-        }
-
         AnimatedVisibility(
             visible = controlsVisible,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.fillMaxSize(),
         ) {
+            // Two gradients rather than a flat wash: the picture keeps its contrast in the
+            // middle, where nothing is drawn, and darkens only under the rows that carry
+            // text. This is the scrim M3 specifies for controls over media.
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f)),
+                    .background(
+                        Brush.verticalGradient(
+                            0f to MaterialTheme.colorScheme.scrim.copy(alpha = 0.65f),
+                            0.28f to Color.Transparent,
+                            0.62f to Color.Transparent,
+                            1f to MaterialTheme.colorScheme.scrim.copy(alpha = 0.75f),
+                        ),
+                    ),
             ) {
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(Res.string.back),
-                        tint = Color.White,
-                    )
+                if (locked) {
+                    // Locked means locked: one way out and nothing else to press.
+                    FilledTonalIconButton(
+                        onClick = { locked = false },
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .windowInsetsPadding(WindowInsets.safeDrawing)
+                            .padding(24.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.LockOpen,
+                            contentDescription = stringResource(Res.string.player_unlock),
+                        )
+                    }
+                    return@Box
                 }
 
-                Row(
+                TopRow(
+                    onBack = onBack,
+                    streamUrl = streamUrl,
+                    title = title,
+                    season = season,
+                    episode = episode,
+                    episodeTitle = episodeTitle,
+                    modifier = Modifier.align(Alignment.TopStart),
+                )
+
+                TransportRow(
+                    isPlaying = isPlaying,
+                    isBuffering = playbackState == Player.STATE_BUFFERING,
+                    onSeekBy = { delta ->
+                        val target = (player.currentPosition + delta).coerceAtLeast(0L)
+                            .let { if (duration > 0) it.coerceAtMost(duration) else it }
+                        player.seekTo(target)
+                        position = target
+                    },
+                    onPlayPause = { if (player.isPlaying) player.pause() else player.play() },
                     modifier = Modifier.align(Alignment.Center),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(32.dp),
-                ) {
-                    IconButton(
-                        onClick = {
-                            val target = (player.currentPosition - SeekStepMillis)
-                                .coerceAtLeast(0L)
-                            player.seekTo(target)
-                            position = target
-                        },
-                        modifier = Modifier.size(56.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Replay10,
-                            contentDescription = stringResource(Res.string.player_back_10),
-                            tint = Color.White,
-                            modifier = Modifier.size(36.dp),
-                        )
-                    }
-                    IconButton(
-                        onClick = { if (player.isPlaying) player.pause() else player.play() },
-                        modifier = Modifier.size(72.dp),
-                    ) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            contentDescription = stringResource(
-                                if (isPlaying) Res.string.player_pause else Res.string.player_play,
-                            ),
-                            tint = Color.White,
-                            modifier = Modifier.size(48.dp),
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            val target = (player.currentPosition + SeekStepMillis)
-                                .let { if (duration > 0) it.coerceAtMost(duration) else it }
-                            player.seekTo(target)
-                            position = target
-                        },
-                        modifier = Modifier.size(56.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Forward10,
-                            contentDescription = stringResource(Res.string.player_forward_10),
-                            tint = Color.White,
-                            modifier = Modifier.size(36.dp),
-                        )
-                    }
-                }
+                )
 
-                SeekBar(
+                BottomRows(
                     position = seekPreviewMillis ?: position,
                     duration = duration,
                     onSeek = { seekPreviewMillis = it },
                     onSeekFinished = {
-                        val target = seekPreviewMillis ?: return@SeekBar
+                        val target = seekPreviewMillis ?: return@BottomRows
                         player.seekTo(target)
                         position = target
                         seekPreviewMillis = null
                     },
-                    modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth(),
+                    resizeMode = resizeMode,
+                    onResizeMode = onResizeMode,
+                    speed = speed,
+                    onSpeed = {
+                        speed = it
+                        player.setPlaybackSpeed(it)
+                    },
+                    tracks = tracks,
+                    onSelectTrack = { type, override ->
+                        val builder = player.trackSelectionParameters.buildUpon()
+                        if (override == null) {
+                            builder.setTrackTypeDisabled(type, true)
+                        } else {
+                            builder.setTrackTypeDisabled(type, false)
+                            builder.setOverrideForType(override)
+                        }
+                        player.trackSelectionParameters = builder.build()
+                    },
+                    onLock = { locked = true },
+                    modifier = Modifier.align(Alignment.BottomStart),
                 )
             }
         }
     }
 }
 
+/** Back, what is playing, and how the swarm is doing. */
 @Composable
-private fun SeekBar(
+private fun TopRow(
+    onBack: () -> Unit,
+    streamUrl: String,
+    title: String?,
+    season: Int?,
+    episode: Int?,
+    episodeTitle: String?,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = onBack) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(Res.string.back),
+            )
+        }
+        Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
+            if (!title.isNullOrBlank()) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            // Built from whichever parts exist: a film has no episode line at all, and a
+            // show whose add-on never named the episode still gets its number.
+            val episodeLine = listOfNotNull(
+                if (season != null && episode != null) {
+                    stringResource(Res.string.player_episode_number, season, episode)
+                } else {
+                    null
+                },
+                episodeTitle?.takeIf { it.isNotBlank() },
+            ).joinToString("  ")
+            if (episodeLine.isNotEmpty()) {
+                Text(
+                    text = episodeLine,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontStyle = FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        TorrentStats(url = streamUrl)
+    }
+}
+
+/** Back five, play or pause, forward five. */
+@Composable
+private fun TransportRow(
+    isPlaying: Boolean,
+    isBuffering: Boolean,
+    onSeekBy: (Long) -> Unit,
+    onPlayPause: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        FilledTonalIconButton(
+            onClick = { onSeekBy(-SeekStepMillis) },
+            modifier = Modifier.size(IconButtonDefaults.largeContainerSize().width),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Replay5,
+                contentDescription = stringResource(Res.string.player_back_5),
+            )
+        }
+        // The loading state takes the play button's place rather than sitting beside it,
+        // so the row never reflows and nothing moves under a thumb mid-press.
+        Box(
+            modifier = Modifier.size(PlayButtonSize),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (isBuffering) {
+                CircularProgressIndicator(modifier = Modifier.size(PlayButtonSize / 2))
+            } else {
+                FilledIconButton(
+                    onClick = onPlayPause,
+                    modifier = Modifier.size(PlayButtonSize),
+                ) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = stringResource(
+                            if (isPlaying) Res.string.player_pause else Res.string.player_play,
+                        ),
+                        modifier = Modifier.size(PlayIconSize),
+                    )
+                }
+            }
+        }
+        FilledTonalIconButton(
+            onClick = { onSeekBy(SeekStepMillis) },
+            modifier = Modifier.size(IconButtonDefaults.largeContainerSize().width),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Forward5,
+                contentDescription = stringResource(Res.string.player_forward_5),
+            )
+        }
+    }
+}
+
+/** Times, the seek bar, and the two button groups under it. */
+@Composable
+private fun BottomRows(
     position: Long,
     duration: Long,
     onSeek: (Long) -> Unit,
     onSeekFinished: () -> Unit,
+    resizeMode: Int,
+    onResizeMode: (Int) -> Unit,
+    speed: Float,
+    onSpeed: (Float) -> Unit,
+    tracks: Tracks,
+    onSelectTrack: (Int, TrackSelectionOverride?) -> Unit,
+    onLock: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val maxValue = duration.coerceAtLeast(1L).toFloat()
-    val value = position.toFloat().coerceIn(0f, maxValue)
 
-    Column(modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Slider(
-            value = value,
-            onValueChange = { onSeek(it.toLong()) },
-            onValueChangeFinished = onSeekFinished,
-            valueRange = 0f..maxValue,
-            colors = SliderDefaults.colors(
-                thumbColor = Color.White,
-                activeTrackColor = Color.White,
-                inactiveTrackColor = Color.White.copy(alpha = 0.3f),
-            ),
-        )
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
                 text = formatPlaybackTime(position),
-                color = Color.White,
                 style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = formatPlaybackTime(duration),
-                color = Color.White,
                 style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Slider(
+            value = position.toFloat().coerceIn(0f, maxValue),
+            onValueChange = { onSeek(it.toLong()) },
+            onValueChangeFinished = onSeekFinished,
+            valueRange = 0f..maxValue,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ViewingGroup(
+                resizeMode = resizeMode,
+                onResizeMode = onResizeMode,
+                speed = speed,
+                onSpeed = onSpeed,
+                tracks = tracks,
+                onSelectTrack = onSelectTrack,
+                onLock = onLock,
+            )
+            LibraryGroup()
+        }
+    }
+}
+
+/**
+ * A connected run of icon buttons.
+ *
+ * M3's own `ButtonGroup` is expressive-only and `internal` in the material3 build Compose
+ * Multiplatform 1.12.0 resolves, so the spec's shape is built here from stable parts: one
+ * container, one shape, the buttons sharing it.
+ */
+@Composable
+private fun IconButtonGroup(content: @Composable () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(GroupCorner),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            content = { content() },
+        )
+    }
+}
+
+/** How the picture is shown, and who is speaking. */
+@Composable
+private fun ViewingGroup(
+    resizeMode: Int,
+    onResizeMode: (Int) -> Unit,
+    speed: Float,
+    onSpeed: (Float) -> Unit,
+    tracks: Tracks,
+    onSelectTrack: (Int, TrackSelectionOverride?) -> Unit,
+    onLock: () -> Unit,
+) {
+    var speedOpen by remember { mutableStateOf(false) }
+    var subtitlesOpen by remember { mutableStateOf(false) }
+    var audioOpen by remember { mutableStateOf(false) }
+
+    IconButtonGroup {
+        Box {
+            val aspectLabel = when (resizeMode) {
+                AspectRatioFrameLayout.RESIZE_MODE_FILL ->
+                    stringResource(Res.string.player_aspect_fill)
+                AspectRatioFrameLayout.RESIZE_MODE_ZOOM ->
+                    stringResource(Res.string.player_aspect_zoom)
+                else -> stringResource(Res.string.player_aspect_fit)
+            }
+            val aspectDescription = stringResource(Res.string.player_aspect)
+            IconButton(onClick = { onResizeMode(nextResizeMode(resizeMode)) }) {
+                Icon(
+                    imageVector = Icons.Filled.AspectRatio,
+                    contentDescription = "$aspectDescription: $aspectLabel",
+                )
+            }
+        }
+        Box {
+            IconButton(onClick = { speedOpen = true }) {
+                Icon(
+                    imageVector = Icons.Filled.Speed,
+                    contentDescription = stringResource(Res.string.player_speed),
+                )
+            }
+            DropdownMenu(expanded = speedOpen, onDismissRequest = { speedOpen = false }) {
+                for (option in PlaybackSpeeds) {
+                    DropdownMenuItem(
+                        text = { Text(formatSpeed(option)) },
+                        onClick = {
+                            onSpeed(option)
+                            speedOpen = false
+                        },
+                        trailingIcon = if (option == speed) {
+                            { Icon(Icons.Filled.Check, contentDescription = null) }
+                        } else {
+                            null
+                        },
+                    )
+                }
+            }
+        }
+        Box {
+            IconButton(onClick = { subtitlesOpen = true }) {
+                Icon(
+                    imageVector = Icons.Filled.ClosedCaption,
+                    contentDescription = stringResource(Res.string.player_subtitles),
+                )
+            }
+            TrackMenu(
+                expanded = subtitlesOpen,
+                onDismiss = { subtitlesOpen = false },
+                tracks = tracks,
+                trackType = C.TRACK_TYPE_TEXT,
+                onSelectTrack = onSelectTrack,
+            )
+        }
+        Box {
+            IconButton(onClick = { audioOpen = true }) {
+                Icon(
+                    imageVector = Icons.Filled.Audiotrack,
+                    contentDescription = stringResource(Res.string.player_audio),
+                )
+            }
+            TrackMenu(
+                expanded = audioOpen,
+                onDismiss = { audioOpen = false },
+                tracks = tracks,
+                trackType = C.TRACK_TYPE_AUDIO,
+                onSelectTrack = onSelectTrack,
+            )
+        }
+        IconButton(onClick = {}, enabled = false) {
+            Icon(
+                imageVector = Icons.Filled.Cast,
+                contentDescription = stringResource(Res.string.player_cast),
+            )
+        }
+        IconButton(onClick = onLock) {
+            Icon(
+                imageVector = Icons.Filled.Lock,
+                contentDescription = stringResource(Res.string.player_lock),
             )
         }
     }
 }
+
+/** Where else this could be played from, and what is next. Both still inert. */
+@Composable
+private fun LibraryGroup() {
+    IconButtonGroup {
+        IconButton(onClick = {}, enabled = false) {
+            Icon(
+                imageVector = Icons.Filled.VideoLibrary,
+                contentDescription = stringResource(Res.string.player_sources),
+            )
+        }
+        IconButton(onClick = {}, enabled = false) {
+            Icon(
+                imageVector = Icons.Filled.PlaylistPlay,
+                contentDescription = stringResource(Res.string.player_episodes),
+            )
+        }
+    }
+}
+
+/** Every track of one kind the file carries, plus the option of none at all. */
+@Composable
+private fun TrackMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    tracks: Tracks,
+    trackType: Int,
+    onSelectTrack: (Int, TrackSelectionOverride?) -> Unit,
+) {
+    val groups = tracks.groups.filter { it.type == trackType }
+
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        DropdownMenuItem(
+            text = { Text(stringResource(Res.string.player_track_off)) },
+            onClick = {
+                onSelectTrack(trackType, null)
+                onDismiss()
+            },
+        )
+        for (group in groups) {
+            for (index in 0 until group.length) {
+                val format = group.getTrackFormat(index)
+                val selected = group.isTrackSelected(index)
+                DropdownMenuItem(
+                    text = { Text(describeTrack(format.language, format.label, index)) },
+                    onClick = {
+                        onSelectTrack(
+                            trackType,
+                            TrackSelectionOverride(group.mediaTrackGroup, index),
+                        )
+                        onDismiss()
+                    },
+                    trailingIcon = if (selected) {
+                        { Icon(Icons.Filled.Check, contentDescription = null) }
+                    } else {
+                        null
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** What the swarm is doing, in icons rather than punctuation. */
+@Composable
+private fun TorrentStats(url: String, modifier: Modifier = Modifier) {
+    val settings by P2pRepository.settings.collectAsState()
+    val status by P2pRepository.status.collectAsState()
+
+    val isTorrent = status.baseUrl?.let(url::startsWith) == true
+    if (settings.hideStats || !isTorrent) return
+
+    Column(
+        modifier = modifier.width(IntrinsicSize.Max),
+        horizontalAlignment = Alignment.End,
+    ) {
+        StatRow(
+            Icons.Filled.Group,
+            stringResource(Res.string.player_stats_peers),
+            status.peers.toString(),
+        )
+        StatRow(
+            Icons.Filled.CloudUpload,
+            stringResource(Res.string.player_stats_seeds),
+            status.seeds.toString(),
+        )
+        StatRow(
+            Icons.Filled.ArrowDownward,
+            null,
+            formatTransferRate(status.downloadBytesPerSecond),
+        )
+        StatRow(
+            Icons.Filled.ArrowUpward,
+            null,
+            formatTransferRate(status.uploadBytesPerSecond),
+        )
+        StatRow(
+            Icons.Filled.Downloading,
+            stringResource(Res.string.player_stats_downloaded),
+            "${(status.progress * 100f).toInt()}%",
+        )
+    }
+}
+
+@Composable
+private fun StatRow(
+    icon: ImageVector,
+    label: String?,
+    value: String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            modifier = Modifier.size(StatIconSize),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = value,
+            // Monospaced so the numbers do not shuffle sideways every time they tick.
+            style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+/** A transfer rate at the largest unit that still leaves a number worth reading. */
+private fun formatTransferRate(bytesPerSecond: Long): String = when {
+    bytesPerSecond >= MegabyteBytes -> {
+        val tenths = bytesPerSecond * 10 / MegabyteBytes
+        "${tenths / 10}.${tenths % 10} MB/s"
+    }
+    bytesPerSecond >= KilobyteBytes -> "${bytesPerSecond / KilobyteBytes} KB/s"
+    else -> "$bytesPerSecond B/s"
+}
+
+/** "1x", "1.5x" — trailing zeroes dropped, because "1.0x" reads like a measurement. */
+private fun formatSpeed(speed: Float): String {
+    val tenths = (speed * 10f).toInt()
+    return if (tenths % 10 == 0) "${tenths / 10}x" else "${tenths / 10}.${tenths % 10}x"
+}
+
+/** A track's language, its own label, or failing both its position in the list. */
+private fun describeTrack(language: String?, label: String?, index: Int): String =
+    label?.takeIf { it.isNotBlank() }
+        ?: language?.takeIf { it.isNotBlank() }
+        ?: "#${index + 1}"
+
+private fun nextResizeMode(current: Int): Int = when (current) {
+    AspectRatioFrameLayout.RESIZE_MODE_FIT -> AspectRatioFrameLayout.RESIZE_MODE_FILL
+    AspectRatioFrameLayout.RESIZE_MODE_FILL -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+    else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+}
+
+private val PlaybackSpeeds = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)
+
+private val PlayButtonSize = 72.dp
+private val PlayIconSize = 40.dp
+private val StatIconSize = 14.dp
+private val GroupCorner = 20.dp
+private const val KilobyteBytes = 1_024L
+private const val MegabyteBytes = 1_024L * 1_024L
 
 /**
  * How long a read may take before the player gives up on it.
