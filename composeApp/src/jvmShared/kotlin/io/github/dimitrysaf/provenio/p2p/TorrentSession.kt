@@ -10,6 +10,7 @@ import org.libtorrent4j.TorrentFlags
 import org.libtorrent4j.TorrentHandle
 import org.libtorrent4j.TorrentInfo
 import org.libtorrent4j.swig.settings_pack.bool_types as bools
+import org.libtorrent4j.swig.settings_pack.choking_algorithm_t as chokers
 import org.libtorrent4j.swig.settings_pack.int_types as ints
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -270,10 +271,26 @@ class TorrentSession(private val cacheDir: File) {
             pack.listenInterfaces("0.0.0.0:${settings.listenPort},[::]:${settings.listenPort}")
         }
 
-        // libtorrent reads a rate limit of 0 as unlimited, so switching uploading off is
-        // the smallest non-zero rate rather than zero. A swarm still needs the occasional
-        // byte back or peers stop answering.
-        pack.uploadRateLimit(if (settings.uploadEnabled) UnlimitedRate else MinimalUploadRate)
+        // Not distributing and not speaking are two different things, and a rate limit
+        // cannot tell them apart. Everything this client receives it must first ask for —
+        // a metadata request, an interested, a 17-byte request per block — and all of it
+        // leaves through the upload channel. Throttling that channel to nothing does not
+        // stop sharing, it gags the client: peers connect, the handshake crawls out on
+        // libtorrent's minimum quota, and no request for data is ever sent. Seventy peers,
+        // nothing asked of any of them.
+        //
+        // So the channel is never rate limited, and refusing to distribute is done the way
+        // the protocol actually expresses it. A peer may only take a piece from us once we
+        // unchoke it; with zero unchoke slots nobody is ever unchoked, so no file data can
+        // leave this device at all. Requests still go out at full speed.
+        pack.uploadRateLimit(UnlimitedRate)
+        if (!settings.uploadEnabled) {
+            pack.setInteger(
+                ints.choking_algorithm.swigValue(),
+                chokers.fixed_slots_choker.swigValue(),
+            )
+            pack.setInteger(ints.unchoke_slots_limit.swigValue(), NoUnchokeSlots)
+        }
 
         pack.connectionsLimit(settings.profile.connections)
         pack.activeDownloads(settings.profile.activeDownloads)
@@ -289,15 +306,17 @@ class TorrentSession(private val cacheDir: File) {
         pack.setBoolean(bools.enable_dht.swigValue(), true)
         pack.setBoolean(bools.enable_lsd.swigValue(), true)
 
-        // Tuned for reading rather than collecting. A whole-pieces threshold means peers
-        // send complete pieces instead of scattered blocks, so a piece finishes when it is
-        // asked for rather than eventually; the short timeouts drop a peer that has gone
-        // quiet fast, because the read head is waiting on it and a stalled request is
-        // worse than no request.
-        pack.setInteger(ints.whole_pieces_threshold.swigValue(), WholePiecesThresholdSeconds)
+        // Only a ceiling on how many block requests may be outstanding — libtorrent sizes
+        // the real queue from the measured rate and stays well under this. Raising a cap
+        // cannot stall anything; the timeouts below it are left alone deliberately.
+        //
+        // There were short request and peer-connect timeouts here, and they were the
+        // reason a torrent could sit on seventy peers and download nothing: a 16 KiB block
+        // from a slow swarm takes longer than ten seconds, so every request was cancelled
+        // just before it could land, re-issued, and cancelled again. libtorrent's own
+        // defaults — 60s and 15s — are chosen for exactly the slow case that matters here,
+        // so they stand.
         pack.setInteger(ints.max_out_request_queue.swigValue(), MaxOutRequestQueue)
-        pack.setInteger(ints.request_timeout.swigValue(), RequestTimeoutSeconds)
-        pack.setInteger(ints.peer_connect_timeout.swigValue(), PeerConnectTimeoutSeconds)
         pack.setInteger(ints.connection_speed.swigValue(), settings.profile.connectionSpeed)
         return pack
     }
@@ -332,7 +351,9 @@ class TorrentSession(private val cacheDir: File) {
 
     private companion object {
         const val UnlimitedRate = 0
-        const val MinimalUploadRate = 1
+
+        /** No unchoke slots: nobody is ever permitted to take a piece from this device. */
+        const val NoUnchokeSlots = 0
         const val HandleTimeoutMillis = 15_000L
         const val HandlePollMillis = 50L
         /**
@@ -344,11 +365,7 @@ class TorrentSession(private val cacheDir: File) {
         const val MetadataPollMillis = 200L
         const val ReportIntervalMillis = 5_000L
 
-        /** Ask peers for whole pieces when one is expected within this many seconds. */
-        const val WholePiecesThresholdSeconds = 20
         const val MaxOutRequestQueue = 1_500
-        const val RequestTimeoutSeconds = 10
-        const val PeerConnectTimeoutSeconds = 4
     }
 }
 
