@@ -6,10 +6,24 @@ import org.libtorrent4j.SessionManager
 import org.libtorrent4j.SessionParams
 import org.libtorrent4j.SettingsPack
 import org.libtorrent4j.Sha1Hash
+import org.libtorrent4j.TorrentFlags
 import org.libtorrent4j.TorrentHandle
 import org.libtorrent4j.TorrentInfo
+import org.libtorrent4j.swig.settings_pack.bool_types as bools
+import org.libtorrent4j.swig.settings_pack.int_types as ints
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
+
+/** One reading of the whole session, taken on a timer while the engine is up. */
+data class TorrentSample(
+    val peers: Int = 0,
+    val seeds: Int = 0,
+    val downloadBytesPerSecond: Long = 0,
+    val uploadBytesPerSecond: Long = 0,
+    val downloadedBytes: Long = 0,
+    val uploadedBytes: Long = 0,
+    val activeTorrents: Int = 0,
+)
 
 /**
  * The libtorrent session, and the torrents currently being streamed from it.
@@ -102,37 +116,33 @@ class TorrentSession(private val cacheDir: File) {
 
             evictTo(current.cacheSize.bytes)
 
-            val magnet = magnetUriOf(request)
-            p2pLog("fetching metadata for $key (up to ${MetadataTimeoutSeconds}s)")
-            p2pLog("magnet: $magnet")
-
-            val startedAt = System.currentTimeMillis()
-            val data = runCatching {
-                session.fetchMagnet(magnet, MetadataTimeoutSeconds, cacheDir)
-            }.onFailure { p2pLog("fetchMagnet threw: $it") }.getOrNull()
-            val elapsed = (System.currentTimeMillis() - startedAt) / 1000
-
-            if (data == null) {
-                p2pLog("no metadata after ${elapsed}s — no seeds answered, or the magnet is bad")
-                return@withContext null
-            }
-            p2pLog("metadata: ${data.size} bytes in ${elapsed}s")
-
-            val info = runCatching { TorrentInfo.bdecode(data) }
-                .onFailure { p2pLog("could not decode metadata: $it") }
+            val hash = runCatching { Sha1Hash.parseHex(key) }
+                .onFailure { p2pLog("not a usable info hash: $key") }
                 .getOrNull() ?: return@withContext null
 
-            p2pLog(
-                "torrent \"${info.name()}\": " +
-                    "files=${info.numFiles()} pieces=${info.numPieces()}",
-            )
-            session.download(info, cacheDir)
+            val magnet = magnetUriOf(request)
+            p2pLog("adding $key (dht ${dhtState()})")
+            p2pLog("magnet: $magnet")
 
-            val handle = awaitHandle(info.infoHash())
+            // Added straight to the session rather than through fetchMagnet, which adds the
+            // torrent in upload mode, waits for metadata and then removes it again. That
+            // threw away every peer it had found, so a second attempt started from nothing
+            // — and a player that gives up and reconnects is exactly when the peers already
+            // found are worth the most. Added this way the torrent stays, and a retry
+            // continues where the last one got to.
+            session.download(magnet, cacheDir, TorrentFlags.SEQUENTIAL_DOWNLOAD)
+
+            val handle = awaitHandle(hash)
             if (handle == null) {
                 p2pLog("torrent added but no handle came back within ${HandleTimeoutMillis}ms")
                 return@withContext null
             }
+
+            val info = awaitMetadata(handle) ?: return@withContext null
+            p2pLog(
+                "torrent \"${info.name()}\": " +
+                    "files=${info.numFiles()} pieces=${info.numPieces()}",
+            )
 
             val stream = StreamingTorrent(
                 handle = handle,
@@ -163,6 +173,54 @@ class TorrentSession(private val cacheDir: File) {
         }
         return null
     }
+
+    /**
+     * Waits for the swarm to hand over the torrent's file list.
+     *
+     * A magnet is only an info hash: what the files are called and how the pieces are laid
+     * out has to come from a peer before anything can be read. Progress is logged on the
+     * way, because "nothing is playing" has two very different causes — no route to the
+     * network at all, or a route and no seeds — and the DHT and peer counts tell them
+     * apart at a glance.
+     */
+    private fun awaitMetadata(handle: TorrentHandle): TorrentInfo? {
+        val startedAt = System.currentTimeMillis()
+        val deadline = startedAt + MetadataTimeoutMillis
+        var nextReport = startedAt + ReportIntervalMillis
+
+        while (System.currentTimeMillis() < deadline && handle.isValid) {
+            val status = handle.status()
+            if (status.hasMetadata()) {
+                val info = handle.torrentFile()
+                if (info != null) {
+                    val waited = (System.currentTimeMillis() - startedAt) / 1000
+                    p2pLog("metadata in ${waited}s from ${status.numPeers()} peers")
+                    return info
+                }
+            }
+
+            val now = System.currentTimeMillis()
+            if (now >= nextReport) {
+                nextReport = now + ReportIntervalMillis
+                p2pLog(
+                    "looking for peers ${(now - startedAt) / 1000}s in: dht=${dhtState()} " +
+                        "peers=${status.numPeers()} seeds=${status.numSeeds()} " +
+                        "known=${status.listPeers()} state=${status.state()}",
+                )
+            }
+            Thread.sleep(MetadataPollMillis)
+        }
+
+        p2pLog(
+            "no metadata after ${MetadataTimeoutMillis / 1000}s — dht=${dhtState()}, " +
+                "nobody with this torrent answered",
+        )
+        return null
+    }
+
+    /** Whether the DHT is up, and how many nodes it knows — zero nodes means no route out. */
+    private fun dhtState(): String =
+        if (session.isDhtRunning) "${session.dhtNodes()} nodes" else "off"
 
     /** Bytes currently held on disk by torrent data. */
     fun cacheBytes(): Long = cacheDir.walkBottomUp().filter { it.isFile }.sumOf { it.length() }
@@ -210,15 +268,70 @@ class TorrentSession(private val cacheDir: File) {
 
         pack.connectionsLimit(settings.profile.connections)
         pack.activeDownloads(settings.profile.activeDownloads)
+
+        // Every way of finding a peer, all at once. The default is to walk tracker tiers in
+        // order and stop at the first that answers, which is the polite thing to do for a
+        // download that can take all day and the wrong thing for someone waiting on a
+        // video to start. Local discovery costs one multicast packet and finds the other
+        // device on the same wifi instantly when it is there.
+        pack.setBoolean(bools.announce_to_all_trackers.swigValue(), true)
+        pack.setBoolean(bools.announce_to_all_tiers.swigValue(), true)
+        pack.setBoolean(bools.prefer_udp_trackers.swigValue(), true)
+        pack.setBoolean(bools.enable_dht.swigValue(), true)
+        pack.setBoolean(bools.enable_lsd.swigValue(), true)
+
+        // Tuned for reading rather than collecting. A whole-pieces threshold means peers
+        // send complete pieces instead of scattered blocks, so a piece finishes when it is
+        // asked for rather than eventually; the short timeouts drop a peer that has gone
+        // quiet fast, because the read head is waiting on it and a stalled request is
+        // worse than no request.
+        pack.setInteger(ints.whole_pieces_threshold.swigValue(), WholePiecesThresholdSeconds)
+        pack.setInteger(ints.max_out_request_queue.swigValue(), MaxOutRequestQueue)
+        pack.setInteger(ints.request_timeout.swigValue(), RequestTimeoutSeconds)
+        pack.setInteger(ints.peer_connect_timeout.swigValue(), PeerConnectTimeoutSeconds)
+        pack.setInteger(ints.connection_speed.swigValue(), settings.profile.connectionSpeed)
         return pack
     }
 
+    /** A reading of the session as a whole, for the status the settings screen shows. */
+    fun sample(): TorrentSample {
+        if (!session.isRunning) return TorrentSample()
+        val live = streams.keys.mapNotNull { key ->
+            runCatching { Sha1Hash.parseHex(key) }.getOrNull()
+                ?.let { session.find(it) }
+                ?.takeIf { it.isValid }
+                ?.status()
+        }
+        return TorrentSample(
+            peers = live.sumOf { it.numPeers() },
+            seeds = live.sumOf { it.numSeeds() },
+            downloadBytesPerSecond = session.downloadRate(),
+            uploadBytesPerSecond = session.uploadRate(),
+            downloadedBytes = session.totalDownload(),
+            uploadedBytes = session.totalUpload(),
+            activeTorrents = live.size,
+        )
+    }
+
     private companion object {
-        const val MetadataTimeoutSeconds = 60
         const val UnlimitedRate = 0
         const val MinimalUploadRate = 1
         const val HandleTimeoutMillis = 15_000L
         const val HandlePollMillis = 50L
+        /**
+         * Deliberately shorter than the player's read timeout. The player is waiting on
+         * this request, so giving up first lets the server answer with a real error the
+         * user can be shown, rather than the player timing out on a silent socket.
+         */
+        const val MetadataTimeoutMillis = 45_000L
+        const val MetadataPollMillis = 200L
+        const val ReportIntervalMillis = 5_000L
+
+        /** Ask peers for whole pieces when one is expected within this many seconds. */
+        const val WholePiecesThresholdSeconds = 20
+        const val MaxOutRequestQueue = 1_500
+        const val RequestTimeoutSeconds = 10
+        const val PeerConnectTimeoutSeconds = 4
     }
 }
 
@@ -235,4 +348,18 @@ private val TorrentProfile.activeDownloads: Int
         TorrentProfile.Slow -> 1
         TorrentProfile.Balanced -> 3
         TorrentProfile.Fast -> 6
+    }
+
+/**
+ * How many peers to reach out to per second.
+ *
+ * libtorrent's default of 10 is paced for a download nobody is waiting on. Opening more at
+ * once is how a stream finds someone to read from in the first few seconds, at the cost of
+ * a burst of radio traffic — which is exactly the trade the profile is there to make.
+ */
+private val TorrentProfile.connectionSpeed: Int
+    get() = when (this) {
+        TorrentProfile.Slow -> 10
+        TorrentProfile.Balanced -> 30
+        TorrentProfile.Fast -> 80
     }

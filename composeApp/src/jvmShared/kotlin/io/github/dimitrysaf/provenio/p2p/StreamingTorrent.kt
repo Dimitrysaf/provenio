@@ -73,13 +73,15 @@ class StreamingTorrent(
         // The file exists on disk only once libtorrent has allocated it, so waiting for
         // the first piece is also waiting for something to open.
         awaitPiece(pieceOf(start))
-        if (!path.exists()) return
+        if (!path.exists()) {
+            p2pLog("nothing on disk for \"$fileName\" after its first piece arrived")
+            return
+        }
 
         RandomAccessFile(path, "r").use { source ->
             val buffer = ByteArray(ChunkBytes)
             var position = start
             var remaining = count
-            var emptyReads = 0
 
             while (remaining > 0 && handle.isValid && position < length) {
                 val piece = pieceOf(position)
@@ -94,15 +96,15 @@ class StreamingTorrent(
                 source.seek(position)
                 val read = source.read(buffer, 0, wanted)
                 if (read <= 0) {
-                    // The piece is accounted for but the bytes are not on disk yet.
-                    // Bounded, because a file shorter than the torrent claims would
-                    // otherwise spin here for as long as the player kept reading.
-                    if (++emptyReads > MaxEmptyReads) break
-                    delay(PollIntervalMillis)
-                    continue
+                    // libtorrent 2 writes through the page cache rather than a cache of its
+                    // own, so a verified piece is readable through the file — there is no
+                    // window where havePiece is true and the bytes are not there. Reaching
+                    // here means the file on disk is shorter than the torrent says, which
+                    // no amount of waiting fixes.
+                    p2pLog("short read at $position of $length in \"$fileName\" — stopping")
+                    break
                 }
 
-                emptyReads = 0
                 out.write(buffer, 0, read)
                 position += read
                 remaining -= read
@@ -172,7 +174,6 @@ class StreamingTorrent(
         const val EndPieces = 4
         const val DeadlineNowMillis = 0
         const val DeadlineStepMillis = 300
-        const val MaxEmptyReads = 200
         const val SlowPieceMillis = 1_000L
     }
 }

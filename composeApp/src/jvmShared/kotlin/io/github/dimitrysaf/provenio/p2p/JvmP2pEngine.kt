@@ -1,9 +1,16 @@
 package io.github.dimitrysaf.provenio.p2p
 
 import io.github.dimitrysaf.provenio.core.platform.cacheDirectoryPath
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.io.File
 import java.net.BindException
 
@@ -18,6 +25,9 @@ class JvmP2pEngine : P2pEngine {
 
     private val torrents = TorrentSession(File(cacheDirectoryPath()))
     private var server: LocalStreamServer? = null
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var sampler: Job? = null
 
     private val _status = MutableStateFlow(P2pStatus())
     override val status: StateFlow<P2pStatus> = _status.asStateFlow()
@@ -41,6 +51,7 @@ class JvmP2pEngine : P2pEngine {
                 localAddresses = localNetworkAddresses(),
                 cacheUsedBytes = torrents.cacheBytes(),
             )
+            startSampling()
         } catch (conflict: BindException) {
             p2pLog("port ${settings.listenPort} already in use")
             stopQuietly()
@@ -94,12 +105,53 @@ class JvmP2pEngine : P2pEngine {
         return url
     }
 
+    /**
+     * Keeps the status readings live while the engine is up.
+     *
+     * Peers, seeds and rates are the only honest answer to "is this working". They are read
+     * on a timer rather than pushed, because libtorrent has no notion of a status change —
+     * these numbers move continuously and a snapshot a second apart is what a person can
+     * actually read.
+     */
+    private fun startSampling() {
+        sampler?.cancel()
+        sampler = scope.launch {
+            var sinceCacheRead = 0
+            while (isActive) {
+                delay(SampleIntervalMillis)
+                if (!torrents.isRunning) continue
+                val sample = torrents.sample()
+                // Walking the cache directory touches every file, so it is read once every
+                // ten samples rather than every one.
+                val cacheBytes = if (sinceCacheRead++ % CacheEverySamples == 0) {
+                    torrents.cacheBytes()
+                } else {
+                    _status.value.cacheUsedBytes
+                }
+                _status.value = _status.value.copy(
+                    peers = sample.peers,
+                    seeds = sample.seeds,
+                    downloadBytesPerSecond = sample.downloadBytesPerSecond,
+                    uploadBytesPerSecond = sample.uploadBytesPerSecond,
+                    sessionDownloadedBytes = sample.downloadedBytes,
+                    sessionUploadedBytes = sample.uploadedBytes,
+                    activeTorrents = sample.activeTorrents,
+                    cacheUsedBytes = cacheBytes,
+                )
+            }
+        }
+    }
+
     private companion object {
         /** 0 asks the operating system for any free port. */
         const val EphemeralPort = 0
+        const val SampleIntervalMillis = 1_000L
+        const val CacheEverySamples = 10
     }
 
     private fun stopQuietly() {
+        sampler?.cancel()
+        sampler = null
         runCatching { server?.stop() }
         server = null
         runCatching { torrents.stop() }
