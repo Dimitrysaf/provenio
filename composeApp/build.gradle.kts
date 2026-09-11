@@ -18,6 +18,15 @@ kotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
+
+        // Off by default in the KMP Android library plugin, and Compose Multiplatform
+        // packs its resources as Android assets — so without this the generated .cvr
+        // bundles never reach the APK and every stringResource throws
+        // MissingResourceException at runtime.
+        // https://kotlinlang.org/docs/multiplatform/multiplatform-project-agp-9-migration.html
+        androidResources {
+            enable = true
+        }
     }
 
     jvm("desktop")
