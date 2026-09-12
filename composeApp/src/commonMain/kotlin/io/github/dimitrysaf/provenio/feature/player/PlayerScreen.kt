@@ -25,4 +25,6 @@ expect fun PlayerScreen(
     season: Int? = null,
     episode: Int? = null,
     episodeTitle: String? = null,
+    /** [url]'s own identity, remembered alongside the resume point it records. */
+    streamId: String? = null,
 )

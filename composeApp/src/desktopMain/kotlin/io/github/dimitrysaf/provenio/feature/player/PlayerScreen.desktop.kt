@@ -27,6 +27,7 @@ actual fun PlayerScreen(
     season: Int?,
     episode: Int?,
     episodeTitle: String?,
+    streamId: String?,
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(

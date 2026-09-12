@@ -67,6 +67,14 @@ fun SourceOption.isPlayingAt(streamUrl: String?): Boolean {
     return playableUrl != null && playableUrl == streamUrl
 }
 
+/**
+ * This source's stable identity — a torrent's info hash, or the playable url itself for
+ * anything else — worth saving alongside a resume point so "resume" can find the same
+ * source again later. [isPlayingAt] is this same identity, in comparison form.
+ */
+val SourceOption.streamId: String?
+    get() = stream.infoHash ?: playableUrl
+
 /** The text a filter looks at: whatever the addon wrote about this source. */
 val SourceOption.searchText: String
     get() = (label.orEmpty() + " " + detail.orEmpty()).lowercase()

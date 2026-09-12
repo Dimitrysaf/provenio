@@ -4,13 +4,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,6 +55,8 @@ fun WatchAction(
     resumeSession: SimklPlaybackSession?,
     /** Locally saved positions, keyed by video id. These outrank Simkl's. */
     positions: Map<String, PlaybackPosition>,
+    /** The video, if any, currently being tried against its remembered source. */
+    resolvingVideoId: String? = null,
     onChooseSource: (String, Float?) -> Unit,
 ) {
     // What this device was last part way through, film or episode. More recent and more
@@ -100,13 +105,25 @@ fun WatchAction(
     // A series plays its first episode; a film plays itself. Either way the id decides
     // which streams the addons are asked for.
     val playId = next?.id ?: meta.id
+    val resolving = resolvingVideoId == playId
 
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Button(
             onClick = { onChooseSource(playId, resumeProgress) },
+            enabled = !resolving,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Icon(Icons.Filled.PlayArrow, contentDescription = null)
+            // Trying the remembered source takes a moment — an addon round trip, and a
+            // torrent resolve when that is what it was. The icon stands in for that wait
+            // rather than the button just sitting there looking unresponsive.
+            if (resolving) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = LocalContentColor.current,
+                )
+            } else {
+                Icon(Icons.Filled.PlayArrow, contentDescription = null)
+            }
             Spacer(Modifier.width(8.dp))
             Text(label)
         }

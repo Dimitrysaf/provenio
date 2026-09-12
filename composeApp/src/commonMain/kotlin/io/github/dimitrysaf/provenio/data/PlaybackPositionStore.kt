@@ -17,12 +17,19 @@ class PlaybackPositionStore(driver: SqlDriver) {
 
     fun all(): List<PlaybackPosition> = queries.selectAll().executeAsList()
 
-    fun save(videoId: String, positionMillis: Long, durationMillis: Long, nowMillis: Long) {
+    fun save(
+        videoId: String,
+        positionMillis: Long,
+        durationMillis: Long,
+        nowMillis: Long,
+        streamId: String? = null,
+    ) {
         queries.save(
             videoId = videoId,
             positionMillis = positionMillis,
             durationMillis = durationMillis,
             updatedAtMillis = nowMillis,
+            streamId = streamId,
         )
     }
 

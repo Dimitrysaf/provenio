@@ -17,4 +17,11 @@ data class PlaybackRequest(
     val season: Int? = null,
     val episode: Int? = null,
     val resumeProgressPercent: Float? = null,
+    /**
+     * [url]'s own identity — see [io.github.dimitrysaf.provenio.stremio.SourceOption.streamId]
+     * — so the player can remember it alongside the position it records. Null whenever the
+     * source could not be identified, which just means the next "resume" for this video
+     * goes straight to the source sheet.
+     */
+    val streamId: String? = null,
 )

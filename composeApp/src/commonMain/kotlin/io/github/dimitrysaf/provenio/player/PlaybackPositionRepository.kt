@@ -13,6 +13,13 @@ data class PlaybackPosition(
     val durationMillis: Long,
     /** When this was last written, so the most recent thing watched can be found. */
     val updatedAtMillis: Long = 0,
+    /**
+     * The source that was playing — a torrent's info hash, or the playable url itself for
+     * anything else, matching [io.github.dimitrysaf.provenio.stremio.SourceOption.streamId].
+     * Null for a position saved before this existed, which reads as "no remembered source"
+     * and falls back to asking the viewer to pick one.
+     */
+    val streamId: String? = null,
 ) {
     /** 0..1, or null when the duration is not known and a fraction would be a guess. */
     val fraction: Float?
@@ -55,8 +62,17 @@ object PlaybackPositionRepository {
      * Records progress. Called often while playing, so it writes the same row over and
      * over by design — the cost is one indexed upsert and the benefit is that a kill,
      * a crash or a battery dying all leave a usable resume point.
+     *
+     * [streamId] should be whatever the caller currently knows the source to be, every
+     * time — this replaces the whole row, so a call that omits it wipes out a source
+     * remembered by an earlier call for the same video.
      */
-    fun save(videoId: String?, positionMillis: Long, durationMillis: Long) {
+    fun save(
+        videoId: String?,
+        positionMillis: Long,
+        durationMillis: Long,
+        streamId: String? = null,
+    ) {
         val id = videoId?.takeIf { it.isNotBlank() } ?: return
         val current = store ?: return
         if (durationMillis <= 0) return
@@ -73,9 +89,9 @@ object PlaybackPositionRepository {
         if (positionMillis < MinimumMillis) return
 
         val now = currentTimeMillis()
-        runCatching { current.save(id, positionMillis, durationMillis, now) }
+        runCatching { current.save(id, positionMillis, durationMillis, now, streamId) }
         _positions.value = _positions.value +
-            (id to PlaybackPosition(positionMillis, durationMillis, now))
+            (id to PlaybackPosition(positionMillis, durationMillis, now, streamId))
     }
 
     fun clear() {
@@ -90,6 +106,7 @@ object PlaybackPositionRepository {
                 positionMillis = row.positionMillis,
                 durationMillis = row.durationMillis,
                 updatedAtMillis = row.updatedAtMillis,
+                streamId = row.streamId,
             )
         }
     }

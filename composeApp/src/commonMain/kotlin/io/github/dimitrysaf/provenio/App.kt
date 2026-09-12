@@ -154,6 +154,7 @@ fun App() {
                         season = route.season,
                         episode = route.episode,
                         episodeTitle = route.episodeTitle,
+                        streamId = route.streamId,
                     )
                 }
 
@@ -176,6 +177,7 @@ fun App() {
                                         season = request.season,
                                         episode = request.episode,
                                         resumeProgressPercent = request.resumeProgressPercent,
+                                        streamId = request.streamId,
                                     ),
                                 )
                             },

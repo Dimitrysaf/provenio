@@ -78,6 +78,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -118,6 +119,7 @@ import io.github.dimitrysaf.provenio.player.PlaybackPositionRepository
 import io.github.dimitrysaf.provenio.player.PlayerBackend
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.ScrobbleTarget
+import io.github.dimitrysaf.provenio.stremio.streamId
 import io.github.dimitrysaf.provenio.simkl.SimklScrobbler
 import kotlinx.coroutines.delay
 import io.github.dimitrysaf.provenio.resources.Res
@@ -167,6 +169,7 @@ actual fun PlayerScreen(
     season: Int?,
     episode: Int?,
     episodeTitle: String?,
+    streamId: String?,
 ) {
     val backend by PlayerRepository.backend.collectAsState()
 
@@ -183,6 +186,7 @@ actual fun PlayerScreen(
             season = season,
             episode = episode,
             episodeTitle = episodeTitle,
+            streamId = streamId,
         )
         PlayerBackend.External -> ExternalPlayer(url = url, onBack = onBack)
     }
@@ -199,6 +203,7 @@ private fun BuiltinPlayer(
     season: Int?,
     episode: Int?,
     episodeTitle: String?,
+    streamId: String?,
 ) {
     val context = LocalContext.current
     val player = remember {
@@ -238,6 +243,10 @@ private fun BuiltinPlayer(
     // The stream the player is on, which starts as the one navigated to and changes when
     // a different source is picked from the side sheet.
     var streamUrl by remember(url) { mutableStateOf(url) }
+    // That stream's own identity (see SourceOption.streamId), kept alongside streamUrl so
+    // the position recorder can remember it too. Starts as whatever the details page
+    // already resolved this source to.
+    var currentStreamId by remember(url) { mutableStateOf(streamId) }
 
     // Changing source only changes what is loaded. This used to be a DisposableEffect
     // keyed on the URL, which meant picking a new source disposed the old effect first —
@@ -246,10 +255,14 @@ private fun BuiltinPlayer(
     // The player's lifetime belongs to the effect below, which is keyed on the player.
     LaunchedEffect(streamUrl) {
         playbackError = null
-        // Capture exactly where the old source left off before it is torn down. The
-        // periodic recorder below can be up to a few seconds stale, and a source swap is
-        // exactly the moment ResumeWhereItStopped is about to read this value back.
-        videoId?.let { PlaybackPositionRepository.save(it, player.currentPosition, player.duration) }
+        // Capture exactly where the old source left off before it is torn down, tagged
+        // with the source now loading rather than the one abandoned — a viewer who backs
+        // out from here on should resume with what is about to play, not what they just
+        // left. The periodic recorder below can be up to a few seconds stale, and a source
+        // swap is exactly the moment ResumeWhereItStopped is about to read this value back.
+        videoId?.let {
+            PlaybackPositionRepository.save(it, player.currentPosition, player.duration, currentStreamId)
+        }
         // Stop before swapping so the surface lets go of the frame it is holding; without
         // it the previous source stays on screen until the new one has decoded enough to
         // paint over it.
@@ -283,7 +296,7 @@ private fun BuiltinPlayer(
         videoId = videoId,
         fallbackPercent = scrobbleTarget?.resumeProgressPercent,
     )
-    PlaybackPositionRecorder(player = player, videoId = videoId)
+    PlaybackPositionRecorder(player = player, videoId = videoId, streamId = currentStreamId)
 
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         AndroidView(
@@ -330,6 +343,7 @@ private fun BuiltinPlayer(
             onDismiss = { sourcesOpen = false },
             onPlay = { source ->
                 source.playableUrl?.let { streamUrl = it }
+                currentStreamId = source.streamId
                 sourcesOpen = false
             },
             currentUrl = streamUrl,
@@ -398,12 +412,19 @@ private fun ResumeWhereItStopped(
  * seconds, and writing on every scrub would hammer the database while a thumb is moving.
  */
 @Composable
-private fun PlaybackPositionRecorder(player: ExoPlayer, videoId: String?) {
+private fun PlaybackPositionRecorder(player: ExoPlayer, videoId: String?, streamId: String?) {
     if (videoId == null) return
+
+    // The effects below are keyed on (player, videoId) only, so they keep running across a
+    // source switch rather than restarting — but that means their closures would otherwise
+    // freeze on whichever stream was current when they first launched. rememberUpdatedState
+    // is exactly the fix Compose offers for that: the same running effect, reading the
+    // latest stream id every time it saves.
+    val latestStreamId by rememberUpdatedState(streamId)
 
     DisposableEffect(player, videoId) {
         onDispose {
-            PlaybackPositionRepository.save(videoId, player.currentPosition, player.duration)
+            PlaybackPositionRepository.save(videoId, player.currentPosition, player.duration, latestStreamId)
         }
     }
 
@@ -411,7 +432,7 @@ private fun PlaybackPositionRecorder(player: ExoPlayer, videoId: String?) {
         while (true) {
             delay(PositionSaveMillis)
             if (player.isPlaying) {
-                PlaybackPositionRepository.save(videoId, player.currentPosition, player.duration)
+                PlaybackPositionRepository.save(videoId, player.currentPosition, player.duration, latestStreamId)
             }
         }
     }

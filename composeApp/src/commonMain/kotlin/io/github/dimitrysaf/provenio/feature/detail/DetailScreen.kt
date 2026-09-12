@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.platform.rememberUrlOpener
+import io.github.dimitrysaf.provenio.player.PlaybackPosition
 import io.github.dimitrysaf.provenio.player.PlaybackPositionRepository
 import io.github.dimitrysaf.provenio.db.SimklItem
 import io.github.dimitrysaf.provenio.designsystem.components.BackdropWash
@@ -68,6 +69,7 @@ import io.github.dimitrysaf.provenio.simkl.SimklRepository
 import io.github.dimitrysaf.provenio.simkl.SimklSync
 import io.github.dimitrysaf.provenio.simkl.SyncState
 import io.github.dimitrysaf.provenio.stremio.AddonRepository
+import io.github.dimitrysaf.provenio.stremio.streamId
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.Video
 import io.github.dimitrysaf.provenio.watch.EpisodeWatchedRepository
@@ -97,6 +99,13 @@ fun DetailScreen(
     var loading by remember { mutableStateOf(true) }
     // Which title the sources sheet is open for, or null when it is closed.
     var sourcesFor by remember { mutableStateOf<SourcesTarget?>(null) }
+    // How far into each episode or film this device got, and which source it used — so a
+    // part-watched entry shows a bar and "resume" can try that exact source again.
+    val positions by PlaybackPositionRepository.positions.collectAsState()
+    val scope = rememberCoroutineScope()
+    // The one video currently being resolved against its remembered source, so a second
+    // tap while that is in flight is ignored rather than starting a race with it.
+    var resolvingVideoId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(type, id) {
         loading = true
@@ -164,8 +173,47 @@ fun DetailScreen(
                 backdropAlpha = 1f - collapse,
                 showBackdrop = showBackdrop,
                 topPadding = topPadding,
+                positions = positions,
+                resolvingVideoId = resolvingVideoId,
                 onChooseSource = { videoId, resumeProgress ->
-                    sourcesFor = SourcesTarget(videoId, resumeProgress)
+                    // A resolve already in flight is left to finish rather than started
+                    // twice, so a second tap on "Resume" while it is running does nothing.
+                    val rememberedStreamId = positions[videoId]?.streamId
+                    if (resolvingVideoId != null) {
+                        // ignored: a resolve for another video is already running
+                    } else if (rememberedStreamId == null) {
+                        sourcesFor = SourcesTarget(videoId, resumeProgress)
+                    } else {
+                        resolvingVideoId = videoId
+                        scope.launch {
+                            val currentMeta = meta
+                            val playType = currentMeta?.type ?: type
+                            val resolved = resolveRememberedSource(playType, videoId, rememberedStreamId)
+                            resolvingVideoId = null
+                            if (resolved == null) {
+                                // No addon lists this source any more, peer-to-peer has no
+                                // consent, or the swarm could not be reached — any of which
+                                // means falling back to letting the source be picked by hand.
+                                sourcesFor = SourcesTarget(videoId, resumeProgress)
+                            } else {
+                                val video = currentMeta?.videos?.firstOrNull { it.id == videoId }
+                                onPlay(
+                                    PlaybackRequest(
+                                        url = resolved.url,
+                                        type = playType,
+                                        imdbId = currentMeta?.id ?: id,
+                                        title = currentMeta?.name,
+                                        videoId = videoId,
+                                        episodeTitle = video?.title,
+                                        season = video?.season,
+                                        episode = video?.episode,
+                                        resumeProgressPercent = resumeProgress,
+                                        streamId = resolved.streamId,
+                                    ),
+                                )
+                            }
+                        }
+                    }
                 },
             )
         }
@@ -220,6 +268,7 @@ fun DetailScreen(
                         season = video?.season,
                         episode = video?.episode,
                         resumeProgressPercent = openFor.resumeProgressPercent,
+                        streamId = source.streamId,
                     ),
                 )
             },
@@ -238,6 +287,9 @@ private fun MetaContent(
     backdropAlpha: Float,
     showBackdrop: Boolean,
     topPadding: Dp,
+    positions: Map<String, PlaybackPosition>,
+    /** The video, if any, currently being resolved against its remembered source. */
+    resolvingVideoId: String?,
     onChooseSource: (String, Float?) -> Unit,
 ) {
     val openUrl = rememberUrlOpener()
@@ -296,9 +348,6 @@ private fun MetaContent(
             ?: seasons.firstOrNull()?.first
             ?: return@LaunchedEffect
     }
-    // How far into each episode or film this device got, so a part-watched entry shows a
-    // bar and the play button knows to say "resume".
-    val positions by PlaybackPositionRepository.positions.collectAsState()
 
     val onToggleWatched: (Video) -> Unit = { video ->
         EpisodeWatchedRepository.setWatched(meta.id, video, video.id !in watchedIds)
@@ -322,6 +371,7 @@ private fun MetaContent(
                 simklWatchedEpisodes = simklWatchedEpisodes,
                 resumeSession = resumeSession,
                 positions = positions,
+                resolvingVideoId = resolvingVideoId,
                 onChooseSource = onChooseSource,
             )
         }

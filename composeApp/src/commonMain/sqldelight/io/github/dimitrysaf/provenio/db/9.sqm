@@ -1,0 +1,5 @@
+-- Remembers which source a saved playback position was recorded against — a torrent's info
+-- hash, or the playable url for anything else — so "resume" can try that exact source
+-- again before asking the viewer to pick one. Existing rows get null, which reads as "no
+-- remembered source", the behaviour they already had.
+ALTER TABLE playbackPosition ADD COLUMN streamId TEXT;
