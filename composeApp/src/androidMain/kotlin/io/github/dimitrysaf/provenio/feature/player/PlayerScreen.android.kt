@@ -1366,13 +1366,22 @@ private fun WavySeekBar(
             // The track and the buffered fill only ever cover what the wave does not: a
             // real gap starts right after the active indicator, exactly the spec's own
             // gap between an indicator and its track, which is also what stops the flat
-            // track line from showing through the wave's peaks and troughs.
-            val gappedStart = if (activeWidth > 0f) activeWidth + gap else 0f
+            // track line from showing through the wave's peaks and troughs. Measured from
+            // the dot's own outer edge, not the raw played position underneath it — the
+            // dot is drawn with a bigger radius than the gap itself, so starting the gap
+            // at the position alone left the dot overlapping straight into it and the
+            // gray butting up against the dot with no visible gap at all.
+            val thumbRadius = WavySeekThumbRadius.toPx()
+            val gappedStart = if (activeWidth > 0f) activeWidth + thumbRadius + gap else 0f
             val bufferedStart = gappedStart.coerceAtMost(size.width)
-            val bufferedEnd = maxOf(bufferedWidth, bufferedStart)
-            // The stop indicator sits fixed at the far end, so the track itself stops
-            // short enough to leave it its own breathing room, same as the gap above.
-            val trackEnd = (size.width - stopRadius * 2f - gap).coerceAtLeast(bufferedEnd)
+            // The stop indicator sits fixed at the far end with its own reserved gap —
+            // capped here rather than after, so a stream that buffers close to 100%
+            // (routine for a direct HTTP source, not just a near-finished torrent) can't
+            // stretch the gray fill through that gap and butt it right up against the
+            // dot. Without the cap the gap was only ever real while little had loaded.
+            val trackRegionEnd = (size.width - stopRadius * 2f - gap).coerceAtLeast(bufferedStart)
+            val bufferedEnd = maxOf(bufferedWidth, bufferedStart).coerceAtMost(trackRegionEnd)
+            val trackEnd = trackRegionEnd
 
             if (bufferedEnd > bufferedStart) {
                 drawLine(
