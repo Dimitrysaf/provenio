@@ -824,6 +824,7 @@ private fun PlayerControls(
     var playbackState by remember { mutableStateOf(player.playbackState) }
     var duration by remember { mutableLongStateOf(player.duration.coerceAtLeast(0L)) }
     var position by remember { mutableLongStateOf(player.currentPosition.coerceAtLeast(0L)) }
+    var bufferedPosition by remember { mutableLongStateOf(player.bufferedPosition.coerceAtLeast(0L)) }
     var controlsVisible by remember { mutableStateOf(true) }
     var locked by remember { mutableStateOf(false) }
     var speed by remember { mutableFloatStateOf(1f) }
@@ -864,6 +865,17 @@ private fun PlayerControls(
         while (isPlaying) {
             if (seekPreviewMillis == null) position = player.currentPosition.coerceAtLeast(0L)
             delay(SeekBarPollMillis)
+        }
+    }
+
+    // Unlike position, this keeps polling while paused: behind a torrent, pieces keep
+    // arriving whether or not playback is moving, and the bar showing what has already
+    // loaded should say so. A coarser interval than the position poll — how far ahead the
+    // buffer reaches does not need to be frame-accurate.
+    LaunchedEffect(player) {
+        while (true) {
+            bufferedPosition = player.bufferedPosition.coerceAtLeast(0L)
+            delay(BufferedPositionPollMillis)
         }
     }
 
@@ -980,6 +992,7 @@ private fun PlayerControls(
                 BottomRows(
                     position = seekPreviewMillis ?: position,
                     duration = duration,
+                    bufferedPosition = bufferedPosition,
                     isPlaying = isPlaying,
                     onSeek = { seekPreviewMillis = it },
                     onSeekFinished = {
@@ -1189,6 +1202,7 @@ private fun TransportRow(
 private fun BottomRows(
     position: Long,
     duration: Long,
+    bufferedPosition: Long,
     isPlaying: Boolean,
     onSeek: (Long) -> Unit,
     onSeekFinished: () -> Unit,
@@ -1226,6 +1240,7 @@ private fun BottomRows(
         WavySeekBar(
             position = position,
             duration = duration,
+            bufferedPosition = bufferedPosition,
             isPlaying = isPlaying,
             onSeek = onSeek,
             onSeekFinished = onSeekFinished,
@@ -1261,6 +1276,9 @@ private fun BottomRows(
 private fun WavySeekBar(
     position: Long,
     duration: Long,
+    /** How far the player has actually loaded ahead of playback, drawn as a plain gray
+     * fill between the wavy played portion and the untouched track. */
+    bufferedPosition: Long,
     isPlaying: Boolean,
     onSeek: (Long) -> Unit,
     onSeekFinished: () -> Unit,
@@ -1270,6 +1288,7 @@ private fun WavySeekBar(
     var dragValue by remember { mutableStateOf<Float?>(null) }
     val shownValue = dragValue ?: position.toFloat()
     val fraction = (shownValue / maxValue).coerceIn(0f, 1f)
+    val bufferedFraction = (bufferedPosition.toFloat() / maxValue).coerceIn(0f, 1f)
 
     val infinite = rememberInfiniteTransition(label = "wavySeekPhase")
     val phase by infinite.animateFloat(
@@ -1287,6 +1306,9 @@ private fun WavySeekBar(
 
     val activeColor = MaterialTheme.colorScheme.primary
     val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+    // Between the two: not yet played, but already sitting on the device, so it reads as
+    // "ready" rather than "unknown" the way the plain track does.
+    val bufferedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
 
     fun valueAt(x: Float, width: Float): Float =
         (x / width.coerceAtLeast(1f) * maxValue).coerceIn(0f, maxValue)
@@ -1327,6 +1349,24 @@ private fun WavySeekBar(
             val wavelength = WavySeekWavelength.toPx()
             val strokeWidth = WavySeekStrokeWidth.toPx()
             val activeWidth = size.width * fraction
+            // Never drawn short of the played point — a stall can briefly leave the
+            // reported buffer behind the position it is already playing from.
+            val bufferedWidth = maxOf(size.width * bufferedFraction, activeWidth)
+
+            drawLine(
+                color = trackColor,
+                start = Offset(0f, midY),
+                end = Offset(size.width, midY),
+                strokeWidth = strokeWidth,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                color = bufferedColor,
+                start = Offset(activeWidth, midY),
+                end = Offset(bufferedWidth, midY),
+                strokeWidth = strokeWidth,
+                cap = StrokeCap.Round,
+            )
 
             val activePath = Path()
             var x = 0f
@@ -1345,13 +1385,6 @@ private fun WavySeekBar(
                 path = activePath,
                 color = activeColor,
                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-            )
-            drawLine(
-                color = trackColor,
-                start = Offset(activeWidth, midY),
-                end = Offset(size.width, midY),
-                strokeWidth = strokeWidth,
-                cap = StrokeCap.Round,
             )
             drawCircle(
                 color = activeColor,
@@ -1740,6 +1773,7 @@ private const val StreamTimeoutMillis = 60_000
 
 private const val SeekStepMillis = 10_000L
 private const val SeekBarPollMillis = 200L
+private const val BufferedPositionPollMillis = 1_000L
 private const val AutoHideMillis = 3_500L
 
 /** How often the resume point is written while playing. */
