@@ -1,5 +1,9 @@
 package io.github.dimitrysaf.provenio.feature.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -28,6 +32,7 @@ import io.github.dimitrysaf.provenio.designsystem.components.AppTopBar
 import io.github.dimitrysaf.provenio.designsystem.components.EmptyState
 import io.github.dimitrysaf.provenio.designsystem.components.backdropHeightFor
 import io.github.dimitrysaf.provenio.designsystem.layout.isPortraitPhone
+import io.github.dimitrysaf.provenio.designsystem.theme.MotionTokens
 import io.github.dimitrysaf.provenio.feature.home.components.ContinueWatchingCarousel
 import io.github.dimitrysaf.provenio.feature.home.components.ContinueWatchingEntry
 import io.github.dimitrysaf.provenio.feature.home.components.HeroCarousel
@@ -134,7 +139,8 @@ fun HomeScreen(
 
         // The hero is a portrait-phone treatment, like the backdrop on a title: it trades
         // height for atmosphere, which is only affordable in a tall window.
-        val showHero = heroItems.isNotEmpty() && isPortraitPhone(maxWidth, maxHeight)
+        val isPortrait = isPortraitPhone(maxWidth, maxHeight)
+        val showHero = heroItems.isNotEmpty() && isPortrait
 
         // The bar sits above the status bar inset, so clearing it means clearing both.
         // The hero is the exception: it is meant to run under the bar and the status bar
@@ -158,8 +164,25 @@ fun HomeScreen(
                 return@LazyColumn
             }
 
-            if (showHero) {
-                item { HeroCarousel(heroItems, heroHeight, onOpenDetail) }
+            // Always present once the window shape allows a hero, rather than added only
+            // once heroItems lands — that way AnimatedVisibility below animates the item's
+            // own height in gradually, instead of the whole shelf list jumping down the
+            // moment the catalog page arrives.
+            if (isPortrait) {
+                item {
+                    AnimatedVisibility(
+                        visible = heroItems.isNotEmpty(),
+                        enter = fadeIn(tween(MotionTokens.DurationMedium2, easing = MotionTokens.Standard)) +
+                            expandVertically(
+                                animationSpec = tween(
+                                    MotionTokens.DurationMedium2,
+                                    easing = MotionTokens.StandardDecelerate,
+                                ),
+                            ),
+                    ) {
+                        HeroCarousel(heroItems, heroHeight, onOpenDetail)
+                    }
+                }
             }
             item { ContinueWatchingCarousel(continueWatching, onOpenDetail) }
             item {

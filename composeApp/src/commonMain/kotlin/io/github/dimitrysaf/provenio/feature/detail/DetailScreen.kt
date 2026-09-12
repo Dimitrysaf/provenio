@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Tv
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -49,6 +50,7 @@ import io.github.dimitrysaf.provenio.designsystem.components.backdropHeightFor
 import io.github.dimitrysaf.provenio.designsystem.layout.isPortraitPhone
 import io.github.dimitrysaf.provenio.feature.detail.components.DetailHeader
 import io.github.dimitrysaf.provenio.feature.detail.components.Ratings
+import io.github.dimitrysaf.provenio.feature.detail.components.SectionHeader
 import io.github.dimitrysaf.provenio.feature.detail.components.SourcesSheet
 import io.github.dimitrysaf.provenio.feature.detail.components.Synopsis
 import io.github.dimitrysaf.provenio.feature.detail.components.WatchAction
@@ -76,6 +78,7 @@ import io.github.dimitrysaf.provenio.watch.EpisodeWatchedRepository
 import kotlinx.coroutines.launch
 import io.github.dimitrysaf.provenio.resources.Res
 import io.github.dimitrysaf.provenio.resources.back
+import io.github.dimitrysaf.provenio.resources.detail_episodes
 import io.github.dimitrysaf.provenio.resources.detail_no_addon
 import org.jetbrains.compose.resources.stringResource
 
@@ -399,6 +402,7 @@ private fun MetaContent(
         item { Ratings(meta) }
         item { Synopsis(meta) }
 
+        item { SectionHeader(stringResource(Res.string.detail_episodes), Icons.Outlined.Tv) }
         seasonSection(
             seasons = seasons,
             expanded = expanded,

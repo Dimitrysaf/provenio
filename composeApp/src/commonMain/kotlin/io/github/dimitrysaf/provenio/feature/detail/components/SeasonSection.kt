@@ -10,8 +10,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,24 +22,43 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Tv
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import io.github.dimitrysaf.provenio.core.platform.MatchHostSystemBars
+import io.github.dimitrysaf.provenio.db.SimklItem
 import io.github.dimitrysaf.provenio.feature.detail.SpecialsSeason
+import io.github.dimitrysaf.provenio.feature.detail.simklWatchedIds
 import io.github.dimitrysaf.provenio.player.PlaybackPosition
+import io.github.dimitrysaf.provenio.player.PlaybackPositionRepository
+import io.github.dimitrysaf.provenio.simkl.SimklSync
+import io.github.dimitrysaf.provenio.stremio.AddonRepository
+import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.stremio.model.Video
+import io.github.dimitrysaf.provenio.watch.EpisodeWatchedRepository
 import io.github.dimitrysaf.provenio.resources.Res
 import io.github.dimitrysaf.provenio.resources.detail_episode
 import io.github.dimitrysaf.provenio.resources.detail_episodes
@@ -58,8 +80,6 @@ fun LazyListScope.seasonSection(
     onChooseSource: (String) -> Unit,
     onToggleWatched: (Video) -> Unit,
 ) {
-    item { SectionHeader(stringResource(Res.string.detail_episodes), Icons.Outlined.Tv) }
-
     if (seasons.isEmpty()) {
         item { EmptyNote(stringResource(Res.string.detail_no_episodes)) }
         return
@@ -92,6 +112,86 @@ fun LazyListScope.seasonSection(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * The episode list, on its own, in a sheet — for the player's "episodes" button, which has
+ * no details page around it to put a [seasonSection] inside. Fetches its own meta, since
+ * the player itself only ever knows the one episode it is playing.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EpisodesSheet(
+    type: String,
+    imdbId: String,
+    currentVideoId: String?,
+    onDismiss: () -> Unit,
+    onSelectEpisode: (Video) -> Unit,
+) {
+    var meta by remember(imdbId) { mutableStateOf<Meta?>(null) }
+    LaunchedEffect(type, imdbId) { meta = AddonRepository.meta(type, imdbId) }
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        MatchHostSystemBars()
+        val currentMeta = meta
+        if (currentMeta == null) {
+            Box(
+                modifier = Modifier.fillMaxWidth().height(200.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+            return@ModalBottomSheet
+        }
+
+        val seasons = currentMeta.videos
+            .groupBy { it.season ?: SpecialsSeason }
+            .toList()
+            .sortedWith(compareBy({ (season, _) -> season == SpecialsSeason }, { it.first }))
+        val expanded = rememberSaveable(currentMeta.id) {
+            mutableStateOf(
+                seasons.firstOrNull { (_, episodes) -> episodes.any { it.id == currentVideoId } }
+                    ?.first ?: seasons.firstOrNull()?.first ?: 1,
+            )
+        }
+
+        var simklItem by remember(currentMeta.id) { mutableStateOf<SimklItem?>(null) }
+        LaunchedEffect(currentMeta.id) { simklItem = SimklSync.progressFor(currentMeta.id) }
+        val simklWatchedEpisodes = remember(simklItem?.simklId) {
+            simklItem?.let { SimklSync.watchedEpisodesFor(it.simklId) }.orEmpty()
+        }
+        val overrides by EpisodeWatchedRepository.overrides.collectAsState()
+        val watchedIds = remember(currentMeta, simklWatchedEpisodes, overrides) {
+            val inferred = simklWatchedIds(currentMeta, simklWatchedEpisodes).toMutableSet()
+            overrides.forEach { (videoId, isWatched) ->
+                if (isWatched) inferred.add(videoId) else inferred.remove(videoId)
+            }
+            inferred
+        }
+        val positions by PlaybackPositionRepository.positions.collectAsState()
+
+        Text(
+            text = stringResource(Res.string.detail_episodes),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
+        )
+        LazyColumn(modifier = Modifier.heightIn(max = 460.dp)) {
+            seasonSection(
+                seasons = seasons,
+                expanded = expanded,
+                onSeasonToggled = {},
+                watchedIds = watchedIds,
+                positions = positions,
+                onChooseSource = { videoId ->
+                    currentMeta.videos.firstOrNull { it.id == videoId }?.let(onSelectEpisode)
+                },
+                onToggleWatched = { video ->
+                    EpisodeWatchedRepository.setWatched(currentMeta.id, video, video.id !in watchedIds)
+                },
+            )
         }
     }
 }
@@ -185,7 +285,12 @@ private fun EpisodeRow(
                     AsyncImage(
                         model = video.thumbnail,
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
+                        // Some addons ship a spoiler-blurred still for an episode nobody
+                        // has watched yet. This app has no say over that image itself, so
+                        // it applies its own blur before watched and lifts it after —
+                        // driven by this device's own watched state either way.
+                        modifier = Modifier.fillMaxSize()
+                            .then(if (watched) Modifier else Modifier.blur(EpisodeSpoilerBlur)),
                         contentScale = ContentScale.Crop,
                     )
                 }
@@ -242,3 +347,6 @@ private fun EpisodeRow(
         }
     }
 }
+
+/** Heavy enough to hide a frame, not so heavy it reads as a broken image. */
+private val EpisodeSpoilerBlur = 18.dp

@@ -6,11 +6,19 @@ import android.net.Uri
 import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +30,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -64,7 +73,6 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -82,10 +90,19 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -95,6 +112,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import coil3.compose.AsyncImage
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
@@ -113,15 +131,20 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
 import io.github.dimitrysaf.provenio.core.platform.MatchHostSystemBars
 import io.github.dimitrysaf.provenio.designsystem.theme.dynamicColorScheme
+import io.github.dimitrysaf.provenio.feature.detail.components.EpisodesSheet
 import io.github.dimitrysaf.provenio.feature.detail.components.SourcesSheet
 import io.github.dimitrysaf.provenio.p2p.P2pRepository
 import io.github.dimitrysaf.provenio.player.PlaybackPositionRepository
 import io.github.dimitrysaf.provenio.player.PlayerBackend
 import io.github.dimitrysaf.provenio.player.PlayerRepository
 import io.github.dimitrysaf.provenio.player.ScrobbleTarget
+import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.streamId
+import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.simkl.SimklScrobbler
 import kotlinx.coroutines.delay
+import kotlin.math.PI
+import kotlin.math.sin
 import io.github.dimitrysaf.provenio.resources.Res
 import io.github.dimitrysaf.provenio.resources.back
 import io.github.dimitrysaf.provenio.resources.player_cause
@@ -238,8 +261,12 @@ private fun BuiltinPlayer(
     }
     var playbackError by remember { mutableStateOf<PlaybackException?>(null) }
     var resizeMode by remember { mutableIntStateOf(AspectRatioFrameLayout.RESIZE_MODE_FIT) }
-    var sourcesOpen by remember { mutableStateOf(false) }
-    PauseWhileCovered(player = player, covered = sourcesOpen)
+    // Which video the sources sheet is fetching for, or null when it is closed. Usually the
+    // episode already playing, but picking a different one from the episodes sheet points
+    // this at that episode instead, before anything about the player itself changes.
+    var sourcesTarget by remember { mutableStateOf<EpisodeTarget?>(null) }
+    var episodesOpen by remember { mutableStateOf(false) }
+    PauseWhileCovered(player = player, covered = sourcesTarget != null || episodesOpen)
     // The stream the player is on, which starts as the one navigated to and changes when
     // a different source is picked from the side sheet.
     var streamUrl by remember(url) { mutableStateOf(url) }
@@ -247,6 +274,14 @@ private fun BuiltinPlayer(
     // the position recorder can remember it too. Starts as whatever the details page
     // already resolved this source to.
     var currentStreamId by remember(url) { mutableStateOf(streamId) }
+    // Which episode is actually playing. Starts as the one navigated to and moves to
+    // whatever is picked from the episodes sheet, the same way streamUrl moves to whatever
+    // is picked from the sources sheet.
+    var currentVideoId by remember(url) { mutableStateOf(videoId) }
+    var currentSeason by remember(url) { mutableStateOf(season) }
+    var currentEpisode by remember(url) { mutableStateOf(episode) }
+    var currentEpisodeTitle by remember(url) { mutableStateOf(episodeTitle) }
+    val currentScrobbleTarget = scrobbleTarget?.copy(season = currentSeason, episode = currentEpisode)
 
     // Changing source only changes what is loaded. This used to be a DisposableEffect
     // keyed on the URL, which meant picking a new source disposed the old effect first —
@@ -260,7 +295,7 @@ private fun BuiltinPlayer(
         // out from here on should resume with what is about to play, not what they just
         // left. The periodic recorder below can be up to a few seconds stale, and a source
         // swap is exactly the moment ResumeWhereItStopped is about to read this value back.
-        videoId?.let {
+        currentVideoId?.let {
             PlaybackPositionRepository.save(it, player.currentPosition, player.duration, currentStreamId)
         }
         // Stop before swapping so the surface lets go of the frame it is holding; without
@@ -289,14 +324,38 @@ private fun BuiltinPlayer(
         }
     }
 
+    // A real frame on screen is the one honest signal that loading is over — buffering
+    // state alone can't tell "still fetching metadata" from "briefly stalled mid-episode".
+    // Reset per streamUrl, so switching source shows the loading art again for the new
+    // source's own start rather than leaving it permanently dismissed after the first ever.
+    var hasRenderedFirstFrame by remember(streamUrl) { mutableStateOf(false) }
+    DisposableEffect(player, streamUrl) {
+        val listener = object : Player.Listener {
+            override fun onRenderedFirstFrame() {
+                hasRenderedFirstFrame = true
+            }
+        }
+        player.addListener(listener)
+        onDispose { player.removeListener(listener) }
+    }
+
+    // Backdrop and logo for the loading art below — fetched once per title, not per
+    // source, since switching sources mid-episode should not re-fetch metadata already on
+    // screen.
+    var loadingMeta by remember { mutableStateOf<Meta?>(null) }
+    LaunchedEffect(currentScrobbleTarget?.imdbId) {
+        val target = currentScrobbleTarget ?: return@LaunchedEffect
+        loadingMeta = AddonRepository.meta(target.mediaType, target.imdbId)
+    }
+
     ImmersiveLandscapeEffect()
     ResumeWhereItStopped(
         player = player,
         streamUrl = streamUrl,
-        videoId = videoId,
+        videoId = currentVideoId,
         fallbackPercent = scrobbleTarget?.resumeProgressPercent,
     )
-    PlaybackPositionRecorder(player = player, videoId = videoId, streamId = currentStreamId)
+    PlaybackPositionRecorder(player = player, videoId = currentVideoId, streamId = currentStreamId)
 
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         AndroidView(
@@ -312,42 +371,76 @@ private fun BuiltinPlayer(
             },
             update = { it.resizeMode = resizeMode },
         )
+        // Sits above the video surface and below the controls — drawn here, between the
+        // two, purely by z-order — and carries no click handling of its own, so a tap
+        // still reaches PlayerControls underneath it exactly as if this were not here.
+        if (!hasRenderedFirstFrame) {
+            LoadingBackdrop(
+                backdrop = loadingMeta?.background,
+                logo = loadingMeta?.logo,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
         PlayerChrome {
             PlayerControls(
                 player = player,
                 onBack = onBack,
                 streamUrl = streamUrl,
                 title = title,
-                season = season,
-                episode = episode,
-                episodeTitle = episodeTitle,
+                season = currentSeason,
+                episode = currentEpisode,
+                episodeTitle = currentEpisodeTitle,
                 resizeMode = resizeMode,
                 onResizeMode = { resizeMode = it },
-                onOpenSources = if (videoId != null) {
-                    { sourcesOpen = true }
-                } else {
-                    null
+                onOpenSources = currentVideoId?.let { id ->
+                    {
+                        sourcesTarget = EpisodeTarget(id, currentSeason, currentEpisode, currentEpisodeTitle)
+                    }
                 },
+                onOpenEpisodes = currentScrobbleTarget?.imdbId?.let { { episodesOpen = true } },
             )
         }
-        if (scrobbleTarget != null) {
-            ScrobbleReporter(player = player, target = scrobbleTarget)
+        if (currentScrobbleTarget != null) {
+            ScrobbleReporter(player = player, target = currentScrobbleTarget)
         }
     }
 
-    if (sourcesOpen && videoId != null) {
+    val target = sourcesTarget
+    if (target != null) {
         SourcesSheet(
             type = scrobbleTarget?.mediaType ?: MovieType,
-            id = videoId,
+            id = target.videoId,
             title = title,
-            onDismiss = { sourcesOpen = false },
+            onDismiss = { sourcesTarget = null },
             onPlay = { source ->
                 source.playableUrl?.let { streamUrl = it }
                 currentStreamId = source.streamId
-                sourcesOpen = false
+                if (target.videoId != currentVideoId) {
+                    currentVideoId = target.videoId
+                    currentSeason = target.season
+                    currentEpisode = target.episode
+                    currentEpisodeTitle = target.title
+                }
+                sourcesTarget = null
             },
             currentUrl = streamUrl,
         )
+    }
+
+    if (episodesOpen) {
+        val target = currentScrobbleTarget
+        if (target?.imdbId != null) {
+            EpisodesSheet(
+                type = target.mediaType,
+                imdbId = target.imdbId,
+                currentVideoId = currentVideoId,
+                onDismiss = { episodesOpen = false },
+                onSelectEpisode = { video ->
+                    episodesOpen = false
+                    sourcesTarget = EpisodeTarget(video.id, video.season, video.episode, video.title)
+                },
+            )
+        }
     }
 
     playbackError?.let { error ->
@@ -355,6 +448,71 @@ private fun BuiltinPlayer(
             info = error.toDebugInfo(url, stringResource(Res.string.player_no_message)),
             onDismiss = { playbackError = null },
         )
+    }
+}
+
+/** Which episode the sources sheet should fetch for — not always the one playing now. */
+private data class EpisodeTarget(
+    val videoId: String,
+    val season: Int?,
+    val episode: Int?,
+    val title: String?,
+)
+
+/**
+ * Stands in for the black screen while the stream itself is still loading — fetching
+ * metadata, or (behind a torrent) waiting for the first pieces to arrive. A still black
+ * frame reads as broken; the show's own art reads as "getting there".
+ *
+ * There is no real byte-level progress to show for either wait, so the logo carries an
+ * animated sweep instead of a determinate bar: a dim copy sits underneath and a brighter
+ * band crosses it on a loop, the same masking trick a shimmer placeholder uses.
+ */
+@Composable
+private fun LoadingBackdrop(backdrop: String?, logo: String?, modifier: Modifier = Modifier) {
+    Box(modifier = modifier.background(Color.Black)) {
+        if (backdrop != null) {
+            AsyncImage(
+                model = backdrop,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        }
+        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)))
+        if (logo != null) {
+            val infinite = rememberInfiniteTransition(label = "loadingLogoSweep")
+            val sweep by infinite.animateFloat(
+                initialValue = -0.4f,
+                targetValue = 1.4f,
+                animationSpec = infiniteRepeatable(tween(1600, easing = LinearEasing)),
+                label = "loadingLogoSweepPosition",
+            )
+            Box(modifier = Modifier.align(Alignment.Center).fillMaxWidth(0.5f)) {
+                AsyncImage(
+                    model = logo,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth().alpha(0.35f),
+                )
+                AsyncImage(
+                    model = logo,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth().drawWithContent {
+                        drawContent()
+                        drawRect(
+                            brush = Brush.linearGradient(
+                                colors = listOf(Color.Transparent, Color.Black, Color.Transparent),
+                                start = Offset((sweep - 0.25f) * size.width, 0f),
+                                end = Offset((sweep + 0.25f) * size.width, 0f),
+                            ),
+                            blendMode = BlendMode.DstIn,
+                        )
+                    },
+                )
+            }
+        }
     }
 }
 
@@ -676,6 +834,7 @@ private fun PlayerControls(
     resizeMode: Int,
     onResizeMode: (Int) -> Unit,
     onOpenSources: (() -> Unit)?,
+    onOpenEpisodes: (() -> Unit)?,
 ) {
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
     var playbackState by remember { mutableStateOf(player.playbackState) }
@@ -837,6 +996,7 @@ private fun PlayerControls(
                 BottomRows(
                     position = seekPreviewMillis ?: position,
                     duration = duration,
+                    isPlaying = isPlaying,
                     onSeek = { seekPreviewMillis = it },
                     onSeekFinished = {
                         val target = seekPreviewMillis ?: return@BottomRows
@@ -848,6 +1008,7 @@ private fun PlayerControls(
                     onResizeMode = onResizeMode,
                     onLock = { locked = true },
                     onOpenSources = onOpenSources,
+                    onOpenEpisodes = onOpenEpisodes,
                     onOpenSpeed = { speedOpen = true },
                     onOpenSubtitles = { subtitlesOpen = true },
                     onOpenAudio = { audioOpen = true },
@@ -907,7 +1068,7 @@ private fun TopRow(
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(horizontal = 8.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
     ) {
         IconButton(onClick = onBack) {
             Icon(
@@ -961,14 +1122,24 @@ private fun TransportRow(
     onPlayPause: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // The same scrim-filled container the button groups below use, so the skip buttons
+    // read as part of the same control family rather than bare icons floating over the
+    // picture.
+    val scheme = MaterialTheme.colorScheme
+    val skipColors = IconButtonDefaults.filledIconButtonColors(
+        containerColor = scheme.scrim.copy(alpha = GroupContainerAlpha),
+        contentColor = scheme.onSurface,
+    )
+
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        IconButton(
+        FilledIconButton(
             onClick = { onSeekBy(-SeekStepMillis) },
             modifier = Modifier.size(NormalButtonSize),
+            colors = skipColors,
         ) {
             Icon(
                 imageVector = Icons.Filled.Replay5,
@@ -997,7 +1168,12 @@ private fun TransportRow(
                 )
                 FilledIconButton(
                     onClick = onPlayPause,
-                    modifier = Modifier.size(PlayButtonSize),
+                    modifier = Modifier
+                        .size(PlayButtonSize)
+                        // Lifts the primary control off the picture, the way the rest of
+                        // the transport reads as sitting on a surface rather than painted
+                        // straight onto the video.
+                        .shadow(elevation = 8.dp, shape = RoundedCornerShape(corner)),
                     shape = RoundedCornerShape(corner),
                 ) {
                     Icon(
@@ -1010,9 +1186,10 @@ private fun TransportRow(
                 }
             }
         }
-        IconButton(
+        FilledIconButton(
             onClick = { onSeekBy(SeekStepMillis) },
             modifier = Modifier.size(NormalButtonSize),
+            colors = skipColors,
         ) {
             Icon(
                 imageVector = Icons.Filled.Forward5,
@@ -1028,19 +1205,19 @@ private fun TransportRow(
 private fun BottomRows(
     position: Long,
     duration: Long,
+    isPlaying: Boolean,
     onSeek: (Long) -> Unit,
     onSeekFinished: () -> Unit,
     resizeMode: Int,
     onResizeMode: (Int) -> Unit,
     onLock: () -> Unit,
     onOpenSources: (() -> Unit)?,
+    onOpenEpisodes: (() -> Unit)?,
     onOpenSpeed: () -> Unit,
     onOpenSubtitles: () -> Unit,
     onOpenAudio: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val maxValue = duration.coerceAtLeast(1L).toFloat()
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -1062,11 +1239,13 @@ private fun BottomRows(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Slider(
-            value = position.toFloat().coerceIn(0f, maxValue),
-            onValueChange = { onSeek(it.toLong()) },
-            onValueChangeFinished = onSeekFinished,
-            valueRange = 0f..maxValue,
+        WavySeekBar(
+            position = position,
+            duration = duration,
+            isPlaying = isPlaying,
+            onSeek = onSeek,
+            onSeekFinished = onSeekFinished,
+            modifier = Modifier.fillMaxWidth(),
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1081,7 +1260,120 @@ private fun BottomRows(
                 onOpenSubtitles = onOpenSubtitles,
                 onOpenAudio = onOpenAudio,
             )
-            LibraryGroup(onOpenSources = onOpenSources)
+            LibraryGroup(onOpenSources = onOpenSources, onOpenEpisodes = onOpenEpisodes)
+        }
+    }
+}
+
+/**
+ * A seek bar that waves while playing and holds still the instant it is not — a moving
+ * line reads as "this is alive" on its own, with no separate indicator needed for it.
+ *
+ * Built from scratch rather than styling the standard [Slider]: the wave is drawn as a
+ * sampled sine path, which is track content, not a track colour Slider has a slot for.
+ * Dragging and tapping both seek, the same gestures the standard control offers.
+ */
+@Composable
+private fun WavySeekBar(
+    position: Long,
+    duration: Long,
+    isPlaying: Boolean,
+    onSeek: (Long) -> Unit,
+    onSeekFinished: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val maxValue = duration.coerceAtLeast(1L).toFloat()
+    var dragValue by remember { mutableStateOf<Float?>(null) }
+    val shownValue = dragValue ?: position.toFloat()
+    val fraction = (shownValue / maxValue).coerceIn(0f, 1f)
+
+    val infinite = rememberInfiniteTransition(label = "wavySeekPhase")
+    val phase by infinite.animateFloat(
+        initialValue = 0f,
+        targetValue = (2f * PI).toFloat(),
+        animationSpec = infiniteRepeatable(tween(1400, easing = LinearEasing)),
+        label = "wavySeekPhasePosition",
+    )
+    // Freezes the wave the instant playback stops, rather than fading it out, so a still
+    // line and a moving one map directly onto paused and playing.
+    val amplitudeFraction by animateFloatAsState(
+        targetValue = if (isPlaying) 1f else 0f,
+        label = "wavySeekAmplitude",
+    )
+
+    val activeColor = MaterialTheme.colorScheme.primary
+    val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+
+    fun valueAt(x: Float, width: Float): Float =
+        (x / width.coerceAtLeast(1f) * maxValue).coerceIn(0f, maxValue)
+
+    Box(
+        modifier = modifier
+            .height(WavySeekBarHeight)
+            .pointerInput(duration) {
+                detectTapGestures(
+                    onTap = { offset ->
+                        val value = valueAt(offset.x, size.width.toFloat())
+                        onSeek(value.toLong())
+                        onSeekFinished()
+                    },
+                )
+            }
+            .pointerInput(duration) {
+                detectHorizontalDragGestures(
+                    onDragStart = { offset ->
+                        dragValue = valueAt(offset.x, size.width.toFloat())
+                    },
+                    onDragEnd = {
+                        dragValue?.let { onSeek(it.toLong()) }
+                        onSeekFinished()
+                        dragValue = null
+                    },
+                    onDragCancel = { dragValue = null },
+                ) { change, _ ->
+                    val value = valueAt(change.position.x, size.width.toFloat())
+                    dragValue = value
+                    onSeek(value.toLong())
+                }
+            },
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val midY = size.height / 2f
+            val waveAmplitude = WavySeekAmplitude.toPx() * amplitudeFraction
+            val wavelength = WavySeekWavelength.toPx()
+            val strokeWidth = WavySeekStrokeWidth.toPx()
+            val activeWidth = size.width * fraction
+
+            val activePath = Path()
+            var x = 0f
+            var first = true
+            while (x <= activeWidth) {
+                val y = midY + sin(x / wavelength * 2f * PI.toFloat() + phase) * waveAmplitude
+                if (first) {
+                    activePath.moveTo(x, y)
+                    first = false
+                } else {
+                    activePath.lineTo(x, y)
+                }
+                x += WavySeekSampleStep
+            }
+            drawPath(
+                path = activePath,
+                color = activeColor,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+            )
+            drawLine(
+                color = trackColor,
+                start = Offset(activeWidth, midY),
+                end = Offset(size.width, midY),
+                strokeWidth = strokeWidth,
+                cap = StrokeCap.Round,
+            )
+            drawCircle(
+                color = activeColor,
+                radius = WavySeekThumbRadius.toPx(),
+                center = Offset(activeWidth, midY),
+            )
         }
     }
 }
@@ -1192,7 +1484,7 @@ private fun ViewingGroup(
 
 /** Where else this could be played from, and what is next. Both still inert. */
 @Composable
-private fun LibraryGroup(onOpenSources: (() -> Unit)?) {
+private fun LibraryGroup(onOpenSources: (() -> Unit)?, onOpenEpisodes: (() -> Unit)?) {
     ConnectedButtonGroup(count = 2) { index, shape ->
         if (index == 0) {
             GroupButton(
@@ -1207,8 +1499,8 @@ private fun LibraryGroup(onOpenSources: (() -> Unit)?) {
                 icon = Icons.Filled.PlaylistPlay,
                 description = stringResource(Res.string.player_episodes),
                 shape = shape,
-                onClick = {},
-                enabled = false,
+                onClick = { onOpenEpisodes?.invoke() },
+                enabled = onOpenEpisodes != null,
             )
         }
     }
@@ -1471,6 +1763,15 @@ private const val AutoHideMillis = 3_500L
 
 /** How often the resume point is written while playing. */
 private const val PositionSaveMillis = 5_000L
+
+private val WavySeekBarHeight = 24.dp
+private val WavySeekAmplitude = 5.dp
+private val WavySeekWavelength = 26.dp
+private val WavySeekStrokeWidth = 3.dp
+private val WavySeekThumbRadius = 6.dp
+
+/** How far apart the sampled points on the wave are, in pixels — finer than this is wasted. */
+private const val WavySeekSampleStep = 4f
 
 /** `m:ss`, or `h:mm:ss` once the video runs an hour or longer. */
 private fun formatPlaybackTime(millis: Long): String {
