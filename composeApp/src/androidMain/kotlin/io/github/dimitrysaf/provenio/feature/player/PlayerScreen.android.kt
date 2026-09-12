@@ -1309,6 +1309,9 @@ private fun WavySeekBar(
     // Between the two: not yet played, but already sitting on the device, so it reads as
     // "ready" rather than "unknown" the way the plain track does.
     val bufferedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+    // The stop indicator M3 draws at the far end of a determinate track, marking where it
+    // finishes — it disappears once the active indicator actually reaches it.
+    val stopIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
 
     fun valueAt(x: Float, width: Float): Float =
         (x / width.coerceAtLeast(1f) * maxValue).coerceIn(0f, maxValue)
@@ -1345,28 +1348,59 @@ private fun WavySeekBar(
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val midY = size.height / 2f
-            val waveAmplitude = WavySeekAmplitude.toPx() * amplitudeFraction
+            // M3 tapers the wave to flat over the first and last tenth of the track,
+            // rather than waving right up to a fixed thumb — the amplitude used to just
+            // cut off at the very ends, which is where a full-height wave looked worst
+            // sitting against the track's flat cap.
+            val edgeTaper = minOf(fraction / 0.1f, (1f - fraction) / 0.1f).coerceIn(0f, 1f)
+            val waveAmplitude = WavySeekAmplitude.toPx() * amplitudeFraction * edgeTaper
             val wavelength = WavySeekWavelength.toPx()
             val strokeWidth = WavySeekStrokeWidth.toPx()
+            val gap = WavySeekGapSize.toPx()
+            val stopRadius = WavySeekStopIndicatorSize.toPx() / 2f
             val activeWidth = size.width * fraction
             // Never drawn short of the played point — a stall can briefly leave the
             // reported buffer behind the position it is already playing from.
             val bufferedWidth = maxOf(size.width * bufferedFraction, activeWidth)
 
-            drawLine(
-                color = trackColor,
-                start = Offset(0f, midY),
-                end = Offset(size.width, midY),
-                strokeWidth = strokeWidth,
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                color = bufferedColor,
-                start = Offset(activeWidth, midY),
-                end = Offset(bufferedWidth, midY),
-                strokeWidth = strokeWidth,
-                cap = StrokeCap.Round,
-            )
+            // The track and the buffered fill only ever cover what the wave does not: a
+            // real gap starts right after the active indicator, exactly the spec's own
+            // gap between an indicator and its track, which is also what stops the flat
+            // track line from showing through the wave's peaks and troughs.
+            val gappedStart = if (activeWidth > 0f) activeWidth + gap else 0f
+            val bufferedStart = gappedStart.coerceAtMost(size.width)
+            val bufferedEnd = maxOf(bufferedWidth, bufferedStart)
+            // The stop indicator sits fixed at the far end, so the track itself stops
+            // short enough to leave it its own breathing room, same as the gap above.
+            val trackEnd = (size.width - stopRadius * 2f - gap).coerceAtLeast(bufferedEnd)
+
+            if (bufferedEnd > bufferedStart) {
+                drawLine(
+                    color = bufferedColor,
+                    start = Offset(bufferedStart, midY),
+                    end = Offset(bufferedEnd, midY),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round,
+                )
+            }
+            if (trackEnd > bufferedEnd) {
+                drawLine(
+                    color = trackColor,
+                    start = Offset(bufferedEnd, midY),
+                    end = Offset(trackEnd, midY),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round,
+                )
+            }
+            // Hidden once playback has actually reached the end — a dot marking a finish
+            // line still ahead makes no sense once nothing is ahead of it any more.
+            if (fraction < 0.999f) {
+                drawCircle(
+                    color = stopIndicatorColor,
+                    radius = stopRadius,
+                    center = Offset(size.width - stopRadius, midY),
+                )
+            }
 
             val activePath = Path()
             var x = 0f
@@ -1782,7 +1816,11 @@ private const val PositionSaveMillis = 5_000L
 private val WavySeekBarHeight = 24.dp
 private val WavySeekAmplitude = 2.dp
 private val WavySeekWavelength = 36.dp
-private val WavySeekStrokeWidth = 3.dp
+// M3's wavy indicator spec: a 4dp stroke for both the active wave and the track, a 4dp
+// gap between them, and a 4dp stop indicator dot marking where the track ends.
+private val WavySeekStrokeWidth = 4.dp
+private val WavySeekGapSize = 4.dp
+private val WavySeekStopIndicatorSize = 4.dp
 private val WavySeekThumbRadius = 6.dp
 
 /** How far apart the sampled points on the wave are, in pixels — finer than this is wasted. */
