@@ -91,13 +91,22 @@ class TorrentSession(private val cacheDir: File) {
      * Remembers a torrent so [open] can find it later, and answers with the key the URL
      * is built from.
      *
+     * Keyed by info hash *and* file index, not the info hash alone: a season pack is one
+     * info hash covering every episode in it, so keying on the hash by itself handed two
+     * different episodes the exact same URL and the exact same cached [StreamingTorrent]
+     * — switching episodes within a pack silently kept reading the file already open
+     * rather than the one just picked. The two [StreamingTorrent]s this can now produce
+     * for one pack safely share the same underlying torrent handle; [open] re-adding an
+     * already-added info hash is a cheap merge in libtorrent, not a second download.
+     *
      * Deliberately does no network work: this runs while the user is still looking at the
      * sources sheet, and fetching metadata here would freeze that sheet for as long as the
      * swarm takes to answer.
      */
     fun register(request: TorrentRequest): String {
-        val key = request.infoHash.trim().lowercase()
-        requests[key] = request.copy(infoHash = key)
+        val infoHash = request.infoHash.trim().lowercase()
+        val key = "$infoHash-${request.fileIndex ?: "auto"}"
+        requests[key] = request.copy(infoHash = infoHash)
         val trackers = request.sources.count { it.startsWith("tracker:") }
         p2pLog(
             "registered $key: trackers=$trackers of ${request.sources.size} sources, " +
@@ -125,8 +134,8 @@ class TorrentSession(private val cacheDir: File) {
 
             evictTo(current.cacheSize.bytes)
 
-            val hash = runCatching { Sha1Hash.parseHex(key) }
-                .onFailure { p2pLog("not a usable info hash: $key") }
+            val hash = runCatching { Sha1Hash.parseHex(request.infoHash) }
+                .onFailure { p2pLog("not a usable info hash: ${request.infoHash}") }
                 .getOrNull() ?: return@withContext null
 
             val magnet = magnetUriOf(request)
@@ -329,8 +338,12 @@ class TorrentSession(private val cacheDir: File) {
         // registered the moment it is added and only gains a stream once its metadata has
         // arrived, so reading from `streams` reported zero peers for the entire time the
         // swarm was being searched — exactly when the number matters most.
-        val live = requests.keys.mapNotNull { key ->
-            runCatching { Sha1Hash.parseHex(key) }.getOrNull()
+        //
+        // By info hash, de-duplicated: two registrations for the same season pack (two
+        // episodes picked from it) share one torrent in the session and would otherwise be
+        // counted, and its peers and rates summed, twice.
+        val live = requests.values.map { it.infoHash }.distinct().mapNotNull { infoHash ->
+            runCatching { Sha1Hash.parseHex(infoHash) }.getOrNull()
                 ?.let { session.find(it) }
                 ?.takeIf { it.isValid }
                 ?.status()
