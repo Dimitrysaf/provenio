@@ -26,8 +26,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.db.SimklItem
+import io.github.dimitrysaf.provenio.player.PlaybackPosition
 import io.github.dimitrysaf.provenio.simkl.SimklImages
 import io.github.dimitrysaf.provenio.simkl.SimklPlaybackSession
+import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.resources.Res
 import io.github.dimitrysaf.provenio.resources.home_continue_watching
 import org.jetbrains.compose.resources.stringResource
@@ -37,12 +39,23 @@ import org.jetbrains.compose.resources.stringResource
 private val ContinueWatchingItemWidth = 220.dp
 private val ContinueWatchingItemHeight = 300.dp
 
+/** One card of the shelf: enough to draw the poster, title, episode line and time bar. */
+data class ContinueWatchingEntry(
+    val id: String,
+    val type: String,
+    val title: String,
+    val poster: String?,
+    val season: Int? = null,
+    val episode: Int? = null,
+    /** 0..1 real time-into-this-title, or null when there is nothing to draw a bar for. */
+    val progress: Float? = null,
+)
+
 /**
- * The lead shelf: Simkl's "watching" list, so it is never empty just because nothing has a
- * live scrobble session yet. A card's progress bar is real time-into-this-episode from
- * [timeProgressByImdbId] when Simkl has that session, and simply absent otherwise — an
- * episode-count fraction is a different metric, not a rougher version of the same one, so
- * there is no fallback bar to draw without it.
+ * The lead shelf. Built primarily from this device's own local resume points — see
+ * [buildContinueWatchingEntries] — so it is never empty just because nobody is signed into
+ * Simkl, and its bar is always real time-into-this-episode rather than a percentage that
+ * only updates when a scrobble happens to reach Simkl.
  *
  * Uses M3's multi-browse carousel rather than a plain scrolling row: the next card sits at
  * reduced width and grows into place as it scrolls to the front, which is the carousel
@@ -52,8 +65,7 @@ private val ContinueWatchingItemHeight = 300.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContinueWatchingCarousel(
-    items: List<SimklItem>,
-    timeProgressByImdbId: Map<String, SimklPlaybackSession>,
+    items: List<ContinueWatchingEntry>,
     onOpenDetail: (type: String, id: String) -> Unit,
 ) {
     if (items.isEmpty()) return
@@ -73,14 +85,12 @@ fun ContinueWatchingCarousel(
             modifier = Modifier.fillMaxWidth().height(ContinueWatchingItemHeight),
         ) { index ->
             val item = items[index]
-            val session = item.imdbId?.let { timeProgressByImdbId[it] }
             ContinueWatchingCard(
                 item = item,
-                session = session,
                 // Reads the carousel's own live mask math, so the card's corners and
                 // edge clip exactly as it collapses — not a static rounded rect.
                 modifier = Modifier.maskClip(RoundedCornerShape(20.dp)),
-                onClick = { item.imdbId?.let { onOpenDetail(item.stremioType(), it) } },
+                onClick = { onOpenDetail(item.type, item.id) },
             )
         }
     }
@@ -88,25 +98,19 @@ fun ContinueWatchingCarousel(
 
 @Composable
 private fun ContinueWatchingCard(
-    item: SimklItem,
-    session: SimklPlaybackSession?,
+    item: ContinueWatchingEntry,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val poster = SimklImages.poster(item.poster)
-    // The watching list has no per-episode number of its own; a matched session's is the
-    // one actually being resumed, so it is shown only when there is one to show.
-    val episode = session?.episode
-
     Box(
         modifier = modifier
             .fillMaxSize()
             .clickable(onClick = onClick)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
-        if (poster != null) {
+        if (item.poster != null) {
             AsyncImage(
-                model = poster,
+                model = item.poster,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
@@ -130,26 +134,92 @@ private fun ContinueWatchingCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (episode != null) {
+            if (item.season != null && item.episode != null) {
                 Text(
-                    text = "S${pad(episode.season)} · E${pad(episode.number)}",
+                    text = "S${pad(item.season)} · E${pad(item.episode)}",
                     style = MaterialTheme.typography.labelMedium,
                     color = Color.White.copy(alpha = 0.75f),
                 )
             }
             // The position itself, in time — not an episode count — and no label: the
             // bar sitting on the art is the whole point, the same way a video scrubber
-            // never needs to spell out what it is. Nothing drawn at all when Simkl has
-            // not reported one.
-            if (session != null) {
+            // never needs to spell out what it is. Nothing drawn at all when there is no
+            // real progress to show.
+            if (item.progress != null) {
                 LinearProgressIndicator(
-                    progress = { (session.progress / 100f).coerceIn(0f, 1f) },
+                    progress = { item.progress.coerceIn(0f, 1f) },
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp).height(4.dp),
                     trackColor = Color.White.copy(alpha = 0.25f),
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
+    }
+}
+
+/**
+ * Merges this device's own resume points with Simkl's "watching" list into one shelf.
+ *
+ * Local positions come first and win on a shared title: they are exact, written by the
+ * player itself every few seconds, and need nobody signed in. Simkl only fills in a title
+ * with no local record at all — watched from another device, say — using whatever bar it
+ * can offer, which is only ever a paused session's own percentage.
+ *
+ * One card per title: within the local positions, only the most recently touched episode
+ * of a show is kept, the same rule [io.github.dimitrysaf.provenio.feature.detail.components.WatchAction]
+ * already uses for "resume where you left off".
+ */
+suspend fun buildContinueWatchingEntries(
+    positions: Map<String, PlaybackPosition>,
+    simklWatching: List<SimklItem>,
+    simklSessionsByImdbId: Map<String, SimklPlaybackSession>,
+): List<ContinueWatchingEntry> {
+    val seenIds = mutableSetOf<String>()
+
+    val local = positions.entries
+        .sortedByDescending { it.value.updatedAtMillis }
+        .mapNotNull { (videoId, position) ->
+            val fraction = position.fraction ?: return@mapNotNull null
+            val (imdbId, season, episode) = parseVideoId(videoId)
+            if (!seenIds.add(imdbId)) return@mapNotNull null
+            val type = if (season != null) "series" else "movie"
+            val meta = AddonRepository.meta(type, imdbId) ?: return@mapNotNull null
+            ContinueWatchingEntry(
+                id = imdbId,
+                type = type,
+                title = meta.name ?: imdbId,
+                poster = meta.poster,
+                season = season,
+                episode = episode,
+                progress = fraction,
+            )
+        }
+
+    val fromSimkl = simklWatching.mapNotNull { item ->
+        val imdbId = item.imdbId ?: return@mapNotNull null
+        if (!seenIds.add(imdbId)) return@mapNotNull null
+        val session = simklSessionsByImdbId[imdbId]
+        ContinueWatchingEntry(
+            id = imdbId,
+            type = item.stremioType(),
+            title = item.title,
+            poster = SimklImages.poster(item.poster),
+            season = session?.episode?.season,
+            episode = session?.episode?.number,
+            progress = session?.progress?.let { (it / 100f).coerceIn(0f, 1f) },
+        )
+    }
+
+    return local + fromSimkl
+}
+
+/** An addon video id such as `tt0108778` (film) or `tt0108778:1:1` (episode). */
+private fun parseVideoId(videoId: String): Triple<String, Int?, Int?> {
+    val parts = videoId.split(":")
+    return if (parts.size >= 3) {
+        Triple(parts[0], parts[1].toIntOrNull(), parts[2].toIntOrNull())
+    } else {
+        Triple(videoId, null, null)
     }
 }
 

@@ -246,6 +246,10 @@ private fun BuiltinPlayer(
     // The player's lifetime belongs to the effect below, which is keyed on the player.
     LaunchedEffect(streamUrl) {
         playbackError = null
+        // Capture exactly where the old source left off before it is torn down. The
+        // periodic recorder below can be up to a few seconds stale, and a source swap is
+        // exactly the moment ResumeWhereItStopped is about to read this value back.
+        videoId?.let { PlaybackPositionRepository.save(it, player.currentPosition, player.duration) }
         // Stop before swapping so the surface lets go of the frame it is holding; without
         // it the previous source stays on screen until the new one has decoded enough to
         // paint over it.

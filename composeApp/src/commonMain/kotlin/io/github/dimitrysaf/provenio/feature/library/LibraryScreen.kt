@@ -206,9 +206,18 @@ private fun BoxScope.WatchedBadge() {
     }
 }
 
-/** Every episode Simkl knows about has been watched. A film counts once it is completed. */
-private fun SimklItem.isFinished(): Boolean =
+/**
+ * Every episode Simkl knows about has been watched.
+ *
+ * A film has no episodes to count — [totalEpisodes] and [watchedEpisodes] are fields a TV
+ * show's sync entry carries and a movie's is always zero, whatever its actual state — so a
+ * film counts as finished from Simkl's own list status instead.
+ */
+private fun SimklItem.isFinished(): Boolean = if (mediaType == "movies") {
+    status == SimklStatus.Completed
+} else {
     totalEpisodes > 0 && watchedEpisodes >= totalEpisodes
+}
 
 /** Simkl types its libraries as shows, movies and anime. The addon protocol does not. */
 private fun SimklItem.stremioType(): String = if (mediaType == "movies") "movie" else "series"

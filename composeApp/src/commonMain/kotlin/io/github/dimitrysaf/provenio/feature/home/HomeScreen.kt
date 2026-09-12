@@ -29,10 +29,13 @@ import io.github.dimitrysaf.provenio.designsystem.components.EmptyState
 import io.github.dimitrysaf.provenio.designsystem.components.backdropHeightFor
 import io.github.dimitrysaf.provenio.designsystem.layout.isPortraitPhone
 import io.github.dimitrysaf.provenio.feature.home.components.ContinueWatchingCarousel
+import io.github.dimitrysaf.provenio.feature.home.components.ContinueWatchingEntry
 import io.github.dimitrysaf.provenio.feature.home.components.HeroCarousel
 import io.github.dimitrysaf.provenio.feature.home.components.LibraryEmptyState
 import io.github.dimitrysaf.provenio.feature.home.components.Shelf
+import io.github.dimitrysaf.provenio.feature.home.components.buildContinueWatchingEntries
 import io.github.dimitrysaf.provenio.feature.home.components.catalogShelves
+import io.github.dimitrysaf.provenio.player.PlaybackPositionRepository
 import io.github.dimitrysaf.provenio.simkl.SimklAuthState
 import io.github.dimitrysaf.provenio.simkl.SimklPlaybackRepository
 import io.github.dimitrysaf.provenio.simkl.SimklPlaybackSession
@@ -112,6 +115,15 @@ fun HomeScreen(
         }
     }
 
+    // This device's own resume points always outrank Simkl's — see
+    // buildContinueWatchingEntries — so the shelf has real time-into-episode progress and
+    // is never empty just because nobody is signed into Simkl.
+    val positions by PlaybackPositionRepository.positions.collectAsState()
+    var continueWatching by remember { mutableStateOf<List<ContinueWatchingEntry>>(emptyList()) }
+    LaunchedEffect(positions, watching, timeProgressByImdbId) {
+        continueWatching = buildContinueWatchingEntries(positions, watching, timeProgressByImdbId)
+    }
+
     val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     // BoxWithConstraints rather than Box: the hero has to be sized against the window,
@@ -149,7 +161,7 @@ fun HomeScreen(
             if (showHero) {
                 item { HeroCarousel(heroItems, heroHeight, onOpenDetail) }
             }
-            item { ContinueWatchingCarousel(watching, timeProgressByImdbId, onOpenDetail) }
+            item { ContinueWatchingCarousel(continueWatching, onOpenDetail) }
             item {
                 Shelf(
                     title = stringResource(Res.string.home_plan_to_watch),

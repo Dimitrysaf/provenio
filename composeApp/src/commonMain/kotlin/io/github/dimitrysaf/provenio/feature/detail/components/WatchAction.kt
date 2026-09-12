@@ -23,6 +23,7 @@ import io.github.dimitrysaf.provenio.feature.detail.firstUnwatchedEpisode
 import io.github.dimitrysaf.provenio.feature.detail.trackedEpisodeCount
 import io.github.dimitrysaf.provenio.player.PlaybackPosition
 import io.github.dimitrysaf.provenio.simkl.SimklPlaybackSession
+import io.github.dimitrysaf.provenio.simkl.SimklStatus
 import io.github.dimitrysaf.provenio.stremio.model.Meta
 import io.github.dimitrysaf.provenio.resources.Res
 import io.github.dimitrysaf.provenio.resources.detail_not_started
@@ -34,6 +35,8 @@ import io.github.dimitrysaf.provenio.resources.detail_watch_first_episode
 import io.github.dimitrysaf.provenio.resources.detail_watch_now
 import io.github.dimitrysaf.provenio.resources.detail_watch_progress
 import io.github.dimitrysaf.provenio.resources.detail_watched_of
+import io.github.dimitrysaf.provenio.resources.not_watched
+import io.github.dimitrysaf.provenio.resources.watched
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -125,9 +128,18 @@ fun WatchAction(
  * user has ever marked watched, on this device or anywhere else Simkl is connected.
  * The local, per-episode tally ([watchedIds]) is only the fallback, for a title Simkl has
  * no record of yet or while signed out.
+ *
+ * A film has no episodes to count towards, so it gets its own binary card below rather
+ * than running the episode-count arithmetic — [SimklItem.totalEpisodes] is a TV show field
+ * and is always zero for a movie, whatever its actual watched state.
  */
 @Composable
 fun WatchProgress(meta: Meta, simklItem: SimklItem?, watchedIds: Set<String>) {
+    if (meta.type == "movie") {
+        MovieWatchProgress(simklItem)
+        return
+    }
+
     val localWatched = meta.videos.count {
         (it.season ?: SpecialsSeason) != SpecialsSeason && it.id in watchedIds
     }
@@ -152,6 +164,26 @@ fun WatchProgress(meta: Meta, simklItem: SimklItem?, watchedIds: Set<String>) {
                 watched == 0 -> stringResource(Res.string.detail_not_started, total)
                 else -> stringResource(Res.string.detail_watched_of, watched, total)
             },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * A film's watch state: binary, from Simkl's own list status rather than an episode count
+ * it does not have. [simklItem] is null when Simkl has no record of the film at all — signed
+ * out, or simply never added to a list — which reads as "not watched" rather than an error.
+ */
+@Composable
+private fun MovieWatchProgress(simklItem: SimklItem?) {
+    val isWatched = simklItem?.status == SimklStatus.Completed
+    SectionCard(
+        title = stringResource(Res.string.detail_watch_progress),
+        icon = Icons.Outlined.Visibility,
+    ) {
+        Text(
+            text = stringResource(if (isWatched) Res.string.watched else Res.string.not_watched),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
