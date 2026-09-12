@@ -3,6 +3,8 @@ package io.github.dimitrysaf.provenio.player
 import io.github.dimitrysaf.provenio.core.platform.currentTimeMillis
 import io.github.dimitrysaf.provenio.data.PlaybackPositionStore
 import io.github.dimitrysaf.provenio.data.createDatabaseDriver
+import io.github.dimitrysaf.provenio.stremio.model.Video
+import io.github.dimitrysaf.provenio.watch.EpisodeWatchedRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -80,6 +82,11 @@ object PlaybackPositionRepository {
         if (positionMillis >= durationMillis * FinishedFraction) {
             runCatching { current.delete(id) }
             _positions.value = _positions.value - id
+            // Deleting the resume point on its own used to be the whole story — which
+            // reads as "never watched" everywhere else that asks, since nothing else
+            // records that this id was ever reached. Marking it watched here is what
+            // actually earns the completed tag, rather than just erasing the progress.
+            markWatched(id)
             return
         }
 
@@ -97,6 +104,20 @@ object PlaybackPositionRepository {
     fun clear() {
         runCatching { store?.clear() }
         _positions.value = emptyMap()
+    }
+
+    /**
+     * [videoId] is `imdbId` for a film or `imdbId:season:episode` for an episode — the
+     * addon protocol's own id format — so it is parsed back apart here rather than asking
+     * every caller of [save] to hand over the show id and episode number separately just
+     * for this.
+     */
+    private fun markWatched(videoId: String) {
+        val parts = videoId.split(":")
+        val showId = parts.firstOrNull() ?: return
+        val season = parts.getOrNull(1)?.toIntOrNull()
+        val episode = parts.getOrNull(2)?.toIntOrNull()
+        EpisodeWatchedRepository.setWatched(showId, Video(id = videoId, season = season, episode = episode), true)
     }
 
     private fun refresh() {

@@ -848,6 +848,12 @@ private fun PlayerControls(
                 playbackState = state
                 if (state == Player.STATE_READY) {
                     duration = player.duration.coerceAtLeast(0L)
+                    // Picks up whatever ResumeWhereItStopped just seeked to for the new
+                    // source — zero for a fresh episode, or a resume point for one picked
+                    // back up. Without this the bar kept showing the previous episode's
+                    // position for as long as playback stayed paused/buffering after a
+                    // switch, since the poll below only runs while isPlaying is true.
+                    position = player.currentPosition.coerceAtLeast(0L)
                 }
             }
 
@@ -857,6 +863,15 @@ private fun PlayerControls(
         }
         player.addListener(listener)
         onDispose { player.removeListener(listener) }
+    }
+
+    // Zeroed the instant a new source is picked, rather than waiting on the state
+    // listener above — switching source pauses for buffering, and the READY callback
+    // that would otherwise sync this can be a moment away, which is exactly the window
+    // where the bar was left showing the previous episode's leftover position.
+    LaunchedEffect(streamUrl) {
+        position = 0L
+        bufferedPosition = 0L
     }
 
     // media3 has no push callback for playback position, so polling while playing is the
