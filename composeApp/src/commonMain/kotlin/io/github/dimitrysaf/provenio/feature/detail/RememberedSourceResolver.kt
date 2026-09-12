@@ -6,6 +6,9 @@ import io.github.dimitrysaf.provenio.stremio.AddonRepository
 import io.github.dimitrysaf.provenio.stremio.SourceKind
 import io.github.dimitrysaf.provenio.stremio.isPlayingAt
 import io.github.dimitrysaf.provenio.stremio.streamId
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 /** A remembered source, resolved back into something actually playable right now. */
 internal data class ResolvedSource(val url: String, val streamId: String?)
@@ -26,11 +29,16 @@ internal suspend fun resolveRememberedSource(
     videoId: String,
     streamId: String,
 ): ResolvedSource? {
-    val match = AddonRepository.streamProviders(type, videoId)
-        .firstNotNullOfOrNull { addon ->
-            AddonRepository.streamsFrom(addon, type, videoId).firstOrNull { it.isPlayingAt(streamId) }
-        }
-        ?: return null
+    // Every addon asked at once rather than one at a time — waiting on them in sequence
+    // means one slow or unreachable addon holds up every addon listed after it, when the
+    // whole point of "resume" trying this first is to be quick about it.
+    val match = coroutineScope {
+        AddonRepository.streamProviders(type, videoId)
+            .map { addon -> async { AddonRepository.streamsFrom(addon, type, videoId) } }
+            .awaitAll()
+            .flatten()
+            .firstOrNull { it.isPlayingAt(streamId) }
+    } ?: return null
 
     val url = if (match.kind == SourceKind.Torrent) {
         val hash = match.stream.infoHash ?: return null

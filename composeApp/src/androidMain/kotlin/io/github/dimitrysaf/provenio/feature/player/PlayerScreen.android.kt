@@ -11,6 +11,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -91,10 +92,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -464,9 +463,9 @@ private data class EpisodeTarget(
  * metadata, or (behind a torrent) waiting for the first pieces to arrive. A still black
  * frame reads as broken; the show's own art reads as "getting there".
  *
- * There is no real byte-level progress to show for either wait, so the logo carries an
- * animated sweep instead of a determinate bar: a dim copy sits underneath and a brighter
- * band crosses it on a loop, the same masking trick a shimmer placeholder uses.
+ * There is no real byte-level progress to show for either wait, so the logo itself
+ * breathes instead of a determinate bar sitting under it — the plain logo, unmasked,
+ * pulsing between dim and bright on a loop.
  */
 @Composable
 private fun LoadingBackdrop(backdrop: String?, logo: String?, modifier: Modifier = Modifier) {
@@ -481,37 +480,22 @@ private fun LoadingBackdrop(backdrop: String?, logo: String?, modifier: Modifier
         }
         Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)))
         if (logo != null) {
-            val infinite = rememberInfiniteTransition(label = "loadingLogoSweep")
-            val sweep by infinite.animateFloat(
-                initialValue = -0.4f,
-                targetValue = 1.4f,
-                animationSpec = infiniteRepeatable(tween(1600, easing = LinearEasing)),
-                label = "loadingLogoSweepPosition",
+            val infinite = rememberInfiniteTransition(label = "loadingLogoPulse")
+            val logoAlpha by infinite.animateFloat(
+                initialValue = 0.4f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(900, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "loadingLogoAlpha",
             )
-            Box(modifier = Modifier.align(Alignment.Center).fillMaxWidth(0.5f)) {
-                AsyncImage(
-                    model = logo,
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth().alpha(0.35f),
-                )
-                AsyncImage(
-                    model = logo,
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth().drawWithContent {
-                        drawContent()
-                        drawRect(
-                            brush = Brush.linearGradient(
-                                colors = listOf(Color.Transparent, Color.Black, Color.Transparent),
-                                start = Offset((sweep - 0.25f) * size.width, 0f),
-                                end = Offset((sweep + 0.25f) * size.width, 0f),
-                            ),
-                            blendMode = BlendMode.DstIn,
-                        )
-                    },
-                )
-            }
+            AsyncImage(
+                model = logo,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.align(Alignment.Center).fillMaxWidth(0.5f).alpha(logoAlpha),
+            )
         }
     }
 }
@@ -1138,7 +1122,7 @@ private fun TransportRow(
     ) {
         FilledIconButton(
             onClick = { onSeekBy(-SeekStepMillis) },
-            modifier = Modifier.size(NormalButtonSize),
+            modifier = Modifier.size(GroupButtonSize),
             colors = skipColors,
         ) {
             Icon(
@@ -1188,7 +1172,7 @@ private fun TransportRow(
         }
         FilledIconButton(
             onClick = { onSeekBy(SeekStepMillis) },
-            modifier = Modifier.size(NormalButtonSize),
+            modifier = Modifier.size(GroupButtonSize),
             colors = skipColors,
         ) {
             Icon(
@@ -1291,7 +1275,7 @@ private fun WavySeekBar(
     val phase by infinite.animateFloat(
         initialValue = 0f,
         targetValue = (2f * PI).toFloat(),
-        animationSpec = infiniteRepeatable(tween(1400, easing = LinearEasing)),
+        animationSpec = infiniteRepeatable(tween(2600, easing = LinearEasing)),
         label = "wavySeekPhasePosition",
     )
     // Freezes the wave the instant playback stops, rather than fading it out, so a still
@@ -1715,9 +1699,6 @@ private fun nextResizeMode(current: Int): Int = when (current) {
 
 private val PlaybackSpeeds = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)
 
-/** M3's standard icon button target, and what every control here is unless stated. */
-private val NormalButtonSize = 48.dp
-
 /**
  * The play button, two percent over standard.
  *
@@ -1765,8 +1746,8 @@ private const val AutoHideMillis = 3_500L
 private const val PositionSaveMillis = 5_000L
 
 private val WavySeekBarHeight = 24.dp
-private val WavySeekAmplitude = 5.dp
-private val WavySeekWavelength = 26.dp
+private val WavySeekAmplitude = 2.dp
+private val WavySeekWavelength = 36.dp
 private val WavySeekStrokeWidth = 3.dp
 private val WavySeekThumbRadius = 6.dp
 

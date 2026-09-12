@@ -88,11 +88,21 @@ object AddonRepository {
      * Addons are asked in the collection's order and the first usable reply wins. Asking
      * all of them and merging would mean deciding which addon's description is correct,
      * which is the seat cascade and is not designed yet.
+     *
+     * Kept for the app's lifetime once fetched — unlike [cachedSources], a title's name,
+     * artwork and episode list do not go stale the way a stream list does, and this is
+     * what stops something like the home hero from re-fetching over the network every
+     * time a title scrolls back into view.
      */
     suspend fun meta(type: String, id: String): Meta? {
+        val key = "$type:$id"
+        metaCache[key]?.let { return it }
         _collection.value.metaProviders(type, id).forEach { addon ->
             val reply = client.fetchMeta(addon.transportUrl, type, id)
-            reply.getOrNull()?.meta?.let { return it }
+            reply.getOrNull()?.meta?.let {
+                metaCache[key] = it
+                return it
+            }
         }
         return null
     }
@@ -178,6 +188,7 @@ object AddonRepository {
     private data class CachedSources(val atMillis: Long, val sources: List<SourceOption>)
 
     private val sourceCache = mutableMapOf<String, CachedSources>()
+    private val metaCache = mutableMapOf<String, Meta>()
 
     private fun commit(collection: AddonCollection) {
         _collection.value = collection

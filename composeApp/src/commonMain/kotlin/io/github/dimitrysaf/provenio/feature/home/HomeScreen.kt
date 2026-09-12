@@ -168,15 +168,20 @@ fun HomeScreen(
             // once heroItems lands — that way AnimatedVisibility below animates the item's
             // own height in gradually, instead of the whole shelf list jumping down the
             // moment the catalog page arrives.
+            //
+            // The fade is quick, so the art itself is never seen half-clipped and dim at
+            // once; the expand runs much longer and on an emphasized-decelerate curve —
+            // built for exactly this, something arriving into a layout — so the shelves
+            // below ease down behind it rather than getting shoved.
             if (isPortrait) {
                 item {
                     AnimatedVisibility(
                         visible = heroItems.isNotEmpty(),
-                        enter = fadeIn(tween(MotionTokens.DurationMedium2, easing = MotionTokens.Standard)) +
+                        enter = fadeIn(tween(MotionTokens.DurationMedium1, easing = MotionTokens.Standard)) +
                             expandVertically(
                                 animationSpec = tween(
-                                    MotionTokens.DurationMedium2,
-                                    easing = MotionTokens.StandardDecelerate,
+                                    MotionTokens.DurationLong2,
+                                    easing = MotionTokens.EmphasizedDecelerate,
                                 ),
                             ),
                     ) {

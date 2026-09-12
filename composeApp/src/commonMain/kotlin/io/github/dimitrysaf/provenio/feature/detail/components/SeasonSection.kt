@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -178,7 +179,14 @@ fun EpisodesSheet(
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
         )
-        LazyColumn(modifier = Modifier.heightIn(max = 460.dp)) {
+        // Season and episode rows carry their own 16dp inset — the same one the details
+        // page's list uses, since seasonSection is shared with it. Adding the missing 8dp
+        // here brings their edge in line with this sheet's own 24dp title, the same total
+        // inset the sources sheet's rows use.
+        LazyColumn(
+            modifier = Modifier.heightIn(max = 460.dp),
+            contentPadding = PaddingValues(horizontal = 8.dp),
+        ) {
             seasonSection(
                 seasons = seasons,
                 expanded = expanded,
