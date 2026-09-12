@@ -1,15 +1,17 @@
 package io.github.dimitrysaf.provenio.feature.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.platform.currentTimeMillis
@@ -140,12 +143,18 @@ fun HomeScreen(
         // The hero is a portrait-phone treatment, like the backdrop on a title: it trades
         // height for atmosphere, which is only affordable in a tall window.
         val isPortrait = isPortraitPhone(maxWidth, maxHeight)
-        val showHero = heroItems.isNotEmpty() && isPortrait
 
         // The bar sits above the status bar inset, so clearing it means clearing both.
         // The hero is the exception: it is meant to run under the bar and the status bar
         // both, so when there is one the list starts flush against the top instead.
-        val topPadding = if (showHero) 0.dp else TopBarHeight + topInset
+        //
+        // This depends only on the window shape, never on whether heroItems has arrived
+        // yet — it used to flip the instant the catalog page landed, which yanked this
+        // padding away in the same frame the hero item itself was still just beginning
+        // its own grow-in animation below. The two together read as the hero and
+        // Continue Watching shoving each other for the same spot. Keeping this constant
+        // leaves exactly one thing moving during that transition: the hero's own height.
+        val topPadding = if (isPortrait) 0.dp else TopBarHeight + topInset
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -165,27 +174,40 @@ fun HomeScreen(
             }
 
             // Always present once the window shape allows a hero, rather than added only
-            // once heroItems lands — that way AnimatedVisibility below animates the item's
-            // own height in gradually, instead of the whole shelf list jumping down the
-            // moment the catalog page arrives.
+            // once heroItems lands — its height starts at the same gap the top bar would
+            // otherwise reserve (topPadding above is 0 in portrait precisely because this
+            // item is standing in for that gap from the very first frame) and eases out to
+            // the full hero height once the catalog page arrives, so everything below
+            // rides down smoothly behind a single animated value instead of snapping to a
+            // second one at the same time.
             //
             // The fade is quick, so the art itself is never seen half-clipped and dim at
-            // once; the expand runs much longer and on an emphasized-decelerate curve —
-            // built for exactly this, something arriving into a layout — so the shelves
-            // below ease down behind it rather than getting shoved.
+            // once; the height eases in on a much longer emphasized-decelerate curve —
+            // built for exactly this, something arriving into a layout.
             if (isPortrait) {
                 item {
-                    AnimatedVisibility(
-                        visible = heroItems.isNotEmpty(),
-                        enter = fadeIn(tween(MotionTokens.DurationMedium1, easing = MotionTokens.Standard)) +
-                            expandVertically(
-                                animationSpec = tween(
-                                    MotionTokens.DurationLong2,
-                                    easing = MotionTokens.EmphasizedDecelerate,
-                                ),
-                            ),
+                    val collapsedHeight = TopBarHeight + topInset
+                    val animatedHeight by animateDpAsState(
+                        targetValue = if (heroItems.isNotEmpty()) heroHeight else collapsedHeight,
+                        animationSpec = tween(
+                            MotionTokens.DurationLong2,
+                            easing = MotionTokens.EmphasizedDecelerate,
+                        ),
+                        label = "heroHeight",
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(animatedHeight)
+                            .clipToBounds(),
                     ) {
-                        HeroCarousel(heroItems, heroHeight, onOpenDetail)
+                        AnimatedVisibility(
+                            visible = heroItems.isNotEmpty(),
+                            enter = fadeIn(tween(MotionTokens.DurationMedium1, easing = MotionTokens.Standard)),
+                            modifier = Modifier.height(heroHeight),
+                        ) {
+                            HeroCarousel(heroItems, heroHeight, onOpenDetail)
+                        }
                     }
                 }
             }
