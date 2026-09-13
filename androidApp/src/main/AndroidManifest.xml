@@ -9,6 +9,7 @@
         android:allowBackup="true"
         android:enableOnBackInvokedCallback="true"
         android:label="Provenio"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/Theme.Provenio">
         <activity
             android:name=".MainActivity"

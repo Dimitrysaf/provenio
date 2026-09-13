@@ -44,7 +44,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,6 +52,7 @@ import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.platform.MatchHostSystemBars
 import io.github.dimitrysaf.provenio.core.platform.todayIso
 import io.github.dimitrysaf.provenio.db.SimklItem
+import io.github.dimitrysaf.provenio.designsystem.components.BlurredAsyncImage
 import io.github.dimitrysaf.provenio.feature.detail.SpecialsSeason
 import io.github.dimitrysaf.provenio.feature.detail.simklWatchedIds
 import io.github.dimitrysaf.provenio.player.PlaybackPosition
@@ -294,17 +294,26 @@ private fun EpisodeRow(
                     .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             ) {
                 if (video.thumbnail != null) {
-                    AsyncImage(
-                        model = video.thumbnail,
-                        contentDescription = null,
-                        // Some addons ship a spoiler-blurred still for an episode nobody
-                        // has watched yet. This app has no say over that image itself, so
-                        // it applies its own blur before watched and lifts it after —
-                        // driven by this device's own watched state either way.
-                        modifier = Modifier.fillMaxSize()
-                            .then(if (watched) Modifier else Modifier.blur(EpisodeSpoilerBlur)),
-                        contentScale = ContentScale.Crop,
-                    )
+                    // Some addons ship a spoiler-blurred still for an episode nobody has
+                    // watched yet. This app has no say over that image itself, so it
+                    // hides it before watched and shows the real thing after — driven by
+                    // this device's own watched state either way. See BlurredAsyncImage
+                    // for why that is a real blur rather than Modifier.blur() itself,
+                    // which has no effect at all below Android 12.
+                    if (watched) {
+                        AsyncImage(
+                            model = video.thumbnail,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                        )
+                    } else {
+                        BlurredAsyncImage(
+                            url = video.thumbnail,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
                 }
             }
             Spacer(Modifier.width(12.dp))
@@ -371,9 +380,6 @@ private fun EpisodeRow(
         }
     }
 }
-
-/** Heavy enough to hide a frame, not so heavy it reads as a broken image. */
-private val EpisodeSpoilerBlur = 18.dp
 
 /**
  * Whether [Video.released] is today or earlier. Addons list a season's whole episode run
