@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.platform.MatchHostSystemBars
+import io.github.dimitrysaf.provenio.core.platform.todayIso
 import io.github.dimitrysaf.provenio.db.SimklItem
 import io.github.dimitrysaf.provenio.feature.detail.SpecialsSeason
 import io.github.dimitrysaf.provenio.feature.detail.simklWatchedIds
@@ -66,6 +68,7 @@ import io.github.dimitrysaf.provenio.resources.detail_episodes
 import io.github.dimitrysaf.provenio.resources.detail_no_episodes
 import io.github.dimitrysaf.provenio.resources.detail_season
 import io.github.dimitrysaf.provenio.resources.detail_specials
+import io.github.dimitrysaf.provenio.resources.not_aired_yet
 import io.github.dimitrysaf.provenio.resources.not_watched
 import io.github.dimitrysaf.provenio.resources.watched
 import org.jetbrains.compose.resources.stringResource
@@ -322,24 +325,36 @@ private fun EpisodeRow(
                 )
             }
             Spacer(Modifier.width(8.dp))
-            // A dedicated touch target, nested inside the row's own click target. Compose
-            // resolves nested clickables front-to-back, so pressing the tick box toggles
-            // watched state instead of also opening the sources sheet underneath it.
-            IconButton(onClick = onToggleWatched) {
+            if (video.hasAired()) {
+                // A dedicated touch target, nested inside the row's own click target.
+                // Compose resolves nested clickables front-to-back, so pressing the tick
+                // box toggles watched state instead of also opening the sources sheet
+                // underneath it.
+                IconButton(onClick = onToggleWatched) {
+                    Icon(
+                        imageVector = if (watched) {
+                            Icons.Filled.CheckCircle
+                        } else {
+                            Icons.Outlined.CheckCircle
+                        },
+                        contentDescription = stringResource(
+                            if (watched) Res.string.watched else Res.string.not_watched,
+                        ),
+                        tint = if (watched) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
+            } else {
+                // Nothing to toggle yet — an unaired episode cannot be watched, so this
+                // is a plain icon rather than an IconButton wrapping a no-op click.
                 Icon(
-                    imageVector = if (watched) {
-                        Icons.Filled.CheckCircle
-                    } else {
-                        Icons.Outlined.CheckCircle
-                    },
-                    contentDescription = stringResource(
-                        if (watched) Res.string.watched else Res.string.not_watched,
-                    ),
-                    tint = if (watched) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+                    imageVector = Icons.Filled.Schedule,
+                    contentDescription = stringResource(Res.string.not_aired_yet),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(12.dp),
                 )
             }
         }
@@ -358,3 +373,18 @@ private fun EpisodeRow(
 
 /** Heavy enough to hide a frame, not so heavy it reads as a broken image. */
 private val EpisodeSpoilerBlur = 18.dp
+
+/**
+ * Whether [Video.released] is today or earlier. Addons list a season's whole episode run
+ * up front, air date included, so a title with episodes still to come would otherwise let
+ * every one of them be ticked watched before it has even aired. No air date at all reads
+ * as aired — most addons carry one, and an episode nobody dated is not worth blocking on.
+ *
+ * [Video.released] and [todayIso] are both `YYYY-MM-DD` (or longer with the same prefix,
+ * for released), so this is a plain string comparison rather than needing an actual date
+ * type this project otherwise has no reason to depend on.
+ */
+private fun Video.hasAired(): Boolean {
+    val date = released?.take(10) ?: return true
+    return date <= todayIso()
+}

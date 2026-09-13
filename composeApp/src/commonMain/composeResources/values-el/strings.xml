@@ -11,6 +11,7 @@
     <string name="unknown">Άγνωστο</string>
     <string name="watched">Το είδατε</string>
     <string name="not_watched">Δεν το είδατε</string>
+    <string name="not_aired_yet">Δεν έχει προβληθεί ακόμα</string>
 
     <!-- Navigation -->
     <string name="nav_home">Αρχική</string>

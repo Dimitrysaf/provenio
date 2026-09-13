@@ -11,6 +11,7 @@
     <string name="unknown">Unknown</string>
     <string name="watched">Watched</string>
     <string name="not_watched">Not watched</string>
+    <string name="not_aired_yet">Not aired yet</string>
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>
