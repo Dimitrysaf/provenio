@@ -2,14 +2,20 @@ package io.github.dimitrysaf.provenio.feature.detail
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -47,7 +53,10 @@ import io.github.dimitrysaf.provenio.player.PlaybackPositionRepository
 import io.github.dimitrysaf.provenio.db.SimklItem
 import io.github.dimitrysaf.provenio.designsystem.components.BackdropWash
 import io.github.dimitrysaf.provenio.designsystem.components.backdropHeightFor
+import io.github.dimitrysaf.provenio.designsystem.layout.WindowSizeClass
 import io.github.dimitrysaf.provenio.designsystem.layout.isPortraitPhone
+import io.github.dimitrysaf.provenio.designsystem.layout.maxContentWidth
+import io.github.dimitrysaf.provenio.designsystem.layout.windowSizeClassOf
 import io.github.dimitrysaf.provenio.feature.detail.components.DetailHeader
 import io.github.dimitrysaf.provenio.feature.detail.components.Ratings
 import io.github.dimitrysaf.provenio.feature.detail.components.SectionHeader
@@ -58,10 +67,9 @@ import io.github.dimitrysaf.provenio.feature.detail.components.WatchProgress
 import io.github.dimitrysaf.provenio.feature.detail.components.WatchlistAction
 import io.github.dimitrysaf.provenio.feature.detail.components.backdropsSection
 import io.github.dimitrysaf.provenio.feature.detail.components.castAndCrew
-import io.github.dimitrysaf.provenio.feature.detail.components.commentsSection
 import io.github.dimitrysaf.provenio.feature.detail.components.factsSection
 import io.github.dimitrysaf.provenio.feature.detail.components.seasonSection
-import io.github.dimitrysaf.provenio.feature.detail.components.tagsAndThemes
+import io.github.dimitrysaf.provenio.feature.detail.components.tagsSection
 import io.github.dimitrysaf.provenio.feature.detail.components.trailersSection
 import io.github.dimitrysaf.provenio.core.platform.currentTimeMillis
 import io.github.dimitrysaf.provenio.simkl.SimklAuthState
@@ -127,6 +135,12 @@ fun DetailScreen(
         // the list starts below it rather than under it.
         val showBackdrop = isPortraitPhone(maxWidth, maxHeight)
 
+        // Wide enough that a single column of actions above a wall of episodes stops
+        // making sense — from here on the actions and the episode list get a rail of
+        // their own beside the rest, the way a title page reads on a couch rather than a
+        // phone in a hand.
+        val isWide = windowSizeClassOf(maxWidth) !in setOf(WindowSizeClass.Compact, WindowSizeClass.Medium)
+
         // The bar is not a Material scroll behaviour: those collapse a headline the bar
         // owns, and what collapses here is the first item of the list. So the state is
         // read straight off the list instead, and drives the fade by hand.
@@ -176,6 +190,7 @@ fun DetailScreen(
                 backdropAlpha = 1f - collapse,
                 showBackdrop = showBackdrop,
                 topPadding = topPadding,
+                isWide = isWide,
                 positions = positions,
                 resolvingVideoId = resolvingVideoId,
                 onChooseSource = { videoId, resumeProgress ->
@@ -290,6 +305,7 @@ private fun MetaContent(
     backdropAlpha: Float,
     showBackdrop: Boolean,
     topPadding: Dp,
+    isWide: Boolean,
     positions: Map<String, PlaybackPosition>,
     /** The video, if any, currently being resolved against its remembered source. */
     resolvingVideoId: String?,
@@ -362,63 +378,137 @@ private fun MetaContent(
     val scope = rememberCoroutineScope()
     var movingList by remember(meta.id) { mutableStateOf(false) }
 
-    LazyColumn(
-        state = listState,
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(top = topPadding),
-    ) {
-        item { DetailHeader(meta, backdropHeight, backdropAlpha, showBackdrop) }
-        item {
-            WatchAction(
-                meta = meta,
-                simklWatchedEpisodes = simklWatchedEpisodes,
-                resumeSession = resumeSession,
-                positions = positions,
-                resolvingVideoId = resolvingVideoId,
-                onChooseSource = onChooseSource,
+    val watchAction: @Composable () -> Unit = {
+        WatchAction(
+            meta = meta,
+            simklWatchedEpisodes = simklWatchedEpisodes,
+            resumeSession = resumeSession,
+            positions = positions,
+            resolvingVideoId = resolvingVideoId,
+            onChooseSource = onChooseSource,
+        )
+    }
+    val watchlistAction: (@Composable () -> Unit)? = if (authState is SimklAuthState.SignedIn) {
+        {
+            WatchlistAction(
+                currentStatus = simklItem?.status,
+                working = movingList,
+                onSelect = { status ->
+                    scope.launch {
+                        movingList = true
+                        SimklSync.setListStatus(
+                            imdbId = meta.id,
+                            isMovie = meta.type == "movie",
+                            status = status,
+                            nowMillis = currentTimeMillis(),
+                        )
+                        movingList = false
+                    }
+                },
             )
         }
-        if (authState is SimklAuthState.SignedIn) {
-            item {
-                WatchlistAction(
-                    currentStatus = simklItem?.status,
-                    working = movingList,
-                    onSelect = { status ->
-                        scope.launch {
-                            movingList = true
-                            SimklSync.setListStatus(
-                                imdbId = meta.id,
-                                isMovie = meta.type == "movie",
-                                status = status,
-                                nowMillis = currentTimeMillis(),
+    } else {
+        null
+    }
+    val onChooseEpisode: (String) -> Unit = { videoId -> onChooseSource(videoId, null) }
+
+    if (isWide) {
+        // The actions and the episode list move into a rail of their own beside the rest
+        // — a show gets its episodes there, a film just the actions, above nothing — so
+        // neither stretches across a window wide enough to sit two of them side by side.
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            Row(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .widthIn(max = DetailWideMaxWidth)
+                    .padding(top = topPadding),
+            ) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    contentPadding = PaddingValues(bottom = 24.dp, end = 24.dp),
+                ) {
+                    item { DetailHeader(meta, backdropHeight, backdropAlpha, showBackdrop) }
+                    item { WatchProgress(meta, simklItem, watchedIds) }
+                    item { Ratings(meta) }
+                    item { Synopsis(meta) }
+                    castAndCrew(meta)
+                    tagsSection(meta)
+                    factsSection(meta)
+                    trailersSection(meta, openUrl)
+                    backdropsSection(meta)
+                    item { Spacer(Modifier.height(32.dp)) }
+                }
+                Column(modifier = Modifier.width(DetailSidebarWidth).fillMaxHeight()) {
+                    watchAction()
+                    watchlistAction?.invoke()
+                    if (seasons.isNotEmpty()) {
+                        LazyColumn(modifier = Modifier.weight(1f)) {
+                            item {
+                                SectionHeader(stringResource(Res.string.detail_episodes), Icons.Outlined.Tv)
+                            }
+                            seasonSection(
+                                seasons = seasons,
+                                expanded = expanded,
+                                onSeasonToggled = { seasonChosenByViewer = true },
+                                watchedIds = watchedIds,
+                                positions = positions,
+                                onChooseSource = onChooseEpisode,
+                                onToggleWatched = onToggleWatched,
                             )
-                            movingList = false
+                            item { Spacer(Modifier.height(24.dp)) }
                         }
-                    },
-                )
+                    }
+                }
             }
         }
-        item { WatchProgress(meta, simklItem, watchedIds) }
-        item { Ratings(meta) }
-        item { Synopsis(meta) }
+    } else {
+        // Capped and centered the same way the rest of the app's wide-window screens
+        // are — a no-op on a phone, which is already narrower than the cap.
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxWidth().widthIn(max = maxContentWidth).fillMaxHeight(),
+                contentPadding = PaddingValues(top = topPadding),
+            ) {
+                item { DetailHeader(meta, backdropHeight, backdropAlpha, showBackdrop) }
+                item { watchAction() }
+                watchlistAction?.let { action -> item { action() } }
+                item { WatchProgress(meta, simklItem, watchedIds) }
+                item { Ratings(meta) }
+                item { Synopsis(meta) }
 
-        item { SectionHeader(stringResource(Res.string.detail_episodes), Icons.Outlined.Tv) }
-        seasonSection(
-            seasons = seasons,
-            expanded = expanded,
-            onSeasonToggled = { seasonChosenByViewer = true },
-            watchedIds = watchedIds,
-            positions = positions,
-            onChooseSource = { videoId -> onChooseSource(videoId, null) },
-            onToggleWatched = onToggleWatched,
-        )
-        castAndCrew(meta)
-        tagsAndThemes(meta)
-        commentsSection()
-        factsSection(meta)
-        trailersSection(meta, openUrl)
-        backdropsSection(meta)
+                // A movie has no seasons at all, so the header only appears for a title
+                // that actually has episodes under it — otherwise it is a headline over
+                // nothing, on every single movie.
+                if (seasons.isNotEmpty()) {
+                    item { SectionHeader(stringResource(Res.string.detail_episodes), Icons.Outlined.Tv) }
+                }
+                seasonSection(
+                    seasons = seasons,
+                    expanded = expanded,
+                    onSeasonToggled = { seasonChosenByViewer = true },
+                    watchedIds = watchedIds,
+                    positions = positions,
+                    onChooseSource = onChooseEpisode,
+                    onToggleWatched = onToggleWatched,
+                )
+                castAndCrew(meta)
+                tagsSection(meta)
+                factsSection(meta)
+                trailersSection(meta, openUrl)
+                backdropsSection(meta)
 
-        item { Spacer(Modifier.height(32.dp)) }
+                item { Spacer(Modifier.height(32.dp)) }
+            }
+        }
     }
 }
+
+/** Total width the two-column layout is allowed to grow to, centered beyond it — a
+ * window wide enough for a rail is not automatically wide enough that the rail should
+ * grow with it too. */
+private val DetailWideMaxWidth = 1400.dp
+
+/** Fixed width for the actions-and-episodes rail beside the main column. */
+private val DetailSidebarWidth = 360.dp

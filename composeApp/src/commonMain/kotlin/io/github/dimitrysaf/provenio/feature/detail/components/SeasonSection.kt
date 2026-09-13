@@ -65,7 +65,6 @@ import io.github.dimitrysaf.provenio.watch.EpisodeWatchedRepository
 import io.github.dimitrysaf.provenio.resources.Res
 import io.github.dimitrysaf.provenio.resources.detail_episode
 import io.github.dimitrysaf.provenio.resources.detail_episodes
-import io.github.dimitrysaf.provenio.resources.detail_no_episodes
 import io.github.dimitrysaf.provenio.resources.detail_season
 import io.github.dimitrysaf.provenio.resources.detail_specials
 import io.github.dimitrysaf.provenio.resources.not_aired_yet
@@ -84,10 +83,12 @@ fun LazyListScope.seasonSection(
     onChooseSource: (String) -> Unit,
     onToggleWatched: (Video) -> Unit,
 ) {
-    if (seasons.isEmpty()) {
-        item { EmptyNote(stringResource(Res.string.detail_no_episodes)) }
-        return
-    }
+    // A movie has no episodes at all, structurally, on every single addon — not a case of
+    // one addon skipping the field, so unlike the other sections this one is worth a
+    // permanent header check rather than an emptiness check. The caller decides whether
+    // to draw the "Episodes" header at all; this only ever draws when there is something
+    // to put under it.
+    if (seasons.isEmpty()) return
 
     seasons.forEach { (season, episodes) ->
         item {

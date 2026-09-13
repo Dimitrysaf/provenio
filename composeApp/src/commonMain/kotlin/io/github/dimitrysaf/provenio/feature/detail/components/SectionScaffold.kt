@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,23 +22,25 @@ import androidx.compose.ui.unit.dp
 /** Zero padded episode and season numbers. Common Kotlin has no String.format. */
 internal fun pad(value: Int): String = value.toString().padStart(2, '0')
 
-/** Divider, icon and title: what separates one run of sections from the next. */
+/**
+ * Icon and title: what separates one run of sections from the next.
+ *
+ * No rule line — a run of these down a page of otherwise plain sections read as a ladder
+ * of thin bars more than as a heading, and the spacing above already does the separating.
+ */
 @Composable
 fun SectionHeader(title: String, icon: ImageVector) {
-    Column {
-        HorizontalDivider(modifier = Modifier.padding(top = 20.dp))
-        Row(
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.width(12.dp))
-            Text(text = title, style = MaterialTheme.typography.titleLarge)
-        }
+    Row(
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 28.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(text = title, style = MaterialTheme.typography.titleLarge)
     }
 }
 
@@ -61,17 +62,6 @@ fun SectionCard(title: String, icon: ImageVector, content: @Composable () -> Uni
         }
         content()
     }
-}
-
-/** What a section says when the addon gave it nothing to show. */
-@Composable
-fun EmptyNote(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-    )
 }
 
 @Composable
