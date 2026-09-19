@@ -13,18 +13,18 @@ class HomeHeroSectionTest {
             viewportHeightDp = 844f,
         )
 
-        assertEquals(HomeHeroStyle.Immersive, layout.style)
+        assertEquals(true, layout.centerTitle)
         assertEquals(452.4f, layout.heroHeight.value, 0.001f)
     }
 
     @Test
-    fun `wide hero switches to the carousel and stays width driven`() {
+    fun `wide hero stays width driven and keeps its title leading`() {
         val layout = homeHeroLayout(
             maxWidthDp = 840f,
             viewportHeightDp = 1200f,
         )
 
-        assertEquals(HomeHeroStyle.Carousel, layout.style)
+        assertEquals(false, layout.centerTitle)
         assertEquals(336f, layout.heroHeight.value, 0.001f)
     }
 
@@ -40,10 +40,14 @@ class HomeHeroSectionTest {
     }
 
     @Test
-    fun `immersive hero occupies only its own height`() {
+    fun `mobile hero also reserves room for its indicator row`() {
         val layout = homeHeroLayout(maxWidthDp = 390f, viewportHeightDp = 844f)
 
-        assertEquals(layout.heroHeight.value, layout.totalHeight.value, 0.001f)
+        assertEquals(
+            layout.heroHeight.value + layout.contentVerticalPadding.value + 24f,
+            layout.totalHeight.value,
+            0.001f,
+        )
     }
 
     @Test
@@ -77,7 +81,7 @@ class HomeHeroSectionTest {
             mobileBelowSectionHeightHintDp = 300f,
         )
 
-        assertEquals(HomeHeroStyle.Immersive, layout.style)
+        assertEquals(true, layout.centerTitle)
         assertEquals(268f, layout.heroHeight.value, 0.001f)
     }
 }

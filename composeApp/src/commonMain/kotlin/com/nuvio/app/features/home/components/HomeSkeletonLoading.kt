@@ -7,20 +7,13 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.SkeletonBlock
@@ -28,7 +21,6 @@ import com.nuvio.app.core.ui.SkeletonPosterRow
 import com.nuvio.app.core.ui.landscapePosterHeightForWidth
 import com.nuvio.app.core.ui.landscapePosterWidth
 import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
-import com.nuvio.app.core.ui.skeleton
 
 @Composable
 fun HomeSkeletonHero(
@@ -43,15 +35,11 @@ fun HomeSkeletonHero(
             mobileBelowSectionHeightHintDp = mobileBelowSectionHeightHint?.value,
         )
 
-        if (layout.isCarousel) {
-            HomeSkeletonHeroCarousel(layout = layout)
-        } else {
-            HomeSkeletonHeroImmersive(layout = layout, containerWidth = maxWidth)
-        }
+        HomeSkeletonHeroCarousel(layout = layout)
     }
 }
 
-/** The wide hero loading: the focal card, the slivers beside it and the indicator row. */
+/** The hero loading state: the focal card, the slivers beside it and the indicator row. */
 @Composable
 private fun HomeSkeletonHeroCarousel(layout: HomeHeroLayout) {
     Column(
@@ -94,91 +82,6 @@ private fun HomeSkeletonHeroCarousel(layout: HomeHeroLayout) {
             SkeletonBlock(width = 32.dp, height = 8.dp, cornerRadius = 4.dp)
             SkeletonBlock(width = 8.dp, height = 8.dp, cornerRadius = 4.dp)
             SkeletonBlock(width = 8.dp, height = 8.dp, cornerRadius = 4.dp)
-        }
-    }
-}
-
-@Composable
-private fun HomeSkeletonHeroImmersive(
-    layout: HomeHeroLayout,
-    containerWidth: Dp,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(layout.heroHeight)
-            .clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
-            .skeleton(RectangleShape),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.background.copy(alpha = 0.02f),
-                            MaterialTheme.colorScheme.background.copy(alpha = 0.12f),
-                            MaterialTheme.colorScheme.background.copy(alpha = 0.34f),
-                            MaterialTheme.colorScheme.background.copy(alpha = 0.78f),
-                        ),
-                    ),
-                ),
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(layout.bottomFadeHeight)
-                .align(Alignment.BottomCenter)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.background.copy(alpha = 0f),
-                            MaterialTheme.colorScheme.background,
-                        ),
-                    ),
-                ),
-        )
-
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(
-                    horizontal = layout.contentHorizontalPadding,
-                    vertical = layout.contentVerticalPadding,
-                ),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(layout.contentWidthFraction)
-                    .widthIn(max = layout.contentMaxWidth),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                val logoWidth = containerWidth
-                    .times(layout.contentWidthFraction * layout.logoWidthFraction)
-                    .coerceAtMost(layout.contentMaxWidth * layout.logoWidthFraction)
-
-                Box(
-                    modifier = Modifier.width(logoWidth).height(logoWidth / 2.6f),
-                    contentAlignment = Alignment.BottomCenter,
-                ) {
-                    SkeletonBlock(width = logoWidth, height = 32.dp, cornerRadius = 8.dp)
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                SkeletonBlock(width = 156.dp, height = 10.dp)
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                modifier = Modifier.height(24.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                SkeletonBlock(width = 32.dp, height = 8.dp, cornerRadius = 4.dp)
-                SkeletonBlock(width = 8.dp, height = 8.dp, cornerRadius = 4.dp)
-                SkeletonBlock(width = 8.dp, height = 8.dp, cornerRadius = 4.dp)
-            }
         }
     }
 }

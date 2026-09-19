@@ -18,7 +18,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,7 +33,6 @@ import com.nuvio.app.core.ui.EmptyState
 import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioNetworkOfflineCard
 import com.nuvio.app.core.ui.nuvioSafeBottomPadding
-import com.nuvio.app.core.ui.rememberHeroStretchState
 import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
 import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
 import com.nuvio.app.features.addons.AddonRepository
@@ -54,7 +52,6 @@ import com.nuvio.app.features.home.components.HomeContinueWatchingSection
 import com.nuvio.app.features.home.components.HomeEmptyStateCard
 import com.nuvio.app.features.home.components.HomeHeroReservedSpace
 import com.nuvio.app.features.home.components.HomeHeroSection
-import com.nuvio.app.features.home.components.homeHeroUsesCarousel
 import com.nuvio.app.features.home.components.HomeSkeletonHero
 import com.nuvio.app.features.home.components.HomeSkeletonRow
 import com.nuvio.app.features.home.components.HomeContinueWatchingSectionBottomPadding
@@ -951,19 +948,9 @@ fun HomeScreen(
             }
         }
 
-        val heroStretchState = rememberHeroStretchState(homeListState)
-        // The stretch belongs to the full-bleed phone hero, which grows with the pull. A wide
-        // window shows the carousel instead, a card that does not stretch, so the same pull only
-        // dragged the whole page down and sprang it back.
-        val heroStretchModifier = if (showHeroSlot && !homeHeroUsesCarousel(maxWidth.value)) {
-            Modifier.nestedScroll(heroStretchState.nestedScrollConnection)
-        } else {
-            Modifier
-        }
-
         // No title: Home's hero is its heading, so it gets no app bar.
         NuvioScreen(
-            modifier = Modifier.fillMaxSize().then(heroStretchModifier),
+            modifier = Modifier.fillMaxSize(),
             horizontalPadding = 0.dp,
             topPadding = if (showHeroSlot) 0.dp else null,
             listState = homeListState,
@@ -987,8 +974,6 @@ fun HomeScreen(
                                 modifier = Modifier,
                                 viewportHeight = maxHeight,
                                 mobileBelowSectionHeightHint = mobileHeroBelowSectionHeightHint,
-                                listState = homeListState,
-                                stretchPx = { heroStretchState.stretchPx },
                                 onItemClick = onPosterClick,
                             )
 
