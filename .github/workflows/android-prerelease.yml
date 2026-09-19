@@ -1,0 +1,53 @@
+name: Build Android Prerelease
+
+on:
+  push:
+    branches:
+      - nuvio-migration
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-prerelease
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Build Android Debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          # The action only writes its cache from the default branch unless told otherwise, and
+          # this workflow only ever runs on nuvio-migration. Every run was therefore starting
+          # cold: re-downloading the Gradle distribution, re-resolving every dependency and
+          # getting no build-cache hits, which is most of the five minutes.
+          cache-read-only: false
+
+      - name: Create placeholder local.properties
+        run: touch local.properties
+
+      - name: Build full debug APK
+        # gradle.properties drops the daemon to low priority so a local build cannot starve the
+        # developer's machine. A runner has nothing to starve, so it builds at normal priority.
+        run: ./gradlew :androidApp:assembleFullDebug --stacktrace --no-configuration-cache --priority=normal
+
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: nuvio-prerelease-android-full-debug
+          path: androidApp/build/outputs/apk/full/debug/*.apk
+          if-no-files-found: error
