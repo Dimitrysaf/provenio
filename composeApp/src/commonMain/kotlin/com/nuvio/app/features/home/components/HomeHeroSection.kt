@@ -59,9 +59,9 @@ private const val HERO_AUTO_SCROLL_INTERVAL_MS = 8_000L
 private const val MOBILE_HERO_VIEWPORT_RATIO = 0.82f
 private const val MOBILE_HERO_MIN_HEIGHT_DP = 360f
 private const val MOBILE_HERO_MAX_HEIGHT_DP = 760f
-private const val MOBILE_HERO_SMALL_ITEM_WIDTH_RATIO = 0.09f
-private const val MOBILE_HERO_SMALL_ITEM_MIN_DP = 28f
-private const val MOBILE_HERO_SMALL_ITEM_MAX_DP = 44f
+private const val MOBILE_HERO_SMALL_ITEM_WIDTH_RATIO = 0.07f
+private const val MOBILE_HERO_SMALL_ITEM_MIN_DP = 24f
+private const val MOBILE_HERO_SMALL_ITEM_MAX_DP = 36f
 
 /** Where a carousel item's overlay text has finished fading in, as a fraction of its unmasking. */
 private const val HERO_ITEM_CONTENT_FADE_START = 0.62f
@@ -164,6 +164,7 @@ private fun HomeHeroCarousel(
                 .fillMaxWidth()
                 .height(layout.heroHeight),
             itemSpacing = layout.itemSpacing,
+            minSmallItemWidth = 24.dp,
             maxSmallItemWidth = layout.smallItemWidth,
             contentPadding = PaddingValues(horizontal = layout.contentHorizontalPadding),
         ) { index ->
@@ -476,10 +477,10 @@ internal fun homeHeroLayout(
             ),
             contentMaxWidth = 480.dp,
             contentWidthFraction = 1f,
-            contentHorizontalPadding = 24.dp,
+            contentHorizontalPadding = 12.dp,
             contentVerticalPadding = 16.dp,
             logoWidthFraction = 0.62f,
-            itemSpacing = 6.dp,
+            itemSpacing = 4.dp,
             smallItemWidth = (maxWidthDp * MOBILE_HERO_SMALL_ITEM_WIDTH_RATIO).dp
                 .coerceIn(MOBILE_HERO_SMALL_ITEM_MIN_DP.dp, MOBILE_HERO_SMALL_ITEM_MAX_DP.dp),
             centerTitle = true,
