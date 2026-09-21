@@ -1,15 +1,19 @@
 name: Build Android Prerelease
 
 on:
+  workflow_dispatch:
   push:
     branches:
+      - main
       - nuvio-migration
+      - 'feature/**'
+      - 'fix/**'
 
 permissions:
   contents: read
 
 concurrency:
-  group: android-prerelease
+  group: android-prerelease-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -31,18 +35,14 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          # The action only writes its cache from the default branch unless told otherwise, and
-          # this workflow only ever runs on nuvio-migration. Every run was therefore starting
-          # cold: re-downloading the Gradle distribution, re-resolving every dependency and
-          # getting no build-cache hits, which is most of the five minutes.
           cache-read-only: false
 
       - name: Create placeholder local.properties
         run: touch local.properties
 
       - name: Build full debug APK
-        # gradle.properties drops the daemon to low priority so a local build cannot starve the
-        # developer's machine. A runner has nothing to starve, so it builds at normal priority.
+        # Override the low-priority setting from gradle.properties
+        # (runners have nothing else to starve)
         run: ./gradlew :androidApp:assembleFullDebug --stacktrace --no-configuration-cache --priority=normal
 
       - name: Upload Android artifact
@@ -51,3 +51,4 @@ jobs:
           name: nuvio-prerelease-android-full-debug
           path: androidApp/build/outputs/apk/full/debug/*.apk
           if-no-files-found: error
+          retention-days: 14
