@@ -518,4 +518,3 @@ private fun mobileHeroHeight(
 
     return cappedHeight.coerceIn(minHeight, MOBILE_HERO_MAX_HEIGHT_DP.dp)
 }
-</content>
