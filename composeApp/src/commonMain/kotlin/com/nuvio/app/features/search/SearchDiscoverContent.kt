@@ -27,11 +27,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.network.NetworkCondition
-import com.nuvio.app.core.ui.EmptyState
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
-import com.nuvio.app.core.ui.NuvioNetworkOfflineCard
-import com.nuvio.app.core.ui.SingleChoiceBottomSheet
-import com.nuvio.app.core.ui.SingleChoiceOption
+import com.nuvio.app.shell.components.EmptyState
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
+import com.nuvio.app.shell.components.NuvioNetworkOfflineCard
+import com.nuvio.app.shell.components.SingleChoiceBottomSheet
+import com.nuvio.app.shell.components.SingleChoiceOption
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.components.PosterGridRow
 import com.nuvio.app.features.home.components.PosterGridSkeletonRow

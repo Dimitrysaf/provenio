@@ -7,8 +7,8 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.PlaylistAddCheckCircle
 import androidx.compose.runtime.Composable
 import com.nuvio.app.core.i18n.localizedSeasonEpisodeCode
-import com.nuvio.app.core.ui.MediaActionsSheet
-import com.nuvio.app.core.ui.MediaSheetAction
+import com.nuvio.app.shell.components.MediaActionsSheet
+import com.nuvio.app.shell.components.MediaSheetAction
 import com.nuvio.app.features.details.MetaVideo
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource

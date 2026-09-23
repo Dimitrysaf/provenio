@@ -17,9 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.nuvio.app.core.ui.DisintegrationRequest
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
-import com.nuvio.app.core.ui.NuvioTokens
+import com.nuvio.app.shell.components.DisintegrationRequest
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
+import com.nuvio.app.shell.theme.NuvioTokens
 import com.nuvio.app.features.cloud.CloudLibraryContentType
 import com.nuvio.app.features.cloud.CloudLibraryFile
 import com.nuvio.app.features.cloud.CloudLibraryItem

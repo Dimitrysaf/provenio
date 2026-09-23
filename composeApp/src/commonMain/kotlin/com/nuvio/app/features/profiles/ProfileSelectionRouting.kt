@@ -1,6 +1,6 @@
 package com.nuvio.app.features.profiles
 
-import com.nuvio.app.core.ui.NuvioToastController
+import com.nuvio.app.shell.components.NuvioToastController
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.profile_already_active
 import org.jetbrains.compose.resources.getString

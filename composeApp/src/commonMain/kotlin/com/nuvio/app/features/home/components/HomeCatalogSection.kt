@@ -6,9 +6,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
-import com.nuvio.app.core.ui.NuvioShelfSection
-import com.nuvio.app.core.ui.NuvioViewAllPillSize
-import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
+import com.nuvio.app.shell.components.NuvioShelfSection
+import com.nuvio.app.shell.components.NuvioViewAllPillSize
+import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
 import com.nuvio.app.features.home.HomeCatalogSection
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.stableKey

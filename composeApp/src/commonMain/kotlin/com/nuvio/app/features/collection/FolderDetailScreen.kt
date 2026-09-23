@@ -23,7 +23,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.LocalRippleConfiguration
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
@@ -50,11 +50,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.nuvio.app.core.ui.NuvioPosterCard
-import com.nuvio.app.core.ui.NuvioPosterShape
-import com.nuvio.app.core.ui.NuvioScreenHeader
-import com.nuvio.app.core.ui.nuvioSafeBottomPadding
-import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
+import com.nuvio.app.shell.components.NuvioPosterCard
+import com.nuvio.app.shell.components.NuvioPosterShape
+import com.nuvio.app.shell.components.NuvioScreenHeader
+import com.nuvio.app.shell.components.nuvioSafeBottomPadding
+import com.nuvio.app.shell.components.withDuplicateSafeLazyKeys
 import com.nuvio.app.features.home.HomeCatalogSection
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.PosterShape

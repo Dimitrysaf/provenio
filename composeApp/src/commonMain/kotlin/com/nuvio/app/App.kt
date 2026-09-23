@@ -11,10 +11,10 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.request.CachePolicy
 import coil3.request.crossfade
 import coil3.svg.SvgDecoder
-import com.nuvio.app.core.ui.NativeProfileSwitcherController
-import com.nuvio.app.core.ui.NuvioTheme
-import com.nuvio.app.core.ui.configurePlatformImageLoader
-import com.nuvio.app.core.ui.isDynamicColorAvailable
+import com.nuvio.app.shell.components.NativeProfileSwitcherController
+import com.nuvio.app.shell.theme.NuvioTheme
+import com.nuvio.app.shell.components.configurePlatformImageLoader
+import com.nuvio.app.shell.theme.isDynamicColorAvailable
 import com.nuvio.app.features.settings.ThemeSettingsRepository
 import com.nuvio.app.navigation.AppRoute
 import com.nuvio.app.navigation.TabsRoute

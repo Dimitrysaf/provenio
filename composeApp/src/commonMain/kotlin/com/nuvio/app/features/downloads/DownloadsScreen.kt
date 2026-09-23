@@ -51,11 +51,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.i18n.localizedByteUnit
-import com.nuvio.app.core.ui.EmptyState
-import com.nuvio.app.core.ui.ListSubheader
-import com.nuvio.app.core.ui.NuvioScreen
-import com.nuvio.app.core.ui.NuvioStatusModal
-import com.nuvio.app.core.ui.NuvioToastController
+import com.nuvio.app.shell.components.EmptyState
+import com.nuvio.app.shell.components.ListSubheader
+import com.nuvio.app.shell.components.NuvioScreen
+import com.nuvio.app.shell.components.NuvioStatusModal
+import com.nuvio.app.shell.components.NuvioToastController
 import com.nuvio.app.features.settings.ListItemBetweenSpace
 import com.nuvio.app.features.settings.segmentShape
 import nuvio.composeapp.generated.resources.*

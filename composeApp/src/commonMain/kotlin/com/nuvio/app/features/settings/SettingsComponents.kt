@@ -46,11 +46,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.core.ui.NuvioTokens
-import com.nuvio.app.core.ui.NuvioBackButton
-import com.nuvio.app.core.ui.ListSubheader
-import com.nuvio.app.core.ui.nuvio
-import com.nuvio.app.core.ui.nuvioConsumePointerEvents
+import com.nuvio.app.shell.theme.NuvioTokens
+import com.nuvio.app.shell.components.NuvioBackButton
+import com.nuvio.app.shell.components.ListSubheader
+import com.nuvio.app.shell.theme.nuvio
+import com.nuvio.app.shell.components.nuvioConsumePointerEvents
 import com.nuvio.app.features.home.HomeCatalogSettingsItem
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.settings_homescreen_collection_with_addon

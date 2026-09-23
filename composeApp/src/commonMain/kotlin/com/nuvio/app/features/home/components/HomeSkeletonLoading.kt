@@ -16,11 +16,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.core.ui.SkeletonBlock
-import com.nuvio.app.core.ui.SkeletonPosterRow
-import com.nuvio.app.core.ui.landscapePosterHeightForWidth
-import com.nuvio.app.core.ui.landscapePosterWidth
-import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
+import com.nuvio.app.shell.components.SkeletonBlock
+import com.nuvio.app.shell.components.SkeletonPosterRow
+import com.nuvio.app.shell.components.landscapePosterHeightForWidth
+import com.nuvio.app.shell.components.landscapePosterWidth
+import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
 
 @Composable
 fun HomeSkeletonHero(

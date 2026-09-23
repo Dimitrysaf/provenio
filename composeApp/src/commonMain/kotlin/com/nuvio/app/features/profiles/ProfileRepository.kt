@@ -15,7 +15,7 @@ import com.nuvio.app.features.downloads.DownloadsRepository
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import com.nuvio.app.features.home.HomeRepository
-import com.nuvio.app.core.ui.PosterCardStyleRepository
+import com.nuvio.app.core.settings.PosterCardStyleRepository
 import com.nuvio.app.features.library.LibraryRepository
 import com.nuvio.app.features.library.LibraryDisplaySettingsRepository
 import com.nuvio.app.features.mdblist.MdbListSettingsRepository

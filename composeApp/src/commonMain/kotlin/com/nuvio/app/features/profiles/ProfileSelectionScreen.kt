@@ -75,8 +75,8 @@ import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.foundation.layout.fillMaxHeight
-import com.nuvio.app.core.ui.NuvioBackButton
-import com.nuvio.app.core.ui.WindowBreakpoint
+import com.nuvio.app.shell.components.NuvioBackButton
+import com.nuvio.app.shell.components.WindowBreakpoint
 import com.nuvio.app.features.membership.CosmeticEntitlement
 import com.nuvio.app.features.settings.MemberBrandWordmark
 import kotlinx.coroutines.delay

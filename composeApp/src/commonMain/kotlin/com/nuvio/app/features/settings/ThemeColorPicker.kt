@@ -30,10 +30,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import com.nuvio.app.core.ui.HsvColor
-import com.nuvio.app.core.ui.NuvioTokens
-import com.nuvio.app.core.ui.formatHexColor
-import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.shell.theme.HsvColor
+import com.nuvio.app.shell.theme.NuvioTokens
+import com.nuvio.app.shell.theme.formatHexColor
+import com.nuvio.app.shell.theme.nuvio
 import kotlin.math.roundToInt
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.custom_theme_brightness

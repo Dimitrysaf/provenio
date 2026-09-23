@@ -25,7 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -51,8 +51,8 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.build.AppFeaturePolicy
-import com.nuvio.app.core.ui.NuvioScreen
-import com.nuvio.app.core.ui.NuvioSurfaceCard
+import com.nuvio.app.shell.components.NuvioScreen
+import com.nuvio.app.shell.components.NuvioSurfaceCard
 import com.nuvio.app.features.addons.httpRequestRaw
 import com.nuvio.app.features.membership.MembershipOverviewRepository
 import kotlinx.coroutines.launch

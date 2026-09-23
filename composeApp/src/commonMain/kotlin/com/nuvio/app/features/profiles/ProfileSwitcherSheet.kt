@@ -14,8 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.core.ui.SingleChoiceBottomSheet
-import com.nuvio.app.core.ui.SingleChoiceOption
+import com.nuvio.app.shell.components.SingleChoiceBottomSheet
+import com.nuvio.app.shell.components.SingleChoiceOption
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 

@@ -1225,7 +1225,7 @@ struct NativeNavContentView: View {
                     return
                 }
                 if newTab == appCoordinator.selectedTab {
-                    NativeTabBridgeKt.nativeTabSelect(tabName: newTab.rawValue)
+                    NativeTabsKt.nativeTabSelect(tabName: newTab.rawValue)
                     return
                 }
                 if appCoordinator.isAppReady || newTab == .home {

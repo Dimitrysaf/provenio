@@ -1,6 +1,6 @@
 package com.nuvio.app.features.settings
 
-import com.nuvio.app.core.ui.AppTheme
+import com.nuvio.app.shell.theme.AppTheme
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource

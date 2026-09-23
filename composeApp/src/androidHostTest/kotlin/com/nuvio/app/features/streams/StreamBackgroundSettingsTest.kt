@@ -10,7 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.nuvio.app.core.storage.ProfileScopedKey
 import com.nuvio.app.core.sync.decodeSyncString
-import com.nuvio.app.core.ui.NuvioTheme
+import com.nuvio.app.shell.theme.NuvioTheme
 import com.nuvio.app.features.settings.SettingsSearchEntry
 import com.nuvio.app.features.settings.settingsSearchEntries
 import com.nuvio.app.features.settings.streamsSettingsContent

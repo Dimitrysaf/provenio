@@ -1,9 +1,9 @@
 package com.nuvio.app.features.settings
 
-import com.nuvio.app.core.ui.AppTheme
-import com.nuvio.app.core.ui.CustomThemeColors
-import com.nuvio.app.core.ui.NativeTabBridge
-import com.nuvio.app.core.ui.ThemeColors
+import com.nuvio.app.shell.theme.AppTheme
+import com.nuvio.app.shell.theme.CustomThemeColors
+import com.nuvio.app.shell.components.NativeTabBridge
+import com.nuvio.app.shell.theme.ThemeColors
 import com.nuvio.app.features.membership.MemberAccessRepository
 import com.nuvio.app.features.membership.availableAppThemes
 import com.nuvio.app.features.membership.resolveAppTheme

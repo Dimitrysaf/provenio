@@ -26,10 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.core.ui.SkeletonBlock
-import com.nuvio.app.core.ui.nuvio
-import com.nuvio.app.core.ui.nuvioHorizontalScrollBleed
-import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
+import com.nuvio.app.shell.components.SkeletonBlock
+import com.nuvio.app.shell.theme.nuvio
+import com.nuvio.app.shell.components.nuvioHorizontalScrollBleed
+import com.nuvio.app.shell.components.withDuplicateSafeLazyKeys
 import com.nuvio.app.features.trakt.TraktCommentReview
 import kotlinx.coroutines.flow.distinctUntilChanged
 import nuvio.composeapp.generated.resources.*

@@ -19,10 +19,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.BasicAlertDialog
-import com.nuvio.app.core.ui.MultiChoiceBottomSheet
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
-import com.nuvio.app.core.ui.SingleChoiceBottomSheet
-import com.nuvio.app.core.ui.SingleChoiceOption
+import com.nuvio.app.shell.components.MultiChoiceBottomSheet
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
+import com.nuvio.app.shell.components.SingleChoiceBottomSheet
+import com.nuvio.app.shell.components.SingleChoiceOption
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider

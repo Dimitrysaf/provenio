@@ -45,10 +45,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.core.ui.BottomSheetBodyMargin
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
-import com.nuvio.app.core.ui.NuvioModalBottomSheet
-import com.nuvio.app.core.ui.dismissNuvioBottomSheet
+import com.nuvio.app.shell.components.BottomSheetBodyMargin
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
+import com.nuvio.app.shell.components.NuvioModalBottomSheet
+import com.nuvio.app.shell.components.dismissNuvioBottomSheet
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_cancel

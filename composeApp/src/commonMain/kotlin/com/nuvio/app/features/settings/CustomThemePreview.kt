@@ -15,11 +15,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.nuvio.app.core.ui.CustomThemeColors
-import com.nuvio.app.core.ui.NuvioTokens
-import com.nuvio.app.core.ui.accentBrush
-import com.nuvio.app.core.ui.nuvio
-import com.nuvio.app.core.ui.toColorPalette
+import com.nuvio.app.shell.theme.CustomThemeColors
+import com.nuvio.app.shell.theme.NuvioTokens
+import com.nuvio.app.shell.theme.accentBrush
+import com.nuvio.app.shell.theme.nuvio
+import com.nuvio.app.shell.theme.toColorPalette
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.custom_theme_preview
 import nuvio.composeapp.generated.resources.custom_theme_preview_accent

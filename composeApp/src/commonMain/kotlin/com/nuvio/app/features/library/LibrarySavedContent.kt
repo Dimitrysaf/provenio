@@ -13,8 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.i18n.localizedMediaTypeLabel
-import com.nuvio.app.core.ui.NuvioDropdownChip
-import com.nuvio.app.core.ui.NuvioDropdownOption
+import com.nuvio.app.shell.components.NuvioDropdownChip
+import com.nuvio.app.shell.components.NuvioDropdownOption
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.components.PosterGridRow
 import com.nuvio.app.features.home.components.PosterGridSkeletonRow

@@ -60,9 +60,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.nuvio.app.core.ui.ListSubheader
-import com.nuvio.app.core.ui.SingleChoiceBottomSheet
-import com.nuvio.app.core.ui.SingleChoiceOption
+import com.nuvio.app.shell.components.ListSubheader
+import com.nuvio.app.shell.components.SingleChoiceBottomSheet
+import com.nuvio.app.shell.components.SingleChoiceOption
 import com.nuvio.app.features.home.PosterShape
 import com.nuvio.app.features.settings.OuterCorner
 import nuvio.composeapp.generated.resources.*

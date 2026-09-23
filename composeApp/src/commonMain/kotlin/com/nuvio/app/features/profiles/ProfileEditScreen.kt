@@ -68,9 +68,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.nuvio.app.core.ui.NuvioScreen
-import com.nuvio.app.core.ui.TextPromptDialog
-import com.nuvio.app.core.ui.nuvioSafeBottomPadding
+import com.nuvio.app.shell.components.NuvioScreen
+import com.nuvio.app.shell.components.TextPromptDialog
+import com.nuvio.app.shell.components.nuvioSafeBottomPadding
 import com.nuvio.app.features.membership.CosmeticEntitlement
 import com.nuvio.app.features.membership.MemberAccessRepository
 import com.nuvio.app.features.membership.ProfileBackgroundRepository

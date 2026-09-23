@@ -40,7 +40,7 @@ import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -75,10 +75,10 @@ import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.build.TrailerPlaybackMode
 import com.nuvio.app.core.network.NetworkCondition
 import com.nuvio.app.core.network.NetworkStatusRepository
-import com.nuvio.app.core.ui.NuvioBackButton
-import com.nuvio.app.core.ui.NuvioToastController
-import com.nuvio.app.core.ui.TrackingListPickerSheet
-import com.nuvio.app.core.ui.nuvioSafeBottomPadding
+import com.nuvio.app.shell.components.NuvioBackButton
+import com.nuvio.app.shell.components.NuvioToastController
+import com.nuvio.app.shell.components.TrackingListPickerSheet
+import com.nuvio.app.shell.components.nuvioSafeBottomPadding
 import com.nuvio.app.features.details.components.DetailActionButtons
 import com.nuvio.app.features.details.components.DetailSecondaryAction
 import com.nuvio.app.features.details.components.CommentDetailSheet

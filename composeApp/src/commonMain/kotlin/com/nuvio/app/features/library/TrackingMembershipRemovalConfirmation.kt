@@ -6,7 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import com.nuvio.app.core.ui.NuvioStatusModal
+import com.nuvio.app.shell.components.NuvioStatusModal
 import com.nuvio.app.features.tracking.TrackingMembershipApplyResult
 import com.nuvio.app.features.tracking.TrackingMembershipRemovalConfirmation
 import com.nuvio.app.features.tracking.TrackingMembershipRemovalImpact

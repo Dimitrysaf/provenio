@@ -47,9 +47,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.build.TrailerPlaybackMode
-import com.nuvio.app.core.ui.SelectableListRow
-import com.nuvio.app.core.ui.SingleChoiceBottomSheet
-import com.nuvio.app.core.ui.SingleChoiceOption
+import com.nuvio.app.shell.components.SelectableListRow
+import com.nuvio.app.shell.components.SingleChoiceBottomSheet
+import com.nuvio.app.shell.components.SingleChoiceOption
 import com.nuvio.app.features.details.MetaEpisodeCardStyle
 import com.nuvio.app.features.details.MetaScreenBackgroundMode
 import com.nuvio.app.features.details.MetaScreenSectionItem

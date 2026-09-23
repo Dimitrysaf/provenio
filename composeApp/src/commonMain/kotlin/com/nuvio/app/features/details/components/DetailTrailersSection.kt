@@ -32,10 +32,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.nuvio.app.core.ui.SingleChoiceBottomSheet
-import com.nuvio.app.core.ui.SingleChoiceOption
-import com.nuvio.app.core.ui.nuvioHorizontalScrollBleed
-import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
+import com.nuvio.app.shell.components.SingleChoiceBottomSheet
+import com.nuvio.app.shell.components.SingleChoiceOption
+import com.nuvio.app.shell.components.nuvioHorizontalScrollBleed
+import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
 import com.nuvio.app.features.details.MetaTrailer
 import com.nuvio.app.features.details.youtubeThumbnailUrl
 import nuvio.composeapp.generated.resources.*

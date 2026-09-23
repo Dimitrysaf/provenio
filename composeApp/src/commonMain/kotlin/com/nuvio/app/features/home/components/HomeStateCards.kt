@@ -5,7 +5,7 @@ import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.nuvio.app.core.ui.EmptyState
+import com.nuvio.app.shell.components.EmptyState
 
 /**
  * A catalog with nothing in it, or one that failed to load.

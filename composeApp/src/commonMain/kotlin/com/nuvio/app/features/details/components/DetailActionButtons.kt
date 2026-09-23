@@ -37,10 +37,10 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.core.ui.AppIconResource
-import com.nuvio.app.core.ui.SingleChoiceBottomSheet
-import com.nuvio.app.core.ui.SingleChoiceOption
-import com.nuvio.app.core.ui.appIconPainter
+import com.nuvio.app.shell.components.AppIconResource
+import com.nuvio.app.shell.components.SingleChoiceBottomSheet
+import com.nuvio.app.shell.components.SingleChoiceOption
+import com.nuvio.app.shell.components.appIconPainter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import nuvio.composeapp.generated.resources.Res

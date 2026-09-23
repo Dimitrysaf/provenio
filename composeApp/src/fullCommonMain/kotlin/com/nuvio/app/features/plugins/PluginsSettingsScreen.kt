@@ -46,11 +46,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nuvio.app.core.ui.EmptyState
-import com.nuvio.app.core.ui.ListSubheader
-import com.nuvio.app.core.ui.NewEntryRow
-import com.nuvio.app.core.ui.NuvioStatusModal
-import com.nuvio.app.core.ui.TextPromptDialog
+import com.nuvio.app.shell.components.EmptyState
+import com.nuvio.app.shell.components.ListSubheader
+import com.nuvio.app.shell.components.NewEntryRow
+import com.nuvio.app.shell.components.NuvioStatusModal
+import com.nuvio.app.shell.components.TextPromptDialog
 import com.nuvio.app.features.plugins.runtime.PluginRuntime
 import com.nuvio.app.features.settings.ListItemBetweenSpace
 import com.nuvio.app.features.settings.SettingsList

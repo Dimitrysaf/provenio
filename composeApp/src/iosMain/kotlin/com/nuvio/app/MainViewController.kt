@@ -3,7 +3,7 @@ package com.nuvio.app
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.window.ComposeUIViewController
-import com.nuvio.app.core.ui.NativeProfileSwitcherController
+import com.nuvio.app.shell.components.NativeProfileSwitcherController
 import com.nuvio.app.navigation.AppRoute
 import platform.UIKit.UIColor
 import platform.UIKit.UIViewController

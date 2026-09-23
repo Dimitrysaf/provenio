@@ -6,7 +6,7 @@ import com.nuvio.app.core.storage.ProfileScopedKey
 import com.nuvio.app.core.sync.decodeSyncBoolean
 import com.nuvio.app.core.sync.decodeSyncString
 import com.nuvio.app.core.sync.encodeSyncString
-import com.nuvio.app.core.ui.CustomThemeColors
+import com.nuvio.app.shell.theme.CustomThemeColors
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.runner.RunWith

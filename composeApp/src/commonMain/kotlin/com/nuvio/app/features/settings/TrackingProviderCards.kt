@@ -46,8 +46,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
-import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
+import com.nuvio.app.shell.theme.nuvio
 import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.simkl.SimklAuthError
 import com.nuvio.app.features.simkl.SimklAuthRepository

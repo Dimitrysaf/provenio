@@ -76,8 +76,8 @@ import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.DeviceLinkAuthRepository
 import com.nuvio.app.core.auth.DeviceLinkAuthState
 import com.nuvio.app.core.build.AppFeaturePolicy
-import com.nuvio.app.core.ui.RobotoFontFamily
-import com.nuvio.app.core.ui.WindowBreakpoint
+import com.nuvio.app.shell.theme.RobotoFontFamily
+import com.nuvio.app.shell.components.WindowBreakpoint
 import com.nuvio.app.features.settings.AppBrandWordmark
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res

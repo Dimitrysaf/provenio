@@ -1,8 +1,8 @@
 package com.nuvio.app.features.settings
 
 import androidx.compose.runtime.Composable
-import com.nuvio.app.core.ui.SingleChoiceBottomSheet
-import com.nuvio.app.core.ui.SingleChoiceOption
+import com.nuvio.app.shell.components.SingleChoiceBottomSheet
+import com.nuvio.app.shell.components.SingleChoiceOption
 
 internal data class TrackingPickerOption<T>(
     val value: T,

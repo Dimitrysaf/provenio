@@ -6,7 +6,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.build.AppVersionConfig
 import com.nuvio.app.core.i18n.localizedByteUnit
-import com.nuvio.app.core.ui.NuvioToastController
+import com.nuvio.app.shell.components.NuvioToastController
 import com.nuvio.app.features.addons.httpRequestRaw
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay

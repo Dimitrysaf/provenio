@@ -36,8 +36,8 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.nuvio.app.core.ui.themePalette
-import com.nuvio.app.core.ui.accentBrush
+import com.nuvio.app.shell.theme.themePalette
+import com.nuvio.app.shell.theme.accentBrush
 import com.nuvio.app.features.membership.ProfileBackgroundCatalogItem
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.profile_background_custom

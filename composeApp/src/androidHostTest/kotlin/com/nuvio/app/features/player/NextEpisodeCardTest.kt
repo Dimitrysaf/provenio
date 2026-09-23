@@ -19,7 +19,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.core.ui.NuvioTheme
+import com.nuvio.app.shell.theme.NuvioTheme
 import com.nuvio.app.features.player.skip.NextEpisodeCard
 import com.nuvio.app.features.player.skip.NextEpisodeInfo
 import org.junit.Rule

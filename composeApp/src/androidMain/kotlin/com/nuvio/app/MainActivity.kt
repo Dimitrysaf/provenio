@@ -57,8 +57,8 @@ import com.nuvio.app.features.simkl.SimklAuthStorage
 import com.nuvio.app.features.simkl.SimklSyncStorage
 import com.nuvio.app.features.tmdb.TmdbSettingsStorage
 import com.nuvio.app.features.updater.AndroidAppUpdaterPlatform
-import com.nuvio.app.core.ui.PlatformToast
-import com.nuvio.app.core.ui.PosterCardStyleStorage
+import com.nuvio.app.shell.components.PlatformToast
+import com.nuvio.app.core.settings.PosterCardStyleStorage
 import com.nuvio.app.features.watched.WatchedStorage
 import com.nuvio.app.features.streams.StreamLinkCacheStorage
 import com.nuvio.app.features.streams.StreamBadgeSettingsStorage

@@ -17,8 +17,8 @@ import com.nuvio.app.features.notifications.EpisodeReleaseNotificationsRepositor
 import com.nuvio.app.features.player.PlayerSettingsStorage
 import com.nuvio.app.features.player.PlayerSettingsRepository
 import com.nuvio.app.features.profiles.ProfileRepository
-import com.nuvio.app.core.ui.PosterCardStyleRepository
-import com.nuvio.app.core.ui.PosterCardStyleStorage
+import com.nuvio.app.core.settings.PosterCardStyleRepository
+import com.nuvio.app.core.settings.PosterCardStyleStorage
 import com.nuvio.app.features.settings.ThemeSettingsStorage
 import com.nuvio.app.features.settings.ThemeSettingsRepository
 import com.nuvio.app.features.streams.StreamBadgeSettingsRepository

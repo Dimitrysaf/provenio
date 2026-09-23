@@ -1,6 +1,6 @@
 package com.nuvio.app.features.player
 
-import com.nuvio.app.core.ui.NuvioToastController
+import com.nuvio.app.shell.components.NuvioToastController
 import com.nuvio.app.features.debrid.DirectDebridPlayableResult
 import com.nuvio.app.features.debrid.DirectDebridPlaybackResolver
 import com.nuvio.app.features.debrid.toastMessage

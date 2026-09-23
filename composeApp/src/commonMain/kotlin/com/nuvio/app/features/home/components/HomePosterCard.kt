@@ -3,9 +3,9 @@ package com.nuvio.app.features.home.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.nuvio.app.core.format.formatReleaseDateForDisplay
-import com.nuvio.app.core.ui.NuvioPosterCard
-import com.nuvio.app.core.ui.NuvioPosterShape
-import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
+import com.nuvio.app.shell.components.NuvioPosterCard
+import com.nuvio.app.shell.components.NuvioPosterShape
+import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.PosterShape
 

@@ -15,8 +15,8 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
-import com.nuvio.app.core.ui.PosterOpenMotion
-import com.nuvio.app.core.ui.drawLiftedPoster
+import com.nuvio.app.shell.components.PosterOpenMotion
+import com.nuvio.app.shell.components.drawLiftedPoster
 
 @Composable
 internal fun PosterNavigationArtwork(request: PosterNavigationRequest) {

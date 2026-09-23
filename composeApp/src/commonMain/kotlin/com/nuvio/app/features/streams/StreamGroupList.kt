@@ -40,8 +40,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.build.AppFeaturePolicy
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
-import com.nuvio.app.core.ui.NuvioToastController
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
+import com.nuvio.app.shell.components.NuvioToastController
 import com.nuvio.app.features.settings.ListItemBetweenSpace
 import com.nuvio.app.features.settings.segmentShape
 import nuvio.composeapp.generated.resources.*

@@ -52,9 +52,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.core.ui.NuvioSearchField
-import com.nuvio.app.core.ui.NuvioTokens
-import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.shell.components.NuvioSearchField
+import com.nuvio.app.shell.theme.NuvioTokens
+import com.nuvio.app.shell.theme.nuvio
 import com.nuvio.app.isIos
 import com.nuvio.app.supportsPosterNavigationMotion
 import nuvio.composeapp.generated.resources.*

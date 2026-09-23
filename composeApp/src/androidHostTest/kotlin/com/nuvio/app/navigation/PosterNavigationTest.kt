@@ -25,10 +25,10 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
-import com.nuvio.app.core.ui.LocalPosterClickAnchor
-import com.nuvio.app.core.ui.PosterLiftSource
-import com.nuvio.app.core.ui.PosterOpenMotion
-import com.nuvio.app.core.ui.posterCardClickable
+import com.nuvio.app.shell.components.LocalPosterClickAnchor
+import com.nuvio.app.shell.components.PosterLiftSource
+import com.nuvio.app.shell.components.PosterOpenMotion
+import com.nuvio.app.shell.components.posterCardClickable
 import org.junit.Rule
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner

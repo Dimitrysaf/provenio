@@ -77,9 +77,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.core.ui.NuvioBackButton
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
-import com.nuvio.app.core.ui.nuvioTypeScale
+import com.nuvio.app.shell.components.NuvioBackButton
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
+import com.nuvio.app.shell.theme.nuvioTypeScale
 import kotlinx.coroutines.delay
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource

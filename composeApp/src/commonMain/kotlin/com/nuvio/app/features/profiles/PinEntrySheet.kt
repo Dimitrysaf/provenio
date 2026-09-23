@@ -24,9 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.core.ui.BottomSheetBodyMargin
-import com.nuvio.app.core.ui.NuvioModalBottomSheet
-import com.nuvio.app.core.ui.dismissNuvioBottomSheet
+import com.nuvio.app.shell.components.BottomSheetBodyMargin
+import com.nuvio.app.shell.components.NuvioModalBottomSheet
+import com.nuvio.app.shell.components.dismissNuvioBottomSheet
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource

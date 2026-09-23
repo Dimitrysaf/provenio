@@ -53,8 +53,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
-import com.nuvio.app.core.ui.skeleton
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
+import com.nuvio.app.shell.components.skeleton
 import com.nuvio.app.features.details.DetailHeroSlide
 import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.details.MetaTrailer

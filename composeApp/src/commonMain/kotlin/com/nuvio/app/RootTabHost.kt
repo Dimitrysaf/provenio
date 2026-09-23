@@ -23,7 +23,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.compose.rememberLifecycleOwner
-import com.nuvio.app.core.ui.LocalScreenActive
+import com.nuvio.app.shell.components.LocalScreenActive
 
 @Composable
 internal fun RootTabHost(

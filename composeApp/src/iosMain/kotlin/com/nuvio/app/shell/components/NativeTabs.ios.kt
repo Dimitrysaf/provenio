@@ -1,0 +1,74 @@
+package com.nuvio.app.shell.components
+
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSUserDefaults
+
+private const val nativeSelectedTabKey = "NuvioNativeSelectedTab"
+
+private const val nativeTabAccentColorKey = "NuvioNativeTabAccentColor"
+
+private const val nativeTabTitleHomeKey = "NuvioNativeTabTitleHome"
+
+private const val nativeTabTitleSearchKey = "NuvioNativeTabTitleSearch"
+
+private const val nativeTabTitleLibraryKey = "NuvioNativeTabTitleLibrary"
+
+private const val nativeTabTitleProfileKey = "NuvioNativeTabTitleProfile"
+
+private const val nativeProfileNameKey = "NuvioNativeProfileName"
+
+private const val nativeProfileAvatarColorKey = "NuvioNativeProfileAvatarColor"
+
+private const val nativeProfileAvatarUrlKey = "NuvioNativeProfileAvatarURL"
+
+private const val nativeProfileAvatarBackgroundColorKey = "NuvioNativeProfileAvatarBackgroundColor"
+
+private const val nativeTabChromeDidChangeNotification = "NuvioNativeTabChromeDidChange"
+
+internal actual fun publishNativeSelectedTab(tabName: String) {
+    NSUserDefaults.standardUserDefaults.setObject(tabName, forKey = nativeSelectedTabKey)
+    notifyNativeTabChromeChanged()
+}
+
+internal actual fun publishNativeTabAccentColor(hexColor: String) {
+    NSUserDefaults.standardUserDefaults.setObject(hexColor, forKey = nativeTabAccentColorKey)
+    notifyNativeTabChromeChanged()
+}
+
+internal actual fun publishNativeTabTitles(
+    home: String,
+    search: String,
+    library: String,
+    profile: String,
+) {
+    publishString(nativeTabTitleHomeKey, home)
+    publishString(nativeTabTitleSearchKey, search)
+    publishString(nativeTabTitleLibraryKey, library)
+    publishString(nativeTabTitleProfileKey, profile)
+    notifyNativeTabChromeChanged()
+}
+
+internal actual fun publishNativeProfileTabIcon(
+    name: String?,
+    avatarColorHex: String?,
+    avatarImageUrl: String?,
+    avatarBackgroundColorHex: String?,
+) {
+    publishString(nativeProfileNameKey, name)
+    publishString(nativeProfileAvatarColorKey, avatarColorHex)
+    publishString(nativeProfileAvatarUrlKey, avatarImageUrl)
+    publishString(nativeProfileAvatarBackgroundColorKey, avatarBackgroundColorHex)
+    notifyNativeTabChromeChanged()
+}
+
+private fun publishString(key: String, value: String?) {
+    if (value.isNullOrBlank()) {
+        NSUserDefaults.standardUserDefaults.removeObjectForKey(key)
+    } else {
+        NSUserDefaults.standardUserDefaults.setObject(value, forKey = key)
+    }
+}
+
+private fun notifyNativeTabChromeChanged() {
+    NSNotificationCenter.defaultCenter.postNotificationName(nativeTabChromeDidChangeNotification, null)
+}

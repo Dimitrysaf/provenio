@@ -32,8 +32,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nuvio.app.core.ui.LocalScreenActive
-import com.nuvio.app.core.ui.ScreenActivityEffect
+import com.nuvio.app.shell.components.LocalScreenActive
+import com.nuvio.app.shell.components.ScreenActivityEffect
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Rule

@@ -3,7 +3,7 @@ package com.nuvio.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
-import com.nuvio.app.core.ui.NativeProfileSwitcherController
+import com.nuvio.app.shell.components.NativeProfileSwitcherController
 import com.nuvio.app.navigation.TabsRoute
 
 @Composable

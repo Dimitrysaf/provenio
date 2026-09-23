@@ -1,6 +1,6 @@
 package com.nuvio.app
 
-import com.nuvio.app.core.ui.NativeNavigationTab
+import com.nuvio.app.shell.components.NativeNavigationTab
 
 enum class AppScreenTab {
     Home,

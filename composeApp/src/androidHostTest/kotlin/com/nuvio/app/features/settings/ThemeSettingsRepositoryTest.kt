@@ -3,8 +3,8 @@ package com.nuvio.app.features.settings
 import android.app.Application
 import android.content.Context
 import com.nuvio.app.core.sync.decodeSyncString
-import com.nuvio.app.core.ui.AppTheme
-import com.nuvio.app.core.ui.CustomThemeColors
+import com.nuvio.app.shell.theme.AppTheme
+import com.nuvio.app.shell.theme.CustomThemeColors
 import com.nuvio.app.features.membership.MemberAccessRepository
 import com.nuvio.app.features.membership.MemberAssetStorage
 import org.junit.runner.RunWith

@@ -23,8 +23,8 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.i18n.localizedByteUnit
-import com.nuvio.app.core.ui.NuvioTokens
-import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.shell.theme.NuvioTokens
+import com.nuvio.app.shell.theme.nuvio
 import kotlin.math.round
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.streams_size

@@ -13,7 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
-import com.nuvio.app.core.ui.PosterOpenMotion
+import com.nuvio.app.shell.components.PosterOpenMotion
 import kotlinx.coroutines.flow.first
 
 @Composable

@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
-import com.nuvio.app.core.ui.PosterOpenMotion
+import com.nuvio.app.shell.components.PosterOpenMotion
 
 internal fun posterNavigationEntry(
     key: NavKey,

@@ -28,7 +28,7 @@ import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material.icons.rounded.StopCircle
 import androidx.compose.material3.BasicAlertDialog
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton

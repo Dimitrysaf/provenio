@@ -28,11 +28,11 @@ import com.nuvio.app.core.auth.DeviceSessionRegistration
 import com.nuvio.app.core.network.NetworkCondition
 import com.nuvio.app.core.network.NetworkStatusRepository
 import com.nuvio.app.core.sync.SyncManager
-import com.nuvio.app.core.ui.NativeProfileSwitcherController
-import com.nuvio.app.core.ui.NativeTabBridge
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
-import com.nuvio.app.core.ui.NuvioTokens
-import com.nuvio.app.core.ui.PlatformBackHandler
+import com.nuvio.app.shell.components.NativeProfileSwitcherController
+import com.nuvio.app.shell.components.NativeTabBridge
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
+import com.nuvio.app.shell.theme.NuvioTokens
+import com.nuvio.app.shell.components.PlatformBackHandler
 import com.nuvio.app.features.auth.AuthScreen
 import com.nuvio.app.features.membership.MemberAccessRepository
 import com.nuvio.app.features.profiles.AvatarRepository

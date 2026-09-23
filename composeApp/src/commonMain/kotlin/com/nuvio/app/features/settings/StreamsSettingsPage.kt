@@ -22,7 +22,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
+import com.nuvio.app.shell.components.NuvioLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,10 +46,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nuvio.app.core.ui.NuvioTokens
-import com.nuvio.app.core.ui.SingleChoiceBottomSheet
-import com.nuvio.app.core.ui.SingleChoiceOption
-import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.shell.theme.NuvioTokens
+import com.nuvio.app.shell.components.SingleChoiceBottomSheet
+import com.nuvio.app.shell.components.SingleChoiceOption
+import com.nuvio.app.shell.theme.nuvio
 import com.nuvio.app.features.streams.STREAM_BADGE_IMPORT_LIMIT
 import com.nuvio.app.features.streams.StreamBadgeChip
 import com.nuvio.app.features.streams.StreamBadgeChipSize

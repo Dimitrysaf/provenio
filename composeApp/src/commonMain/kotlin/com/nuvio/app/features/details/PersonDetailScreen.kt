@@ -62,11 +62,11 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.nuvio.app.core.i18n.localizedShortMonthName
-import com.nuvio.app.core.ui.SkeletonPosterRow
-import com.nuvio.app.core.ui.landscapePosterHeightForWidth
-import com.nuvio.app.core.ui.landscapePosterWidth
-import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
-import com.nuvio.app.core.ui.skeleton
+import com.nuvio.app.shell.components.SkeletonPosterRow
+import com.nuvio.app.shell.components.landscapePosterHeightForWidth
+import com.nuvio.app.shell.components.landscapePosterWidth
+import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
+import com.nuvio.app.shell.components.skeleton
 import com.nuvio.app.features.details.components.DetailPosterRailSection
 import com.nuvio.app.features.details.components.ExpandableDescription
 import com.nuvio.app.features.home.MetaPreview

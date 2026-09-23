@@ -52,7 +52,7 @@ import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.features.home.components.HomeSkeletonRow
-import com.nuvio.app.core.ui.skeleton
+import com.nuvio.app.shell.components.skeleton
 import com.nuvio.app.features.details.components.DetailPosterRailSection
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.tmdb.TmdbEntityBrowseData

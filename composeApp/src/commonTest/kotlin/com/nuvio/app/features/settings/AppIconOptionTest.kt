@@ -1,6 +1,6 @@
 package com.nuvio.app.features.settings
 
-import com.nuvio.app.core.ui.AppTheme
+import com.nuvio.app.shell.theme.AppTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import nuvio.composeapp.generated.resources.Res
