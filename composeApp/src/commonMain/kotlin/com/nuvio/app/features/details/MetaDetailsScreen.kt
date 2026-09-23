@@ -12,6 +12,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -41,6 +43,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -85,6 +88,7 @@ import com.nuvio.app.features.details.components.DetailCommentsSection
 import com.nuvio.app.features.details.components.DetailFloatingHeader
 import com.nuvio.app.features.details.components.DetailHero
 import com.nuvio.app.features.details.components.DetailMetaInfo
+import com.nuvio.app.features.details.components.DetailPosterGridSection
 import com.nuvio.app.features.details.components.DetailPosterRailSection
 import com.nuvio.app.features.details.components.DetailProductionSection
 import com.nuvio.app.features.details.components.DetailEpisodeListRow
@@ -834,6 +838,129 @@ fun MetaDetailsScreen(
                     val viewportHeight = maxHeight
                     val contentHorizontalPadding = if (isTablet) 32.dp else 18.dp
                     val contentMaxWidth = detailTabletContentMaxWidth(maxWidth, isTablet)
+                    val sidePaneSection = if (maxWidth >= DetailTwoPaneMinWidth) {
+                        detailSidePaneSection(
+                            metaScreenSettingsUiState.items
+                                .filter { item ->
+                                    item.enabled && metaSectionHasContent(
+                                        key = item.key,
+                                        meta = meta,
+                                        hasProductionSection = hasProductionSection,
+                                        hasTrailersSection = hasTrailersSection,
+                                        hasEpisodes = hasEpisodes,
+                                        hasAdditionalInfoSection = hasAdditionalInfoSection,
+                                        hasCollectionSection = hasCollectionSection,
+                                        moreLikeThisItems = moreLikeThisItems,
+                                        shouldShowComments = shouldShowComments,
+                                        comments = comments,
+                                        isCommentsLoading = isCommentsLoading,
+                                        commentsError = commentsError,
+                                    )
+                                }
+                                .map { it.key },
+                        )
+                    } else {
+                        null
+                    }
+                    val primaryPaneWeight = if (sidePaneSection != null) DetailPrimaryPaneWeight else 1f
+                    val sectionHorizontalPadding = if (sidePaneSection != null) 24.dp else contentHorizontalPadding
+                    val primaryPaneSettings = remember(metaScreenSettingsUiState, sidePaneSection) {
+                        metaScreenSettingsUiState.copy(
+                            items = metaScreenSettingsUiState.items.filterNot { it.key == sidePaneSection },
+                        )
+                    }
+                    val sidePaneSettings = remember(metaScreenSettingsUiState, sidePaneSection) {
+                        sidePaneSection?.let { key ->
+                            metaScreenSettingsUiState.copy(
+                                items = metaScreenSettingsUiState.items
+                                    .filter { it.key == key }
+                                    .map { it.copy(tabGroup = null) },
+                                tabLayout = false,
+                            )
+                        }
+                    }
+                    val detailSectionItems: LazyListScope.(MetaScreenSettingsUiState, Dp) -> Unit =
+                        { sectionSettings, sectionMaxWidth ->
+                            configuredMetaSectionItems(
+                                settings = sectionSettings,
+                                meta = meta,
+                                isTablet = isTablet,
+                                contentHorizontalPadding = sectionHorizontalPadding,
+                                contentMaxWidth = sectionMaxWidth,
+                                playButtonLabel = playButtonLabel,
+                                isPrimaryPlayEnabled = isPrimaryPlayEnabled,
+                                isSaved = isSaved,
+                                isWatched = isWatched,
+                                onPrimaryPlayClick = onPrimaryPlayClick,
+                                onPrimaryPlayLongClick = onPrimaryPlayLongClick,
+                                onSaveClick = toggleSaved,
+                                onSaveLongClick = openLibraryListPicker,
+                                onWatchedClick = toggleWatched,
+                                showManualPlayOption = showManualPlayOption,
+                                hasProductionSection = hasProductionSection,
+                                hasTrailersSection = hasTrailersSection,
+                                hasEpisodes = hasEpisodes,
+                                hasAdditionalInfoSection = hasAdditionalInfoSection,
+                                hasCollectionSection = hasCollectionSection,
+                                moreLikeThisItems = moreLikeThisItems,
+                                shouldShowComments = shouldShowComments,
+                                comments = comments,
+                                isCommentsLoading = isCommentsLoading,
+                                isCommentsLoadingMore = isCommentsLoadingMore,
+                                commentsCurrentPage = commentsCurrentPage,
+                                commentsPageCount = commentsPageCount,
+                                commentsError = commentsError,
+                                episodeListEntries = episodeListEntries,
+                                todayIsoDate = todayIsoDate,
+                                onEpisodeSeasonToggle = { season ->
+                                    episodeSeasonExpansion.toggle(season, episodeSeasonSummary.defaultSeason)
+                                },
+                                onRetryComments = {
+                                    detailsScope.launch {
+                                        isCommentsLoading = true
+                                        commentsError = null
+                                        try {
+                                            val result = TraktCommentsRepository.getCommentsPage(meta, page = 1, forceRefresh = true)
+                                            comments = result.items
+                                            commentsCurrentPage = result.currentPage
+                                            commentsPageCount = result.pageCount
+                                        } catch (e: Exception) {
+                                            commentsError = e.message ?: getString(Res.string.details_comments_load_failed)
+                                        }
+                                        isCommentsLoading = false
+                                    }
+                                },
+                                onLoadMoreComments = {
+                                    detailsScope.launch {
+                                        isCommentsLoadingMore = true
+                                        try {
+                                            val nextPage = commentsCurrentPage + 1
+                                            val result = TraktCommentsRepository.getCommentsPage(meta, page = nextPage)
+                                            val existingIds = comments.map { it.id }.toSet()
+                                            val newComments = result.items.filter { it.id !in existingIds }
+                                            comments = comments + newComments
+                                            commentsCurrentPage = result.currentPage
+                                            commentsPageCount = result.pageCount
+                                        } catch (_: Exception) { }
+                                        isCommentsLoadingMore = false
+                                    }
+                                },
+                                onCommentClick = { review -> selectedComment = review },
+                                onTrailerClick = playTrailer,
+                                progressByVideoId = progressByVideoId,
+                                watchedKeys = watchedUiState.watchedKeys,
+                                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                                blurUnwatchedEpisodes = metaScreenSettingsUiState.blurUnwatchedEpisodes,
+                                onEpisodeClick = onEpisodePlayClick,
+                                onEpisodeLongPress = { video -> selectedEpisodeForActions = video },
+                                onSeasonLongPress = { season -> selectedSeasonForActions = season },
+                                onOpenMeta = onOpenMeta,
+                                onCastClick = onCastClick,
+                                onCompanyClick = onCompanyClick,
+                                sharedTransitionScope = sharedTransitionScope,
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
+                        }
                     val backdropUrl = meta.background ?: meta.poster
                     val backgroundMode = metaScreenSettingsUiState.backgroundMode
                     val dominantColorEnabled = backgroundMode == MetaScreenBackgroundMode.DominantColor &&
@@ -913,117 +1040,67 @@ fun MetaDetailsScreen(
                                     )
                                 }
                             }
-                            LazyColumn(
-                                state = listState,
+                            Row(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .zIndex(1f),
                             ) {
-                                item(key = "detail-hero") {
-                                    DetailHero(
-                                        meta = meta,
-                                        slides = heroSlides,
-                                        viewportHeight = viewportHeight,
-                                        onHeightChanged = { heroHeightPx.intValue = it },
-                                        trailerResolutionEnabled = heroTrailerPlaybackEnabled &&
-                                            deferredMetaWorkAllowed &&
-                                            !isLeavingDetails,
-                                        trailerPlayWhenReady = {
-                                            !isLeavingDetails && !isHeroCollapsed.value
-                                        },
-                                        trailerMuted = heroTrailerMuted,
-                                        onTrailerMuteToggle = {
-                                            HeroTrailerAudioState.toggleMuted()
-                                        },
-                                        onBackdropLoaded = { painter, imageBitmap ->
-                                            dominantBackdropPainter = painter
-                                            dominantBackdropImageBitmap = imageBitmap
-                                        },
+                                LazyColumn(
+                                    state = listState,
+                                    modifier = Modifier
+                                        .weight(primaryPaneWeight)
+                                        .fillMaxHeight(),
+                                ) {
+                                    item(key = "detail-hero") {
+                                        DetailHero(
+                                            meta = meta,
+                                            slides = heroSlides,
+                                            viewportHeight = viewportHeight,
+                                            onHeightChanged = { heroHeightPx.intValue = it },
+                                            trailerResolutionEnabled = heroTrailerPlaybackEnabled &&
+                                                deferredMetaWorkAllowed &&
+                                                !isLeavingDetails,
+                                            trailerPlayWhenReady = {
+                                                !isLeavingDetails && !isHeroCollapsed.value
+                                            },
+                                            trailerMuted = heroTrailerMuted,
+                                            onTrailerMuteToggle = {
+                                                HeroTrailerAudioState.toggleMuted()
+                                            },
+                                            onBackdropLoaded = { painter, imageBitmap ->
+                                                dominantBackdropPainter = painter
+                                                dominantBackdropImageBitmap = imageBitmap
+                                            },
+                                        )
+                                    }
+
+                                    detailSectionItems(
+                                        primaryPaneSettings,
+                                        if (isTablet && sidePaneSection == null) contentMaxWidth else Dp.Unspecified,
                                     )
+
+                                    item(key = "detail-bottom-spacer") {
+                                        Spacer(modifier = Modifier.height(nuvioSafeBottomPadding(32.dp)))
+                                    }
                                 }
 
-                                configuredMetaSectionItems(
-                                    settings = metaScreenSettingsUiState,
-                                    meta = meta,
-                                    isTablet = isTablet,
-                                    contentHorizontalPadding = contentHorizontalPadding,
-                                    contentMaxWidth = if (isTablet) contentMaxWidth else Dp.Unspecified,
-                                    playButtonLabel = playButtonLabel,
-                                    isPrimaryPlayEnabled = isPrimaryPlayEnabled,
-                                    isSaved = isSaved,
-                                    isWatched = isWatched,
-                                    onPrimaryPlayClick = onPrimaryPlayClick,
-                                    onPrimaryPlayLongClick = onPrimaryPlayLongClick,
-                                    onSaveClick = toggleSaved,
-                                    onSaveLongClick = openLibraryListPicker,
-                                    onWatchedClick = toggleWatched,
-                                    showManualPlayOption = showManualPlayOption,
-                                    hasProductionSection = hasProductionSection,
-                                    hasTrailersSection = hasTrailersSection,
-                                    hasEpisodes = hasEpisodes,
-                                    hasAdditionalInfoSection = hasAdditionalInfoSection,
-                                    hasCollectionSection = hasCollectionSection,
-                                    moreLikeThisItems = moreLikeThisItems,
-                                    shouldShowComments = shouldShowComments,
-                                    comments = comments,
-                                    isCommentsLoading = isCommentsLoading,
-                                    isCommentsLoadingMore = isCommentsLoadingMore,
-                                    commentsCurrentPage = commentsCurrentPage,
-                                    commentsPageCount = commentsPageCount,
-                                    commentsError = commentsError,
-                                    episodeListEntries = episodeListEntries,
-                                    todayIsoDate = todayIsoDate,
-                                    onEpisodeSeasonToggle = { season ->
-                                        episodeSeasonExpansion.toggle(season, episodeSeasonSummary.defaultSeason)
-                                    },
-                                    onRetryComments = {
-                                        detailsScope.launch {
-                                            isCommentsLoading = true
-                                            commentsError = null
-                                            try {
-                                                val result = TraktCommentsRepository.getCommentsPage(meta, page = 1, forceRefresh = true)
-                                                comments = result.items
-                                                commentsCurrentPage = result.currentPage
-                                                commentsPageCount = result.pageCount
-                                            } catch (e: Exception) {
-                                                commentsError = e.message ?: getString(Res.string.details_comments_load_failed)
-                                            }
-                                            isCommentsLoading = false
-                                        }
-                                    },
-                                    onLoadMoreComments = {
-                                        detailsScope.launch {
-                                            isCommentsLoadingMore = true
-                                            try {
-                                                val nextPage = commentsCurrentPage + 1
-                                                val result = TraktCommentsRepository.getCommentsPage(meta, page = nextPage)
-                                                val existingIds = comments.map { it.id }.toSet()
-                                                val newComments = result.items.filter { it.id !in existingIds }
-                                                comments = comments + newComments
-                                                commentsCurrentPage = result.currentPage
-                                                commentsPageCount = result.pageCount
-                                            } catch (_: Exception) { }
-                                            isCommentsLoadingMore = false
-                                        }
-                                    },
-                                    onCommentClick = { review -> selectedComment = review },
-                                    onTrailerClick = playTrailer,
-                                    progressByVideoId = progressByVideoId,
-                                    watchedKeys = watchedUiState.watchedKeys,
-                                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                                    blurUnwatchedEpisodes = metaScreenSettingsUiState.blurUnwatchedEpisodes,
-                                    onEpisodeClick = onEpisodePlayClick,
-                                    onEpisodeLongPress = { video -> selectedEpisodeForActions = video },
-                                    onSeasonLongPress = { season -> selectedSeasonForActions = season },
-                                    onOpenMeta = onOpenMeta,
-                                    onCastClick = onCastClick,
-                                    onCompanyClick = onCompanyClick,
-                                    sharedTransitionScope = sharedTransitionScope,
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                )
+                                if (sidePaneSettings != null) {
+                                    LazyColumn(
+                                        state = rememberLazyListState(),
+                                        modifier = Modifier
+                                            .weight(1f - primaryPaneWeight)
+                                            .fillMaxHeight(),
+                                        contentPadding = PaddingValues(
+                                            top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
+                                                TopAppBarDefaults.TopAppBarExpandedHeight,
+                                        ),
+                                    ) {
+                                        detailSectionItems(sidePaneSettings, Dp.Unspecified)
 
-                                item(key = "detail-bottom-spacer") {
-                                    Spacer(modifier = Modifier.height(nuvioSafeBottomPadding(32.dp)))
+                                        item(key = "detail-side-bottom-spacer") {
+                                            Spacer(modifier = Modifier.height(nuvioSafeBottomPadding(32.dp)))
+                                        }
+                                    }
                                 }
                             }
 
@@ -1033,7 +1110,7 @@ fun MetaDetailsScreen(
                                 Box(
                                     modifier = Modifier
                                         .zIndex(0.5f)
-                                        .fillMaxWidth()
+                                        .fillMaxWidth(primaryPaneWeight)
                                         .height(132.dp)
                                         .graphicsLayer {
                                             translationY = heroHeightPx.intValue.toFloat() - detailScrollOffsetPx()
@@ -1876,13 +1953,12 @@ private fun ConfiguredMetaSections(
                         MoreLikeThisSource.TRAKT -> stringResource(Res.string.detail_more_like_this_powered_by_trakt)
                         null -> null
                     }
-                    DetailPosterRailSection(
+                    DetailPosterGridSection(
                         title = stringResource(Res.string.details_more_like_this),
                         items = moreLikeThisItems,
                         watchedKeys = watchedKeys,
                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                         showHeader = showHeader,
-                        horizontalScrollPadding = horizontalScrollPadding,
                         sourceLabel = sourceLabel,
                         onPosterClick = onOpenMeta,
                     )

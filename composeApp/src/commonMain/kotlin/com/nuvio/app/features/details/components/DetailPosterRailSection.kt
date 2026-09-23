@@ -1,5 +1,7 @@
 package com.nuvio.app.features.details.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +30,8 @@ import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.PosterShape
 import com.nuvio.app.features.home.components.HomePosterCard
+import com.nuvio.app.features.home.components.PosterGridRow
+import com.nuvio.app.features.home.components.rememberPosterGridColumnCount
 import com.nuvio.app.features.home.stableKey
 import com.nuvio.app.features.watching.application.WatchingState
 import com.nuvio.app.features.tmdb.TmdbMetadataService
@@ -112,6 +116,54 @@ fun DetailPosterRailSection(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+    }
+}
+
+// The same posters as a grid, as many across as the poster width allows.
+@Composable
+fun DetailPosterGridSection(
+    title: String,
+    items: List<MetaPreview>,
+    watchedKeys: Set<String>,
+    modifier: Modifier = Modifier,
+    fullyWatchedSeriesKeys: Set<String> = emptySet(),
+    showHeader: Boolean = true,
+    sourceLabel: String? = null,
+    onPosterClick: ((MetaPreview) -> Unit)? = null,
+) {
+    if (items.isEmpty()) return
+
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val columns = rememberPosterGridColumnCount(maxWidth)
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            if (showHeader) {
+                DetailSectionTitle(title = title)
+            }
+            items.chunked(columns).forEach { rowItems ->
+                PosterGridRow(
+                    items = rowItems,
+                    columns = columns,
+                    watchedKeys = watchedKeys,
+                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                    onPosterClick = onPosterClick,
+                )
+            }
+            sourceLabel
+                ?.takeIf { it.isNotBlank() }
+                ?.let { label ->
+                    Text(
+                        text = label,
+                        modifier = Modifier.align(Alignment.End),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+        }
     }
 }
 
