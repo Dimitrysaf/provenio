@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SplitButtonDefaults
 import androidx.compose.material3.SplitButtonLayout
@@ -55,6 +56,7 @@ data class DetailSecondaryAction(
 )
 
 /** Play, split from the rest of what can be done with this title, which opens as a sheet of options. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DetailActionButtons(
     modifier: Modifier = Modifier,
