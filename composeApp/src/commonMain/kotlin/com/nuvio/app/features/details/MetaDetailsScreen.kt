@@ -884,6 +884,7 @@ fun MetaDetailsScreen(
                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                     val colorScheme = MaterialTheme.colorScheme
                     val isTablet = maxWidth >= 720.dp
+                    val viewportHeight = maxHeight
                     val contentHorizontalPadding = if (isTablet) 32.dp else 18.dp
                     val contentMaxWidth = detailTabletContentMaxWidth(maxWidth, isTablet)
                     val backdropUrl = meta.background ?: meta.poster
@@ -975,6 +976,7 @@ fun MetaDetailsScreen(
                                     DetailHero(
                                         meta = meta,
                                         slides = heroSlides,
+                                        viewportHeight = viewportHeight,
                                         onHeightChanged = { heroHeightPx.intValue = it },
                                         trailerResolutionEnabled = heroTrailerPlaybackEnabled &&
                                             deferredMetaWorkAllowed &&

@@ -43,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
@@ -52,6 +53,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.nuvio.app.core.ui.NuvioLoadingIndicator
+import com.nuvio.app.core.ui.skeleton
 import com.nuvio.app.features.details.DetailHeroSlide
 import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.details.MetaTrailer
@@ -81,6 +84,7 @@ fun DetailHero(
     meta: MetaDetails,
     slides: List<DetailHeroSlide>,
     modifier: Modifier = Modifier,
+    viewportHeight: Dp? = null,
     onHeightChanged: (Int) -> Unit = {},
     trailerResolutionEnabled: Boolean = false,
     trailerPlayWhenReady: () -> Boolean = { false },
@@ -92,7 +96,12 @@ fun DetailHero(
     val pages = slides.ifEmpty { listOf(DetailHeroSlide.Artwork("")) }
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val layout = homeHeroLayout(maxWidthDp = maxWidth.value)
+        val layout = homeHeroLayout(
+            maxWidthDp = maxWidth.value,
+            viewportHeightDp = viewportHeight?.value,
+            // Nothing has to peek below the hero here, so it takes the screen-driven height whole.
+            mobileBelowSectionHeightHintDp = 0f,
+        )
         val topInset = heroCarouselTopInset()
         val sectionHeight = topInset + layout.heroHeight + layout.contentVerticalPadding
         val sectionHeightPx = with(LocalDensity.current) { sectionHeight.roundToPx() }
@@ -277,6 +286,13 @@ private fun HeroArtworkPage(
     contentAlpha: () -> Float,
     onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
 ) {
+    var artworkSettled by remember(url) { mutableStateOf(false) }
+    val skeletonAlpha by animateFloatAsState(
+        targetValue = if (artworkSettled) 0f else 1f,
+        animationSpec = tween(durationMillis = 260),
+        label = "detail_hero_artwork_skeleton",
+    )
+
     Box(modifier = Modifier.fillMaxSize()) {
         if (url.isBlank()) {
             Box(
@@ -291,11 +307,21 @@ private fun HeroArtworkPage(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
                 onSuccess = { state ->
+                    artworkSettled = true
                     if (reportLoaded) {
                         onBackdropLoaded(state.painter, loadedBackdropImageBitmap(state.result))
                     }
                 },
+                onError = { artworkSettled = true },
             )
+            if (skeletonAlpha > 0.01f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = skeletonAlpha }
+                        .skeleton(RectangleShape),
+                )
+            }
         }
 
         HeroPageScrim()
@@ -382,6 +408,12 @@ private fun HeroTrailerPage(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                 )
+                if (isFocal && !spent && !videoReady && playWhenReady()) {
+                    NuvioLoadingIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color.White,
+                    )
+                }
                 if (isFocal && source != null && !spent) {
                     HeroTrailerPlayerSurface(
                         sourceUrl = source.videoUrl,
