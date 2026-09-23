@@ -40,6 +40,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -574,7 +575,9 @@ private data class ContinueWatchingLandscapeCardMetrics(
     val cornerRadius: Dp,
     val contentPadding: Dp,
     val textGap: Dp,
-    val statusRowTopPadding: Dp,
+    val badgeInset: Dp,
+    val progressHorizontalPadding: Dp,
+    val progressBottomPadding: Dp,
     val progressHeight: Dp,
 )
 
@@ -589,7 +592,9 @@ private fun continueWatchingLandscapeCardMetrics(
             cornerRadius = cornerRadiusDp.dp,
             contentPadding = 8.dp,
             textGap = 1.dp,
-            statusRowTopPadding = 2.dp,
+            badgeInset = 6.dp,
+            progressHorizontalPadding = 8.dp,
+            progressBottomPadding = 3.dp,
             progressHeight = 3.dp,
         )
         basePosterWidthDp <= 120 -> ContinueWatchingLandscapeCardMetrics(
@@ -597,7 +602,9 @@ private fun continueWatchingLandscapeCardMetrics(
             cornerRadius = cornerRadiusDp.dp,
             contentPadding = 9.dp,
             textGap = 1.dp,
-            statusRowTopPadding = 2.dp,
+            badgeInset = 6.dp,
+            progressHorizontalPadding = 8.dp,
+            progressBottomPadding = 3.dp,
             progressHeight = 3.dp,
         )
         else -> ContinueWatchingLandscapeCardMetrics(
@@ -605,7 +612,9 @@ private fun continueWatchingLandscapeCardMetrics(
             cornerRadius = cornerRadiusDp.dp,
             contentPadding = 10.dp,
             textGap = 2.dp,
-            statusRowTopPadding = 2.dp,
+            badgeInset = 7.dp,
+            progressHorizontalPadding = 9.dp,
+            progressBottomPadding = 4.dp,
             progressHeight = 3.dp,
         )
     }
@@ -702,7 +711,6 @@ private fun ContinueWatchingCard(
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .fillMaxWidth()
                     .padding(cardMetrics.contentPadding),
                 verticalArrangement = Arrangement.spacedBy(cardMetrics.textGap),
             ) {
@@ -731,33 +739,32 @@ private fun ContinueWatchingCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                // The status badge sits on the progress bar's line, or takes its place when nothing has played yet.
-                Row(
+            }
+
+            ContinueWatchingBadge(
+                item = item,
+                text = badgeText,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(cardMetrics.badgeInset),
+            )
+
+            if (item.progressFraction > 0f) {
+                LinearProgressIndicator(
+                    progress = { item.progressFraction.coerceIn(0f, 1f) },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = cardMetrics.statusRowTopPadding),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (item.progressFraction > 0f) {
-                        LinearProgressIndicator(
-                            progress = { item.progressFraction.coerceIn(0f, 1f) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(cardMetrics.progressHeight),
-                            color = MaterialTheme.colorScheme.primary,
-                            trackColor = OnScrimColor.copy(alpha = 0.24f),
-                            gapSize = 0.dp,
-                            drawStopIndicator = {},
+                        .align(Alignment.BottomCenter)
+                        .padding(
+                            horizontal = cardMetrics.progressHorizontalPadding,
+                            vertical = cardMetrics.progressBottomPadding,
                         )
-                    } else {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-                    ContinueWatchingBadge(
-                        item = item,
-                        text = badgeText,
-                    )
-                }
+                        .fillMaxWidth()
+                        .height(cardMetrics.progressHeight),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = OnScrimColor.copy(alpha = 0.24f),
+                    gapSize = 0.dp,
+                    drawStopIndicator = {},
+                )
             }
         }
     }
@@ -968,13 +975,24 @@ private fun ContinueWatchingPosterCard(
                     )
                 }
                 if (item.progressFraction <= 0f && item.seasonNumber != null && item.episodeNumber != null) {
-                    ContinueWatchingBadge(
-                        item = item,
-                        text = upNextBadgeText(item),
+                    // Edge to edge along the bottom of the artwork, the way the progress bar runs.
+                    Surface(
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp),
-                    )
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth(),
+                        color = continueWatchingBadgeContainer(item),
+                    ) {
+                        Text(
+                            text = upNextBadgeText(item),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 6.dp, vertical = 3.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
                 if (item.progressFraction > 0f) {
                     LinearProgressIndicator(
@@ -1061,11 +1079,7 @@ private fun ContinueWatchingBadge(
     text: String,
     modifier: Modifier = Modifier,
 ) {
-    val container = when {
-        item.isNewSeasonRelease -> MaterialTheme.colorScheme.tertiaryContainer
-        item.isReleaseAlert -> MaterialTheme.colorScheme.primaryContainer
-        else -> MaterialTheme.colorScheme.surfaceContainerHighest
-    }
+    val container = continueWatchingBadgeContainer(item)
     // Surface takes the matching "on" colour for a known container, so the label is legible in
     // either scheme without being told what colour to be.
     Surface(
@@ -1080,6 +1094,13 @@ private fun ContinueWatchingBadge(
             maxLines = 1,
         )
     }
+}
+
+@Composable
+private fun continueWatchingBadgeContainer(item: ContinueWatchingItem): Color = when {
+    item.isNewSeasonRelease -> MaterialTheme.colorScheme.tertiaryContainer
+    item.isReleaseAlert -> MaterialTheme.colorScheme.primaryContainer
+    else -> MaterialTheme.colorScheme.surfaceContainerHighest
 }
 
 /** What an item that has not been started yet is waiting on. */
