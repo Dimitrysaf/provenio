@@ -30,6 +30,7 @@ class PendingTrackingMembershipRemoval(
     val retry: suspend (Set<TrackingProviderId>) -> TrackingMembershipApplyResult,
     val onApplied: suspend (TrackingMembershipApplyResult) -> Unit,
     val onFailure: suspend (Throwable) -> Unit,
+    val onCancelled: () -> Unit = {},
 )
 
 suspend fun executeTrackingMembershipOperation(
@@ -104,6 +105,7 @@ fun TrackingMembershipRemovalConfirmationHost(
                                 retry = request.retry,
                                 onApplied = request.onApplied,
                                 onFailure = request.onFailure,
+                                onCancelled = request.onCancelled,
                             ),
                         )
                     } else {
@@ -121,7 +123,10 @@ fun TrackingMembershipRemovalConfirmationHost(
             }
         },
         onDismiss = {
-            if (!isBusy) onPendingChange(null)
+            if (!isBusy) {
+                pending?.onCancelled?.invoke()
+                onPendingChange(null)
+            }
         },
     )
 }

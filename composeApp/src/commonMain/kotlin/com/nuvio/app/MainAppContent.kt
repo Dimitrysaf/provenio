@@ -69,7 +69,7 @@ import com.nuvio.app.core.ui.NuvioContinueWatchingActionSheet
 import com.nuvio.app.core.ui.NuvioFloatingPrompt
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioToastController
-import com.nuvio.app.core.ui.TrackingListPickerDialog
+import com.nuvio.app.core.ui.TrackingListPickerSheet
 import com.nuvio.app.core.ui.localizedContinueWatchingSubtitle
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.platformExitApp
@@ -1814,7 +1814,7 @@ internal fun MainAppContent(
                 )
             }
 
-            TrackingListPickerDialog(
+            TrackingListPickerSheet(
                 visible = showLibraryListPicker,
                 title = pickerTitle,
                 tabs = pickerTabs,
@@ -1822,21 +1822,13 @@ internal fun MainAppContent(
                 isPending = pickerPending,
                 errorMessage = pickerError,
                 onToggle = { listKey ->
+                    val item = pickerItem ?: return@TrackingListPickerSheet
+                    val previousMembership = pickerMembership
                     pickerMembership = toggleTrackingLibraryMembership(
                         tabs = pickerTabs,
                         membership = pickerMembership,
                         key = listKey,
                     )
-                },
-                onDismiss = {
-                    if (!pickerPending) {
-                        showLibraryListPicker = false
-                        pickerItem = null
-                        pickerError = null
-                    }
-                },
-                onSave = {
-                    val item = pickerItem ?: return@TrackingListPickerDialog
                     coroutineScope.launch {
                         pickerPending = true
                         pickerError = null
@@ -1849,11 +1841,9 @@ internal fun MainAppContent(
                                 confirmedRemovalProviders = confirmedProviders,
                             )
                         }
-                        val completeMembershipUpdate: suspend (TrackingMembershipApplyResult) -> Unit = { result ->
-                            showTrackingMembershipRewriteFeedback(result)
-                            showLibraryListPicker = false
-                            pickerItem = null
-                            pickerError = null
+                        val revertMembership: suspend (Throwable) -> Unit = { error ->
+                            pickerMembership = previousMembership
+                            pickerError = error.message ?: trackingListsUpdateFailedMessage
                         }
                         executeTrackingMembershipOperation(
                             operation = { applyMembership(emptySet()) },
@@ -1863,21 +1853,23 @@ internal fun MainAppContent(
                                         itemTitle = item.name,
                                         confirmations = result.requiredRemovalConfirmations,
                                         retry = applyMembership,
-                                        onApplied = completeMembershipUpdate,
-                                        onFailure = { error ->
-                                            pickerError = error.message ?: trackingListsUpdateFailedMessage
-                                        },
+                                        onApplied = { applied -> showTrackingMembershipRewriteFeedback(applied) },
+                                        onFailure = revertMembership,
+                                        onCancelled = { pickerMembership = previousMembership },
                                     )
                                 } else {
-                                    completeMembershipUpdate(result)
+                                    showTrackingMembershipRewriteFeedback(result)
                                 }
                             },
-                            onFailure = { error ->
-                                pickerError = error.message ?: trackingListsUpdateFailedMessage
-                            },
+                            onFailure = revertMembership,
                         )
                         pickerPending = false
                     }
+                },
+                onDismiss = {
+                    showLibraryListPicker = false
+                    pickerItem = null
+                    pickerError = null
                 },
             )
 

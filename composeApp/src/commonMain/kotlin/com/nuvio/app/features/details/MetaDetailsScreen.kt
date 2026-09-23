@@ -77,7 +77,7 @@ import com.nuvio.app.core.network.NetworkCondition
 import com.nuvio.app.core.network.NetworkStatusRepository
 import com.nuvio.app.core.ui.NuvioBackButton
 import com.nuvio.app.core.ui.NuvioToastController
-import com.nuvio.app.core.ui.TrackingListPickerDialog
+import com.nuvio.app.core.ui.TrackingListPickerSheet
 import com.nuvio.app.core.ui.nuvioSafeBottomPadding
 import com.nuvio.app.features.details.components.DetailActionButtons
 import com.nuvio.app.features.details.components.DetailSecondaryAction
@@ -1271,7 +1271,7 @@ fun MetaDetailsScreen(
                             )
                         }
 
-                        TrackingListPickerDialog(
+                        TrackingListPickerSheet(
                             visible = showLibraryListPicker,
                             title = meta.name,
                             tabs = pickerTabs,
@@ -1279,18 +1279,12 @@ fun MetaDetailsScreen(
                             isPending = pickerPending,
                             errorMessage = pickerError,
                             onToggle = { listKey ->
+                                val previousMembership = pickerMembership
                                 pickerMembership = toggleTrackingLibraryMembership(
                                     tabs = pickerTabs,
                                     membership = pickerMembership,
                                     key = listKey,
                                 )
-                            },
-                            onDismiss = {
-                                if (!pickerPending) {
-                                    showLibraryListPicker = false
-                                }
-                            },
-                            onSave = {
                                 detailsScope.launch {
                                     pickerPending = true
                                     pickerError = null
@@ -1304,9 +1298,9 @@ fun MetaDetailsScreen(
                                             confirmedRemovalProviders = confirmedProviders,
                                         )
                                     }
-                                    val completeMembershipUpdate: suspend (TrackingMembershipApplyResult) -> Unit = { result ->
-                                        showTrackingMembershipRewriteFeedback(result)
-                                        showLibraryListPicker = false
+                                    val revertMembership: suspend (Throwable) -> Unit = { error ->
+                                        pickerMembership = previousMembership
+                                        pickerError = error.message ?: trackingListsUpdateFailedMessage
                                     }
                                     executeTrackingMembershipOperation(
                                         operation = { applyMembership(emptySet()) },
@@ -1316,22 +1310,24 @@ fun MetaDetailsScreen(
                                                     itemTitle = item.name,
                                                     confirmations = result.requiredRemovalConfirmations,
                                                     retry = applyMembership,
-                                                    onApplied = completeMembershipUpdate,
-                                                    onFailure = { error ->
-                                                        pickerError = error.message
-                                                            ?: trackingListsUpdateFailedMessage
+                                                    onApplied = { applied ->
+                                                        showTrackingMembershipRewriteFeedback(applied)
                                                     },
+                                                    onFailure = revertMembership,
+                                                    onCancelled = { pickerMembership = previousMembership },
                                                 )
                                             } else {
-                                                completeMembershipUpdate(result)
+                                                showTrackingMembershipRewriteFeedback(result)
                                             }
                                         },
-                                        onFailure = { error ->
-                                            pickerError = error.message ?: trackingListsUpdateFailedMessage
-                                        },
+                                        onFailure = revertMembership,
                                     )
                                     pickerPending = false
                                 }
+                            },
+                            onDismiss = {
+                                showLibraryListPicker = false
+                                pickerError = null
                             },
                         )
 
