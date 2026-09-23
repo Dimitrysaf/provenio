@@ -71,7 +71,7 @@ internal val HeroMinSmallItemWidth = 24.dp
 
 private val HeroIndicatorHeight = 8.dp
 private val HeroIndicatorActiveWidth = 32.dp
-internal val HeroIndicatorRowHeight = 24.dp
+private val HeroIndicatorRowHeight = 24.dp
 
 /** Text drawn over artwork, which is dark by the scrim rather than by the colour scheme. */
 internal val HeroOnArtworkColor = Color.White
@@ -252,12 +252,11 @@ internal fun heroCarouselTopInset(): Dp =
 
 /** Moves to the next title on its own, and only while this screen is the one being looked at. */
 @Composable
-internal fun HeroAutoAdvance(
+private fun HeroAutoAdvance(
     itemCount: Int,
     currentItem: Int,
     isScrollInProgress: () -> Boolean,
     onAdvance: suspend (Int) -> Unit,
-    enabled: Boolean = true,
 ) {
     val latestItem = rememberUpdatedState(currentItem)
     val latestIsScrollInProgress = rememberUpdatedState(isScrollInProgress)
@@ -267,8 +266,8 @@ internal fun HeroAutoAdvance(
     // effect's own `onAdvance` is animating it there; keying on that value would tear this effect
     // down every one of those ticks, cancelling the animation it just started and leaving the
     // carousel visibly stalled partway to the next title.
-    ScreenActivityEffect(itemCount, enabled) { active ->
-        if (!active || !enabled || itemCount <= 1) return@ScreenActivityEffect
+    ScreenActivityEffect(itemCount) { active ->
+        if (!active || itemCount <= 1) return@ScreenActivityEffect
         while (true) {
             delay(HERO_AUTO_SCROLL_INTERVAL_MS)
             while (latestIsScrollInProgress.value()) {
@@ -286,7 +285,7 @@ internal fun HeroAutoAdvance(
  * carried by shape and colour together rather than by opacity alone.
  */
 @Composable
-internal fun HeroIndicatorRow(
+private fun HeroIndicatorRow(
     itemCount: Int,
     activeFraction: @Composable (Int) -> Float,
     onSelect: (Int) -> Unit,

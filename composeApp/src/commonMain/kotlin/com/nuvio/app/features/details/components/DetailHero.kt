@@ -11,12 +11,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.VolumeOff
@@ -58,14 +61,10 @@ import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.details.MetaTrailer
 import com.nuvio.app.features.details.youtubePlaybackUrl
 import com.nuvio.app.features.details.youtubeThumbnailUrl
-import com.nuvio.app.features.home.components.HeroAutoAdvance
-import com.nuvio.app.features.home.components.HeroIndicatorRow
-import com.nuvio.app.features.home.components.HeroIndicatorRowHeight
 import com.nuvio.app.features.home.components.HeroMinSmallItemWidth
 import com.nuvio.app.features.home.components.HeroOnArtworkColor
 import com.nuvio.app.features.home.components.HeroOnArtworkVariantColor
 import com.nuvio.app.features.home.components.HomeHeroLayout
-import com.nuvio.app.features.home.components.heroCarouselTopInset
 import com.nuvio.app.features.home.components.heroItemContentAlpha
 import com.nuvio.app.features.home.components.homeHeroLayout
 import com.nuvio.app.features.trailer.TrailerPlaybackResolver
@@ -78,6 +77,9 @@ private const val TRAILER_ASPECT_RATIO = 16f / 9f
 
 /** Room kept under the trailer band for its audio button. */
 private val TrailerBandBottomClearance = 52.dp
+
+/** What the top app bar takes at the top, since it floats rather than pushing the page down. */
+private val DetailTopBarHeight = 64.dp
 
 /** The home screen's hero carousel, over one title's own pages: artwork, trailers, more artwork. */
 @Composable
@@ -98,13 +100,13 @@ fun DetailHero(
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val layout = homeHeroLayout(maxWidthDp = maxWidth.value)
-        val topInset = heroCarouselTopInset()
-        val sectionHeightPx = with(LocalDensity.current) {
-            (topInset + layout.totalHeight).roundToPx()
-        }
+        val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
+            DetailTopBarHeight
+        val sectionHeight = topInset + layout.heroHeight + layout.contentVerticalPadding
+        val sectionHeightPx = with(LocalDensity.current) { sectionHeight.roundToPx() }
         LaunchedEffect(sectionHeightPx) { onHeightChanged(sectionHeightPx) }
 
-        DetailHeroCarousel(
+        DetailHeroPages(
             meta = meta,
             pages = pages,
             layout = layout,
@@ -121,7 +123,7 @@ fun DetailHero(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DetailHeroCarousel(
+private fun DetailHeroPages(
     meta: MetaDetails,
     pages: List<DetailHeroSlide>,
     layout: HomeHeroLayout,
@@ -157,86 +159,121 @@ private fun DetailHeroCarousel(
         }
     }
 
-    HeroAutoAdvance(
-        itemCount = pages.size,
-        currentItem = focalPage,
-        isScrollInProgress = { carouselState.isScrollInProgress },
-        onAdvance = { page -> carouselState.animateScrollToItem(page) },
-        // A trailer page holds its place until the trailer is done with it.
-        enabled = focalTrailer == null || focalTrailer.id in spentTrailerIds,
-    )
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = topInset),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        HorizontalCenteredHeroCarousel(
-            state = carouselState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heroStretchHeight(layout.heroHeight, stretchPx),
-            itemSpacing = layout.itemSpacing,
-            minSmallItemWidth = minOf(HeroMinSmallItemWidth, layout.smallItemWidth),
-            maxSmallItemWidth = layout.smallItemWidth,
-            contentPadding = PaddingValues(horizontal = layout.contentHorizontalPadding),
-        ) { index ->
-            val page = pages[index]
-            val drawInfo = carouselItemDrawInfo
-            val contentAlpha = { heroItemContentAlpha(drawInfo) }
-            val isFocal = index == focalPage
+        if (pages.size == 1) {
+            // Nothing to peek at, so the page takes the width between equal margins.
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .maskClip(MaterialTheme.shapes.extraLarge)
-                    .clickable(enabled = !isFocal) {
-                        coroutineScope.launch { carouselState.animateScrollToItem(index) }
-                    },
+                    .fillMaxWidth()
+                    .padding(horizontal = layout.contentHorizontalPadding)
+                    .heroStretchHeight(layout.heroHeight, stretchPx)
+                    .clip(MaterialTheme.shapes.extraLarge),
             ) {
-                when (page) {
-                    is DetailHeroSlide.Artwork -> HeroArtworkPage(
-                        url = page.url,
+                DetailHeroPage(
+                    page = pages[0],
+                    meta = meta,
+                    layout = layout,
+                    reportBackdropLoaded = true,
+                    isFocal = true,
+                    trailerSources = trailerSources,
+                    spentTrailerIds = spentTrailerIds,
+                    trailerPlayWhenReady = trailerPlayWhenReady,
+                    trailerMuted = trailerMuted,
+                    contentAlpha = { 1f },
+                    onTrailerMuteToggle = onTrailerMuteToggle,
+                    onTrailerSpent = { spentTrailerIds.add(it) },
+                    onBackdropLoaded = onBackdropLoaded,
+                )
+            }
+        } else {
+            HorizontalCenteredHeroCarousel(
+                state = carouselState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heroStretchHeight(layout.heroHeight, stretchPx),
+                itemSpacing = layout.itemSpacing,
+                minSmallItemWidth = minOf(HeroMinSmallItemWidth, layout.smallItemWidth),
+                maxSmallItemWidth = layout.smallItemWidth,
+                contentPadding = PaddingValues(horizontal = layout.contentHorizontalPadding),
+            ) { index ->
+                val drawInfo = carouselItemDrawInfo
+                val isFocal = index == focalPage
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .maskClip(MaterialTheme.shapes.extraLarge)
+                        .clickable(enabled = !isFocal) {
+                            coroutineScope.launch { carouselState.animateScrollToItem(index) }
+                        },
+                ) {
+                    DetailHeroPage(
+                        page = pages[index],
                         meta = meta,
                         layout = layout,
-                        reportLoaded = index == 0,
-                        contentAlpha = contentAlpha,
-                        onBackdropLoaded = onBackdropLoaded,
-                    )
-
-                    is DetailHeroSlide.Trailer -> HeroTrailerPage(
-                        trailer = page.trailer,
-                        artworkUrl = meta.background ?: meta.poster,
-                        source = trailerSources[page.trailer.id],
+                        reportBackdropLoaded = index == 0,
                         isFocal = isFocal,
-                        spent = page.trailer.id in spentTrailerIds,
-                        playWhenReady = {
+                        trailerSources = trailerSources,
+                        spentTrailerIds = spentTrailerIds,
+                        // A drag pauses the trailer rather than tearing its player down.
+                        trailerPlayWhenReady = {
                             trailerPlayWhenReady() && !carouselState.isScrollInProgress
                         },
-                        muted = trailerMuted,
-                        layout = layout,
-                        contentAlpha = contentAlpha,
-                        onMuteToggle = onTrailerMuteToggle,
-                        onSpent = { spentTrailerIds.add(page.trailer.id) },
+                        trailerMuted = trailerMuted,
+                        contentAlpha = { heroItemContentAlpha(drawInfo) },
+                        onTrailerMuteToggle = onTrailerMuteToggle,
+                        onTrailerSpent = { spentTrailerIds.add(it) },
+                        onBackdropLoaded = onBackdropLoaded,
                     )
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(layout.contentVerticalPadding))
+    }
+}
 
-        HeroIndicatorRow(
-            itemCount = pages.size,
-            activeFraction = { index ->
-                animateFloatAsState(
-                    targetValue = if (index == focalPage) 1f else 0f,
-                    label = "DetailHeroIndicator",
-                ).value
-            },
-            onSelect = { index ->
-                coroutineScope.launch { carouselState.animateScrollToItem(index) }
-            },
-            modifier = Modifier.height(HeroIndicatorRowHeight),
+@Composable
+private fun DetailHeroPage(
+    page: DetailHeroSlide,
+    meta: MetaDetails,
+    layout: HomeHeroLayout,
+    reportBackdropLoaded: Boolean,
+    isFocal: Boolean,
+    trailerSources: Map<String, TrailerPlaybackSource>,
+    spentTrailerIds: List<String>,
+    trailerPlayWhenReady: () -> Boolean,
+    trailerMuted: Boolean,
+    contentAlpha: () -> Float,
+    onTrailerMuteToggle: () -> Unit,
+    onTrailerSpent: (String) -> Unit,
+    onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
+) {
+    when (page) {
+        is DetailHeroSlide.Artwork -> HeroArtworkPage(
+            url = page.url,
+            meta = meta,
+            layout = layout,
+            reportLoaded = reportBackdropLoaded,
+            contentAlpha = contentAlpha,
+            onBackdropLoaded = onBackdropLoaded,
+        )
+
+        is DetailHeroSlide.Trailer -> HeroTrailerPage(
+            trailer = page.trailer,
+            artworkUrl = meta.background ?: meta.poster,
+            source = trailerSources[page.trailer.id],
+            isFocal = isFocal,
+            spent = page.trailer.id in spentTrailerIds,
+            playWhenReady = trailerPlayWhenReady,
+            muted = trailerMuted,
+            layout = layout,
+            contentAlpha = contentAlpha,
+            onMuteToggle = onTrailerMuteToggle,
+            onSpent = { onTrailerSpent(page.trailer.id) },
         )
     }
 }

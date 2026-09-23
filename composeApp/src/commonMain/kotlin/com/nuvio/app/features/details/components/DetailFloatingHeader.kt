@@ -14,13 +14,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -38,7 +35,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.lerp
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.ui.platformPhysicalTopInset
 import com.nuvio.app.features.details.MetaDetails
@@ -47,25 +43,14 @@ import com.nuvio.app.navigation.LocalUseNativeNavigation
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
-/**
- * The bar that takes over from the hero on the way up the page.
- *
- * A real top app bar rather than a row dressed as one: the title slot centres the logo, the
- * navigation and action slots place and size themselves, and the bar keeps the height and the
- * touch targets the spec gives it. What stays bespoke is only how it arrives, which is tied to
- * how far the hero has scrolled rather than to a scroll behaviour of its own.
- *
- * m3.material.io/components/top-app-bar/specs
- */
+/** The page's top app bar: always there for the back button, its surface and title tied to the hero's retreat. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailFloatingHeader(
     meta: MetaDetails,
-    isSaved: Boolean,
     progress: Float,
     backgroundColor: Color? = null,
     onBack: () -> Unit,
-    onToggleSaved: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val useNativeNavigation = LocalUseNativeNavigation.current
@@ -75,7 +60,6 @@ fun DetailFloatingHeader(
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     }
     val headerTopPadding = (safeAreaTop - 6.dp).coerceAtLeast(safeAreaTop * 0.8f)
-    val interactive = progress > 0.05f
     val surfaceColor = backgroundColor ?: if (isIos) {
         MaterialTheme.colorScheme.surface.copy(alpha = 1.0f)
     } else {
@@ -89,9 +73,7 @@ fun DetailFloatingHeader(
         modifier = modifier
             .fillMaxWidth()
             .graphicsLayer {
-                alpha = progress
-                translationY = lerp((-20).dp, 0.dp, progress).toPx()
-                shadowElevation = 4.dp.toPx()
+                shadowElevation = 4.dp.toPx() * progress
                 shape = RectangleShape
             },
     ) {
@@ -101,7 +83,7 @@ fun DetailFloatingHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .clipToBounds()
-                .background(surfaceColor),
+                .background(surfaceColor.copy(alpha = progress)),
         ) {
             CenterAlignedTopAppBar(
                 modifier = Modifier.padding(top = headerTopPadding),
@@ -116,31 +98,33 @@ fun DetailFloatingHeader(
                     actionIconContentColor = MaterialTheme.colorScheme.onBackground,
                 ),
                 title = {
-                    if (!meta.logo.isNullOrBlank() && !logoLoadError) {
-                        AsyncImage(
-                            model = meta.logo,
-                            contentDescription = stringResource(
-                                Res.string.detail_logo_content_description,
-                                meta.name,
-                            ),
-                            modifier = Modifier
-                                .width(logoWidth)
-                                .widthIn(max = LogoMaxWidth)
-                                .height(LogoHeight),
-                            onError = { logoLoadError = true },
-                        )
-                    } else {
-                        Text(
-                            text = meta.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                    Box(modifier = Modifier.graphicsLayer { alpha = progress }) {
+                        if (!meta.logo.isNullOrBlank() && !logoLoadError) {
+                            AsyncImage(
+                                model = meta.logo,
+                                contentDescription = stringResource(
+                                    Res.string.detail_logo_content_description,
+                                    meta.name,
+                                ),
+                                modifier = Modifier
+                                    .width(logoWidth)
+                                    .widthIn(max = LogoMaxWidth)
+                                    .height(LogoHeight),
+                                onError = { logoLoadError = true },
+                            )
+                        } else {
+                            Text(
+                                text = meta.name,
+                                style = MaterialTheme.typography.titleLarge,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
-                    if (interactive && !useNativeNavigation) {
+                    if (!useNativeNavigation) {
                         IconButton(onClick = onBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
@@ -154,20 +138,8 @@ fun DetailFloatingHeader(
                     }
                 },
                 actions = {
-                    IconToggleButton(
-                        checked = isSaved,
-                        onCheckedChange = { onToggleSaved() },
-                        enabled = interactive,
-                    ) {
-                        Icon(
-                            imageVector = if (isSaved) Icons.Rounded.Check else Icons.Rounded.Add,
-                            contentDescription = if (isSaved) {
-                                stringResource(Res.string.hero_remove_from_library)
-                            } else {
-                                stringResource(Res.string.hero_add_to_library)
-                            },
-                        )
-                    }
+                    // Balances the navigation slot so the title stays centred.
+                    Box(modifier = Modifier.size(NavigationSlotSize))
                 },
             )
 
@@ -177,7 +149,7 @@ fun DetailFloatingHeader(
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
                         .height(0.5.dp)
-                        .background(Color.White.copy(alpha = 0.15f)),
+                        .background(Color.White.copy(alpha = 0.15f * progress)),
                 )
             }
         }

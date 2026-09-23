@@ -1114,11 +1114,9 @@ fun MetaDetailsScreen(
 
                         DetailHeaderOverlay(
                             meta = meta,
-                            isSaved = isSaved,
                             isHeroCollapsed = isHeroCollapsed,
                             backgroundColor = dominantBackdropColor.takeIf { dominantColorEnabled },
                             onBack = onBackFromDetails,
-                            onToggleSaved = toggleSaved,
                         )
 
                         selectedEpisodeForActions?.let { selectedEpisode ->
@@ -1413,11 +1411,9 @@ private fun MetaDetails.isSeriesLikeForEpisodeRatings(): Boolean {
 @Composable
 private fun DetailHeaderOverlay(
     meta: MetaDetails,
-    isSaved: Boolean,
     isHeroCollapsed: State<Boolean>,
     backgroundColor: Color?,
     onBack: () -> Unit,
-    onToggleSaved: () -> Unit,
 ) {
     val headerTarget = if (isHeroCollapsed.value) 1f else 0f
     val headerProgress by animateFloatAsState(
@@ -1429,27 +1425,11 @@ private fun DetailHeaderOverlay(
         label = "detail_floating_header_progress",
     )
 
-    if (headerProgress <= 0.05f) {
-        NuvioBackButton(
-            onClick = onBack,
-            modifier = Modifier
-                .padding(
-                    start = 12.dp,
-                    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 8.dp,
-                )
-                .zIndex(2f),
-            containerColor = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.onBackground,
-        )
-    }
-
     DetailFloatingHeader(
         meta = meta,
-        isSaved = isSaved,
         progress = headerProgress,
         backgroundColor = backgroundColor,
         onBack = onBack,
-        onToggleSaved = onToggleSaved,
         modifier = Modifier.zIndex(2f),
     )
 }
