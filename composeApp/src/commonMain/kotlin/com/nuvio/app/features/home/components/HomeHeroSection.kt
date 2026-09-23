@@ -66,6 +66,9 @@ private const val MOBILE_HERO_SMALL_ITEM_MAX_DP = 36f
 /** Where a carousel item's overlay text has finished fading in, as a fraction of its unmasking. */
 private const val HERO_ITEM_CONTENT_FADE_START = 0.62f
 
+/** The carousel rejects a maximum sliver width below its minimum, so both come from here. */
+internal val HeroMinSmallItemWidth = 24.dp
+
 private val HeroIndicatorHeight = 8.dp
 private val HeroIndicatorActiveWidth = 32.dp
 internal val HeroIndicatorRowHeight = 24.dp
@@ -164,7 +167,7 @@ private fun HomeHeroCarousel(
                 .fillMaxWidth()
                 .height(layout.heroHeight),
             itemSpacing = layout.itemSpacing,
-            minSmallItemWidth = 24.dp,
+            minSmallItemWidth = minOf(HeroMinSmallItemWidth, layout.smallItemWidth),
             maxSmallItemWidth = layout.smallItemWidth,
             contentPadding = PaddingValues(horizontal = layout.contentHorizontalPadding),
         ) { index ->

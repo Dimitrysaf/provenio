@@ -61,6 +61,7 @@ import com.nuvio.app.features.details.youtubeThumbnailUrl
 import com.nuvio.app.features.home.components.HeroAutoAdvance
 import com.nuvio.app.features.home.components.HeroIndicatorRow
 import com.nuvio.app.features.home.components.HeroIndicatorRowHeight
+import com.nuvio.app.features.home.components.HeroMinSmallItemWidth
 import com.nuvio.app.features.home.components.HeroOnArtworkColor
 import com.nuvio.app.features.home.components.HeroOnArtworkVariantColor
 import com.nuvio.app.features.home.components.HomeHeroLayout
@@ -177,6 +178,7 @@ private fun DetailHeroCarousel(
                 .fillMaxWidth()
                 .heroStretchHeight(layout.heroHeight, stretchPx),
             itemSpacing = layout.itemSpacing,
+            minSmallItemWidth = minOf(HeroMinSmallItemWidth, layout.smallItemWidth),
             maxSmallItemWidth = layout.smallItemWidth,
             contentPadding = PaddingValues(horizontal = layout.contentHorizontalPadding),
         ) { index ->
