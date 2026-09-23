@@ -3,6 +3,7 @@ package com.nuvio.app.features.details.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,13 +11,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ShapeDefaults
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Card
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.nuvio.app.features.details.MetaCompany
@@ -100,21 +103,12 @@ fun DetailProductionSection(
 @Composable
 private fun ProductionChip(
     item: MetaCompany,
-    chipHeight: androidx.compose.ui.unit.Dp,
-    logoWidth: androidx.compose.ui.unit.Dp,
-    logoHeight: androidx.compose.ui.unit.Dp,
+    chipHeight: Dp,
+    logoWidth: Dp,
+    logoHeight: Dp,
     onClick: (() -> Unit)? = null,
 ) {
-    // A surface rather than a clipped box with a click on it: the ripple, the shape and the
-    // button semantics come with the component. The plate stays a fixed light colour in both
-    // themes because a company logo is a dark mark on transparency and has nowhere else to sit.
-    Surface(
-        onClick = onClick ?: {},
-        enabled = onClick != null,
-        shape = ShapeDefaults.Medium,
-        color = ProductionChipBackground,
-        contentColor = ProductionTextColor,
-    ) {
+    val content: @Composable ColumnScope.() -> Unit = {
         Box(
             modifier = Modifier
                 .padding(horizontal = 12.dp, vertical = 8.dp)
@@ -129,6 +123,8 @@ private fun ProductionChip(
                         .width(logoWidth)
                         .height(logoHeight),
                     contentScale = ContentScale.Fit,
+                    // Logos are marks on transparency, so they take the card's content colour and read in either theme.
+                    colorFilter = ColorFilter.tint(LocalContentColor.current),
                 )
             } else {
                 Text(
@@ -138,7 +134,10 @@ private fun ProductionChip(
             }
         }
     }
-}
 
-private val ProductionChipBackground = androidx.compose.ui.graphics.Color(0xE6F5F5F5)
-private val ProductionTextColor = androidx.compose.ui.graphics.Color(0xFF333333)
+    if (onClick != null) {
+        Card(onClick = onClick, content = content)
+    } else {
+        Card(content = content)
+    }
+}

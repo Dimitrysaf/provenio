@@ -94,6 +94,7 @@ import com.nuvio.app.features.details.components.DetailSeriesListHeader
 import com.nuvio.app.features.details.components.DetailTrailersSection
 import com.nuvio.app.features.details.components.EpisodeWatchedActionSheet
 import com.nuvio.app.features.details.components.SeasonWatchedActionSheet
+import com.nuvio.app.features.home.HomeRepository
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.library.LibraryRepository
 import com.nuvio.app.features.library.PendingTrackingMembershipRemoval
@@ -155,6 +156,7 @@ fun MetaDetailsScreen(
 ) {
     val playbackAvailability = rememberPlaybackAvailability()
     val uiState by MetaDetailsRepository.uiState.collectAsStateWithLifecycle()
+    val homeSections = HomeRepository.uiState.collectAsStateWithLifecycle().value.sections
     val displayedMeta = uiState.meta?.takeIf { it.type == type && it.id == id }
         ?: MetaDetailsRepository.peek(type, id)
     val metaScreenSettingsUiState by remember {
@@ -618,8 +620,8 @@ fun MetaDetailsScreen(
                 val hasCollectionSection = remember(meta) {
                     meta.collectionName != null && meta.collectionItems.isNotEmpty()
                 }
-                val hasMoreLikeThisSection = remember(meta) {
-                    meta.moreLikeThis.isNotEmpty()
+                val moreLikeThisItems = remember(meta, homeSections) {
+                    meta.moreLikeThis.ifEmpty { moreLikeThisFallback(meta, homeSections) }
                 }
                 val hasTrailersSection = remember(meta) {
                     meta.trailers.isNotEmpty()
@@ -980,7 +982,7 @@ fun MetaDetailsScreen(
                                     hasEpisodes = hasEpisodes,
                                     hasAdditionalInfoSection = hasAdditionalInfoSection,
                                     hasCollectionSection = hasCollectionSection,
-                                    hasMoreLikeThisSection = hasMoreLikeThisSection,
+                                    moreLikeThisItems = moreLikeThisItems,
                                     shouldShowComments = shouldShowComments,
                                     comments = comments,
                                     isCommentsLoading = isCommentsLoading,
@@ -1467,7 +1469,7 @@ private fun LazyListScope.configuredMetaSectionItems(
     hasEpisodes: Boolean,
     hasAdditionalInfoSection: Boolean,
     hasCollectionSection: Boolean,
-    hasMoreLikeThisSection: Boolean,
+    moreLikeThisItems: List<MetaPreview>,
     shouldShowComments: Boolean,
     comments: List<TraktCommentReview>,
     isCommentsLoading: Boolean,
@@ -1507,7 +1509,7 @@ private fun LazyListScope.configuredMetaSectionItems(
             hasEpisodes = hasEpisodes,
             hasAdditionalInfoSection = hasAdditionalInfoSection,
             hasCollectionSection = hasCollectionSection,
-            hasMoreLikeThisSection = hasMoreLikeThisSection,
+            moreLikeThisItems = moreLikeThisItems,
             shouldShowComments = shouldShowComments,
             comments = comments,
             isCommentsLoading = isCommentsLoading,
@@ -1549,7 +1551,7 @@ private fun LazyListScope.configuredMetaSectionItems(
                     hasEpisodes = hasEpisodes,
                     hasAdditionalInfoSection = hasAdditionalInfoSection,
                     hasCollectionSection = hasCollectionSection,
-                    hasMoreLikeThisSection = hasMoreLikeThisSection,
+                    moreLikeThisItems = moreLikeThisItems,
                     shouldShowComments = shouldShowComments,
                     comments = comments,
                     isCommentsLoading = isCommentsLoading,
@@ -1731,7 +1733,7 @@ private fun metaSectionHasContent(
     hasEpisodes: Boolean,
     hasAdditionalInfoSection: Boolean,
     hasCollectionSection: Boolean,
-    hasMoreLikeThisSection: Boolean,
+    moreLikeThisItems: List<MetaPreview>,
     shouldShowComments: Boolean,
     comments: List<TraktCommentReview>,
     isCommentsLoading: Boolean,
@@ -1747,7 +1749,7 @@ private fun metaSectionHasContent(
         MetaScreenSectionKey.EPISODES -> hasEpisodes
         MetaScreenSectionKey.DETAILS -> hasAdditionalInfoSection
         MetaScreenSectionKey.COLLECTION -> !hasEpisodes && hasCollectionSection
-        MetaScreenSectionKey.MORE_LIKE_THIS -> hasMoreLikeThisSection
+        MetaScreenSectionKey.MORE_LIKE_THIS -> moreLikeThisItems.isNotEmpty()
     }
 
 @Composable
@@ -1774,7 +1776,7 @@ private fun ConfiguredMetaSections(
     hasEpisodes: Boolean,
     hasAdditionalInfoSection: Boolean,
     hasCollectionSection: Boolean,
-    hasMoreLikeThisSection: Boolean,
+    moreLikeThisItems: List<MetaPreview>,
     shouldShowComments: Boolean,
     comments: List<TraktCommentReview>,
     isCommentsLoading: Boolean,
@@ -1814,7 +1816,7 @@ private fun ConfiguredMetaSections(
             MetaScreenSectionKey.EPISODES -> hasEpisodes
             MetaScreenSectionKey.DETAILS -> hasAdditionalInfoSection
             MetaScreenSectionKey.COLLECTION -> !hasEpisodes && hasCollectionSection
-            MetaScreenSectionKey.MORE_LIKE_THIS -> hasMoreLikeThisSection
+            MetaScreenSectionKey.MORE_LIKE_THIS -> moreLikeThisItems.isNotEmpty()
         }
     }
 
@@ -1952,7 +1954,7 @@ private fun ConfiguredMetaSections(
                 }
             }
             MetaScreenSectionKey.MORE_LIKE_THIS -> {
-                if (hasMoreLikeThisSection) {
+                if (moreLikeThisItems.isNotEmpty()) {
                     val sourceLabel = when (meta.moreLikeThisSource) {
                         MoreLikeThisSource.TMDB -> stringResource(Res.string.detail_more_like_this_powered_by_tmdb)
                         MoreLikeThisSource.TRAKT -> stringResource(Res.string.detail_more_like_this_powered_by_trakt)
@@ -1960,7 +1962,7 @@ private fun ConfiguredMetaSections(
                     }
                     DetailPosterRailSection(
                         title = stringResource(Res.string.details_more_like_this),
-                        items = meta.moreLikeThis,
+                        items = moreLikeThisItems,
                         watchedKeys = watchedKeys,
                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                         showHeader = showHeader,

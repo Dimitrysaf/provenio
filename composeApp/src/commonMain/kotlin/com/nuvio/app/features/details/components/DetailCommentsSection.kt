@@ -1,9 +1,6 @@
 package com.nuvio.app.features.details.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,9 +13,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,12 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.nuvio.app.core.ui.SkeletonBlock
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.nuvioHorizontalScrollBleed
@@ -72,7 +66,7 @@ fun DetailCommentsSection(
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (showHeader) {
-            CommentsHeader()
+            DetailSectionTitle(title = stringResource(Res.string.detail_comments_title), fullWidth = false)
             Spacer(modifier = Modifier.height(12.dp))
         }
 
@@ -98,13 +92,7 @@ fun DetailCommentsSection(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Button(
-                        onClick = onRetry,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                        ),
-                    ) {
+                    FilledTonalButton(onClick = onRetry) {
                         Text(stringResource(Res.string.action_retry))
                     }
                 }
@@ -149,30 +137,11 @@ fun DetailCommentsSection(
 }
 
 @Composable
-private fun CommentsHeader() {
-    BoxWithConstraints {
-        val isTablet = maxWidth >= 720.dp
-        val titleSize = if (isTablet) 22.sp else 20.sp
-
-        Text(
-            text = stringResource(Res.string.detail_comments_title),
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontSize = titleSize,
-                fontWeight = FontWeight.SemiBold,
-            ),
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-    }
-}
-
-@Composable
 private fun CommentCard(
     review: TraktCommentReview,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    val isAmoled = colorScheme.background == Color.Black && colorScheme.surface == Color(0xFF050505)
     val bodyText = if (review.hasSpoilerContent) {
         stringResource(Res.string.detail_comments_spoiler_card)
     } else {
@@ -180,18 +149,13 @@ private fun CommentCard(
     }
 
     BoxWithConstraints {
-        val isTablet = maxWidth >= 720.dp
-        val cardWidth = if (isTablet) 340.dp else 280.dp
-        val cardHeight = if (isTablet) 210.dp else 190.dp
+        val size = commentCardSize(maxWidth)
 
-        Surface(
+        Card(
+            onClick = onClick,
             modifier = modifier
-                .width(cardWidth)
-                .height(cardHeight)
-                .clickable(onClick = onClick),
-            shape = RoundedCornerShape(16.dp),
-            color = if (isAmoled) Color(0xFF121212) else colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            tonalElevation = 1.dp,
+                .width(size.width)
+                .height(size.height),
         ) {
             Column(
                 modifier = Modifier
@@ -202,10 +166,8 @@ private fun CommentCard(
                 Text(
                     text = review.authorDisplayName,
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.SemiBold,
                 )
 
                 if (review.review) {
@@ -214,7 +176,7 @@ private fun CommentCard(
 
                 Text(
                     text = bodyText,
-                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
+                    style = MaterialTheme.typography.bodyMedium,
                     color = if (review.hasSpoilerContent) {
                         MaterialTheme.nuvio.colors.warning
                     } else {
@@ -230,14 +192,14 @@ private fun CommentCard(
                         Text(
                             text = stringResource(Res.string.detail_comments_badge_rating, rating),
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                         )
                     }
                     Text(
                         text = stringResource(Res.string.detail_comments_likes, review.likes),
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -249,18 +211,15 @@ private fun CommentCard(
 
 @Composable
 private fun CommentChip(text: String) {
-    Box(
-        modifier = Modifier
-            .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(999.dp),
-            )
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
     ) {
         Text(
             text = text,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
         )
     }
@@ -269,15 +228,9 @@ private fun CommentChip(text: String) {
 @Composable
 private fun LoadingCommentCard() {
     BoxWithConstraints {
-        val isTablet = maxWidth >= 720.dp
-        val cardWidth = if (isTablet) 340.dp else 280.dp
-        val cardHeight = if (isTablet) 210.dp else 190.dp
+        val size = commentCardSize(maxWidth)
 
-        Surface(
-            modifier = Modifier.width(cardWidth).height(cardHeight),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-        ) {
+        Card(modifier = Modifier.width(size.width).height(size.height)) {
             Column(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -293,3 +246,8 @@ private fun LoadingCommentCard() {
         }
     }
 }
+
+private data class CommentCardSize(val width: Dp, val height: Dp)
+
+private fun commentCardSize(maxWidth: Dp): CommentCardSize =
+    if (maxWidth >= 720.dp) CommentCardSize(340.dp, 210.dp) else CommentCardSize(280.dp, 190.dp)
