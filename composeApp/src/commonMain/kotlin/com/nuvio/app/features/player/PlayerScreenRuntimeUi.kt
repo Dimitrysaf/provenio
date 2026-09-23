@@ -249,8 +249,6 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
     ) {
         PlayerControlsShell(
             title = title,
-            streamTitle = activeStreamTitle,
-            providerName = activeProviderName,
             seasonNumber = activeSeasonNumber,
             episodeNumber = activeEpisodeNumber,
             episodeTitle = activeEpisodeTitle,
@@ -289,7 +287,23 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 null
             },
             onSourcesClick = if (activeVideoId != null) { { openSourcesPanel() } } else null,
-            onEpisodesClick = if (isSeries) { { openEpisodesPanel() } } else null,
+            onEpisodesClick = if (isSeries && playerMetaVideos.isNotEmpty()) { { openEpisodesPanel() } } else null,
+            onNextEpisode = nextEpisodeInfo?.takeIf { it.hasAired }?.let {
+                {
+                    nextEpisodeAutoPlayJob?.cancel()
+                    playNextEpisode()
+                }
+            },
+            torrentStats = (p2pStreamingState as? P2pStreamingState.Streaming)
+                ?.takeIf { activeTorrentInfoHash != null && !p2pSettingsUiState.hideTorrentStats }
+                ?.let { stats ->
+                    PlayerTorrentStats(
+                        seeds = stats.seeds,
+                        peers = stats.peers,
+                        downloadSpeed = formatP2pSpeed(stats.downloadSpeed),
+                        downloadedPercent = (stats.totalProgress * 100f).toInt().coerceIn(0, 100),
+                    )
+                },
             onOpenInExternalPlayer = args.onOpenInExternalPlayer?.let { openExternal ->
                 {
                     val loadedSubtitles = addonSubtitles

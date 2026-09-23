@@ -1385,6 +1385,11 @@
     <string name="player_next_episode_playing_via_countdown">Playing via %1$s in %2$d…</string>
     <string name="player_next_episode_thumbnail">Next episode thumbnail</string>
     <string name="player_next_episode_unaired">Unaired</string>
+    <string name="player_replay">Replay</string>
+    <string name="player_cast">Cast</string>
+    <string name="player_torrent_seeds">Seeds %1$d</string>
+    <string name="player_torrent_peers">Peers %1$d</string>
+    <string name="player_torrent_downloaded">Downloaded %1$s</string>
     <string name="player_skip">Skip</string>
     <string name="player_skip_intro">Skip Intro</string>
     <string name="player_skip_outro">Skip Outro</string>
