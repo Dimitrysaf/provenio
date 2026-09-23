@@ -404,31 +404,31 @@ private fun CenterControls(
             metrics = metrics,
             onClick = onSeekBack,
         )
+        // Square when paused or finished, round while playing or buffering.
+        val isRound = !snapshot.isEnded && (snapshot.isLoading || snapshot.isPlaying)
         when {
-            snapshot.isEnded && onNextEpisode != null -> CenterControlButton(
+            snapshot.isEnded && onNextEpisode != null -> PrimaryControlButton(
                 icon = Icons.Rounded.SkipNext,
                 contentDescription = stringResource(Res.string.player_next_episode),
                 metrics = metrics,
+                isRound = isRound,
                 onClick = onNextEpisode,
-                isPrimary = true,
             )
-            snapshot.isEnded -> CenterControlButton(
+            snapshot.isEnded -> PrimaryControlButton(
                 icon = Icons.Rounded.Replay,
                 contentDescription = stringResource(Res.string.player_replay),
                 metrics = metrics,
+                isRound = isRound,
                 onClick = onTogglePlayback,
-                isPrimary = true,
             )
-            snapshot.isLoading -> Box(
-                modifier = Modifier.padding(metrics.playButtonPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                NuvioLoadingIndicator(
-                    color = Color.White,
-                    modifier = Modifier.size(metrics.playIconSize),
-                )
-            }
-            else -> CenterControlButton(
+            snapshot.isLoading -> PrimaryControlButton(
+                icon = null,
+                contentDescription = null,
+                metrics = metrics,
+                isRound = isRound,
+                onClick = null,
+            )
+            else -> PrimaryControlButton(
                 icon = if (snapshot.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                 contentDescription = if (snapshot.isPlaying) {
                     stringResource(Res.string.compose_action_pause)
@@ -436,8 +436,8 @@ private fun CenterControls(
                     stringResource(Res.string.detail_btn_play)
                 },
                 metrics = metrics,
+                isRound = isRound,
                 onClick = onTogglePlayback,
-                isPrimary = true,
             )
         }
         // An invisible stand-in keeps play centred while the next episode card holds this side.
@@ -458,21 +458,61 @@ private fun CenterControlButton(
     contentDescription: String,
     metrics: PlayerLayoutMetrics,
     onClick: () -> Unit,
-    isPrimary: Boolean = false,
 ) {
     Box(
         modifier = Modifier
             .clip(CircleShape)
+            .background(PlayerScrimColor)
             .clickable(onClick = onClick)
-            .padding(if (isPrimary) metrics.playButtonPadding else metrics.sideButtonPadding),
+            .padding(metrics.sideButtonPadding),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = Color.White,
-            modifier = Modifier.size(if (isPrimary) metrics.playIconSize else metrics.sideIconSize),
+            modifier = Modifier.size(metrics.sideIconSize),
         )
+    }
+}
+
+// Play, pause, replay, next or buffering; the corners morph between round and square.
+@Composable
+private fun PrimaryControlButton(
+    icon: ImageVector?,
+    contentDescription: String?,
+    metrics: PlayerLayoutMetrics,
+    isRound: Boolean,
+    onClick: (() -> Unit)?,
+) {
+    val size = metrics.playIconSize + metrics.playButtonPadding * 2
+    val corner by animateDpAsState(
+        targetValue = if (isRound) size / 2 else size * PrimarySquareCornerFraction,
+        animationSpec = tween(220),
+        label = "player_primary_corner",
+    )
+    val shape = RoundedCornerShape(corner)
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(shape)
+            .background(PlayerScrimColor)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (icon == null) {
+            NuvioLoadingIndicator(
+                color = Color.White,
+                modifier = Modifier.size(metrics.playIconSize),
+            )
+        } else {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = Color.White,
+                modifier = Modifier.size(metrics.playIconSize),
+            )
+        }
     }
 }
 
@@ -812,6 +852,7 @@ internal fun LockedPlayerOverlay(
 internal val PlayerScrimColor = Color.Black.copy(alpha = 0.5f)
 
 private val PlayerGroupGap = 2.dp
+private const val PrimarySquareCornerFraction = 0.28f
 private val PlayerGroupButtonHeight = 36.dp
 private val PlayerGroupButtonMinWidth = 40.dp
 private val PlayerGroupIconSize = 18.dp
