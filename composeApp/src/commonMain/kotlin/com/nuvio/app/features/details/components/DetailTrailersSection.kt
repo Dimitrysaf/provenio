@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
@@ -17,11 +20,8 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
-import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -102,25 +102,24 @@ fun DetailTrailersSection(
 
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val sizing = trailerSectionSizing(maxWidth.value)
-            // A fresh carousel per category, so switching starts from the first trailer.
-            val carouselState = key(selectedCategory) {
-                rememberCarouselState(itemCount = { selectedTrailers.size })
-            }
-            HorizontalUncontainedCarousel(
-                state = carouselState,
-                itemWidth = sizing.cardWidth,
+            LazyRow(
                 modifier = Modifier
                     .nuvioHorizontalScrollBleed(horizontalScrollPadding)
                     .fillMaxWidth(),
-                itemSpacing = sizing.cardSpacing,
                 contentPadding = PaddingValues(horizontal = horizontalScrollPadding),
-            ) { index ->
-                val trailer = selectedTrailers[index]
-                TrailerCard(
-                    trailer = trailer,
-                    cornerRadius = cornerRadius,
-                    onClick = { onTrailerClick(trailer) },
-                )
+                horizontalArrangement = Arrangement.spacedBy(sizing.cardSpacing),
+            ) {
+                itemsIndexed(
+                    items = selectedTrailers,
+                    key = { index, trailer -> "${trailer.type}-${trailer.id}-${trailer.seasonNumber ?: 0}#$index" },
+                ) { _, trailer ->
+                    TrailerCard(
+                        trailer = trailer,
+                        cardWidth = sizing.cardWidth,
+                        cornerRadius = cornerRadius,
+                        onClick = { onTrailerClick(trailer) },
+                    )
+                }
             }
         }
     }
@@ -144,13 +143,14 @@ fun DetailTrailersSection(
 @Composable
 private fun TrailerCard(
     trailer: MetaTrailer,
+    cardWidth: Dp,
     cornerRadius: Dp,
     onClick: () -> Unit,
 ) {
     val title = trailer.displayName?.takeIf { it.isNotBlank() } ?: trailer.name
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.width(cardWidth),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Card(
