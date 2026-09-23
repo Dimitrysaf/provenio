@@ -638,41 +638,15 @@ fun MetaDetailsScreen(
                 var trailerErrorMessage by remember(meta.id) { mutableStateOf<String?>(null) }
                 var trailerRequestToken by remember(meta.id) { mutableIntStateOf(0) }
                 var isLeavingDetails by remember(meta.id) { mutableStateOf(false) }
-                val heroTrailerCandidate = remember(meta.trailers) {
-                    selectHeroTrailer(meta.trailers)
-                }
                 val heroTrailerPlaybackEnabled = AppFeaturePolicy.heroTrailerPlaybackSupported &&
                     inAppTrailerPlaybackEnabled &&
                     metaScreenSettingsUiState.heroTrailerPlayback
-                var heroTrailerPlaybackSource by remember(meta.id, heroTrailerCandidate?.id) { mutableStateOf<TrailerPlaybackSource?>(null) }
-                var heroTrailerReady by remember(meta.id, heroTrailerCandidate?.id) { mutableStateOf(false) }
-                var heroTrailerFinished by remember(meta.id, heroTrailerCandidate?.id) { mutableStateOf(false) }
-                val heroTrailerMuted by HeroTrailerAudioState.muted.collectAsStateWithLifecycle()
-                LaunchedEffect(
-                    heroTrailerPlaybackEnabled,
-                    heroTrailerCandidate?.id,
-                    heroTrailerCandidate?.key,
-                    deferredMetaWorkAllowed,
-                ) {
-                    heroTrailerPlaybackSource = null
-                    heroTrailerReady = false
-                    heroTrailerFinished = false
-                    if (!deferredMetaWorkAllowed || !heroTrailerPlaybackEnabled || heroTrailerCandidate == null) {
-                        return@LaunchedEffect
-                    }
-                    val resolvedSource = runCatching {
-                        TrailerPlaybackResolver.resolveFromYouTubeUrl(heroTrailerCandidate.youtubePlaybackUrl())
-                    }.getOrNull()
-                    if (resolvedSource == null) {
-                        heroTrailerFinished = true
-                    } else {
-                        heroTrailerPlaybackSource = resolvedSource
-                    }
+                val heroSlides = remember(meta, heroTrailerPlaybackEnabled) {
+                    buildDetailHeroSlides(meta, includeTrailers = heroTrailerPlaybackEnabled)
                 }
+                val heroTrailerMuted by HeroTrailerAudioState.muted.collectAsStateWithLifecycle()
                 val onBackFromDetails: () -> Unit = {
                     isLeavingDetails = true
-                    heroTrailerReady = false
-                    heroTrailerFinished = true
                     onBack()
                 }
                 val resolveTrailer: (MetaTrailer) -> Unit = remember(meta.id, inAppTrailerPlaybackEnabled, uriHandler) {
@@ -901,9 +875,6 @@ fun MetaDetailsScreen(
                         }
                     }
                 }
-                val heroScrollOffset = remember(detailScrollOffsetPx) {
-                    { detailScrollOffsetPx().toInt() }
-                }
                 val isHeroCollapsed = remember(listState, heroHeightPx, safeAreaTopPx) {
                     derivedStateOf {
                         val measuredHeroHeightPx = heroHeightPx.intValue
@@ -912,12 +883,6 @@ fun MetaDetailsScreen(
                             (listState.firstVisibleItemIndex > 0 || detailScrollOffsetPx() > thresholdPx)
                     }
                 }
-                val heroTrailerSourceUrl = heroTrailerPlaybackSource
-                    ?.videoUrl
-                    ?.takeIf { it.isNotBlank() && heroTrailerPlaybackEnabled && !heroTrailerFinished && !isLeavingDetails }
-                val heroTrailerSourceAudioUrl = heroTrailerPlaybackSource
-                    ?.audioUrl
-                    ?.takeIf { heroTrailerSourceUrl != null && it.isNotBlank() }
 
                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                     val colorScheme = MaterialTheme.colorScheme
@@ -1013,41 +978,24 @@ fun MetaDetailsScreen(
                                 item(key = "detail-hero") {
                                     DetailHero(
                                         meta = meta,
-                                        isTablet = isTablet,
-                                        contentMaxWidth = contentMaxWidth,
-                                        scrollOffset = heroScrollOffset,
+                                        slides = heroSlides,
                                         stretchPx = { heroStretchState.stretchPx },
                                         onHeightChanged = { heroHeightPx.intValue = it },
-                                        heroTrailerSourceUrl = heroTrailerSourceUrl,
-                                        heroTrailerSourceAudioUrl = heroTrailerSourceAudioUrl,
-                                        heroTrailerReady = heroTrailerReady,
-                                        heroTrailerPlayWhenReady = {
-                                            heroTrailerSourceUrl != null &&
-                                                selectedTrailer == null &&
+                                        trailerResolutionEnabled = heroTrailerPlaybackEnabled &&
+                                            deferredMetaWorkAllowed &&
+                                            !isLeavingDetails,
+                                        trailerPlayWhenReady = {
+                                            selectedTrailer == null &&
                                                 !isLeavingDetails &&
                                                 !isHeroCollapsed.value
                                         },
-                                        heroTrailerMuted = heroTrailerMuted,
-                                        heroGradientColor = dominantBackdropColor.takeIf { dominantColorEnabled },
+                                        trailerMuted = heroTrailerMuted,
+                                        onTrailerMuteToggle = {
+                                            HeroTrailerAudioState.toggleMuted()
+                                        },
                                         onBackdropLoaded = { painter, imageBitmap ->
                                             dominantBackdropPainter = painter
                                             dominantBackdropImageBitmap = imageBitmap
-                                        },
-                                        onHeroTrailerMuteToggle = {
-                                            HeroTrailerAudioState.toggleMuted()
-                                        },
-                                        onHeroTrailerReady = {
-                                            if (!heroTrailerFinished) {
-                                                heroTrailerReady = true
-                                            }
-                                        },
-                                        onHeroTrailerEnded = {
-                                            heroTrailerReady = false
-                                            heroTrailerFinished = true
-                                        },
-                                        onHeroTrailerError = {
-                                            heroTrailerReady = false
-                                            heroTrailerFinished = true
                                         },
                                     )
                                 }

@@ -764,6 +764,7 @@ object TmdbMetadataService {
             name = enrichment.localizedTitle ?: "TMDB $tmdbId",
             poster = enrichment.poster,
             background = enrichment.backdrop,
+            extraArtwork = enrichment.extraBackdrops,
             logo = enrichment.logo,
             description = enrichment.description,
             releaseInfo = enrichment.releaseInfo,
@@ -800,6 +801,7 @@ object TmdbMetadataService {
         if (enrichment != null && settings.useArtwork) {
             updated = updated.copy(
                 background = enrichment.backdrop ?: updated.background,
+                extraArtwork = enrichment.extraBackdrops.ifEmpty { updated.extraArtwork },
                 poster = enrichment.poster ?: updated.poster,
                 logo = enrichment.logo ?: updated.logo,
             )
@@ -1042,6 +1044,10 @@ object TmdbMetadataService {
             description = description,
             genres = genres,
             backdrop = buildImageUrl(details.backdropPath, "w1280"),
+            extraBackdrops = images?.backdrops.orEmpty()
+                .backdropPathsTextlessFirst()
+                .mapNotNull { buildImageUrl(it, "w1280") }
+                .take(MAX_EXTRA_BACKDROPS),
             logo = buildImageUrl(images?.logos.orEmpty().selectBestLocalizedImagePath(normalizedLanguage), "w500"),
             poster = buildImageUrl(details.posterPath, "w500"),
             people = people,
@@ -1409,6 +1415,7 @@ internal data class TmdbEnrichment(
     val description: String?,
     val genres: List<String>,
     val backdrop: String?,
+    val extraBackdrops: List<String> = emptyList(),
     val logo: String?,
     val poster: String?,
     val people: List<MetaPerson>,
@@ -1434,6 +1441,7 @@ internal data class TmdbEnrichment(
             description != null ||
             genres.isNotEmpty() ||
             backdrop != null ||
+            extraBackdrops.isNotEmpty() ||
             logo != null ||
             poster != null ||
             people.isNotEmpty() ||
@@ -2145,6 +2153,8 @@ private data class TmdbPersonCreditCrew(
     @SerialName("vote_average") val voteAverage: Double? = null,
     val popularity: Double? = null,
 )
+
+private const val MAX_EXTRA_BACKDROPS = 8
 
 // ─── Entity Browse (Company / Network) Models ───
 

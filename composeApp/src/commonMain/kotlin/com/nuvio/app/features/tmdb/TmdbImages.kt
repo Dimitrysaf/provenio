@@ -40,3 +40,10 @@ internal data class TmdbImage(
     @SerialName("iso_639_1") val iso6391: String? = null,
     @SerialName("iso_3166_1") val iso31661: String? = null,
 )
+
+/** Backdrop paths with the textless ones first, since the hero draws a logo over them. */
+internal fun List<TmdbImage>.backdropPathsTextlessFirst(): List<String> {
+    val (textless, localized) = filter { !it.filePath.isNullOrBlank() }
+        .partition { it.iso6391 == null }
+    return (textless + localized).mapNotNull { it.filePath?.trim() }
+}

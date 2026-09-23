@@ -9,6 +9,8 @@ data class MetaDetails(
     val name: String,
     val poster: String? = null,
     val background: String? = null,
+    /** Further backdrops for the hero carousel, best first, without the main [background]. */
+    val extraArtwork: List<String> = emptyList(),
     val logo: String? = null,
     val description: String? = null,
     val releaseInfo: String? = null,

@@ -68,11 +68,11 @@ private const val HERO_ITEM_CONTENT_FADE_START = 0.62f
 
 private val HeroIndicatorHeight = 8.dp
 private val HeroIndicatorActiveWidth = 32.dp
-private val HeroIndicatorRowHeight = 24.dp
+internal val HeroIndicatorRowHeight = 24.dp
 
 /** Text drawn over artwork, which is dark by the scrim rather than by the colour scheme. */
-private val OnArtworkColor = Color.White
-private val OnArtworkVariantColor = Color.White.copy(alpha = 0.76f)
+internal val HeroOnArtworkColor = Color.White
+internal val HeroOnArtworkVariantColor = Color.White.copy(alpha = 0.76f)
 
 /**
  * How the hero is sized and aligned at this width.
@@ -249,11 +249,12 @@ internal fun heroCarouselTopInset(): Dp =
 
 /** Moves to the next title on its own, and only while this screen is the one being looked at. */
 @Composable
-private fun HeroAutoAdvance(
+internal fun HeroAutoAdvance(
     itemCount: Int,
     currentItem: Int,
     isScrollInProgress: () -> Boolean,
     onAdvance: suspend (Int) -> Unit,
+    enabled: Boolean = true,
 ) {
     val latestItem = rememberUpdatedState(currentItem)
     val latestIsScrollInProgress = rememberUpdatedState(isScrollInProgress)
@@ -263,8 +264,8 @@ private fun HeroAutoAdvance(
     // effect's own `onAdvance` is animating it there; keying on that value would tear this effect
     // down every one of those ticks, cancelling the animation it just started and leaving the
     // carousel visibly stalled partway to the next title.
-    ScreenActivityEffect(itemCount) { active ->
-        if (!active || itemCount <= 1) return@ScreenActivityEffect
+    ScreenActivityEffect(itemCount, enabled) { active ->
+        if (!active || !enabled || itemCount <= 1) return@ScreenActivityEffect
         while (true) {
             delay(HERO_AUTO_SCROLL_INTERVAL_MS)
             while (latestIsScrollInProgress.value()) {
@@ -282,7 +283,7 @@ private fun HeroAutoAdvance(
  * carried by shape and colour together rather than by opacity alone.
  */
 @Composable
-private fun HeroIndicatorRow(
+internal fun HeroIndicatorRow(
     itemCount: Int,
     activeFraction: @Composable (Int) -> Float,
     onSelect: (Int) -> Unit,
@@ -319,7 +320,7 @@ private fun heroItemIsFocal(drawInfo: CarouselItemDrawInfo): Boolean =
     drawInfo.size >= drawInfo.maxSize * 0.9f
 
 /** A carousel item's text belongs to the item at the centre, so it fades with the mask. */
-private fun heroItemContentAlpha(drawInfo: CarouselItemDrawInfo): Float {
+internal fun heroItemContentAlpha(drawInfo: CarouselItemDrawInfo): Float {
     val range = drawInfo.maxSize - drawInfo.minSize
     val unmasked = if (range <= 0f) 1f else ((drawInfo.size - drawInfo.minSize) / range)
     return ((unmasked - HERO_ITEM_CONTENT_FADE_START) / (1f - HERO_ITEM_CONTENT_FADE_START))
@@ -378,7 +379,7 @@ private fun HeroContentBlock(
                 text = item.name,
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.displaySmallEmphasized,
-                color = OnArtworkColor,
+                color = HeroOnArtworkColor,
                 textAlign = if (layout.centerTitle) TextAlign.Center else TextAlign.Start,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -396,14 +397,14 @@ private fun HeroContentBlock(
             },
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            HeroMetaText(text = item.type.replaceFirstChar(Char::uppercase), color = OnArtworkVariantColor)
+            HeroMetaText(text = item.type.replaceFirstChar(Char::uppercase), color = HeroOnArtworkVariantColor)
             item.genres.firstOrNull()?.let { genre ->
-                HeroMetaDot(color = OnArtworkVariantColor)
-                HeroMetaText(text = genre, color = OnArtworkVariantColor)
+                HeroMetaDot(color = HeroOnArtworkVariantColor)
+                HeroMetaText(text = genre, color = HeroOnArtworkVariantColor)
             }
             item.releaseInfo?.takeIf { it.isNotBlank() }?.let { info ->
-                HeroMetaDot(color = OnArtworkVariantColor)
-                HeroMetaText(text = formatReleaseDateForDisplay(info), color = OnArtworkVariantColor)
+                HeroMetaDot(color = HeroOnArtworkVariantColor)
+                HeroMetaText(text = formatReleaseDateForDisplay(info), color = HeroOnArtworkVariantColor)
             }
         }
     }

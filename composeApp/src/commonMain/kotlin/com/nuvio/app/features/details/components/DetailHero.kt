@@ -1,275 +1,483 @@
 package com.nuvio.app.features.details.components
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.VolumeOff
 import androidx.compose.material.icons.rounded.VolumeUp
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
+import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.graphicsLayer
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.ui.heroStretchHeight
-import com.nuvio.app.core.ui.heroStretchZoom
+import com.nuvio.app.features.details.DetailHeroSlide
 import com.nuvio.app.features.details.MetaDetails
+import com.nuvio.app.features.details.MetaTrailer
+import com.nuvio.app.features.details.youtubePlaybackUrl
+import com.nuvio.app.features.details.youtubeThumbnailUrl
+import com.nuvio.app.features.home.components.HeroAutoAdvance
+import com.nuvio.app.features.home.components.HeroIndicatorRow
+import com.nuvio.app.features.home.components.HeroIndicatorRowHeight
+import com.nuvio.app.features.home.components.HeroOnArtworkColor
+import com.nuvio.app.features.home.components.HeroOnArtworkVariantColor
+import com.nuvio.app.features.home.components.HomeHeroLayout
+import com.nuvio.app.features.home.components.heroCarouselTopInset
+import com.nuvio.app.features.home.components.heroItemContentAlpha
+import com.nuvio.app.features.home.components.homeHeroLayout
+import com.nuvio.app.features.trailer.TrailerPlaybackResolver
+import com.nuvio.app.features.trailer.TrailerPlaybackSource
+import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
+private const val TRAILER_ASPECT_RATIO = 16f / 9f
+
+/** Room kept under the trailer band for its audio button. */
+private val TrailerBandBottomClearance = 52.dp
+
+/** The home screen's hero carousel, over one title's own pages: artwork, trailers, more artwork. */
 @Composable
 fun DetailHero(
     meta: MetaDetails,
-    isTablet: Boolean = false,
-    scrollOffset: () -> Int = { 0 },
-    stretchPx: () -> Float = { 0f },
-    contentMaxWidth: Dp = 560.dp,
-    onHeightChanged: (Int) -> Unit = {},
-    heroTrailerSourceUrl: String? = null,
-    heroTrailerSourceAudioUrl: String? = null,
-    heroTrailerReady: Boolean = false,
-    heroTrailerPlayWhenReady: () -> Boolean = { false },
-    heroTrailerMuted: Boolean = true,
-    heroGradientColor: Color? = null,
-    onBackdropLoaded: (Painter, ImageBitmap?) -> Unit = { _, _ -> },
-    onHeroTrailerMuteToggle: () -> Unit = {},
-    onHeroTrailerReady: () -> Unit = {},
-    onHeroTrailerEnded: () -> Unit = {},
-    onHeroTrailerError: () -> Unit = {},
+    slides: List<DetailHeroSlide>,
     modifier: Modifier = Modifier,
+    stretchPx: () -> Float = { 0f },
+    onHeightChanged: (Int) -> Unit = {},
+    trailerResolutionEnabled: Boolean = false,
+    trailerPlayWhenReady: () -> Boolean = { false },
+    trailerMuted: Boolean = true,
+    onTrailerMuteToggle: () -> Unit = {},
+    onBackdropLoaded: (Painter, ImageBitmap?) -> Unit = { _, _ -> },
 ) {
-    BoxWithConstraints(
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        val heroHeight = detailHeroHeight(maxWidth, isTablet)
-        val trailerAlpha by animateFloatAsState(
-            targetValue = if (heroTrailerReady) 1f else 0f,
-            animationSpec = tween(durationMillis = 300),
-            label = "detail_hero_trailer_alpha",
-        )
-        val muteIconSize = if (isTablet) 20.dp else 22.dp
-        val heroChromeTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
-            8.dp +
-            ((40.dp - muteIconSize) / 2)
-        val bottomGradientColor = heroGradientColor ?: MaterialTheme.colorScheme.background
-        var logoLoadError by remember(meta.id, meta.logo) {
-            mutableStateOf(false)
-        }
-        val logoUrl = meta.logo?.takeIf { it.isNotBlank() }
+    // A title with no artwork at all still gets its page, over the plain surface.
+    val pages = slides.ifEmpty { listOf(DetailHeroSlide.Artwork("")) }
 
-        val heroBaseHeightPx = with(LocalDensity.current) { heroHeight.roundToPx() }
-        LaunchedEffect(heroBaseHeightPx) { onHeightChanged(heroBaseHeightPx) }
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val layout = homeHeroLayout(maxWidthDp = maxWidth.value)
+        val topInset = heroCarouselTopInset()
+        val sectionHeightPx = with(LocalDensity.current) {
+            (topInset + layout.totalHeight).roundToPx()
+        }
+        LaunchedEffect(sectionHeightPx) { onHeightChanged(sectionHeightPx) }
+
+        DetailHeroCarousel(
+            meta = meta,
+            pages = pages,
+            layout = layout,
+            topInset = topInset,
+            stretchPx = stretchPx,
+            trailerResolutionEnabled = trailerResolutionEnabled,
+            trailerPlayWhenReady = trailerPlayWhenReady,
+            trailerMuted = trailerMuted,
+            onTrailerMuteToggle = onTrailerMuteToggle,
+            onBackdropLoaded = onBackdropLoaded,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DetailHeroCarousel(
+    meta: MetaDetails,
+    pages: List<DetailHeroSlide>,
+    layout: HomeHeroLayout,
+    topInset: Dp,
+    stretchPx: () -> Float,
+    trailerResolutionEnabled: Boolean,
+    trailerPlayWhenReady: () -> Boolean,
+    trailerMuted: Boolean,
+    onTrailerMuteToggle: () -> Unit,
+    onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
+) {
+    val carouselState = rememberCarouselState(itemCount = { pages.size })
+    val coroutineScope = rememberCoroutineScope()
+    val focalPage = carouselState.currentItem
+    val focalTrailer = (pages.getOrNull(focalPage) as? DetailHeroSlide.Trailer)?.trailer
+    val trailerSources = remember(meta.id) { mutableStateMapOf<String, TrailerPlaybackSource>() }
+    // Trailers that have played out, errored, or have no playable stream: the page keeps its still.
+    val spentTrailerIds = remember(meta.id) { mutableStateListOf<String>() }
+
+    LaunchedEffect(focalTrailer?.id, trailerResolutionEnabled) {
+        val trailer = focalTrailer ?: return@LaunchedEffect
+        if (!trailerResolutionEnabled) return@LaunchedEffect
+        if (trailerSources.containsKey(trailer.id) || trailer.id in spentTrailerIds) {
+            return@LaunchedEffect
+        }
+        val source = runCatching {
+            TrailerPlaybackResolver.resolveFromYouTubeUrl(trailer.youtubePlaybackUrl())
+        }.getOrNull()
+        if (source == null) {
+            spentTrailerIds.add(trailer.id)
+        } else {
+            trailerSources[trailer.id] = source
+        }
+    }
+
+    HeroAutoAdvance(
+        itemCount = pages.size,
+        currentItem = focalPage,
+        isScrollInProgress = { carouselState.isScrollInProgress },
+        onAdvance = { page -> carouselState.animateScrollToItem(page) },
+        // A trailer page holds its place until the trailer is done with it.
+        enabled = focalTrailer == null || focalTrailer.id in spentTrailerIds,
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = topInset),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        HorizontalCenteredHeroCarousel(
+            state = carouselState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heroStretchHeight(layout.heroHeight, stretchPx),
+            itemSpacing = layout.itemSpacing,
+            maxSmallItemWidth = layout.smallItemWidth,
+            contentPadding = PaddingValues(horizontal = layout.contentHorizontalPadding),
+        ) { index ->
+            val page = pages[index]
+            val drawInfo = carouselItemDrawInfo
+            val contentAlpha = { heroItemContentAlpha(drawInfo) }
+            val isFocal = index == focalPage
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .maskClip(MaterialTheme.shapes.extraLarge)
+                    .clickable(enabled = !isFocal) {
+                        coroutineScope.launch { carouselState.animateScrollToItem(index) }
+                    },
+            ) {
+                when (page) {
+                    is DetailHeroSlide.Artwork -> HeroArtworkPage(
+                        url = page.url,
+                        meta = meta,
+                        layout = layout,
+                        reportLoaded = index == 0,
+                        contentAlpha = contentAlpha,
+                        onBackdropLoaded = onBackdropLoaded,
+                    )
+
+                    is DetailHeroSlide.Trailer -> HeroTrailerPage(
+                        trailer = page.trailer,
+                        artworkUrl = meta.background ?: meta.poster,
+                        source = trailerSources[page.trailer.id],
+                        isFocal = isFocal,
+                        spent = page.trailer.id in spentTrailerIds,
+                        playWhenReady = {
+                            trailerPlayWhenReady() && !carouselState.isScrollInProgress
+                        },
+                        muted = trailerMuted,
+                        layout = layout,
+                        contentAlpha = contentAlpha,
+                        onMuteToggle = onTrailerMuteToggle,
+                        onSpent = { spentTrailerIds.add(page.trailer.id) },
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(layout.contentVerticalPadding))
+
+        HeroIndicatorRow(
+            itemCount = pages.size,
+            activeFraction = { index ->
+                animateFloatAsState(
+                    targetValue = if (index == focalPage) 1f else 0f,
+                    label = "DetailHeroIndicator",
+                ).value
+            },
+            onSelect = { index ->
+                coroutineScope.launch { carouselState.animateScrollToItem(index) }
+            },
+            modifier = Modifier.height(HeroIndicatorRowHeight),
+        )
+    }
+}
+
+@Composable
+private fun HeroArtworkPage(
+    url: String,
+    meta: MetaDetails,
+    layout: HomeHeroLayout,
+    reportLoaded: Boolean,
+    contentAlpha: () -> Float,
+    onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (url.isBlank()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface),
+            )
+        } else {
+            AsyncImage(
+                model = url,
+                contentDescription = meta.name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                onSuccess = { state ->
+                    if (reportLoaded) {
+                        onBackdropLoaded(state.painter, loadedBackdropImageBitmap(state.result))
+                    }
+                },
+            )
+        }
+
+        HeroPageScrim()
 
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .heroStretchHeight(heroHeight, stretchPx)
-                .graphicsLayer {
-                    clip = true
-                },
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.BottomCenter,
-            ) {
-                val imageUrl = meta.background ?: meta.poster
-                if (imageUrl != null) {
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = meta.name,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .fillMaxWidth()
-                            .height(heroHeight)
-                            .heroStretchZoom(stretchPx)
-                            .graphicsLayer {
-                                translationY = scrollOffset() * 0.5f
-                                scaleX = 1.08f
-                                scaleY = 1.08f
-                        },
-                        alignment = if (isTablet) Alignment.TopCenter else Alignment.Center,
-                        contentScale = ContentScale.Crop,
-                        onSuccess = { state ->
-                            onBackdropLoaded(
-                                state.painter,
-                                loadedBackdropImageBitmap(state.result),
-                            )
-                        },
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.surface),
-                    )
-                }
-                if (heroTrailerSourceUrl != null) {
-                    HeroTrailerPlayerSurface(
-                        sourceUrl = heroTrailerSourceUrl,
-                        sourceAudioUrl = heroTrailerSourceAudioUrl,
-                        playWhenReady = heroTrailerPlayWhenReady(),
-                        muted = heroTrailerMuted,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .fillMaxWidth()
-                            .height(heroHeight)
-                            .heroStretchZoom(stretchPx)
-                            .graphicsLayer {
-                                alpha = trailerAlpha
-                                translationY = scrollOffset() * 0.5f
-                                scaleX = 1.08f
-                                scaleY = 1.08f
-                            },
-                        onReady = onHeroTrailerReady,
-                        onEnded = onHeroTrailerEnded,
-                        onError = onHeroTrailerError,
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable(
-                                enabled = heroTrailerReady,
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = onHeroTrailerMuteToggle,
-                            ),
-                    )
-                    AnimatedContent(
-                        targetState = heroTrailerMuted,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(
-                                top = heroChromeTopPadding,
-                                end = if (isTablet) 32.dp else 22.dp,
-                            )
-                            .graphicsLayer {
-                                alpha = trailerAlpha * 0.72f
-                            },
-                        transitionSpec = {
-                            (fadeIn(animationSpec = tween(120)) + scaleIn(
-                                initialScale = 0.82f,
-                                animationSpec = tween(160),
-                            )) togetherWith (fadeOut(animationSpec = tween(90)) + scaleOut(
-                                targetScale = 1.12f,
-                                animationSpec = tween(100),
-                            ))
-                        },
-                        label = "detail_hero_trailer_mute_icon",
-                    ) { muted ->
-                        Icon(
-                            imageVector = if (muted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(muteIconSize),
-                        )
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(if (isTablet) 360.dp else 320.dp)
-                        .align(Alignment.BottomCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                colorStops = arrayOf(
-                                    0.00f to Color.Transparent,
-                                    0.16f to bottomGradientColor.copy(alpha = 0.04f),
-                                    0.32f to bottomGradientColor.copy(alpha = 0.14f),
-                                    0.50f to bottomGradientColor.copy(alpha = 0.34f),
-                                    0.68f to bottomGradientColor.copy(alpha = 0.62f),
-                                    0.84f to bottomGradientColor.copy(alpha = 0.84f),
-                                    1.00f to bottomGradientColor,
-                                ),
-                            ),
-                        ),
+                .align(Alignment.BottomStart)
+                .fillMaxWidth(layout.contentWidthFraction)
+                .widthIn(max = layout.contentMaxWidth)
+                .padding(
+                    horizontal = layout.contentHorizontalPadding,
+                    vertical = layout.contentVerticalPadding,
                 )
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = if (isTablet) 32.dp else 18.dp)
-                        .padding(bottom = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    if (logoUrl != null && !logoLoadError) {
-                        AsyncImage(
-                            model = logoUrl,
-                            contentDescription = stringResource(Res.string.detail_logo_content_description, meta.name),
-                            modifier = Modifier
-                                .fillMaxWidth(if (isTablet) 0.56f else 0.6f)
-                                .widthIn(max = contentMaxWidth)
-                                .height(if (isTablet) 72.dp else 80.dp),
-                            alignment = Alignment.Center,
-                            contentScale = ContentScale.Fit,
-                            onError = { logoLoadError = true },
-                        )
-                    } else {
-                        Text(
-                            text = meta.name,
-                            style = if (isTablet) MaterialTheme.typography.displaySmall else MaterialTheme.typography.displayLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-
-                    if (meta.genres.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = meta.genres.take(3).joinToString(" \u2022 "),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
-            }
+                .graphicsLayer { alpha = contentAlpha() },
+        ) {
+            HeroTitleBlock(meta = meta, layout = layout)
         }
     }
 }
 
-private fun detailHeroHeight(maxWidth: Dp, isTablet: Boolean): Dp =
-    if (!isTablet) {
-        (maxWidth * 1.33f).coerceIn(420.dp, 760.dp)
-    } else {
-        (maxWidth * 0.42f).coerceIn(300.dp, 420.dp)
+/** A trailer over the dimmed artwork, in a band of its own shape so its frame is never cropped. */
+@Composable
+private fun HeroTrailerPage(
+    trailer: MetaTrailer,
+    artworkUrl: String?,
+    source: TrailerPlaybackSource?,
+    isFocal: Boolean,
+    spent: Boolean,
+    playWhenReady: () -> Boolean,
+    muted: Boolean,
+    layout: HomeHeroLayout,
+    contentAlpha: () -> Float,
+    onMuteToggle: () -> Unit,
+    onSpent: () -> Unit,
+) {
+    var videoReady by remember(trailer.id, isFocal) { mutableStateOf(false) }
+    val videoAlpha by animateFloatAsState(
+        targetValue = if (videoReady) 1f else 0f,
+        animationSpec = tween(durationMillis = 300),
+        label = "detail_hero_trailer_alpha",
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (artworkUrl != null) {
+            AsyncImage(
+                model = artworkUrl,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.45f)),
+        )
+
+        HeroPageScrim()
+
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    horizontal = layout.contentHorizontalPadding,
+                    vertical = layout.contentVerticalPadding,
+                )
+                .padding(bottom = TrailerBandBottomClearance),
+            contentAlignment = Alignment.Center,
+        ) {
+            val bandFill = if (maxWidth / maxHeight < TRAILER_ASPECT_RATIO) {
+                Modifier.fillMaxWidth()
+            } else {
+                Modifier.fillMaxHeight()
+            }
+            Box(
+                modifier = bandFill
+                    .aspectRatio(TRAILER_ASPECT_RATIO)
+                    .clip(MaterialTheme.shapes.large)
+                    .background(Color.Black),
+            ) {
+                AsyncImage(
+                    model = trailer.youtubeThumbnailUrl(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+                if (isFocal && source != null && !spent) {
+                    HeroTrailerPlayerSurface(
+                        sourceUrl = source.videoUrl,
+                        sourceAudioUrl = source.audioUrl?.takeIf { it.isNotBlank() },
+                        playWhenReady = playWhenReady(),
+                        muted = muted,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { alpha = videoAlpha },
+                        onReady = { videoReady = true },
+                        onEnded = {
+                            videoReady = false
+                            onSpent()
+                        },
+                        onError = {
+                            videoReady = false
+                            onSpent()
+                        },
+                    )
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth(layout.contentWidthFraction)
+                .widthIn(max = layout.contentMaxWidth)
+                .padding(
+                    horizontal = layout.contentHorizontalPadding,
+                    vertical = layout.contentVerticalPadding,
+                )
+                .graphicsLayer { alpha = contentAlpha() },
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            FilledTonalIconToggleButton(
+                checked = !muted,
+                onCheckedChange = { onMuteToggle() },
+            ) {
+                Icon(
+                    imageVector = if (muted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
+                    contentDescription = stringResource(
+                        if (muted) {
+                            Res.string.detail_hero_trailer_audio_unmute
+                        } else {
+                            Res.string.detail_hero_trailer_audio_mute
+                        },
+                    ),
+                )
+            }
+            Text(
+                text = trailer.displayName?.takeIf { it.isNotBlank() } ?: trailer.name,
+                style = MaterialTheme.typography.labelLarge,
+                color = HeroOnArtworkColor,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
+}
+
+@Composable
+private fun HeroTitleBlock(
+    meta: MetaDetails,
+    layout: HomeHeroLayout,
+) {
+    var logoLoadError by remember(meta.id, meta.logo) { mutableStateOf(false) }
+    val logoUrl = meta.logo?.takeIf { it.isNotBlank() }
+    val horizontalAlignment = if (layout.centerTitle) Alignment.CenterHorizontally else Alignment.Start
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = horizontalAlignment,
+    ) {
+        if (logoUrl != null && !logoLoadError) {
+            AsyncImage(
+                model = logoUrl,
+                contentDescription = stringResource(Res.string.detail_logo_content_description, meta.name),
+                modifier = Modifier
+                    .fillMaxWidth(layout.logoWidthFraction)
+                    .aspectRatio(2.6f),
+                alignment = if (layout.centerTitle) Alignment.Center else Alignment.CenterStart,
+                contentScale = ContentScale.Fit,
+                onError = { logoLoadError = true },
+            )
+        } else {
+            Text(
+                text = meta.name,
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.displaySmallEmphasized,
+                color = HeroOnArtworkColor,
+                textAlign = if (layout.centerTitle) TextAlign.Center else TextAlign.Start,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        if (meta.genres.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = meta.genres.take(3).joinToString(" • "),
+                style = MaterialTheme.typography.labelLarge,
+                color = HeroOnArtworkVariantColor,
+                textAlign = if (layout.centerTitle) TextAlign.Center else TextAlign.Start,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun HeroPageScrim() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f),
+                        MaterialTheme.colorScheme.scrim.copy(alpha = 0.86f),
+                    ),
+                ),
+            ),
+    )
+}
