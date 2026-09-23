@@ -6,8 +6,6 @@ import com.nuvio.app.core.tracking.WatchProgressSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
-import com.nuvio.app.features.watchprogress.WatchProgressSourceSimklPlayback
 
 class WatchProgressMetadataProjectionTest {
     @Test

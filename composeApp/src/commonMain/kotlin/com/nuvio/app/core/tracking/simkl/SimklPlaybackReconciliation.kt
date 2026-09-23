@@ -3,7 +3,7 @@ package com.nuvio.app.core.tracking.simkl
 import com.nuvio.app.core.tracking.TrackingSettingsRepository
 import com.nuvio.app.core.tracking.parseTrackingExternalIds
 import com.nuvio.app.core.watch.watched.WatchedItem
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import kotlinx.atomicfu.atomic
 
 internal fun SimklSyncSnapshot.reconcileWatchedPlayback(): SimklSyncSnapshot {

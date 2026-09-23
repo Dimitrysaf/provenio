@@ -1,6 +1,6 @@
 package com.nuvio.app.features.home.components
 
-import com.nuvio.app.features.watchprogress.ContinueWatchingItem
+import com.nuvio.app.core.watch.progress.ContinueWatchingItem
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

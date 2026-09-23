@@ -9,12 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
-import com.nuvio.app.features.watchprogress.MetadataResolutionRetryCoordinator
-import com.nuvio.app.features.watchprogress.WatchProgressDeltaDecisionType
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
-import com.nuvio.app.features.watchprogress.WatchProgressUiState
-import com.nuvio.app.features.watchprogress.projectWatchProgressUiState
 
 class WatchProgressIdentityTest {
     @Test

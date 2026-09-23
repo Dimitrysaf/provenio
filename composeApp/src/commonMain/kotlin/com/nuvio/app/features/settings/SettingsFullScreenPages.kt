@@ -14,7 +14,7 @@ import com.nuvio.app.core.addons.enabledAddons
 import com.nuvio.app.core.addons.firstEnabledManifestError
 import com.nuvio.app.core.addons.hasPendingEnabledManifests
 import com.nuvio.app.core.addons.isWaitingForFirstEnabledManifest
-import com.nuvio.app.features.collection.CollectionRepository
+import com.nuvio.app.core.collection.CollectionRepository
 import com.nuvio.app.core.metadata.MetaScreenSettingsRepository
 import com.nuvio.app.core.plugins.PluginRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository

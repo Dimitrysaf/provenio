@@ -9,10 +9,14 @@ import com.nuvio.app.core.p2p.P2pSettingsRepository
 import com.nuvio.app.features.streams.ActiveStreamStore
 import com.nuvio.app.core.streams.StreamItem
 import com.nuvio.app.core.streams.StreamsUiState
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_player_episode_code_full
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.playback.AddonSubtitle
+import com.nuvio.app.core.playback.AudioTrack
+import com.nuvio.app.core.playback.PlayerResizeMode
+import com.nuvio.app.core.playback.SubtitleTrack
 
 @Composable
 internal fun PlayerScreenModalHosts(

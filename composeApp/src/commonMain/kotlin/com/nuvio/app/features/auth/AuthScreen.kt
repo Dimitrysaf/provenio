@@ -97,6 +97,7 @@ import nuvio.composeapp.generated.resources.compose_auth_terms_link
 import nuvio.composeapp.generated.resources.compose_auth_terms_prefix
 import nuvio.composeapp.generated.resources.compose_auth_welcome_back
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.auth.ServerConnectionController
 
 /** Widest the form itself is allowed to get, from the spec's recommended pane widths. */
 private val FormMaxWidth = 360.dp

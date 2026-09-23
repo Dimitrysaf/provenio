@@ -3,7 +3,6 @@ package com.nuvio.app.core.playback
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import com.nuvio.app.features.player.PlayerSubtitleCueParser
 
 class PlayerSubtitleUtilsTest {
 

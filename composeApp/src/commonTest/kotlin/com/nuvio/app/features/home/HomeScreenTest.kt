@@ -9,14 +9,14 @@ import com.nuvio.app.core.cloud.playbackVideoId
 import com.nuvio.app.core.debrid.DebridProviders
 import com.nuvio.app.core.watch.progress.CachedInProgressItem
 import com.nuvio.app.core.watch.progress.CachedNextUpItem
-import com.nuvio.app.features.watchprogress.ContinueWatchingItem
-import com.nuvio.app.features.watchprogress.ContinueWatchingSortMode
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
-import com.nuvio.app.features.watchprogress.WatchProgressSourceTraktHistory
-import com.nuvio.app.features.watchprogress.nextUpDismissKey
-import com.nuvio.app.features.watchprogress.parseReleaseDateToEpochMs
+import com.nuvio.app.core.watch.progress.ContinueWatchingItem
+import com.nuvio.app.core.watch.progress.ContinueWatchingSortMode
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressSourceTraktHistory
+import com.nuvio.app.core.watch.progress.nextUpDismissKey
+import com.nuvio.app.core.watch.progress.parseReleaseDateToEpochMs
 import com.nuvio.app.core.watch.progress.resolvedProgressKey
-import com.nuvio.app.features.watchprogress.toContinueWatchingItem
+import com.nuvio.app.core.watch.progress.toContinueWatchingItem
 import com.nuvio.app.core.watch.watched.WatchedItem
 import com.nuvio.app.core.watch.watching.domain.WatchingContentRef
 import kotlinx.serialization.json.Json
@@ -28,6 +28,19 @@ import kotlin.test.assertTrue
 import com.nuvio.app.core.home.shouldShowHomeHeroSlot
 import com.nuvio.app.core.home.shouldShowInitialHomeLoading
 import com.nuvio.app.core.home.stableKey
+import com.nuvio.app.core.home.CompletedSeriesCandidate
+import com.nuvio.app.core.home.HomeContinueWatchingMaxRecentProgressItems
+import com.nuvio.app.core.home.HomeNextUpCandidateMetadataOutcome
+import com.nuvio.app.core.home.HomeNextUpInitialResolutionLimit
+import com.nuvio.app.core.home.buildHomeNextUpSeedCandidates
+import com.nuvio.app.core.home.cachedNextUpHasAired
+import com.nuvio.app.core.home.filterEntriesForContinueWatchingWindow
+import com.nuvio.app.core.home.filterNextUpItemsByCurrentSeeds
+import com.nuvio.app.core.home.hasHomeNextUpSeedChangedFromCache
+import com.nuvio.app.core.home.hasUsableHomeNextUpMetadata
+import com.nuvio.app.core.home.isHomeNextUpSeedSourceLoaded
+import com.nuvio.app.core.home.planHomeNextUpResolutionCandidates
+import com.nuvio.app.core.home.splitUpcomingItems
 
 class HomeScreenTest {
 

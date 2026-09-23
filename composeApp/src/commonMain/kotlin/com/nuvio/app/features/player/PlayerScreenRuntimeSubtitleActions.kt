@@ -4,6 +4,11 @@ import com.nuvio.app.core.i18n.localizedNoSubtitleLinesFound
 import com.nuvio.app.core.i18n.localizedSubtitleLinesLoadError
 import com.nuvio.app.core.addons.httpGetTextWithHeaders
 import kotlinx.coroutines.launch
+import com.nuvio.app.core.playback.PlayerSubtitleCueParser
+import com.nuvio.app.core.playback.PlayerTrackPreferenceStorage
+import com.nuvio.app.core.playback.SUBTITLE_DELAY_MAX_MS
+import com.nuvio.app.core.playback.SUBTITLE_DELAY_MIN_MS
+import com.nuvio.app.core.playback.SubtitleSyncCue
 
 internal fun PlayerScreenRuntime.fetchAddonSubtitlesForActiveItem() {
     if (activeSourceUrl.startsWith("file:") && externalSubtitles.isNotEmpty()) {

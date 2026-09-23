@@ -4,7 +4,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.savedstate.serialization.SavedStateConfiguration
 import com.nuvio.app.features.catalog.CatalogRepository
 import com.nuvio.app.features.collection.CollectionEditorPage
-import com.nuvio.app.features.collection.CollectionEditorRepository
+import com.nuvio.app.core.collection.CollectionEditorRepository
 import com.nuvio.app.features.collection.FolderDetailRepository
 import com.nuvio.app.features.collection.disposeCollectionEditorPage
 import com.nuvio.app.core.home.MetaPreview

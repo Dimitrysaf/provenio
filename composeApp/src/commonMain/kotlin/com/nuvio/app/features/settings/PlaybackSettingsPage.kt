@@ -54,8 +54,8 @@ import com.nuvio.app.core.addons.AddonRepository
 import com.nuvio.app.core.addons.enabledAddons
 import com.nuvio.app.features.player.AndroidLibmpvVideoOutput
 import com.nuvio.app.features.player.AndroidPlaybackEngine
-import com.nuvio.app.features.player.AudioLanguageOption
-import com.nuvio.app.features.player.AvailableLanguageOptions
+import com.nuvio.app.core.playback.AudioLanguageOption
+import com.nuvio.app.core.playback.AvailableLanguageOptions
 import com.nuvio.app.core.playback.ExternalPlayerApp
 import com.nuvio.app.core.playback.ExternalPlayerPlatform
 import com.nuvio.app.features.player.IosAudioOutputMode
@@ -64,10 +64,10 @@ import com.nuvio.app.features.player.localizedLabel
 import com.nuvio.app.features.player.IosTargetPrimaries
 import com.nuvio.app.features.player.IosTargetTransfer
 import com.nuvio.app.features.player.PlayerSettingsRepository
-import com.nuvio.app.features.player.STREAM_AUTO_PLAY_TIMEOUT_VALUES
+import com.nuvio.app.core.playback.STREAM_AUTO_PLAY_TIMEOUT_VALUES
 import com.nuvio.app.features.player.SubtitleBackgroundColorSwatches
 import com.nuvio.app.features.player.SubtitleColorSwatches
-import com.nuvio.app.features.player.SubtitleLanguageOption
+import com.nuvio.app.core.playback.SubtitleLanguageOption
 import com.nuvio.app.features.player.formatPlaybackSpeedLabel
 import com.nuvio.app.features.player.languageLabelForCode
 import com.nuvio.app.features.player.subtitleFontSizeRangeSp

@@ -24,6 +24,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.profiles.AvatarCatalogItem
+import com.nuvio.app.core.profiles.AvatarRepository
+import com.nuvio.app.core.profiles.NuvioProfile
+import com.nuvio.app.core.profiles.avatarImageUrl
+import com.nuvio.app.core.profiles.routeProfileSelection
 
 /**
  * The profile tab, and the switcher it opens.

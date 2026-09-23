@@ -1,9 +1,9 @@
 package com.nuvio.app.shell.components
 
-import com.nuvio.app.features.profiles.AvatarCatalogItem
-import com.nuvio.app.features.profiles.AvatarRepository
-import com.nuvio.app.features.profiles.MAX_PROFILES
-import com.nuvio.app.features.profiles.NuvioProfile
+import com.nuvio.app.core.profiles.AvatarCatalogItem
+import com.nuvio.app.core.profiles.AvatarRepository
+import com.nuvio.app.core.profiles.MAX_PROFILES
+import com.nuvio.app.core.profiles.NuvioProfile
 import com.nuvio.app.features.profiles.PinVerifyResult
 import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.profiles.profileAvatarImageUrl

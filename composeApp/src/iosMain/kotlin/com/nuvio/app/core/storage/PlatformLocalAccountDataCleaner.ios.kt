@@ -5,7 +5,7 @@ package com.nuvio.app.core.storage
 import platform.Foundation.NSUserDefaults
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHomeDirectory
-import com.nuvio.app.features.profiles.MAX_PROFILES
+import com.nuvio.app.core.profiles.MAX_PROFILES
 
 internal actual object PlatformLocalAccountDataCleaner {
     private val plainKeys = listOf(

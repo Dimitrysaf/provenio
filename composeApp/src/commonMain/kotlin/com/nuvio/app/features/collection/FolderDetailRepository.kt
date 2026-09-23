@@ -15,7 +15,7 @@ import com.nuvio.app.core.home.HomeCatalogSection
 import com.nuvio.app.core.home.MetaPreview
 import com.nuvio.app.core.home.filterReleasedItems
 import com.nuvio.app.core.home.stableKey
-import com.nuvio.app.features.trakt.TraktPublicListSourceResolver
+import com.nuvio.app.core.tracking.trakt.TraktPublicListSourceResolver
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,61 +32,17 @@ import nuvio.composeapp.generated.resources.collections_folder_trakt_movie_list
 import nuvio.composeapp.generated.resources.collections_folder_trakt_series_list
 import nuvio.composeapp.generated.resources.collections_tab_all
 import org.jetbrains.compose.resources.getString
-
-data class FolderTab(
-    val label: String,
-    val typeLabel: String = "",
-    val source: CollectionSource? = null,
-    val sourceKey: String? = null,
-    val manifestUrl: String? = null,
-    val type: String = "",
-    val catalogId: String = "",
-    val genre: String? = null,
-    val supportsPagination: Boolean = false,
-    val items: List<MetaPreview> = emptyList(),
-    val isLoading: Boolean = true,
-    val isLoadingMore: Boolean = false,
-    val nextSkip: Int? = null,
-    val consecutiveDuplicatePages: Int = 0,
-    val error: String? = null,
-    val isAllTab: Boolean = false,
-) {
-    val canLoadMore: Boolean
-        get() = supportsPagination && nextSkip != null
-}
-
-data class FolderDetailUiState(
-    val folder: CollectionFolder? = null,
-    val collectionTitle: String = "",
-    val viewMode: FolderViewMode = FolderViewMode.TABBED_GRID,
-    val tabs: List<FolderTab> = emptyList(),
-    val selectedTabIndex: Int = 0,
-    val isLoading: Boolean = true,
-    val showAllTab: Boolean = true,
-) {
-    val selectedTab: FolderTab?
-        get() = tabs.getOrNull(selectedTabIndex)
-
-    val selectedTabCanLoadMore: Boolean
-        get() {
-            val currentTab = selectedTab ?: return false
-            return if (currentTab.isAllTab) {
-                tabs.any { !it.isAllTab && it.canLoadMore }
-            } else {
-                currentTab.canLoadMore
-            }
-        }
-
-    val selectedTabIsLoadingMore: Boolean
-        get() {
-            val currentTab = selectedTab ?: return false
-            return if (currentTab.isAllTab) {
-                tabs.any { !it.isAllTab && it.isLoadingMore }
-            } else {
-                currentTab.isLoadingMore
-            }
-        }
-}
+import com.nuvio.app.core.collection.CollectionRepository
+import com.nuvio.app.core.collection.CollectionSource
+import com.nuvio.app.core.collection.FolderDetailUiState
+import com.nuvio.app.core.collection.FolderTab
+import com.nuvio.app.core.collection.TmdbCollectionMediaType
+import com.nuvio.app.core.collection.TmdbCollectionSourceResolver
+import com.nuvio.app.core.collection.TmdbCollectionSourceType
+import com.nuvio.app.core.collection.TraktListSort
+import com.nuvio.app.core.collection.TraktSortHow
+import com.nuvio.app.core.collection.catalogRouteKey
+import com.nuvio.app.core.collection.findCollectionCatalog
 
 object FolderDetailRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -460,8 +416,6 @@ object FolderDetailRepository {
         }
     }
 }
-
-private fun Boolean?.orFalse(): Boolean = this == true
 
 private fun CatalogPage.withUnreleasedFilter(): CatalogPage {
     if (!HomeCatalogSettingsRepository.snapshot().hideUnreleasedContent) return this

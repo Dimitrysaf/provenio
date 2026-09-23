@@ -67,7 +67,7 @@ import com.nuvio.app.core.metadata.MetaScreenSettingsRepository
 import com.nuvio.app.core.metadata.MetaScreenSettingsUiState
 import com.nuvio.app.core.settings.PosterCardStyleRepository
 import com.nuvio.app.core.settings.PosterCardStyleUiState
-import com.nuvio.app.features.collection.CollectionRepository
+import com.nuvio.app.core.collection.CollectionRepository
 import com.nuvio.app.features.collection.CollectionsInlinePane
 import com.nuvio.app.core.addons.enabledAddons
 import com.nuvio.app.core.addons.firstEnabledManifestError
@@ -96,7 +96,7 @@ import com.nuvio.app.core.tracking.TrackingSettingsUiState
 import com.nuvio.app.core.metadata.tmdb.TmdbSettings
 import com.nuvio.app.core.metadata.tmdb.TmdbSettingsRepository
 import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
-import com.nuvio.app.features.watchprogress.ContinueWatchingPreferencesUiState
+import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesUiState
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_settings_page_root
 import kotlinx.coroutines.delay

@@ -15,6 +15,7 @@ import nuvio.composeapp.generated.resources.compose_player_resize_fit
 import nuvio.composeapp.generated.resources.compose_player_resize_zoom
 import org.jetbrains.compose.resources.StringResource
 import kotlin.math.max
+import com.nuvio.app.core.playback.PlayerResizeMode
 
 internal data class PlayerLayoutMetrics(
     val horizontalPadding: Dp,
@@ -127,13 +128,6 @@ internal fun PlayerResizeMode.next(): PlayerResizeMode =
         PlayerResizeMode.Fit -> PlayerResizeMode.Fill
         PlayerResizeMode.Fill -> PlayerResizeMode.Zoom
         PlayerResizeMode.Zoom -> PlayerResizeMode.Fit
-    }
-
-internal val PlayerResizeMode.labelRes: StringResource
-    get() = when (this) {
-        PlayerResizeMode.Fit -> Res.string.compose_player_resize_fit
-        PlayerResizeMode.Fill -> Res.string.compose_player_resize_fill
-        PlayerResizeMode.Zoom -> Res.string.compose_player_resize_zoom
     }
 
 internal fun formatPlaybackTime(positionMs: Long): String {

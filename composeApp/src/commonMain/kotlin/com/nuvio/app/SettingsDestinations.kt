@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import com.nuvio.app.features.collection.CollectionEditorPage
 import com.nuvio.app.features.collection.CollectionEditorScreen
 import com.nuvio.app.features.collection.CollectionManagementScreen
-import com.nuvio.app.features.collection.CollectionRepository
+import com.nuvio.app.core.collection.CollectionRepository
 import com.nuvio.app.features.collection.FolderDetailRepository
 import com.nuvio.app.features.collection.FolderDetailScreen
 import com.nuvio.app.core.downloads.DownloadItem

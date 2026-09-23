@@ -12,7 +12,7 @@ import com.nuvio.app.core.watch.watched.toEpisodeWatchedItem
 import com.nuvio.app.core.watch.watched.toSeriesWatchedItem
 import com.nuvio.app.core.watch.watched.toWatchedItem
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

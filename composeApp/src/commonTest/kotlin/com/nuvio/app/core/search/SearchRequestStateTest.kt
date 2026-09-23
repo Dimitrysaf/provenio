@@ -8,8 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import com.nuvio.app.features.search.SearchRepository
-import com.nuvio.app.features.search.canReuseRequestState
-import com.nuvio.app.features.search.resolveDiscoverCatalog
 
 class SearchRequestStateTest {
     @Test

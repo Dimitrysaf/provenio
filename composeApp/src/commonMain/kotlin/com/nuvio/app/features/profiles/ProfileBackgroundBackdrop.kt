@@ -16,8 +16,9 @@ import coil3.compose.AsyncImage
 import com.nuvio.app.shell.components.ProfileMeshBackground
 import com.nuvio.app.core.membership.MemberAccessRepository
 import com.nuvio.app.core.membership.ProfileBackgroundRepository
-import com.nuvio.app.features.membership.ProfileBackgroundSelection
-import com.nuvio.app.features.membership.resolveProfileBackground
+import com.nuvio.app.core.membership.ProfileBackgroundSelection
+import com.nuvio.app.core.membership.resolveProfileBackground
+import com.nuvio.app.core.profiles.NuvioProfile
 
 @Composable
 fun ProfileBackgroundBackdrop(

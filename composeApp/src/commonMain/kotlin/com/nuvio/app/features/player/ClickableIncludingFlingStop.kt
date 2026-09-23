@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
+import com.nuvio.app.core.playback.shouldDeliverFlingStopClick
 
 /**
  * Like [Modifier.clickable], but still delivers [onClick] when LazyColumn consumed the
@@ -49,10 +50,3 @@ internal fun Modifier.clickableIncludingFlingStop(onClick: () -> Unit): Modifier
             }
         }
 }
-
-internal fun shouldDeliverFlingStopClick(
-    downConsumed: Boolean,
-    movement: Float,
-    touchSlop: Float,
-    pointerUp: Boolean,
-): Boolean = downConsumed && pointerUp && movement <= touchSlop

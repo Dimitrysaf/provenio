@@ -32,7 +32,7 @@ import com.nuvio.app.core.metadata.mdblist.MdbListSettingsStorage
 import com.nuvio.app.core.notifications.EpisodeReleaseNotificationPlatform
 import com.nuvio.app.core.notifications.EpisodeReleaseNotificationsStorage
 import com.nuvio.app.features.player.PlayerSettingsStorage
-import com.nuvio.app.features.player.PlayerTrackPreferenceStorage
+import com.nuvio.app.core.playback.PlayerTrackPreferenceStorage
 import com.nuvio.app.core.playback.ExternalPlayerPlatform
 import com.nuvio.app.core.playback.SubtitleFileCache
 import com.nuvio.app.features.player.PlayerPictureInPictureManager

@@ -7,14 +7,17 @@ import com.nuvio.app.core.tracking.TrackingScrobbleCoordinator
 import com.nuvio.app.core.tracking.TrackingScrobbleEvent
 import com.nuvio.app.core.tracking.buildTrackingMediaReference
 import com.nuvio.app.core.watch.progress.WatchProgressClock
-import com.nuvio.app.features.watchprogress.WatchProgressPlaybackSession
+import com.nuvio.app.core.watch.progress.WatchProgressPlaybackSession
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
-import com.nuvio.app.features.watchprogress.buildPlaybackVideoId
+import com.nuvio.app.core.watch.progress.buildPlaybackVideoId
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.nuvio.app.core.playback.extractParentalGuideImdbId
 import com.nuvio.app.core.playback.extractParentalGuideTmdbId
+import com.nuvio.app.core.playback.TrackingScrobbleItemInputs
+import com.nuvio.app.core.playback.shouldSendStopScrobble
+import com.nuvio.app.core.playback.shouldUpdateTrackingScrobbleAfterSeek
 
 internal val PlayerScreenRuntime.activePlaybackIdentity: String
     get() = activeTorrentInfoHash
@@ -90,16 +93,6 @@ internal fun PlayerScreenRuntime.currentPlaybackProgressPercent(
     return ((snapshot.positionMs.toFloat() / duration.toFloat()) * 100f)
         .coerceIn(0f, 100f)
 }
-
-internal data class TrackingScrobbleItemInputs(
-    val contentType: String,
-    val parentMetaId: String,
-    val videoId: String?,
-    val title: String,
-    val seasonNumber: Int?,
-    val episodeNumber: Int?,
-    val episodeTitle: String?,
-)
 
 internal fun PlayerScreenRuntime.snapshotTrackingScrobbleItemInputs() = TrackingScrobbleItemInputs(
     contentType = contentType ?: parentMetaType,
@@ -206,16 +199,6 @@ internal fun PlayerScreenRuntime.emitStopScrobbleForCurrentProgress() {
         emitTrackingScrobbleStop(progressPercent)
     }
 }
-
-internal fun shouldSendStopScrobble(
-    hasActiveScrobble: Boolean,
-    progressPercent: Float,
-): Boolean = hasActiveScrobble || progressPercent >= 80f
-
-internal fun shouldUpdateTrackingScrobbleAfterSeek(
-    hasActiveScrobble: Boolean,
-    progressPercent: Float,
-): Boolean = hasActiveScrobble && progressPercent >= 1f && progressPercent < 80f
 
 internal fun PlayerScreenRuntime.emitTrackingSeekScrobbleStart() {
     val mediaSnapshot = currentTrackingMedia

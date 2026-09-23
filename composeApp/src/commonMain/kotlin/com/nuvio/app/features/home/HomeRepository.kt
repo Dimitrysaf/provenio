@@ -5,13 +5,13 @@ import com.nuvio.app.core.addons.AddonRepository
 import com.nuvio.app.core.addons.enabledAddons
 import com.nuvio.app.core.catalog.CatalogTarget
 import com.nuvio.app.core.catalog.fetchCatalogPage
-import com.nuvio.app.features.collection.Collection
-import com.nuvio.app.features.collection.CollectionRepository
-import com.nuvio.app.features.collection.CollectionSource
-import com.nuvio.app.features.collection.TmdbCollectionSourceResolver
-import com.nuvio.app.features.collection.catalogRouteKey
-import com.nuvio.app.features.collection.findCollectionCatalog
-import com.nuvio.app.features.trakt.TraktPublicListSourceResolver
+import com.nuvio.app.core.collection.Collection
+import com.nuvio.app.core.collection.CollectionRepository
+import com.nuvio.app.core.collection.CollectionSource
+import com.nuvio.app.core.collection.TmdbCollectionSourceResolver
+import com.nuvio.app.core.collection.catalogRouteKey
+import com.nuvio.app.core.collection.findCollectionCatalog
+import com.nuvio.app.core.tracking.trakt.TraktPublicListSourceResolver
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +33,7 @@ import com.nuvio.app.core.home.MetaPreview
 import com.nuvio.app.core.home.buildHomeCatalogDefinitions
 import com.nuvio.app.core.home.filterReleasedItems
 import com.nuvio.app.core.home.stableKey
+import com.nuvio.app.core.home.HomeCatalogSettingsSnapshot
 
 object HomeRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

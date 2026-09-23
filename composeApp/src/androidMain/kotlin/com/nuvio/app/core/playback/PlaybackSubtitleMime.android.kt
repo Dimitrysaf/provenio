@@ -4,8 +4,6 @@ import android.net.Uri
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import com.nuvio.app.core.streams.StreamSubtitle
-import com.nuvio.app.features.player.PlayerSubtitleUtils
-import com.nuvio.app.features.player.isLocalSubtitleUri
 
 internal fun startupSubtitleConfigurations(
     subtitles: List<StreamSubtitle>,

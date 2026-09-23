@@ -36,6 +36,11 @@ import nuvio.composeapp.generated.resources.action_play
 import nuvio.composeapp.generated.resources.player_error_mpv_unavailable
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.playback.AudioTrack
+import com.nuvio.app.core.playback.PlayerResizeMode
+import com.nuvio.app.core.playback.SUBTITLE_DELAY_MAX_MS
+import com.nuvio.app.core.playback.SUBTITLE_DELAY_MIN_MS
+import com.nuvio.app.core.playback.SubtitleTrack
 
 private const val TAG = "NuvioiOSPlayer"
 

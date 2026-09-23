@@ -21,6 +21,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.nuvio.app.core.profiles.AvatarCatalogItem
+import com.nuvio.app.core.profiles.avatarImageUrl
 
 @Composable
 internal fun AvatarPicker(

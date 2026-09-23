@@ -8,7 +8,7 @@ import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.runtime.Composable
 import com.nuvio.app.core.cloud.CloudLibraryContentType
 import com.nuvio.app.core.cloud.cloudLibraryDisplayArtworkUrl
-import com.nuvio.app.features.watchprogress.ContinueWatchingItem
+import com.nuvio.app.core.watch.progress.ContinueWatchingItem
 import nuvio.composeapp.generated.resources.*
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.cw_action_go_to_details

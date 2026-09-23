@@ -7,11 +7,11 @@ import com.nuvio.app.core.metadata.MetaDetails
 import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.core.metadata.tmdb.TmdbService
 import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
-import com.nuvio.app.features.watchprogress.WatchProgressSourceTraktHistory
-import com.nuvio.app.features.watchprogress.WatchProgressSourceTraktPlayback
-import com.nuvio.app.features.watchprogress.WatchProgressSourceTraktShowProgress
-import com.nuvio.app.features.watchprogress.buildPlaybackVideoId
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressSourceTraktHistory
+import com.nuvio.app.core.watch.progress.WatchProgressSourceTraktPlayback
+import com.nuvio.app.core.watch.progress.WatchProgressSourceTraktShowProgress
+import com.nuvio.app.core.watch.progress.buildPlaybackVideoId
 import com.nuvio.app.core.watch.progress.shouldReplaceProgressSnapshotEntry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope

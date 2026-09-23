@@ -4,8 +4,8 @@ import com.nuvio.app.core.time.parseZonedIsoDateTimeToEpochMs
 import com.nuvio.app.core.home.MetaPreview
 import com.nuvio.app.core.watch.watched.WatchedItem
 import com.nuvio.app.core.watch.watched.watchedItemKey
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
-import com.nuvio.app.features.watchprogress.WatchProgressSourceTraktPlayback
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressSourceTraktPlayback
 import com.nuvio.app.core.watch.watching.domain.WatchingCompletedEpisode
 import com.nuvio.app.core.watch.watching.domain.WatchingContentRef
 import kotlin.test.Test

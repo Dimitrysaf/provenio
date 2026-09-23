@@ -18,6 +18,9 @@ import com.nuvio.app.shell.components.SingleChoiceBottomSheet
 import com.nuvio.app.shell.components.SingleChoiceOption
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.profiles.AvatarCatalogItem
+import com.nuvio.app.core.profiles.MAX_PROFILES
+import com.nuvio.app.core.profiles.NuvioProfile
 
 /**
  * Switching profile: the profiles as a list, in a sheet.

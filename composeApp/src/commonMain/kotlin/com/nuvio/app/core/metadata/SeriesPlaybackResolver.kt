@@ -4,7 +4,7 @@ import com.nuvio.app.core.watch.watched.WatchedItem
 import com.nuvio.app.core.watch.watched.normalizeWatchedMarkedAtEpochMs
 import com.nuvio.app.core.watch.watched.watchedItemKey
 import com.nuvio.app.core.watch.watching.application.WatchingState
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import com.nuvio.app.core.watch.watching.domain.WatchingCompletedEpisode
 import com.nuvio.app.core.watch.watching.domain.WatchingContentRef
 import com.nuvio.app.core.watch.watching.domain.WatchingProgressRecord

@@ -7,36 +7,13 @@ import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_player_track_number
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
+import com.nuvio.app.core.playback.AddonSubtitle
+import com.nuvio.app.core.playback.AudioTrack
+import com.nuvio.app.core.playback.SubtitleSyncCue
+import com.nuvio.app.core.playback.SubtitleTrack
 
-data class AudioTrack(
-    val index: Int,
-    val id: String,
-    val label: String,
-    val language: String? = null,
-    val isSelected: Boolean = false,
-)
-
-data class SubtitleTrack(
-    val index: Int,
-    val id: String,
-    val label: String,
-    val language: String? = null,
-    val isSelected: Boolean = false,
-    val isForced: Boolean = false,
-)
-
-data class AddonSubtitle(
-    val id: String,
-    val url: String,
-    val language: String,
-    val display: String,
-    val addonName: String? = null,
-    val isSelected: Boolean = false,
-)
-
-const val SUBTITLE_DELAY_MIN_MS = -60_000
-const val SUBTITLE_DELAY_MAX_MS = 60_000
 const val SUBTITLE_DELAY_STEP_MS = 100
+
 const val SUBTITLE_AUTO_SYNC_REACTION_COMPENSATION_MS = 300L
 
 internal val subtitleFontSizeRangeSp: IntRange
@@ -59,12 +36,6 @@ data class SubtitleStyleState(
         val DEFAULT = SubtitleStyleState()
     }
 }
-
-data class SubtitleSyncCue(
-    val startTimeMs: Long,
-    val endTimeMs: Long = startTimeMs + 5_000L,
-    val text: String,
-)
 
 data class SubtitleAutoSyncUiState(
     val capturedPositionMs: Long? = null,

@@ -29,8 +29,8 @@ import com.nuvio.app.shell.components.PosterLandscapeAspectRatio
 import com.nuvio.app.shell.components.landscapePosterWidth
 import com.nuvio.app.shell.components.posterCardClickable
 import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
-import com.nuvio.app.features.collection.Collection
-import com.nuvio.app.features.collection.CollectionFolder
+import com.nuvio.app.core.collection.Collection
+import com.nuvio.app.core.collection.CollectionFolder
 import com.nuvio.app.core.home.PosterShape
 
 @Composable

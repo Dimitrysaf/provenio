@@ -19,6 +19,8 @@ import org.jetbrains.compose.resources.getString
 import com.nuvio.app.core.playback.ExternalPlayerPlaybackRequest
 import com.nuvio.app.core.playback.SubtitleCacheProvider
 import com.nuvio.app.core.playback.SubtitleInput
+import com.nuvio.app.core.playback.SubtitleLanguageOption
+import com.nuvio.app.core.playback.languageMatchesPreference
 
 private const val SkipSegmentResolveTimeoutMs = 4_000L
 

@@ -78,6 +78,10 @@ import com.nuvio.app.features.settings.SettingsList
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.profiles.AvatarCatalogItem
+import com.nuvio.app.core.profiles.AvatarRepository
+import com.nuvio.app.core.profiles.NuvioProfile
+import com.nuvio.app.core.profiles.avatarImageUrl
 
 /**
  * The profile editor. [embedded] hosts it inside a layout pane instead of as a full window: the

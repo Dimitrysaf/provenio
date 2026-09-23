@@ -8,9 +8,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import com.nuvio.app.features.watchprogress.ContinueWatchingPreferencesUiState
-import com.nuvio.app.features.watchprogress.ContinueWatchingSectionStyle
-import com.nuvio.app.features.watchprogress.ContinueWatchingSortMode
 
 @Serializable
 private data class StoredContinueWatchingPreferences(

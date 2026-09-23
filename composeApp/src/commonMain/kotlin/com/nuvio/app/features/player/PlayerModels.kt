@@ -70,12 +70,6 @@ object PlayerLaunchStore {
     }
 }
 
-enum class PlayerResizeMode {
-    Fit,
-    Fill,
-    Zoom,
-}
-
 enum class AndroidPlaybackEngine(
     val label: String,
 ) {

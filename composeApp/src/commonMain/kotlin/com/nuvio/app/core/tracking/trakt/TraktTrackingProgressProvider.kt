@@ -4,9 +4,9 @@ import co.touchlab.kermit.Logger
 import com.nuvio.app.core.tracking.TrackingProgressProvider
 import com.nuvio.app.core.tracking.TrackingProgressSnapshot
 import com.nuvio.app.core.tracking.TrackingProviderId
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
-import com.nuvio.app.features.watchprogress.WatchProgressSourceTraktPlayback
-import com.nuvio.app.features.watchprogress.buildPlaybackVideoId
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressSourceTraktPlayback
+import com.nuvio.app.core.watch.progress.buildPlaybackVideoId
 import com.nuvio.app.core.watch.progress.shouldUseAsCompletedSeedForContinueWatching
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow

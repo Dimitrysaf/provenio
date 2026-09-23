@@ -3,8 +3,6 @@ package com.nuvio.app.core.watch.progress
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import com.nuvio.app.features.watchprogress.RemoteProgressWriteDeduplicator
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
 
 class RemoteProgressWriteDeduplicatorTest {
     @Test

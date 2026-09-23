@@ -59,10 +59,10 @@ import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
 import com.nuvio.app.core.cloud.CloudLibraryContentType
 import com.nuvio.app.core.cloud.cloudLibraryDisplayArtworkUrl
 import com.nuvio.app.core.tracking.WatchProgressSource
-import com.nuvio.app.features.watchprogress.ContinueWatchingItem
-import com.nuvio.app.features.watchprogress.ContinueWatchingSectionStyle
-import com.nuvio.app.features.watchprogress.WatchProgressCompletionPercentThreshold
-import com.nuvio.app.features.watchprogress.continueWatchingItemKey
+import com.nuvio.app.core.watch.progress.ContinueWatchingItem
+import com.nuvio.app.core.watch.progress.ContinueWatchingSectionStyle
+import com.nuvio.app.core.watch.progress.WatchProgressCompletionPercentThreshold
+import com.nuvio.app.core.watch.progress.continueWatchingItemKey
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import com.nuvio.app.features.watchprogress.computeAirDateBadgeText
 import kotlin.math.roundToInt

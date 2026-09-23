@@ -12,7 +12,7 @@ import com.nuvio.app.core.tracking.effectiveWatchProgressSource
 import com.nuvio.app.core.tracking.providerId
 import com.nuvio.app.core.tracking.trakt.TraktProgressRepository
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

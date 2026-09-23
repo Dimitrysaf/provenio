@@ -40,21 +40,8 @@ import com.nuvio.app.core.search.DiscoverSelectionStorage
 import com.nuvio.app.core.search.DiscoverUiState
 import com.nuvio.app.core.search.SearchEmptyStateReason
 import com.nuvio.app.core.search.SearchUiState
-
-internal fun <T> canReuseRequestState(
-    forceRefresh: Boolean,
-    requestKey: T,
-    cachedRequestKey: T?,
-): Boolean = !forceRefresh && requestKey == cachedRequestKey
-
-internal fun resolveDiscoverCatalog(
-    sources: List<DiscoverCatalogOption>,
-    preferredCatalogKey: String?,
-    currentCatalogKey: String?,
-): DiscoverCatalogOption? =
-    sources.firstOrNull { it.key == preferredCatalogKey }
-        ?: sources.firstOrNull { it.key == currentCatalogKey }
-        ?: sources.firstOrNull()
+import com.nuvio.app.core.search.canReuseRequestState
+import com.nuvio.app.core.search.resolveDiscoverCatalog
 
 private data class DiscoverRequestKey(
     val sources: List<DiscoverCatalogOption>,
@@ -649,11 +636,3 @@ private fun List<MetaPreview>.previewNames(limit: Int = 5): String {
 
 private fun String.displayLabel(): String =
     localizedMediaTypeLabel(this)
-
-private fun String.typeSortKey(): String =
-    when (lowercase()) {
-        "movie" -> "0_movie"
-        "series" -> "1_series"
-        "anime" -> "2_anime"
-        else -> "9_$this"
-    }

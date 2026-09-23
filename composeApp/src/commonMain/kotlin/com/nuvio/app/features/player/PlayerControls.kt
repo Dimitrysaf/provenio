@@ -86,6 +86,8 @@ import org.jetbrains.compose.resources.stringResource
 import kotlin.math.PI
 import kotlin.math.sin
 import com.nuvio.app.core.playback.ParentalWarning
+import com.nuvio.app.core.playback.PlayerResizeMode
+import com.nuvio.app.core.playback.labelRes
 
 @Composable
 internal fun PlayerControlsShell(

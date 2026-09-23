@@ -49,6 +49,7 @@ import com.nuvio.app.core.streams.streamAddonInstanceId
 import com.nuvio.app.core.streams.toEmptyStateReason
 import com.nuvio.app.core.streams.toPluginProviderGroups
 import com.nuvio.app.core.streams.toStreamItem
+import com.nuvio.app.core.streams.supportsStream
 
 object StreamsRepository {
     private val log = Logger.withTag("StreamsRepo")

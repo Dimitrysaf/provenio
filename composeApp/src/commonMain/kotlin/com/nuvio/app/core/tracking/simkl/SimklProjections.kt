@@ -12,9 +12,9 @@ import com.nuvio.app.core.tracking.parseTrackingExternalIds
 import com.nuvio.app.core.tracking.trackingMediaKind
 import com.nuvio.app.core.watch.watched.WatchedItem
 import com.nuvio.app.core.watch.watched.watchedItemKey
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
-import com.nuvio.app.features.watchprogress.WatchProgressSourceSimklPlayback
-import com.nuvio.app.features.watchprogress.buildPlaybackVideoId
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressSourceSimklPlayback
+import com.nuvio.app.core.watch.progress.buildPlaybackVideoId
 
 internal data class SimklWatchedProjection(
     val items: List<WatchedItem>,

@@ -4,6 +4,19 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import com.nuvio.app.core.playback.AddonSubtitle
+import com.nuvio.app.core.playback.AudioTrack
+import com.nuvio.app.core.playback.PersistedPlayerTrackPreference
+import com.nuvio.app.core.playback.PersistedSubtitleSelectionType
+import com.nuvio.app.core.playback.SubtitleAutoSelectionMode
+import com.nuvio.app.core.playback.SubtitleTrack
+import com.nuvio.app.core.playback.addonSubtitleIsForced
+import com.nuvio.app.core.playback.addonSubtitleMatchesLanguage
+import com.nuvio.app.core.playback.addonSubtitleMatchesSelectedAudioLanguage
+import com.nuvio.app.core.playback.findPersistedSubtitleTrackIndex
+import com.nuvio.app.core.playback.findPreferredSubtitleTrackIndex
+import com.nuvio.app.core.playback.resolveAudioTrackLanguageTarget
+import com.nuvio.app.core.playback.resolveSubtitleAutoSelectionPlan
 
 class PlayerTrackSelectionTest {
 

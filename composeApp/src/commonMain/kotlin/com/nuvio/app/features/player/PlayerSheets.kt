@@ -72,11 +72,25 @@ import com.nuvio.app.features.streams.rememberStreamGroupExpansion
 import com.nuvio.app.features.streams.rememberStreamSizeLabelFormat
 import com.nuvio.app.features.streams.streamGroups
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.abs
+import com.nuvio.app.core.playback.AddonSubtitle
+import com.nuvio.app.core.playback.AudioTrack
+import com.nuvio.app.core.playback.PlayerResizeMode
+import com.nuvio.app.core.playback.SUBTITLE_DELAY_MAX_MS
+import com.nuvio.app.core.playback.SUBTITLE_DELAY_MIN_MS
+import com.nuvio.app.core.playback.SubtitleLanguageItem
+import com.nuvio.app.core.playback.SubtitleOffLanguageKey
+import com.nuvio.app.core.playback.SubtitleSelectionOption
+import com.nuvio.app.core.playback.SubtitleTrack
+import com.nuvio.app.core.playback.SubtitleUnknownLanguageKey
+import com.nuvio.app.core.playback.buildSubtitleLanguageItems
+import com.nuvio.app.core.playback.buildSubtitleSelectionOptions
+import com.nuvio.app.core.playback.findSelectedAddon
+import com.nuvio.app.core.playback.labelRes
 
 @Composable
 internal fun PlayerAudioSheet(

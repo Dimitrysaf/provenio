@@ -28,7 +28,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.nuvio.app.shell.components.PlatformBackHandler
 import com.nuvio.app.shell.components.WindowBreakpoint
-import com.nuvio.app.features.profiles.NuvioProfile
+import com.nuvio.app.core.profiles.NuvioProfile
 import com.nuvio.app.features.profiles.ProfileSwitcherTab
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_nav_home

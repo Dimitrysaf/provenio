@@ -13,6 +13,7 @@ import nuvio.composeapp.generated.resources.player_loading_subtitles_progress
 import nuvio.composeapp.generated.resources.player_loading_subtitles_addon
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.playback.SubtitleLoadingProgress
 
 internal fun playerLoadingStatusResource(
     showStatus: Boolean,

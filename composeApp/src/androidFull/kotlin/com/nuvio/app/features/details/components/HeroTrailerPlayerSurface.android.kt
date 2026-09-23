@@ -27,7 +27,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MergingMediaSource
-import com.nuvio.app.features.player.PlatformPlaybackDataSourceFactory
+import com.nuvio.app.core.playback.PlatformPlaybackDataSourceFactory
 
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable

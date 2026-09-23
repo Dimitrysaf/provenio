@@ -2,7 +2,7 @@ package com.nuvio.app.core.tracking.simkl
 
 import com.nuvio.app.core.tracking.TrackingMediaKind
 import com.nuvio.app.core.tracking.TrackingMembershipRemovalImpact
-import com.nuvio.app.features.watchprogress.WatchProgressSourceSimklPlayback
+import com.nuvio.app.core.watch.progress.WatchProgressSourceSimklPlayback
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlin.test.Test

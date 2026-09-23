@@ -9,6 +9,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import com.nuvio.app.core.playback.ParentalWarning
+import com.nuvio.app.core.playback.shouldSendStopScrobble
+import com.nuvio.app.core.playback.shouldUpdateTrackingScrobbleAfterSeek
 
 class PlayerScreenRuntimeStateTest {
 

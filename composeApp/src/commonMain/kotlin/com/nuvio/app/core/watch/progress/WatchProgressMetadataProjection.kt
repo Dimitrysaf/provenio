@@ -4,8 +4,6 @@ import com.nuvio.app.core.metadata.MetaDetails
 import com.nuvio.app.core.tracking.WatchProgressSource
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
-import com.nuvio.app.features.watchprogress.WatchProgressSourceLocal
 
 internal data class WatchProgressMetadataKey(
     val metaId: String,

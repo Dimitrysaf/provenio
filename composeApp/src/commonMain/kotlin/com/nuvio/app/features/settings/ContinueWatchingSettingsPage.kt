@@ -25,8 +25,8 @@ import com.nuvio.app.shell.components.SingleChoiceOption
 import com.nuvio.app.shell.components.SelectableListRow
 import com.nuvio.app.features.home.components.ContinueWatchingStylePreview
 import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
-import com.nuvio.app.features.watchprogress.ContinueWatchingSectionStyle
-import com.nuvio.app.features.watchprogress.ContinueWatchingSortMode
+import com.nuvio.app.core.watch.progress.ContinueWatchingSectionStyle
+import com.nuvio.app.core.watch.progress.ContinueWatchingSortMode
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.settings_continue_watching_blur_next_up_description
 import nuvio.composeapp.generated.resources.settings_continue_watching_blur_next_up_title

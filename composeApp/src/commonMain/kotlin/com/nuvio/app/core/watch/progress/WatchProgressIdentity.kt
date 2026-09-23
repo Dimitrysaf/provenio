@@ -2,7 +2,6 @@ package com.nuvio.app.core.watch.progress
 
 import com.nuvio.app.core.watch.watching.sync.ProgressDeltaEvent
 import com.nuvio.app.core.watch.watching.sync.ProgressSyncRecord
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
 
 /**
  * Stable storage/sync identity for a progress row.

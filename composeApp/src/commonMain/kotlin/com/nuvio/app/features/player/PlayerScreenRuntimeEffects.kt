@@ -21,7 +21,7 @@ import com.nuvio.app.core.streams.StreamItem
 import com.nuvio.app.core.streams.hasLikelyExpiringPlaybackCredentials
 import com.nuvio.app.core.tracking.TrackingScrobbleAction
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
-import com.nuvio.app.features.watchprogress.buildPlaybackVideoId
+import com.nuvio.app.core.watch.progress.buildPlaybackVideoId
 import com.nuvio.app.core.watch.watching.application.WatchingState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -31,6 +31,7 @@ import org.jetbrains.compose.resources.getString
 import com.nuvio.app.core.playback.ParentalGuideRepository
 import com.nuvio.app.core.playback.PlayerStreamsRepository
 import com.nuvio.app.core.playback.buildParentalWarnings
+import com.nuvio.app.core.playback.PlayerTrackPreferenceStorage
 
 @Composable
 internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {

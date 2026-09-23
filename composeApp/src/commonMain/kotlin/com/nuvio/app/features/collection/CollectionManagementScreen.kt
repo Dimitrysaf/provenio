@@ -64,6 +64,9 @@ import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import com.nuvio.app.core.collection.Collection
+import com.nuvio.app.core.collection.CollectionEditorRepository
+import com.nuvio.app.core.collection.CollectionRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

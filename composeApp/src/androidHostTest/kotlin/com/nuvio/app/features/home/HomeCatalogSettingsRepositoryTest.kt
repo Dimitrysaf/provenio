@@ -9,12 +9,12 @@ import com.nuvio.app.core.addons.AddonManifest
 import com.nuvio.app.core.addons.AddonRepository
 import com.nuvio.app.core.addons.AddonStorage
 import com.nuvio.app.core.addons.ManagedAddon
-import com.nuvio.app.features.collection.Collection
-import com.nuvio.app.features.collection.CollectionFolder
-import com.nuvio.app.features.collection.CollectionMobileSettingsRepository
+import com.nuvio.app.core.collection.Collection
+import com.nuvio.app.core.collection.CollectionFolder
+import com.nuvio.app.core.collection.CollectionMobileSettingsRepository
 import com.nuvio.app.core.collection.CollectionMobileSettingsStorage
-import com.nuvio.app.features.collection.CollectionRepository
-import com.nuvio.app.features.collection.CollectionSource
+import com.nuvio.app.core.collection.CollectionRepository
+import com.nuvio.app.core.collection.CollectionSource
 import com.nuvio.app.core.collection.CollectionStorage
 import com.nuvio.app.features.profiles.ProfileRepository
 import kotlinx.coroutines.flow.first

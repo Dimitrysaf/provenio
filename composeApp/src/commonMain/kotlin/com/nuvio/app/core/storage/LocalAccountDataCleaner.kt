@@ -6,8 +6,8 @@ import com.nuvio.app.core.sync.ProfileSettingsSync
 import com.nuvio.app.core.tracking.ensureTrackingProvidersRegistered
 import com.nuvio.app.core.addons.AddonRepository
 import com.nuvio.app.features.catalog.CatalogRepository
-import com.nuvio.app.features.collection.CollectionMobileSettingsRepository
-import com.nuvio.app.features.collection.CollectionRepository
+import com.nuvio.app.core.collection.CollectionMobileSettingsRepository
+import com.nuvio.app.core.collection.CollectionRepository
 import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.core.metadata.MetaScreenSettingsRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
@@ -22,7 +22,7 @@ import com.nuvio.app.core.p2p.P2pSettingsRepository
 import com.nuvio.app.core.plugins.PluginRepository
 import com.nuvio.app.features.player.SubtitleRepository
 import com.nuvio.app.features.profiles.ProfileRepository
-import com.nuvio.app.features.profiles.MAX_PROFILES
+import com.nuvio.app.core.profiles.MAX_PROFILES
 import com.nuvio.app.features.search.SearchRepository
 import com.nuvio.app.features.settings.ThemeSettingsRepository
 import com.nuvio.app.core.streams.StreamContextStore

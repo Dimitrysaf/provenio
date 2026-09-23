@@ -1,12 +1,12 @@
 package com.nuvio.app.features.catalog
 
-import com.nuvio.app.features.collection.CollectionRepository
-import com.nuvio.app.features.collection.TmdbCollectionSourceResolver
-import com.nuvio.app.features.collection.catalogRouteKey
+import com.nuvio.app.core.collection.CollectionRepository
+import com.nuvio.app.core.collection.TmdbCollectionSourceResolver
+import com.nuvio.app.core.collection.catalogRouteKey
 import com.nuvio.app.core.library.LibraryRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import com.nuvio.app.core.home.filterReleasedItems
-import com.nuvio.app.features.trakt.TraktPublicListSourceResolver
+import com.nuvio.app.core.tracking.trakt.TraktPublicListSourceResolver
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope

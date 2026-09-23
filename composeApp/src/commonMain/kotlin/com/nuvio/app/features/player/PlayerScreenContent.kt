@@ -39,6 +39,7 @@ import nuvio.composeapp.generated.resources.compose_player_tba
 import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.core.playback.ParentalGuideLabels
 import com.nuvio.app.core.playback.PlayerStreamsRepository
+import com.nuvio.app.core.playback.mergeStreamAndAddonSubtitles
 
 @Composable
 internal fun PlayerScreenContent(args: PlayerScreenArgs) {

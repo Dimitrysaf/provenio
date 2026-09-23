@@ -1,6 +1,6 @@
 package com.nuvio.app.core.tracking.trakt
 
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

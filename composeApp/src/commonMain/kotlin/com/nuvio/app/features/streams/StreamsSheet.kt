@@ -56,7 +56,7 @@ import com.nuvio.app.core.debrid.DirectDebridPlaybackResolver
 import com.nuvio.app.core.debrid.toastMessage
 import com.nuvio.app.features.player.PlayerSettingsRepository
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
@@ -64,6 +64,7 @@ import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.core.streams.AddonStreamGroup
 import com.nuvio.app.core.streams.StreamBadgeSettingsRepository
 import com.nuvio.app.core.streams.StreamItem
+import com.nuvio.app.core.streams.resolveStreamResumeState
 
 // ---------------------------------------------------------------------------
 // Streams sheet
@@ -367,25 +368,6 @@ private fun reloadStreams(
     )
 }
 
-internal data class StreamResumeState(
-    val positionMs: Long? = null,
-    val progressFraction: Float? = null,
-)
-
-internal fun resolveStreamResumeState(
-    progress: WatchProgressEntry?,
-    initialPositionMs: Long?,
-    initialProgressFraction: Float?,
-    startFromBeginning: Boolean,
-): StreamResumeState {
-    if (startFromBeginning || progress?.isResumable == false) return StreamResumeState()
-    val fraction = (if (progress != null) progress.progressPercent?.div(100f) else initialProgressFraction)
-        ?.takeIf { it > 0f }?.coerceIn(0f, 1f)
-    val position = if (fraction != null) null
-        else (progress?.lastPositionMs ?: initialPositionMs)?.takeIf { it > 0L }
-    return StreamResumeState(positionMs = position, progressFraction = fraction)
-}
-
 internal fun streamSectionRenderKey(
     groupIndex: Int,
     group: AddonStreamGroup,
@@ -538,6 +520,7 @@ private fun StreamsSheetThumbnail(
 
 /** 16:9, the same still the actions sheet shows for an episode. */
 private val StreamsSheetThumbnailWidth = 96.dp
+
 private val StreamsSheetThumbnailHeight = 54.dp
 
 /** The sheet's gutter, matching the rest of the app's lists. */

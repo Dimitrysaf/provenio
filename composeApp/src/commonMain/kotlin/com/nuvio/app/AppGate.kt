@@ -35,8 +35,8 @@ import com.nuvio.app.shell.theme.NuvioTokens
 import com.nuvio.app.shell.components.PlatformBackHandler
 import com.nuvio.app.features.auth.AuthScreen
 import com.nuvio.app.core.membership.MemberAccessRepository
-import com.nuvio.app.features.profiles.AvatarRepository
-import com.nuvio.app.features.profiles.NuvioProfile
+import com.nuvio.app.core.profiles.AvatarRepository
+import com.nuvio.app.core.profiles.NuvioProfile
 import com.nuvio.app.features.profiles.ProfileEditScreen
 import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.profiles.ProfileSelectionScreen

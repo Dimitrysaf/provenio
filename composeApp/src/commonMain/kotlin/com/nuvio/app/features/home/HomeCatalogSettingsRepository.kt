@@ -2,8 +2,8 @@ package com.nuvio.app.features.home
 
 import androidx.compose.ui.text.intl.Locale
 import com.nuvio.app.core.addons.ManagedAddon
-import com.nuvio.app.features.collection.Collection
-import com.nuvio.app.features.collection.CollectionRepository
+import com.nuvio.app.core.collection.Collection
+import com.nuvio.app.core.collection.CollectionRepository
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +18,11 @@ import org.jetbrains.compose.resources.getString
 import com.nuvio.app.core.home.HomeCatalogDefinition
 import com.nuvio.app.core.home.HomeCatalogSettingsStorage
 import com.nuvio.app.core.home.buildHomeCatalogDefinitions
+import com.nuvio.app.core.home.HomeCatalogPreference
+import com.nuvio.app.core.home.HomeCatalogSettingsSnapshot
+import com.nuvio.app.core.home.SyncCatalogItem
+import com.nuvio.app.core.home.SyncHomeCatalogPayload
+import com.nuvio.app.core.home.visibleCollectionsWithUniqueIds
 
 data class HomeCatalogSettingsItem(
     val key: String,
@@ -56,20 +61,6 @@ data class HomeCatalogSettingsUiState(
             )
         }
 }
-
-internal data class HomeCatalogPreference(
-    val customTitle: String,
-    val enabled: Boolean,
-    val heroSourceEnabled: Boolean,
-    val order: Int,
-)
-
-internal data class HomeCatalogSettingsSnapshot(
-    val heroEnabled: Boolean,
-    val showCatalogType: Boolean,
-    val hideUnreleasedContent: Boolean,
-    val preferences: Map<String, HomeCatalogPreference>,
-)
 
 @Serializable
 private data class StoredHomeCatalogPreference(
@@ -640,11 +631,6 @@ internal data class CollectionCatalogDefinition(
     val subtitle: String,
     val isPinnedToTop: Boolean,
 )
-
-internal fun visibleCollectionsWithUniqueIds(collections: List<Collection>): List<Collection> =
-    collections
-        .filter { collection -> collection.folders.isNotEmpty() }
-        .distinctBy(Collection::id)
 
 internal fun buildCollectionDefinitions(collections: List<Collection>): List<CollectionCatalogDefinition> =
     visibleCollectionsWithUniqueIds(collections).map { collection ->

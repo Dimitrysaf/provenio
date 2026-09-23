@@ -19,11 +19,15 @@ import com.nuvio.app.core.playback.skip.SkipInterval
 import com.nuvio.app.core.streams.StreamsUiState
 import com.nuvio.app.core.tracking.TrackingMediaReference
 import com.nuvio.app.core.watch.watched.WatchedUiState
-import com.nuvio.app.features.watchprogress.WatchProgressUiState
+import com.nuvio.app.core.watch.progress.WatchProgressUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import com.nuvio.app.core.playback.ParentalGuideLabels
 import com.nuvio.app.core.playback.ParentalWarning
+import com.nuvio.app.core.playback.AddonSubtitle
+import com.nuvio.app.core.playback.AudioTrack
+import com.nuvio.app.core.playback.PlayerResizeMode
+import com.nuvio.app.core.playback.SubtitleTrack
 
 internal class PlayerScreenRuntime(
     args: PlayerScreenArgs,

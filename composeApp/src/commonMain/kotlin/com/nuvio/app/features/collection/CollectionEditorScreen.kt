@@ -82,12 +82,27 @@ import com.nuvio.app.core.home.PosterShape
 import com.nuvio.app.features.settings.ListItemBetweenSpace
 import com.nuvio.app.features.settings.OuterCorner
 import com.nuvio.app.features.settings.segmentShape
-import com.nuvio.app.features.trakt.TraktPublicListSearchResult
+import com.nuvio.app.core.tracking.trakt.TraktPublicListSearchResult
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import com.nuvio.app.core.collection.AvailableCatalog
+import com.nuvio.app.core.collection.CollectionCatalogSource
+import com.nuvio.app.core.collection.CollectionEditorRepository
+import com.nuvio.app.core.collection.CollectionEditorUiState
+import com.nuvio.app.core.collection.CollectionFolder
+import com.nuvio.app.core.collection.CollectionSource
+import com.nuvio.app.core.collection.FolderViewMode
+import com.nuvio.app.core.collection.TmdbBuilderMode
+import com.nuvio.app.core.collection.TmdbCollectionMediaType
+import com.nuvio.app.core.collection.TmdbCollectionSort
+import com.nuvio.app.core.collection.TmdbCollectionSourceResolver
+import com.nuvio.app.core.collection.TmdbCollectionSourceType
+import com.nuvio.app.core.collection.TraktListSort
+import com.nuvio.app.core.collection.TraktSortHow
+import com.nuvio.app.core.collection.findAvailableCatalog
 
 enum class CollectionEditorPage {
     Root,

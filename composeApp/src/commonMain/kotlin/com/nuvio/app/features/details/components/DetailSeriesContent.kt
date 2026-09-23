@@ -49,8 +49,8 @@ import com.nuvio.app.core.metadata.isReleasedBy
 import com.nuvio.app.core.metadata.seasonSortKey
 import com.nuvio.app.features.home.components.HeroOnArtworkColor
 import com.nuvio.app.features.settings.segmentShape
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
-import com.nuvio.app.features.watchprogress.buildPlaybackVideoId
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.buildPlaybackVideoId
 import com.nuvio.app.core.watch.watching.application.WatchingState
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.StringResource

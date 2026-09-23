@@ -2,6 +2,8 @@ package com.nuvio.app.core.search
 
 import com.nuvio.app.core.home.MetaPreview
 import com.nuvio.app.core.home.HomeCatalogSection
+import com.nuvio.app.core.catalog.supportsPagination
+import nuvio.composeapp.generated.resources.*
 
 enum class SearchEmptyStateReason {
     NoActiveAddons,
@@ -58,3 +60,26 @@ data class DiscoverUiState(
     val canLoadMore: Boolean
         get() = nextSkip != null
 }
+
+internal fun <T> canReuseRequestState(
+    forceRefresh: Boolean,
+    requestKey: T,
+    cachedRequestKey: T?,
+): Boolean = !forceRefresh && requestKey == cachedRequestKey
+
+internal fun resolveDiscoverCatalog(
+    sources: List<DiscoverCatalogOption>,
+    preferredCatalogKey: String?,
+    currentCatalogKey: String?,
+): DiscoverCatalogOption? =
+    sources.firstOrNull { it.key == preferredCatalogKey }
+        ?: sources.firstOrNull { it.key == currentCatalogKey }
+        ?: sources.firstOrNull()
+
+private fun String.typeSortKey(): String =
+    when (lowercase()) {
+        "movie" -> "0_movie"
+        "series" -> "1_series"
+        "anime" -> "2_anime"
+        else -> "9_$this"
+    }

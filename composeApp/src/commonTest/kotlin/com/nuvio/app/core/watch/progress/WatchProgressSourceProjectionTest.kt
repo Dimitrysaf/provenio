@@ -3,7 +3,6 @@ package com.nuvio.app.core.watch.progress
 import com.nuvio.app.core.tracking.WatchProgressSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
 
 class WatchProgressSourceProjectionTest {
     @Test

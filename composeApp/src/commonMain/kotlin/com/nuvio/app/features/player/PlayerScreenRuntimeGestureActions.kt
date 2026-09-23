@@ -12,6 +12,7 @@ import nuvio.composeapp.generated.resources.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import com.nuvio.app.core.playback.PlayerStreamsRepository
+import com.nuvio.app.core.playback.PlayerResizeMode
 
 internal data class PlayerSurfaceGestureCallbacks(
     val onSurfaceTap: State<(Offset) -> Unit>,

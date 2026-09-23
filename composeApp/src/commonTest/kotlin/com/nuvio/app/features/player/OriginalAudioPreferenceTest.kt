@@ -10,6 +10,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import com.nuvio.app.core.playback.AudioLanguageOption
+import com.nuvio.app.core.playback.AudioTrack
+import com.nuvio.app.core.playback.PersistedPlayerTrackPreference
+import com.nuvio.app.core.playback.SubtitleLanguageOption
+import com.nuvio.app.core.playback.SubtitleTrack
 
 class OriginalAudioPreferenceTest {
     @Test

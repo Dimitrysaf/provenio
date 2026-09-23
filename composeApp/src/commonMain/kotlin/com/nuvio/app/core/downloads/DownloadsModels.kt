@@ -1,6 +1,6 @@
 package com.nuvio.app.core.downloads
 
-import com.nuvio.app.features.player.SubtitleAddonRequest
+import com.nuvio.app.core.playback.SubtitleAddonRequest
 import com.nuvio.app.core.streams.StreamSubtitle
 import kotlinx.serialization.Serializable
 import kotlinx.coroutines.runBlocking

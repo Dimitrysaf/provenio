@@ -9,8 +9,8 @@ import com.nuvio.app.core.sync.ProfileSettingsSync
 import com.nuvio.app.core.sync.putSyncOriginClientId
 import com.nuvio.app.core.tracking.ensureTrackingProvidersRegistered
 import com.nuvio.app.core.addons.AddonRepository
-import com.nuvio.app.features.collection.CollectionMobileSettingsRepository
-import com.nuvio.app.features.collection.CollectionRepository
+import com.nuvio.app.core.collection.CollectionMobileSettingsRepository
+import com.nuvio.app.core.collection.CollectionRepository
 import com.nuvio.app.core.downloads.DownloadsRepository
 import com.nuvio.app.core.metadata.MetaScreenSettingsRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
@@ -58,6 +58,9 @@ import com.nuvio.app.core.profiles.ProfilePinCacheStorage
 import com.nuvio.app.core.profiles.ProfileStorage
 import com.nuvio.app.core.profiles.generateProfilePinSalt
 import com.nuvio.app.core.profiles.hashProfilePin
+import com.nuvio.app.core.profiles.MAX_PROFILES
+import com.nuvio.app.core.profiles.NuvioProfile
+import com.nuvio.app.core.profiles.ProfileLockState
 
 @Serializable
 private data class StoredProfilePayload(
@@ -551,10 +554,3 @@ object ProfileRepository {
         )
     }
 }
-
-@kotlinx.serialization.Serializable
-data class ProfileLockState(
-    @kotlinx.serialization.SerialName("profile_index") val profileIndex: Int,
-    @kotlinx.serialization.SerialName("pin_enabled") val pinEnabled: Boolean = false,
-    @kotlinx.serialization.SerialName("pin_locked_until") val pinLockedUntil: String? = null,
-)

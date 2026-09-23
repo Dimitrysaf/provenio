@@ -1,7 +1,7 @@
 package com.nuvio.app.core.metadata
 
 import com.nuvio.app.core.watch.watched.WatchedItem
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import com.nuvio.app.core.watch.watching.domain.WatchingContentRef
 import kotlin.test.Test
 import kotlin.test.assertEquals

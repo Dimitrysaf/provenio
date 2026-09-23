@@ -30,12 +30,12 @@ import com.nuvio.app.core.library.LibraryItem
 import com.nuvio.app.features.library.LibraryScreen
 import com.nuvio.app.core.library.LibrarySection
 import com.nuvio.app.core.library.LibrarySortOption
-import com.nuvio.app.features.profiles.NuvioProfile
+import com.nuvio.app.core.profiles.NuvioProfile
 import com.nuvio.app.features.profiles.ProfileBackgroundBackdrop
 import com.nuvio.app.features.search.SearchScreen
 import com.nuvio.app.features.settings.AppBrandWordmark
 import com.nuvio.app.features.settings.SettingsScreen
-import com.nuvio.app.features.watchprogress.ContinueWatchingItem
+import com.nuvio.app.core.watch.progress.ContinueWatchingItem
 import com.nuvio.app.navigation.AppRoute
 import com.nuvio.app.navigation.NuvioNavigator
 import kotlinx.coroutines.flow.Flow

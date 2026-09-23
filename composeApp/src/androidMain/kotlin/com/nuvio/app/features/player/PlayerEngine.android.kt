@@ -96,8 +96,18 @@ import com.nuvio.app.core.playback.probeMimeType
 import com.nuvio.app.core.playback.releaseWithAssSupportCompat
 import com.nuvio.app.core.playback.startupSubtitleConfigurations
 import com.nuvio.app.core.playback.toAssRenderType
+import com.nuvio.app.core.playback.AudioTrack
+import com.nuvio.app.core.playback.PlatformPlaybackDataSourceFactory
+import com.nuvio.app.core.playback.PlayerResizeMode
+import com.nuvio.app.core.playback.PlayerSubtitleUtils
+import com.nuvio.app.core.playback.SUBTITLE_DELAY_MAX_MS
+import com.nuvio.app.core.playback.SUBTITLE_DELAY_MIN_MS
+import com.nuvio.app.core.playback.SubtitleLanguageOption
+import com.nuvio.app.core.playback.SubtitleTrack
+import com.nuvio.app.core.playback.normalizeLanguageCode
 
 private const val TAG = "NuvioPlayer"
+
 private const val PLAYER_DIAGNOSTIC_TAG = "NuvioPlayerDiag"
 
 private class PlaybackDiagnostics {
@@ -1747,8 +1757,11 @@ private fun SubtitleStyleState.toMpvSubtitleBorderStyle(): String =
     }
 
 private const val MPV_SUBTITLE_FONT_SIZE_SCALE = 55.0 / 18.0
+
 private const val MPV_SUBTITLE_FONT_SIZE_MIN = 36
+
 private const val MPV_SUBTITLE_FONT_SIZE_MAX = 122
+
 private const val MPV_SUBTITLE_OUTLINE_SIZE_SCALE = 1.5
 
 private fun ExoPlayer.snapshot(): PlayerPlaybackSnapshot {
@@ -2335,50 +2348,3 @@ private fun diagnosticThrowableChain(value: Throwable): String =
             "${error.javaClass.simpleName}:${diagnosticPlayerMessage(error.message)}"
         }
         .let(::diagnosticPlayerMessage)
-
-internal class SubtitleRequestHeaderDataSourceFactory(
-    private val upstreamFactory: DataSource.Factory,
-    private val externalSubtitles: List<com.nuvio.app.core.streams.StreamSubtitle>,
-) : DataSource.Factory {
-    override fun createDataSource(): DataSource =
-        SubtitleRequestHeaderDataSource(
-            upstream = upstreamFactory.createDataSource(),
-            externalSubtitles = externalSubtitles,
-        )
-}
-
-internal class SubtitleRequestHeaderDataSource(
-    private val upstream: DataSource,
-    private val externalSubtitles: List<com.nuvio.app.core.streams.StreamSubtitle>,
-) : DataSource {
-    override fun addTransferListener(transferListener: TransferListener) {
-        upstream.addTransferListener(transferListener)
-    }
-
-    override fun open(dataSpec: DataSpec): Long {
-        val url = dataSpec.uri.toString()
-        val subtitle = externalSubtitles.find { it.url == url }
-        val headers = subtitle?.headers
-        
-        return if (headers.isNullOrEmpty()) {
-            upstream.open(dataSpec)
-        } else {
-            val mergedHeaders = dataSpec.httpRequestHeaders.toMutableMap()
-            headers.forEach { (key, value) ->
-                mergedHeaders[key] = value
-            }
-            upstream.open(dataSpec.buildUpon().setHttpRequestHeaders(mergedHeaders).build())
-        }
-    }
-
-    override fun read(buffer: ByteArray, offset: Int, length: Int): Int =
-        upstream.read(buffer, offset, length)
-
-    override fun getUri(): Uri? = upstream.uri
-
-    override fun getResponseHeaders(): Map<String, List<String>> = upstream.responseHeaders
-
-    override fun close() {
-        upstream.close()
-    }
-}

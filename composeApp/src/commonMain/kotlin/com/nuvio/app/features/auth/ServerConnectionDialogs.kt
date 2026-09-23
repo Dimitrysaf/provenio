@@ -88,6 +88,8 @@ import nuvio.composeapp.generated.resources.server_warning_public
 import nuvio.composeapp.generated.resources.server_warning_public_http
 import nuvio.composeapp.generated.resources.server_warning_title
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.auth.ServerConnectionUiState
+import com.nuvio.app.core.auth.ServerSwitchFailure
 
 @Composable
 internal fun ServerConnectionMenu(

@@ -5,7 +5,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import com.nuvio.app.features.home.mergeHomeCatalogSettingsJson
 
 class HomeCatalogSettingsSyncServiceTest {
     @Test

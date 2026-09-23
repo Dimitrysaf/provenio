@@ -25,8 +25,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
-import com.nuvio.app.features.player.PlayerSubtitleCueParser
-import com.nuvio.app.features.player.PlayerSubtitleUtils
 
 private const val SIDECAR_TAG = "NuvioSidecar"
 private val sidecarParserFactory = DefaultSubtitleParserFactory()

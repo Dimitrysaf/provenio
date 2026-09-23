@@ -82,7 +82,7 @@ import com.nuvio.app.core.cloud.CloudLibraryPlaybackTargetLookupResult
 import com.nuvio.app.core.cloud.CloudLibraryRepository
 import com.nuvio.app.core.cloud.playbackVideoId
 import com.nuvio.app.core.cloud.providerPosterUrl
-import com.nuvio.app.features.collection.CollectionRepository
+import com.nuvio.app.core.collection.CollectionRepository
 import com.nuvio.app.features.collection.CollectionSyncService
 import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.core.metadata.MetaScreenSettingsRepository
@@ -115,7 +115,7 @@ import com.nuvio.app.features.player.PlayerLaunch
 import com.nuvio.app.features.player.PlayerLaunchStore
 import com.nuvio.app.features.player.PlayerPlaybackSnapshot
 import com.nuvio.app.features.player.PlayerSettingsRepository
-import com.nuvio.app.features.player.SubtitleLanguageOption
+import com.nuvio.app.core.playback.SubtitleLanguageOption
 import com.nuvio.app.features.player.prepareExternalPlayerLaunch
 import com.nuvio.app.features.player.LockPlayerToLandscape
 import com.nuvio.app.features.player.HidePlayerSystemBars
@@ -152,14 +152,14 @@ import com.nuvio.app.core.watch.watched.WatchedRepository
 import com.nuvio.app.core.watch.watching.application.WatchingActions
 import com.nuvio.app.core.watch.watching.application.WatchingState
 import com.nuvio.app.core.watch.watching.domain.isShortPlaceholderDuration
-import com.nuvio.app.features.watchprogress.ContinueWatchingItem
+import com.nuvio.app.core.watch.progress.ContinueWatchingItem
 import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
-import com.nuvio.app.features.watchprogress.WatchProgressPlaybackSession
+import com.nuvio.app.core.watch.progress.WatchProgressPlaybackSession
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
 import com.nuvio.app.core.watch.progress.WatchProgressSourceCoordinator
-import com.nuvio.app.features.watchprogress.continueWatchingItemKey
-import com.nuvio.app.features.watchprogress.nextUpDismissKey
-import com.nuvio.app.features.watchprogress.toContinueWatchingItem
+import com.nuvio.app.core.watch.progress.continueWatchingItemKey
+import com.nuvio.app.core.watch.progress.nextUpDismissKey
+import com.nuvio.app.core.watch.progress.toContinueWatchingItem
 import com.nuvio.app.navigation.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest

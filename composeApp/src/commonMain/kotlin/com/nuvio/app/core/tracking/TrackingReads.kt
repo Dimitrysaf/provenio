@@ -3,7 +3,7 @@ package com.nuvio.app.core.tracking
 import com.nuvio.app.core.library.LibraryItem
 import com.nuvio.app.core.library.LibrarySection
 import com.nuvio.app.core.watch.watching.sync.WatchedSyncAdapter
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import com.nuvio.app.core.watch.progress.shouldUseAsCompletedSeedForContinueWatching
 import kotlinx.coroutines.flow.Flow
 

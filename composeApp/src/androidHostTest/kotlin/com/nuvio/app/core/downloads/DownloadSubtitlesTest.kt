@@ -5,10 +5,10 @@ import android.os.Bundle
 import androidx.core.content.FileProvider
 import com.nuvio.app.R
 import com.nuvio.app.core.playback.ExternalPlayerPlaybackRequest
-import com.nuvio.app.features.player.PlayerSubtitleCueParser
+import com.nuvio.app.core.playback.PlayerSubtitleCueParser
 import com.nuvio.app.core.playback.SubtitleFileCache
 import com.nuvio.app.features.player.prepareExternalPlayerLaunch
-import com.nuvio.app.features.player.SubtitleAddonRequest
+import com.nuvio.app.core.playback.SubtitleAddonRequest
 import com.nuvio.app.features.player.SubtitleRepository
 import com.nuvio.app.core.streams.StreamSubtitle
 import java.io.File

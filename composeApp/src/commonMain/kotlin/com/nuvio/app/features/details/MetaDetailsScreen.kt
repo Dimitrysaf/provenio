@@ -130,9 +130,9 @@ import com.nuvio.app.core.watch.watched.releasedPlayableEpisodes
 import com.nuvio.app.core.watch.watched.releasedEpisodesForSeason
 import com.nuvio.app.core.watch.watched.watchedItemKey
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
-import com.nuvio.app.features.watchprogress.buildPlaybackVideoId
+import com.nuvio.app.core.watch.progress.buildPlaybackVideoId
 import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
 import com.nuvio.app.core.watch.watching.application.WatchingActions
 import com.nuvio.app.core.watch.watching.application.WatchingState
@@ -161,6 +161,7 @@ import com.nuvio.app.core.metadata.moreLikeThisFallback
 import com.nuvio.app.core.metadata.playLabel
 import com.nuvio.app.core.metadata.seriesPrimaryAction
 import com.nuvio.app.core.metadata.tabGroupForRendering
+import com.nuvio.app.core.metadata.detailSidePaneSection
 
 private val watchedMarkerDiagnosticLog = Logger.withTag("WatchedMarkerDiag")
 

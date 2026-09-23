@@ -12,9 +12,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
-import com.nuvio.app.features.watchprogress.WatchProgressSourceTraktHistory
-import com.nuvio.app.features.watchprogress.WatchProgressSourceTraktShowProgress
 
 internal const val ContinueWatchingLimit = DefaultContinueWatchingLimit
 private const val WatchProgressSnapshotConflictToleranceMs = 1_000L

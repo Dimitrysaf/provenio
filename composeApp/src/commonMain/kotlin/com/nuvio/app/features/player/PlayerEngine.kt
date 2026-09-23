@@ -2,6 +2,9 @@ package com.nuvio.app.features.player
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.nuvio.app.core.playback.AudioTrack
+import com.nuvio.app.core.playback.PlayerResizeMode
+import com.nuvio.app.core.playback.SubtitleTrack
 
 interface PlayerEngineController {
     fun play()

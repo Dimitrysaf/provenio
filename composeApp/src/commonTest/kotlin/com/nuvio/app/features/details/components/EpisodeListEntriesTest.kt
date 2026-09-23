@@ -1,7 +1,7 @@
 package com.nuvio.app.features.details.components
 
 import com.nuvio.app.core.metadata.MetaVideo
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

@@ -104,6 +104,9 @@ import nuvio.composeapp.generated.resources.trakt_watch_progress_source_trakt
 import nuvio.composeapp.generated.resources.trakt_watch_progress_subtitle
 import nuvio.composeapp.generated.resources.trakt_watch_progress_title
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.settings.TrackingBrand
+import com.nuvio.app.core.settings.effectiveTrackingRecommendationsSource
+import com.nuvio.app.core.settings.isTrackingBrandAvailable
 
 internal fun LazyListScope.trackingSettingsContent(
     isTablet: Boolean,
@@ -575,16 +578,6 @@ private fun continueWatchingDaysCapLabel(daysCap: Int): String {
         stringResource(Res.string.trakt_days_format, normalized)
     }
 }
-
-internal fun effectiveTrackingRecommendationsSource(
-    source: MoreLikeThisSourcePreference,
-    traktConnected: Boolean,
-): MoreLikeThisSourcePreference =
-    if (source == MoreLikeThisSourcePreference.TRAKT && !traktConnected) {
-        MoreLikeThisSourcePreference.TMDB
-    } else {
-        source
-    }
 
 @Composable
 private fun AnimeIdPreferenceSection(

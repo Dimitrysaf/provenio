@@ -71,15 +71,28 @@ import com.nuvio.app.core.watch.progress.shouldCascadeCompletedProgressToWatched
 import com.nuvio.app.core.watch.progress.shouldStoreWatchProgress
 import com.nuvio.app.core.watch.progress.shouldUseAsCompletedSeedForContinueWatching
 import com.nuvio.app.core.watch.progress.withResolvedProgressKey
+import com.nuvio.app.core.watch.progress.MetadataResolutionRetryCoordinator
+import com.nuvio.app.core.watch.progress.RemoteProgressWriteDeduplicator
+import com.nuvio.app.core.watch.progress.WatchProgressDeltaDecision
+import com.nuvio.app.core.watch.progress.WatchProgressDeltaDecisionType
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressPlaybackSession
+import com.nuvio.app.core.watch.progress.WatchProgressUiState
+import com.nuvio.app.core.watch.progress.projectWatchProgressUiState
 
 private const val WATCH_PROGRESS_METADATA_RESOLUTION_CONCURRENCY = 4
+
 private const val WATCH_PROGRESS_METADATA_RESOLUTION_LIMIT = 64
+
 private const val WATCH_PROGRESS_METADATA_FETCH_ATTEMPTS = 3
+
 private const val WATCH_PROGRESS_METADATA_RETRY_BASE_DELAY_MS = 750L
+
 private const val WATCH_PROGRESS_DELTA_PAGE_SIZE = 900
+
 private const val WATCH_PROGRESS_DELTA_OPERATION_UPSERT = "upsert"
+
 private const val WATCH_PROGRESS_DELTA_OPERATION_DELETE = "delete"
-private const val WATCH_PROGRESS_REMOTE_WRITE_DEDUP_WINDOW_MS = 5_000L
 
 private data class RemoteMetadataResolutionResult(
     val key: WatchProgressMetadataKey,
@@ -97,162 +110,12 @@ private data class MetadataProviderReadiness(
         get() = providers.isNotEmpty()
 }
 
-internal class MetadataResolutionRetryCoordinator {
-    private val lock = SynchronizedObject()
-    private var generation = 0L
-    private var activeGeneration: Long? = null
-    private var activeProviderFingerprint: String? = null
-    private var lastRequestedProviderFingerprint: String? = null
-    private var pendingProviderFingerprint: String? = null
-
-    fun reset() {
-        synchronized(lock) {
-            generation += 1L
-            activeGeneration = null
-            activeProviderFingerprint = null
-            lastRequestedProviderFingerprint = null
-            pendingProviderFingerprint = null
-        }
-    }
-
-    fun invalidateActiveResolution() {
-        synchronized(lock) {
-            generation += 1L
-            activeGeneration = null
-            activeProviderFingerprint = null
-            pendingProviderFingerprint = null
-        }
-    }
-
-    fun requestForProviders(providerFingerprint: String): Boolean =
-        synchronized(lock) {
-            if (activeGeneration != null) {
-                if (providerFingerprint != activeProviderFingerprint) {
-                    pendingProviderFingerprint = providerFingerprint
-                }
-                return@synchronized false
-            }
-            if (providerFingerprint == lastRequestedProviderFingerprint) {
-                return@synchronized false
-            }
-
-            lastRequestedProviderFingerprint = providerFingerprint
-            true
-        }
-
-    fun beginResolution(providerFingerprint: String?): Long =
-        synchronized(lock) {
-            generation += 1L
-            activeGeneration = generation
-            activeProviderFingerprint = providerFingerprint
-            pendingProviderFingerprint = null
-            if (providerFingerprint != null) {
-                lastRequestedProviderFingerprint = providerFingerprint
-            }
-            generation
-        }
-
-    fun providersObservedBeforeFetch(
-        resolutionGeneration: Long,
-        providerFingerprint: String,
-    ) {
-        synchronized(lock) {
-            if (activeGeneration != resolutionGeneration) return@synchronized
-            activeProviderFingerprint = providerFingerprint
-            lastRequestedProviderFingerprint = providerFingerprint
-            if (pendingProviderFingerprint == providerFingerprint) {
-                pendingProviderFingerprint = null
-            }
-        }
-    }
-
-    fun finishResolution(
-        resolutionGeneration: Long,
-        currentProviderFingerprint: String?,
-    ): Boolean = synchronized(lock) {
-        if (activeGeneration != resolutionGeneration) return@synchronized false
-
-        activeGeneration = null
-        val shouldRetry = currentProviderFingerprint != null &&
-            currentProviderFingerprint != activeProviderFingerprint &&
-            (pendingProviderFingerprint != null ||
-                currentProviderFingerprint != lastRequestedProviderFingerprint)
-        activeProviderFingerprint = null
-        pendingProviderFingerprint = null
-        if (shouldRetry) {
-            lastRequestedProviderFingerprint = currentProviderFingerprint
-        }
-        shouldRetry
-    }
-}
-
 private data class WatchProgressDeltaApplyResult(
     val appliedUpserts: Int,
     val appliedDeletes: Int,
     val preservedLocalItems: Boolean,
     val changed: Boolean,
 )
-
-internal enum class WatchProgressDeltaDecisionType {
-    UPSERT,
-    DELETE,
-    PRESERVE_LOCAL,
-    IGNORE,
-}
-
-internal data class WatchProgressDeltaDecision(
-    val type: WatchProgressDeltaDecisionType,
-    val updatedEntry: WatchProgressEntry? = null,
-    val clearsDirtyProgress: Boolean = false,
-)
-
-private data class RemoteProgressWriteKey(
-    val profileId: Int,
-    val progressKey: String,
-)
-
-private data class RemoteProgressWrite(
-    val entry: WatchProgressEntry,
-    val sentAtEpochMs: Long,
-)
-
-internal class RemoteProgressWriteDeduplicator(
-    private val windowMs: Long = WATCH_PROGRESS_REMOTE_WRITE_DEDUP_WINDOW_MS,
-) {
-    private val lock = SynchronizedObject()
-    private val recentWrites = mutableMapOf<RemoteProgressWriteKey, RemoteProgressWrite>()
-
-    fun shouldSend(
-        profileId: Int,
-        entry: WatchProgressEntry,
-        nowEpochMs: Long,
-    ): Boolean = synchronized(lock) {
-        recentWrites.entries.removeAll { (_, write) ->
-            val elapsedMs = nowEpochMs - write.sentAtEpochMs
-            elapsedMs < 0L || elapsedMs >= windowMs
-        }
-        val key = RemoteProgressWriteKey(
-            profileId = profileId,
-            progressKey = entry.resolvedProgressKey(),
-        )
-        val normalizedEntry = entry.copy(lastUpdatedEpochMs = 0L)
-        val previous = recentWrites[key]
-        if (previous?.entry == normalizedEntry) {
-            return@synchronized false
-        }
-        recentWrites[key] = RemoteProgressWrite(
-            entry = normalizedEntry,
-            sentAtEpochMs = nowEpochMs,
-        )
-        true
-    }
-
-    fun clear() {
-        synchronized(lock) {
-            recentWrites.clear()
-        }
-    }
-}
 
 object WatchProgressRepository {
     private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -1743,16 +1606,3 @@ object WatchProgressRepository {
         resources.any { resource -> resource.name == "meta" }
 
 }
-
-internal fun projectWatchProgressUiState(
-    source: WatchProgressSource,
-    entries: List<WatchProgressEntry>,
-    providerSnapshot: TrackingProgressSnapshot?,
-    hasLoadedNuvioRemoteProgress: Boolean,
-): WatchProgressUiState = WatchProgressUiState(
-    source = source,
-    entries = entries,
-    hiddenContentIds = providerSnapshot?.hiddenContentIds.orEmpty(),
-    hasLoadedRemoteProgress =
-        providerSnapshot?.hasLoadedRemoteProgress ?: hasLoadedNuvioRemoteProgress,
-)

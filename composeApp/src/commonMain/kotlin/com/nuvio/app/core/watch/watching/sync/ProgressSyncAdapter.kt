@@ -1,6 +1,6 @@
 package com.nuvio.app.core.watch.watching.sync
 
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 
 data class ProgressSyncRecord(
     val contentId: String,

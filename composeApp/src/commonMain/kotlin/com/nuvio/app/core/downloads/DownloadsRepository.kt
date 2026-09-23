@@ -1,6 +1,6 @@
 package com.nuvio.app.core.downloads
 
-import com.nuvio.app.features.player.addonSubtitleRequests
+import com.nuvio.app.core.playback.addonSubtitleRequests
 import com.nuvio.app.core.streams.StreamItem
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.p2p.P2pSettingsRepository

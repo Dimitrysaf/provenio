@@ -8,8 +8,6 @@ import org.robolectric.annotation.Config
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import com.nuvio.app.features.player.PlayerSubtitleUtils
-import com.nuvio.app.features.player.isLocalSubtitleUri
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])

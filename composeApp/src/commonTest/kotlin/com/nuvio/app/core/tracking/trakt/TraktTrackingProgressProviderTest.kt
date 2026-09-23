@@ -1,7 +1,7 @@
 package com.nuvio.app.core.tracking.trakt
 
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
-import com.nuvio.app.features.watchprogress.WatchProgressSourceTraktPlayback
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressSourceTraktPlayback
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

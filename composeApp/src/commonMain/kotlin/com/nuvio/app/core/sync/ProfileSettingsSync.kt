@@ -4,7 +4,7 @@ import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
 import com.nuvio.app.core.network.SupabaseProvider
-import com.nuvio.app.features.collection.CollectionMobileSettingsRepository
+import com.nuvio.app.core.collection.CollectionMobileSettingsRepository
 import com.nuvio.app.core.collection.CollectionMobileSettingsStorage
 import com.nuvio.app.core.debrid.DebridSettingsRepository
 import com.nuvio.app.core.debrid.DebridSettingsStorage

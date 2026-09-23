@@ -9,7 +9,7 @@ import com.nuvio.app.core.tracking.TrackingProgressSnapshot
 import com.nuvio.app.core.tracking.TrackingRefreshIntent
 import com.nuvio.app.core.tracking.TrackingWatchedProvider
 import com.nuvio.app.core.watch.watched.WatchedItem
-import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.CancellationException

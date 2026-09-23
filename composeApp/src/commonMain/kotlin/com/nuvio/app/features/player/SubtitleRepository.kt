@@ -12,6 +12,9 @@ import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_player_no_subtitles_found
 import org.jetbrains.compose.resources.getString
+import com.nuvio.app.core.playback.AddonSubtitle
+import com.nuvio.app.core.playback.SubtitleLoadingProgress
+import com.nuvio.app.core.playback.addonSubtitleRequests
 
 object SubtitleRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -67,9 +70,3 @@ object SubtitleRepository {
         _error.value = null
     }
 }
-
-internal data class SubtitleLoadingProgress(
-    val total: Int,
-    val completed: Int = 0,
-    val addonName: String? = null,
-)

@@ -83,6 +83,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.profiles.AvatarRepository
+import com.nuvio.app.core.profiles.MAX_PROFILES
+import com.nuvio.app.core.profiles.NuvioProfile
+import com.nuvio.app.core.profiles.avatarImageUrl
+import com.nuvio.app.core.profiles.routeProfileSelection
 
 /** m3.material.io/components/side-sheets/specs — max-width. */
 private val SideSheetMaxWidth = 400.dp

@@ -41,6 +41,7 @@ import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.core.settings.AppIconOption
 import com.nuvio.app.core.settings.AppIconSettingsState
 import com.nuvio.app.core.settings.AppLanguage
+import com.nuvio.app.core.settings.labelResource
 
 internal fun LazyListScope.appearanceSettingsContent(
     isTablet: Boolean,
