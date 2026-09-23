@@ -98,15 +98,9 @@ enum class MetaEpisodeCardStyle {
     }
 }
 
-internal fun MetaScreenSectionItem.tabGroupForRendering(
-    episodeCardStyle: MetaEpisodeCardStyle,
-): Int? = if (
-    key == MetaScreenSectionKey.EPISODES && episodeCardStyle == MetaEpisodeCardStyle.List
-) {
-    null
-} else {
-    tabGroup
-}
+// Episodes are a lazy segmented list, so they never sit inside a tab group.
+internal fun MetaScreenSectionItem.tabGroupForRendering(): Int? =
+    if (key == MetaScreenSectionKey.EPISODES) null else tabGroup
 
 @Serializable
 private data class StoredMetaScreenSectionPreference(

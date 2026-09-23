@@ -16,19 +16,14 @@ class MetaScreenSectionLayoutTest {
     )
 
     @Test
-    fun `list episodes render outside a multi-section tab group`() {
-        assertNull(groupedEpisodes.tabGroupForRendering(MetaEpisodeCardStyle.List))
-    }
-
-    @Test
-    fun `horizontal episodes retain their configured tab group`() {
-        assertEquals(3, groupedEpisodes.tabGroupForRendering(MetaEpisodeCardStyle.Horizontal))
+    fun `episodes render outside a multi-section tab group`() {
+        assertNull(groupedEpisodes.tabGroupForRendering())
     }
 
     @Test
     fun `other list sections retain their configured tab group`() {
         val groupedCast = groupedEpisodes.copy(key = MetaScreenSectionKey.CAST)
 
-        assertEquals(3, groupedCast.tabGroupForRendering(MetaEpisodeCardStyle.List))
+        assertEquals(3, groupedCast.tabGroupForRendering())
     }
 }
