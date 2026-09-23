@@ -21,7 +21,6 @@ import com.nuvio.app.features.details.SPECIALS_SEASON_NUMBER
 import com.nuvio.app.features.details.formatRuntimeForDisplay
 import com.nuvio.app.features.details.groupedEpisodesForDisplay
 import nuvio.composeapp.generated.resources.*
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -49,27 +48,24 @@ internal fun detailInfoRows(meta: MetaDetails): List<Pair<String, String>> {
     val seasonCount = seasons.keys.count { it != SPECIALS_SEASON_NUMBER }
     val episodeCount = seasons.filterKeys { it != SPECIALS_SEASON_NUMBER }.values.sumOf { it.size }
 
-    return buildList {
-        addIfPresent(Res.string.details_status, meta.status)
-        addIfPresent(Res.string.details_release_info, meta.releaseInfo?.let(::formatReleaseDateForDisplay))
-        addIfPresent(Res.string.details_last_aired, meta.lastAirDate?.let(::formatReleaseDateForDisplay))
-        if (seasonCount > 0) add(stringResource(Res.string.details_seasons) to seasonCount.toString())
-        if (episodeCount > 0) add(stringResource(Res.string.details_episodes) to episodeCount.toString())
-        addIfPresent(Res.string.details_runtime, formatRuntimeForDisplay(meta.runtime))
-        addIfPresent(Res.string.details_certification, meta.ageRating)
-        addIfPresent(Res.string.details_genres, meta.genres.joinToString(", "))
-        addIfPresent(Res.string.details_origin_country, meta.country)
-        addIfPresent(Res.string.details_original_language, meta.language?.uppercase())
-        addIfPresent(Res.string.details_awards, meta.awards)
-        addIfPresent(Res.string.details_website, meta.website?.let(::formatWebsiteForDisplay))
+    // Every label resolves on every pass, so the composition keeps one shape; missing values drop after.
+    val candidates = listOf(
+        stringResource(Res.string.details_status) to meta.status,
+        stringResource(Res.string.details_release_info) to meta.releaseInfo?.let(::formatReleaseDateForDisplay),
+        stringResource(Res.string.details_last_aired) to meta.lastAirDate?.let(::formatReleaseDateForDisplay),
+        stringResource(Res.string.details_seasons) to seasonCount.takeIf { it > 0 }?.toString(),
+        stringResource(Res.string.details_episodes) to episodeCount.takeIf { it > 0 }?.toString(),
+        stringResource(Res.string.details_runtime) to formatRuntimeForDisplay(meta.runtime),
+        stringResource(Res.string.details_certification) to meta.ageRating,
+        stringResource(Res.string.details_genres) to meta.genres.joinToString(", "),
+        stringResource(Res.string.details_origin_country) to meta.country,
+        stringResource(Res.string.details_original_language) to meta.language?.uppercase(),
+        stringResource(Res.string.details_awards) to meta.awards,
+        stringResource(Res.string.details_website) to meta.website?.let(::formatWebsiteForDisplay),
+    )
+    return candidates.mapNotNull { (label, value) ->
+        value?.trim()?.takeIf(String::isNotBlank)?.let { label to it }
     }
-}
-
-/** Adds a row only when the addon actually gave us the value. */
-@Composable
-private fun MutableList<Pair<String, String>>.addIfPresent(label: StringResource, value: String?) {
-    val text = value?.trim()?.takeIf { it.isNotBlank() } ?: return
-    add(stringResource(label) to text)
 }
 
 private fun formatWebsiteForDisplay(url: String): String =
