@@ -1098,8 +1098,6 @@
     <string name="streams_resume_from_percent">Συνέχεια από %1$d%</string>
     <string name="streams_resume_from_time">Συνέχεια από %1$s</string>
     <string name="streams_size">ΜΕΓΕΘΟΣ %1$s</string>
-    <string name="trailer_close">Κλείσιμο τρέιλερ</string>
-    <string name="trailer_unable_to_play">Αδυναμία αναπαραγωγής τρέιλερ</string>
     <string name="trakt_lists_load_failed">Αποτυχία φόρτωσης λιστών Trakt</string>
     <string name="trakt_lists_update_failed">Αποτυχία ενημέρωσης λιστών Trakt</string>
     <string name="tracking_lists_update_failed">Αποτυχία ενημέρωσης λιστών παρακολούθησης</string>
@@ -1290,7 +1288,6 @@
     <string name="person_role_director">Σκηνοθέτης</string>
     <string name="person_role_writer">Σεναριογράφος</string>
     <string name="rating_audience_score">Βαθμολογία κοινού</string>
-    <string name="trailer_no_playable_stream">Δεν βρέθηκε αναπαράγωγη ροή τρέιλερ.</string>
     <string name="trailer_season_label">Σεζόν %1$d - %2$s</string>
     <string name="unit_bytes_b">B</string>
     <string name="unit_bytes_kb">KB</string>

@@ -1356,8 +1356,6 @@
     <string name="external_player_failed">Nu s-a putut deschide playerul extern</string>
     <string name="external_player_not_configured">Alege mai întâi un player extern din setări</string>
     <string name="external_player_unavailable">Nu este disponibil niciun player extern</string>
-    <string name="trailer_close">Închide trailerul</string>
-    <string name="trailer_unable_to_play">Nu se poate reda trailerul</string>
     <string name="trakt_lists_load_failed">Nu s-au putut încărca listele Trakt</string>
     <string name="trakt_lists_update_failed">Nu s-au putut actualiza listele Trakt</string>
     <string name="updates_asset_line">%1$s • %2$s</string>
@@ -1613,7 +1611,6 @@
     <string name="person_role_director">Regizor</string>
     <string name="person_role_writer">Scenarist</string>
     <string name="rating_audience_score">Scor audiență</string>
-    <string name="trailer_no_playable_stream">Nu s-a găsit un flux redabil pentru trailer.</string>
     <string name="trailer_season_label">Sezonul %1$d - %2$s</string>
     <string name="unit_bytes_b">B</string>
     <string name="unit_bytes_kb">KB</string>

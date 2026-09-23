@@ -1330,8 +1330,6 @@
     <string name="external_player_failed">Nelze otevřít externí přehrávač</string>
     <string name="external_player_not_configured">Nejprve vyberte externí přehrávač v nastavení</string>
     <string name="external_player_unavailable">Žádný externí přehrávač není dostupný</string>
-    <string name="trailer_close">Zavřít trailer</string>
-    <string name="trailer_unable_to_play">Nelze přehrát trailer</string>
     <string name="trakt_lists_load_failed">Nepodařilo se načíst seznamy Trakt</string>
     <string name="trakt_lists_update_failed">Nepodařilo se aktualizovat seznamy Trakt</string>
     <string name="updates_asset_line">%1$s • %2$s</string>
@@ -1588,7 +1586,6 @@
     <string name="person_role_director">Režisér</string>
     <string name="person_role_writer">Scénárista</string>
     <string name="rating_audience_score">Hodnocení diváků</string>
-    <string name="trailer_no_playable_stream">Nenalezen žádný přehrávatelný stream s trailerem.</string>
     <string name="trailer_season_label">Série %1$d - %2$s</string>
     <string name="unit_bytes_b">B</string>
     <string name="unit_bytes_kb">KB</string>

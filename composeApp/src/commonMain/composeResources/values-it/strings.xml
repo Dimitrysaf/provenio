@@ -931,8 +931,6 @@
   <string name="streams_resume_from_percent">Riprendi dal %1$d%</string>
   <string name="streams_resume_from_time">Riprendi da %1$s</string>
   <string name="streams_size">DIMENSIONE %1$s</string>
-  <string name="trailer_close">Chiudi trailer</string>
-  <string name="trailer_unable_to_play">Impossibile riprodurre il trailer</string>
   <string name="trakt_lists_load_failed">Impossibile caricare le liste Trakt</string>
   <string name="trakt_lists_update_failed">Impossibile aggiornare le liste Trakt</string>
   <string name="updates_asset_line">%1$s • %2$s</string>
@@ -1096,7 +1094,6 @@
   <string name="person_role_director">Regista</string>
   <string name="person_role_writer">Sceneggiatore</string>
   <string name="rating_audience_score">Punteggio del pubblico</string>
-  <string name="trailer_no_playable_stream">Nessun flusso trailer riproducibile trovato.</string>
   <string name="trailer_season_label">Stagione %1$d - %2$s</string>
   <string name="unit_bytes_b">B</string>
   <string name="unit_bytes_kb">KB</string>

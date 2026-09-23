@@ -1595,8 +1595,6 @@
     <string name="external_player_failed">Không thể mở trình phát bên ngoài</string>
     <string name="external_player_not_configured">Chọn trình phát bên ngoài trong Cài đặt trước khi tiếp tục</string>
     <string name="external_player_unavailable">Không có trình phát bên ngoài</string>
-    <string name="trailer_close">Đóng trailer</string>
-    <string name="trailer_unable_to_play">Không thể phát trailer</string>
     <string name="trakt_lists_load_failed">Không thể tải danh sách Trakt</string>
     <string name="trakt_lists_update_failed">Không thể cập nhật danh sách Trakt</string>
     <string name="tracking_lists_update_failed">Không thể cập nhật danh sách theo dõi</string>
@@ -1883,7 +1881,6 @@
     <string name="person_role_director">Đạo diễn</string>
     <string name="person_role_writer">Biên kịch</string>
     <string name="rating_audience_score">Điểm khán giả</string>
-    <string name="trailer_no_playable_stream">Không tìm thấy nguồn trailer phát được</string>
     <string name="trailer_season_label">Mùa %1$d - %2$s</string>
     <string name="unit_bytes_b">B</string>
     <string name="unit_bytes_kb">KB</string>

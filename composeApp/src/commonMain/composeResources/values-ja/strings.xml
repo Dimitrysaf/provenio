@@ -1327,8 +1327,6 @@
     <string name="external_player_failed">外部プレーヤーを開けませんでした</string>
     <string name="external_player_not_configured">先に設定で外部プレーヤーを選択してください</string>
     <string name="external_player_unavailable">外部プレーヤーが利用できません</string>
-    <string name="trailer_close">予告編を閉じる</string>
-    <string name="trailer_unable_to_play">予告編を再生できません</string>
     <string name="trakt_lists_load_failed">Traktリストの読み込みに失敗しました</string>
     <string name="trakt_lists_update_failed">Traktリストの更新に失敗しました</string>
     <string name="updates_asset_line">%1$s • %2$s</string>
@@ -1583,7 +1581,6 @@
     <string name="person_role_director">監督</string>
     <string name="person_role_writer">脚本</string>
     <string name="rating_audience_score">オーディエンススコア</string>
-    <string name="trailer_no_playable_stream">再生可能な予告編ストリームが見つかりません。</string>
     <string name="trailer_season_label">シーズン %1$d - %2$s</string>
     <string name="unit_bytes_b">B</string>
     <string name="unit_bytes_kb">KB</string>

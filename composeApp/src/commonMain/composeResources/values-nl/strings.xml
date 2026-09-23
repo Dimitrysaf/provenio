@@ -1592,8 +1592,6 @@
     <string name="external_player_failed">Kon externe speler niet openen</string>
     <string name="external_player_not_configured">Kies eerst een externe speler in de instellingen</string>
     <string name="external_player_unavailable">Geen externe speler beschikbaar</string>
-    <string name="trailer_close">Trailer sluiten</string>
-    <string name="trailer_unable_to_play">Kan trailer niet afspelen</string>
     <string name="trakt_lists_load_failed">Laden van Trakt-lijsten mislukt</string>
     <string name="trakt_lists_update_failed">Bijwerken van Trakt-lijsten mislukt</string>
     <string name="tracking_lists_update_failed">Bijwerken van trackinglijsten mislukt</string>
@@ -1880,7 +1878,6 @@
     <string name="person_role_director">Regisseur</string>
     <string name="person_role_writer">Schrijver</string>
     <string name="rating_audience_score">Publieksscore</string>
-    <string name="trailer_no_playable_stream">Geen afspeelbare trailerstream gevonden.</string>
     <string name="trailer_season_label">Seizoen %1$d - %2$s</string>
     <string name="unit_bytes_b">B</string>
     <string name="unit_bytes_kb">KB</string>

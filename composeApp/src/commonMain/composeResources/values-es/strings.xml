@@ -1573,8 +1573,6 @@
     <string name="external_player_failed">No se pudo abrir el reproductor externo</string>
     <string name="external_player_not_configured">Elija primero un reproductor externo en la configuración</string>
     <string name="external_player_unavailable">No hay ningún reproductor externo disponible</string>
-    <string name="trailer_close">Cerrar tráiler</string>
-    <string name="trailer_unable_to_play">No se puede reproducir el tráiler</string>
     <string name="trakt_lists_load_failed">No se pudieron cargar las listas de Trakt</string>
     <string name="trakt_lists_update_failed">No se pudieron actualizar las listas de Trakt</string>
     <string name="tracking_lists_update_failed">Error al actualizar las listas de seguimiento</string>
@@ -1860,7 +1858,6 @@
     <string name="person_role_director">Director</string>
     <string name="person_role_writer">Guionista</string>
     <string name="rating_audience_score">Puntuación del público</string>
-    <string name="trailer_no_playable_stream">No se encontró un stream de tráiler reproducible.</string>
     <string name="trailer_season_label">Temporada %1$d - %2$s</string>
     <string name="unit_bytes_b">B</string>
     <string name="unit_bytes_kb">KB</string>

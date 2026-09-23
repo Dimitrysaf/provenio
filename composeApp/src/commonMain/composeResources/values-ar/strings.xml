@@ -1489,8 +1489,6 @@
     <string name="external_player_failed">تعذر فتح المشغّل الخارجي</string>
     <string name="external_player_not_configured">اختر مشغّلًا خارجيًا من الإعدادات أولًا</string>
     <string name="external_player_unavailable">لا يتوفر مشغّل خارجي</string>
-    <string name="trailer_close">إغلاق الإعلان</string>
-    <string name="trailer_unable_to_play">تعذر تشغيل الإعلان</string>
     <string name="trakt_lists_load_failed">فشل تحميل قوائم Trakt</string>
     <string name="trakt_lists_update_failed">فشل تحديث قوائم Trakt</string>
     <string name="tracking_lists_update_failed">فشل تحديث قوائم التتبع</string>
@@ -1774,7 +1772,6 @@
     <string name="person_role_director">مخرج</string>
     <string name="person_role_writer">الكاتب</string>
     <string name="rating_audience_score">درجة الجمهور</string>
-    <string name="trailer_no_playable_stream">لم يتم العثور على مصدر إعلان قابل للتشغيل.</string>
     <string name="trailer_season_label">الموسم %1$d - %2$s</string>
     <string name="unit_bytes_b">B</string>
     <string name="unit_bytes_kb">KB</string>

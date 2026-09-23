@@ -1218,8 +1218,6 @@
     <string name="external_player_failed">Tidak dapat membuka player eksternal</string>
     <string name="external_player_not_configured">Pilih player eksternal terlebih dahulu di pengaturan</string>
     <string name="external_player_unavailable">Tidak ada player eksternal yang tersedia</string>
-    <string name="trailer_close">Tutup trailer</string>
-    <string name="trailer_unable_to_play">Tidak dapat memutar trailer</string>
     <string name="trakt_lists_load_failed">Gagal memuat daftar Trakt</string>
     <string name="trakt_lists_update_failed">Gagal memperbarui daftar Trakt</string>
     <string name="updates_asset_line">%1$s • %2$s</string>
@@ -1424,7 +1422,6 @@
     <string name="person_role_director">Sutradara</string>
     <string name="person_role_writer">Penulis</string>
     <string name="rating_audience_score">Skor Penonton</string>
-    <string name="trailer_no_playable_stream">Tidak ada stream trailer yang dapat diputar ditemukan.</string>
     <string name="trailer_season_label">Musim %1$d - %2$s</string>
     <string name="unit_bytes_b">B</string>
     <string name="unit_bytes_kb">KB</string>

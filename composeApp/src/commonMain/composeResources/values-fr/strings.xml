@@ -1348,8 +1348,6 @@
     <string name="external_player_failed">Impossible d’ouvrir le lecteur externe</string>
     <string name="external_player_not_configured">Choisissez d’abord un lecteur externe dans les paramètres</string>
     <string name="external_player_unavailable">Aucun lecteur externe disponible</string>
-    <string name="trailer_close">Fermer la bande-annonce</string>
-    <string name="trailer_unable_to_play">Impossible de lire la bande-annonce</string>
     <string name="trakt_lists_load_failed">Impossible de charger les listes Trakt</string>
     <string name="trakt_lists_update_failed">Impossible de mettre à jour les listes Trakt</string>
     <string name="updates_asset_line">%1$s • %2$s</string>
@@ -1602,7 +1600,6 @@
     <string name="person_role_director">Réalisateur</string>
     <string name="person_role_writer">Scénariste</string>
     <string name="rating_audience_score">Score du public</string>
-    <string name="trailer_no_playable_stream">Aucun stream de bande-annonce lisible trouvé.</string>
     <string name="trailer_season_label">Saison %1$d - %2$s</string>
     <string name="unit_bytes_b">o</string>
     <string name="unit_bytes_kb">Ko</string>

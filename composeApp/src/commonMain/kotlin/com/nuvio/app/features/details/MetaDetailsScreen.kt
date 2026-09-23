@@ -62,7 +62,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -95,7 +94,6 @@ import com.nuvio.app.features.details.components.DetailSeriesListHeader
 import com.nuvio.app.features.details.components.DetailTrailersSection
 import com.nuvio.app.features.details.components.EpisodeWatchedActionSheet
 import com.nuvio.app.features.details.components.SeasonWatchedActionSheet
-import com.nuvio.app.features.details.components.TrailerPlayerPopup
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.library.LibraryRepository
 import com.nuvio.app.features.library.PendingTrackingMembershipRemoval
@@ -118,8 +116,6 @@ import com.nuvio.app.features.tracking.TrackingMembershipApplyResult
 import com.nuvio.app.features.tracking.toggleTrackingLibraryMembership
 import com.nuvio.app.features.tracking.TrackingSettingsRepository
 import com.nuvio.app.features.tracking.TrackingProviderId
-import com.nuvio.app.features.trailer.TrailerPlaybackResolver
-import com.nuvio.app.features.trailer.TrailerPlaybackSource
 import com.nuvio.app.features.watched.WatchedRepository
 import com.nuvio.app.features.watched.previousReleasedEpisodesBefore
 import com.nuvio.app.features.watched.releasedPlayableEpisodes
@@ -628,14 +624,7 @@ fun MetaDetailsScreen(
                 val hasTrailersSection = remember(meta) {
                     meta.trailers.isNotEmpty()
                 }
-                val uriHandler = LocalUriHandler.current
                 val inAppTrailerPlaybackEnabled = AppFeaturePolicy.trailerPlaybackMode == TrailerPlaybackMode.IN_APP
-                val trailerScope = rememberCoroutineScope()
-                var selectedTrailer by remember(meta.id) { mutableStateOf<MetaTrailer?>(null) }
-                var trailerPlaybackSource by remember(meta.id) { mutableStateOf<TrailerPlaybackSource?>(null) }
-                var trailerLoading by remember(meta.id) { mutableStateOf(false) }
-                var trailerErrorMessage by remember(meta.id) { mutableStateOf<String?>(null) }
-                var trailerRequestToken by remember(meta.id) { mutableIntStateOf(0) }
                 var isLeavingDetails by remember(meta.id) { mutableStateOf(false) }
                 val heroTrailerPlaybackEnabled = AppFeaturePolicy.heroTrailerPlaybackSupported &&
                     inAppTrailerPlaybackEnabled &&
@@ -648,36 +637,8 @@ fun MetaDetailsScreen(
                     isLeavingDetails = true
                     onBack()
                 }
-                val resolveTrailer: (MetaTrailer) -> Unit = remember(meta.id, inAppTrailerPlaybackEnabled, uriHandler) {
-                    { trailer ->
-                        val youtubeUrl = trailer.youtubePlaybackUrl()
-                        if (!inAppTrailerPlaybackEnabled) {
-                            runCatching { uriHandler.openUri(youtubeUrl) }
-                        } else {
-                            selectedTrailer = trailer
-                            trailerPlaybackSource = null
-                            trailerErrorMessage = null
-                            trailerLoading = true
-                            trailerRequestToken += 1
-                            val currentRequestToken = trailerRequestToken
-                            trailerScope.launch {
-                                val resolvedSource = runCatching {
-                                    TrailerPlaybackResolver.resolveFromYouTubeUrl(youtubeUrl)
-                                }.getOrNull()
-                                if (currentRequestToken != trailerRequestToken) {
-                                    return@launch
-                                }
-                                trailerPlaybackSource = resolvedSource
-                                trailerErrorMessage = if (resolvedSource == null) {
-                                    getString(Res.string.trailer_no_playable_stream)
-                                } else {
-                                    null
-                                }
-                                trailerLoading = false
-                            }
-                        }
-                    }
-                }
+                // Trailers will open in the main player; until then a tap has nowhere to go.
+                val playTrailer: (MetaTrailer) -> Unit = {}
                 val primaryVideoId = seriesStreamVideoId ?: seriesAction?.videoId ?: meta.id
                 val isPrimaryPlayEnabled = playbackAvailability.canPlay(
                     type = meta.type,
@@ -983,9 +944,7 @@ fun MetaDetailsScreen(
                                             deferredMetaWorkAllowed &&
                                             !isLeavingDetails,
                                         trailerPlayWhenReady = {
-                                            selectedTrailer == null &&
-                                                !isLeavingDetails &&
-                                                !isHeroCollapsed.value
+                                            !isLeavingDetails && !isHeroCollapsed.value
                                         },
                                         trailerMuted = heroTrailerMuted,
                                         onTrailerMuteToggle = {
@@ -1065,7 +1024,7 @@ fun MetaDetailsScreen(
                                         }
                                     },
                                     onCommentClick = { review -> selectedComment = review },
-                                    onTrailerClick = resolveTrailer,
+                                    onTrailerClick = playTrailer,
                                     progressByVideoId = progressByVideoId,
                                     watchedKeys = watchedUiState.watchedKeys,
                                     fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
@@ -1248,28 +1207,6 @@ fun MetaDetailsScreen(
                                         episodes = previousSeasonEpisodes,
                                         areCurrentlyWatched = false,
                                     )
-                                },
-                            )
-                        }
-
-                        if (inAppTrailerPlaybackEnabled) {
-                            TrailerPlayerPopup(
-                                visible = selectedTrailer != null,
-                                trailerTitle = selectedTrailer?.displayName ?: selectedTrailer?.name.orEmpty(),
-                                trailerType = selectedTrailer?.type.orEmpty(),
-                                contentTitle = meta.name,
-                                playbackSource = trailerPlaybackSource,
-                                isLoading = trailerLoading,
-                                errorMessage = trailerErrorMessage,
-                                onDismiss = {
-                                    trailerRequestToken += 1
-                                    trailerLoading = false
-                                    trailerPlaybackSource = null
-                                    trailerErrorMessage = null
-                                    selectedTrailer = null
-                                },
-                                onRetry = selectedTrailer?.let { trailer ->
-                                    { resolveTrailer(trailer) }
                                 },
                             )
                         }

@@ -1231,8 +1231,6 @@
     <string name="external_player_failed">Nie udało się otworzyć zewnętrznego odtwarzacza</string>
     <string name="external_player_not_configured">Najpierw wybierz zewnętrzny odtwarzacz w ustawieniach</string>
     <string name="external_player_unavailable">Brak dostępnego zewnętrznego odtwarzacza</string>
-    <string name="trailer_close">Zamknij zwiastun</string>
-    <string name="trailer_unable_to_play">Nie można odtworzyć zwiastuna</string>
     <string name="trakt_lists_load_failed">Nie udało się załadować list Trakt</string>
     <string name="trakt_lists_update_failed">Nie udało się zaktualizować list Trakt</string>
     <string name="updates_asset_line">%1$s • %2$s</string>
@@ -1408,7 +1406,6 @@
     <string name="person_role_director">Reżyser</string>
     <string name="person_role_writer">Scenarzysta</string>
     <string name="rating_audience_score">Ocena widzów</string>
-    <string name="trailer_no_playable_stream">Nie znaleziono odtwarzalnego strumienia zwiastuna.</string>
     <string name="trailer_season_label">Sezon %1$d - %2$s</string>
     <string name="unit_bytes_b">B</string>
     <string name="unit_bytes_kb">KB</string>
@@ -2003,8 +2000,6 @@
     <string name="collections_editor_tmdb_without_watch_providers">Wykluczone ID dostawców</string>
     <string name="collections_editor_tmdb_without_watch_providers_helper">Wyklucz tytuły dostępne u podanych dostawców TMDB w wybranym regionie.</string>
     <string name="collections_editor_tmdb_without_watch_providers_placeholder">8|337|350</string>
-    <string name="trailer_enter_fullscreen">Pełny ekran</string>
-    <string name="trailer_exit_fullscreen">Zamknij pełny ekran</string>
     <string name="player_seek_position">Pozycja odtwarzania</string>
     <string name="compose_auth_link_cancel">Anuluj</string>
     <string name="compose_auth_link_code_expired">Ten kod wygasł.</string>

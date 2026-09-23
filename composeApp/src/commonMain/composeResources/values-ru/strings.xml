@@ -1573,8 +1573,6 @@
     <string name="external_player_failed">Не удалось открыть внешний проигрыватель</string>
     <string name="external_player_not_configured">Сначала выберите внешний проигрыватель в настройках</string>
     <string name="external_player_unavailable">Внешний проигрыватель недоступен</string>
-    <string name="trailer_close">Закрыть трейлер</string>
-    <string name="trailer_unable_to_play">Не могу воспроизвести трейлер</string>
     <string name="trakt_lists_load_failed">Не удалось загрузить списки Trakt.</string>
     <string name="trakt_lists_update_failed">Не удалось обновить списки Trakt.</string>
     <string name="tracking_lists_update_failed">Не удалось обновить списки отслеживания.</string>
@@ -1861,7 +1859,6 @@
     <string name="person_role_director">Режиссер</string>
     <string name="person_role_writer">Сценарист</string>
     <string name="rating_audience_score">Оценка аудитории</string>
-    <string name="trailer_no_playable_stream">Воспроизводимый трейлер не найден.</string>
     <string name="trailer_season_label">Сезон %1$d - %2$s</string>
     <string name="unit_bytes_b">Б</string>
     <string name="unit_bytes_kb">КБ</string>

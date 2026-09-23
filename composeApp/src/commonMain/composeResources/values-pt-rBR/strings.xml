@@ -1169,8 +1169,6 @@
     <string name="external_player_failed">Não foi possível abrir o player externo</string>
     <string name="external_player_not_configured">Escolha um player externo nas configurações primeiro</string>
     <string name="external_player_unavailable">Nenhum player externo está disponível</string>
-    <string name="trailer_close">Fechar trailer</string>
-    <string name="trailer_unable_to_play">Não foi possível reproduzir o trailer</string>
     <string name="trakt_lists_load_failed">Falha ao carregar listas do Trakt</string>
     <string name="trakt_lists_update_failed">Falha ao atualizar listas do Trakt</string>
     <string name="updates_asset_line">%1$s • %2$s</string>
@@ -1344,7 +1342,6 @@
     <string name="person_role_director">Diretor</string>
     <string name="person_role_writer">Roteirista</string>
     <string name="rating_audience_score">Pontuação do Público</string>
-    <string name="trailer_no_playable_stream">Nenhuma stream de trailer reproduzível encontrada.</string>
     <string name="trailer_season_label">Temporada %1$d - %2$s</string>
     <string name="unit_bytes_b">B</string>
     <string name="unit_bytes_kb">KB</string>

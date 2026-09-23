@@ -359,8 +359,6 @@
     <string name="compose_action_off">Off</string>
     <string name="compose_action_on">On</string>
     <string name="compose_action_pause">Pause</string>
-    <string name="trailer_enter_fullscreen">Enter fullscreen</string>
-    <string name="trailer_exit_fullscreen">Exit fullscreen</string>
     <string name="player_seek_position">Playback position</string>
     <string name="compose_action_reload">Reload</string>
     <string name="compose_auth_already_have_account">Already have an account? </string>
@@ -1660,8 +1658,6 @@
     <string name="external_player_failed">Couldn&apos;t open external player</string>
     <string name="external_player_not_configured">Choose an external player in settings first</string>
     <string name="external_player_unavailable">No external player is available</string>
-    <string name="trailer_close">Close trailer</string>
-    <string name="trailer_unable_to_play">Unable to play trailer</string>
     <string name="trakt_lists_load_failed">Failed to load Trakt lists</string>
     <string name="trakt_lists_update_failed">Failed to update Trakt lists</string>
     <string name="tracking_lists_update_failed">Failed to update tracking lists</string>
@@ -1961,7 +1957,6 @@
     <string name="person_role_director">Director</string>
     <string name="person_role_writer">Writer</string>
     <string name="rating_audience_score">Audience Score</string>
-    <string name="trailer_no_playable_stream">No playable trailer stream found.</string>
     <string name="trailer_season_label">Season %1$d - %2$s</string>
     <string name="unit_bytes_b">B</string>
     <string name="unit_bytes_kb">KB</string>

@@ -606,7 +606,6 @@
     <string name="streams_resume_from_percent">המשך מ-%1$d%</string>
     <string name="streams_resume_from_time">המשך מ-%1$s</string>
     <string name="streams_size">גודל %1$s</string>
-    <string name="trailer_close">סגור טריילר</string>
     <string name="continue_watching_up_next">הפרק הבא</string>
     <string name="media_movie">סרט</string>
     <string name="trakt_missing_credentials">חסר TRAKT_CLIENT_ID / TRAKT_CLIENT_SECRET ב-local.properties.</string>

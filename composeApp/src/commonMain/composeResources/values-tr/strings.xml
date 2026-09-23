@@ -1476,8 +1476,6 @@
     <string name="external_player_failed">Harici oynatıcı açılamadı</string>
     <string name="external_player_not_configured">Önce ayarlardan bir harici oynatıcı seç</string>
     <string name="external_player_unavailable">Kullanılabilir harici oynatıcı yok</string>
-    <string name="trailer_close">Fragmanı kapat</string>
-    <string name="trailer_unable_to_play">Fragman oynatılamıyor</string>
     <string name="trakt_lists_load_failed">Trakt listeleri yüklenemedi</string>
     <string name="trakt_lists_update_failed">Trakt listeleri güncellenemedi</string>
     <string name="tracking_lists_update_failed">Takip listeleri güncellenemedi</string>
@@ -1762,7 +1760,6 @@
     <string name="person_role_director">Yönetmen</string>
     <string name="person_role_writer">Yazar</string>
     <string name="rating_audience_score">İzleyici puanı</string>
-    <string name="trailer_no_playable_stream">Oynatılabilir fragman yayını bulunamadı.</string>
     <string name="trailer_season_label">%1$d. sezon - %2$s</string>
     <string name="unit_bytes_b">B</string>
     <string name="unit_bytes_kb">KB</string>

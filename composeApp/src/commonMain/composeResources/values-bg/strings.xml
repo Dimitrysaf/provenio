@@ -1573,8 +1573,6 @@
     <string name="external_player_failed">Не можа да се отвори външен плейър</string>
     <string name="external_player_not_configured">Първо изберете外ен плейър в настройките</string>
     <string name="external_player_unavailable">Няма наличен外ен плейър</string>
-    <string name="trailer_close">Затвори трейлъра</string>
-    <string name="trailer_unable_to_play">Трейлърът не можа да се пусне</string>
     <string name="trakt_lists_load_failed">Trakt списъците не можаха да се заредят</string>
     <string name="trakt_lists_update_failed">Trakt списъците не можаха да се актуализират</string>
     <string name="tracking_lists_update_failed">Неуспешно обновяване на списъците</string>
@@ -1861,7 +1859,6 @@
     <string name="person_role_director">Режисьор</string>
     <string name="person_role_writer">Сценарист</string>
     <string name="rating_audience_score">Зрителска оценка</string>
-    <string name="trailer_no_playable_stream">Не е намерен източник на трейлър за пускане.</string>
     <string name="trailer_season_label">Сезон %1$d - %2$s</string>
     <string name="unit_bytes_b">Б</string>
     <string name="unit_bytes_kb">КБ</string>
