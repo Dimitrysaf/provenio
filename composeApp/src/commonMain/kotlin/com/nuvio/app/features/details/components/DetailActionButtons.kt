@@ -1,30 +1,24 @@
 package com.nuvio.app.features.details.components
 
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SplitButtonDefaults
+import androidx.compose.material3.SplitButtonLayout
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,7 +28,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -42,9 +35,10 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.AppIconResource
+import com.nuvio.app.core.ui.SingleChoiceBottomSheet
+import com.nuvio.app.core.ui.SingleChoiceOption
 import com.nuvio.app.core.ui.appIconPainter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -58,21 +52,9 @@ data class DetailSecondaryAction(
     val icon: ImageVector,
     val isActive: Boolean = false,
     val onClick: () -> Unit = {},
-    val onLongClick: (() -> Unit)? = null,
 )
 
-/**
- * What you can do with this title, as one row: play it, and the toggles that were folded behind
- * the overflow control.
- *
- * Every control here is a Material component rather than a tinted surface with a click on it, so
- * the press morph, the state layers and the disabled roles are the ones the spec publishes.
- * The toggles are toggles: an action that is on says so by being checked, not by being repainted.
- *
- * m3.material.io/components/buttons/specs
- * m3.material.io/components/icon-buttons/specs
- */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+/** Play, split from the rest of what can be done with this title, which opens as a sheet of options. */
 @Composable
 fun DetailActionButtons(
     modifier: Modifier = Modifier,
@@ -84,148 +66,98 @@ fun DetailActionButtons(
     onPlayClick: () -> Unit = {},
     onPlayLongClick: (() -> Unit)? = null,
 ) {
-    val playPainter = appIconPainter(AppIconResource.PlayerPlay)
-    val buttonHeight = if (isTablet) 56.dp else 52.dp
-    val iconButtonSize = buttonHeight
-    var actionsExpanded by remember { mutableStateOf(false) }
-    val menuProgress by animateFloatAsState(
-        targetValue = if (actionsExpanded) 1f else 0f,
-        animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
-        label = "detail_action_menu_progress",
+    val buttonHeight = SplitButtonDefaults.MediumContainerHeight
+    var actionsSheetVisible by remember { mutableStateOf(false) }
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (actionsSheetVisible) 180f else 0f,
+        label = "detail_actions_chevron",
     )
-    val hasSecondaryActions = secondaryActions.isNotEmpty()
     val playInteractionSource = remember { MutableInteractionSource() }
     val playLongPress = rememberLongPressGate(
         interactionSource = playInteractionSource,
         onLongClick = onPlayLongClick,
     )
+    val playContent: @Composable RowScope.() -> Unit = {
+        Icon(
+            painter = appIconPainter(AppIconResource.PlayerPlay),
+            contentDescription = null,
+            modifier = Modifier.size(ButtonDefaults.iconSizeFor(buttonHeight)),
+        )
+        Spacer(modifier = Modifier.width(ButtonDefaults.iconSpacingFor(buttonHeight)))
+        Text(
+            text = playLabel,
+            style = ButtonDefaults.textStyleFor(buttonHeight),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .widthIn(max = if (isTablet) 520.dp else 420.dp)
-            .fillMaxWidth()
-            .height(buttonHeight),
+            .fillMaxWidth(),
     ) {
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        if (secondaryActions.isEmpty()) {
             Button(
                 onClick = { if (!playLongPress.consume()) onPlayClick() },
                 modifier = Modifier
-                    .weight(1f)
+                    .fillMaxWidth()
                     .height(buttonHeight),
                 enabled = playEnabled,
-                shape = RoundedCornerShape(PlayCornerRadius),
-                contentPadding = ButtonDefaults.contentPaddingFor(
-                    buttonHeight = buttonHeight,
-                    hasStartIcon = true,
-                ),
+                contentPadding = ButtonDefaults.contentPaddingFor(buttonHeight, hasStartIcon = true),
                 interactionSource = playInteractionSource,
-            ) {
-                Icon(
-                    painter = playPainter,
-                    contentDescription = null,
-                    modifier = Modifier.size(ButtonDefaults.IconSize),
-                )
-                Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
-                Text(
-                    text = playLabel,
-                    style = if (isTablet) {
-                        MaterialTheme.typography.titleMedium
-                    } else {
-                        MaterialTheme.typography.titleSmall
-                    },
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
-            if (hasSecondaryActions) {
-                Spacer(modifier = Modifier.width(12.dp))
-                secondaryActions.forEachIndexed { index, action ->
-                    // The slot opens by width, so the row's own layout carries the reveal and
-                    // the button inside it is never asked to animate its own size.
-                    Box(
+                content = playContent,
+            )
+        } else {
+            // The layout measures the leading button first, so it is given the width the trailing one leaves.
+            SplitButtonLayout(
+                leadingButton = {
+                    SplitButtonDefaults.LeadingButton(
+                        onClick = { if (!playLongPress.consume()) onPlayClick() },
                         modifier = Modifier
-                            .width(iconButtonSize * menuProgress)
-                            .height(iconButtonSize)
-                            .graphicsLayer { clip = true },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (actionsExpanded || menuProgress > 0.01f) {
-                            DetailIconAction(
-                                action = action,
-                                progress = menuProgress,
-                                size = iconButtonSize,
-                            )
-                        }
-                    }
-
-                    if (index != secondaryActions.lastIndex) {
-                        Spacer(modifier = Modifier.width(12.dp * menuProgress))
-                    }
-                }
-                Spacer(modifier = Modifier.width(12.dp * menuProgress))
-
-                // The overflow control is itself a toggle: it is either showing the actions or
-                // it is not, which is exactly what a checked icon toggle says.
-                FilledTonalIconToggleButton(
-                    checked = actionsExpanded,
-                    onCheckedChange = { actionsExpanded = it },
-                    modifier = Modifier.size(iconButtonSize),
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.MoreHoriz,
-                        contentDescription = actionsMenuLabel,
-                        modifier = Modifier
-                            .size(SecondaryIconSize)
-                            .graphicsLayer { rotationZ = 90f * menuProgress },
+                            .width(maxWidth - buttonHeight - SplitButtonDefaults.Spacing)
+                            .height(buttonHeight),
+                        enabled = playEnabled,
+                        shapes = SplitButtonDefaults.leadingButtonShapesFor(buttonHeight),
+                        contentPadding = SplitButtonDefaults.leadingButtonContentPaddingFor(buttonHeight),
+                        interactionSource = playInteractionSource,
+                        content = playContent,
                     )
-                }
-            }
+                },
+                trailingButton = {
+                    SplitButtonDefaults.TrailingButton(
+                        checked = actionsSheetVisible,
+                        onCheckedChange = { actionsSheetVisible = it },
+                        modifier = Modifier.size(buttonHeight),
+                        shapes = SplitButtonDefaults.trailingButtonShapesFor(buttonHeight),
+                        contentPadding = SplitButtonDefaults.trailingButtonContentPaddingFor(buttonHeight),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.KeyboardArrowDown,
+                            contentDescription = actionsMenuLabel,
+                            modifier = Modifier
+                                .size(SplitButtonDefaults.trailingButtonIconSizeFor(buttonHeight))
+                                .graphicsLayer { rotationZ = chevronRotation },
+                        )
+                    }
+                },
+            )
         }
     }
-}
 
-@Composable
-private fun DetailIconAction(
-    action: DetailSecondaryAction,
-    progress: Float,
-    size: Dp,
-    modifier: Modifier = Modifier,
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val longPress = rememberLongPressGate(
-        interactionSource = interactionSource,
-        onLongClick = action.onLongClick,
-    )
-    val haptics = LocalHapticFeedback.current
-
-    FilledTonalIconToggleButton(
-        checked = action.isActive,
-        onCheckedChange = {
-            if (longPress.consume()) return@FilledTonalIconToggleButton
-            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-            action.onClick()
-        },
-        modifier = modifier
-            .size(size)
-            .graphicsLayer {
-                alpha = progress
-                scaleX = 0.86f + (0.14f * progress)
-                scaleY = 0.86f + (0.14f * progress)
+    if (actionsSheetVisible) {
+        SingleChoiceBottomSheet(
+            title = actionsMenuLabel,
+            options = secondaryActions.map { action ->
+                SingleChoiceOption(
+                    value = action,
+                    label = action.label,
+                    leadingContent = { Icon(imageVector = action.icon, contentDescription = null) },
+                )
             },
-        colors = IconButtonDefaults.filledTonalIconToggleButtonColors(),
-        interactionSource = interactionSource,
-    ) {
-        Icon(
-            imageVector = action.icon,
-            contentDescription = action.label,
-            modifier = Modifier.size(SecondaryIconSize),
+            isSelected = { it.isActive },
+            onSelected = { it.onClick() },
+            onDismiss = { actionsSheetVisible = false },
         )
     }
 }
@@ -281,9 +213,3 @@ private fun rememberLongPressGate(
     }
     return gate
 }
-
-/** Full-height rounding, the shape the spec gives a button at this size. */
-private val PlayCornerRadius = 40.dp
-
-/** `IconButtonDefaults` publishes no icon size for the extra-large configuration. */
-private val SecondaryIconSize = 24.dp

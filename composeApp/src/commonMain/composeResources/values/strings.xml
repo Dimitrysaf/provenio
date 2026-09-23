@@ -1490,6 +1490,7 @@
     <string name="details_more_like_this">More Like This</string>
     <string name="detail_more_like_this_powered_by_tmdb">Powered by TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">Powered by Trakt</string>
+    <string name="details_save_to_lists">Save to lists</string>
     <string name="details_seasons">Seasons</string>
     <string name="details_series_missing_numbers">This addon returned videos for the series, but none included season or episode numbers.</string>
     <string name="details_series_no_metadata">This addon did not provide episode metadata for this series.</string>

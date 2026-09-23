@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CheckCircleOutline
+import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
@@ -1915,8 +1916,14 @@ private fun ConfiguredMetaSections(
                             },
                             isActive = isSaved,
                             onClick = onSaveClick,
-                            onLongClick = onSaveLongClick,
                         ))
+                        onSaveLongClick?.let { openListPicker ->
+                            add(DetailSecondaryAction(
+                                label = stringResource(Res.string.details_save_to_lists),
+                                icon = Icons.Rounded.CollectionsBookmark,
+                                onClick = openListPicker,
+                            ))
+                        }
                     },
                     isTablet = isTablet,
                     onPlayClick = onPrimaryPlayClick,
