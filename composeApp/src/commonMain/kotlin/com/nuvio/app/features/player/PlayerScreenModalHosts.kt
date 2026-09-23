@@ -9,6 +9,9 @@ import com.nuvio.app.features.p2p.P2pSettingsRepository
 import com.nuvio.app.features.streams.StreamItem
 import com.nuvio.app.features.streams.StreamsUiState
 import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.compose_player_episode_code_full
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun PlayerScreenModalHosts(
@@ -33,17 +36,19 @@ internal fun PlayerScreenModalHosts(
     subtitleStyle: SubtitleStyleState,
     subtitleDelayMs: Int,
     selectedAddonSubtitle: AddonSubtitle?,
-    subtitleAutoSyncState: SubtitleAutoSyncUiState,
     onBuiltInSubtitleTrackSelected: (Int) -> Unit,
     onAddonSubtitleSelected: (AddonSubtitle) -> Unit,
     onFetchAddonSubtitles: () -> Unit,
-    onSubtitleStyleChanged: (SubtitleStyleState) -> Unit,
     onSubtitleDelayChanged: (Int) -> Unit,
-    onSubtitleDelayReset: () -> Unit,
-    onAutoSyncCapture: () -> Unit,
-    onAutoSyncCueSelected: (SubtitleSyncCue) -> Unit,
-    onAutoSyncReload: () -> Unit,
     onSubtitleModalDismissed: () -> Unit,
+    showSpeedSheet: Boolean,
+    currentSpeed: Float,
+    onSpeedSelected: (Float) -> Unit,
+    onSpeedSheetDismissed: () -> Unit,
+    showResizeSheet: Boolean,
+    resizeMode: PlayerResizeMode,
+    onResizeModeSelected: (PlayerResizeMode) -> Unit,
+    onResizeSheetDismissed: () -> Unit,
     showVideoSettingsModal: Boolean,
     playerSettings: PlayerSettingsUiState,
     onVideoSettingsChanged: () -> Unit,
@@ -54,7 +59,6 @@ internal fun PlayerScreenModalHosts(
     activeEpisodeTitle: String?,
     activeSourceUrl: String,
     activeStreamTitle: String,
-    onSourceFilterSelected: (String?) -> Unit,
     onSourceStreamSelected: (StreamItem) -> Unit,
     onReloadSources: () -> Unit,
     onSourcesPanelDismissed: () -> Unit,
@@ -63,6 +67,8 @@ internal fun PlayerScreenModalHosts(
     allEpisodes: List<MetaVideo>,
     parentMetaType: String,
     parentMetaId: String,
+    poster: String?,
+    background: String?,
     activeSeasonNumber: Int?,
     activeEpisodeNumber: Int?,
     watchProgressByVideoId: Map<String, WatchProgressEntry>,
@@ -72,7 +78,6 @@ internal fun PlayerScreenModalHosts(
     episodeStreamsRepoState: StreamsUiState,
     onEpisodeSelectedForDownload: (MetaVideo) -> Boolean,
     onEpisodeStreamsRequested: (MetaVideo) -> Unit,
-    onEpisodeStreamFilterSelected: (String?) -> Unit,
     onEpisodeStreamSelected: (StreamItem, MetaVideo) -> Unit,
     onBackToEpisodes: () -> Unit,
     onReloadEpisodeStreams: () -> Unit,
@@ -114,38 +119,50 @@ internal fun PlayerScreenModalHosts(
         )
     }
 
-    AudioTrackModal(
-        visible = showAudioModal,
-        audioTracks = audioTracks,
-        selectedIndex = selectedAudioIndex,
-        onTrackSelected = onAudioTrackSelected,
-        onDismiss = onAudioModalDismissed,
-    )
+    if (showAudioModal) {
+        PlayerAudioSheet(
+            audioTracks = audioTracks,
+            selectedIndex = selectedAudioIndex,
+            onTrackSelected = onAudioTrackSelected,
+            onDismiss = onAudioModalDismissed,
+        )
+    }
 
-    SubtitleModal(
-        visible = showSubtitleModal,
-        subtitleTracks = subtitleTracks,
-        selectedSubtitleIndex = selectedSubtitleIndex,
-        addonSubtitles = addonSubtitles,
-        selectedAddonSubtitleId = selectedAddonSubtitleId,
-        isLoadingAddonSubtitles = isLoadingAddonSubtitles,
-        preferredSubtitleLanguage = playerSettings.preferredSubtitleLanguage,
-        secondaryPreferredSubtitleLanguage = playerSettings.secondaryPreferredSubtitleLanguage,
-        subtitleStyle = subtitleStyle,
-        subtitleDelayMs = subtitleDelayMs,
-        selectedAddonSubtitle = selectedAddonSubtitle,
-        subtitleAutoSyncState = subtitleAutoSyncState,
-        onBuiltInTrackSelected = onBuiltInSubtitleTrackSelected,
-        onAddonSubtitleSelected = onAddonSubtitleSelected,
-        onFetchAddonSubtitles = onFetchAddonSubtitles,
-        onStyleChanged = onSubtitleStyleChanged,
-        onSubtitleDelayChanged = onSubtitleDelayChanged,
-        onSubtitleDelayReset = onSubtitleDelayReset,
-        onAutoSyncCapture = onAutoSyncCapture,
-        onAutoSyncCueSelected = onAutoSyncCueSelected,
-        onAutoSyncReload = onAutoSyncReload,
-        onDismiss = onSubtitleModalDismissed,
-    )
+    if (showSubtitleModal) {
+        PlayerSubtitlesSheet(
+            subtitleTracks = subtitleTracks,
+            selectedSubtitleIndex = selectedSubtitleIndex,
+            addonSubtitles = addonSubtitles,
+            selectedAddonSubtitleId = selectedAddonSubtitleId,
+            isLoadingAddonSubtitles = isLoadingAddonSubtitles,
+            preferredSubtitleLanguage = playerSettings.preferredSubtitleLanguage,
+            secondaryPreferredSubtitleLanguage = playerSettings.secondaryPreferredSubtitleLanguage,
+            showOnlyPreferredLanguages = subtitleStyle.showOnlyPreferredLanguages,
+            selectedAddonSubtitle = selectedAddonSubtitle,
+            subtitleDelayMs = subtitleDelayMs,
+            onBuiltInTrackSelected = onBuiltInSubtitleTrackSelected,
+            onAddonSubtitleSelected = onAddonSubtitleSelected,
+            onFetchAddonSubtitles = onFetchAddonSubtitles,
+            onSubtitleDelayChanged = onSubtitleDelayChanged,
+            onDismiss = onSubtitleModalDismissed,
+        )
+    }
+
+    if (showSpeedSheet) {
+        PlayerSpeedSheet(
+            currentSpeed = currentSpeed,
+            onSpeedSelected = onSpeedSelected,
+            onDismiss = onSpeedSheetDismissed,
+        )
+    }
+
+    if (showResizeSheet) {
+        PlayerResizeSheet(
+            currentMode = resizeMode,
+            onModeSelected = onResizeModeSelected,
+            onDismiss = onResizeSheetDismissed,
+        )
+    }
 
     IosVideoSettingsModal(
         visible = showVideoSettingsModal,
@@ -154,42 +171,47 @@ internal fun PlayerScreenModalHosts(
         onDismiss = onVideoSettingsModalDismissed,
     )
 
-    PlayerSourcesPanel(
-        visible = showSourcesPanel,
-        streamsUiState = sourceStreamsState,
-        contentTitle = contentTitle,
-        currentSeason = activeSeasonNumber,
-        currentEpisode = activeEpisodeNumber,
-        currentEpisodeTitle = activeEpisodeTitle,
-        currentStreamUrl = activeSourceUrl,
-        currentStreamName = activeStreamTitle,
-        onFilterSelected = onSourceFilterSelected,
-        onStreamSelected = onSourceStreamSelected,
-        onReload = onReloadSources,
-        onDismiss = onSourcesPanelDismissed,
-    )
+    if (showSourcesPanel) {
+        PlayerStreamsSheet(
+            title = contentTitle,
+            subtitle = if (activeSeasonNumber != null && activeEpisodeNumber != null) {
+                listOfNotNull(
+                    stringResource(
+                        Res.string.compose_player_episode_code_full,
+                        activeSeasonNumber,
+                        activeEpisodeNumber,
+                    ),
+                    activeEpisodeTitle?.takeIf { it.isNotBlank() },
+                ).joinToString(" · ")
+            } else {
+                null
+            },
+            streamsUiState = sourceStreamsState,
+            isStreamSelected = { stream -> stream.isCurrentPlayerStream(activeSourceUrl, activeStreamTitle) },
+            onStreamSelected = onSourceStreamSelected,
+            onReload = onReloadSources,
+            onDismiss = onSourcesPanelDismissed,
+        )
+    }
 
-    if (isSeries) {
-        PlayerEpisodesPanel(
-            visible = showEpisodesPanel,
-            episodes = allEpisodes,
-            parentMetaType = parentMetaType,
+    if (isSeries && showEpisodesPanel) {
+        PlayerEpisodesSheet(
+            title = contentTitle,
             parentMetaId = parentMetaId,
+            parentMetaType = parentMetaType,
+            poster = poster,
+            background = background,
+            episodes = allEpisodes,
             currentSeason = activeSeasonNumber,
-            currentEpisode = activeEpisodeNumber,
             progressByVideoId = watchProgressByVideoId,
             watchedKeys = watchedKeys,
             blurUnwatchedEpisodes = blurUnwatchedEpisodes,
-            episodeStreamsState = episodeStreamsPanelState.copy(
-                streamsUiState = episodeStreamsRepoState,
-            ),
-            onSeasonSelected = { },
+            episodeStreams = episodeStreamsPanelState.copy(streamsUiState = episodeStreamsRepoState),
             onEpisodeSelected = { episode ->
                 if (!onEpisodeSelectedForDownload(episode)) {
                     onEpisodeStreamsRequested(episode)
                 }
             },
-            onEpisodeStreamFilterSelected = onEpisodeStreamFilterSelected,
             onEpisodeStreamSelected = onEpisodeStreamSelected,
             onBackToEpisodes = onBackToEpisodes,
             onReloadEpisodeStreams = onReloadEpisodeStreams,

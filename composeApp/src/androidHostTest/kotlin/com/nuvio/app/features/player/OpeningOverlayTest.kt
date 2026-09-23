@@ -30,7 +30,6 @@ class OpeningOverlayTest {
     val compose = createComposeRule()
 
     private val message = mutableStateOf<String?>(null)
-    private val progress = mutableStateOf<Float?>(null)
 
     @Test
     fun statusToggleKeepsTheTitleAndCloseActionVisible() {
@@ -43,8 +42,7 @@ class OpeningOverlayTest {
                     logo = null,
                     title = "Example movie",
                     onBack = { closed = true },
-                    horizontalSafePadding = 0.dp,
-                    message = if (statusVisible.value) "Finding stream source" else null,
+                    statusLines = listOfNotNull(if (statusVisible.value) "Finding stream source" else null),
                 )
             }
         }
@@ -67,9 +65,10 @@ class OpeningOverlayTest {
                     logo = null,
                     title = "Example movie",
                     onBack = {},
-                    horizontalSafePadding = 0.dp,
-                    message = subtitleLoadingStatusMessage(
-                        SubtitleLoadingProgress(total = 3, completed = 1, addonName = "Example addon"),
+                    statusLines = listOf(
+                        subtitleLoadingStatusMessage(
+                            SubtitleLoadingProgress(total = 3, completed = 1, addonName = "Example addon"),
+                        ),
                     ),
                 )
             }
@@ -84,14 +83,14 @@ class OpeningOverlayTest {
     }
 
     @Test
-    fun loadingContentStaysCenteredWithStatusAndProgressBelowIt() {
+    fun loadingContentStaysCenteredWithStatusAtTheTopEnd() {
         message.value = "Preparing playback"
-        progress.value = 0.5f
         showOverlay()
         assertContentCentered()
         val contentBounds = compose.onNodeWithText("Example title").getUnclippedBoundsInRoot()
         val statusBounds = compose.onNodeWithText("Preparing playback").getUnclippedBoundsInRoot()
-        assertTrue(statusBounds.top > contentBounds.bottom)
+        assertTrue(statusBounds.bottom < contentBounds.top)
+        assertTrue(statusBounds.right > contentBounds.right)
     }
 
     @Test
@@ -100,19 +99,16 @@ class OpeningOverlayTest {
         assertContentCentered()
         compose.runOnIdle {
             message.value = "Finding a source"
-            progress.value = 0.2f
         }
         compose.onNodeWithText("Finding a source").assertIsDisplayed()
         assertContentCentered()
         compose.runOnIdle {
             message.value = "Preparing playback"
-            progress.value = 0.8f
         }
         compose.onNodeWithText("Preparing playback").assertIsDisplayed()
         assertContentCentered()
         compose.runOnIdle {
             message.value = null
-            progress.value = null
         }
         assertContentCentered()
     }
@@ -134,9 +130,7 @@ class OpeningOverlayTest {
                         logo = null,
                         title = "Example title",
                         onBack = {},
-                        horizontalSafePadding = 0.dp,
-                        message = message.value,
-                        progress = progress.value,
+                        statusLines = listOfNotNull(message.value),
                         modifier = Modifier.testTag("opening-overlay"),
                     )
                 }

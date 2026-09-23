@@ -1,6 +1,5 @@
 package com.nuvio.app.features.player
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -9,10 +8,10 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,12 +19,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,24 +32,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.nuvio.app.core.ui.NuvioBackButton
+import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.core.ui.nuvioTypeScale
-import nuvio.composeapp.generated.resources.Res
-import nuvio.composeapp.generated.resources.compose_player_close
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun OpeningOverlay(
@@ -60,10 +50,9 @@ internal fun OpeningOverlay(
     logo: String?,
     title: String?,
     onBack: () -> Unit,
-    horizontalSafePadding: Dp,
     modifier: Modifier = Modifier,
-    message: String? = null,
-    progress: Float? = null,
+    metrics: PlayerLayoutMetrics = PlayerLayoutMetrics.fromWidth(0.dp),
+    statusLines: List<String> = emptyList(),
 ) {
     val contentAlpha by animateFloatAsState(
         targetValue = 1f,
@@ -115,158 +104,62 @@ internal fun OpeningOverlay(
             )
         }
 
-        NuvioBackButton(
-            onClick = onBack,
+        Box(
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
-                .padding(top = 20.dp, start = horizontalSafePadding, end = horizontalSafePadding + 20.dp),
-            containerColor = Color.Black.copy(alpha = 0.3f),
-            contentColor = Color.White,
-            buttonSize = 44.dp,
-            iconSize = 24.dp,
-            contentDescription = stringResource(Res.string.compose_player_close),
-        )
-
-        val targetProgress = progress?.coerceIn(0f, 1f)
-        val animatedProgress by animateFloatAsState(
-            targetValue = targetProgress ?: 0f,
-            animationSpec = tween(
-                durationMillis = if ((targetProgress ?: 0f) >= 0.999f) 160 else 400,
-                easing = LinearEasing,
-            ),
-            label = "openingOverlayP2pProgress",
-        )
-        val progressActive = targetProgress != null
-        Layout(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp),
-            content = {
-                Box(contentAlignment = Alignment.Center) {
-                    if (logoUrl != null && !logoLoadError) {
-                        Box(
-                            modifier = Modifier
-                                .width(logoWidth)
-                                .height(logoHeight),
-                        ) {
-                            AsyncImage(
-                                model = logoUrl,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .graphicsLayer {
-                                        alpha = if (progressActive) 0.25f else contentAlpha
-                                        if (!progressActive) {
-                                            scaleX = contentScale
-                                            scaleY = contentScale
-                                        }
-                                    },
-                                contentScale = ContentScale.Fit,
-                                onError = { logoLoadError = true },
-                            )
-                            if (progressActive) {
-                                AsyncImage(
-                                    model = logoUrl,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .drawWithContent {
-                                            clipRect(right = size.width * animatedProgress) {
-                                                this@drawWithContent.drawContent()
-                                            }
-                                        },
-                                    contentScale = ContentScale.Fit,
-                                )
-                            }
-                        }
-                    } else if (!title.isNullOrBlank()) {
-                        Text(
-                            text = title,
-                            color = Color.White,
-                            textAlign = TextAlign.Center,
-                            maxLines = 2,
-                            style = MaterialTheme.nuvioTypeScale.displayMd.copy(
-                                fontSize = titleFontSize,
-                                fontWeight = FontWeight.ExtraBold,
-                            ),
-                            modifier = Modifier
-                                .padding(horizontal = 24.dp)
-                                .graphicsLayer {
-                                    alpha = contentAlpha
-                                    scaleX = contentScale
-                                    scaleY = contentScale
-                                },
-                        )
-                    } else {
-                        NuvioLoadingIndicator(
-                            color = Color(0xFFE50914),
-                            modifier = Modifier.size(54.dp),
-                        )
-                    }
-                }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    val showHorizontalProgress = progressActive && (logoUrl == null || logoLoadError)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Crossfade(
-                        targetState = message?.takeIf { it.isNotBlank() },
-                        animationSpec = tween(260),
-                        label = "openingLoadingMessage",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp),
-                    ) { loadingMessage ->
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            if (loadingMessage != null) {
-                                Text(
-                                    text = loadingMessage,
-                                    color = Color.White.copy(alpha = 0.72f),
-                                    textAlign = TextAlign.Center,
-                                    maxLines = 2,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 24.dp),
-                                )
-                            }
-                        }
-                    }
-                    if (showHorizontalProgress) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Box(
-                            modifier = Modifier
-                                .width(240.dp)
-                                .height(4.dp)
-                                .background(
-                                    color = Color.White.copy(alpha = 0.2f),
-                                    shape = RoundedCornerShape(2.dp),
-                                ),
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(animatedProgress)
-                                    .height(4.dp)
-                                    .background(
-                                        color = Color.White.copy(alpha = 0.85f),
-                                        shape = RoundedCornerShape(2.dp),
-                                    ),
-                            )
-                        }
-                    }
-                }
-            },
-        ) { measurables, constraints ->
-            val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
-            val artworkContent = measurables[0].measure(looseConstraints)
-            val artworkTop = (constraints.maxHeight - artworkContent.height) / 2
-            val statusTop = artworkTop + artworkContent.height
-            val statusContent = measurables[1].measure(
-                looseConstraints.copy(maxHeight = constraints.maxHeight - statusTop),
-            )
-            layout(constraints.maxWidth, constraints.maxHeight) {
-                artworkContent.placeRelative((constraints.maxWidth - artworkContent.width) / 2, artworkTop)
-                statusContent.placeRelative((constraints.maxWidth - statusContent.width) / 2, statusTop)
+                .align(Alignment.Center)
+                .graphicsLayer {
+                    alpha = contentAlpha
+                    scaleX = contentScale
+                    scaleY = contentScale
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            if (logoUrl != null && !logoLoadError) {
+                AsyncImage(
+                    model = logoUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .width(logoWidth)
+                        .height(logoHeight),
+                    contentScale = ContentScale.Fit,
+                    onError = { logoLoadError = true },
+                )
+            } else if (!title.isNullOrBlank()) {
+                Text(
+                    text = title,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    style = MaterialTheme.nuvioTypeScale.displayMd.copy(
+                        fontSize = titleFontSize,
+                        fontWeight = FontWeight.ExtraBold,
+                    ),
+                    modifier = Modifier.padding(horizontal = 24.dp),
+                )
+            } else {
+                NuvioLoadingIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(54.dp),
+                )
             }
+        }
+
+        // Same top row as the controls: back at the start, status at the end.
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .fillMaxWidth()
+                .playerFrameInsets(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+                .padding(metrics.horizontalPadding),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top,
+        ) {
+            PlayerOverlayBackButton(onClick = onBack, metrics = metrics)
+            PlayerStatusColumn(lines = statusLines)
         }
     }
 }
+
+// The player frame: only what the display actually covers, nothing reserved for gestures.
+internal fun Modifier.playerFrameInsets(sides: WindowInsetsSides): Modifier =
+    windowInsetsPadding(WindowInsets.safeDrawing.only(sides))

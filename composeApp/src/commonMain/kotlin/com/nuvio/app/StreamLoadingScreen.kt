@@ -1,7 +1,6 @@
 package com.nuvio.app
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.dp
 import com.nuvio.app.features.player.OpeningOverlay
 import com.nuvio.app.features.player.subtitleLoadingStatusMessage
 import com.nuvio.app.features.streams.StreamLaunch
@@ -34,7 +33,6 @@ internal fun StreamLoadingScreen(
         logo = launch.logo,
         title = launch.title,
         onBack = onBack,
-        horizontalSafePadding = 0.dp,
-        message = message,
+        statusLines = listOfNotNull(message),
     )
 }

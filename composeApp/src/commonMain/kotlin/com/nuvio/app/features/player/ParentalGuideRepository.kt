@@ -22,6 +22,7 @@ data class ParentalGuideResult(
 data class ParentalWarning(
     val label: String,
     val severity: String,
+    val category: String = "",
 )
 
 internal data class ParentalGuideLabels(
@@ -121,6 +122,7 @@ internal fun buildParentalWarnings(
         .sortedBy { severityOrder[it.second.lowercase()] ?: 3 }
         .map { (category, severity) ->
             ParentalWarning(
+                category = category,
                 label = when (category) {
                     "nudity" -> labels.nudity
                     "violence" -> labels.violence

@@ -232,6 +232,16 @@ internal fun PlayerScreenRuntime.cyclePlaybackSpeed() {
     controlsVisible = true
 }
 
+internal fun PlayerScreenRuntime.setResizeModeTo(mode: PlayerResizeMode) {
+    resizeMode = mode
+    lastSyncedSettingsResizeMode = mode
+    PlayerSettingsRepository.setResizeMode(mode)
+}
+
+internal fun PlayerScreenRuntime.setPlaybackSpeedTo(speed: Float) {
+    playerController?.setPlaybackSpeed(speed)
+}
+
 internal fun PlayerScreenRuntime.activateHoldToSpeed() {
     if (!playerSettingsUiState.holdToSpeedEnabled) return
     val controller = playerController ?: return
