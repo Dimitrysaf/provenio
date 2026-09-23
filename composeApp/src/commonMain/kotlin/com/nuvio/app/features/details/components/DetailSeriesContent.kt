@@ -44,6 +44,7 @@ import coil3.compose.AsyncImage
 import com.nuvio.app.core.i18n.localizedSeasonEpisodeCode
 import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.details.MetaVideo
+import com.nuvio.app.features.details.SPECIALS_SEASON_NUMBER
 import com.nuvio.app.features.details.isReleasedBy
 import com.nuvio.app.features.details.seasonSortKey
 import com.nuvio.app.features.home.components.HeroOnArtworkColor
@@ -55,24 +56,109 @@ import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-// Which seasons are open; every season starts collapsed.
-internal class EpisodeSeasonExpansion(initiallyExpanded: Set<Int>) {
-    var expanded by mutableStateOf(initiallyExpanded)
+// Only the default season starts open; a season the user toggles keeps their choice.
+internal class EpisodeSeasonExpansion(initialOverrides: Map<Int, Boolean>) {
+    var overrides by mutableStateOf(initialOverrides)
         private set
 
-    fun toggle(season: Int) {
-        expanded = if (season in expanded) expanded - season else expanded + season
+    fun isExpanded(season: Int, defaultSeason: Int?): Boolean =
+        overrides[season] ?: (season == defaultSeason)
+
+    fun toggle(season: Int, defaultSeason: Int?) {
+        overrides = overrides + (season to !isExpanded(season, defaultSeason))
     }
 }
 
 @Composable
 internal fun rememberEpisodeSeasonExpansion(key: Any?): EpisodeSeasonExpansion =
-    rememberSaveable(key, saver = EpisodeSeasonExpansionSaver) { EpisodeSeasonExpansion(emptySet()) }
+    rememberSaveable(key, saver = EpisodeSeasonExpansionSaver) { EpisodeSeasonExpansion(emptyMap()) }
 
 private val EpisodeSeasonExpansionSaver = listSaver<EpisodeSeasonExpansion, Int>(
-    save = { it.expanded.toList() },
-    restore = { EpisodeSeasonExpansion(it.toSet()) },
+    save = { expansion ->
+        expansion.overrides.flatMap { (season, open) -> listOf(season, if (open) 1 else 0) }
+    },
+    restore = { saved ->
+        EpisodeSeasonExpansion(saved.chunked(2).associate { (season, open) -> season to (open == 1) })
+    },
 )
+
+internal class EpisodeWatchState(
+    val isWatched: Boolean,
+    val inProgress: WatchProgressEntry?,
+)
+
+internal fun episodeWatchState(
+    meta: MetaDetails,
+    episode: MetaVideo,
+    progressByVideoId: Map<String, WatchProgressEntry>,
+    watchedKeys: Set<String>,
+): EpisodeWatchState {
+    val videoId = buildPlaybackVideoId(
+        parentMetaId = meta.id,
+        seasonNumber = episode.season,
+        episodeNumber = episode.episode,
+        fallbackVideoId = episode.id,
+    )
+    val progressEntry = progressByVideoId[videoId]
+    val isWatched = progressEntry?.isEffectivelyCompleted == true ||
+        WatchingState.isEpisodeWatched(
+            watchedKeys = watchedKeys,
+            metaType = meta.type,
+            metaId = meta.id,
+            episode = episode,
+        )
+    return EpisodeWatchState(
+        isWatched = isWatched,
+        inProgress = progressEntry?.takeIf { !isWatched && it.durationMs > 0L && !it.isCompleted },
+    )
+}
+
+internal data class EpisodeSeasonSummary(
+    val completedSeasons: Set<Int>,
+    val defaultSeason: Int?,
+)
+
+// The open season is the one being watched, else the furthest season started (or the one after it once finished).
+internal fun summarizeEpisodeSeasons(
+    groupedEpisodes: Map<Int, List<MetaVideo>>,
+    todayIsoDate: String,
+    watchState: (MetaVideo) -> EpisodeWatchState,
+): EpisodeSeasonSummary {
+    val seasons = groupedEpisodes.keys.sortedBy(::seasonSortKey)
+    val completed = mutableSetOf<Int>()
+    val started = mutableSetOf<Int>()
+    var watchingSeason: Int? = null
+    var watchingUpdatedAt = Long.MIN_VALUE
+
+    seasons.forEach { season ->
+        var aired = 0
+        var watchedAired = 0
+        groupedEpisodes.getValue(season).forEach { episode ->
+            val state = watchState(episode)
+            if (state.isWatched || state.inProgress != null) started += season
+            state.inProgress?.let { entry ->
+                if (watchingSeason == null || entry.lastUpdatedEpochMs > watchingUpdatedAt) {
+                    watchingSeason = season
+                    watchingUpdatedAt = entry.lastUpdatedEpochMs
+                }
+            }
+            if (episode.isReleasedBy(todayIsoDate)) {
+                aired++
+                if (state.isWatched) watchedAired++
+            }
+        }
+        if (aired > 0 && watchedAired == aired) completed += season
+    }
+
+    val regularSeasons = seasons.filter { it > SPECIALS_SEASON_NUMBER }.ifEmpty { seasons }
+    val furthestStarted = regularSeasons.lastOrNull { it in started }
+    val defaultSeason = watchingSeason ?: when {
+        furthestStarted == null -> regularSeasons.firstOrNull()
+        furthestStarted !in completed -> furthestStarted
+        else -> regularSeasons.getOrNull(regularSeasons.indexOf(furthestStarted) + 1)
+    }
+    return EpisodeSeasonSummary(completedSeasons = completed, defaultSeason = defaultSeason)
+}
 
 // Season rows and episode rows flattened into one segmented list, like the Streams sheet.
 internal sealed interface EpisodeListEntry {
@@ -83,6 +169,7 @@ internal sealed interface EpisodeListEntry {
         val season: Int,
         val episodeCount: Int,
         val expanded: Boolean,
+        val completed: Boolean,
     ) : EpisodeListEntry
 
     data class Episode(
@@ -94,6 +181,7 @@ internal sealed interface EpisodeListEntry {
 internal fun buildEpisodeListEntries(
     groupedEpisodes: Map<Int, List<MetaVideo>>,
     expandedSeasons: Set<Int>,
+    completedSeasons: Set<Int> = emptySet(),
 ): List<EpisodeListEntry> = buildList {
     groupedEpisodes.keys.sortedBy(::seasonSortKey).forEach { season ->
         val episodes = groupedEpisodes.getValue(season)
@@ -105,6 +193,7 @@ internal fun buildEpisodeListEntries(
                 season = season,
                 episodeCount = episodes.size,
                 expanded = expanded,
+                completed = season in completedSeasons,
             ),
         )
         if (!expanded) return@forEach
@@ -156,6 +245,7 @@ internal fun DetailEpisodeListRow(
             },
             episodeCount = entry.episodeCount,
             expanded = entry.expanded,
+            completed = entry.completed,
             shapes = shapes,
             onClick = { onSeasonClick(entry.season) },
             onLongClick = onSeasonLongPress?.let { handler -> { handler(entry.season) } },
@@ -164,34 +254,18 @@ internal fun DetailEpisodeListRow(
 
         is EpisodeListEntry.Episode -> {
             val episode = entry.episode
-            val videoId = buildPlaybackVideoId(
-                parentMetaId = meta.id,
-                seasonNumber = episode.season,
-                episodeNumber = episode.episode,
-                fallbackVideoId = episode.id,
-            )
-            val progressEntry = progressByVideoId[videoId]
-            val isWatched = progressEntry?.isEffectivelyCompleted == true ||
-                WatchingState.isEpisodeWatched(
-                    watchedKeys = watchedKeys,
-                    metaType = meta.type,
-                    metaId = meta.id,
-                    episode = episode,
-                )
+            val watchState = episodeWatchState(meta, episode, progressByVideoId, watchedKeys)
             val status = when {
-                isWatched -> EpisodeStatus.Watched
+                watchState.isWatched -> EpisodeStatus.Watched
                 !episode.isReleasedBy(todayIsoDate) -> EpisodeStatus.Unaired
                 else -> null
             }
-            val progress = progressEntry
-                ?.takeIf { !isWatched && it.durationMs > 0L && !it.isCompleted }
-                ?.progressFraction
             EpisodeRow(
                 episode = episode,
                 imageUrl = episode.thumbnail ?: meta.background ?: meta.poster,
                 status = status,
-                progress = progress,
-                blurArtwork = blurUnwatchedEpisodes && !isWatched,
+                progress = watchState.inProgress?.progressFraction,
+                blurArtwork = blurUnwatchedEpisodes && !watchState.isWatched,
                 shape = shape,
                 shapes = shapes,
                 onClick = { onEpisodeClick?.invoke(episode) },
@@ -208,6 +282,7 @@ private fun SeasonRow(
     label: String,
     episodeCount: Int,
     expanded: Boolean,
+    completed: Boolean,
     shapes: ListItemShapes,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)?,
@@ -236,12 +311,20 @@ private fun SeasonRow(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Icon(
-                    imageVector = Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.rotate(chevronRotation),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (completed) {
+                    Icon(
+                        imageVector = Icons.Rounded.Check,
+                        contentDescription = stringResource(Res.string.episodes_cd_watched),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Rounded.KeyboardArrowDown,
+                        contentDescription = null,
+                        modifier = Modifier.rotate(chevronRotation),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         },
     ) {

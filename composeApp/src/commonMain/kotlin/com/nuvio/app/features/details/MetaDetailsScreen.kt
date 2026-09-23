@@ -91,7 +91,9 @@ import com.nuvio.app.features.details.components.DetailEpisodeListRow
 import com.nuvio.app.features.details.components.DetailSectionTitle
 import com.nuvio.app.features.details.components.EpisodeListEntry
 import com.nuvio.app.features.details.components.buildEpisodeListEntries
+import com.nuvio.app.features.details.components.episodeWatchState
 import com.nuvio.app.features.details.components.rememberEpisodeSeasonExpansion
+import com.nuvio.app.features.details.components.summarizeEpisodeSeasons
 import com.nuvio.app.features.details.components.DetailTrailersSection
 import com.nuvio.app.features.details.components.EpisodeWatchedActionSheet
 import com.nuvio.app.features.details.components.SeasonWatchedActionSheet
@@ -561,11 +563,30 @@ fun MetaDetailsScreen(
                 val episodeListGroupedEpisodes = remember(meta.videos, meta.type) {
                     meta.groupedEpisodesForDisplay()
                 }
+                val episodeSeasonSummary = remember(
+                    meta,
+                    episodeListGroupedEpisodes,
+                    progressByVideoId,
+                    watchedUiState.watchedKeys,
+                    todayIsoDate,
+                ) {
+                    summarizeEpisodeSeasons(episodeListGroupedEpisodes, todayIsoDate) { episode ->
+                        episodeWatchState(meta, episode, progressByVideoId, watchedUiState.watchedKeys)
+                    }
+                }
                 val episodeSeasonExpansion = rememberEpisodeSeasonExpansion(meta.id)
-                val episodeListEntries = remember(episodeListGroupedEpisodes, episodeSeasonExpansion.expanded) {
+                val expandedEpisodeSeasons = episodeListGroupedEpisodes.keys.filter { season ->
+                    episodeSeasonExpansion.isExpanded(season, episodeSeasonSummary.defaultSeason)
+                }.toSet()
+                val episodeListEntries = remember(
+                    episodeListGroupedEpisodes,
+                    expandedEpisodeSeasons,
+                    episodeSeasonSummary.completedSeasons,
+                ) {
                     buildEpisodeListEntries(
                         groupedEpisodes = episodeListGroupedEpisodes,
-                        expandedSeasons = episodeSeasonExpansion.expanded,
+                        expandedSeasons = expandedEpisodeSeasons,
+                        completedSeasons = episodeSeasonSummary.completedSeasons,
                     )
                 }
                 val hasProductionSection = remember(meta) {
@@ -952,7 +973,9 @@ fun MetaDetailsScreen(
                                     commentsError = commentsError,
                                     episodeListEntries = episodeListEntries,
                                     todayIsoDate = todayIsoDate,
-                                    onEpisodeSeasonToggle = episodeSeasonExpansion::toggle,
+                                    onEpisodeSeasonToggle = { season ->
+                                        episodeSeasonExpansion.toggle(season, episodeSeasonSummary.defaultSeason)
+                                    },
                                     onRetryComments = {
                                         detailsScope.launch {
                                             isCommentsLoading = true
