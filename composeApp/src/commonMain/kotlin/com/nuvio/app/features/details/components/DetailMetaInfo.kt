@@ -184,10 +184,10 @@ fun DetailMetaInfo(
         }
 
         if (!meta.description.isNullOrBlank()) {
-            ExpandableDescription(
+            Text(
                 text = meta.description,
-                collapsedMaxLines = 3,
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
