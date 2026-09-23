@@ -65,7 +65,6 @@ import com.nuvio.app.features.streams.StreamBadgeSettingsStorage
 import com.nuvio.app.features.streams.BingeGroupCacheStorage
 import com.nuvio.app.features.watchprogress.ContinueWatchingEnrichmentStorage
 import com.nuvio.app.features.watchprogress.ContinueWatchingPreferencesStorage
-import com.nuvio.app.features.watchprogress.ResumePromptStorage
 import com.nuvio.app.features.watchprogress.WatchProgressStorage
 
 open class MainActivity : AppCompatActivity() {
@@ -120,7 +119,6 @@ open class MainActivity : AppCompatActivity() {
         SimklSyncStorage.initialize(applicationContext)
         LibraryDisplaySettingsStorage.initialize(applicationContext)
         ContinueWatchingPreferencesStorage.initialize(applicationContext)
-        ResumePromptStorage.initialize(applicationContext)
         ContinueWatchingEnrichmentStorage.initialize(applicationContext)
         EpisodeReleaseNotificationsStorage.initialize(applicationContext)
         WatchProgressStorage.initialize(applicationContext)

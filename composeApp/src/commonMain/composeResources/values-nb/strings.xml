@@ -475,7 +475,6 @@
     <string name="episodes_cd_watched">Sett</string>
     <string name="episodes_season">Sesong %1$d</string>
     <string name="episodes_specials">Spesialepisoder</string>
-    <string name="floating_prompt_continue_where_left_off">Fortsett der du slapp</string>
     <string name="hero_add_to_library">Legg til i bibliotek</string>
     <string name="hero_mark_unwatched">Marker som usett</string>
     <string name="hero_mark_watched">Marker som sett</string>
@@ -558,8 +557,6 @@
     <string name="settings_poster_width_large">Stor</string>
     <string name="settings_poster_width_standard">Standard</string>
     <string name="settings_show_secret">Vis verdi</string>
-    <string name="settings_continue_watching_resume_prompt_description">Vis popup for å fortsette der du slapp ved oppstart.</string>
-    <string name="settings_continue_watching_resume_prompt_title">Fortsett-prompt ved oppstart</string>
     <string name="settings_continue_watching_blur_next_up_description">Slør neste episode-miniature for å unngå spoilere.</string>
     <string name="settings_continue_watching_blur_next_up_title">Slør usette i Fortsett å se</string>
     <string name="settings_continue_watching_show_unaired_next_up_description">Inkluder kommende episoder i Fortsett å se før de sendes.</string>
@@ -571,7 +568,6 @@
     <string name="settings_continue_watching_sort_mode_streaming">Streaming-stil</string>
     <string name="settings_continue_watching_sort_mode_streaming_desc">Utgitt først, kommende til slutt</string>
     <string name="settings_continue_watching_section_card_style">PLAKATSTIL</string>
-    <string name="settings_continue_watching_section_on_launch">VED OPPSTART</string>
     <string name="settings_continue_watching_section_up_next_behavior">NESTE OPPFØRSEL</string>
     <string name="settings_continue_watching_section_visibility">SYNLIGHET</string>
     <string name="settings_continue_watching_show_description">Vis Fortsett å se-hylle på hjemskjermen.</string>
@@ -1147,7 +1143,6 @@
     <string name="profile_use_primary_addons_description">Del hovedprofilens tilleggsoppsett i stedet for å administrere en egen liste.</string>
     <string name="profile_who_is_watching">Hvem ser?</string>
     <string name="provider_downloaded">Lastet ned</string>
-    <string name="resume_prompt_action">Gjenoppta</string>
     <string name="streams_active_scrapers">Aktive scrapere</string>
     <string name="streams_checking_more_addons">Sjekker flere tillegg…</string>
     <string name="streams_copy_link">Kopier strøm-lenke</string>

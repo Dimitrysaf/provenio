@@ -12,7 +12,6 @@ import com.nuvio.app.features.player.ExternalPlayerPlatform
 import com.nuvio.app.features.player.PlayerLaunch
 import com.nuvio.app.features.player.PlayerLaunchStore
 import com.nuvio.app.features.player.PlayerScreen
-import com.nuvio.app.features.watchprogress.ResumePromptRepository
 import com.nuvio.app.navigation.NuvioNavigator
 import com.nuvio.app.navigation.PlayerRoute
 
@@ -35,9 +34,6 @@ internal fun PlayerDestination(
         }
         Box(modifier = Modifier.fillMaxSize())
         return
-    }
-    LaunchedEffect(launch.videoId) {
-        launch.videoId?.let { ResumePromptRepository.markPlayerEntered(it) }
     }
     PlayerScreen(
         profileId = launch.profileId,
