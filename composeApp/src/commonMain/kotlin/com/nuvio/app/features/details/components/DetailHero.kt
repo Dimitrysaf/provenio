@@ -99,8 +99,6 @@ fun DetailHero(
         val layout = homeHeroLayout(
             maxWidthDp = maxWidth.value,
             viewportHeightDp = viewportHeight?.value,
-            // Nothing has to peek below the hero here, so it takes the screen-driven height whole.
-            mobileBelowSectionHeightHintDp = 0f,
         )
         val topInset = heroCarouselTopInset()
         val sectionHeight = topInset + layout.heroHeight + layout.contentVerticalPadding
@@ -381,58 +379,60 @@ private fun HeroTrailerPage(
 
         HeroPageScrim()
 
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    horizontal = layout.contentHorizontalPadding,
-                    vertical = layout.contentVerticalPadding,
-                )
-                .padding(bottom = TrailerBandBottomClearance),
-            contentAlignment = Alignment.Center,
-        ) {
-            val bandFill = if (maxWidth / maxHeight < TRAILER_ASPECT_RATIO) {
-                Modifier.fillMaxWidth()
-            } else {
-                Modifier.fillMaxHeight()
-            }
-            Box(
-                modifier = bandFill
-                    .aspectRatio(TRAILER_ASPECT_RATIO)
-                    .clip(MaterialTheme.shapes.large)
-                    .background(Color.Black),
+        if (isFocal) {
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        horizontal = layout.contentHorizontalPadding,
+                        vertical = layout.contentVerticalPadding,
+                    )
+                    .padding(bottom = TrailerBandBottomClearance),
+                contentAlignment = Alignment.Center,
             ) {
-                AsyncImage(
-                    model = trailer.youtubeThumbnailUrl(),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
-                if (isFocal && !spent && !videoReady && playWhenReady()) {
-                    NuvioLoadingIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = Color.White,
-                    )
+                val bandFill = if (maxWidth / maxHeight < TRAILER_ASPECT_RATIO) {
+                    Modifier.fillMaxWidth()
+                } else {
+                    Modifier.fillMaxHeight()
                 }
-                if (isFocal && source != null && !spent) {
-                    HeroTrailerPlayerSurface(
-                        sourceUrl = source.videoUrl,
-                        sourceAudioUrl = source.audioUrl?.takeIf { it.isNotBlank() },
-                        playWhenReady = playWhenReady(),
-                        muted = muted,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer { alpha = videoAlpha },
-                        onReady = { videoReady = true },
-                        onEnded = {
-                            videoReady = false
-                            onSpent()
-                        },
-                        onError = {
-                            videoReady = false
-                            onSpent()
-                        },
+                Box(
+                    modifier = bandFill
+                        .aspectRatio(TRAILER_ASPECT_RATIO)
+                        .clip(MaterialTheme.shapes.large)
+                        .background(Color.Black),
+                ) {
+                    AsyncImage(
+                        model = trailer.youtubeThumbnailUrl(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
                     )
+                    if (!spent && !videoReady && playWhenReady()) {
+                        NuvioLoadingIndicator(
+                            modifier = Modifier.align(Alignment.Center),
+                            color = Color.White,
+                        )
+                    }
+                    if (source != null && !spent) {
+                        HeroTrailerPlayerSurface(
+                            sourceUrl = source.videoUrl,
+                            sourceAudioUrl = source.audioUrl?.takeIf { it.isNotBlank() },
+                            playWhenReady = playWhenReady(),
+                            muted = muted,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer { alpha = videoAlpha },
+                            onReady = { videoReady = true },
+                            onEnded = {
+                                videoReady = false
+                                onSpent()
+                            },
+                            onError = {
+                                videoReady = false
+                                onSpent()
+                            },
+                        )
+                    }
                 }
             }
         }
