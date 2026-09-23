@@ -1,5 +1,6 @@
 package com.nuvio.app.features.player
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Remove
@@ -58,6 +60,7 @@ import com.nuvio.app.features.details.components.summarizeEpisodeSeasons
 import com.nuvio.app.features.details.groupedEpisodesForDisplay
 import com.nuvio.app.features.settings.ListItemBetweenSpace
 import com.nuvio.app.features.settings.segmentShape
+import com.nuvio.app.features.streams.ActiveStreamStore
 import com.nuvio.app.features.streams.LocalStreamSizeLabelFormat
 import com.nuvio.app.features.streams.StreamBadgeSettingsRepository
 import com.nuvio.app.features.streams.StreamItem
@@ -186,6 +189,7 @@ internal fun PlayerEpisodesSheet(
     background: String?,
     episodes: List<MetaVideo>,
     currentSeason: Int?,
+    currentVideoId: String?,
     progressByVideoId: Map<String, WatchProgressEntry>,
     watchedKeys: Set<String>,
     blurUnwatchedEpisodes: Boolean,
@@ -215,7 +219,7 @@ internal fun PlayerEpisodesSheet(
             HorizontalDivider()
             PlayerStreamGroupsList(
                 streamsUiState = episodeStreams.streamsUiState,
-                isStreamSelected = { false },
+                isStreamSelected = { stream -> ActiveStreamStore.isActive(selectedEpisode.id, stream) },
                 onStreamSelected = { stream -> onEpisodeStreamSelected(stream, selectedEpisode) },
                 modifier = Modifier.weight(1f, fill = false),
             )
@@ -232,6 +236,7 @@ internal fun PlayerEpisodesSheet(
                     videos = episodes,
                 ),
                 currentSeason = currentSeason,
+                currentVideoId = currentVideoId,
                 progressByVideoId = progressByVideoId,
                 watchedKeys = watchedKeys,
                 blurUnwatchedEpisodes = blurUnwatchedEpisodes,
@@ -246,6 +251,7 @@ internal fun PlayerEpisodesSheet(
 private fun PlayerEpisodeList(
     meta: MetaDetails,
     currentSeason: Int?,
+    currentVideoId: String?,
     progressByVideoId: Map<String, WatchProgressEntry>,
     watchedKeys: Set<String>,
     blurUnwatchedEpisodes: Boolean,
@@ -289,6 +295,7 @@ private fun PlayerEpisodeList(
                     .padding(horizontal = StreamsHorizontalPadding)
                     .padding(bottom = if (index == entries.lastIndex) 0.dp else ListItemBetweenSpace)
                     .animateItem(),
+                currentEpisodeId = currentVideoId,
             )
         }
     }
@@ -353,6 +360,8 @@ private fun PlayerSheetHeader(
     onBack: (() -> Unit)? = null,
     onReload: (() -> Unit)? = null,
     reloadEnabled: Boolean = true,
+    onFetch: (() -> Unit)? = null,
+    fetching: Boolean = false,
 ) {
     Row(
         modifier = Modifier
@@ -394,6 +403,23 @@ private fun PlayerSheetHeader(
                     imageVector = Icons.Rounded.Refresh,
                     contentDescription = stringResource(Res.string.streams_refresh),
                 )
+            }
+        }
+        if (onFetch != null) {
+            // The fetch button turns into a progress indicator while fetching.
+            Crossfade(targetState = fetching, label = "player_sheet_fetch") { isFetching ->
+                Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                    if (isFetching) {
+                        NuvioLoadingIndicator(modifier = Modifier.size(24.dp))
+                    } else {
+                        IconButton(onClick = onFetch) {
+                            Icon(
+                                imageVector = Icons.Rounded.CloudDownload,
+                                contentDescription = stringResource(Res.string.compose_player_fetch_subtitles),
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -459,9 +485,6 @@ internal fun PlayerSubtitlesSheet(
                     .forEach { add(SubtitleSheetEntry.Option(it)) }
             }
         }
-        if (addonSubtitles.isEmpty()) {
-            add(SubtitleSheetEntry.Fetch(loading = isLoadingAddonSubtitles))
-        }
     }
 
     NuvioModalBottomSheet(
@@ -469,7 +492,12 @@ internal fun PlayerSubtitlesSheet(
         sheetState = sheetState,
         fullHeight = true,
     ) {
-        PlayerSheetHeader(title = stringResource(Res.string.compose_player_subtitles), subtitle = null)
+        PlayerSheetHeader(
+            title = stringResource(Res.string.compose_player_subtitles),
+            subtitle = null,
+            onFetch = onFetchAddonSubtitles,
+            fetching = isLoadingAddonSubtitles,
+        )
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -521,20 +549,6 @@ internal fun PlayerSubtitlesSheet(
                         },
                         modifier = rowModifier,
                     )
-                    is SubtitleSheetEntry.Fetch -> SegmentedListItem(
-                        onClick = onFetchAddonSubtitles,
-                        shapes = shapes,
-                        modifier = rowModifier,
-                        enabled = !entry.loading,
-                        colors = playerSheetRowColors(),
-                        trailingContent = if (entry.loading) {
-                            { NuvioLoadingIndicator(modifier = Modifier.size(20.dp)) }
-                        } else {
-                            null
-                        },
-                    ) {
-                        Text(stringResource(Res.string.compose_player_fetch_subtitles))
-                    }
                 }
             }
 
@@ -564,10 +578,6 @@ private sealed interface SubtitleSheetEntry {
 
     data class Option(val option: SubtitleSelectionOption) : SubtitleSheetEntry {
         override fun key(index: Int) = "option:${option.id}:$index"
-    }
-
-    data class Fetch(val loading: Boolean) : SubtitleSheetEntry {
-        override fun key(index: Int) = "fetch"
     }
 }
 

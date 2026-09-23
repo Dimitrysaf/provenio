@@ -6,6 +6,7 @@ import com.nuvio.app.features.details.MetaVideo
 import com.nuvio.app.features.downloads.DownloadsRepository
 import com.nuvio.app.features.p2p.P2pConsentDialog
 import com.nuvio.app.features.p2p.P2pSettingsRepository
+import com.nuvio.app.features.streams.ActiveStreamStore
 import com.nuvio.app.features.streams.StreamItem
 import com.nuvio.app.features.streams.StreamsUiState
 import com.nuvio.app.features.watchprogress.WatchProgressEntry
@@ -187,7 +188,10 @@ internal fun PlayerScreenModalHosts(
                 null
             },
             streamsUiState = sourceStreamsState,
-            isStreamSelected = { stream -> stream.isCurrentPlayerStream(activeSourceUrl, activeStreamTitle) },
+            isStreamSelected = { stream ->
+                activeVideoId?.let { ActiveStreamStore.isActive(it, stream) } == true ||
+                    stream.isCurrentPlayerStream(activeSourceUrl, activeStreamTitle)
+            },
             onStreamSelected = onSourceStreamSelected,
             onReload = onReloadSources,
             onDismiss = onSourcesPanelDismissed,
@@ -203,6 +207,7 @@ internal fun PlayerScreenModalHosts(
             background = background,
             episodes = allEpisodes,
             currentSeason = activeSeasonNumber,
+            currentVideoId = activeVideoId,
             progressByVideoId = watchProgressByVideoId,
             watchedKeys = watchedKeys,
             blurUnwatchedEpisodes = blurUnwatchedEpisodes,

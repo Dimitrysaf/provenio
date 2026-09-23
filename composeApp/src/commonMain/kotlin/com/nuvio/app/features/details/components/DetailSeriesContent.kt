@@ -224,6 +224,7 @@ internal fun DetailEpisodeListRow(
     onEpisodeClick: ((MetaVideo) -> Unit)?,
     onEpisodeLongPress: ((MetaVideo) -> Unit)?,
     modifier: Modifier = Modifier,
+    currentEpisodeId: String? = null,
 ) {
     val shape = segmentShape(index = index, count = count)
     val shapes = ListItemDefaults.shapes(
@@ -265,6 +266,11 @@ internal fun DetailEpisodeListRow(
                 imageUrl = episode.thumbnail ?: meta.background ?: meta.poster,
                 status = status,
                 progress = watchState.inProgress?.progressFraction,
+                selected = if (currentEpisodeId != null) {
+                    episode.id == currentEpisodeId
+                } else {
+                    watchState.inProgress != null
+                },
                 blurArtwork = blurUnwatchedEpisodes && !watchState.isWatched,
                 shape = shape,
                 shapes = shapes,
@@ -343,6 +349,7 @@ private fun EpisodeRow(
     imageUrl: String?,
     status: EpisodeStatus?,
     progress: Float?,
+    selected: Boolean,
     blurArtwork: Boolean,
     shape: Shape,
     shapes: ListItemShapes,
@@ -357,7 +364,7 @@ private fun EpisodeRow(
 
     Box(modifier = modifier.fillMaxWidth().clip(shape)) {
         SegmentedListItem(
-            selected = progress != null,
+            selected = selected,
             onClick = onClick,
             shapes = shapes,
             modifier = Modifier.fillMaxWidth(),

@@ -11,6 +11,7 @@ import com.nuvio.app.features.downloads.DownloadSubtitles
 import com.nuvio.app.features.downloads.DownloadsRepository
 import com.nuvio.app.features.p2p.P2pSettingsRepository
 import com.nuvio.app.features.p2p.P2pStreamingEngine
+import com.nuvio.app.features.streams.ActiveStreamStore
 import com.nuvio.app.features.streams.StreamItem
 import com.nuvio.app.features.streams.StreamLinkCacheRepository
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
@@ -231,13 +232,15 @@ internal fun PlayerScreenRuntime.switchToP2pEpisodeStream(
     applyEpisodeStreamMetadata(stream, episode, resume)
 }
 
-internal fun PlayerScreenRuntime.switchToSource(stream: StreamItem) {
+internal fun PlayerScreenRuntime.switchToSource(stream: StreamItem, recordAsActive: Boolean = true) {
+    // Recorded before a debrid link resolves, so the list recognises the stream it shows.
+    if (recordAsActive) activeVideoId?.let { ActiveStreamStore.set(videoId = it, stream = stream) }
     if (
         resolveDebridForPlayer(
             stream = stream,
             season = activeSeasonNumber,
             episode = activeEpisodeNumber,
-            onResolved = { switchToSource(it) },
+            onResolved = { switchToSource(it, recordAsActive = false) },
             onStale = {
                 val vid = activeVideoId
                 if (vid != null) {
@@ -289,13 +292,18 @@ internal fun PlayerScreenRuntime.switchToSource(stream: StreamItem) {
     PlayerStreamsRepository.pauseSearchForPlayback()
 }
 
-internal fun PlayerScreenRuntime.switchToEpisodeStream(stream: StreamItem, episode: MetaVideo) {
+internal fun PlayerScreenRuntime.switchToEpisodeStream(
+    stream: StreamItem,
+    episode: MetaVideo,
+    recordAsActive: Boolean = true,
+) {
+    if (recordAsActive) ActiveStreamStore.set(videoId = episode.id, stream = stream)
     if (
         resolveDebridForPlayer(
             stream = stream,
             season = episode.season,
             episode = episode.episode,
-            onResolved = { resolvedStream -> switchToEpisodeStream(resolvedStream, episode) },
+            onResolved = { resolvedStream -> switchToEpisodeStream(resolvedStream, episode, recordAsActive = false) },
             onStale = {
                 PlayerStreamsRepository.loadEpisodeStreams(
                     type = contentType ?: parentMetaType,
@@ -332,6 +340,7 @@ internal fun PlayerScreenRuntime.switchToEpisodeStream(stream: StreamItem, episo
 
 internal fun PlayerScreenRuntime.switchToDownloadedEpisode(downloadItem: DownloadItem, episode: MetaVideo) {
     val localFileUri = DownloadsRepository.playableLocalFileUri(downloadItem) ?: return
+    ActiveStreamStore.clear()
     resetEpisodePanelAndNextEpisodeState()
     flushWatchProgress()
     stopActiveP2pStream()
