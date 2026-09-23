@@ -32,11 +32,13 @@ import com.nuvio.app.shell.components.NuvioLoadingIndicator
 import com.nuvio.app.shell.components.NuvioNetworkOfflineCard
 import com.nuvio.app.shell.components.SingleChoiceBottomSheet
 import com.nuvio.app.shell.components.SingleChoiceOption
-import com.nuvio.app.features.home.MetaPreview
+import com.nuvio.app.core.home.MetaPreview
 import com.nuvio.app.features.home.components.PosterGridRow
 import com.nuvio.app.features.home.components.PosterGridSkeletonRow
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.search.DiscoverEmptyStateReason
+import com.nuvio.app.core.search.DiscoverUiState
 
 internal fun LazyListScope.discoverContent(
     state: DiscoverUiState,

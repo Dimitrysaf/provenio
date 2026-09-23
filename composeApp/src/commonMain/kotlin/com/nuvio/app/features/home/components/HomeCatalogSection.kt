@@ -9,10 +9,10 @@ import androidx.compose.ui.unit.Dp
 import com.nuvio.app.shell.components.NuvioShelfSection
 import com.nuvio.app.shell.components.NuvioViewAllPillSize
 import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
-import com.nuvio.app.features.home.HomeCatalogSection
-import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.home.stableKey
-import com.nuvio.app.features.watching.application.WatchingState
+import com.nuvio.app.core.home.HomeCatalogSection
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.home.stableKey
+import com.nuvio.app.core.watch.watching.application.WatchingState
 
 @Composable
 fun HomeCatalogRowSection(

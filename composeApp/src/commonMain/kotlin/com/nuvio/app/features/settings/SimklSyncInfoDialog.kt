@@ -13,7 +13,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.features.simkl.SIMKL_AUTOMATIC_REFRESH_INTERVAL_MINUTES
+import com.nuvio.app.core.tracking.simkl.SIMKL_AUTOMATIC_REFRESH_INTERVAL_MINUTES
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_close
 import nuvio.composeapp.generated.resources.settings_simkl_sync_info_activity

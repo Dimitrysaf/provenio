@@ -22,7 +22,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.nuvio.app.features.debrid.DebridProviders
+import com.nuvio.app.core.debrid.DebridProviders
+import com.nuvio.app.core.streams.StreamBadge
+import com.nuvio.app.core.streams.StreamBadgePlacement
+import com.nuvio.app.core.streams.StreamDebridCacheState
+import com.nuvio.app.core.streams.StreamItem
 
 /**
  * One stream, as a row in its add-on's segmented list.

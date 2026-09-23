@@ -5,6 +5,9 @@ import com.nuvio.app.shell.theme.CustomThemeColors
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import com.nuvio.app.core.membership.CosmeticEntitlement
+import com.nuvio.app.core.membership.CosmeticEntitlements
+import com.nuvio.app.core.membership.MemberTier
 
 class ThemeAccessTest {
     @Test

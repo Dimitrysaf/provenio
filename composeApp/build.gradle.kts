@@ -78,11 +78,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/features/tmdb").apply {
+        outDir.resolve("com/nuvio/app/core/metadata/tmdb").apply {
             mkdirs()
             resolve("TmdbConfig.kt").writeText(
                 """
-                |package com.nuvio.app.features.tmdb
+                |package com.nuvio.app.core.metadata.tmdb
                 |
                 |object TmdbConfig {
                 |    const val API_KEY = "${tmdbApiKey.get()}"
@@ -91,11 +91,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/features/trakt").apply {
+        outDir.resolve("com/nuvio/app/core/tracking/trakt").apply {
             mkdirs()
             resolve("TraktConfig.kt").writeText(
                 """
-                |package com.nuvio.app.features.trakt
+                |package com.nuvio.app.core.tracking.trakt
                 |
                 |object TraktConfig {
                 |    const val CLIENT_ID = "${props.getProperty("TRAKT_CLIENT_ID", "")}" 
@@ -106,11 +106,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/features/simkl").apply {
+        outDir.resolve("com/nuvio/app/core/tracking/simkl").apply {
             mkdirs()
             resolve("SimklConfig.kt").writeText(
                 """
-                |package com.nuvio.app.features.simkl
+                |package com.nuvio.app.core.tracking.simkl
                 |
                 |object SimklConfig {
                 |    const val CLIENT_ID = "${props.getProperty("SIMKL_CLIENT_ID", "")}"
@@ -121,11 +121,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/features/player/skip").apply {
+        outDir.resolve("com/nuvio/app/core/playback/skip").apply {
             mkdirs()
             resolve("IntroDbConfig.kt").writeText(
                 """
-                |package com.nuvio.app.features.player.skip
+                |package com.nuvio.app.core.playback.skip
                 |
                 |object IntroDbConfig {
                 |    const val URL = "${props.getProperty("INTRODB_API_URL", "")}" 
@@ -134,11 +134,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/features/details").apply {
+        outDir.resolve("com/nuvio/app/core/metadata").apply {
             mkdirs()
             resolve("ImdbEpisodeRatingsConfig.kt").writeText(
                 """
-                |package com.nuvio.app.features.details
+                |package com.nuvio.app.core.metadata
                 |
                 |object ImdbEpisodeRatingsConfig {
                 |    const val IMDB_RATINGS_API_BASE_URL = "${props.getProperty("IMDB_RATINGS_API_BASE_URL", "")}" 
@@ -148,11 +148,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/features/debrid").apply {
+        outDir.resolve("com/nuvio/app/core/debrid").apply {
             mkdirs()
             resolve("PremiumizeConfig.kt").writeText(
                 """
-                |package com.nuvio.app.features.debrid
+                |package com.nuvio.app.core.debrid
                 |
                 |object PremiumizeConfig {
                 |    const val CLIENT_ID = "${props.getProperty("PREMIUMIZE_CLIENT_ID", "")}"
@@ -175,11 +175,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/features/settings").apply {
+        outDir.resolve("com/nuvio/app/core/settings").apply {
             mkdirs()
             resolve("CommunityConfig.kt").writeText(
                 """
-                |package com.nuvio.app.features.settings
+                |package com.nuvio.app.core.settings
                 |
                 |object CommunityConfig {
                 |    const val CONTRIBUTIONS_URL = "${props.getProperty("CONTRIBUTIONS_URL", "")}" 

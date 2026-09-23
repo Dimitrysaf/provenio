@@ -1,10 +1,10 @@
 package com.nuvio.app.features.streams
 
-import com.nuvio.app.features.addons.AddonManifest
-import com.nuvio.app.features.addons.AddonResource
-import com.nuvio.app.features.addons.ManagedAddon
-import com.nuvio.app.features.plugins.PluginScraper
-import com.nuvio.app.features.plugins.PluginsUiState
+import com.nuvio.app.core.addons.AddonManifest
+import com.nuvio.app.core.addons.AddonResource
+import com.nuvio.app.core.addons.ManagedAddon
+import com.nuvio.app.core.plugins.PluginScraper
+import com.nuvio.app.core.plugins.PluginsUiState
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

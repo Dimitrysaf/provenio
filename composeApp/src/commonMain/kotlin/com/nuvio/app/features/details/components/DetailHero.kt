@@ -55,11 +55,11 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.nuvio.app.shell.components.NuvioLoadingIndicator
 import com.nuvio.app.shell.components.skeleton
-import com.nuvio.app.features.details.DetailHeroSlide
-import com.nuvio.app.features.details.MetaDetails
-import com.nuvio.app.features.details.MetaTrailer
-import com.nuvio.app.features.details.youtubePlaybackUrl
-import com.nuvio.app.features.details.youtubeThumbnailUrl
+import com.nuvio.app.core.metadata.DetailHeroSlide
+import com.nuvio.app.core.metadata.MetaDetails
+import com.nuvio.app.core.metadata.MetaTrailer
+import com.nuvio.app.core.metadata.youtubePlaybackUrl
+import com.nuvio.app.core.metadata.youtubeThumbnailUrl
 import com.nuvio.app.features.home.components.HeroMinSmallItemWidth
 import com.nuvio.app.features.home.components.HeroOnArtworkColor
 import com.nuvio.app.features.home.components.HeroOnArtworkVariantColor
@@ -67,8 +67,8 @@ import com.nuvio.app.features.home.components.HomeHeroLayout
 import com.nuvio.app.features.home.components.heroCarouselTopInset
 import com.nuvio.app.features.home.components.heroItemContentAlpha
 import com.nuvio.app.features.home.components.homeHeroLayout
-import com.nuvio.app.features.trailer.TrailerPlaybackResolver
-import com.nuvio.app.features.trailer.TrailerPlaybackSource
+import com.nuvio.app.core.trailer.TrailerPlaybackResolver
+import com.nuvio.app.core.trailer.TrailerPlaybackSource
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource

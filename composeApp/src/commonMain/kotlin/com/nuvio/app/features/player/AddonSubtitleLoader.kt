@@ -1,10 +1,10 @@
 package com.nuvio.app.features.player
 
-import com.nuvio.app.features.addons.AddonRepository
-import com.nuvio.app.features.addons.AddonResource
-import com.nuvio.app.features.addons.buildAddonResourceUrl
-import com.nuvio.app.features.addons.enabledAddons
-import com.nuvio.app.features.addons.fetchAddonResponseText
+import com.nuvio.app.core.addons.AddonRepository
+import com.nuvio.app.core.addons.AddonResource
+import com.nuvio.app.core.addons.buildAddonResourceUrl
+import com.nuvio.app.core.addons.enabledAddons
+import com.nuvio.app.core.addons.fetchAddonResponseText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll

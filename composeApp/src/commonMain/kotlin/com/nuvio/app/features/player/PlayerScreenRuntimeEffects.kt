@@ -8,26 +8,29 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.nuvio.app.features.details.MetaDetailsRepository
-import com.nuvio.app.features.p2p.P2pSettingsRepository
-import com.nuvio.app.features.p2p.P2pStreamRequest
-import com.nuvio.app.features.p2p.P2pStreamingEngine
-import com.nuvio.app.features.p2p.P2pStreamingState
-import com.nuvio.app.features.player.skip.NextEpisodeInfo
-import com.nuvio.app.features.player.skip.PlayerNextEpisodeRules
-import com.nuvio.app.features.player.skip.SkipIntroRepository
-import com.nuvio.app.features.streams.BingeGroupCacheRepository
-import com.nuvio.app.features.streams.StreamLinkCacheRepository
-import com.nuvio.app.features.streams.StreamItem
-import com.nuvio.app.features.streams.hasLikelyExpiringPlaybackCredentials
-import com.nuvio.app.features.tracking.TrackingScrobbleAction
+import com.nuvio.app.core.p2p.P2pSettingsRepository
+import com.nuvio.app.core.p2p.P2pStreamRequest
+import com.nuvio.app.core.p2p.P2pStreamingEngine
+import com.nuvio.app.core.p2p.P2pStreamingState
+import com.nuvio.app.core.playback.skip.NextEpisodeInfo
+import com.nuvio.app.core.playback.skip.PlayerNextEpisodeRules
+import com.nuvio.app.core.playback.skip.SkipIntroRepository
+import com.nuvio.app.core.streams.BingeGroupCacheRepository
+import com.nuvio.app.core.streams.StreamLinkCacheRepository
+import com.nuvio.app.core.streams.StreamItem
+import com.nuvio.app.core.streams.hasLikelyExpiringPlaybackCredentials
+import com.nuvio.app.core.tracking.TrackingScrobbleAction
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
 import com.nuvio.app.features.watchprogress.buildPlaybackVideoId
-import com.nuvio.app.features.watching.application.WatchingState
+import com.nuvio.app.core.watch.watching.application.WatchingState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
+import com.nuvio.app.core.playback.ParentalGuideRepository
+import com.nuvio.app.core.playback.PlayerStreamsRepository
+import com.nuvio.app.core.playback.buildParentalWarnings
 
 @Composable
 internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {

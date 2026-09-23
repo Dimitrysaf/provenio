@@ -1,14 +1,14 @@
 package com.nuvio.app.features.player
 
 import androidx.compose.runtime.Composable
-import com.nuvio.app.features.details.MetaDetailsUiState
-import com.nuvio.app.features.details.MetaVideo
-import com.nuvio.app.features.downloads.DownloadsRepository
+import com.nuvio.app.core.metadata.MetaDetailsUiState
+import com.nuvio.app.core.metadata.MetaVideo
+import com.nuvio.app.core.downloads.DownloadsRepository
 import com.nuvio.app.features.p2p.P2pConsentDialog
-import com.nuvio.app.features.p2p.P2pSettingsRepository
+import com.nuvio.app.core.p2p.P2pSettingsRepository
 import com.nuvio.app.features.streams.ActiveStreamStore
-import com.nuvio.app.features.streams.StreamItem
-import com.nuvio.app.features.streams.StreamsUiState
+import com.nuvio.app.core.streams.StreamItem
+import com.nuvio.app.core.streams.StreamsUiState
 import com.nuvio.app.features.watchprogress.WatchProgressEntry
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_player_episode_code_full

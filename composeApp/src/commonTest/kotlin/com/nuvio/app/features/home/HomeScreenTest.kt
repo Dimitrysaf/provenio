@@ -1,30 +1,33 @@
 package com.nuvio.app.features.home
 
-import com.nuvio.app.features.cloud.CloudLibraryFile
-import com.nuvio.app.features.cloud.CloudLibraryItem
-import com.nuvio.app.features.cloud.CloudLibraryItemType
-import com.nuvio.app.features.cloud.CloudLibraryProviderState
-import com.nuvio.app.features.cloud.CloudLibraryUiState
-import com.nuvio.app.features.cloud.playbackVideoId
-import com.nuvio.app.features.debrid.DebridProviders
-import com.nuvio.app.features.watchprogress.CachedInProgressItem
-import com.nuvio.app.features.watchprogress.CachedNextUpItem
+import com.nuvio.app.core.cloud.CloudLibraryFile
+import com.nuvio.app.core.cloud.CloudLibraryItem
+import com.nuvio.app.core.cloud.CloudLibraryItemType
+import com.nuvio.app.core.cloud.CloudLibraryProviderState
+import com.nuvio.app.core.cloud.CloudLibraryUiState
+import com.nuvio.app.core.cloud.playbackVideoId
+import com.nuvio.app.core.debrid.DebridProviders
+import com.nuvio.app.core.watch.progress.CachedInProgressItem
+import com.nuvio.app.core.watch.progress.CachedNextUpItem
 import com.nuvio.app.features.watchprogress.ContinueWatchingItem
 import com.nuvio.app.features.watchprogress.ContinueWatchingSortMode
 import com.nuvio.app.features.watchprogress.WatchProgressEntry
 import com.nuvio.app.features.watchprogress.WatchProgressSourceTraktHistory
 import com.nuvio.app.features.watchprogress.nextUpDismissKey
 import com.nuvio.app.features.watchprogress.parseReleaseDateToEpochMs
-import com.nuvio.app.features.watchprogress.resolvedProgressKey
+import com.nuvio.app.core.watch.progress.resolvedProgressKey
 import com.nuvio.app.features.watchprogress.toContinueWatchingItem
-import com.nuvio.app.features.watched.WatchedItem
-import com.nuvio.app.features.watching.domain.WatchingContentRef
+import com.nuvio.app.core.watch.watched.WatchedItem
+import com.nuvio.app.core.watch.watching.domain.WatchingContentRef
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import com.nuvio.app.core.home.shouldShowHomeHeroSlot
+import com.nuvio.app.core.home.shouldShowInitialHomeLoading
+import com.nuvio.app.core.home.stableKey
 
 class HomeScreenTest {
 

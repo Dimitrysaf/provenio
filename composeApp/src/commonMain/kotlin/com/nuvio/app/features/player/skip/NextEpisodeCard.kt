@@ -53,6 +53,7 @@ import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_player_episode_code_full
 import nuvio.composeapp.generated.resources.player_next_episode_thumbnail
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.playback.skip.NextEpisodeInfo
 
 // The next episode as a large thumbnail on the right; tap plays it, swipe right dismisses it.
 @Composable

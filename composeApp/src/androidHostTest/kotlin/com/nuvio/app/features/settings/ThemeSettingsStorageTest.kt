@@ -17,6 +17,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import com.nuvio.app.core.settings.ThemeSettingsStorage
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)

@@ -1,12 +1,18 @@
 package com.nuvio.app.features.watchprogress
 
-import com.nuvio.app.features.cloud.CloudLibraryContentType
-import com.nuvio.app.features.cloud.cloudLibraryProviderPosterUrl
-import com.nuvio.app.features.details.MetaVideo
-import com.nuvio.app.features.tracking.TrackingAttributedItem
-import com.nuvio.app.features.tracking.WatchProgressSource
-import com.nuvio.app.features.watching.domain.WatchingContentRef
+import com.nuvio.app.core.cloud.CloudLibraryContentType
+import com.nuvio.app.core.cloud.cloudLibraryProviderPosterUrl
+import com.nuvio.app.core.metadata.MetaVideo
+import com.nuvio.app.core.tracking.TrackingAttributedItem
+import com.nuvio.app.core.tracking.WatchProgressSource
+import com.nuvio.app.core.watch.watching.domain.WatchingContentRef
 import kotlinx.serialization.Serializable
+import com.nuvio.app.core.watch.progress.ContinueWatchingLimit
+import com.nuvio.app.core.watch.progress.continueWatchingEntries
+import com.nuvio.app.core.watch.progress.isWatchProgressComplete
+import com.nuvio.app.core.watch.progress.newestByProgressKey
+import com.nuvio.app.core.watch.progress.resolveProgressForVideo
+import com.nuvio.app.core.watch.progress.watchProgressEntryFreshnessComparator
 
 internal const val WatchProgressCompletionPercentThreshold = 90f
 internal const val WatchProgressSourceLocal = "local"

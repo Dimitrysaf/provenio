@@ -27,6 +27,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import com.nuvio.app.core.streams.StreamBackgroundMode
+import com.nuvio.app.core.streams.StreamBadgeSettingsRepository
+import com.nuvio.app.core.streams.StreamBadgeSettingsStorage
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class, qualifiers = "w400dp-h900dp-port")

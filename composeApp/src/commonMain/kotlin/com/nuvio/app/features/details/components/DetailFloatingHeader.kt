@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.nuvio.app.shell.components.NuvioBackButton
 import com.nuvio.app.shell.components.platformPhysicalTopInset
-import com.nuvio.app.features.details.MetaDetails
+import com.nuvio.app.core.metadata.MetaDetails
 import com.nuvio.app.isIos
 import com.nuvio.app.navigation.LocalUseNativeNavigation
 import nuvio.composeapp.generated.resources.*

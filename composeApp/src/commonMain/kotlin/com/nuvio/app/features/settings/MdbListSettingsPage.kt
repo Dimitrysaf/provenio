@@ -16,9 +16,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.features.mdblist.MdbListMetadataService
-import com.nuvio.app.features.mdblist.MdbListSettings
-import com.nuvio.app.features.mdblist.MdbListSettingsRepository
+import com.nuvio.app.core.metadata.mdblist.MdbListMetadataService
+import com.nuvio.app.core.metadata.mdblist.MdbListSettings
+import com.nuvio.app.core.metadata.mdblist.MdbListSettingsRepository
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_cancel
 import nuvio.composeapp.generated.resources.action_save

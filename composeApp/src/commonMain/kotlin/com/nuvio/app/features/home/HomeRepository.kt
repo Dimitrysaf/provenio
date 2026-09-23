@@ -1,10 +1,10 @@
 package com.nuvio.app.features.home
 
-import com.nuvio.app.features.addons.ManagedAddon
-import com.nuvio.app.features.addons.AddonRepository
-import com.nuvio.app.features.addons.enabledAddons
-import com.nuvio.app.features.catalog.CatalogTarget
-import com.nuvio.app.features.catalog.fetchCatalogPage
+import com.nuvio.app.core.addons.ManagedAddon
+import com.nuvio.app.core.addons.AddonRepository
+import com.nuvio.app.core.addons.enabledAddons
+import com.nuvio.app.core.catalog.CatalogTarget
+import com.nuvio.app.core.catalog.fetchCatalogPage
 import com.nuvio.app.features.collection.Collection
 import com.nuvio.app.features.collection.CollectionRepository
 import com.nuvio.app.features.collection.CollectionSource
@@ -12,7 +12,7 @@ import com.nuvio.app.features.collection.TmdbCollectionSourceResolver
 import com.nuvio.app.features.collection.catalogRouteKey
 import com.nuvio.app.features.collection.findCollectionCatalog
 import com.nuvio.app.features.trakt.TraktPublicListSourceResolver
-import com.nuvio.app.features.watchprogress.CurrentDateProvider
+import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -26,6 +26,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 import kotlin.random.Random
+import com.nuvio.app.core.home.HomeCatalogDefinition
+import com.nuvio.app.core.home.HomeCatalogSection
+import com.nuvio.app.core.home.HomeUiState
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.home.buildHomeCatalogDefinitions
+import com.nuvio.app.core.home.filterReleasedItems
+import com.nuvio.app.core.home.stableKey
 
 object HomeRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

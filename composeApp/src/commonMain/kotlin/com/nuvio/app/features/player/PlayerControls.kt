@@ -85,6 +85,7 @@ import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.PI
 import kotlin.math.sin
+import com.nuvio.app.core.playback.ParentalWarning
 
 @Composable
 internal fun PlayerControlsShell(

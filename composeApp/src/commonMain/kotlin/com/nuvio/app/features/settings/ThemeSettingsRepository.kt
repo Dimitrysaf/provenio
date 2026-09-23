@@ -4,7 +4,7 @@ import com.nuvio.app.shell.theme.AppTheme
 import com.nuvio.app.shell.theme.CustomThemeColors
 import com.nuvio.app.shell.components.NativeTabBridge
 import com.nuvio.app.shell.theme.ThemeColors
-import com.nuvio.app.features.membership.MemberAccessRepository
+import com.nuvio.app.core.membership.MemberAccessRepository
 import com.nuvio.app.features.membership.availableAppThemes
 import com.nuvio.app.features.membership.resolveAppTheme
 import com.nuvio.app.features.membership.resolveCustomThemeColors
@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.nuvio.app.core.settings.AppLanguage
+import com.nuvio.app.core.settings.ThemeSettingsStorage
 
 object ThemeSettingsRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

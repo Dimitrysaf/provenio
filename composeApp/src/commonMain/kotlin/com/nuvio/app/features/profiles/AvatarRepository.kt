@@ -2,9 +2,9 @@ package com.nuvio.app.features.profiles
 
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.network.SupabaseProvider
-import com.nuvio.app.features.membership.CosmeticEntitlement
-import com.nuvio.app.features.membership.MemberAccessRepository
-import com.nuvio.app.features.membership.MemberAssetStorage
+import com.nuvio.app.core.membership.CosmeticEntitlement
+import com.nuvio.app.core.membership.MemberAccessRepository
+import com.nuvio.app.core.membership.MemberAssetStorage
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 import io.github.jan.supabase.storage.storage
@@ -28,6 +28,7 @@ import kotlinx.serialization.json.Json
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
+import com.nuvio.app.core.profiles.AvatarStorage
 
 private const val MemberAvatarBucket = "membership-profile-avatars"
 private val AvatarCatalogRefreshInterval = 15.minutes

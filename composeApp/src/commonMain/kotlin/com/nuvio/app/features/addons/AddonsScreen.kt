@@ -69,6 +69,9 @@ import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import com.nuvio.app.core.addons.AddAddonResult
+import com.nuvio.app.core.addons.AddonRepository
+import com.nuvio.app.core.addons.ManagedAddon
 
 @Composable
 fun AddonsScreen(

@@ -6,9 +6,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.nuvio.app.features.catalog.CatalogScreen
-import com.nuvio.app.features.catalog.CatalogTarget
-import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.library.toLibraryItem
+import com.nuvio.app.core.catalog.CatalogTarget
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.library.toLibraryItem
 import com.nuvio.app.navigation.CatalogRoute
 import com.nuvio.app.navigation.DetailRoute
 import com.nuvio.app.navigation.NuvioNavigator

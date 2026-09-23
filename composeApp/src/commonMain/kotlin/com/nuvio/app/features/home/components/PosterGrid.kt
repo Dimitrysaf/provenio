@@ -32,9 +32,9 @@ import com.nuvio.app.shell.components.landscapePosterWidth
 import com.nuvio.app.shell.components.SkeletonPoster
 import com.nuvio.app.shell.components.posterCardClickable
 import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
-import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.home.PosterShape
-import com.nuvio.app.features.watching.application.WatchingState
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.home.PosterShape
+import com.nuvio.app.core.watch.watching.application.WatchingState
 
 /**
  * How many posters fit across, at the width the person chose for them.

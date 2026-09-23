@@ -2,7 +2,7 @@ package com.nuvio.app.core.diagnostics
 
 import android.app.Application
 import com.nuvio.app.core.build.AppVersionConfig
-import com.nuvio.app.features.settings.SentrySettingsRepository
+import com.nuvio.app.core.settings.SentrySettingsRepository
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions

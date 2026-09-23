@@ -6,8 +6,8 @@ import com.nuvio.app.core.format.formatReleaseDateForDisplay
 import com.nuvio.app.shell.components.NuvioPosterCard
 import com.nuvio.app.shell.components.NuvioPosterShape
 import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
-import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.home.PosterShape
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.home.PosterShape
 
 @Composable
 fun HomePosterCard(

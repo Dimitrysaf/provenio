@@ -4,6 +4,8 @@ import com.nuvio.app.features.player.p2pInitialLoadingProgress
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import com.nuvio.app.core.p2p.P2pSettingsUiState
+import com.nuvio.app.core.p2p.P2pStreamingState
 
 class P2pTelemetryTest {
     @Test

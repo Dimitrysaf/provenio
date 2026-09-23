@@ -8,6 +8,9 @@ import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.nuvio.app.core.build.AppFeaturePolicy
 import kotlinx.coroutines.CancellationException
+import com.nuvio.app.core.downloads.AndroidDownloadScheduler
+import com.nuvio.app.core.downloads.DownloadsLiveStatusPlatform
+import com.nuvio.app.core.downloads.DownloadsPlatformDownloader
 
 class DownloadsTransferWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result {

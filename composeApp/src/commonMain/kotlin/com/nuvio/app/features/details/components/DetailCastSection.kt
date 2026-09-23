@@ -35,8 +35,8 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.nuvio.app.shell.components.nuvioHorizontalScrollBleed
-import com.nuvio.app.features.details.MetaPerson
-import com.nuvio.app.features.details.castAvatarSharedTransitionKey
+import com.nuvio.app.core.metadata.MetaPerson
+import com.nuvio.app.core.metadata.castAvatarSharedTransitionKey
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 

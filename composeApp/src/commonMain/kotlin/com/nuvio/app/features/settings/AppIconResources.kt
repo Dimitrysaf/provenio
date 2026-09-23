@@ -4,6 +4,7 @@ import com.nuvio.app.shell.theme.AppTheme
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
+import com.nuvio.app.core.settings.AppIconOption
 
 internal val AppIconOption.labelResource: StringResource
     get() = when (this) {

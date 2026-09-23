@@ -1,6 +1,7 @@
 package com.nuvio.app.features.player
 
 import androidx.compose.ui.Modifier
+import com.nuvio.app.core.playback.ExternalPlayerPlaybackRequest
 
 internal data class PlayerScreenArgs(
     val profileId: Int,

@@ -1,24 +1,24 @@
 package com.nuvio.app.features.details
 
 import co.touchlab.kermit.Logger
-import com.nuvio.app.features.addons.AddonManifest
-import com.nuvio.app.features.addons.AddonRepository
-import com.nuvio.app.features.addons.buildAddonResourceUrl
-import com.nuvio.app.features.addons.enabledAddons
-import com.nuvio.app.features.addons.fetchAddonResponseText
+import com.nuvio.app.core.addons.AddonManifest
+import com.nuvio.app.core.addons.AddonRepository
+import com.nuvio.app.core.addons.buildAddonResourceUrl
+import com.nuvio.app.core.addons.enabledAddons
+import com.nuvio.app.core.addons.fetchAddonResponseText
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
-import com.nuvio.app.features.home.filterReleasedItems
-import com.nuvio.app.features.mdblist.MdbListMetadataService
-import com.nuvio.app.features.mdblist.MdbListSettingsRepository
-import com.nuvio.app.features.tmdb.TmdbMetadataService
-import com.nuvio.app.features.tmdb.TmdbService
-import com.nuvio.app.features.tmdb.TmdbSettingsRepository
-import com.nuvio.app.features.trakt.TraktAuthRepository
-import com.nuvio.app.features.trakt.TraktConnectionMode
-import com.nuvio.app.features.trakt.TraktRelatedRepository
-import com.nuvio.app.features.tracking.TrackingSettingsRepository
-import com.nuvio.app.features.trakt.shouldUseTraktMoreLikeThis
-import com.nuvio.app.features.watchprogress.CurrentDateProvider
+import com.nuvio.app.core.home.filterReleasedItems
+import com.nuvio.app.core.metadata.mdblist.MdbListMetadataService
+import com.nuvio.app.core.metadata.mdblist.MdbListSettingsRepository
+import com.nuvio.app.core.metadata.tmdb.TmdbMetadataService
+import com.nuvio.app.core.metadata.tmdb.TmdbService
+import com.nuvio.app.core.metadata.tmdb.TmdbSettingsRepository
+import com.nuvio.app.core.tracking.trakt.TraktAuthRepository
+import com.nuvio.app.core.tracking.trakt.TraktConnectionMode
+import com.nuvio.app.core.tracking.trakt.TraktRelatedRepository
+import com.nuvio.app.core.tracking.TrackingSettingsRepository
+import com.nuvio.app.core.tracking.trakt.shouldUseTraktMoreLikeThis
+import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +32,10 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
+import com.nuvio.app.core.metadata.MetaDetails
+import com.nuvio.app.core.metadata.MetaDetailsParser
+import com.nuvio.app.core.metadata.MetaDetailsUiState
+import com.nuvio.app.core.metadata.MoreLikeThisSource
 
 object MetaDetailsRepository {
     private data class CachedMetaEntry(

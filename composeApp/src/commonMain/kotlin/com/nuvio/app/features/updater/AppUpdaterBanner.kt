@@ -67,6 +67,7 @@ import nuvio.composeapp.generated.resources.updates_preparing_download
 import nuvio.composeapp.generated.resources.updates_title_allow_installs
 import nuvio.composeapp.generated.resources.updates_title_available
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.updater.AppUpdaterPlatform
 
 @Composable
 fun AppUpdaterHost(

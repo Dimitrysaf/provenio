@@ -1,7 +1,7 @@
 package com.nuvio.app.features.home
 
 import androidx.compose.ui.text.intl.Locale
-import com.nuvio.app.features.addons.ManagedAddon
+import com.nuvio.app.core.addons.ManagedAddon
 import com.nuvio.app.features.collection.Collection
 import com.nuvio.app.features.collection.CollectionRepository
 import kotlinx.atomicfu.atomic
@@ -15,6 +15,9 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
+import com.nuvio.app.core.home.HomeCatalogDefinition
+import com.nuvio.app.core.home.HomeCatalogSettingsStorage
+import com.nuvio.app.core.home.buildHomeCatalogDefinitions
 
 data class HomeCatalogSettingsItem(
     val key: String,

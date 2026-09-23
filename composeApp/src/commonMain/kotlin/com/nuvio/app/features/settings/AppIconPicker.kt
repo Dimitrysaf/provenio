@@ -59,6 +59,9 @@ import nuvio.composeapp.generated.resources.settings_appearance_app_icon_change_
 import nuvio.composeapp.generated.resources.settings_appearance_app_icon_sheet_title
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.settings.AppIconOption
+import com.nuvio.app.core.settings.AppIconPlatform
+import com.nuvio.app.core.settings.AppIconSettingsState
 
 @Composable
 internal fun AppIconPicker(

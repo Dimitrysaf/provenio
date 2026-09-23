@@ -30,7 +30,7 @@ import com.nuvio.app.shell.components.SkeletonBlock
 import com.nuvio.app.shell.theme.nuvio
 import com.nuvio.app.shell.components.nuvioHorizontalScrollBleed
 import com.nuvio.app.shell.components.withDuplicateSafeLazyKeys
-import com.nuvio.app.features.trakt.TraktCommentReview
+import com.nuvio.app.core.tracking.trakt.TraktCommentReview
 import kotlinx.coroutines.flow.distinctUntilChanged
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource

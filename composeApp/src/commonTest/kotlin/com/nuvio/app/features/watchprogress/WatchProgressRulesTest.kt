@@ -1,13 +1,22 @@
 package com.nuvio.app.features.watchprogress
 
-import com.nuvio.app.features.cloud.TorboxCloudLibraryPosterUrl
-import com.nuvio.app.features.details.MetaVideo
-import com.nuvio.app.features.trakt.parseTraktIsoDateTimeToEpochMs
+import com.nuvio.app.core.cloud.TorboxCloudLibraryPosterUrl
+import com.nuvio.app.core.metadata.MetaVideo
+import com.nuvio.app.core.tracking.trakt.parseTraktIsoDateTimeToEpochMs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import com.nuvio.app.core.watch.progress.WatchProgressCodec
+import com.nuvio.app.core.watch.progress.continueWatchingEntries
+import com.nuvio.app.core.watch.progress.isWatchProgressComplete
+import com.nuvio.app.core.watch.progress.resolvedProgressKey
+import com.nuvio.app.core.watch.progress.resumeEntryForSeries
+import com.nuvio.app.core.watch.progress.shouldCascadeCompletedProgressToWatchedHistory
+import com.nuvio.app.core.watch.progress.shouldReplaceProgressSnapshotEntry
+import com.nuvio.app.core.watch.progress.shouldStoreWatchProgress
+import com.nuvio.app.core.watch.progress.shouldTreatAsInProgressForContinueWatching
 
 class WatchProgressRulesTest {
 

@@ -3,11 +3,11 @@ package com.nuvio.app.features.catalog
 import com.nuvio.app.features.collection.CollectionRepository
 import com.nuvio.app.features.collection.TmdbCollectionSourceResolver
 import com.nuvio.app.features.collection.catalogRouteKey
-import com.nuvio.app.features.library.LibraryRepository
+import com.nuvio.app.core.library.LibraryRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
-import com.nuvio.app.features.home.filterReleasedItems
+import com.nuvio.app.core.home.filterReleasedItems
 import com.nuvio.app.features.trakt.TraktPublicListSourceResolver
-import com.nuvio.app.features.watchprogress.CurrentDateProvider
+import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +19,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
+import com.nuvio.app.core.catalog.CATALOG_PAGE_SIZE
+import com.nuvio.app.core.catalog.CatalogPage
+import com.nuvio.app.core.catalog.CatalogScrollPosition
+import com.nuvio.app.core.catalog.CatalogTarget
+import com.nuvio.app.core.catalog.CatalogUiState
+import com.nuvio.app.core.catalog.dedupeCatalogItems
+import com.nuvio.app.core.catalog.fetchCatalogPage
+import com.nuvio.app.core.catalog.libraryCatalogStates
+import com.nuvio.app.core.catalog.mergeCatalogItems
+import com.nuvio.app.core.catalog.nextCatalogPaginationState
+import com.nuvio.app.core.catalog.supportsPagination
 
 object CatalogRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import com.nuvio.app.core.i18n.localizedSeasonEpisodeCode
 import com.nuvio.app.shell.components.MediaActionsSheet
 import com.nuvio.app.shell.components.MediaSheetAction
-import com.nuvio.app.features.details.MetaVideo
+import com.nuvio.app.core.metadata.MetaVideo
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 

@@ -5,6 +5,8 @@ import com.nuvio.app.features.collection.TraktSortHow
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import com.nuvio.app.core.tracking.trakt.firstTraktImageUrl
+import com.nuvio.app.core.tracking.trakt.toTraktImageUrl
 
 class TraktPublicListSourceResolverTest {
     @Test

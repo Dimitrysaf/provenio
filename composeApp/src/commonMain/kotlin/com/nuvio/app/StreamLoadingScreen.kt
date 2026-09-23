@@ -3,8 +3,8 @@ package com.nuvio.app
 import androidx.compose.runtime.Composable
 import com.nuvio.app.features.player.OpeningOverlay
 import com.nuvio.app.features.player.subtitleLoadingStatusMessage
-import com.nuvio.app.features.streams.StreamLaunch
-import com.nuvio.app.features.streams.StreamsUiState
+import com.nuvio.app.core.streams.StreamLaunch
+import com.nuvio.app.core.streams.StreamsUiState
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.debrid_resolving_stream
 import nuvio.composeapp.generated.resources.player_loading_preparing

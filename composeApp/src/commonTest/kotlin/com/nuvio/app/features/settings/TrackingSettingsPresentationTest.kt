@@ -1,8 +1,8 @@
 package com.nuvio.app.features.settings
 
-import com.nuvio.app.features.simkl.SimklConnectionMode
-import com.nuvio.app.features.trakt.MoreLikeThisSourcePreference
-import com.nuvio.app.features.trakt.TraktConnectionMode
+import com.nuvio.app.core.tracking.simkl.SimklConnectionMode
+import com.nuvio.app.core.tracking.trakt.MoreLikeThisSourcePreference
+import com.nuvio.app.core.tracking.trakt.TraktConnectionMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

@@ -2,7 +2,7 @@ package com.nuvio.app.features.player
 
 import com.nuvio.app.core.i18n.localizedNoSubtitleLinesFound
 import com.nuvio.app.core.i18n.localizedSubtitleLinesLoadError
-import com.nuvio.app.features.addons.httpGetTextWithHeaders
+import com.nuvio.app.core.addons.httpGetTextWithHeaders
 import kotlinx.coroutines.launch
 
 internal fun PlayerScreenRuntime.fetchAddonSubtitlesForActiveItem() {

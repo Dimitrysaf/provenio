@@ -31,7 +31,7 @@ import com.nuvio.app.shell.components.posterCardClickable
 import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
 import com.nuvio.app.features.collection.Collection
 import com.nuvio.app.features.collection.CollectionFolder
-import com.nuvio.app.features.home.PosterShape
+import com.nuvio.app.core.home.PosterShape
 
 @Composable
 fun HomeCollectionRowSection(

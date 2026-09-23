@@ -7,8 +7,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import com.nuvio.app.shell.theme.NuvioTheme
 import com.nuvio.app.features.player.PlayerSettingsRepository
 import com.nuvio.app.features.player.PlayerSettingsStorage
-import com.nuvio.app.features.streams.StreamLaunch
-import com.nuvio.app.features.streams.StreamLaunchStore
+import com.nuvio.app.core.streams.StreamLaunch
+import com.nuvio.app.core.streams.StreamLaunchStore
 import com.nuvio.app.features.streams.StreamsRepository
 import com.nuvio.app.navigation.StreamRoute
 import org.junit.Rule

@@ -5,6 +5,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.app_logo_wordmark_gold
+import com.nuvio.app.core.settings.AppIconOption
 
 class AppIconOptionTest {
     @Test

@@ -22,9 +22,9 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.nuvio.app.shell.components.ListSubheader
 import com.nuvio.app.shell.components.NuvioScreen
-import com.nuvio.app.features.cloud.PremiumizeCloudLibraryPosterUrl
-import com.nuvio.app.features.cloud.TorboxCloudLibraryPosterUrl
-import com.nuvio.app.features.cloud.cloudLibraryDisplayArtworkUrl
+import com.nuvio.app.core.cloud.PremiumizeCloudLibraryPosterUrl
+import com.nuvio.app.core.cloud.TorboxCloudLibraryPosterUrl
+import com.nuvio.app.core.cloud.cloudLibraryDisplayArtworkUrl
 import com.nuvio.app.isIos
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.StringResource

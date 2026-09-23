@@ -65,7 +65,7 @@ import androidx.media3.ui.PlayerView
 import androidx.media3.ui.SubtitleView
 import androidx.media3.ui.CaptionStyleCompat
 import com.nuvio.app.R
-import com.nuvio.app.features.streams.normalizeStreamType
+import com.nuvio.app.core.streams.normalizeStreamType
 import `is`.xyz.mpv.BaseMPVView
 import `is`.xyz.mpv.MPV
 import `is`.xyz.mpv.MPVNode
@@ -85,6 +85,17 @@ import java.io.File
 import java.net.URI
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import com.nuvio.app.core.playback.CustomDefaultTrackNameProvider
+import com.nuvio.app.core.playback.LibassRenderType
+import com.nuvio.app.core.playback.SidecarSubtitleController
+import com.nuvio.app.core.playback.SubtitleSdhFilter
+import com.nuvio.app.core.playback.buildWithAssSupportCompat
+import com.nuvio.app.core.playback.getAssHandlerCompat
+import com.nuvio.app.core.playback.playbackMediaItemFromUrl
+import com.nuvio.app.core.playback.probeMimeType
+import com.nuvio.app.core.playback.releaseWithAssSupportCompat
+import com.nuvio.app.core.playback.startupSubtitleConfigurations
+import com.nuvio.app.core.playback.toAssRenderType
 
 private const val TAG = "NuvioPlayer"
 private const val PLAYER_DIAGNOSTIC_TAG = "NuvioPlayerDiag"

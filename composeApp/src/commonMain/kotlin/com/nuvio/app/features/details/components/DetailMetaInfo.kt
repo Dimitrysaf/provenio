@@ -47,10 +47,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.shell.components.nuvioHorizontalScrollBleed
-import com.nuvio.app.features.details.MetaDetails
-import com.nuvio.app.features.details.MetaExternalRating
-import com.nuvio.app.features.details.formatRuntimeForDisplay
-import com.nuvio.app.features.details.formatMetaReleaseLineForDetails
+import com.nuvio.app.core.metadata.MetaDetails
+import com.nuvio.app.core.metadata.MetaExternalRating
+import com.nuvio.app.core.metadata.formatRuntimeForDisplay
+import com.nuvio.app.core.metadata.formatMetaReleaseLineForDetails
 import com.nuvio.app.features.mdblist.MdbListMetadataService.PROVIDER_AUDIENCE
 import com.nuvio.app.features.mdblist.MdbListMetadataService.PROVIDER_IMDB
 import com.nuvio.app.features.mdblist.MdbListMetadataService.PROVIDER_LETTERBOXD

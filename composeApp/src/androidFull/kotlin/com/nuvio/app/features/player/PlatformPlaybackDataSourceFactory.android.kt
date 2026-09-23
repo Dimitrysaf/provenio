@@ -3,7 +3,9 @@ package com.nuvio.app.features.player
 import android.content.Context
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
-import com.nuvio.app.features.trailer.YoutubeChunkedDataSourceFactory
+import com.nuvio.app.core.trailer.YoutubeChunkedDataSourceFactory
+import com.nuvio.app.core.playback.PlayerPlaybackNetworking
+import com.nuvio.app.core.playback.ResponseHeaderOverridingDataSourceFactory
 
 internal object PlatformPlaybackDataSourceFactory {
     fun create(

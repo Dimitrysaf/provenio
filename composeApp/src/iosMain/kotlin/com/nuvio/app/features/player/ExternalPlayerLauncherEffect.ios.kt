@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication
+import com.nuvio.app.core.playback.ExternalPlayerIntentResult
 
 @Composable
 actual fun rememberExternalPlayerLauncher(

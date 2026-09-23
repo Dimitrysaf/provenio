@@ -2,19 +2,19 @@ package com.nuvio.app.features.streams
 
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.build.AppFeaturePolicy
-import com.nuvio.app.features.addons.AddonRepository
-import com.nuvio.app.features.addons.buildAddonResourceUrl
-import com.nuvio.app.features.addons.enabledAddons
-import com.nuvio.app.features.addons.fetchAddonResponseText
-import com.nuvio.app.features.debrid.DirectDebridStreamPreparer
-import com.nuvio.app.features.debrid.DebridSettingsRepository
-import com.nuvio.app.features.debrid.DebridStreamPresentation
-import com.nuvio.app.features.debrid.LocalDebridAvailabilityService
+import com.nuvio.app.core.addons.AddonRepository
+import com.nuvio.app.core.addons.buildAddonResourceUrl
+import com.nuvio.app.core.addons.enabledAddons
+import com.nuvio.app.core.addons.fetchAddonResponseText
+import com.nuvio.app.core.debrid.DirectDebridStreamPreparer
+import com.nuvio.app.core.debrid.DebridSettingsRepository
+import com.nuvio.app.core.debrid.DebridStreamPresentation
+import com.nuvio.app.core.debrid.LocalDebridAvailabilityService
 import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.features.player.PlayerSettingsRepository
-import com.nuvio.app.features.plugins.PluginRepository
-import com.nuvio.app.features.plugins.pluginContentId
-import com.nuvio.app.features.plugins.PluginsUiState
+import com.nuvio.app.core.plugins.PluginRepository
+import com.nuvio.app.core.plugins.pluginContentId
+import com.nuvio.app.core.plugins.PluginsUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,6 +28,27 @@ import kotlinx.coroutines.flow.update
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 import kotlinx.coroutines.launch
+import com.nuvio.app.core.streams.AddonStreamGroup
+import com.nuvio.app.core.streams.BingeGroupCacheRepository
+import com.nuvio.app.core.streams.InstalledStreamAddonTarget
+import com.nuvio.app.core.streams.StreamAutoPlayEvaluation
+import com.nuvio.app.core.streams.StreamAutoPlayMode
+import com.nuvio.app.core.streams.StreamAutoPlayPolicy
+import com.nuvio.app.core.streams.StreamAutoPlaySelector
+import com.nuvio.app.core.streams.StreamBadgePresentation
+import com.nuvio.app.core.streams.StreamBadgeSettingsRepository
+import com.nuvio.app.core.streams.StreamItem
+import com.nuvio.app.core.streams.StreamLoadCompletion
+import com.nuvio.app.core.streams.StreamParser
+import com.nuvio.app.core.streams.StreamsEmptyStateReason
+import com.nuvio.app.core.streams.StreamsUiState
+import com.nuvio.app.core.streams.areAutoPlaySourcesLoaded
+import com.nuvio.app.core.streams.runCatchingUnlessCancelled
+import com.nuvio.app.core.streams.sortedForGroupedDisplay
+import com.nuvio.app.core.streams.streamAddonInstanceId
+import com.nuvio.app.core.streams.toEmptyStateReason
+import com.nuvio.app.core.streams.toPluginProviderGroups
+import com.nuvio.app.core.streams.toStreamItem
 
 object StreamsRepository {
     private val log = Logger.withTag("StreamsRepo")

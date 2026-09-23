@@ -1,7 +1,7 @@
 package com.nuvio.app.features.collection
 
 import androidx.compose.runtime.Immutable
-import com.nuvio.app.features.home.PosterShape
+import com.nuvio.app.core.home.PosterShape
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient

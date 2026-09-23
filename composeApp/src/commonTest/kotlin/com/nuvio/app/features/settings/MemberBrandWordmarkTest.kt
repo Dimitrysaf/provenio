@@ -1,7 +1,7 @@
 package com.nuvio.app.features.settings
 
 import androidx.compose.ui.graphics.Color
-import com.nuvio.app.features.membership.MemberTier
+import com.nuvio.app.core.membership.MemberTier
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

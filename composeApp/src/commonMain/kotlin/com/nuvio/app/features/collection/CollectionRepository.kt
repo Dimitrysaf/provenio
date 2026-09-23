@@ -1,9 +1,9 @@
 package com.nuvio.app.features.collection
 
 import co.touchlab.kermit.Logger
-import com.nuvio.app.features.addons.AddonRepository
-import com.nuvio.app.features.addons.ManagedAddon
-import com.nuvio.app.features.addons.enabledAddons
+import com.nuvio.app.core.addons.AddonRepository
+import com.nuvio.app.core.addons.ManagedAddon
+import com.nuvio.app.core.addons.enabledAddons
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -31,6 +31,7 @@ import nuvio.composeapp.generated.resources.collections_import_error_trakt_list_
 import org.jetbrains.compose.resources.getString
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import com.nuvio.app.core.collection.CollectionStorage
 
 object CollectionRepository {
     private val log = Logger.withTag("CollectionRepository")

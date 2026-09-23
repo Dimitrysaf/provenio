@@ -1,7 +1,7 @@
 package com.nuvio.app.features.collection
 
 import co.touchlab.kermit.Logger
-import com.nuvio.app.features.home.PosterShape
+import com.nuvio.app.core.home.PosterShape
 import com.nuvio.app.features.trakt.TraktPublicListSearchResult
 import com.nuvio.app.features.trakt.TraktPublicListSourceResolver
 import kotlinx.coroutines.CoroutineScope

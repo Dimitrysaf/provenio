@@ -53,8 +53,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.shell.components.NuvioScreen
 import com.nuvio.app.shell.components.NuvioSurfaceCard
-import com.nuvio.app.features.addons.httpRequestRaw
-import com.nuvio.app.features.membership.MembershipOverviewRepository
+import com.nuvio.app.core.addons.httpRequestRaw
+import com.nuvio.app.core.membership.MembershipOverviewRepository
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString

@@ -22,8 +22,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.nuvio.app.features.details.MetaCompany
-import com.nuvio.app.features.details.MetaDetails
+import com.nuvio.app.core.metadata.MetaCompany
+import com.nuvio.app.core.metadata.MetaDetails
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 

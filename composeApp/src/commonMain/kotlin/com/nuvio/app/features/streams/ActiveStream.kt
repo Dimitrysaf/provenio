@@ -3,6 +3,7 @@ package com.nuvio.app.features.streams
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.nuvio.app.core.streams.StreamItem
 
 /**
  * What names a stream, whatever it turns into on the way to the player.

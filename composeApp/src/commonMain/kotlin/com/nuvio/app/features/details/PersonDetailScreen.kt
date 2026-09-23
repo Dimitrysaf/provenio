@@ -69,14 +69,16 @@ import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
 import com.nuvio.app.shell.components.skeleton
 import com.nuvio.app.features.details.components.DetailPosterRailSection
 import com.nuvio.app.features.details.components.ExpandableDescription
-import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.tmdb.TmdbMetadataService
-import com.nuvio.app.features.watched.WatchedRepository
-import com.nuvio.app.features.watchprogress.CurrentDateProvider
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.metadata.tmdb.TmdbMetadataService
+import com.nuvio.app.core.watch.watched.WatchedRepository
+import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.navigation.LocalUseNativeNavigation
+import com.nuvio.app.core.metadata.PersonDetail
+import com.nuvio.app.core.metadata.castAvatarSharedTransitionKey
 
 private sealed interface PersonDetailUiState {
     data object Loading : PersonDetailUiState

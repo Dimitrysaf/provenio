@@ -4,11 +4,11 @@ import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
 import com.nuvio.app.core.network.SupabaseProvider
-import com.nuvio.app.features.debrid.DebridProviders
-import com.nuvio.app.features.debrid.DebridSettings
-import com.nuvio.app.features.debrid.DebridSettingsRepository
-import com.nuvio.app.features.mdblist.MdbListSettings
-import com.nuvio.app.features.mdblist.MdbListSettingsRepository
+import com.nuvio.app.core.debrid.DebridProviders
+import com.nuvio.app.core.debrid.DebridSettings
+import com.nuvio.app.core.debrid.DebridSettingsRepository
+import com.nuvio.app.core.metadata.mdblist.MdbListSettings
+import com.nuvio.app.core.metadata.mdblist.MdbListSettingsRepository
 import com.nuvio.app.features.player.PlayerSettingsRepository
 import com.nuvio.app.features.player.PlayerSettingsUiState
 import com.nuvio.app.features.profiles.ProfileRepository

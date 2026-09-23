@@ -1,15 +1,15 @@
 package com.nuvio.app.features.trakt
 
 import co.touchlab.kermit.Logger
-import com.nuvio.app.features.addons.RawHttpResponse
-import com.nuvio.app.features.addons.httpRequestRaw
-import com.nuvio.app.features.catalog.CatalogPage
+import com.nuvio.app.core.addons.RawHttpResponse
+import com.nuvio.app.core.addons.httpRequestRaw
+import com.nuvio.app.core.catalog.CatalogPage
 import com.nuvio.app.features.collection.CollectionSource
 import com.nuvio.app.features.collection.TmdbCollectionMediaType
 import com.nuvio.app.features.collection.TraktListSort
 import com.nuvio.app.features.collection.TraktSortHow
-import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.home.PosterShape
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.home.PosterShape
 import io.ktor.http.encodeURLParameter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -34,6 +34,7 @@ import nuvio.composeapp.generated.resources.collections_trakt_rate_limit_reached
 import nuvio.composeapp.generated.resources.collections_trakt_request_failed
 import org.jetbrains.compose.resources.getString
 import kotlin.math.roundToInt
+import com.nuvio.app.core.tracking.trakt.TraktImagesDto
 
 data class TraktPublicListImportMetadata(
     val title: String? = null,

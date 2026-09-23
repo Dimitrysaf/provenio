@@ -51,7 +51,7 @@ import com.nuvio.app.shell.components.ListSubheader
 import com.nuvio.app.shell.components.NewEntryRow
 import com.nuvio.app.shell.components.NuvioStatusModal
 import com.nuvio.app.shell.components.TextPromptDialog
-import com.nuvio.app.features.plugins.runtime.PluginRuntime
+import com.nuvio.app.core.plugins.runtime.PluginRuntime
 import com.nuvio.app.features.settings.ListItemBetweenSpace
 import com.nuvio.app.features.settings.SettingsList
 import com.nuvio.app.features.settings.segmentShape
@@ -96,6 +96,11 @@ import nuvio.composeapp.generated.resources.plugins_test_failed
 import nuvio.composeapp.generated.resources.plugins_test_results_count
 import nuvio.composeapp.generated.resources.plugins_test_results_title
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.plugins.AddPluginRepositoryResult
+import com.nuvio.app.core.plugins.PluginRepository
+import com.nuvio.app.core.plugins.PluginRepositoryItem
+import com.nuvio.app.core.plugins.PluginRuntimeResult
+import com.nuvio.app.core.plugins.PluginScraper
 
 private const val AddRepositoryRowKey = "plugins:add-repo"
 

@@ -1,6 +1,6 @@
 package com.nuvio.app.features.player
 
-import com.nuvio.app.features.streams.StreamSubtitle
+import com.nuvio.app.core.streams.StreamSubtitle
 
 internal fun String.isLocalSubtitleUri(): Boolean {
     val trimmed = trim()

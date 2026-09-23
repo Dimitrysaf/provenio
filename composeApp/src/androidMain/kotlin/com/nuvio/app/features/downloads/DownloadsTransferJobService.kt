@@ -11,6 +11,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
+import com.nuvio.app.core.downloads.AndroidDownloadScheduler
+import com.nuvio.app.core.downloads.DownloadsLiveStatusPlatform
+import com.nuvio.app.core.downloads.DownloadsPlatformDownloader
 
 @RequiresApi(34)
 class DownloadsTransferJobService : JobService() {

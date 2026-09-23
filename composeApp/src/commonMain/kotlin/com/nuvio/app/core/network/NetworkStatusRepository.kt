@@ -1,7 +1,7 @@
 package com.nuvio.app.core.network
 
 import androidx.compose.runtime.Composable
-import com.nuvio.app.features.addons.httpRequestRaw
+import com.nuvio.app.core.addons.httpRequestRaw
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

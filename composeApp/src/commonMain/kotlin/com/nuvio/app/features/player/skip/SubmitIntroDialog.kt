@@ -65,6 +65,7 @@ import nuvio.composeapp.generated.resources.submit_intro_start_time_label
 import nuvio.composeapp.generated.resources.submit_intro_title
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.floor
+import com.nuvio.app.core.playback.skip.SkipIntroRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

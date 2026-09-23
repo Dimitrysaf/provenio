@@ -46,6 +46,11 @@ import com.nuvio.app.features.settings.ListItemBetweenSpace
 import com.nuvio.app.features.settings.segmentShape
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.streams.AddonStreamGroup
+import com.nuvio.app.core.streams.StreamBadgePlacement
+import com.nuvio.app.core.streams.StreamItem
+import com.nuvio.app.core.streams.StreamsEmptyStateReason
+import com.nuvio.app.core.streams.isSelectableForPlayback
 
 /**
  * Which add-ons are open.

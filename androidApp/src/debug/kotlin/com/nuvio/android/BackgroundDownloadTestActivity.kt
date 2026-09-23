@@ -4,10 +4,10 @@ import android.app.job.JobScheduler
 import android.net.Uri
 import android.os.Build
 import com.nuvio.app.MainActivity
-import com.nuvio.app.features.downloads.DownloadEnqueueResult
-import com.nuvio.app.features.downloads.DownloadStatus
-import com.nuvio.app.features.downloads.DownloadsRepository
-import com.nuvio.app.features.streams.StreamItem
+import com.nuvio.app.core.downloads.DownloadEnqueueResult
+import com.nuvio.app.core.downloads.DownloadStatus
+import com.nuvio.app.core.downloads.DownloadsRepository
+import com.nuvio.app.core.streams.StreamItem
 import java.io.File
 
 /** Debug-only launcher: instrumentation force-stops its app when it ends or is killed. */

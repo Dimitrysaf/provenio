@@ -2,12 +2,13 @@ package com.nuvio.app.features.player
 
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Modifier
-import com.nuvio.app.features.streams.StreamsUiState
+import com.nuvio.app.core.streams.StreamsUiState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import com.nuvio.app.core.playback.ParentalWarning
 
 class PlayerScreenRuntimeStateTest {
 

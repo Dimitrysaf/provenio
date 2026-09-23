@@ -7,21 +7,23 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.features.addons.AddonsUiState
-import com.nuvio.app.features.details.MetaDetails
-import com.nuvio.app.features.details.MetaDetailsUiState
-import com.nuvio.app.features.details.MetaScreenSettingsUiState
-import com.nuvio.app.features.details.MetaVideo
-import com.nuvio.app.features.p2p.P2pSettingsUiState
-import com.nuvio.app.features.p2p.P2pStreamingState
-import com.nuvio.app.features.player.skip.NextEpisodeInfo
-import com.nuvio.app.features.player.skip.SkipInterval
-import com.nuvio.app.features.streams.StreamsUiState
-import com.nuvio.app.features.tracking.TrackingMediaReference
-import com.nuvio.app.features.watched.WatchedUiState
+import com.nuvio.app.core.addons.AddonsUiState
+import com.nuvio.app.core.metadata.MetaDetails
+import com.nuvio.app.core.metadata.MetaDetailsUiState
+import com.nuvio.app.core.metadata.MetaScreenSettingsUiState
+import com.nuvio.app.core.metadata.MetaVideo
+import com.nuvio.app.core.p2p.P2pSettingsUiState
+import com.nuvio.app.core.p2p.P2pStreamingState
+import com.nuvio.app.core.playback.skip.NextEpisodeInfo
+import com.nuvio.app.core.playback.skip.SkipInterval
+import com.nuvio.app.core.streams.StreamsUiState
+import com.nuvio.app.core.tracking.TrackingMediaReference
+import com.nuvio.app.core.watch.watched.WatchedUiState
 import com.nuvio.app.features.watchprogress.WatchProgressUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import com.nuvio.app.core.playback.ParentalGuideLabels
+import com.nuvio.app.core.playback.ParentalWarning
 
 internal class PlayerScreenRuntime(
     args: PlayerScreenArgs,

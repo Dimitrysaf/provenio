@@ -10,6 +10,8 @@ import androidx.compose.material3.MaterialTheme
 import com.nuvio.app.shell.theme.appTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.painterResource
+import com.nuvio.app.core.settings.AppIconOption
+import com.nuvio.app.core.settings.AppIconRepository
 
 @Composable
 internal fun AppBrandWordmark(

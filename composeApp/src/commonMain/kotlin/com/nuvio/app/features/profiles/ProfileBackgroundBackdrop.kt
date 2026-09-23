@@ -14,8 +14,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.nuvio.app.shell.components.ProfileMeshBackground
-import com.nuvio.app.features.membership.MemberAccessRepository
-import com.nuvio.app.features.membership.ProfileBackgroundRepository
+import com.nuvio.app.core.membership.MemberAccessRepository
+import com.nuvio.app.core.membership.ProfileBackgroundRepository
 import com.nuvio.app.features.membership.ProfileBackgroundSelection
 import com.nuvio.app.features.membership.resolveProfileBackground
 

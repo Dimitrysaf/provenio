@@ -4,18 +4,18 @@ import android.app.Application
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.SharedPreferences
-import com.nuvio.app.features.addons.AddonCatalog
-import com.nuvio.app.features.addons.AddonManifest
-import com.nuvio.app.features.addons.AddonRepository
-import com.nuvio.app.features.addons.AddonStorage
-import com.nuvio.app.features.addons.ManagedAddon
+import com.nuvio.app.core.addons.AddonCatalog
+import com.nuvio.app.core.addons.AddonManifest
+import com.nuvio.app.core.addons.AddonRepository
+import com.nuvio.app.core.addons.AddonStorage
+import com.nuvio.app.core.addons.ManagedAddon
 import com.nuvio.app.features.collection.Collection
 import com.nuvio.app.features.collection.CollectionFolder
 import com.nuvio.app.features.collection.CollectionMobileSettingsRepository
-import com.nuvio.app.features.collection.CollectionMobileSettingsStorage
+import com.nuvio.app.core.collection.CollectionMobileSettingsStorage
 import com.nuvio.app.features.collection.CollectionRepository
 import com.nuvio.app.features.collection.CollectionSource
-import com.nuvio.app.features.collection.CollectionStorage
+import com.nuvio.app.core.collection.CollectionStorage
 import com.nuvio.app.features.profiles.ProfileRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -33,6 +33,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import com.nuvio.app.core.home.HomeCatalogSettingsStorage
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)

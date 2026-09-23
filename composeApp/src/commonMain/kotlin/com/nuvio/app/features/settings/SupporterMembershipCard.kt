@@ -33,9 +33,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.shell.components.NuvioLoadingIndicator
-import com.nuvio.app.features.membership.MemberTier
-import com.nuvio.app.features.membership.MembershipOverview
-import com.nuvio.app.features.membership.MembershipOverviewState
+import com.nuvio.app.core.membership.MemberTier
+import com.nuvio.app.core.membership.MembershipOverview
+import com.nuvio.app.core.membership.MembershipOverviewState
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.community_membership_connected_description
 import nuvio.composeapp.generated.resources.community_membership_connected_title

@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.nuvio.app.shell.theme.themePalette
 import com.nuvio.app.shell.theme.accentBrush
 import kotlinx.coroutines.delay
+import com.nuvio.app.core.playback.ParentalWarning
 
 private val ParentalGuideRowHeight = 18.dp
 private val ParentalGuideRowGap = 2.dp

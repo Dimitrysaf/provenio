@@ -51,7 +51,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.format.formatReleaseDateForDisplay
 import com.nuvio.app.shell.components.ScreenActivityEffect
-import com.nuvio.app.features.home.MetaPreview
+import com.nuvio.app.core.home.MetaPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

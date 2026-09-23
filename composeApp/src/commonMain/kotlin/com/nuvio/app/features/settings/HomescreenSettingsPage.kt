@@ -49,7 +49,7 @@ import com.nuvio.app.shell.components.EmptyState
 import com.nuvio.app.shell.components.NuvioLoadingIndicator
 import com.nuvio.app.shell.components.NuvioToastController
 import com.nuvio.app.shell.theme.nuvio
-import com.nuvio.app.features.addons.AddonRepository
+import com.nuvio.app.core.addons.AddonRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsItem
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import com.nuvio.app.features.home.components.HomeEmptyStateCard

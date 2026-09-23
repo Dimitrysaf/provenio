@@ -37,6 +37,7 @@ import nuvio.composeapp.generated.resources.player_skip_intro
 import nuvio.composeapp.generated.resources.player_skip_outro
 import nuvio.composeapp.generated.resources.player_skip_recap
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.playback.skip.SkipInterval
 
 @Composable
 fun SkipIntroButton(

@@ -38,6 +38,9 @@ import nuvio.composeapp.generated.resources.settings_content_discovery_homescree
 import nuvio.composeapp.generated.resources.settings_content_discovery_meta_screen_description
 import nuvio.composeapp.generated.resources.compose_settings_root_streams_description
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.settings.AppIconOption
+import com.nuvio.app.core.settings.AppIconSettingsState
+import com.nuvio.app.core.settings.AppLanguage
 
 internal fun LazyListScope.appearanceSettingsContent(
     isTablet: Boolean,

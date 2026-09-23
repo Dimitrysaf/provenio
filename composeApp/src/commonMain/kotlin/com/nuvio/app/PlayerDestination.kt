@@ -7,8 +7,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.nuvio.app.shell.components.NuvioToastController
-import com.nuvio.app.features.player.ExternalPlayerIntentResult
-import com.nuvio.app.features.player.ExternalPlayerPlatform
+import com.nuvio.app.core.playback.ExternalPlayerIntentResult
+import com.nuvio.app.core.playback.ExternalPlayerPlatform
 import com.nuvio.app.features.player.PlayerLaunch
 import com.nuvio.app.features.player.PlayerLaunchStore
 import com.nuvio.app.features.player.PlayerScreen

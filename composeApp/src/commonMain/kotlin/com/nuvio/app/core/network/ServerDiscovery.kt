@@ -1,7 +1,7 @@
 package com.nuvio.app.core.network
 
 import com.nuvio.app.core.build.AppVersionConfig
-import com.nuvio.app.features.addons.httpRequestRaw
+import com.nuvio.app.core.addons.httpRequestRaw
 import io.ktor.http.Url
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeout

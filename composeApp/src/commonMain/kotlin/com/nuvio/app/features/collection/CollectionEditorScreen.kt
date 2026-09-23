@@ -78,7 +78,7 @@ import com.nuvio.app.shell.components.SelectableListRow
 import com.nuvio.app.shell.components.SingleChoiceBottomSheet
 import com.nuvio.app.shell.components.SingleChoiceOption
 import com.nuvio.app.shell.components.nuvioSafeBottomPadding
-import com.nuvio.app.features.home.PosterShape
+import com.nuvio.app.core.home.PosterShape
 import com.nuvio.app.features.settings.ListItemBetweenSpace
 import com.nuvio.app.features.settings.OuterCorner
 import com.nuvio.app.features.settings.segmentShape

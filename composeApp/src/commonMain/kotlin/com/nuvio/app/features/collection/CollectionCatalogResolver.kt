@@ -1,8 +1,8 @@
 package com.nuvio.app.features.collection
 
-import com.nuvio.app.features.addons.AddonCatalog
-import com.nuvio.app.features.addons.ManagedAddon
-import com.nuvio.app.features.addons.enabledAddons
+import com.nuvio.app.core.addons.AddonCatalog
+import com.nuvio.app.core.addons.ManagedAddon
+import com.nuvio.app.core.addons.enabledAddons
 
 internal data class ResolvedCollectionCatalog(
     val addon: ManagedAddon,

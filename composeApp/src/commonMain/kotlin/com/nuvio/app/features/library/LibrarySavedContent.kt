@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.i18n.localizedMediaTypeLabel
 import com.nuvio.app.shell.components.NuvioDropdownChip
 import com.nuvio.app.shell.components.NuvioDropdownOption
-import com.nuvio.app.features.home.MetaPreview
+import com.nuvio.app.core.home.MetaPreview
 import com.nuvio.app.features.home.components.PosterGridRow
 import com.nuvio.app.features.home.components.PosterGridSkeletonRow
 import nuvio.composeapp.generated.resources.Res
@@ -29,6 +29,16 @@ import nuvio.composeapp.generated.resources.library_sort_title_asc
 import nuvio.composeapp.generated.resources.library_sort_title_desc
 import nuvio.composeapp.generated.resources.library_sort_provider_order
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.library.LibraryItem
+import com.nuvio.app.core.library.LibraryLayoutMode
+import com.nuvio.app.core.library.LibrarySection
+import com.nuvio.app.core.library.LibrarySortOption
+import com.nuvio.app.core.library.LibrarySourceMode
+import com.nuvio.app.core.library.LibraryVerticalEntry
+import com.nuvio.app.core.library.LibraryVerticalProjection
+import com.nuvio.app.core.library.availableLibrarySortOptions
+import com.nuvio.app.core.library.isRemoteTrackingSource
+import com.nuvio.app.core.library.toMetaPreview
 
 @Composable
 internal fun LibrarySavedControls(

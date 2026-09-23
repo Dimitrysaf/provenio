@@ -16,10 +16,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.format.formatReleaseDateForDisplay
-import com.nuvio.app.features.details.MetaDetails
-import com.nuvio.app.features.details.SPECIALS_SEASON_NUMBER
-import com.nuvio.app.features.details.formatRuntimeForDisplay
-import com.nuvio.app.features.details.groupedEpisodesForDisplay
+import com.nuvio.app.core.metadata.MetaDetails
+import com.nuvio.app.core.metadata.SPECIALS_SEASON_NUMBER
+import com.nuvio.app.core.metadata.formatRuntimeForDisplay
+import com.nuvio.app.core.metadata.groupedEpisodesForDisplay
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 

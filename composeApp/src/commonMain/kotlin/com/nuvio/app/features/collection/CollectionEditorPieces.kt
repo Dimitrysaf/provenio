@@ -63,7 +63,7 @@ import coil3.compose.AsyncImage
 import com.nuvio.app.shell.components.ListSubheader
 import com.nuvio.app.shell.components.SingleChoiceBottomSheet
 import com.nuvio.app.shell.components.SingleChoiceOption
-import com.nuvio.app.features.home.PosterShape
+import com.nuvio.app.core.home.PosterShape
 import com.nuvio.app.features.settings.OuterCorner
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource

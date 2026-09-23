@@ -3,10 +3,10 @@ package com.nuvio.app.core.storage
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
-import com.nuvio.app.features.tracking.WatchProgressSource
-import com.nuvio.app.features.watchprogress.CachedNextUpItem
-import com.nuvio.app.features.watchprogress.ContinueWatchingEnrichmentCache
-import com.nuvio.app.features.watchprogress.ContinueWatchingEnrichmentStorage
+import com.nuvio.app.core.tracking.WatchProgressSource
+import com.nuvio.app.core.watch.progress.CachedNextUpItem
+import com.nuvio.app.core.watch.progress.ContinueWatchingEnrichmentCache
+import com.nuvio.app.core.watch.progress.ContinueWatchingEnrichmentStorage
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment

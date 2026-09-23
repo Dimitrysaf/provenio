@@ -27,15 +27,15 @@ import com.nuvio.app.shell.components.PosterLandscapeAspectRatio
 import com.nuvio.app.shell.components.SkeletonPoster
 import com.nuvio.app.shell.components.landscapePosterWidth
 import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
-import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.home.PosterShape
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.home.PosterShape
 import com.nuvio.app.features.home.components.HomePosterCard
 import com.nuvio.app.features.home.components.PosterGridRow
 import com.nuvio.app.features.home.components.rememberPosterGridColumnCount
-import com.nuvio.app.features.home.stableKey
-import com.nuvio.app.features.watching.application.WatchingState
-import com.nuvio.app.features.tmdb.TmdbMetadataService
-import com.nuvio.app.features.tmdb.TmdbSettingsRepository
+import com.nuvio.app.core.home.stableKey
+import com.nuvio.app.core.watch.watching.application.WatchingState
+import com.nuvio.app.core.metadata.tmdb.TmdbMetadataService
+import com.nuvio.app.core.metadata.tmdb.TmdbSettingsRepository
 
 @Composable
 fun DetailPosterRailSection(

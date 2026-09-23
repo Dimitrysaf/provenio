@@ -160,7 +160,7 @@
         </activity>
 
         <service
-            android:name="com.nuvio.app.features.player.PlayerNowPlayingService"
+            android:name="com.nuvio.app.core.playback.PlayerNowPlayingService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback"
             android:stopWithTask="false" />
@@ -170,7 +170,7 @@
             android:exported="false" />
 
         <receiver
-            android:name="com.nuvio.app.features.downloads.DownloadsNotificationActionReceiver"
+            android:name="com.nuvio.app.core.downloads.DownloadsNotificationActionReceiver"
             android:exported="false" />
 
         <provider

@@ -48,12 +48,12 @@ import com.nuvio.app.shell.components.NuvioModalBottomSheet
 import com.nuvio.app.shell.components.NuvioToastController
 import com.nuvio.app.shell.components.dismissNuvioBottomSheet
 import com.nuvio.app.shell.components.nuvioSafeBottomPadding
-import com.nuvio.app.features.downloads.DownloadsRepository
+import com.nuvio.app.core.downloads.DownloadsRepository
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nuvio.app.features.debrid.DebridSettingsRepository
-import com.nuvio.app.features.debrid.DirectDebridPlayableResult
-import com.nuvio.app.features.debrid.DirectDebridPlaybackResolver
-import com.nuvio.app.features.debrid.toastMessage
+import com.nuvio.app.core.debrid.DebridSettingsRepository
+import com.nuvio.app.core.debrid.DirectDebridPlayableResult
+import com.nuvio.app.core.debrid.DirectDebridPlaybackResolver
+import com.nuvio.app.core.debrid.toastMessage
 import com.nuvio.app.features.player.PlayerSettingsRepository
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
 import com.nuvio.app.features.watchprogress.WatchProgressEntry
@@ -61,6 +61,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.streams.AddonStreamGroup
+import com.nuvio.app.core.streams.StreamBadgeSettingsRepository
+import com.nuvio.app.core.streams.StreamItem
 
 // ---------------------------------------------------------------------------
 // Streams sheet

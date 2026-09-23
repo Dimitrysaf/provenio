@@ -11,10 +11,10 @@ import com.nuvio.app.features.collection.CollectionManagementScreen
 import com.nuvio.app.features.collection.CollectionRepository
 import com.nuvio.app.features.collection.FolderDetailRepository
 import com.nuvio.app.features.collection.FolderDetailScreen
-import com.nuvio.app.features.downloads.DownloadItem
+import com.nuvio.app.core.downloads.DownloadItem
 import com.nuvio.app.features.downloads.DownloadsScreen
-import com.nuvio.app.features.home.HomeCatalogSection
-import com.nuvio.app.features.home.MetaPreview
+import com.nuvio.app.core.home.HomeCatalogSection
+import com.nuvio.app.core.home.MetaPreview
 import com.nuvio.app.features.settings.SettingsScreen
 import com.nuvio.app.navigation.AppRoute
 import com.nuvio.app.navigation.CollectionEditorPageRoute

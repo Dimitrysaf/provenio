@@ -24,7 +24,7 @@ import com.nuvio.app.shell.components.SingleChoiceBottomSheet
 import com.nuvio.app.shell.components.SingleChoiceOption
 import com.nuvio.app.shell.components.SelectableListRow
 import com.nuvio.app.features.home.components.ContinueWatchingStylePreview
-import com.nuvio.app.features.watchprogress.ContinueWatchingPreferencesRepository
+import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
 import com.nuvio.app.features.watchprogress.ContinueWatchingSectionStyle
 import com.nuvio.app.features.watchprogress.ContinueWatchingSortMode
 import nuvio.composeapp.generated.resources.Res

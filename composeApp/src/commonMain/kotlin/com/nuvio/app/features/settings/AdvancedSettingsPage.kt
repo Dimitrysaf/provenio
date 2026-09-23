@@ -29,7 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.shell.theme.NuvioTokens
 import com.nuvio.app.shell.theme.nuvio
 import com.nuvio.app.features.profiles.ProfileRepository
-import com.nuvio.app.features.watchprogress.ContinueWatchingEnrichmentCache
+import com.nuvio.app.core.watch.progress.ContinueWatchingEnrichmentCache
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res
@@ -58,6 +58,7 @@ import nuvio.composeapp.generated.resources.sentry_sent_title
 import nuvio.composeapp.generated.resources.sentry_turn_off
 import nuvio.composeapp.generated.resources.sentry_turn_on
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.settings.SentrySettingsRepository
 
 internal fun LazyListScope.advancedSettingsContent(
     isTablet: Boolean,

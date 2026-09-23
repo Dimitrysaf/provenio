@@ -6,8 +6,8 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.runtime.Composable
-import com.nuvio.app.features.cloud.CloudLibraryContentType
-import com.nuvio.app.features.cloud.cloudLibraryDisplayArtworkUrl
+import com.nuvio.app.core.cloud.CloudLibraryContentType
+import com.nuvio.app.core.cloud.cloudLibraryDisplayArtworkUrl
 import com.nuvio.app.features.watchprogress.ContinueWatchingItem
 import nuvio.composeapp.generated.resources.*
 import nuvio.composeapp.generated.resources.Res

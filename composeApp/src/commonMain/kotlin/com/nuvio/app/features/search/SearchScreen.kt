@@ -51,17 +51,17 @@ import com.nuvio.app.shell.components.NuvioScreen
 import com.nuvio.app.shell.components.NuvioSearchField
 import com.nuvio.app.shell.components.ScreenActivityEffect
 import com.nuvio.app.shell.components.withDuplicateSafeLazyKeys
-import com.nuvio.app.features.addons.AddonRepository
-import com.nuvio.app.features.addons.firstEnabledManifestError
-import com.nuvio.app.features.addons.hasPendingEnabledManifests
+import com.nuvio.app.core.addons.AddonRepository
+import com.nuvio.app.core.addons.firstEnabledManifestError
+import com.nuvio.app.core.addons.hasPendingEnabledManifests
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
-import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.home.buildAddonCatalogRefreshSignature
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.home.buildAddonCatalogRefreshSignature
 import com.nuvio.app.features.home.components.HomeCatalogRowSection
 import com.nuvio.app.features.home.components.HomeSkeletonRow
 import com.nuvio.app.features.home.components.homeSectionHorizontalPaddingForWidth
 import com.nuvio.app.features.home.components.rememberPosterGridColumnCount
-import com.nuvio.app.features.watched.WatchedRepository
+import com.nuvio.app.core.watch.watched.WatchedRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -82,6 +82,8 @@ import nuvio.composeapp.generated.resources.compose_search_placeholder
 import nuvio.composeapp.generated.resources.compose_search_recent_searches
 import nuvio.composeapp.generated.resources.compose_search_remove_recent_search
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.search.SearchEmptyStateReason
+import com.nuvio.app.core.search.SearchHistoryRepository
 
 /** The side margin the discover grid sits in, which its column count has to allow for. */
 private val DiscoverGridHorizontalPadding = 16.dp

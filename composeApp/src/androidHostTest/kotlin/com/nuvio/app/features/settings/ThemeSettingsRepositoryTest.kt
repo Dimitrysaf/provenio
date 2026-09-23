@@ -5,8 +5,8 @@ import android.content.Context
 import com.nuvio.app.core.sync.decodeSyncString
 import com.nuvio.app.shell.theme.AppTheme
 import com.nuvio.app.shell.theme.CustomThemeColors
-import com.nuvio.app.features.membership.MemberAccessRepository
-import com.nuvio.app.features.membership.MemberAssetStorage
+import com.nuvio.app.core.membership.MemberAccessRepository
+import com.nuvio.app.core.membership.MemberAssetStorage
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
@@ -15,6 +15,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import com.nuvio.app.core.settings.ThemeSettingsStorage
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)

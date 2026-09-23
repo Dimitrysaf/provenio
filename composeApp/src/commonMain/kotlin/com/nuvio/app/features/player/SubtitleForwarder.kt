@@ -2,6 +2,7 @@ package com.nuvio.app.features.player
 
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
+import com.nuvio.app.core.playback.SubtitleInput
 
 object SubtitleForwarder {
 

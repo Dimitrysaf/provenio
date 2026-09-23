@@ -19,8 +19,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.features.tracking.TrackingLibraryTab
-import com.nuvio.app.features.tracking.trackingMembershipDestinations
+import com.nuvio.app.core.tracking.TrackingLibraryTab
+import com.nuvio.app.core.tracking.trackingMembershipDestinations
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.cd_selected

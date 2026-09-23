@@ -1,6 +1,6 @@
 package com.nuvio.app.features.home
 
-import com.nuvio.app.features.watchprogress.CachedNextUpItem
+import com.nuvio.app.core.watch.progress.CachedNextUpItem
 import com.nuvio.app.features.watchprogress.calculateReleaseAlertState
 import com.nuvio.app.features.watchprogress.parseReleaseDateToEpochMs
 import kotlin.test.Test

@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nuvio.app.shell.components.NuvioModalBottomSheet
 import com.nuvio.app.shell.theme.nuvio
-import com.nuvio.app.features.trakt.TraktCommentReview
+import com.nuvio.app.core.tracking.trakt.TraktCommentReview
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 

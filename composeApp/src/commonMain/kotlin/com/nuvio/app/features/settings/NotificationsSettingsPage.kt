@@ -9,8 +9,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.nuvio.app.features.notifications.EpisodeReleaseNotificationsRepository
-import com.nuvio.app.features.notifications.EpisodeReleaseNotificationsUiState
+import com.nuvio.app.core.notifications.EpisodeReleaseNotificationsRepository
+import com.nuvio.app.core.notifications.EpisodeReleaseNotificationsUiState
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_close
 import nuvio.composeapp.generated.resources.settings_notifications_disabled_in_app

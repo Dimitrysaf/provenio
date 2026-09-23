@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.nuvio.app.core.collection.CollectionMobileSettingsStorage
 
 data class CollectionMobileSettingsUiState(
     val folderGifOverrides: Map<String, Boolean> = emptyMap(),

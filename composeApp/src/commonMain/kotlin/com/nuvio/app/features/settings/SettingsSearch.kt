@@ -59,6 +59,7 @@ import com.nuvio.app.isIos
 import com.nuvio.app.supportsPosterNavigationMotion
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.settings.SentrySettingsRepository
 
 internal sealed class SettingsSearchTarget {
     data class Page(val page: SettingsPage) : SettingsSearchTarget()

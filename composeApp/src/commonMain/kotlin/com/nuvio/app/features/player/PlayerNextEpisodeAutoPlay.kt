@@ -1,16 +1,16 @@
 package com.nuvio.app.features.player
 
-import com.nuvio.app.features.addons.AddonRepository
-import com.nuvio.app.features.addons.enabledAddons
-import com.nuvio.app.features.debrid.DebridSettingsRepository
-import com.nuvio.app.features.details.MetaVideo
-import com.nuvio.app.features.downloads.DownloadItem
-import com.nuvio.app.features.downloads.DownloadsRepository
-import com.nuvio.app.features.player.skip.NextEpisodeInfo
-import com.nuvio.app.features.streams.StreamAutoPlayMode
-import com.nuvio.app.features.streams.StreamAutoPlaySelector
-import com.nuvio.app.features.streams.StreamAutoPlaySource
-import com.nuvio.app.features.streams.StreamItem
+import com.nuvio.app.core.addons.AddonRepository
+import com.nuvio.app.core.addons.enabledAddons
+import com.nuvio.app.core.debrid.DebridSettingsRepository
+import com.nuvio.app.core.metadata.MetaVideo
+import com.nuvio.app.core.downloads.DownloadItem
+import com.nuvio.app.core.downloads.DownloadsRepository
+import com.nuvio.app.core.playback.skip.NextEpisodeInfo
+import com.nuvio.app.core.streams.StreamAutoPlayMode
+import com.nuvio.app.core.streams.StreamAutoPlaySelector
+import com.nuvio.app.core.streams.StreamAutoPlaySource
+import com.nuvio.app.core.streams.StreamItem
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -18,6 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import com.nuvio.app.core.playback.PlayerStreamsRepository
 
 internal fun CoroutineScope.launchPlayerNextEpisodeAutoPlay(
     previousJob: Job?,

@@ -1,8 +1,8 @@
 package com.nuvio.app.features.player
 
-import com.nuvio.app.features.addons.AddonResource
-import com.nuvio.app.features.addons.ManagedAddon
-import com.nuvio.app.features.addons.enabledAddons
+import com.nuvio.app.core.addons.AddonResource
+import com.nuvio.app.core.addons.ManagedAddon
+import com.nuvio.app.core.addons.enabledAddons
 
 internal fun buildAddonSubtitleFetchKey(
     addons: List<ManagedAddon>,

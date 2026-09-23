@@ -7,6 +7,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import kotlin.math.abs
+import com.nuvio.app.core.notifications.EpisodeReleaseNotificationPlatform
+import com.nuvio.app.core.notifications.EpisodeReleaseNotificationRequest
+import com.nuvio.app.core.notifications.releaseDateIso
 
 class EpisodeReleaseNotificationWorker(
     appContext: android.content.Context,

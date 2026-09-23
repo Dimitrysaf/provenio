@@ -10,9 +10,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.nuvio.app.shell.components.TextPromptDialog
-import com.nuvio.app.features.tmdb.TmdbSettings
-import com.nuvio.app.features.tmdb.TmdbSettingsRepository
-import com.nuvio.app.features.tmdb.normalizeLanguage
+import com.nuvio.app.core.metadata.tmdb.TmdbSettings
+import com.nuvio.app.core.metadata.tmdb.TmdbSettingsRepository
+import com.nuvio.app.core.metadata.tmdb.normalizeLanguage
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.settings_tmdb_enable_enrichment
 import nuvio.composeapp.generated.resources.settings_tmdb_enable_enrichment_description

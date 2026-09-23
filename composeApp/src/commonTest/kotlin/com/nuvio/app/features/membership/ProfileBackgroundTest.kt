@@ -4,6 +4,7 @@ import com.nuvio.app.features.profiles.NuvioProfile
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import com.nuvio.app.core.membership.CosmeticEntitlements
 
 class ProfileBackgroundTest {
     @Test

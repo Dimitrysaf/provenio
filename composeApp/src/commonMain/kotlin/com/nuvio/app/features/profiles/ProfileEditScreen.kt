@@ -71,9 +71,9 @@ import coil3.compose.AsyncImage
 import com.nuvio.app.shell.components.NuvioScreen
 import com.nuvio.app.shell.components.TextPromptDialog
 import com.nuvio.app.shell.components.nuvioSafeBottomPadding
-import com.nuvio.app.features.membership.CosmeticEntitlement
-import com.nuvio.app.features.membership.MemberAccessRepository
-import com.nuvio.app.features.membership.ProfileBackgroundRepository
+import com.nuvio.app.core.membership.CosmeticEntitlement
+import com.nuvio.app.core.membership.MemberAccessRepository
+import com.nuvio.app.core.membership.ProfileBackgroundRepository
 import com.nuvio.app.features.settings.SettingsList
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*

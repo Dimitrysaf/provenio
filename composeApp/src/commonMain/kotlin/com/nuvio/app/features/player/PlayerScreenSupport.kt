@@ -1,8 +1,8 @@
 package com.nuvio.app.features.player
 
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.features.details.MetaVideo
-import com.nuvio.app.features.streams.StreamItem
+import com.nuvio.app.core.metadata.MetaVideo
+import com.nuvio.app.core.streams.StreamItem
 
 internal const val PlaybackProgressPersistIntervalMs = 60_000L
 internal const val PlayerDoubleTapSeekStepMs = 10_000L

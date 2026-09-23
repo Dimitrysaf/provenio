@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import kotlinx.serialization.json.*
+import com.nuvio.app.core.plugins.PluginStorage
 
 @Composable
 fun PluginSettingsDialog(

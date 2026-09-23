@@ -36,8 +36,8 @@ import com.nuvio.app.shell.components.SingleChoiceBottomSheet
 import com.nuvio.app.shell.components.SingleChoiceOption
 import com.nuvio.app.shell.components.nuvioHorizontalScrollBleed
 import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
-import com.nuvio.app.features.details.MetaTrailer
-import com.nuvio.app.features.details.youtubeThumbnailUrl
+import com.nuvio.app.core.metadata.MetaTrailer
+import com.nuvio.app.core.metadata.youtubeThumbnailUrl
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 

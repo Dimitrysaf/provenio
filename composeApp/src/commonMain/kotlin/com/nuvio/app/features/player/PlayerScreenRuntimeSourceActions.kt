@@ -1,22 +1,23 @@
 package com.nuvio.app.features.player
 
 import com.nuvio.app.shell.components.NuvioToastController
-import com.nuvio.app.features.debrid.DirectDebridPlayableResult
-import com.nuvio.app.features.debrid.DirectDebridPlaybackResolver
-import com.nuvio.app.features.debrid.toastMessage
+import com.nuvio.app.core.debrid.DirectDebridPlayableResult
+import com.nuvio.app.core.debrid.DirectDebridPlaybackResolver
+import com.nuvio.app.core.debrid.toastMessage
 import com.nuvio.app.features.details.MetaDetailsRepository
-import com.nuvio.app.features.details.MetaVideo
-import com.nuvio.app.features.downloads.DownloadItem
-import com.nuvio.app.features.downloads.DownloadSubtitles
-import com.nuvio.app.features.downloads.DownloadsRepository
-import com.nuvio.app.features.p2p.P2pSettingsRepository
-import com.nuvio.app.features.p2p.P2pStreamingEngine
+import com.nuvio.app.core.metadata.MetaVideo
+import com.nuvio.app.core.downloads.DownloadItem
+import com.nuvio.app.core.downloads.DownloadSubtitles
+import com.nuvio.app.core.downloads.DownloadsRepository
+import com.nuvio.app.core.p2p.P2pSettingsRepository
+import com.nuvio.app.core.p2p.P2pStreamingEngine
 import com.nuvio.app.features.streams.ActiveStreamStore
-import com.nuvio.app.features.streams.StreamItem
-import com.nuvio.app.features.streams.StreamLinkCacheRepository
+import com.nuvio.app.core.streams.StreamItem
+import com.nuvio.app.core.streams.StreamLinkCacheRepository
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
 import com.nuvio.app.features.watchprogress.buildPlaybackVideoId
 import kotlinx.coroutines.launch
+import com.nuvio.app.core.playback.PlayerStreamsRepository
 
 internal fun PlayerScreenRuntime.resolveDebridForPlayer(
     stream: StreamItem,

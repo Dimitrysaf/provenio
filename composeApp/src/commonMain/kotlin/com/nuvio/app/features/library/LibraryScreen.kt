@@ -72,25 +72,38 @@ import com.nuvio.app.shell.components.NuvioShelfSection
 import com.nuvio.app.shell.components.NuvioViewAllPillSize
 import com.nuvio.app.shell.components.ScopedDisintegrationTracker
 import com.nuvio.app.shell.components.SkeletonBlock
-import com.nuvio.app.features.cloud.CloudLibraryFile
-import com.nuvio.app.features.cloud.CloudLibraryItem
-import com.nuvio.app.features.cloud.CloudLibraryItemType
-import com.nuvio.app.features.cloud.CloudLibraryRepository
-import com.nuvio.app.features.cloud.CloudLibraryUiState
-import com.nuvio.app.features.debrid.DebridSettingsRepository
+import com.nuvio.app.core.cloud.CloudLibraryFile
+import com.nuvio.app.core.cloud.CloudLibraryItem
+import com.nuvio.app.core.cloud.CloudLibraryItemType
+import com.nuvio.app.core.cloud.CloudLibraryRepository
+import com.nuvio.app.core.cloud.CloudLibraryUiState
+import com.nuvio.app.core.debrid.DebridSettingsRepository
 import com.nuvio.app.features.home.components.HomeEmptyStateCard
 import com.nuvio.app.features.home.components.HomePosterCard
 import com.nuvio.app.features.home.components.HomeSkeletonRow
 import com.nuvio.app.features.home.components.rememberPosterGridColumnCount
 import com.nuvio.app.features.profiles.ProfileRepository
-import com.nuvio.app.features.tracking.TrackingRefreshIntent
-import com.nuvio.app.features.watched.WatchedRepository
-import com.nuvio.app.features.watching.application.WatchingState
+import com.nuvio.app.core.tracking.TrackingRefreshIntent
+import com.nuvio.app.core.watch.watched.WatchedRepository
+import com.nuvio.app.core.watch.watching.application.WatchingState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.library.LibraryDisplaySettingsRepository
+import com.nuvio.app.core.library.LibraryItem
+import com.nuvio.app.core.library.LibraryLayoutMode
+import com.nuvio.app.core.library.LibraryRepository
+import com.nuvio.app.core.library.LibrarySection
+import com.nuvio.app.core.library.LibrarySortOption
+import com.nuvio.app.core.library.LibrarySourceMode
+import com.nuvio.app.core.library.LibraryVerticalProjection
+import com.nuvio.app.core.library.buildLibraryVerticalProjection
+import com.nuvio.app.core.library.effectiveLibrarySortOption
+import com.nuvio.app.core.library.librarySectionItemKey
+import com.nuvio.app.core.library.sortLibrarySections
+import com.nuvio.app.core.library.toMetaPreview
 
 /** The side margin the library grid sits in, which its column count has to allow for. */
 private val LibraryGridHorizontalPadding = 16.dp

@@ -1,14 +1,14 @@
 package com.nuvio.app.features.collection
 
 import co.touchlab.kermit.Logger
-import com.nuvio.app.features.addons.httpGetText
-import com.nuvio.app.features.catalog.CatalogPage
-import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.home.PosterShape
-import com.nuvio.app.features.tmdb.TmdbConfig
-import com.nuvio.app.features.tmdb.TmdbSettingsRepository
-import com.nuvio.app.features.tmdb.buildTmdbUrl
-import com.nuvio.app.features.tmdb.normalizeTmdbLanguage
+import com.nuvio.app.core.addons.httpGetText
+import com.nuvio.app.core.catalog.CatalogPage
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.home.PosterShape
+import com.nuvio.app.core.metadata.tmdb.TmdbConfig
+import com.nuvio.app.core.metadata.tmdb.TmdbSettingsRepository
+import com.nuvio.app.core.metadata.tmdb.buildTmdbUrl
+import com.nuvio.app.core.metadata.tmdb.normalizeTmdbLanguage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName

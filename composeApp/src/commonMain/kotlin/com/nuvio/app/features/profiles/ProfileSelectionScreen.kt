@@ -77,7 +77,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.foundation.layout.fillMaxHeight
 import com.nuvio.app.shell.components.NuvioBackButton
 import com.nuvio.app.shell.components.WindowBreakpoint
-import com.nuvio.app.features.membership.CosmeticEntitlement
+import com.nuvio.app.core.membership.CosmeticEntitlement
 import com.nuvio.app.features.settings.MemberBrandWordmark
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

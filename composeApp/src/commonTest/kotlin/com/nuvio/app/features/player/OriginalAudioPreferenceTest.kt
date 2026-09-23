@@ -1,11 +1,11 @@
 package com.nuvio.app.features.player
 
 import androidx.compose.ui.Modifier
-import com.nuvio.app.features.details.MetaDetails
-import com.nuvio.app.features.details.MetaDetailsUiState
-import com.nuvio.app.features.tmdb.TmdbEnrichment
-import com.nuvio.app.features.tmdb.TmdbMetadataService
-import com.nuvio.app.features.tmdb.TmdbSettings
+import com.nuvio.app.core.metadata.MetaDetails
+import com.nuvio.app.core.metadata.MetaDetailsUiState
+import com.nuvio.app.core.metadata.tmdb.TmdbEnrichment
+import com.nuvio.app.core.metadata.tmdb.TmdbMetadataService
+import com.nuvio.app.core.metadata.tmdb.TmdbSettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

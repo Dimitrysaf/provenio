@@ -60,6 +60,12 @@ import com.nuvio.app.features.settings.ListItemBetweenSpace
 import com.nuvio.app.features.settings.segmentShape
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.downloads.DownloadItem
+import com.nuvio.app.core.downloads.DownloadStatus
+import com.nuvio.app.core.downloads.DownloadsPlatformDownloader
+import com.nuvio.app.core.downloads.DownloadsRepository
+import com.nuvio.app.core.downloads.DownloadsUiState
+import com.nuvio.app.core.downloads.sortedForSeriesDownloads
 
 @Composable
 fun DownloadsScreen(

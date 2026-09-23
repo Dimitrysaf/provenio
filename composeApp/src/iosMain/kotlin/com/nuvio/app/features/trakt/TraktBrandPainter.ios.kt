@@ -6,6 +6,7 @@ import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.trakt_logo_wordmark
 import nuvio.composeapp.generated.resources.trakt_tv_favicon
 import org.jetbrains.compose.resources.painterResource
+import com.nuvio.app.core.tracking.trakt.TraktBrandAsset
 
 @Composable
 actual fun traktBrandPainter(asset: TraktBrandAsset): Painter =

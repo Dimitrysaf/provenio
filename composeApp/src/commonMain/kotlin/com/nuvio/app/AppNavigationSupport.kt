@@ -7,12 +7,12 @@ import com.nuvio.app.features.collection.CollectionEditorPage
 import com.nuvio.app.features.collection.CollectionEditorRepository
 import com.nuvio.app.features.collection.FolderDetailRepository
 import com.nuvio.app.features.collection.disposeCollectionEditorPage
-import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.library.LibraryItem
-import com.nuvio.app.features.player.ExternalPlayerPlaybackRequest
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.library.LibraryItem
+import com.nuvio.app.core.playback.ExternalPlayerPlaybackRequest
 import com.nuvio.app.features.player.PlayerLaunch
 import com.nuvio.app.features.player.PlayerLaunchStore
-import com.nuvio.app.features.streams.StreamLaunchStore
+import com.nuvio.app.core.streams.StreamLaunchStore
 import com.nuvio.app.features.streams.StreamsRepository
 import com.nuvio.app.navigation.*
 import kotlinx.serialization.modules.SerializersModule

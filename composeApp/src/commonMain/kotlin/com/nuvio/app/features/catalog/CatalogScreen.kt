@@ -59,19 +59,20 @@ import com.nuvio.app.shell.components.nuvioSafeBottomPadding
 import com.nuvio.app.shell.components.posterCardClickable
 import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
 import com.nuvio.app.shell.components.withDuplicateSafeLazyKeys
-import com.nuvio.app.features.home.MetaPreview
+import com.nuvio.app.core.home.MetaPreview
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
-import com.nuvio.app.features.home.PosterShape
+import com.nuvio.app.core.home.PosterShape
 import com.nuvio.app.features.home.components.HomeEmptyStateCard
-import com.nuvio.app.features.home.stableKey
-import com.nuvio.app.features.watched.WatchedRepository
-import com.nuvio.app.features.watching.application.WatchingState
+import com.nuvio.app.core.home.stableKey
+import com.nuvio.app.core.watch.watched.WatchedRepository
+import com.nuvio.app.core.watch.watching.application.WatchingState
 import com.nuvio.app.navigation.LocalUseNativeNavigation
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.catalog.CatalogTarget
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable

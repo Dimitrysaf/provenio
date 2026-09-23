@@ -1,6 +1,8 @@
 package com.nuvio.app.features.membership
 
 import com.nuvio.app.features.profiles.NuvioProfile
+import com.nuvio.app.core.membership.CosmeticEntitlement
+import com.nuvio.app.core.membership.CosmeticEntitlements
 
 sealed interface ProfileBackgroundSelection {
     data class Catalog(val id: String) : ProfileBackgroundSelection

@@ -26,6 +26,9 @@ import java.net.URL
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
+import com.nuvio.app.core.playback.NOW_PLAYING_CHANNEL_ID
+import com.nuvio.app.core.playback.NOW_PLAYING_TAG
+import com.nuvio.app.core.playback.PlayerNowPlayingService
 
 private const val SEEK_INTERVAL_MS = 10_000L
 private const val MAX_ARTWORK_DOWNLOAD_BYTES = 12 * 1024 * 1024

@@ -7,11 +7,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.nuvio.app.shell.components.NuvioStatusModal
-import com.nuvio.app.features.tracking.TrackingMembershipApplyResult
-import com.nuvio.app.features.tracking.TrackingMembershipRemovalConfirmation
-import com.nuvio.app.features.tracking.TrackingMembershipRemovalImpact
-import com.nuvio.app.features.tracking.TrackingProviderId
-import com.nuvio.app.features.tracking.TrackingProviderRegistry
+import com.nuvio.app.core.tracking.TrackingMembershipApplyResult
+import com.nuvio.app.core.tracking.TrackingMembershipRemovalConfirmation
+import com.nuvio.app.core.tracking.TrackingMembershipRemovalImpact
+import com.nuvio.app.core.tracking.TrackingProviderId
+import com.nuvio.app.core.tracking.TrackingProviderRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res

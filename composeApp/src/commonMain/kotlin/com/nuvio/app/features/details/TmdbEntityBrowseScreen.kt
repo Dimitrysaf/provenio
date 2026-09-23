@@ -54,13 +54,13 @@ import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.features.home.components.HomeSkeletonRow
 import com.nuvio.app.shell.components.skeleton
 import com.nuvio.app.features.details.components.DetailPosterRailSection
-import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.tmdb.TmdbEntityBrowseData
-import com.nuvio.app.features.tmdb.TmdbEntityKind
-import com.nuvio.app.features.tmdb.TmdbEntityMediaType
-import com.nuvio.app.features.tmdb.TmdbEntityRailType
-import com.nuvio.app.features.tmdb.TmdbMetadataService
-import com.nuvio.app.features.watched.WatchedRepository
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.metadata.tmdb.TmdbEntityBrowseData
+import com.nuvio.app.core.metadata.tmdb.TmdbEntityKind
+import com.nuvio.app.core.metadata.tmdb.TmdbEntityMediaType
+import com.nuvio.app.core.metadata.tmdb.TmdbEntityRailType
+import com.nuvio.app.core.metadata.tmdb.TmdbMetadataService
+import com.nuvio.app.core.watch.watched.WatchedRepository
 import com.nuvio.app.navigation.LocalUseNativeNavigation
 
 private sealed interface EntityBrowseUiState {

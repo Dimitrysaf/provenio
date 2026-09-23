@@ -9,11 +9,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
-import com.nuvio.app.features.p2p.P2pStreamingState
-import com.nuvio.app.features.p2p.formatP2pSpeed
+import com.nuvio.app.core.p2p.P2pStreamingState
+import com.nuvio.app.core.p2p.formatP2pSpeed
 import com.nuvio.app.isIos
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
+import com.nuvio.app.core.playback.ExternalPlayerPlaybackRequest
+import com.nuvio.app.core.playback.PlayerStreamsRepository
+import com.nuvio.app.core.playback.SubtitleInput
 
 @Composable
 internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {

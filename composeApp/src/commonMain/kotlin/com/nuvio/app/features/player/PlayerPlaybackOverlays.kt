@@ -13,9 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.shell.components.NuvioStatusModal
 import com.nuvio.app.features.player.skip.NextEpisodeCard
-import com.nuvio.app.features.player.skip.NextEpisodeInfo
+import com.nuvio.app.core.playback.skip.NextEpisodeInfo
 import com.nuvio.app.features.player.skip.SkipIntroButton
-import com.nuvio.app.features.player.skip.SkipInterval
+import com.nuvio.app.core.playback.skip.SkipInterval
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_player_go_back
 import nuvio.composeapp.generated.resources.compose_player_playback_error

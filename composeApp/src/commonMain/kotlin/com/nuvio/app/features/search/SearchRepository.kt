@@ -2,25 +2,25 @@ package com.nuvio.app.features.search
 
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.i18n.localizedMediaTypeLabel
-import com.nuvio.app.features.addons.AddonCatalog
-import com.nuvio.app.features.addons.AddonExtraProperty
-import com.nuvio.app.features.addons.ManagedAddon
-import com.nuvio.app.features.addons.enabledAddons
-import com.nuvio.app.features.addons.firstEnabledManifestError
-import com.nuvio.app.features.addons.hasPendingEnabledManifests
-import com.nuvio.app.features.catalog.CATALOG_PAGE_SIZE
-import com.nuvio.app.features.catalog.CatalogPage
-import com.nuvio.app.features.catalog.CatalogTarget
-import com.nuvio.app.features.catalog.buildCatalogUrl
-import com.nuvio.app.features.catalog.fetchCatalogPage
-import com.nuvio.app.features.catalog.mergeCatalogItems
-import com.nuvio.app.features.catalog.nextCatalogPaginationState
-import com.nuvio.app.features.catalog.supportsPagination
+import com.nuvio.app.core.addons.AddonCatalog
+import com.nuvio.app.core.addons.AddonExtraProperty
+import com.nuvio.app.core.addons.ManagedAddon
+import com.nuvio.app.core.addons.enabledAddons
+import com.nuvio.app.core.addons.firstEnabledManifestError
+import com.nuvio.app.core.addons.hasPendingEnabledManifests
+import com.nuvio.app.core.catalog.CATALOG_PAGE_SIZE
+import com.nuvio.app.core.catalog.CatalogPage
+import com.nuvio.app.core.catalog.CatalogTarget
+import com.nuvio.app.core.catalog.buildCatalogUrl
+import com.nuvio.app.core.catalog.fetchCatalogPage
+import com.nuvio.app.core.catalog.mergeCatalogItems
+import com.nuvio.app.core.catalog.nextCatalogPaginationState
+import com.nuvio.app.core.catalog.supportsPagination
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
-import com.nuvio.app.features.home.HomeCatalogSection
-import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.home.filterReleasedItems
-import com.nuvio.app.features.watchprogress.CurrentDateProvider
+import com.nuvio.app.core.home.HomeCatalogSection
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.home.filterReleasedItems
+import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +34,12 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
+import com.nuvio.app.core.search.DiscoverCatalogOption
+import com.nuvio.app.core.search.DiscoverEmptyStateReason
+import com.nuvio.app.core.search.DiscoverSelectionStorage
+import com.nuvio.app.core.search.DiscoverUiState
+import com.nuvio.app.core.search.SearchEmptyStateReason
+import com.nuvio.app.core.search.SearchUiState
 
 internal fun <T> canReuseRequestState(
     forceRefresh: Boolean,

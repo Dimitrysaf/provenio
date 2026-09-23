@@ -5,13 +5,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.build.AppFeaturePolicy
-import com.nuvio.app.features.addons.AddonManifest
-import com.nuvio.app.features.addons.AddonRepository
-import com.nuvio.app.features.addons.ManagedAddon
+import com.nuvio.app.core.addons.AddonManifest
+import com.nuvio.app.core.addons.AddonRepository
+import com.nuvio.app.core.addons.ManagedAddon
 import com.nuvio.app.features.details.MetaDetailsRepository
-import com.nuvio.app.features.downloads.DownloadsRepository
-import com.nuvio.app.features.plugins.PluginRepository
-import com.nuvio.app.features.plugins.PluginsUiState
+import com.nuvio.app.core.downloads.DownloadsRepository
+import com.nuvio.app.core.plugins.PluginRepository
+import com.nuvio.app.core.plugins.PluginsUiState
 
 internal fun AddonManifest.supportsStream(type: String, videoId: String): Boolean =
     resources.any { resource ->

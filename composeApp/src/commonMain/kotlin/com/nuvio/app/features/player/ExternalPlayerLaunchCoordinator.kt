@@ -1,8 +1,8 @@
 package com.nuvio.app.features.player
 
-import com.nuvio.app.features.downloads.DownloadSubtitles
-import com.nuvio.app.features.player.skip.SkipInterval
-import com.nuvio.app.features.player.skip.SkipIntroRepository
+import com.nuvio.app.core.downloads.DownloadSubtitles
+import com.nuvio.app.core.playback.skip.SkipInterval
+import com.nuvio.app.core.playback.skip.SkipIntroRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -16,6 +16,9 @@ import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.player_external_downloading_subtitles
 import nuvio.composeapp.generated.resources.player_external_loading_subtitles
 import org.jetbrains.compose.resources.getString
+import com.nuvio.app.core.playback.ExternalPlayerPlaybackRequest
+import com.nuvio.app.core.playback.SubtitleCacheProvider
+import com.nuvio.app.core.playback.SubtitleInput
 
 private const val SkipSegmentResolveTimeoutMs = 4_000L
 

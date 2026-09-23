@@ -2,6 +2,9 @@ package com.nuvio.app.features.membership
 
 import com.nuvio.app.shell.theme.AppTheme
 import com.nuvio.app.shell.theme.CustomThemeColors
+import com.nuvio.app.core.membership.CosmeticEntitlement
+import com.nuvio.app.core.membership.CosmeticEntitlements
+import com.nuvio.app.core.membership.MemberTier
 
 private val supporterThemes = linkedMapOf(
     AppTheme.GOLD to CosmeticEntitlement.GOLD_THEME,

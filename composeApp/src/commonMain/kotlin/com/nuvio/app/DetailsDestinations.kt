@@ -10,9 +10,9 @@ import androidx.compose.ui.Modifier
 import com.nuvio.app.features.details.MetaDetailsScreen
 import com.nuvio.app.features.details.PersonDetailScreen
 import com.nuvio.app.features.details.TmdbEntityBrowseScreen
-import com.nuvio.app.features.home.MetaPreview
-import com.nuvio.app.features.tmdb.TmdbEntityKind
-import com.nuvio.app.features.tmdb.TmdbService
+import com.nuvio.app.core.home.MetaPreview
+import com.nuvio.app.core.metadata.tmdb.TmdbEntityKind
+import com.nuvio.app.core.metadata.tmdb.TmdbService
 import com.nuvio.app.navigation.DetailRoute
 import com.nuvio.app.navigation.EntityBrowseRoute
 import com.nuvio.app.navigation.NuvioNavigator

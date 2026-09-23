@@ -34,8 +34,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nuvio.app.features.membership.MemberAccessRepository
-import com.nuvio.app.features.membership.MemberTier
+import com.nuvio.app.core.membership.MemberAccessRepository
+import com.nuvio.app.core.membership.MemberTier
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos

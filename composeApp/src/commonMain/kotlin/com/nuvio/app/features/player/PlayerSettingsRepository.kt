@@ -1,13 +1,14 @@
 package com.nuvio.app.features.player
 
 import com.nuvio.app.core.build.AppFeaturePolicy
-import com.nuvio.app.features.player.skip.NextEpisodeThresholdMode
-import com.nuvio.app.features.streams.StreamAutoPlayMode
-import com.nuvio.app.features.streams.StreamAutoPlaySource
+import com.nuvio.app.core.playback.skip.NextEpisodeThresholdMode
+import com.nuvio.app.core.streams.StreamAutoPlayMode
+import com.nuvio.app.core.streams.StreamAutoPlaySource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.math.abs
+import com.nuvio.app.core.playback.ExternalPlayerPlatform
 
 val STREAM_AUTO_PLAY_TIMEOUT_VALUES: List<Int> = listOf(
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, Int.MAX_VALUE

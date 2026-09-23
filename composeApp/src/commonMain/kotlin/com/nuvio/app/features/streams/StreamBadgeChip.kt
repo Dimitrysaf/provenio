@@ -29,6 +29,8 @@ import kotlin.math.round
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.streams_size
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.streams.StreamBadge
+import com.nuvio.app.core.streams.StreamItem
 
 private const val STREAM_SIZE_PLACEHOLDER = "\uE000"
 
