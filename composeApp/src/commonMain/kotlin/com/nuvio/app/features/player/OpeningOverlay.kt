@@ -161,5 +161,6 @@ internal fun OpeningOverlay(
 }
 
 // The player frame: only what the display actually covers, nothing reserved for gestures.
+@Composable
 internal fun Modifier.playerFrameInsets(sides: WindowInsetsSides): Modifier =
     windowInsetsPadding(WindowInsets.safeDrawing.only(sides))
