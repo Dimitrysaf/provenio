@@ -12,12 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -32,10 +28,12 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.nuvio.app.core.ui.NuvioBackButton
 import com.nuvio.app.core.ui.platformPhysicalTopInset
 import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.isIos
@@ -125,12 +123,18 @@ fun DetailFloatingHeader(
                 },
                 navigationIcon = {
                     if (!useNativeNavigation) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                contentDescription = stringResource(Res.string.action_back),
-                            )
-                        }
+                        // Over artwork the arrow needs its own scrim; the bar's surface takes
+                        // that job over as it fades in behind it.
+                        NuvioBackButton(
+                            onClick = onBack,
+                            containerColor = MaterialTheme.colorScheme.scrim
+                                .copy(alpha = 0.40f * (1f - progress)),
+                            contentColor = lerp(
+                                Color.White,
+                                MaterialTheme.colorScheme.onBackground,
+                                progress,
+                            ),
+                        )
                     } else {
                         // Native iOS navigation owns the back button, but retaining this slot
                         // keeps the logo centred as the bar replaces the hero.

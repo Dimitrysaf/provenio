@@ -11,15 +11,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.VolumeOff
@@ -55,7 +52,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.nuvio.app.core.ui.heroStretchHeight
 import com.nuvio.app.features.details.DetailHeroSlide
 import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.details.MetaTrailer
@@ -65,6 +61,7 @@ import com.nuvio.app.features.home.components.HeroMinSmallItemWidth
 import com.nuvio.app.features.home.components.HeroOnArtworkColor
 import com.nuvio.app.features.home.components.HeroOnArtworkVariantColor
 import com.nuvio.app.features.home.components.HomeHeroLayout
+import com.nuvio.app.features.home.components.heroCarouselTopInset
 import com.nuvio.app.features.home.components.heroItemContentAlpha
 import com.nuvio.app.features.home.components.homeHeroLayout
 import com.nuvio.app.features.trailer.TrailerPlaybackResolver
@@ -78,16 +75,12 @@ private const val TRAILER_ASPECT_RATIO = 16f / 9f
 /** Room kept under the trailer band for its audio button. */
 private val TrailerBandBottomClearance = 52.dp
 
-/** What the top app bar takes at the top, since it floats rather than pushing the page down. */
-private val DetailTopBarHeight = 64.dp
-
 /** The home screen's hero carousel, over one title's own pages: artwork, trailers, more artwork. */
 @Composable
 fun DetailHero(
     meta: MetaDetails,
     slides: List<DetailHeroSlide>,
     modifier: Modifier = Modifier,
-    stretchPx: () -> Float = { 0f },
     onHeightChanged: (Int) -> Unit = {},
     trailerResolutionEnabled: Boolean = false,
     trailerPlayWhenReady: () -> Boolean = { false },
@@ -100,8 +93,7 @@ fun DetailHero(
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val layout = homeHeroLayout(maxWidthDp = maxWidth.value)
-        val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
-            DetailTopBarHeight
+        val topInset = heroCarouselTopInset()
         val sectionHeight = topInset + layout.heroHeight + layout.contentVerticalPadding
         val sectionHeightPx = with(LocalDensity.current) { sectionHeight.roundToPx() }
         LaunchedEffect(sectionHeightPx) { onHeightChanged(sectionHeightPx) }
@@ -111,7 +103,6 @@ fun DetailHero(
             pages = pages,
             layout = layout,
             topInset = topInset,
-            stretchPx = stretchPx,
             trailerResolutionEnabled = trailerResolutionEnabled,
             trailerPlayWhenReady = trailerPlayWhenReady,
             trailerMuted = trailerMuted,
@@ -128,7 +119,6 @@ private fun DetailHeroPages(
     pages: List<DetailHeroSlide>,
     layout: HomeHeroLayout,
     topInset: Dp,
-    stretchPx: () -> Float,
     trailerResolutionEnabled: Boolean,
     trailerPlayWhenReady: () -> Boolean,
     trailerMuted: Boolean,
@@ -170,7 +160,7 @@ private fun DetailHeroPages(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = layout.contentHorizontalPadding)
-                    .heroStretchHeight(layout.heroHeight, stretchPx)
+                    .height(layout.heroHeight)
                     .clip(MaterialTheme.shapes.extraLarge),
             ) {
                 DetailHeroPage(
@@ -194,7 +184,7 @@ private fun DetailHeroPages(
                 state = carouselState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heroStretchHeight(layout.heroHeight, stretchPx),
+                    .height(layout.heroHeight),
                 itemSpacing = layout.itemSpacing,
                 minSmallItemWidth = minOf(HeroMinSmallItemWidth, layout.smallItemWidth),
                 maxSmallItemWidth = layout.smallItemWidth,
