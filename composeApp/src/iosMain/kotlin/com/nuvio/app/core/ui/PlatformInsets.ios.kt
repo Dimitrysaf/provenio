@@ -15,7 +15,6 @@ import kotlinx.cinterop.useContents
 
 internal actual val nuvioPlatformExtraTopPadding: Dp = 0.dp
 internal actual val nuvioPlatformExtraBottomPadding: Dp = 0.dp
-internal actual val nuvioBottomNavigationExtraVerticalPadding: Dp = 0.dp
 
 @Composable
 internal actual fun nuvioBottomNavigationBarInsets(): WindowInsets =

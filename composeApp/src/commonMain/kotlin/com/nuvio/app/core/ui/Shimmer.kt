@@ -78,8 +78,8 @@ internal fun Modifier.skeleton(
     shape: Shape = RoundedCornerShape(6.dp),
 ): Modifier {
     val progress = rememberSkeletonProgress()
-    val base = MaterialTheme.nuvio.colors.skeleton
-    val highlight = MaterialTheme.nuvio.colors.shimmer
+    val base = MaterialTheme.colorScheme.surfaceContainerHigh
+    val highlight = MaterialTheme.colorScheme.surfaceContainerHighest
     var rootWidth by remember { mutableFloatStateOf(0f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
 

@@ -5,7 +5,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -25,17 +23,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.Scaffold
@@ -47,14 +42,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
@@ -85,12 +76,11 @@ fun NuvioScreen(
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     bottomBar: (@Composable () -> Unit)? = null,
-    horizontalPadding: Dp = MaterialTheme.nuvio.spacing.screenHorizontal,
+    horizontalPadding: Dp = 16.dp,
     topPadding: Dp? = null,
     listState: LazyListState = rememberLazyListState(),
     content: LazyListScope.() -> Unit,
 ) {
-    val tokens = MaterialTheme.nuvio
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     // A null title means the screen supplies its own heading — Home's hero, for one — so no app
@@ -146,19 +136,19 @@ fun NuvioScreen(
                     ?: if (title != null) {
                         innerPadding.calculateTopPadding()
                     } else {
-                        tokens.spacing.screenTop + statusBarTop + nuvioPlatformExtraTopPadding
+                        10.dp + statusBarTop + nuvioPlatformExtraTopPadding
                     },
                 end = horizontalPadding,
                 // A bottom bar already reserves its own height plus the navigation bar inset in
                 // the scaffold's inner padding, so the content only adds the screen's own gap
                 // above it.
                 bottom = if (bottomBar != null) {
-                    innerPadding.calculateBottomPadding() + tokens.spacing.screenBottom
+                    innerPadding.calculateBottomPadding() + 18.dp
                 } else {
-                    nuvioSafeBottomPadding(tokens.spacing.screenBottom)
+                    nuvioSafeBottomPadding(18.dp)
                 },
             ),
-            verticalArrangement = Arrangement.spacedBy(tokens.spacing.listGap),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             content = content,
         )
     }
@@ -175,22 +165,15 @@ internal fun Modifier.nuvioConsumePointerEvents(): Modifier =
         }
     }
 
+// A filled Material card with the standard 16dp content padding.
 @Composable
 fun NuvioSurfaceCard(
     modifier: Modifier = Modifier,
-    tonalElevation: Int = 0,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val tokens = MaterialTheme.nuvio
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = tokens.colors.surface,
-        shape = tokens.shapes.card,
-        tonalElevation = tonalElevation.dp,
-        shadowElevation = tokens.elevation.flat,
-    ) {
+    Card(modifier = modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(tokens.spacing.cardPadding),
+            modifier = Modifier.padding(16.dp),
             content = content,
         )
     }
@@ -205,7 +188,6 @@ fun NuvioScreenHeader(
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    val tokens = MaterialTheme.nuvio
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val nativeDetailNavigation = LocalUseNativeNavigation.current &&
         !LocalNativeNavigationBarHidden.current &&
@@ -214,40 +196,39 @@ fun NuvioScreenHeader(
         Row(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(bottom = NuvioTokens.Space.s4),
+                .padding(bottom = 4.dp),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
             content = actions,
         )
         return
     }
-    val resolvedTopPadding = topPadding ?: if (includeStatusBarPadding) statusBarTop else NuvioTokens.Space.none
+    val resolvedTopPadding = topPadding ?: if (includeStatusBarPadding) statusBarTop else 0.dp
     Box(
         modifier = modifier.fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier
                 .matchParentSize()
-                .background(tokens.colors.background)
+                .background(MaterialTheme.colorScheme.surface)
                 .nuvioConsumePointerEvents(),
         ) {}
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = resolvedTopPadding, bottom = NuvioTokens.Space.s4),
+                .padding(top = resolvedTopPadding, bottom = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Bottom,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(tokens.spacing.controlGap),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 if (onBack != null) {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = stringResource(Res.string.action_back),
-                            tint = tokens.colors.textPrimary,
                         )
                     }
                 }
@@ -259,12 +240,12 @@ fun NuvioScreenHeader(
                     Text(
                         text = currentTitle,
                         style = MaterialTheme.typography.displayLarge,
-                        color = tokens.colors.textPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
             Row(
-                horizontalArrangement = Arrangement.spacedBy(NuvioTokens.Space.s2),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 content = actions,
             )
@@ -272,40 +253,36 @@ fun NuvioScreenHeader(
     }
 }
 
-
-
+// A filled Material icon button holding the back arrow; callers may retint it over artwork.
 @Composable
 fun NuvioBackButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: Shape = MaterialTheme.nuvio.shapes.avatar,
-    containerColor: Color = MaterialTheme.nuvio.colors.surface,
-    contentColor: Color = MaterialTheme.nuvio.colors.textPrimary,
-    buttonSize: Dp = NuvioTokens.Space.s40,
-    iconSize: Dp = NuvioTokens.Icon.md,
+    shape: Shape = IconButtonDefaults.filledShape,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    buttonSize: Dp = 40.dp,
+    iconSize: Dp = 24.dp,
     contentDescription: String = stringResource(Res.string.action_back),
 ) {
     if (LocalUseNativeNavigation.current && !LocalNativeNavigationBarHidden.current) return
 
-    Box(
-        modifier = modifier
-            .size(buttonSize)
-            .clip(shape)
-            .background(containerColor)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
+    FilledIconButton(
+        onClick = onClick,
+        modifier = modifier.size(buttonSize),
+        shape = shape,
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+        ),
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
             contentDescription = contentDescription,
-            tint = contentColor,
             modifier = Modifier.size(iconSize),
         )
     }
 }
-
-
-
 
 /**
  * The app's confirmation and status dialog.
@@ -361,7 +338,6 @@ fun NuvioStatusModal(
         },
     )
 }
-
 
 /**
  * Brief messages that go away on their own.
