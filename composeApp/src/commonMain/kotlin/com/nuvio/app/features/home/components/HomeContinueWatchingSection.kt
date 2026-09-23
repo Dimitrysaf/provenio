@@ -574,9 +574,7 @@ private data class ContinueWatchingLandscapeCardMetrics(
     val cornerRadius: Dp,
     val contentPadding: Dp,
     val textGap: Dp,
-    val badgeInset: Dp,
-    val progressHorizontalPadding: Dp,
-    val progressBottomPadding: Dp,
+    val statusRowTopPadding: Dp,
     val progressHeight: Dp,
 )
 
@@ -591,9 +589,7 @@ private fun continueWatchingLandscapeCardMetrics(
             cornerRadius = cornerRadiusDp.dp,
             contentPadding = 8.dp,
             textGap = 1.dp,
-            badgeInset = 6.dp,
-            progressHorizontalPadding = 8.dp,
-            progressBottomPadding = 3.dp,
+            statusRowTopPadding = 2.dp,
             progressHeight = 3.dp,
         )
         basePosterWidthDp <= 120 -> ContinueWatchingLandscapeCardMetrics(
@@ -601,9 +597,7 @@ private fun continueWatchingLandscapeCardMetrics(
             cornerRadius = cornerRadiusDp.dp,
             contentPadding = 9.dp,
             textGap = 1.dp,
-            badgeInset = 6.dp,
-            progressHorizontalPadding = 8.dp,
-            progressBottomPadding = 3.dp,
+            statusRowTopPadding = 2.dp,
             progressHeight = 3.dp,
         )
         else -> ContinueWatchingLandscapeCardMetrics(
@@ -611,9 +605,7 @@ private fun continueWatchingLandscapeCardMetrics(
             cornerRadius = cornerRadiusDp.dp,
             contentPadding = 10.dp,
             textGap = 2.dp,
-            badgeInset = 7.dp,
-            progressHorizontalPadding = 9.dp,
-            progressBottomPadding = 4.dp,
+            statusRowTopPadding = 2.dp,
             progressHeight = 3.dp,
         )
     }
@@ -710,6 +702,7 @@ private fun ContinueWatchingCard(
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
+                    .fillMaxWidth()
                     .padding(cardMetrics.contentPadding),
                 verticalArrangement = Arrangement.spacedBy(cardMetrics.textGap),
             ) {
@@ -738,32 +731,33 @@ private fun ContinueWatchingCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-            }
-
-            ContinueWatchingBadge(
-                item = item,
-                text = badgeText,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(cardMetrics.badgeInset),
-            )
-
-            if (item.progressFraction > 0f) {
-                LinearProgressIndicator(
-                    progress = { item.progressFraction.coerceIn(0f, 1f) },
+                // The status badge sits on the progress bar's line, or takes its place when nothing has played yet.
+                Row(
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(
-                            horizontal = cardMetrics.progressHorizontalPadding,
-                            vertical = cardMetrics.progressBottomPadding,
-                        )
                         .fillMaxWidth()
-                        .height(cardMetrics.progressHeight),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = OnScrimColor.copy(alpha = 0.24f),
-                    gapSize = 0.dp,
-                    drawStopIndicator = {},
-                )
+                        .padding(top = cardMetrics.statusRowTopPadding),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (item.progressFraction > 0f) {
+                        LinearProgressIndicator(
+                            progress = { item.progressFraction.coerceIn(0f, 1f) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(cardMetrics.progressHeight),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = OnScrimColor.copy(alpha = 0.24f),
+                            gapSize = 0.dp,
+                            drawStopIndicator = {},
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                    ContinueWatchingBadge(
+                        item = item,
+                        text = badgeText,
+                    )
+                }
             }
         }
     }
