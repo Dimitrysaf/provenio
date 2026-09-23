@@ -6,8 +6,10 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,14 +22,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -87,50 +98,63 @@ fun DetailMetaInfo(
             runtimeText != null ||
             ageBadge != null ||
             (validImdbRating != null && !hasMdbImdbRating)
-        if (hasMetaRow) {
+        val infoRows = detailInfoRows(meta)
+        var infoExpanded by rememberSaveable(meta.id) { mutableStateOf(false) }
+        val chevronRotation by animateFloatAsState(
+            targetValue = if (infoExpanded) 180f else 0f,
+            label = "detail_meta_info_chevron",
+        )
+
+        if (hasMetaRow || infoRows.isNotEmpty()) {
             Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(ShapeDefaults.Small)
+                    .clickable(enabled = infoRows.isNotEmpty()) { infoExpanded = !infoExpanded }
+                    .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                releaseLine?.let { line ->
+                if (infoExpanded) {
                     Text(
-                        text = line,
-                        style = MaterialTheme.typography.titleMedium,
+                        text = detailInfoTitle(meta),
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleMediumEmphasized,
                         color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                } else {
+                    MetaFactsLine(
+                        modifier = Modifier.weight(1f),
+                        releaseLine = releaseLine,
+                        runtimeText = runtimeText,
+                        ageBadge = ageBadge,
+                        imdbRating = validImdbRating?.takeIf { !hasMdbImdbRating },
                     )
                 }
-                runtimeText?.let { rt ->
-                    Text(
-                        text = rt,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold,
+                if (infoRows.isNotEmpty()) {
+                    Icon(
+                        imageVector = Icons.Rounded.ExpandMore,
+                        contentDescription = stringResource(
+                            if (infoExpanded) {
+                                Res.string.details_info_collapse
+                            } else {
+                                Res.string.details_info_expand
+                            },
+                        ),
+                        modifier = Modifier.rotate(chevronRotation),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                ageBadge?.let { badge ->
-                    DetailHeroMetaBadge(text = badge)
-                }
-                if (validImdbRating != null && !hasMdbImdbRating) {
-                    val imdbTextStyle = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.sp,
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        ImdbRatingSourceLabel(
-                            storeTextStyle = imdbTextStyle,
-                            storeTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            text = validImdbRating,
-                            style = imdbTextStyle,
-                            color = ImdbYellow,
-                        )
-                    }
-                }
+            }
+
+            AnimatedVisibility(
+                visible = infoExpanded,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                DetailInfoRows(rows = infoRows)
             }
         }
 
@@ -165,6 +189,53 @@ fun DetailMetaInfo(
                 collapsedMaxLines = 3,
                 style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
             )
+        }
+    }
+}
+
+/** The title's facts as one supporting line, which is what the expander shows when it is closed. */
+@Composable
+private fun MetaFactsLine(
+    releaseLine: String?,
+    runtimeText: String?,
+    ageBadge: String?,
+    imdbRating: String?,
+    modifier: Modifier = Modifier,
+) {
+    val facts = listOfNotNull(releaseLine, runtimeText).joinToString(" \u2022 ")
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        if (facts.isNotEmpty()) {
+            Text(
+                text = facts,
+                modifier = Modifier.weight(1f, fill = false),
+                style = MaterialTheme.typography.titleMediumEmphasized,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        ageBadge?.let { badge ->
+            DetailHeroMetaBadge(text = badge)
+        }
+        imdbRating?.let { rating ->
+            val imdbTextStyle = MaterialTheme.typography.titleMediumEmphasized.copy(letterSpacing = 0.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ImdbRatingSourceLabel(
+                    storeTextStyle = imdbTextStyle,
+                    storeTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.width(5.dp))
+                Text(
+                    text = rating,
+                    style = imdbTextStyle,
+                    color = ImdbYellow,
+                )
+            }
         }
     }
 }
@@ -259,12 +330,11 @@ private fun MetaLabelValueRow(
     label: String,
     value: String,
 ) {
-    Row {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = "$label:  ",
-            style = MaterialTheme.typography.bodyMedium,
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.SemiBold,
         )
         Text(
             text = value,

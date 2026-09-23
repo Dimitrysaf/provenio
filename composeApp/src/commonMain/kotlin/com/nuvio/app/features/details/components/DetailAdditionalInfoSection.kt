@@ -3,6 +3,7 @@ package com.nuvio.app.features.details.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,13 +29,22 @@ fun DetailAdditionalInfoSection(
     modifier: Modifier = Modifier,
     showHeader: Boolean = true,
 ) {
-    val isSeriesLike = meta.type == "series" || meta.videos.any { it.season != null || it.episode != null }
-    val title = if (isSeriesLike) {
-        stringResource(Res.string.details_show_details)
-    } else {
-        stringResource(Res.string.details_movie_details)
+    val rows = detailInfoRows(meta)
+    if (rows.isEmpty()) return
+
+    DetailSection(
+        title = detailInfoTitle(meta),
+        modifier = modifier,
+        showHeader = showHeader,
+    ) {
+        DetailInfoRows(rows = rows)
     }
-    val rows = buildList {
+}
+
+/** What this title's own details table holds, shared by the section and the overview's expander. */
+@Composable
+internal fun detailInfoRows(meta: MetaDetails): List<Pair<String, String>> =
+    buildList {
         meta.status?.let { add(stringResource(Res.string.details_status) to it) }
         meta.releaseInfo?.let {
             add(stringResource(Res.string.details_release_info) to formatReleaseDateForDisplay(it))
@@ -48,13 +58,23 @@ fun DetailAdditionalInfoSection(
             add(stringResource(Res.string.details_original_language) to it.uppercase())
         }
     }
-    if (rows.isEmpty()) return
 
-    DetailSection(
-        title = title,
-        modifier = modifier,
-        showHeader = showHeader,
-    ) {
+@Composable
+internal fun detailInfoTitle(meta: MetaDetails): String {
+    val isSeriesLike = meta.type == "series" || meta.videos.any { it.season != null || it.episode != null }
+    return if (isSeriesLike) {
+        stringResource(Res.string.details_show_details)
+    } else {
+        stringResource(Res.string.details_movie_details)
+    }
+}
+
+@Composable
+internal fun DetailInfoRows(
+    rows: List<Pair<String, String>>,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
         rows.forEachIndexed { index, (label, value) ->
             DetailInfoRow(
                 label = label,
@@ -71,7 +91,7 @@ private fun DetailInfoRow(
     value: String,
     showDivider: Boolean,
 ) {
-    androidx.compose.foundation.layout.Column(
+    Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
