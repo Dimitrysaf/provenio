@@ -1,7 +1,6 @@
 package com.nuvio.app.features.details.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -83,9 +82,7 @@ fun DetailMetaInfo(
     horizontalScrollPadding: Dp = 0.dp,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .animateContentSize(),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         val releaseLine = formatMetaReleaseLineForDetails(meta)
@@ -105,68 +102,76 @@ fun DetailMetaInfo(
             label = "detail_meta_info_chevron",
         )
 
-        if (hasMetaRow || infoRows.isNotEmpty()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(ShapeDefaults.Small)
-                    .clickable(enabled = infoRows.isNotEmpty()) { infoExpanded = !infoExpanded }
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                if (infoExpanded) {
-                    Text(
-                        text = detailInfoTitle(meta),
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.titleMediumEmphasized,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                } else {
-                    MetaFactsLine(
-                        modifier = Modifier.weight(1f),
-                        releaseLine = releaseLine,
-                        runtimeText = runtimeText,
-                        ageBadge = ageBadge,
-                        imdbRating = validImdbRating?.takeIf { !hasMdbImdbRating },
-                    )
+        val hasHeader = hasMetaRow || infoRows.isNotEmpty()
+        if (hasHeader || meta.externalRatings.isNotEmpty()) {
+            // One child of the spaced column, so the rows opening inside it never jump the page below.
+            Column(modifier = Modifier.fillMaxWidth()) {
+                if (hasHeader) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(ShapeDefaults.Small)
+                            .clickable(enabled = infoRows.isNotEmpty()) { infoExpanded = !infoExpanded }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        if (infoExpanded) {
+                            Text(
+                                text = detailInfoTitle(meta),
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.titleMediumEmphasized,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        } else {
+                            MetaFactsLine(
+                                modifier = Modifier.weight(1f),
+                                releaseLine = releaseLine,
+                                runtimeText = runtimeText,
+                                ageBadge = ageBadge,
+                                imdbRating = validImdbRating?.takeIf { !hasMdbImdbRating },
+                            )
+                        }
+                        if (infoRows.isNotEmpty()) {
+                            Icon(
+                                imageVector = Icons.Rounded.ExpandMore,
+                                contentDescription = stringResource(
+                                    if (infoExpanded) {
+                                        Res.string.details_info_collapse
+                                    } else {
+                                        Res.string.details_info_expand
+                                    },
+                                ),
+                                modifier = Modifier.rotate(chevronRotation),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = infoExpanded,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically(),
+                    ) {
+                        DetailInfoRows(rows = infoRows, modifier = Modifier.padding(top = 8.dp))
+                    }
                 }
-                if (infoRows.isNotEmpty()) {
-                    Icon(
-                        imageVector = Icons.Rounded.ExpandMore,
-                        contentDescription = stringResource(
-                            if (infoExpanded) {
-                                Res.string.details_info_collapse
-                            } else {
-                                Res.string.details_info_expand
-                            },
-                        ),
-                        modifier = Modifier.rotate(chevronRotation),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+
+                AnimatedVisibility(
+                    visible = meta.externalRatings.isNotEmpty(),
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically(),
+                ) {
+                    Column(modifier = Modifier.padding(top = if (hasHeader) 12.dp else 0.dp)) {
+                        DetailRatingsRow(
+                            ratings = meta.externalRatings,
+                            horizontalScrollPadding = horizontalScrollPadding,
+                        )
+                    }
                 }
             }
-
-            AnimatedVisibility(
-                visible = infoExpanded,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically(),
-            ) {
-                DetailInfoRows(rows = infoRows)
-            }
-        }
-
-        AnimatedVisibility(
-            visible = meta.externalRatings.isNotEmpty(),
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically(),
-        ) {
-            DetailRatingsRow(
-                ratings = meta.externalRatings,
-                horizontalScrollPadding = horizontalScrollPadding,
-            )
         }
 
         if (meta.director.isNotEmpty()) {

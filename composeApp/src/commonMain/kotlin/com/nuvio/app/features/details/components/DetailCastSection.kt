@@ -10,12 +10,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,8 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -143,15 +143,14 @@ private fun CastItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        // Profile photos are 2:3 portraits, so a frame of that shape shows the whole face rather than a crop of it.
         Box(
             modifier = Modifier
                 .then(avatarSharedElementModifier)
-                .size(sizing.avatarSize)
-                .clip(CircleShape)
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = CircleShape,
-                ),
+                .width(sizing.photoWidth)
+                .aspectRatio(CastPhotoAspectRatio)
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
             if (person.photo != null) {
@@ -170,16 +169,17 @@ private fun CastItem(
                 )
             }
         }
+        // Names wrap to as many lines as they need, splitting a word that does not fit with a hyphen.
         Text(
             text = person.name,
             modifier = Modifier.fillMaxWidth(),
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontSize = sizing.nameLabelSize,
+                hyphens = Hyphens.Auto,
+                lineBreak = LineBreak.Simple,
             ),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
         if (!person.role.isNullOrBlank()) {
             Text(
@@ -187,18 +187,18 @@ private fun CastItem(
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontSize = sizing.subLabelSize,
+                    hyphens = Hyphens.Auto,
+                    lineBreak = LineBreak.Simple,
                 ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
         }
     }
 }
 
 private data class CastSectionSizing(
-    val avatarSize: androidx.compose.ui.unit.Dp,
+    val photoWidth: androidx.compose.ui.unit.Dp,
     val itemWidth: androidx.compose.ui.unit.Dp,
     val avatarGap: androidx.compose.ui.unit.Dp,
     val nameLabelSize: TextUnit,
@@ -208,34 +208,36 @@ private data class CastSectionSizing(
 private fun castSectionSizing(maxWidthDp: Float): CastSectionSizing =
     when {
         maxWidthDp >= 1200f -> CastSectionSizing(
-            avatarSize = 100.dp,
+            photoWidth = 100.dp,
             itemWidth = 112.dp,
             avatarGap = 20.dp,
             nameLabelSize = 16.sp,
             subLabelSize = 14.sp,
         )
         maxWidthDp >= 840f -> CastSectionSizing(
-            avatarSize = 90.dp,
+            photoWidth = 90.dp,
             itemWidth = 102.dp,
             avatarGap = 18.dp,
             nameLabelSize = 15.sp,
             subLabelSize = 13.sp,
         )
         maxWidthDp >= 600f -> CastSectionSizing(
-            avatarSize = 85.dp,
+            photoWidth = 85.dp,
             itemWidth = 98.dp,
             avatarGap = 16.dp,
             nameLabelSize = 14.sp,
             subLabelSize = 12.sp,
         )
         else -> CastSectionSizing(
-            avatarSize = 80.dp,
+            photoWidth = 80.dp,
             itemWidth = 92.dp,
             avatarGap = 16.dp,
             nameLabelSize = 14.sp,
             subLabelSize = 12.sp,
         )
     }
+
+private const val CastPhotoAspectRatio = 2f / 3f
 
 private fun String.initials(): String {
     val parts = trim().split(" ").filter { it.isNotBlank() }
