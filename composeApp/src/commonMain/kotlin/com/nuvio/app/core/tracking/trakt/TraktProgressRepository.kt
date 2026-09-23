@@ -1534,7 +1534,7 @@ object TraktProgressRepository {
     private fun Int.pad2(): String = if (this < 10) "0$this" else "$this"
     private fun Int.pad4(): String = toString().padStart(4, '0')
 
-    private fun com.nuvio.app.features.addons.RawHttpResponse.headerInt(name: String): Int? =
+    private fun com.nuvio.app.core.addons.RawHttpResponse.headerInt(name: String): Int? =
         headers[name.lowercase()]
             ?.substringBefore(',')
             ?.trim()

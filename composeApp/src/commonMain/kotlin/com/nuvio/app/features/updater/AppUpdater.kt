@@ -22,6 +22,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.coroutines.runBlocking
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
+import com.nuvio.app.core.updater.AppUpdaterPlatform
 
 private const val gitHubOwner = "NuvioMedia"
 private const val gitHubRepo = "NuvioMobile"

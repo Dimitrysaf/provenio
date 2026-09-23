@@ -251,7 +251,7 @@ internal fun PlayerScreenModalHosts(
 internal fun selectDownloadedEpisodeForPlayback(
     parentMetaId: String,
     episode: MetaVideo,
-    onDownloadedEpisodeSelected: (com.nuvio.app.features.downloads.DownloadItem, MetaVideo) -> Unit,
+    onDownloadedEpisodeSelected: (com.nuvio.app.core.downloads.DownloadItem, MetaVideo) -> Unit,
 ): Boolean {
     val downloadedEpisode = DownloadsRepository.findPlayableDownload(
         parentMetaId = parentMetaId,

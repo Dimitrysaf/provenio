@@ -1,6 +1,6 @@
 package com.nuvio.app.core.debrid
 
-import com.nuvio.app.features.debrid.DebridStreamPresentation.isManagedDebridStream
+import com.nuvio.app.core.debrid.DebridStreamPresentation.isManagedDebridStream
 import com.nuvio.app.core.streams.StreamClientResolve
 import com.nuvio.app.core.streams.StreamClientResolveParsed
 import com.nuvio.app.core.streams.StreamDebridCacheState

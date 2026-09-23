@@ -1071,7 +1071,7 @@ private fun PlaybackSettingsSection(
                     )
                 }
                 when (autoPlayPlayerSettings.nextEpisodeThresholdMode) {
-                    com.nuvio.app.features.player.skip.NextEpisodeThresholdMode.PERCENTAGE -> {
+                    com.nuvio.app.core.playback.skip.NextEpisodeThresholdMode.PERCENTAGE -> {
                         val thresholdPercent = autoPlayPlayerSettings.nextEpisodeThresholdPercent
                         shapedRow { shape ->
                         SettingsSliderContainer(shape = shape, enabled = true) {
@@ -1128,7 +1128,7 @@ private fun PlaybackSettingsSection(
                         }
                         }
                     }
-                    com.nuvio.app.features.player.skip.NextEpisodeThresholdMode.MINUTES_BEFORE_END -> {
+                    com.nuvio.app.core.playback.skip.NextEpisodeThresholdMode.MINUTES_BEFORE_END -> {
                         val thresholdMinutes = autoPlayPlayerSettings.nextEpisodeThresholdMinutesBeforeEnd
                         shapedRow { shape ->
                         SettingsSliderContainer(shape = shape, enabled = true) {
@@ -2199,7 +2199,7 @@ private fun IntroDbApiKeyDialog(
                             isVerifying = true
                             errorMessage = null
                             scope.launch {
-                                val isValid = com.nuvio.app.features.player.skip.SkipIntroRepository.verifyIntroDbApiKey(trimmed)
+                                val isValid = com.nuvio.app.core.playback.skip.SkipIntroRepository.verifyIntroDbApiKey(trimmed)
                                 isVerifying = false
                                 if (isValid) {
                                     onSave(trimmed)
@@ -2226,13 +2226,13 @@ private fun IntroDbApiKeyDialog(
 
 @Composable
 private fun NextEpisodeThresholdModeDialog(
-    selected: com.nuvio.app.features.player.skip.NextEpisodeThresholdMode,
-    onSelect: (com.nuvio.app.features.player.skip.NextEpisodeThresholdMode) -> Unit,
+    selected: com.nuvio.app.core.playback.skip.NextEpisodeThresholdMode,
+    onSelect: (com.nuvio.app.core.playback.skip.NextEpisodeThresholdMode) -> Unit,
     onDismiss: () -> Unit,
 ) {
     SingleChoiceBottomSheet(
         title = stringResource(Res.string.settings_playback_threshold_mode),
-        options = com.nuvio.app.features.player.skip.NextEpisodeThresholdMode.entries.map { mode ->
+        options = com.nuvio.app.core.playback.skip.NextEpisodeThresholdMode.entries.map { mode ->
             SingleChoiceOption(value = mode, label = stringResource(mode.labelRes))
         },
         isSelected = { it == selected },
@@ -2266,11 +2266,11 @@ private val StreamAutoPlayMode.labelRes: StringResource
         StreamAutoPlayMode.REGEX_MATCH -> Res.string.settings_playback_stream_selection_mode_regex
     }
 
-private val com.nuvio.app.features.player.skip.NextEpisodeThresholdMode.labelRes: StringResource
+private val com.nuvio.app.core.playback.skip.NextEpisodeThresholdMode.labelRes: StringResource
     get() = when (this) {
-        com.nuvio.app.features.player.skip.NextEpisodeThresholdMode.PERCENTAGE ->
+        com.nuvio.app.core.playback.skip.NextEpisodeThresholdMode.PERCENTAGE ->
             Res.string.settings_playback_threshold_mode_percentage
-        com.nuvio.app.features.player.skip.NextEpisodeThresholdMode.MINUTES_BEFORE_END ->
+        com.nuvio.app.core.playback.skip.NextEpisodeThresholdMode.MINUTES_BEFORE_END ->
             Res.string.settings_playback_threshold_mode_minutes_before_end
     }
 

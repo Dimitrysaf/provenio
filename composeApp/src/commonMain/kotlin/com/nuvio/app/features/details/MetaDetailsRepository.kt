@@ -298,7 +298,7 @@ object MetaDetailsRepository {
         return findMetaManifests(readyState, type, id)
     }
 
-    private fun findMetaManifests(state: com.nuvio.app.features.addons.AddonsUiState, type: String, id: String): List<AddonManifest> =
+    private fun findMetaManifests(state: com.nuvio.app.core.addons.AddonsUiState, type: String, id: String): List<AddonManifest> =
         state.addons
             .enabledAddons()
             .mapNotNull { it.manifest }
@@ -310,7 +310,7 @@ object MetaDetailsRepository {
                 }
             }
 
-    private fun com.nuvio.app.features.addons.AddonsUiState.hasPendingEnabledAddonManifests(): Boolean =
+    private fun com.nuvio.app.core.addons.AddonsUiState.hasPendingEnabledAddonManifests(): Boolean =
         addons.enabledAddons().any { addon -> addon.manifest == null && addon.isRefreshing }
 
     private suspend fun resolveMetaLookupId(itemId: String, itemType: String): String {
@@ -342,7 +342,7 @@ object MetaDetailsRepository {
         meta: MetaDetails,
         fallbackItemId: String,
         fallbackItemType: String,
-        mdbListSettings: com.nuvio.app.features.mdblist.MdbListSettings,
+        mdbListSettings: com.nuvio.app.core.metadata.mdblist.MdbListSettings,
         metaScreenSettingsFingerprint: String,
     ) {
         val cachedEntry = CachedMetaEntry(baseMeta = meta)
@@ -381,7 +381,7 @@ object MetaDetailsRepository {
         meta: MetaDetails,
         fallbackItemId: String,
         fallbackItemType: String,
-        settings: com.nuvio.app.features.mdblist.MdbListSettings,
+        settings: com.nuvio.app.core.metadata.mdblist.MdbListSettings,
         settingsFingerprint: String,
     ): MetaDetails {
         val mdbListEnrichedMeta = withTimeoutOrNull(MDBLIST_ENRICH_TIMEOUT_MS) {
@@ -457,7 +457,7 @@ object MetaDetailsRepository {
     private fun shouldFetchMdbListOnMetaScreen(
         meta: MetaDetails,
         fallbackItemId: String,
-        settings: com.nuvio.app.features.mdblist.MdbListSettings,
+        settings: com.nuvio.app.core.metadata.mdblist.MdbListSettings,
     ): Boolean = MdbListMetadataService.shouldFetchForMeta(
         meta = meta,
         fallbackItemId = fallbackItemId,
@@ -467,7 +467,7 @@ object MetaDetailsRepository {
     private fun shouldEnrichForMetaScreen(
         meta: MetaDetails,
         fallbackItemId: String,
-        settings: com.nuvio.app.features.mdblist.MdbListSettings,
+        settings: com.nuvio.app.core.metadata.mdblist.MdbListSettings,
     ): Boolean {
         if (shouldFetchMdbListOnMetaScreen(meta, fallbackItemId, settings)) return true
         return shouldApplyMoreLikeThisSource(meta)
@@ -488,7 +488,7 @@ object MetaDetailsRepository {
     }
 
     private fun buildMetaScreenSettingsFingerprint(
-        settings: com.nuvio.app.features.mdblist.MdbListSettings,
+        settings: com.nuvio.app.core.metadata.mdblist.MdbListSettings,
     ): String {
         TrackingSettingsRepository.ensureLoaded()
         TraktAuthRepository.ensureLoaded()
@@ -526,7 +526,7 @@ object MetaDetailsRepository {
     }
 
    
-    fun findEmbeddedStreams(videoId: String): List<com.nuvio.app.features.streams.StreamItem> {
+    fun findEmbeddedStreams(videoId: String): List<com.nuvio.app.core.streams.StreamItem> {
         val meta = _uiState.value.meta ?: return emptyList()
         val videosWithStreams = meta.videos.filter { it.streams.isNotEmpty() }
         if (videosWithStreams.isEmpty()) return emptyList()

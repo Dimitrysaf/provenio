@@ -60,7 +60,7 @@ internal class TorboxCloudLibraryProviderApi : CloudLibraryProviderApi {
         }
     }
 
-    private fun com.nuvio.app.features.debrid.DebridApiResponse<com.nuvio.app.features.debrid.TorboxEnvelopeDto<List<TorboxCloudItemDto>>>.itemsOrThrow(
+    private fun com.nuvio.app.core.debrid.DebridApiResponse<com.nuvio.app.core.debrid.TorboxEnvelopeDto<List<TorboxCloudItemDto>>>.itemsOrThrow(
         type: CloudLibraryItemType,
     ): List<CloudLibraryItem> =
         toCloudLibraryItemsOrThrow(
@@ -70,7 +70,7 @@ internal class TorboxCloudLibraryProviderApi : CloudLibraryProviderApi {
         )
 }
 
-internal fun com.nuvio.app.features.debrid.DebridApiResponse<com.nuvio.app.features.debrid.TorboxEnvelopeDto<List<TorboxCloudItemDto>>>.toCloudLibraryItemsOrThrow(
+internal fun com.nuvio.app.core.debrid.DebridApiResponse<com.nuvio.app.core.debrid.TorboxEnvelopeDto<List<TorboxCloudItemDto>>>.toCloudLibraryItemsOrThrow(
     providerId: String,
     providerName: String,
     type: CloudLibraryItemType,

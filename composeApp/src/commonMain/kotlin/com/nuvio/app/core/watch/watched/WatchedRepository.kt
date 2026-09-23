@@ -903,7 +903,7 @@ object WatchedRepository {
     fun reconcileSeriesWatchedState(
         meta: MetaDetails,
         todayIsoDate: String,
-        isEpisodeCompleted: (com.nuvio.app.features.details.MetaVideo) -> Boolean = { false },
+        isEpisodeCompleted: (com.nuvio.app.core.metadata.MetaVideo) -> Boolean = { false },
     ) {
         if (!meta.type.isSeriesLikeWatchedType()) return
 
@@ -940,7 +940,7 @@ object WatchedRepository {
             } else {
                 val episodeNumber = episode.episode
                 if (episodeNumber != null) {
-                    com.nuvio.app.features.simkl.SimklAnimeWatchedFallback.isWatched(episode.id, episodeNumber)
+                    com.nuvio.app.core.tracking.simkl.SimklAnimeWatchedFallback.isWatched(episode.id, episodeNumber)
                 } else {
                     false
                 }

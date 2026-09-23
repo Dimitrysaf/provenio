@@ -42,7 +42,7 @@ internal object SkipIntroApi {
             "Content-Type" to "application/json"
         )
         return try {
-            val response = com.nuvio.app.features.addons.httpRequestRaw(
+            val response = com.nuvio.app.core.addons.httpRequestRaw(
                 method = "POST",
                 url = url,
                 headers = headers,
@@ -63,7 +63,7 @@ internal object SkipIntroApi {
             "Content-Type" to "application/json"
         )
         return try {
-            val response = com.nuvio.app.features.addons.httpRequestRaw(
+            val response = com.nuvio.app.core.addons.httpRequestRaw(
                 method = "POST",
                 url = url,
                 headers = headers,

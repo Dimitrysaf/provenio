@@ -1,12 +1,12 @@
 package com.nuvio.app.features.details
 
-import com.nuvio.app.features.details.MetaScreenSectionKey.ACTIONS
-import com.nuvio.app.features.details.MetaScreenSectionKey.CAST
-import com.nuvio.app.features.details.MetaScreenSectionKey.COMMENTS
-import com.nuvio.app.features.details.MetaScreenSectionKey.DETAILS
-import com.nuvio.app.features.details.MetaScreenSectionKey.EPISODES
-import com.nuvio.app.features.details.MetaScreenSectionKey.MORE_LIKE_THIS
-import com.nuvio.app.features.details.MetaScreenSectionKey.OVERVIEW
+import com.nuvio.app.core.metadata.MetaScreenSectionKey.ACTIONS
+import com.nuvio.app.core.metadata.MetaScreenSectionKey.CAST
+import com.nuvio.app.core.metadata.MetaScreenSectionKey.COMMENTS
+import com.nuvio.app.core.metadata.MetaScreenSectionKey.DETAILS
+import com.nuvio.app.core.metadata.MetaScreenSectionKey.EPISODES
+import com.nuvio.app.core.metadata.MetaScreenSectionKey.MORE_LIKE_THIS
+import com.nuvio.app.core.metadata.MetaScreenSectionKey.OVERVIEW
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

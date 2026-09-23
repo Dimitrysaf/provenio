@@ -46,7 +46,7 @@ actual fun PlatformPlayerSurface(
     sourceAudioUrl: String?,
     sourceHeaders: Map<String, String>,
     sourceResponseHeaders: Map<String, String>,
-    externalSubtitles: List<com.nuvio.app.features.streams.StreamSubtitle>,
+    externalSubtitles: List<com.nuvio.app.core.streams.StreamSubtitle>,
     streamType: String?,
     useYoutubeChunkedPlayback: Boolean,
     modifier: Modifier,
@@ -454,7 +454,7 @@ private fun Int.toHexByte(): String {
     }
 }
 
-private fun encodeExternalSubtitlesForBridge(subtitles: List<com.nuvio.app.features.streams.StreamSubtitle>): String? {
+private fun encodeExternalSubtitlesForBridge(subtitles: List<com.nuvio.app.core.streams.StreamSubtitle>): String? {
     if (subtitles.isEmpty()) return null
     return runCatching {
         Json.encodeToString(subtitles)

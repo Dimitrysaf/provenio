@@ -6,6 +6,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import com.nuvio.app.features.player.mergeStreamAndAddonSubtitles
+import com.nuvio.app.features.player.AddonSubtitle
+import com.nuvio.app.features.player.isLocalSubtitleUri
 
 class PlayerStartupSubtitlesTest {
     @Test

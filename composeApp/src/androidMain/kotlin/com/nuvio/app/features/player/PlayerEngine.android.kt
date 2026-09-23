@@ -112,7 +112,7 @@ actual fun PlatformPlayerSurface(
     sourceAudioUrl: String?,
     sourceHeaders: Map<String, String>,
     sourceResponseHeaders: Map<String, String>,
-    externalSubtitles: List<com.nuvio.app.features.streams.StreamSubtitle>,
+    externalSubtitles: List<com.nuvio.app.core.streams.StreamSubtitle>,
     streamType: String?,
     useYoutubeChunkedPlayback: Boolean,
     modifier: Modifier,
@@ -218,7 +218,7 @@ private fun ExoPlayerSurface(
     sourceAudioUrl: String?,
     sourceHeaders: Map<String, String>,
     sourceResponseHeaders: Map<String, String>,
-    externalSubtitles: List<com.nuvio.app.features.streams.StreamSubtitle>,
+    externalSubtitles: List<com.nuvio.app.core.streams.StreamSubtitle>,
     streamType: String?,
     useYoutubeChunkedPlayback: Boolean,
     modifier: Modifier,
@@ -980,7 +980,7 @@ private fun LibmpvPlayerSurface(
     sourceUrl: String,
     sourceAudioUrl: String?,
     sourceHeaders: Map<String, String>,
-    externalSubtitles: List<com.nuvio.app.features.streams.StreamSubtitle>,
+    externalSubtitles: List<com.nuvio.app.core.streams.StreamSubtitle>,
     modifier: Modifier,
     playWhenReady: Boolean,
     resizeMode: PlayerResizeMode,
@@ -1285,7 +1285,7 @@ private class NuvioLibmpvView(
     private var currentSourceUrl: String? = null
     private var currentSourceAudioUrl: String? = null
     private var currentRequestHeaders: Map<String, String> = emptyMap()
-    private var currentExternalSubtitles: List<com.nuvio.app.features.streams.StreamSubtitle> = emptyList()
+    private var currentExternalSubtitles: List<com.nuvio.app.core.streams.StreamSubtitle> = emptyList()
     @Volatile
     private var latestSnapshot = PlayerPlaybackSnapshot()
     @Volatile
@@ -1334,7 +1334,7 @@ private class NuvioLibmpvView(
         sourceUrl: String,
         sourceAudioUrl: String?,
         requestHeaders: Map<String, String>,
-        externalSubtitles: List<com.nuvio.app.features.streams.StreamSubtitle>,
+        externalSubtitles: List<com.nuvio.app.core.streams.StreamSubtitle>,
         playWhenReady: Boolean,
     ) = withContext(mpvDispatcher) {
         if (!released.get()) {
@@ -2338,7 +2338,7 @@ private fun diagnosticThrowableChain(value: Throwable): String =
 
 internal class SubtitleRequestHeaderDataSourceFactory(
     private val upstreamFactory: DataSource.Factory,
-    private val externalSubtitles: List<com.nuvio.app.features.streams.StreamSubtitle>,
+    private val externalSubtitles: List<com.nuvio.app.core.streams.StreamSubtitle>,
 ) : DataSource.Factory {
     override fun createDataSource(): DataSource =
         SubtitleRequestHeaderDataSource(
@@ -2349,7 +2349,7 @@ internal class SubtitleRequestHeaderDataSourceFactory(
 
 internal class SubtitleRequestHeaderDataSource(
     private val upstream: DataSource,
-    private val externalSubtitles: List<com.nuvio.app.features.streams.StreamSubtitle>,
+    private val externalSubtitles: List<com.nuvio.app.core.streams.StreamSubtitle>,
 ) : DataSource {
     override fun addTransferListener(transferListener: TransferListener) {
         upstream.addTransferListener(transferListener)

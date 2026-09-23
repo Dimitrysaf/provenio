@@ -45,7 +45,7 @@ object WatchingState {
         val videoId = episode.id
         val episodeNumber = episode.episode
         if (episodeNumber != null) {
-            return com.nuvio.app.features.simkl.SimklAnimeWatchedFallback.isWatched(videoId, episodeNumber)
+            return com.nuvio.app.core.tracking.simkl.SimklAnimeWatchedFallback.isWatched(videoId, episodeNumber)
         }
         return false
     }

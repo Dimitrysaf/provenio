@@ -222,7 +222,7 @@ internal object PluginRuntime {
                         }
                         ?.toMap()
                         ?.takeIf { it.isNotEmpty() }
-                    com.nuvio.app.features.plugins.PluginSubtitleResult(
+                    com.nuvio.app.core.plugins.PluginSubtitleResult(
                         url = subUrl,
                         language = subLang,
                         name = subName,

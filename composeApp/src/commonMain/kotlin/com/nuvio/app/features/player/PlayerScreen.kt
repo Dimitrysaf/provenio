@@ -12,7 +12,7 @@ fun PlayerScreen(
     sourceAudioUrl: String? = null,
     sourceHeaders: Map<String, String> = emptyMap(),
     sourceResponseHeaders: Map<String, String> = emptyMap(),
-    externalSubtitles: List<com.nuvio.app.features.streams.StreamSubtitle> = emptyList(),
+    externalSubtitles: List<com.nuvio.app.core.streams.StreamSubtitle> = emptyList(),
     streamType: String? = null,
     providerName: String,
     streamTitle: String,

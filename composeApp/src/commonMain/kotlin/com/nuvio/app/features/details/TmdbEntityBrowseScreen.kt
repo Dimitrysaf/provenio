@@ -309,7 +309,7 @@ private fun WideEntityBrowseContent(
 
 @Composable
 private fun EntityIdentitySidebar(
-    header: com.nuvio.app.features.tmdb.TmdbEntityHeader,
+    header: com.nuvio.app.core.metadata.tmdb.TmdbEntityHeader,
     catalogueCount: Int,
     modifier: Modifier = Modifier,
 ) {
@@ -480,7 +480,7 @@ private fun EntitySidebarLabel(text: String) {
 }
 
 @Composable
-private fun entityRailTitle(rail: com.nuvio.app.features.tmdb.TmdbEntityRail): String {
+private fun entityRailTitle(rail: com.nuvio.app.core.metadata.tmdb.TmdbEntityRail): String {
     val mediaLabel = when (rail.mediaType) {
         TmdbEntityMediaType.MOVIE -> stringResource(Res.string.media_movies)
         TmdbEntityMediaType.TV -> stringResource(Res.string.media_series)
@@ -495,7 +495,7 @@ private fun entityRailTitle(rail: com.nuvio.app.features.tmdb.TmdbEntityRail): S
 
 @Composable
 private fun EntityHeroSection(
-    header: com.nuvio.app.features.tmdb.TmdbEntityHeader,
+    header: com.nuvio.app.core.metadata.tmdb.TmdbEntityHeader,
     modifier: Modifier = Modifier,
 ) {
     val hasLogo = !header.logo.isNullOrBlank()

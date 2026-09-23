@@ -241,7 +241,7 @@ object PlayerStreamsRepository {
         if (installedAddons.isEmpty() && pluginProviderGroups.isEmpty()) {
             stateFlow.value = StreamsUiState(
                 isAnyLoading = false,
-                emptyStateReason = com.nuvio.app.features.streams.StreamsEmptyStateReason.NoAddonsInstalled,
+                emptyStateReason = com.nuvio.app.core.streams.StreamsEmptyStateReason.NoAddonsInstalled,
             )
             return
         }
@@ -267,7 +267,7 @@ object PlayerStreamsRepository {
         if (streamAddons.isEmpty() && pluginProviderGroups.isEmpty()) {
             stateFlow.value = StreamsUiState(
                 isAnyLoading = false,
-                emptyStateReason = com.nuvio.app.features.streams.StreamsEmptyStateReason.NoCompatibleAddons,
+                emptyStateReason = com.nuvio.app.core.streams.StreamsEmptyStateReason.NoCompatibleAddons,
             )
             return
         }
@@ -531,7 +531,7 @@ object PlayerStreamsRepository {
 private data class PlayerInstalledStreamAddonTarget(
     val addonName: String,
     val addonId: String,
-    val manifest: com.nuvio.app.features.addons.AddonManifest,
+    val manifest: com.nuvio.app.core.addons.AddonManifest,
 )
 
 private fun StreamsUiState.streamDiagnostics(): String {
@@ -553,6 +553,6 @@ private fun StreamsUiState.streamDiagnostics(): String {
         "sample=$sampleGroups$suffix"
 }
 
-private fun com.nuvio.app.features.addons.ManagedAddon.streamAddonInstanceId(manifestId: String): String =
+private fun com.nuvio.app.core.addons.ManagedAddon.streamAddonInstanceId(manifestId: String): String =
     "addon:$manifestId:$manifestUrl"
 

@@ -76,7 +76,7 @@ suspend fun resolveWatchedBadgesBulk(
                         } else {
                             val episodeNumber = episode.episode
                             if (episodeNumber != null) {
-                                com.nuvio.app.features.simkl.SimklAnimeWatchedFallback.isWatched(episode.id, episodeNumber)
+                                com.nuvio.app.core.tracking.simkl.SimklAnimeWatchedFallback.isWatched(episode.id, episodeNumber)
                             } else {
                                 false
                             }
@@ -145,7 +145,7 @@ private fun getActiveProviderSiblingMap(): Map<String, Set<String>> {
     val effectiveSource = effectiveWatchProgressSource(
         requestedSource = source,
         isProviderAuthenticated = { providerId ->
-            com.nuvio.app.features.tracking.TrackingProviderRegistry.isAuthenticated(providerId)
+            com.nuvio.app.core.tracking.TrackingProviderRegistry.isAuthenticated(providerId)
         },
     )
     return when (effectiveSource.providerId) {

@@ -35,6 +35,13 @@ import nuvio.composeapp.generated.resources.collections_trakt_request_failed
 import org.jetbrains.compose.resources.getString
 import kotlin.math.roundToInt
 import com.nuvio.app.core.tracking.trakt.TraktImagesDto
+import com.nuvio.app.core.tracking.trakt.TraktConfig
+import com.nuvio.app.core.tracking.trakt.TraktExternalIds
+import com.nuvio.app.core.tracking.trakt.firstTraktImageUrl
+import com.nuvio.app.core.tracking.trakt.normalizeTraktContentId
+import com.nuvio.app.core.tracking.trakt.traktBestBackdropUrl
+import com.nuvio.app.core.tracking.trakt.traktBestLogoUrl
+import com.nuvio.app.core.tracking.trakt.traktBestPosterUrl
 
 data class TraktPublicListImportMetadata(
     val title: String? = null,

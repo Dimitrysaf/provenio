@@ -381,7 +381,7 @@ fun buildPlaybackVideoId(
     seasonNumber: Int?,
     episodeNumber: Int?,
     fallbackVideoId: String? = null,
-): String = com.nuvio.app.features.watching.domain.buildPlaybackVideoId(
+): String = com.nuvio.app.core.watch.watching.domain.buildPlaybackVideoId(
     content = WatchingContentRef(type = "", id = parentMetaId),
     seasonNumber = seasonNumber,
     episodeNumber = episodeNumber,

@@ -63,6 +63,7 @@ import kotlin.math.roundToInt
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.settings.CommunityConfig
 
 private enum class CommunityTab {
     Contributors,
