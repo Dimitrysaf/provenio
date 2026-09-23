@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -21,11 +23,12 @@ import com.nuvio.app.features.tracking.TrackingLibraryTab
 import com.nuvio.app.features.tracking.trackingMembershipDestinations
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.cd_selected
 import nuvio.composeapp.generated.resources.compose_tracking_list_picker_loading
 import nuvio.composeapp.generated.resources.compose_tracking_list_picker_subtitle
 import org.jetbrains.compose.resources.stringResource
 
-// Each list is a toggle that applies as soon as it flips, so the sheet needs no save or cancel.
+// Tapping a list checks or unchecks it and saves at once, so the sheet needs no save or cancel.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackingListPickerSheet(
@@ -107,8 +110,12 @@ fun TrackingListPickerSheet(
                         headline = tab.title,
                         enabled = !isPending,
                         trailingContent = {
-                            // Null handler: the row owns the tap, so the switch only shows the state.
-                            Switch(checked = checked, onCheckedChange = null, enabled = !isPending)
+                            if (checked) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = stringResource(Res.string.cd_selected),
+                                )
+                            }
                         },
                     )
                 }
