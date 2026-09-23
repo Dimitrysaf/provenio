@@ -224,10 +224,6 @@ fun resolvePreferredSubtitleLanguageTargets(
     }
 }
 
-internal expect object DeviceLanguagePreferences {
-    fun preferredLanguageCodes(): List<String>
-}
-
 fun inferForcedSubtitleTrack(
     label: String?,
     language: String?,

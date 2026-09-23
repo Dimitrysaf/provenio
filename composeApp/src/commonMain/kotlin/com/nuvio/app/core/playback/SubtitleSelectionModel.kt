@@ -135,7 +135,7 @@ internal fun subtitleLanguageKey(language: String?): String {
     }
 }
 
-private fun SubtitleTrack.subtitleLanguageKey(): String {
+internal fun SubtitleTrack.subtitleLanguageKey(): String {
     val normalized = subtitleLanguageKey(language)
     val haystack = listOf(label, language, id).filterNotNull().joinToString(" ").lowercase()
     return when (normalized) {

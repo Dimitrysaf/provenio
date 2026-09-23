@@ -6,6 +6,7 @@ import com.nuvio.app.core.addons.enabledAddons
 import com.nuvio.app.core.playback.AddonSubtitle
 import com.nuvio.app.core.playback.SubtitleLanguageMatching
 import com.nuvio.app.core.playback.SubtitleLanguageOption
+import com.nuvio.app.core.playback.DeviceLanguagePreferences
 
 internal fun filterAddonSubtitlesForSettings(
     subtitles: List<AddonSubtitle>,

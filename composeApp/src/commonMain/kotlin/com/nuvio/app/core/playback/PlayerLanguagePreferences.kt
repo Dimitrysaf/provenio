@@ -437,3 +437,7 @@ fun languageMatchesPreference(trackLanguage: String?, targetLanguage: String): B
     val targetPrimary = normalizedTarget.substringBefore('-')
     return trackPrimary == targetPrimary
 }
+
+internal expect object DeviceLanguagePreferences {
+    fun preferredLanguageCodes(): List<String>
+}
