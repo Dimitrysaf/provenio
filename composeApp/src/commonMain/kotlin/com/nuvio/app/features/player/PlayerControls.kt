@@ -492,24 +492,25 @@ private fun PrimaryControlButton(
         label = "player_primary_corner",
     )
     val shape = RoundedCornerShape(corner)
+    val contentColor = MaterialTheme.colorScheme.onSecondaryContainer
     Box(
         modifier = Modifier
             .size(size)
             .clip(shape)
-            .background(PlayerScrimColor)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         if (icon == null) {
             NuvioLoadingIndicator(
-                color = Color.White,
+                color = contentColor,
                 modifier = Modifier.size(metrics.playIconSize),
             )
         } else {
             Icon(
                 imageVector = icon,
                 contentDescription = contentDescription,
-                tint = Color.White,
+                tint = contentColor,
                 modifier = Modifier.size(metrics.playIconSize),
             )
         }
