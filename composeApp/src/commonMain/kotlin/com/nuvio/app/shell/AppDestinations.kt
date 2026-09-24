@@ -331,7 +331,7 @@ internal fun appEntryProvider(
             navController = navController,
             useNativeNavigation = useNativeNavigation,
             downloadsTitle = titles.downloads,
-            titles.collections = titles.collections,
+            collectionsTitle = titles.collections,
             onCheckForUpdates = if (AppFeaturePolicy.inAppUpdaterEnabled) {
                 { appUpdaterController.checkForUpdates(force = true, showNoUpdateFeedback = true) }
             } else null,
@@ -390,7 +390,7 @@ internal fun appEntryProvider(
         CollectionsDestination(
             route = route,
             navController = navController,
-            titles.newCollection = titles.newCollection,
+            newCollectionTitle = titles.newCollection,
         )
     }
     entry<CollectionEditorRoute> { route ->
