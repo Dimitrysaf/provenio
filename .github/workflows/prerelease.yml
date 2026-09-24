@@ -1,0 +1,61 @@
+name: Prerelease
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'fix/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prerelease-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  beta:
+    name: Build beta
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up environment
+        uses: ./.github/actions/setup-environment
+
+      - name: Building app
+        uses: ./.github/actions/build-app
+        with:
+          build-type: debug
+          gradle-args: -Pprovenio.abiSplits=true --no-configuration-cache
+          artifact-name: provenio-beta
+
+      - name: Publish beta app
+        if: github.ref == 'refs/heads/main'
+        run: |
+          short_sha="${GITHUB_SHA::7}"
+          gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}" --jq '.commit.message' > notes.md
+          if gh release view beta --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1 </dev/null; then
+            echo "Deleting the previous beta release"
+            gh release delete beta --repo "${GITHUB_REPOSITORY}" --yes </dev/null
+          fi
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/beta" >/dev/null 2>&1 </dev/null; then
+            echo "Deleting the previous beta tag"
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/tags/beta" </dev/null
+          fi
+          gh release create beta \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --title "Provenio Beta channel ${short_sha}" \
+            --notes-file notes.md \
+            --prerelease \
+            dist/*.apk </dev/null

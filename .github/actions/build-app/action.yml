@@ -1,0 +1,51 @@
+name: Build app
+description: Builds the full APKs, names them for the updater and uploads them as an artifact.
+
+inputs:
+  build-type:
+    description: debug or release
+    required: true
+  gradle-args:
+    description: Extra Gradle arguments
+    required: false
+    default: ""
+  artifact-name:
+    description: Name of the uploaded artifact
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        BUILD_TYPE: ${{ inputs.build-type }}
+        GRADLE_ARGS: ${{ inputs.gradle-args }}
+      run: |
+        task=":androidApp:assembleFull${BUILD_TYPE^}"
+        echo "Running ${task}"
+        ./gradlew "${task}" ${GRADLE_ARGS} --stacktrace --priority=normal
+
+        mkdir -p dist
+        for apk in androidApp/build/outputs/apk/full/"${BUILD_TYPE}"/*.apk; do
+          case "$(basename "${apk}")" in
+            *-universal-*) name="Provenio.apk" ;;
+            *-arm64-v8a-*) name="Provenio-arm64v8.apk" ;;
+            *-armeabi-v7a-*) name="Provenio-armv7.apk" ;;
+            *-x86_64-*) name="Provenio-x86_64.apk" ;;
+            *-x86-*) name="Provenio-x86.apk" ;;
+            *) continue ;;
+          esac
+          cp "${apk}" "dist/${name}"
+        done
+        if [[ ! -f dist/Provenio.apk ]]; then
+          echo "No universal APK was built." >&2
+          exit 1
+        fi
+        ls -l dist
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: dist/*.apk
+        if-no-files-found: error
+        retention-days: 14

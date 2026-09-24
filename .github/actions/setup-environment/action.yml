@@ -1,0 +1,49 @@
+name: Set up environment
+description: Java, Gradle and local.properties; signing when a keystore is given.
+
+inputs:
+  local-properties-base64:
+    description: Base64 local.properties with the release keys. Empty for an unsigned build.
+    required: false
+    default: ""
+  keystore-base64:
+    description: Base64 release keystore. Empty for an unsigned build.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v5
+      with:
+        distribution: temurin
+        java-version: 17
+
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: false
+
+    - shell: bash
+      env:
+        LOCAL_PROPERTIES_BASE64: ${{ inputs.local-properties-base64 }}
+        KEYSTORE_BASE64: ${{ inputs.keystore-base64 }}
+      run: |
+        if [[ -z "${KEYSTORE_BASE64}" ]]; then
+          echo "No keystore given, writing a placeholder local.properties"
+          touch local.properties
+          exit 0
+        fi
+
+        echo "Setting up release signing"
+        keystore_path="${RUNNER_TEMP}/provenio-release.jks"
+        printf '%s' "${KEYSTORE_BASE64}" | base64 --decode > "${keystore_path}"
+        printf '%s' "${LOCAL_PROPERTIES_BASE64}" | base64 --decode > local.properties
+        sed -i -E '/^[[:space:]]*(sdk\.dir|PROVENIO_RELEASE_STORE_FILE)[[:space:]]*=/d' local.properties
+        printf '\nPROVENIO_RELEASE_STORE_FILE=%s\n' "${keystore_path}" >> local.properties
+
+        for property_name in PROVENIO_RELEASE_STORE_PASSWORD PROVENIO_RELEASE_KEY_ALIAS PROVENIO_RELEASE_KEY_PASSWORD; do
+          if ! grep -Eq "^${property_name}=.+" local.properties; then
+            echo "Missing required property: ${property_name}" >&2
+            exit 1
+          fi
+        done
