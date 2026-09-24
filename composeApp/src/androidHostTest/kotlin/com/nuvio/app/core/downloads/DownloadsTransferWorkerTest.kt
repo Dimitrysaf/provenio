@@ -20,7 +20,6 @@ import org.robolectric.annotation.Config
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import com.nuvio.app.features.downloads.DownloadsTransferWorker
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [26, 34])

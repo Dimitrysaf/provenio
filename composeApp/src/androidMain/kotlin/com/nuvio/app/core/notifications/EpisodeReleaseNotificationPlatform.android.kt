@@ -38,7 +38,6 @@ import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import com.nuvio.app.features.notifications.EpisodeReleaseNotificationWorker
 
 internal actual object EpisodeReleaseNotificationPlatform {
     private const val permissionRequestCode = 4607

@@ -1,11 +1,9 @@
 package com.nuvio.app.shell.nav
 
 import androidx.navigation3.runtime.NavKey
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.AppRoute")
 sealed interface AppRoute : NavKey {
     val title: String?
         get() = null
@@ -27,18 +25,15 @@ sealed interface AppRoute : NavKey {
 }
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.SettingsDestinationRoute")
 sealed interface SettingsDestinationRoute : AppRoute {
     override val preferredTabName: String
         get() = "Settings"
 }
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.TabsRoute")
 data object TabsRoute : AppRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.DetailRoute")
 data class DetailRoute(
     val type: String,
     val id: String,
@@ -46,7 +41,6 @@ data class DetailRoute(
 ) : AppRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.PersonDetailRoute")
 data class PersonDetailRoute(
     val personId: Int,
     val personName: String,
@@ -59,7 +53,6 @@ data class PersonDetailRoute(
 }
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.EntityBrowseRoute")
 data class EntityBrowseRoute(
     val entityKind: String,
     val entityId: Int,
@@ -72,68 +65,54 @@ data class EntityBrowseRoute(
 
 /** A settings leaf promoted from the former in-screen page state machine. */
 @Serializable
-@SerialName("com.nuvio.app.navigation.SettingsPageRoute")
 data class SettingsPageRoute(
     val pageName: String,
     override val title: String,
 ) : SettingsDestinationRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.HomescreenSettingsRoute")
 data class HomescreenSettingsRoute(override val title: String = "") : SettingsDestinationRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.MetaScreenSettingsRoute")
 data class MetaScreenSettingsRoute(override val title: String = "") : SettingsDestinationRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.ContinueWatchingSettingsRoute")
 data class ContinueWatchingSettingsRoute(override val title: String = "") : SettingsDestinationRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.DownloadsSettingsRoute")
 data class DownloadsSettingsRoute(override val title: String = "") : SettingsDestinationRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.DownloadShowRoute")
 data class DownloadShowRoute(
     val showId: String,
     override val title: String,
 ) : AppRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.AddonsSettingsRoute")
 data class AddonsSettingsRoute(override val title: String = "") : SettingsDestinationRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.PluginsSettingsRoute")
 data class PluginsSettingsRoute(override val title: String = "") : SettingsDestinationRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.AccountSettingsRoute")
 data class AccountSettingsRoute(override val title: String = "") : SettingsDestinationRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.SupportersContributorsSettingsRoute")
 data class SupportersContributorsSettingsRoute(override val title: String = "") : SettingsDestinationRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.LicensesAttributionsSettingsRoute")
 data class LicensesAttributionsSettingsRoute(override val title: String = "") : SettingsDestinationRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.CollectionsRoute")
 data class CollectionsRoute(override val title: String = "") : SettingsDestinationRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.CollectionEditorRoute")
 data class CollectionEditorRoute(
     val collectionId: String? = null,
     override val title: String = "",
 ) : AppRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.CollectionEditorPageRoute")
 data class CollectionEditorPageRoute(
     val collectionId: String? = null,
     val pageName: String,
@@ -141,7 +120,6 @@ data class CollectionEditorPageRoute(
 ) : AppRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.FolderDetailRoute")
 data class FolderDetailRoute(
     val collectionId: String,
     val folderId: String,
@@ -149,14 +127,12 @@ data class FolderDetailRoute(
 ) : AppRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.StreamRoute")
 data class StreamRoute(
     val launchId: Long,
     override val title: String = "",
 ) : AppRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.CatalogRoute")
 data class CatalogRoute(
     val launchId: Long,
     override val title: String = "",
@@ -164,7 +140,6 @@ data class CatalogRoute(
 ) : AppRoute
 
 @Serializable
-@SerialName("com.nuvio.app.navigation.PlayerRoute")
 data class PlayerRoute(
     val launchId: Long,
     override val title: String = "",

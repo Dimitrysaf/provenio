@@ -1,4 +1,4 @@
-package com.nuvio.app.features.downloads
+package com.nuvio.app.core.downloads
 
 import android.app.job.JobParameters
 import android.app.job.JobService
@@ -11,9 +11,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
-import com.nuvio.app.core.downloads.AndroidDownloadScheduler
-import com.nuvio.app.core.downloads.DownloadsLiveStatusPlatform
-import com.nuvio.app.core.downloads.DownloadsPlatformDownloader
 
 @RequiresApi(34)
 class DownloadsTransferJobService : JobService() {

@@ -17,7 +17,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import com.nuvio.app.features.downloads.DownloadsTransferJobService
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34, 36])

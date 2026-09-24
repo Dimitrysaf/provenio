@@ -1,8 +1,8 @@
 package com.nuvio.app.core.tracking.simkl
 
 import com.nuvio.app.core.storage.ProfileScopedKey
-import com.nuvio.app.features.plugins.cryptointerop.CC_SHA256
-import com.nuvio.app.features.plugins.cryptointerop.CC_SHA256_DIGEST_LENGTH
+import com.nuvio.app.core.plugins.cryptointerop.CC_SHA256
+import com.nuvio.app.core.plugins.cryptointerop.CC_SHA256_DIGEST_LENGTH
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.get

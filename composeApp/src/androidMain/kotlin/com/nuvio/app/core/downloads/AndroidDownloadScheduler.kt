@@ -33,8 +33,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.ConnectionPool
-import com.nuvio.app.features.downloads.DownloadsTransferJobService
-import com.nuvio.app.features.downloads.DownloadsTransferWorker
 
 internal class AndroidDownloadScheduler(val context: Context) {
     val store = AndroidDownloadStore(File(context.filesDir, "download-transfers"))
