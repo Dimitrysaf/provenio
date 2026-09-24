@@ -59,7 +59,6 @@ import com.nuvio.app.shell.components.MediaSheetAction
 import com.nuvio.app.shell.components.NuvioContinueWatchingActionSheet
 import com.nuvio.app.shell.components.NuvioStatusModal
 import com.nuvio.app.shell.components.NuvioToastController
-import com.nuvio.app.shell.components.TrackingListPickerSheet
 import com.nuvio.app.shell.components.platformExitApp
 import com.nuvio.app.core.addons.AddonRepository
 import com.nuvio.app.core.addons.enabledAddons
@@ -83,16 +82,16 @@ import com.nuvio.app.core.home.HomeCatalogSettingsRepository
 import com.nuvio.app.core.home.HomeRepository
 import com.nuvio.app.core.home.buildAddonCatalogRefreshSignature
 import com.nuvio.app.shell.screens.home.components.shouldBlurContinueWatchingArtwork
-import com.nuvio.app.core.library.LibraryItem
 import com.nuvio.app.core.library.LibraryRepository
 import com.nuvio.app.core.library.LibrarySection
 import com.nuvio.app.core.library.LibrarySortOption
 import com.nuvio.app.core.library.LibrarySourceMode
+import com.nuvio.app.shell.screens.library.LibraryListPickerHost
+import com.nuvio.app.shell.screens.library.rememberLibraryListPickerState
 import com.nuvio.app.shell.screens.library.PendingTrackingMembershipRemoval
 import com.nuvio.app.shell.screens.library.TrackingMembershipRemovalConfirmationHost
 import com.nuvio.app.shell.screens.library.executeTrackingMembershipOperation
 import com.nuvio.app.core.library.librarySectionItemKey
-import com.nuvio.app.shell.screens.library.showTrackingMembershipRewriteFeedback
 import com.nuvio.app.core.library.toLibraryItem
 import com.nuvio.app.core.library.toMetaPreview
 import com.nuvio.app.core.notifications.EpisodeReleaseNotificationsRepository
@@ -124,14 +123,12 @@ import com.nuvio.app.shell.screens.streams.PlaybackAvailability
 import com.nuvio.app.shell.screens.streams.rememberPlaybackAvailability
 import com.nuvio.app.core.streams.StreamLaunchStore
 import com.nuvio.app.core.streams.StreamsRepository
-import com.nuvio.app.core.tracking.TrackingLibraryTab
 import com.nuvio.app.core.tracking.TrackingMembershipApplyResult
 import com.nuvio.app.core.tracking.TrackingProviderId
 import com.nuvio.app.core.tracking.TrackingScrobbleAction
 import com.nuvio.app.core.tracking.TrackingScrobbleCoordinator
 import com.nuvio.app.core.tracking.TrackingScrobbleEvent
 import com.nuvio.app.core.tracking.buildTrackingMediaReference
-import com.nuvio.app.core.tracking.toggleTrackingLibraryMembership
 import com.nuvio.app.shell.screens.updater.AppUpdaterHost
 import com.nuvio.app.core.updater.AppUpdaterPlatform
 import com.nuvio.app.shell.screens.updater.rememberAppUpdaterController
@@ -219,13 +216,7 @@ internal fun MainAppContent(
         val libraryDisintegrationRequests = remember { DisintegrationRequestController<String>() }
         val continueWatchingDisintegrationRequests = remember { DisintegrationRequestController<String>() }
         var requestedSettingsPageName by rememberSaveable { mutableStateOf<String?>(null) }
-        var showLibraryListPicker by remember { mutableStateOf(false) }
-        var pickerItem by remember { mutableStateOf<LibraryItem?>(null) }
-        var pickerTitle by remember { mutableStateOf("") }
-        var pickerTabs by remember { mutableStateOf<List<TrackingLibraryTab>>(emptyList()) }
-        var pickerMembership by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
-        var pickerPending by remember { mutableStateOf(false) }
-        var pickerError by remember { mutableStateOf<String?>(null) }
+        val libraryListPicker = rememberLibraryListPickerState()
         var pendingTrackingRemoval by remember { mutableStateOf<PendingTrackingMembershipRemoval?>(null) }
         val trackingListsUpdateFailedMessage = stringResource(Res.string.tracking_lists_update_failed)
         val addonsUiState by remember {
@@ -1502,26 +1493,7 @@ internal fun MainAppContent(
                                         if (!isRemoteLibrarySource) {
                                             LibraryRepository.toggleLocalSaved(libraryItem)
                                         } else {
-                                            pickerItem = libraryItem
-                                            pickerTitle = preview.name
-                                            pickerTabs = LibraryRepository.libraryListTabs(libraryItem)
-                                            pickerMembership = pickerTabs.associate { it.key to false }
-                                            pickerPending = true
-                                            pickerError = null
-                                            showLibraryListPicker = true
-                                            coroutineScope.launch {
-                                                runCatching {
-                                                    val snapshot = LibraryRepository.getMembershipSnapshot(libraryItem)
-                                                    val tabs = LibraryRepository.libraryListTabs(libraryItem)
-                                                    pickerTabs = tabs
-                                                    pickerMembership = tabs.associate { tab ->
-                                                        tab.key to (snapshot[tab.key] == true)
-                                                    }
-                                                }.onFailure { error ->
-                                                    pickerError = error.message ?: getString(Res.string.trakt_lists_load_failed)
-                                                }
-                                                pickerPending = false
-                                            }
+                                            libraryListPicker.open(libraryItem, preview.name)
                                         }
                                     }
                                 },
@@ -1576,63 +1548,9 @@ internal fun MainAppContent(
                 )
             }
 
-            TrackingListPickerSheet(
-                visible = showLibraryListPicker,
-                title = pickerTitle,
-                tabs = pickerTabs,
-                membership = pickerMembership,
-                isPending = pickerPending,
-                errorMessage = pickerError,
-                onToggle = { listKey ->
-                    val item = pickerItem ?: return@TrackingListPickerSheet
-                    val previousMembership = pickerMembership
-                    pickerMembership = toggleTrackingLibraryMembership(
-                        tabs = pickerTabs,
-                        membership = pickerMembership,
-                        key = listKey,
-                    )
-                    coroutineScope.launch {
-                        pickerPending = true
-                        pickerError = null
-                        val desiredMembership = pickerMembership.toMap()
-                        val applyMembership: suspend (Set<TrackingProviderId>) ->
-                            TrackingMembershipApplyResult = { confirmedProviders ->
-                            LibraryRepository.applyMembershipChanges(
-                                item = item,
-                                desiredMembership = desiredMembership,
-                                confirmedRemovalProviders = confirmedProviders,
-                            )
-                        }
-                        val revertMembership: suspend (Throwable) -> Unit = { error ->
-                            pickerMembership = previousMembership
-                            pickerError = error.message ?: trackingListsUpdateFailedMessage
-                        }
-                        executeTrackingMembershipOperation(
-                            operation = { applyMembership(emptySet()) },
-                            onSuccess = { result ->
-                                if (result.requiresRemovalConfirmation) {
-                                    pendingTrackingRemoval = PendingTrackingMembershipRemoval(
-                                        itemTitle = item.name,
-                                        confirmations = result.requiredRemovalConfirmations,
-                                        retry = applyMembership,
-                                        onApplied = { applied -> showTrackingMembershipRewriteFeedback(applied) },
-                                        onFailure = revertMembership,
-                                        onCancelled = { pickerMembership = previousMembership },
-                                    )
-                                } else {
-                                    showTrackingMembershipRewriteFeedback(result)
-                                }
-                            },
-                            onFailure = revertMembership,
-                        )
-                        pickerPending = false
-                    }
-                },
-                onDismiss = {
-                    showLibraryListPicker = false
-                    pickerItem = null
-                    pickerError = null
-                },
+            LibraryListPickerHost(
+                state = libraryListPicker,
+                onRemovalNeedsConfirmation = { pendingTrackingRemoval = it },
             )
 
             TrackingMembershipRemovalConfirmationHost(
