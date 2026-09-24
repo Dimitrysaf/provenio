@@ -47,17 +47,10 @@ import com.nuvio.app.shell.components.LocalPosterClickAnchor
 import com.nuvio.app.shell.nav.PosterNavigationState
 import com.nuvio.app.shell.nav.posterNavigationEntry
 import com.nuvio.app.core.auth.AuthRepository
-import com.nuvio.app.core.auth.AuthState
-import com.nuvio.app.core.auth.DeviceSessionRegistration
 import com.nuvio.app.core.build.AppFeaturePolicy
-import com.nuvio.app.core.deeplink.AppDeepLink
-import com.nuvio.app.core.deeplink.AppDeepLinkRepository
 import com.nuvio.app.core.format.formatReleaseDateForDisplay
 import com.nuvio.app.core.network.NetworkCondition
 import com.nuvio.app.core.network.NetworkStatusRepository
-import com.nuvio.app.core.sync.AppForegroundMonitor
-import com.nuvio.app.core.sync.AppVisibility
-import com.nuvio.app.core.sync.ProfileSettingsSync
 import com.nuvio.app.core.sync.SyncManager
 import com.nuvio.app.shell.components.DisintegrationRequestController
 import com.nuvio.app.shell.components.NativeTabBridge
@@ -67,9 +60,7 @@ import com.nuvio.app.shell.components.NuvioContinueWatchingActionSheet
 import com.nuvio.app.shell.components.NuvioStatusModal
 import com.nuvio.app.shell.components.NuvioToastController
 import com.nuvio.app.shell.components.TrackingListPickerSheet
-import com.nuvio.app.shell.theme.nuvio
 import com.nuvio.app.shell.components.platformExitApp
-import com.nuvio.app.core.addons.AddAddonResult
 import com.nuvio.app.core.addons.AddonRepository
 import com.nuvio.app.core.addons.enabledAddons
 import com.nuvio.app.core.addons.isWaitingForFirstEnabledManifest
@@ -83,8 +74,6 @@ import com.nuvio.app.core.cloud.CloudLibraryRepository
 import com.nuvio.app.core.cloud.playbackVideoId
 import com.nuvio.app.core.cloud.providerPosterUrl
 import com.nuvio.app.core.collection.CollectionRepository
-import com.nuvio.app.core.collection.CollectionSyncService
-import com.nuvio.app.core.metadata.MetaDetailsRepository
 import com.nuvio.app.core.metadata.MetaScreenSettingsRepository
 import com.nuvio.app.core.downloads.DownloadItem
 import com.nuvio.app.core.downloads.DownloadSubtitles
@@ -106,7 +95,6 @@ import com.nuvio.app.core.library.librarySectionItemKey
 import com.nuvio.app.shell.screens.library.showTrackingMembershipRewriteFeedback
 import com.nuvio.app.core.library.toLibraryItem
 import com.nuvio.app.core.library.toMetaPreview
-import com.nuvio.app.core.membership.MemberAccessRepository
 import com.nuvio.app.core.notifications.EpisodeReleaseNotificationsRepository
 import com.nuvio.app.core.p2p.P2pSettingsRepository
 import com.nuvio.app.core.playback.ExternalPlayerIntentResult
@@ -129,7 +117,6 @@ import com.nuvio.app.shell.screens.settings.LicensesAttributionsSettingsScreen
 import com.nuvio.app.shell.screens.settings.MetaScreenSettingsScreen
 import com.nuvio.app.shell.screens.settings.PluginsSettingsScreen
 import com.nuvio.app.shell.screens.settings.SupportersContributorsSettingsScreen
-import com.nuvio.app.core.settings.ThemeSettingsRepository
 import com.nuvio.app.core.streams.BingeGroupCacheRepository
 import com.nuvio.app.core.streams.StreamAutoPlayPolicy
 import com.nuvio.app.core.streams.StreamLaunch
@@ -156,7 +143,6 @@ import com.nuvio.app.core.watch.progress.ContinueWatchingItem
 import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
 import com.nuvio.app.core.watch.progress.WatchProgressPlaybackSession
 import com.nuvio.app.core.watch.progress.WatchProgressRepository
-import com.nuvio.app.core.watch.progress.WatchProgressSourceCoordinator
 import com.nuvio.app.core.watch.progress.continueWatchingItemKey
 import com.nuvio.app.core.watch.progress.nextUpDismissKey
 import com.nuvio.app.core.watch.progress.toContinueWatchingItem
@@ -213,17 +199,7 @@ internal fun MainAppContent(
             )
         }
         val appUpdaterController = rememberAppUpdaterController()
-        if (ownsAppRuntime) {
-            remember {
-                EpisodeReleaseNotificationsRepository.ensureLoaded()
-            }
-            remember {
-                CollectionSyncService.startObserving()
-            }
-            remember {
-                ProfileSettingsSync.startObserving()
-            }
-        }
+        AppRuntimeServices(ownsAppRuntime)
         val hapticFeedback = LocalHapticFeedback.current
         val focusManager = LocalFocusManager.current
         val uriHandler = LocalUriHandler.current
@@ -236,18 +212,7 @@ internal fun MainAppContent(
         val libraryScrollToTopRequests = remember { MutableSharedFlow<Unit>(extraBufferCapacity = 1) }
         val settingsRootActionRequests = remember { MutableSharedFlow<Unit>(extraBufferCapacity = 1) }
         val currentRoute = navBackStack.lastOrNull() as? AppRoute
-        LaunchedEffect(currentRoute, posterNavigationEnabled) {
-            val request = posterNavigation.active
-            if (!posterNavigationEnabled || (request != null && currentRoute != request.to)) posterNavigation.clear()
-        }
-        LaunchedEffect(posterNavigation.active?.to) {
-            posterNavigation.active?.to?.let { route ->
-                MetaDetailsRepository.load(route.type, route.id)
-            }
-        }
-        DisposableEffect(posterNavigation) {
-            onDispose { posterNavigation.clear() }
-        }
+        PosterNavigationEffects(posterNavigation, currentRoute, posterNavigationEnabled)
         var showExitConfirmation by rememberSaveable { mutableStateOf(false) }
         var selectedPosterActionTarget by remember { mutableStateOf<PosterActionTarget?>(null) }
         var selectedContinueWatchingForActions by remember { mutableStateOf<ContinueWatchingItem?>(null) }
@@ -318,12 +283,6 @@ internal fun MainAppContent(
     val cloudLibraryPlayFailedText = stringResource(Res.string.cloud_library_play_failed)
     val cloudLibraryPlayDisabledText = stringResource(Res.string.cloud_library_play_disabled)
     val cloudLibraryPlayNotConnectedText = stringResource(Res.string.cloud_library_play_not_connected)
-    val nativeTabHomeTitle = stringResource(Res.string.compose_nav_home)
-    val nativeTabSearchTitle = stringResource(Res.string.compose_nav_search)
-    val nativeTabLibraryTitle = stringResource(Res.string.compose_nav_library)
-    val nativeTabProfileTitle = stringResource(Res.string.compose_nav_profile)
-    val nativeSwitchProfileTitle = stringResource(Res.string.compose_settings_root_switch_profile_title)
-    val nativeAddProfileTitle = stringResource(Res.string.compose_profile_add_profile)
     val homescreenSettingsTitle = stringResource(Res.string.compose_settings_page_homescreen)
     val metaScreenSettingsTitle = stringResource(Res.string.compose_settings_page_meta_screen)
     val continueWatchingSettingsTitle = stringResource(Res.string.compose_settings_page_continue_watching)
@@ -336,7 +295,6 @@ internal fun MainAppContent(
     val licensesSettingsTitle = stringResource(Res.string.compose_settings_page_licenses_attributions)
     val collectionsTitle = stringResource(Res.string.collections_header)
     val newCollectionTitle = stringResource(Res.string.collections_new)
-    val detailsFallbackTitle = stringResource(Res.string.meta_section_details_title)
     val isRemoteLibrarySource = libraryUiState.sourceMode != LibrarySourceMode.LOCAL
     val appContentGeneration = if (ownsAppRuntime && appGateController != null) {
         val generation by appGateController.contentGeneration.collectAsStateWithLifecycle()
@@ -348,9 +306,6 @@ internal fun MainAppContent(
         mutableStateOf(!ownsAppRuntime)
     }
     var offlineLaunchRouteHandled by rememberSaveable { mutableStateOf(false) }
-    var networkToastBaselineReady by rememberSaveable { mutableStateOf(false) }
-    var lastNetworkToastCondition by rememberSaveable { mutableStateOf(NetworkCondition.Unknown.name) }
-    var watchSourceReconnectPending by remember { mutableStateOf(false) }
     val homeCatalogRefreshKey = remember(addonsUiState.addons) {
         buildAddonCatalogRefreshSignature(addonsUiState.addons)
     }
@@ -406,30 +361,7 @@ internal fun MainAppContent(
         }
     }
 
-    LaunchedEffect(
-        nativeTabHomeTitle,
-        nativeTabSearchTitle,
-        nativeTabLibraryTitle,
-        nativeTabProfileTitle,
-        nativeSwitchProfileTitle,
-        nativeAddProfileTitle,
-        onTabTitles,
-    ) {
-        NativeTabBridge.publishTabTitles(
-            home = nativeTabHomeTitle,
-            search = nativeTabSearchTitle,
-            library = nativeTabLibraryTitle,
-            profile = nativeTabProfileTitle,
-        )
-        onTabTitles?.invoke(
-            nativeTabHomeTitle,
-            nativeTabSearchTitle,
-            nativeTabLibraryTitle,
-            nativeTabProfileTitle,
-            nativeSwitchProfileTitle,
-            nativeAddProfileTitle,
-        )
-    }
+    NativeTabTitlesEffect(onTabTitles)
 
     LaunchedEffect(initialTab) {
         snapshotFlow { selectedTab }.collectLatest { tab ->
@@ -469,81 +401,14 @@ internal fun MainAppContent(
         initialHomeReady = true
     }
 
-    LaunchedEffect(networkStatusUiState.condition) {
-        if (!ownsAppRuntime) return@LaunchedEffect
-        val condition = networkStatusUiState.condition
-        if (!networkToastBaselineReady) {
-            networkToastBaselineReady = true
-            lastNetworkToastCondition = condition.name
-            return@LaunchedEffect
-        }
+    NetworkToastEffect(ownsAppRuntime, networkStatusUiState.condition)
 
-        val previousConditionName = lastNetworkToastCondition
-        if (previousConditionName == condition.name) return@LaunchedEffect
-
-        when (condition) {
-            NetworkCondition.NoInternet -> {
-                NuvioToastController.show(getString(Res.string.network_no_internet_connection))
-            }
-
-            NetworkCondition.ServersUnreachable -> {
-                NuvioToastController.show(getString(Res.string.network_cannot_reach_servers))
-            }
-
-            NetworkCondition.Online -> {
-                if (
-                    previousConditionName == NetworkCondition.NoInternet.name ||
-                    previousConditionName == NetworkCondition.ServersUnreachable.name
-                ) {
-                    MemberAccessRepository.refresh()
-                    NuvioToastController.show(getString(Res.string.network_back_online))
-                }
-            }
-
-            NetworkCondition.Unknown,
-            NetworkCondition.Checking,
-            -> Unit
-        }
-
-        lastNetworkToastCondition = condition.name
-    }
-
-    LaunchedEffect(
-        networkStatusUiState.condition,
-        (authState as? AuthState.Authenticated)?.userId,
-        profileState.activeProfile?.profileIndex,
-    ) {
-        if (!ownsAppRuntime) return@LaunchedEffect
-        when (networkStatusUiState.condition) {
-            NetworkCondition.NoInternet,
-            NetworkCondition.ServersUnreachable,
-            -> watchSourceReconnectPending = true
-
-            NetworkCondition.Online -> {
-                if (!watchSourceReconnectPending) return@LaunchedEffect
-
-                val profileId = profileState.activeProfile?.profileIndex
-                    ?: ProfileRepository.activeProfileId
-                val authenticatedState = authState as? AuthState.Authenticated
-                if (authenticatedState != null && !authenticatedState.isAnonymous) {
-                    SyncManager.requestForegroundPull(profileId = profileId)
-                    watchSourceReconnectPending = false
-                } else {
-                    val result = WatchProgressSourceCoordinator.refreshActiveSource(
-                        profileId = profileId,
-                        force = true,
-                    )
-                    if (result.succeeded) {
-                        watchSourceReconnectPending = false
-                    }
-                }
-            }
-
-            NetworkCondition.Unknown,
-            NetworkCondition.Checking,
-            -> Unit
-        }
-    }
+    WatchSourceReconnectEffect(
+        enabled = ownsAppRuntime,
+        condition = networkStatusUiState.condition,
+        authState = authState,
+        activeProfileIndex = profileState.activeProfile?.profileIndex,
+    )
 
     LaunchedEffect(
         initialHomeReady,
@@ -580,35 +445,11 @@ internal fun MainAppContent(
         }
     }
 
-    LaunchedEffect(authState, profileState.activeProfile?.profileIndex) {
-        if (!ownsAppRuntime) return@LaunchedEffect
-        val authenticatedState = authState as? AuthState.Authenticated
-        val activeProfileId = profileState.activeProfile?.profileIndex
-        val syncProfileId = activeProfileId?.takeIf {
-            authenticatedState != null && !authenticatedState.isAnonymous
-        }
-        syncProfileId?.let(SyncManager::pullAllForProfile)
-        try {
-            AppForegroundMonitor.events().collect { visibility ->
-                when (visibility) {
-                    AppVisibility.Foreground -> {
-                        NetworkStatusRepository.requestForegroundRefresh()
-                        DeviceSessionRegistration.registerIfAuthenticated()
-                        MemberAccessRepository.refreshIfStale()
-                        if (syncProfileId != null) {
-                            SyncManager.startPeriodicNuvioSyncPull(syncProfileId)
-                            SyncManager.requestForegroundPull(syncProfileId)
-                        } else {
-                            SyncManager.stopPeriodicNuvioSyncPull()
-                        }
-                    }
-                    AppVisibility.Background -> SyncManager.stopPeriodicNuvioSyncPull()
-                }
-            }
-        } finally {
-            SyncManager.stopPeriodicNuvioSyncPull()
-        }
-    }
+    ForegroundSyncEffect(
+        enabled = ownsAppRuntime,
+        authState = authState,
+        activeProfileIndex = profileState.activeProfile?.profileIndex,
+    )
     var lastExternalPlayerLaunch by remember { mutableStateOf<PlayerLaunch?>(null) }
     val activePlaybackProfileId = profileState.activeProfile?.profileIndex ?: ProfileRepository.activeProfileId
     val launchExternalPlayer = rememberExternalPlayerLauncher { result ->
@@ -687,60 +528,7 @@ internal fun MainAppContent(
         ContinueWatchingPreferencesRepository.uiState
     }.collectAsStateWithLifecycle()
 
-        LaunchedEffect(navController) {
-            if (!ownsAppRuntime) return@LaunchedEffect
-            AppDeepLinkRepository.pendingDeepLink.collectLatest { deepLink ->
-                when (deepLink) {
-                    is AppDeepLink.Meta -> {
-                        activateTab(AppScreenTab.Home)
-                        val routeTitle = runCatching {
-                            MetaDetailsRepository.fetch(deepLink.type, deepLink.id)?.name
-                        }.getOrNull().orEmpty().ifBlank { detailsFallbackTitle }
-                        navController.navigate(
-                            DetailRoute(
-                                type = deepLink.type,
-                                id = deepLink.id,
-                                title = routeTitle,
-                            )
-                        ) {
-                            launchSingleTop = true
-                        }
-                        AppDeepLinkRepository.markConsumed(deepLink)
-                    }
-
-                    is AppDeepLink.AddonInstall -> {
-                        activateTab(AppScreenTab.Settings)
-                        navController.navigate(AddonsSettingsRoute(addonsSettingsTitle)) {
-                            launchSingleTop = true
-                        }
-                        NuvioToastController.show(getString(Res.string.addons_modal_checking_title))
-                        AddonRepository.initialize()
-                        when (val result = AddonRepository.addAddon(deepLink.manifestUrl)) {
-                            is AddAddonResult.Success -> {
-                                NuvioToastController.show(
-                                    getString(Res.string.addons_modal_success_message, result.manifest.name),
-                                )
-                            }
-
-                            is AddAddonResult.Error -> {
-                                NuvioToastController.show(result.message)
-                            }
-                        }
-                        AppDeepLinkRepository.markConsumed(deepLink)
-                    }
-
-                    AppDeepLink.Downloads -> {
-                        activateTab(AppScreenTab.Settings)
-                        navController.navigate(DownloadsSettingsRoute(downloadsSettingsTitle)) {
-                            launchSingleTop = true
-                        }
-                        AppDeepLinkRepository.markConsumed(deepLink)
-                    }
-
-                    null -> Unit
-                }
-            }
-        }
+        AppDeepLinkEffect(navController, ownsAppRuntime, ::activateTab)
 
         suspend fun openExternalPlayback(launch: PlayerLaunch): Boolean {
             lastExternalPlayerLaunch = launch
