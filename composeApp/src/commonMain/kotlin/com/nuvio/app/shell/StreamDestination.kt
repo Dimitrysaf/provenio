@@ -1,9 +1,7 @@
 package com.nuvio.app.shell
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -16,20 +14,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.shell.components.NuvioToastController
-import com.nuvio.app.shell.theme.nuvio
 import com.nuvio.app.core.debrid.DirectDebridPlayableResult
 import com.nuvio.app.core.debrid.DirectDebridPlaybackResolver
 import com.nuvio.app.core.debrid.toastMessage
-import com.nuvio.app.core.metadata.MetaDetailsRepository
 import com.nuvio.app.shell.screens.p2p.P2pConsentDialog
 import com.nuvio.app.core.p2p.P2pSettingsRepository
 import com.nuvio.app.core.playback.PlayerLaunch
 import com.nuvio.app.core.playback.PlayerLaunchStore
 import com.nuvio.app.core.playback.PlayerSettingsRepository
-import com.nuvio.app.shell.screens.player.resolveContentLanguage
-import com.nuvio.app.shell.screens.player.sanitizePlaybackHeaders
-import com.nuvio.app.shell.screens.player.sanitizePlaybackResponseHeaders
-import com.nuvio.app.core.streams.StreamBehaviorHints
 import com.nuvio.app.core.streams.StreamItem
 import com.nuvio.app.core.streams.StreamLaunchStore
 import com.nuvio.app.core.streams.StreamLinkCacheRepository
@@ -41,16 +33,11 @@ import com.nuvio.app.core.streams.shouldUseLandscapeAutoPlayLoading
 import com.nuvio.app.core.streams.StreamsUiState
 import com.nuvio.app.shell.nav.*
 import kotlinx.coroutines.launch
-import nuvio.composeapp.generated.resources.*
-import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.resources.getString
 
 private data class PendingP2pStreamOpen(
     val stream: StreamItem,
     val resumePositionMs: Long?,
     val resumeProgressFraction: Float?,
-    val forceExternal: Boolean,
-    val forceInternal: Boolean,
     val isAutoPlay: Boolean,
 )
 
@@ -73,81 +60,25 @@ internal fun StreamDestination(
         }
         return
     }
-    val pauseDescription = launch.pauseDescription
     val streamRouteScope = rememberCoroutineScope()
     var autoPlayNavigationStarted by remember(route.launchId) { mutableStateOf(false) }
     var resolvingDebridStream by rememberSaveable(route.launchId) { mutableStateOf(false) }
     var pendingP2pStreamOpen by remember { mutableStateOf<PendingP2pStreamOpen?>(null) }
-    val shouldResolveEpisodeVideoId =
-        launch.parentMetaId != null &&
-            launch.seasonNumber != null &&
-            launch.episodeNumber != null
-    var effectiveVideoId by rememberSaveable(
-        launch.videoId,
-        launch.parentMetaId,
-        launch.seasonNumber,
-        launch.episodeNumber,
-    ) {
-        mutableStateOf(launch.videoId)
-    }
-    var hasResolvedVideoId by rememberSaveable(
-        launch.videoId,
-        launch.parentMetaId,
-        launch.seasonNumber,
-        launch.episodeNumber,
-    ) {
-        mutableStateOf(!shouldResolveEpisodeVideoId)
-    }
-
-    LaunchedEffect(
-        launch.videoId,
-        launch.parentMetaId,
-        launch.parentMetaType,
-        launch.type,
-        launch.seasonNumber,
-        launch.episodeNumber,
-    ) {
-        effectiveVideoId = launch.videoId
-        if (!shouldResolveEpisodeVideoId) {
-            hasResolvedVideoId = true
-            return@LaunchedEffect
-        }
-
-        hasResolvedVideoId = false
-        val metaType = launch.parentMetaType ?: launch.type
-        val metaId = launch.parentMetaId ?: return@LaunchedEffect
-        val resolvedVideoId = runCatching {
-            MetaDetailsRepository.fetch(metaType, metaId)
-        }.getOrNull()
-            ?.videos
-            ?.firstOrNull { video ->
-                video.season == launch.seasonNumber &&
-                    video.episode == launch.episodeNumber
-            }
-            ?.id
-            ?.takeIf { it.isNotBlank() }
-
-        effectiveVideoId = resolvedVideoId ?: launch.videoId
-        hasResolvedVideoId = true
-    }
-
+    val episodeVideoId = rememberEpisodeVideoId(launch)
+    val effectiveVideoId = episodeVideoId.value
     val playerSettings by remember {
         PlayerSettingsRepository.ensureLoaded()
         PlayerSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
 
-    fun p2pSentinelUrl(infoHash: String, fileIdx: Int?): String =
-        "torrent://$infoHash${fileIdx?.let { "?index=$it" }.orEmpty()}"
-
-    fun resolveLaunchContentLanguage(fallbackLanguage: String? = null): String? {
-        val meta = MetaDetailsRepository.peek(
-            type = launch.parentMetaType ?: launch.type,
-            id = launch.parentMetaId ?: effectiveVideoId,
-        )
-        return resolveContentLanguage(
-            language = meta?.language?.takeIf { it.isNotBlank() } ?: fallbackLanguage,
-            country = meta?.country,
-        )
+    // Opens the player, replacing this sheet when the stream was picked for the user.
+    fun openPlayer(playerLaunch: PlayerLaunch, replaceStreamRoute: Boolean) {
+        val launchId = PlayerLaunchStore.put(playerLaunch)
+        navController.navigate(PlayerRoute(launchId = launchId, title = playerLaunch.title)) {
+            if (replaceStreamRoute) {
+                popUpTo<StreamRoute> { inclusive = true }
+            }
+        }
     }
 
     fun openP2pStream(
@@ -157,88 +88,29 @@ internal fun StreamDestination(
         replaceStreamRoute: Boolean,
     ) {
         val infoHash = stream.p2pInfoHash ?: return
-        val sentinelUrl = p2pSentinelUrl(infoHash, stream.p2pFileIdx)
         if (playerSettings.streamReuseLastLinkEnabled) {
-            val cacheKey = StreamLinkCacheRepository.contentKey(
-                type = launch.type,
-                videoId = effectiveVideoId,
-                parentMetaId = launch.parentMetaId,
-                season = launch.seasonNumber,
-                episode = launch.episodeNumber,
-            )
-            StreamLinkCacheRepository.save(
-                contentKey = cacheKey,
-                url = "",
-                streamName = stream.streamLabel,
-                addonName = stream.addonName,
-                addonId = stream.addonId,
-                requestHeaders = emptyMap(),
-                responseHeaders = emptyMap(),
-                filename = stream.behaviorHints.filename,
-                videoSize = stream.behaviorHints.videoSize,
-                infoHash = infoHash,
-                fileIdx = stream.p2pFileIdx,
-                sources = stream.sources,
-                bingeGroup = stream.behaviorHints.bingeGroup,
-                contentLanguage = resolveLaunchContentLanguage(),
-            )
+            launch.cacheP2pLink(effectiveVideoId, stream, infoHash)
         }
-        val playerLaunch = PlayerLaunch(
-            profileId = launch.profileId,
-            title = launch.title,
-            sourceUrl = sentinelUrl,
-            sourceHeaders = emptyMap(),
-            sourceResponseHeaders = emptyMap(),
-            streamType = stream.streamType,
-            logo = launch.logo,
-            poster = launch.poster,
-            background = launch.background,
-            seasonNumber = launch.seasonNumber,
-            episodeNumber = launch.episodeNumber,
-            episodeTitle = launch.episodeTitle,
-            episodeThumbnail = launch.episodeThumbnail,
-            streamTitle = stream.streamLabel,
-            streamSubtitle = stream.streamSubtitle,
-            bingeGroup = stream.behaviorHints.bingeGroup,
-            pauseDescription = pauseDescription,
-            providerName = stream.addonName,
-            providerAddonId = stream.addonId,
-            contentType = launch.type,
+        val playerLaunch = launch.p2pPlayerLaunch(
             videoId = effectiveVideoId,
-            parentMetaId = launch.parentMetaId ?: effectiveVideoId,
-            parentMetaType = launch.parentMetaType ?: launch.type,
-            torrentInfoHash = infoHash,
-            torrentFileIdx = stream.p2pFileIdx,
-            torrentFilename = stream.behaviorHints.filename,
-            torrentTrackers = stream.p2pTrackers,
-            initialPositionMs = resolvedResumePositionMs ?: 0L,
-            initialProgressFraction = resolvedResumeProgressFraction,
-            contentLanguage = resolveLaunchContentLanguage(),
+            stream = stream,
+            infoHash = infoHash,
+            resumePositionMs = resolvedResumePositionMs,
+            resumeProgressFraction = resolvedResumeProgressFraction,
         )
-
         autoPlayNavigationStarted = replaceStreamRoute
-        val launchId = PlayerLaunchStore.put(playerLaunch)
         StreamsRepository.cancelLoading()
-        navController.navigate(PlayerRoute(launchId = launchId, title = playerLaunch.title)) {
-            if (replaceStreamRoute) {
-                popUpTo<StreamRoute> { inclusive = true }
-            }
-        }
+        openPlayer(playerLaunch, replaceStreamRoute)
     }
 
+    // Torrents need P2P turned on; when it is off, ask first and open once the user agrees.
     fun requestOrOpenP2pStream(
         stream: StreamItem,
         resolvedResumePositionMs: Long?,
         resolvedResumeProgressFraction: Float?,
-        forceExternal: Boolean,
-        forceInternal: Boolean,
         isAutoPlay: Boolean,
     ) {
-        if (stream.p2pInfoHash == null) {
-            if (isAutoPlay) StreamsRepository.skipAutoPlayStream(stream)
-            return
-        }
-        if (!P2pSettingsRepository.isVisible) {
+        if (stream.p2pInfoHash == null || !P2pSettingsRepository.isVisible) {
             if (isAutoPlay) StreamsRepository.skipAutoPlayStream(stream)
             return
         }
@@ -247,8 +119,6 @@ internal fun StreamDestination(
                 stream = stream,
                 resumePositionMs = resolvedResumePositionMs,
                 resumeProgressFraction = resolvedResumeProgressFraction,
-                forceExternal = forceExternal,
-                forceInternal = forceInternal,
                 isAutoPlay = isAutoPlay,
             )
             return
@@ -263,92 +133,37 @@ internal fun StreamDestination(
 
     var reuseHandled by rememberSaveable(launch.videoId, effectiveVideoId) { mutableStateOf(false) }
     var reuseNavigated by remember { mutableStateOf(false) }
-    LaunchedEffect(effectiveVideoId, hasResolvedVideoId, playerSettings.streamReuseLastLinkEnabled, launch.manualSelection) {
-        if (!hasResolvedVideoId) return@LaunchedEffect
+    LaunchedEffect(effectiveVideoId, episodeVideoId.isResolved, playerSettings.streamReuseLastLinkEnabled, launch.manualSelection) {
+        if (!episodeVideoId.isResolved) return@LaunchedEffect
         if (reuseHandled) return@LaunchedEffect
         reuseHandled = true
         if (launch.manualSelection) return@LaunchedEffect
         if (!playerSettings.streamReuseLastLinkEnabled) return@LaunchedEffect
-        val cacheKey = StreamLinkCacheRepository.contentKey(
-            type = launch.type,
-            videoId = effectiveVideoId,
-            parentMetaId = launch.parentMetaId,
-            season = launch.seasonNumber,
-            episode = launch.episodeNumber,
-        )
         val maxAgeMs = playerSettings.streamReuseLastLinkCacheHours * 60L * 60L * 1000L
-        val cached = StreamLinkCacheRepository.getValid(cacheKey, maxAgeMs)
-        if (cached != null) {
-            if (cached.url.isBlank() && !cached.infoHash.isNullOrBlank()) {
-                val cachedStream = StreamItem(
-                    name = cached.streamName,
-                    url = null,
-                    infoHash = cached.infoHash,
-                    fileIdx = cached.fileIdx,
-                    sources = cached.sources,
-                    addonName = cached.addonName,
-                    addonId = cached.addonId,
-                    behaviorHints = StreamBehaviorHints(
-                        filename = cached.filename,
-                        videoSize = cached.videoSize,
-                        bingeGroup = cached.bingeGroup,
-                    ),
-                )
-                requestOrOpenP2pStream(
-                    stream = cachedStream,
-                    resolvedResumePositionMs = launch.resumePositionMs,
-                    resolvedResumeProgressFraction = launch.resumeProgressFraction,
-                    forceExternal = false,
-                    forceInternal = true,
-                    isAutoPlay = true,
-                )
-                reuseNavigated = true
-                return@LaunchedEffect
-            }
-            val playerLaunch = PlayerLaunch(
-                profileId = launch.profileId,
-                title = launch.title,
-                sourceUrl = cached.url,
-                sourceHeaders = sanitizePlaybackHeaders(cached.requestHeaders),
-                sourceResponseHeaders = sanitizePlaybackResponseHeaders(cached.responseHeaders),
-                externalSubtitles = emptyList(),
-                streamType = cached.streamType,
-                logo = launch.logo,
-                poster = launch.poster,
-                background = launch.background,
-                seasonNumber = launch.seasonNumber,
-                episodeNumber = launch.episodeNumber,
-                episodeTitle = launch.episodeTitle,
-                episodeThumbnail = launch.episodeThumbnail,
-                streamTitle = cached.streamName,
-                streamSubtitle = null,
-                bingeGroup = cached.bingeGroup,
-                pauseDescription = pauseDescription,
-                providerName = cached.addonName,
-                providerAddonId = cached.addonId,
-                contentType = launch.type,
-                videoId = effectiveVideoId,
-                parentMetaId = launch.parentMetaId ?: effectiveVideoId,
-                parentMetaType = launch.parentMetaType ?: launch.type,
-                initialPositionMs = launch.resumePositionMs ?: 0L,
-                initialProgressFraction = launch.resumeProgressFraction,
-                contentLanguage = resolveLaunchContentLanguage(cached.contentLanguage),
+        val cached = StreamLinkCacheRepository.getValid(launch.linkCacheKey(effectiveVideoId), maxAgeMs)
+            ?: return@LaunchedEffect
+        if (cached.url.isBlank() && !cached.infoHash.isNullOrBlank()) {
+            requestOrOpenP2pStream(
+                stream = cached.toP2pStream(),
+                resolvedResumePositionMs = launch.resumePositionMs,
+                resolvedResumeProgressFraction = launch.resumeProgressFraction,
+                isAutoPlay = true,
             )
-            if (playerSettings.externalPlayerEnabled) {
-                openExternalPlayback(playerLaunch)
-                StreamsRepository.cancelLoading()
-                StreamsRepository.setOverlayVisible(false)
-                reuseNavigated = true
-                return@LaunchedEffect
-            }
-            StreamsRepository.clear()
             reuseNavigated = true
-            autoPlayNavigationStarted = true
-            val launchId = PlayerLaunchStore.put(playerLaunch)
-            navController.navigate(PlayerRoute(launchId = launchId, title = playerLaunch.title)) {
-                popUpTo<StreamRoute> { inclusive = true }
-            }
+            return@LaunchedEffect
         }
+        val playerLaunch = launch.cachedPlayerLaunch(effectiveVideoId, cached)
+        if (playerSettings.externalPlayerEnabled) {
+            openExternalPlayback(playerLaunch)
+            StreamsRepository.cancelLoading()
+            StreamsRepository.setOverlayVisible(false)
+            reuseNavigated = true
+            return@LaunchedEffect
+        }
+        StreamsRepository.clear()
+        reuseNavigated = true
+        autoPlayNavigationStarted = true
+        openPlayer(playerLaunch, replaceStreamRoute = true)
     }
 
     val streamsUiState by StreamsRepository.uiState.collectAsStateWithLifecycle()
@@ -383,37 +198,7 @@ internal fun StreamDestination(
         if (autoPlayHandled) return@LaunchedEffect
         if (streamsUiState.requestToken != expectedStreamsRequestToken) return@LaunchedEffect
         val selectedStream = streamsUiState.autoPlayStream ?: return@LaunchedEffect
-        val stream = if (DirectDebridPlaybackResolver.shouldResolveToPlayableStream(selectedStream)) {
-            StreamsRepository.setOverlayVisible(true, getString(Res.string.debrid_resolving_stream))
-            when (
-                val resolved = DirectDebridPlaybackResolver.resolveToPlayableStream(
-                    stream = selectedStream,
-                    season = launch.seasonNumber,
-                    episode = launch.episodeNumber,
-                )
-            ) {
-                is DirectDebridPlayableResult.Success -> resolved.stream
-                else -> {
-                    val hasNextCandidate = StreamsRepository.skipAutoPlayStream(selectedStream)
-                    if (!hasNextCandidate) {
-                        resolved.toastMessage()?.let { NuvioToastController.show(it) }
-                    }
-                    if (!hasNextCandidate && resolved == DirectDebridPlayableResult.Stale) {
-                        StreamsRepository.reload(
-                            type = launch.type,
-                            videoId = effectiveVideoId,
-                            parentMetaId = launch.parentMetaId,
-                            season = launch.seasonNumber,
-                            episode = launch.episodeNumber,
-                            manualSelection = launch.manualSelection,
-                        )
-                    }
-                    return@LaunchedEffect
-                }
-            }
-        } else {
-            selectedStream
-        }
+        val stream = launch.resolveAutoPlayStream(selectedStream, effectiveVideoId) ?: return@LaunchedEffect
         val sourceUrl = stream.playableDirectUrl
         if (sourceUrl == null && stream.needsLocalDebridResolve && stream.p2pInfoHash != null) {
             autoPlayHandled = true
@@ -421,8 +206,6 @@ internal fun StreamDestination(
                 stream = stream,
                 resolvedResumePositionMs = launch.resumePositionMs,
                 resolvedResumeProgressFraction = launch.resumeProgressFraction,
-                forceExternal = false,
-                forceInternal = true,
                 isAutoPlay = true,
             )
             StreamsRepository.consumeAutoPlay()
@@ -434,56 +217,14 @@ internal fun StreamDestination(
         }
         autoPlayHandled = true
         if (playerSettings.streamReuseLastLinkEnabled) {
-            val cacheKey = StreamLinkCacheRepository.contentKey(
-                type = launch.type,
-                videoId = effectiveVideoId,
-                parentMetaId = launch.parentMetaId,
-                season = launch.seasonNumber,
-                episode = launch.episodeNumber,
-            )
-            StreamLinkCacheRepository.save(
-                contentKey = cacheKey,
-                url = sourceUrl,
-                streamName = stream.streamLabel,
-                addonName = stream.addonName,
-                addonId = stream.addonId,
-                requestHeaders = sanitizePlaybackHeaders(stream.behaviorHints.proxyHeaders?.request),
-                responseHeaders = sanitizePlaybackResponseHeaders(stream.behaviorHints.proxyHeaders?.response),
-                filename = stream.behaviorHints.filename,
-                videoSize = stream.behaviorHints.videoSize,
-                bingeGroup = stream.behaviorHints.bingeGroup,
-                streamType = stream.streamType,
-                contentLanguage = resolveLaunchContentLanguage(),
-            )
+            launch.cacheDirectLink(effectiveVideoId, stream, sourceUrl)
         }
-        val playerLaunch = PlayerLaunch(
-            profileId = launch.profileId,
-            title = launch.title,
-            sourceUrl = sourceUrl,
-            sourceHeaders = sanitizePlaybackHeaders(stream.behaviorHints.proxyHeaders?.request),
-            sourceResponseHeaders = sanitizePlaybackResponseHeaders(stream.behaviorHints.proxyHeaders?.response),
-            externalSubtitles = stream.externalSubtitles,
-            streamType = stream.streamType,
-            logo = launch.logo,
-            poster = launch.poster,
-            background = launch.background,
-            seasonNumber = launch.seasonNumber,
-            episodeNumber = launch.episodeNumber,
-            episodeTitle = launch.episodeTitle,
-            episodeThumbnail = launch.episodeThumbnail,
-            streamTitle = stream.streamLabel,
-            streamSubtitle = stream.streamSubtitle,
-            bingeGroup = stream.behaviorHints.bingeGroup,
-            pauseDescription = pauseDescription,
-            providerName = stream.addonName,
-            providerAddonId = stream.addonId,
-            contentType = launch.type,
+        val playerLaunch = launch.directPlayerLaunch(
             videoId = effectiveVideoId,
-            parentMetaId = launch.parentMetaId ?: effectiveVideoId,
-            parentMetaType = launch.parentMetaType ?: launch.type,
-            initialPositionMs = launch.resumePositionMs ?: 0L,
-            initialProgressFraction = launch.resumeProgressFraction,
-            contentLanguage = resolveLaunchContentLanguage(),
+            stream = stream,
+            sourceUrl = sourceUrl,
+            resumePositionMs = launch.resumePositionMs,
+            resumeProgressFraction = launch.resumeProgressFraction,
         )
         if (playerSettings.externalPlayerEnabled) {
             openExternalPlayback(playerLaunch)
@@ -494,10 +235,7 @@ internal fun StreamDestination(
         StreamsRepository.consumeAutoPlay()
         StreamsRepository.cancelLoading()
         autoPlayNavigationStarted = true
-        val launchId = PlayerLaunchStore.put(playerLaunch)
-        navController.navigate(PlayerRoute(launchId = launchId, title = playerLaunch.title)) {
-            popUpTo<StreamRoute> { inclusive = true }
-        }
+        openPlayer(playerLaunch, replaceStreamRoute = true)
     }
 
     fun openSelectedStream(
@@ -533,14 +271,7 @@ internal fun StreamDestination(
                     else -> {
                         resolved.toastMessage()?.let { NuvioToastController.show(it) }
                         if (resolved == DirectDebridPlayableResult.Stale) {
-                            StreamsRepository.reload(
-                                type = launch.type,
-                                videoId = effectiveVideoId,
-                                parentMetaId = launch.parentMetaId,
-                                season = launch.seasonNumber,
-                                episode = launch.episodeNumber,
-                                manualSelection = launch.manualSelection,
-                            )
+                            launch.reloadStreams(effectiveVideoId)
                         }
                     }
                 }
@@ -552,8 +283,6 @@ internal fun StreamDestination(
                 stream = stream,
                 resolvedResumePositionMs = resolvedResumePositionMs,
                 resolvedResumeProgressFraction = resolvedResumeProgressFraction,
-                forceExternal = forceExternal,
-                forceInternal = forceInternal,
                 isAutoPlay = false,
             )
             return
@@ -567,56 +296,14 @@ internal fun StreamDestination(
         }
         val sourceUrl = stream.playableDirectUrl ?: return
         if (playerSettings.streamReuseLastLinkEnabled) {
-            val cacheKey = StreamLinkCacheRepository.contentKey(
-                type = launch.type,
-                videoId = effectiveVideoId,
-                parentMetaId = launch.parentMetaId,
-                season = launch.seasonNumber,
-                episode = launch.episodeNumber,
-            )
-            StreamLinkCacheRepository.save(
-                contentKey = cacheKey,
-                url = sourceUrl,
-                streamName = stream.streamLabel,
-                addonName = stream.addonName,
-                addonId = stream.addonId,
-                requestHeaders = sanitizePlaybackHeaders(stream.behaviorHints.proxyHeaders?.request),
-                responseHeaders = sanitizePlaybackResponseHeaders(stream.behaviorHints.proxyHeaders?.response),
-                filename = stream.behaviorHints.filename,
-                videoSize = stream.behaviorHints.videoSize,
-                bingeGroup = stream.behaviorHints.bingeGroup,
-                streamType = stream.streamType,
-                contentLanguage = resolveLaunchContentLanguage(),
-            )
+            launch.cacheDirectLink(effectiveVideoId, stream, sourceUrl)
         }
-        val playerLaunch = PlayerLaunch(
-            profileId = launch.profileId,
-            title = launch.title,
-            sourceUrl = sourceUrl,
-            sourceHeaders = sanitizePlaybackHeaders(stream.behaviorHints.proxyHeaders?.request),
-            sourceResponseHeaders = sanitizePlaybackResponseHeaders(stream.behaviorHints.proxyHeaders?.response),
-            externalSubtitles = stream.externalSubtitles,
-            streamType = stream.streamType,
-            logo = launch.logo,
-            poster = launch.poster,
-            background = launch.background,
-            seasonNumber = launch.seasonNumber,
-            episodeNumber = launch.episodeNumber,
-            episodeTitle = launch.episodeTitle,
-            episodeThumbnail = launch.episodeThumbnail,
-            streamTitle = stream.streamLabel,
-            streamSubtitle = stream.streamSubtitle,
-            bingeGroup = stream.behaviorHints.bingeGroup,
-            pauseDescription = pauseDescription,
-            providerName = stream.addonName,
-            providerAddonId = stream.addonId,
-            contentType = launch.type,
+        val playerLaunch = launch.directPlayerLaunch(
             videoId = effectiveVideoId,
-            parentMetaId = launch.parentMetaId ?: effectiveVideoId,
-            parentMetaType = launch.parentMetaType ?: launch.type,
-            initialPositionMs = resolvedResumePositionMs ?: 0L,
-            initialProgressFraction = resolvedResumeProgressFraction,
-            contentLanguage = resolveLaunchContentLanguage(),
+            stream = stream,
+            sourceUrl = sourceUrl,
+            resumePositionMs = resolvedResumePositionMs,
+            resumeProgressFraction = resolvedResumeProgressFraction,
         )
 
         if (!forceInternal && (forceExternal || playerSettings.externalPlayerEnabled)) {
@@ -627,11 +314,8 @@ internal fun StreamDestination(
             return
         }
 
-        val launchId = PlayerLaunchStore.put(playerLaunch)
         StreamsRepository.cancelLoading()
-        navController.navigate(
-            PlayerRoute(launchId = launchId, title = playerLaunch.title)
-        )
+        openPlayer(playerLaunch, replaceStreamRoute = false)
     }
 
     LaunchedEffect(reuseNavigated) {
@@ -645,7 +329,7 @@ internal fun StreamDestination(
             showLoadingScreen = showLoadingScreen,
             // Opening the sheet does not wait on the episode's own id being looked up: the sheet
             // comes up straight away and holds its list until there is something to ask for.
-            preparing = !hasResolvedVideoId,
+            preparing = !episodeVideoId.isResolved,
             type = launch.type,
             videoId = effectiveVideoId,
             parentMetaId = launch.parentMetaId ?: effectiveVideoId,

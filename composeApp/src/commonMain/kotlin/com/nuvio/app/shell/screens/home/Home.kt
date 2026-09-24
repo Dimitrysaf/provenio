@@ -17,6 +17,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import com.nuvio.app.core.addons.ManagedAddon
+import com.nuvio.app.core.collection.Collection
+import com.nuvio.app.shell.components.DuplicateSafeLazyEntry
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
@@ -126,7 +130,6 @@ fun HomeScreen(
         TrackingSettingsRepository.ensureLoaded()
         TrackingSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
-    var observedOfflineState by remember { mutableStateOf(false) }
 
     ScreenActivityEffect(scrollToTopRequests) { active ->
         if (!active) return@ScreenActivityEffect
@@ -135,27 +138,7 @@ fun HomeScreen(
         }
     }
 
-    ScreenActivityEffect(networkStatusUiState.condition) { active ->
-        if (!active) return@ScreenActivityEffect
-        when (networkStatusUiState.condition) {
-            NetworkCondition.NoInternet,
-            NetworkCondition.ServersUnreachable,
-            -> {
-                observedOfflineState = true
-            }
-
-            NetworkCondition.Online -> {
-                if (observedOfflineState) {
-                    observedOfflineState = false
-                    HomeRepository.refresh(addonsUiState.addons.enabledAddons(), force = true)
-                }
-            }
-
-            NetworkCondition.Unknown,
-            NetworkCondition.Checking,
-            -> Unit
-        }
-    }
+    HomeReconnectEffect(networkStatusUiState.condition, addonsUiState.addons)
 
     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
     val activeProfileId = profileState.activeProfile?.profileIndex ?: 1
@@ -318,33 +301,13 @@ fun HomeScreen(
         ) {
             if (showHeroSlot) {
                 item(key = "home_hero", contentType = "hero") {
-                    Crossfade(
-                        targetState = showHeroSkeleton,
-                        animationSpec = tween(320),
-                        label = "HomeHeroLoading",
-                    ) { isLoading ->
-                        when {
-                            isLoading -> HomeSkeletonHero(
-                                modifier = Modifier,
-                                viewportHeight = maxHeight,
-                                mobileBelowSectionHeightHint = mobileHeroBelowSectionHeightHint,
-                            )
-
-                            homeUiState.heroItems.isNotEmpty() -> HomeHeroSection(
-                                items = homeUiState.heroItems,
-                                modifier = Modifier,
-                                viewportHeight = maxHeight,
-                                mobileBelowSectionHeightHint = mobileHeroBelowSectionHeightHint,
-                                onItemClick = onPosterClick,
-                            )
-
-                            else -> HomeHeroReservedSpace(
-                                modifier = Modifier,
-                                viewportHeight = maxHeight,
-                                mobileBelowSectionHeightHint = mobileHeroBelowSectionHeightHint,
-                            )
-                        }
-                    }
+                    HomeHeroSlot(
+                        showSkeleton = showHeroSkeleton,
+                        heroItems = homeUiState.heroItems,
+                        viewportHeight = maxHeight,
+                        mobileBelowSectionHeightHint = mobileHeroBelowSectionHeightHint,
+                        onItemClick = onPosterClick,
+                    )
                 }
             }
 
@@ -392,44 +355,19 @@ fun HomeScreen(
                 else -> {
                     continueWatchingSections()
 
-                    keyedEnabledHomeItems.forEach { keyedSettingsItem ->
-                        val settingsItem = keyedSettingsItem.value
-                        if (settingsItem.isCollection) {
-                            val collection = collectionsMap[settingsItem.key]
-                            if (collection != null) {
-                                item(key = keyedSettingsItem.lazyKey, contentType = "collection") {
-                                    HomeCollectionRowSection(
-                                        collection = collection,
-                                        modifier = Modifier.padding(bottom = 12.dp),
-                                        sectionPadding = homeSectionPadding,
-                                        animateGifs = animateCollectionGifs,
-                                        onFolderClick = onFolderClick,
-                                    )
-                                }
-                            }
-                        } else {
-                            val section = sectionsMap[settingsItem.key]
-                            if (section != null && section.items.isNotEmpty()) {
-                                item(key = keyedSettingsItem.lazyKey, contentType = "catalog") {
-                                    HomeCatalogRowSection(
-                                        section = section,
-                                        entries = section.items.take(HOME_CATALOG_PREVIEW_LIMIT),
-                                        modifier = Modifier.padding(bottom = 12.dp),
-                                        sectionPadding = homeSectionPadding,
-                                        onViewAllClick = if (section.canOpenCatalog(HOME_CATALOG_PREVIEW_LIMIT)) {
-                                            onCatalogClick?.let { { it(section) } }
-                                        } else {
-                                            null
-                                        },
-                                        watchedKeys = watchedUiState.watchedKeys,
-                                        fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                                        onPosterClick = onPosterClick,
-                                        onPosterLongClick = onPosterLongClick,
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    homeRows(
+                        keyedItems = keyedEnabledHomeItems,
+                        collectionsMap = collectionsMap,
+                        sectionsMap = sectionsMap,
+                        sectionPadding = homeSectionPadding,
+                        animateCollectionGifs = animateCollectionGifs,
+                        watchedKeys = watchedUiState.watchedKeys,
+                        fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                        onCatalogClick = onCatalogClick,
+                        onFolderClick = onFolderClick,
+                        onPosterClick = onPosterClick,
+                        onPosterLongClick = onPosterLongClick,
+                    )
                 }
             }
         }
@@ -510,3 +448,119 @@ private const val HOME_CATALOG_PREVIEW_LIMIT = 18
 internal const val HOME_CONTINUE_WATCHING_SECTION_KEY = "home_continue_watching"
 
 internal const val HOME_UPCOMING_SECTION_KEY = "home_upcoming"
+
+// Refreshes the catalogs once the connection comes back after being lost.
+@Composable
+private fun HomeReconnectEffect(condition: NetworkCondition, addons: List<ManagedAddon>) {
+    var observedOfflineState by remember { mutableStateOf(false) }
+    ScreenActivityEffect(condition) { active ->
+        if (!active) return@ScreenActivityEffect
+        when (condition) {
+            NetworkCondition.NoInternet,
+            NetworkCondition.ServersUnreachable,
+            -> {
+                observedOfflineState = true
+            }
+
+            NetworkCondition.Online -> {
+                if (observedOfflineState) {
+                    observedOfflineState = false
+                    HomeRepository.refresh(addons.enabledAddons(), force = true)
+                }
+            }
+
+            NetworkCondition.Unknown,
+            NetworkCondition.Checking,
+            -> Unit
+        }
+    }
+}
+
+// The hero at the top: a skeleton while its sources load, then the hero or the space it keeps.
+@Composable
+private fun HomeHeroSlot(
+    showSkeleton: Boolean,
+    heroItems: List<MetaPreview>,
+    viewportHeight: Dp,
+    mobileBelowSectionHeightHint: Dp?,
+    onItemClick: ((MetaPreview) -> Unit)?,
+) {
+    Crossfade(
+        targetState = showSkeleton,
+        animationSpec = tween(320),
+        label = "HomeHeroLoading",
+    ) { isLoading ->
+        when {
+            isLoading -> HomeSkeletonHero(
+                modifier = Modifier,
+                viewportHeight = viewportHeight,
+                mobileBelowSectionHeightHint = mobileBelowSectionHeightHint,
+            )
+
+            heroItems.isNotEmpty() -> HomeHeroSection(
+                items = heroItems,
+                modifier = Modifier,
+                viewportHeight = viewportHeight,
+                mobileBelowSectionHeightHint = mobileBelowSectionHeightHint,
+                onItemClick = onItemClick,
+            )
+
+            else -> HomeHeroReservedSpace(
+                modifier = Modifier,
+                viewportHeight = viewportHeight,
+                mobileBelowSectionHeightHint = mobileBelowSectionHeightHint,
+            )
+        }
+    }
+}
+
+// The collection and catalog rows, in the order the home settings put them.
+private fun LazyListScope.homeRows(
+    keyedItems: List<DuplicateSafeLazyEntry<HomeCatalogSettingsItem>>,
+    collectionsMap: Map<String, Collection>,
+    sectionsMap: Map<String, HomeCatalogSection>,
+    sectionPadding: Dp,
+    animateCollectionGifs: Boolean,
+    watchedKeys: Set<String>,
+    fullyWatchedSeriesKeys: Set<String>,
+    onCatalogClick: ((HomeCatalogSection) -> Unit)?,
+    onFolderClick: ((collectionId: String, folderId: String) -> Unit)?,
+    onPosterClick: ((MetaPreview) -> Unit)?,
+    onPosterLongClick: ((MetaPreview) -> Unit)?,
+) {
+    keyedItems.forEach { keyedSettingsItem ->
+        val settingsItem = keyedSettingsItem.value
+        if (settingsItem.isCollection) {
+            val collection = collectionsMap[settingsItem.key] ?: return@forEach
+            item(key = keyedSettingsItem.lazyKey, contentType = "collection") {
+                HomeCollectionRowSection(
+                    collection = collection,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                    sectionPadding = sectionPadding,
+                    animateGifs = animateCollectionGifs,
+                    onFolderClick = onFolderClick,
+                )
+            }
+        } else {
+            val section = sectionsMap[settingsItem.key]
+            if (section == null || section.items.isEmpty()) return@forEach
+            item(key = keyedSettingsItem.lazyKey, contentType = "catalog") {
+                HomeCatalogRowSection(
+                    section = section,
+                    entries = section.items.take(HOME_CATALOG_PREVIEW_LIMIT),
+                    modifier = Modifier.padding(bottom = 12.dp),
+                    sectionPadding = sectionPadding,
+                    onViewAllClick = if (section.canOpenCatalog(HOME_CATALOG_PREVIEW_LIMIT)) {
+                        onCatalogClick?.let { { it(section) } }
+                    } else {
+                        null
+                    },
+                    watchedKeys = watchedKeys,
+                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                    onPosterClick = onPosterClick,
+                    onPosterLongClick = onPosterLongClick,
+                )
+            }
+        }
+    }
+}

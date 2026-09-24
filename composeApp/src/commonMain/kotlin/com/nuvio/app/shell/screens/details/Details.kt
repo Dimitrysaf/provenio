@@ -33,10 +33,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -45,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -65,21 +62,14 @@ import com.nuvio.app.core.build.TrailerPlaybackMode
 import com.nuvio.app.core.network.NetworkCondition
 import com.nuvio.app.core.network.NetworkStatusRepository
 import com.nuvio.app.shell.components.NuvioBackButton
-import com.nuvio.app.shell.components.NuvioToastController
 import com.nuvio.app.shell.components.nuvioSafeBottomPadding
 import com.nuvio.app.shell.screens.details.components.DetailFloatingHeader
 import com.nuvio.app.shell.screens.details.components.DetailHero
-import com.nuvio.app.shell.screens.details.components.buildEpisodeListEntries
-import com.nuvio.app.shell.screens.details.components.episodeWatchState
-import com.nuvio.app.shell.screens.details.components.rememberEpisodeSeasonExpansion
-import com.nuvio.app.shell.screens.details.components.summarizeEpisodeSeasons
 import com.nuvio.app.core.home.HomeRepository
 import com.nuvio.app.core.home.MetaPreview
 import com.nuvio.app.core.library.LibraryRepository
 import com.nuvio.app.shell.screens.library.PendingTrackingMembershipRemoval
 import com.nuvio.app.shell.screens.library.TrackingMembershipRemovalConfirmationHost
-import com.nuvio.app.shell.screens.library.executeTrackingMembershipOperation
-import com.nuvio.app.shell.screens.library.showTrackingMembershipRewriteFeedback
 import com.nuvio.app.core.library.toLibraryItem
 import com.nuvio.app.core.playback.PlayerSettingsRepository
 import com.nuvio.app.shell.screens.streams.rememberPlaybackAvailability
@@ -88,16 +78,13 @@ import com.nuvio.app.core.metadata.tmdb.TmdbSettingsRepository
 import com.nuvio.app.core.tracking.trakt.TraktAuthRepository
 import com.nuvio.app.core.tracking.trakt.TraktCommentsSettings
 import com.nuvio.app.core.tracking.trakt.TraktConnectionMode
-import com.nuvio.app.core.tracking.TrackingMembershipApplyResult
 import com.nuvio.app.core.tracking.TrackingSettingsRepository
-import com.nuvio.app.core.tracking.TrackingProviderId
 import com.nuvio.app.core.watch.watched.WatchedRepository
 import com.nuvio.app.core.watch.watched.watchedItemKey
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import com.nuvio.app.core.watch.progress.WatchProgressRepository
 import com.nuvio.app.core.watch.progress.buildPlaybackVideoId
-import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
 import com.nuvio.app.core.watch.watching.application.WatchingActions
 import com.nuvio.app.core.watch.watching.application.WatchingState
 import kotlinx.coroutines.delay
@@ -114,9 +101,6 @@ import com.nuvio.app.core.metadata.MetaScreenSettingsUiState
 import com.nuvio.app.core.metadata.MetaTrailer
 import com.nuvio.app.core.metadata.MetaVideo
 import com.nuvio.app.core.metadata.buildDetailHeroSlides
-import com.nuvio.app.core.metadata.groupedEpisodesForDisplay
-import com.nuvio.app.core.metadata.moreLikeThisFallback
-import com.nuvio.app.core.metadata.seriesPrimaryAction
 import com.nuvio.app.core.metadata.detailSidePaneSection
 import com.nuvio.app.core.metadata.MetaDetailsRepository
 
@@ -481,7 +465,6 @@ private fun MetaDetailsContent(
     }
     var selectedEpisodeForActions by remember(meta.id) { mutableStateOf<MetaVideo?>(null) }
     var selectedSeasonForActions by remember(meta.id) { mutableStateOf<Int?>(null) }
-    val trackingListsUpdateFailedMessage = stringResource(Res.string.tracking_lists_update_failed)
     val metaPreview = remember(meta) { meta.toMetaPreview() }
     val todayIsoDate = CurrentDateProvider.todayIsoDate()
     val isSaved = remember(
@@ -503,46 +486,7 @@ private fun MetaDetailsContent(
     val openLibraryListPicker: () -> Unit = {
         libraryListPicker.open(meta.toLibraryItem(savedAtEpochMs = 0L), meta.name)
     }
-    val toggleSaved = remember(meta, trackingListsUpdateFailedMessage) {
-        {
-            val item = meta.toLibraryItem(savedAtEpochMs = 0L)
-            detailsScope.launch {
-                val toggleMembership: suspend (Set<TrackingProviderId>) ->
-                    TrackingMembershipApplyResult = { confirmedProviders ->
-                    LibraryRepository.toggleSaved(
-                        item = item,
-                        confirmedRemovalProviders = confirmedProviders,
-                    )
-                }
-                executeTrackingMembershipOperation(
-                    operation = { toggleMembership(emptySet()) },
-                    onSuccess = { result ->
-                        if (result.requiresRemovalConfirmation) {
-                            pendingTrackingRemoval = PendingTrackingMembershipRemoval(
-                                itemTitle = item.name,
-                                confirmations = result.requiredRemovalConfirmations,
-                                retry = toggleMembership,
-                                onApplied = ::showTrackingMembershipRewriteFeedback,
-                                onFailure = { error ->
-                                    NuvioToastController.show(
-                                        error.message ?: trackingListsUpdateFailedMessage,
-                                    )
-                                },
-                            )
-                        } else {
-                            showTrackingMembershipRewriteFeedback(result)
-                        }
-                    },
-                    onFailure = { error ->
-                        NuvioToastController.show(
-                            error.message ?: trackingListsUpdateFailedMessage,
-                        )
-                    },
-                )
-            }
-            Unit
-        }
-    }
+    val toggleSaved = rememberToggleSaved(meta, detailsScope) { pendingTrackingRemoval = it }
     val toggleWatched = remember(metaPreview) {
         {
             detailsScope.launch {
@@ -572,91 +516,19 @@ private fun MetaDetailsContent(
             )
         }
     }
-    val movieProgress = progressByVideoId[meta.id]
-        ?.takeUnless { it.isCompleted }
-    val cwPrefs by ContinueWatchingPreferencesRepository.uiState.collectAsStateWithLifecycle()
-    val seriesAction = remember(watchProgressUiState.entries, watchedUiState.items, meta, todayIsoDate, cwPrefs.upNextFromFurthestEpisode, watchedUiState.watchedKeys) {
-        meta.seriesPrimaryAction(
-            entries = watchProgressUiState.entries,
-            watchedItems = watchedUiState.items,
-            todayIsoDate = todayIsoDate,
-            preferFurthestEpisode = cwPrefs.upNextFromFurthestEpisode,
-            watchedKeys = watchedUiState.watchedKeys,
-        )
-    }
-    val seriesActionVideo = remember(seriesAction, meta.id, meta.videos) {
-        val action = seriesAction ?: return@remember null
-        meta.videos.firstOrNull { video ->
-            if (action.seasonNumber != null && action.episodeNumber != null) {
-                video.season == action.seasonNumber &&
-                    video.episode == action.episodeNumber
-            } else {
-                buildPlaybackVideoId(
-                    parentMetaId = meta.id,
-                    seasonNumber = video.season,
-                    episodeNumber = video.episode,
-                    fallbackVideoId = video.id,
-                ) == action.videoId || video.id == action.videoId
-            }
-        }
-    }
-    val seriesPauseDescription = remember(seriesActionVideo) {
-        seriesActionVideo?.overview
-    }
-    val seriesStreamVideoId = remember(seriesAction, seriesActionVideo) {
-        val action = seriesAction ?: return@remember null
-        seriesActionVideo?.id?.takeIf { it.isNotBlank() } ?: action.videoId
-    }
+    val primaryPlay = rememberDetailPrimaryPlay(meta, watchProgressUiState, watchedUiState, progressByVideoId, todayIsoDate)
+    val seriesAction = primaryPlay.seriesAction
+    val seriesStreamVideoId = primaryPlay.seriesStreamVideoId
+    val seriesPauseDescription = primaryPlay.seriesPauseDescription
+    val movieProgress = primaryPlay.movieProgress
     val hasEpisodes = meta.videos.any { it.season != null || it.episode != null }
-    val episodeListGroupedEpisodes = remember(meta.videos, meta.type) {
-        meta.groupedEpisodesForDisplay()
-    }
-    val episodeSeasonSummary = remember(
-        meta,
-        episodeListGroupedEpisodes,
-        progressByVideoId,
-        watchedUiState.watchedKeys,
-        todayIsoDate,
-    ) {
-        summarizeEpisodeSeasons(episodeListGroupedEpisodes, todayIsoDate) { episode ->
-            episodeWatchState(meta, episode, progressByVideoId, watchedUiState.watchedKeys)
-        }
-    }
-    val episodeSeasonExpansion = rememberEpisodeSeasonExpansion(meta.id)
-    val expandedEpisodeSeasons = episodeListGroupedEpisodes.keys.filter { season ->
-        episodeSeasonExpansion.isExpanded(season, episodeSeasonSummary.defaultSeason)
-    }.toSet()
-    val episodeListEntries = remember(
-        episodeListGroupedEpisodes,
-        expandedEpisodeSeasons,
-        episodeSeasonSummary.completedSeasons,
-    ) {
-        buildEpisodeListEntries(
-            groupedEpisodes = episodeListGroupedEpisodes,
-            expandedSeasons = expandedEpisodeSeasons,
-            completedSeasons = episodeSeasonSummary.completedSeasons,
-        )
-    }
-    val hasProductionSection = remember(meta) {
-        meta.productionCompanies.isNotEmpty() || meta.networks.isNotEmpty()
-    }
-    val hasAdditionalInfoSection = remember(meta) {
-        meta.status != null ||
-            meta.releaseInfo != null ||
-            meta.runtime != null ||
-            meta.ageRating != null ||
-            meta.country != null ||
-            meta.language != null
-    }
-    val hasCollectionSection = remember(meta) {
-        meta.collectionName != null && meta.collectionItems.isNotEmpty()
-    }
-    val moreLikeThisItems = remember(meta, homeSections) {
-        meta.moreLikeThis.ifEmpty { moreLikeThisFallback(meta, homeSections) }
-    }
-    val hasTrailersSection = remember(meta) {
-        meta.trailers.isNotEmpty()
-    }
+    val episodeList = rememberDetailEpisodeList(meta, progressByVideoId, watchedUiState.watchedKeys, todayIsoDate)
+    val sectionContent = rememberDetailSectionContent(meta, homeSections)
+    val hasProductionSection = sectionContent.hasProduction
+    val hasAdditionalInfoSection = sectionContent.hasAdditionalInfo
+    val hasCollectionSection = sectionContent.hasCollection
+    val hasTrailersSection = sectionContent.hasTrailers
+    val moreLikeThisItems = sectionContent.moreLikeThisItems
     val inAppTrailerPlaybackEnabled = AppFeaturePolicy.trailerPlaybackMode == TrailerPlaybackMode.IN_APP
     var isLeavingDetails by remember(meta.id) { mutableStateOf(false) }
     val heroTrailerPlaybackEnabled = AppFeaturePolicy.heroTrailerPlaybackSupported &&
@@ -715,34 +587,11 @@ private fun MetaDetailsContent(
     val loadMoreComments: () -> Unit = {
         detailsScope.launch { comments.loadNextPage(meta) }
     }
-    val listState = rememberLazyListState()
-    val density = LocalDensity.current
-    val safeAreaTopPx = with(density) {
-        WindowInsets.statusBars
-            .asPaddingValues()
-            .calculateTopPadding()
-            .toPx()
-    }
-    val heroHeightPx = remember(meta.id) { mutableIntStateOf(0) }
-    // Keep pixel-by-pixel list state reads out of this composition. Reading the
-    // offset here would recompose every metadata section on every scroll frame.
-    val detailScrollOffsetPx = remember(listState, heroHeightPx) {
-        {
-            if (listState.firstVisibleItemIndex == 0) {
-                listState.firstVisibleItemScrollOffset.toFloat()
-            } else {
-                heroHeightPx.intValue.toFloat() + listState.firstVisibleItemScrollOffset
-            }
-        }
-    }
-    val isHeroCollapsed = remember(listState, heroHeightPx, safeAreaTopPx) {
-        derivedStateOf {
-            val measuredHeroHeightPx = heroHeightPx.intValue
-            val thresholdPx = (measuredHeroHeightPx - safeAreaTopPx).coerceAtLeast(0f)
-            measuredHeroHeightPx > 0 &&
-                (listState.firstVisibleItemIndex > 0 || detailScrollOffsetPx() > thresholdPx)
-        }
-    }
+    val scroll = rememberDetailScrollState(meta.id)
+    val listState = scroll.listState
+    val heroHeightPx = scroll.heroHeightPx
+    val detailScrollOffsetPx = scroll.scrollOffsetPx
+    val isHeroCollapsed = scroll.isHeroCollapsed
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val colorScheme = MaterialTheme.colorScheme
@@ -822,11 +671,9 @@ private fun MetaDetailsContent(
                     commentsCurrentPage = comments.currentPage,
                     commentsPageCount = comments.pageCount,
                     commentsError = comments.error,
-                    episodeListEntries = episodeListEntries,
+                    episodeListEntries = episodeList.entries,
                     todayIsoDate = todayIsoDate,
-                    onEpisodeSeasonToggle = { season ->
-                        episodeSeasonExpansion.toggle(season, episodeSeasonSummary.defaultSeason)
-                    },
+                    onEpisodeSeasonToggle = episodeList.onSeasonToggle,
                     onRetryComments = {
                         detailsScope.launch { comments.loadFirstPage(meta, forceRefresh = true) }
                     },

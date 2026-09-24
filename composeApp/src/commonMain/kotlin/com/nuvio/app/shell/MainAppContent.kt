@@ -6,7 +6,6 @@ import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,7 +13,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -36,13 +34,11 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
-import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import com.nuvio.app.shell.components.LocalPosterClickAnchor
 import com.nuvio.app.shell.nav.PosterNavigationState
 import com.nuvio.app.shell.nav.posterNavigationEntry
 import com.nuvio.app.core.auth.AuthRepository
-import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.network.NetworkCondition
 import com.nuvio.app.core.network.NetworkStatusRepository
 import com.nuvio.app.core.sync.SyncManager
@@ -50,14 +46,11 @@ import com.nuvio.app.shell.components.DisintegrationRequestController
 import com.nuvio.app.shell.components.NativeTabBridge
 import com.nuvio.app.shell.components.NuvioContinueWatchingActionSheet
 import com.nuvio.app.shell.components.NuvioStatusModal
-import com.nuvio.app.shell.components.NuvioToastController
 import com.nuvio.app.shell.components.platformExitApp
 import com.nuvio.app.core.addons.AddonRepository
 import com.nuvio.app.core.addons.enabledAddons
 import com.nuvio.app.core.addons.isWaitingForFirstEnabledManifest
 import com.nuvio.app.core.catalog.CatalogTarget
-import com.nuvio.app.core.cloud.playbackVideoId
-import com.nuvio.app.core.collection.CollectionRepository
 import com.nuvio.app.core.metadata.MetaScreenSettingsRepository
 import com.nuvio.app.core.downloads.DownloadsRepository
 import com.nuvio.app.core.home.HomeCatalogSection
@@ -73,24 +66,14 @@ import com.nuvio.app.shell.screens.library.LibraryListPickerHost
 import com.nuvio.app.shell.screens.library.rememberLibraryListPickerState
 import com.nuvio.app.shell.screens.library.PendingTrackingMembershipRemoval
 import com.nuvio.app.shell.screens.library.TrackingMembershipRemovalConfirmationHost
-import com.nuvio.app.core.library.toMetaPreview
 import com.nuvio.app.core.notifications.EpisodeReleaseNotificationsRepository
 import com.nuvio.app.core.p2p.P2pSettingsRepository
 import com.nuvio.app.core.playback.PlayerSettingsRepository
 import com.nuvio.app.shell.screens.player.LockPlayerToLandscape
 import com.nuvio.app.shell.screens.player.HidePlayerSystemBars
 import com.nuvio.app.core.profiles.ProfileRepository
-import com.nuvio.app.shell.screens.settings.AccountSettingsScreen
-import com.nuvio.app.shell.screens.settings.AddonsSettingsScreen
-import com.nuvio.app.shell.screens.settings.ContinueWatchingSettingsScreen
-import com.nuvio.app.shell.screens.settings.HomescreenSettingsScreen
-import com.nuvio.app.shell.screens.settings.LicensesAttributionsSettingsScreen
-import com.nuvio.app.shell.screens.settings.MetaScreenSettingsScreen
-import com.nuvio.app.shell.screens.settings.PluginsSettingsScreen
-import com.nuvio.app.shell.screens.settings.SupportersContributorsSettingsScreen
 import com.nuvio.app.core.streams.StreamAutoPlayPolicy
 import com.nuvio.app.shell.screens.updater.AppUpdaterHost
-import com.nuvio.app.core.updater.AppUpdaterPlatform
 import com.nuvio.app.shell.screens.updater.rememberAppUpdaterController
 import com.nuvio.app.core.watch.watched.WatchedRepository
 import com.nuvio.app.core.watch.progress.ContinueWatchingItem
@@ -98,14 +81,12 @@ import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
 import com.nuvio.app.core.watch.progress.WatchProgressRepository
 import com.nuvio.app.core.watch.progress.continueWatchingItemKey
 import com.nuvio.app.core.watch.progress.nextUpDismissKey
-import com.nuvio.app.core.watch.progress.toContinueWatchingItem
 import com.nuvio.app.shell.nav.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
-import com.nuvio.app.core.build.isIos
 import com.nuvio.app.core.build.supportsPosterNavigationMotion
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -196,9 +177,9 @@ internal fun MainAppContent(
         PlayerSettingsRepository.ensureLoaded()
         PlayerSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
-    var visiblePlayerEntries by remember { mutableIntStateOf(0) }
+    val visiblePlayerEntries = remember { mutableIntStateOf(0) }
     var streamLandscapeLoadingVisible by remember(currentRoute) { mutableStateOf(false) }
-    if (currentRoute is PlayerRoute || visiblePlayerEntries > 0 || streamLandscapeLoadingVisible) {
+    if (currentRoute is PlayerRoute || visiblePlayerEntries.intValue > 0 || streamLandscapeLoadingVisible) {
         LockPlayerToLandscape()
         HidePlayerSystemBars()
     }
@@ -218,18 +199,7 @@ internal fun MainAppContent(
     val networkStatusUiState by remember {
         NetworkStatusRepository.uiState
     }.collectAsStateWithLifecycle()
-    val homescreenSettingsTitle = stringResource(Res.string.compose_settings_page_homescreen)
-    val metaScreenSettingsTitle = stringResource(Res.string.compose_settings_page_meta_screen)
-    val continueWatchingSettingsTitle = stringResource(Res.string.compose_settings_page_continue_watching)
-    val debridSettingsTitle = stringResource(Res.string.compose_settings_page_debrid)
-    val downloadsSettingsTitle = stringResource(Res.string.compose_settings_root_downloads_title)
-    val addonsSettingsTitle = stringResource(Res.string.compose_settings_page_addons)
-    val pluginsSettingsTitle = stringResource(Res.string.compose_settings_page_plugins)
-    val accountSettingsTitle = stringResource(Res.string.compose_settings_page_account)
-    val supportersSettingsTitle = stringResource(Res.string.compose_settings_page_supporters_contributors)
-    val licensesSettingsTitle = stringResource(Res.string.compose_settings_page_licenses_attributions)
-    val collectionsTitle = stringResource(Res.string.collections_header)
-    val newCollectionTitle = stringResource(Res.string.collections_new)
+    val titles = appPageTitles()
     val isRemoteLibrarySource = libraryUiState.sourceMode != LibrarySourceMode.LOCAL
     val appContentGeneration = if (ownsAppRuntime && appGateController != null) {
         val generation by appGateController.contentGeneration.collectAsStateWithLifecycle()
@@ -372,7 +342,7 @@ internal fun MainAppContent(
                 }
                 if (hasPlayableDownload) {
                     activateTab(AppScreenTab.Settings)
-                    navController.navigate(DownloadsSettingsRoute(downloadsSettingsTitle)) {
+                    navController.navigate(DownloadsSettingsRoute(titles.downloads)) {
                         launchSingleTop = true
                     }
                 }
@@ -490,8 +460,22 @@ internal fun MainAppContent(
                     // instead of replacing it.
                     sceneStrategies = remember { listOf(SheetOverlaySceneStrategy()) },
                     sharedTransitionScope = this@SharedTransitionLayout,
-                    entryProvider = entryProvider<NavKey> {
-                entry<TabsRoute> {
+                    entryProvider = appEntryProvider(
+                        navController = navController,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        titles = titles,
+                        playback = playback,
+                        useNativeNavigation = useNativeNavigation,
+                        p2pEnabled = p2pSettingsUiState.p2pEnabled,
+                        externalPlayerId = playerSettingsUiState.externalPlayerId,
+                        appUpdaterController = appUpdaterController,
+                        visiblePlayerEntries = visiblePlayerEntries,
+                        onStreamLandscapeLoadingChanged = { route, visible ->
+                            if (currentRoute == route) streamLandscapeLoadingVisible = visible
+                        },
+                        openPosterActions = openPosterActions,
+                        onCatalogClick = onCatalogClick,
+                    ) {
                     MainTabsDestination(
                         selectedTab = selectedTab,
                         initialHomeReady = initialHomeReady,
@@ -535,131 +519,21 @@ internal fun MainAppContent(
                             )
                         },
                         actions = { isTabletLayout ->
-                            AppTabActions(
+                            buildAppTabActions(
+                                isTabletLayout = isTabletLayout,
+                                navController = navController,
+                                titles = titles,
+                                playback = playback,
+                                scope = coroutineScope,
+                                useNativeNavigation = useNativeNavigation,
+                                appUpdaterController = appUpdaterController,
                                 onCatalogClick = onCatalogClick,
-                                onPosterClick = { meta ->
-                                    navController.navigate(
-                                        DetailRoute(type = meta.type, id = meta.id, title = meta.name),
-                                    )
-                                },
-                                onPosterLongClick = { meta ->
-                                    openPosterActions(PosterActionTarget(preview = meta))
-                                },
-                                onLibraryPosterClick = { item ->
-                                    navController.navigate(
-                                        DetailRoute(type = item.type, id = item.id, title = item.name),
-                                    )
-                                },
-                                onLibraryPosterLongClick = { item, section ->
-                                    openPosterActions(
-                                        PosterActionTarget(
-                                            preview = item.toMetaPreview(),
-                                            libraryItem = item,
-                                            libraryListKey = section.type,
-                                        ),
-                                    )
-                                },
                                 onLibrarySectionViewAllClick = onLibrarySectionViewAllClick,
-                                onCloudFilePlay = { item, file ->
-                                    coroutineScope.launch {
-                                        val resumeItem = WatchProgressRepository
-                                            .progressForVideo(
-                                                videoId = item.playbackVideoId(file),
-                                                parentMetaId = item.id,
-                                            )
-                                            ?.takeIf { it.isResumable }
-                                            ?.toContinueWatchingItem()
-                                        if (
-                                            !playback.launchCloudLibraryFile(
-                                                item = item,
-                                                file = file,
-                                                resumePositionMs = resumeItem?.resumePositionMs,
-                                                resumeProgressFraction = resumeItem?.resumeProgressFraction,
-                                            )
-                                        ) {
-                                            NuvioToastController.show(playback.strings.cloudPlayFailed)
-                                        }
-                                    }
-                                },
-                                onConnectCloudClick = {
-                                    if (useNativeNavigation && !isTabletLayout) {
-                                        activateTab(AppScreenTab.Settings)
-                                        navController.navigate(
-                                            SettingsPageRoute(
-                                                pageName = "Debrid",
-                                                title = debridSettingsTitle,
-                                            )
-                                        )
-                                    } else {
-                                        requestedSettingsPageName = "Debrid"
-                                        activateTab(AppScreenTab.Settings)
-                                    }
-                                },
-                                onContinueWatchingClick = { item -> playback.openContinueWatching(item) },
+                                openPosterActions = openPosterActions,
                                 onContinueWatchingLongPress = onContinueWatchingLongPress,
                                 onSwitchProfile = onSwitchProfile,
-                                onSettingsPageClick = if (useNativeNavigation && !isTabletLayout) {
-                                    { pageName, title ->
-                                        navController.navigate(SettingsPageRoute(pageName, title))
-                                    }
-                                } else {
-                                    null
-                                },
-                                onHomescreenSettingsClick = { navController.navigate(HomescreenSettingsRoute(homescreenSettingsTitle)) },
-                                onMetaScreenSettingsClick = { navController.navigate(MetaScreenSettingsRoute(metaScreenSettingsTitle)) },
-                                onContinueWatchingSettingsClick = { navController.navigate(ContinueWatchingSettingsRoute(continueWatchingSettingsTitle)) },
-                                onDownloadsSettingsClick = { navController.navigate(DownloadsSettingsRoute(downloadsSettingsTitle)) },
-                                onAddonsSettingsClick = { navController.navigate(AddonsSettingsRoute(addonsSettingsTitle)) },
-                                onPluginsSettingsClick = {
-                                    if (AppFeaturePolicy.pluginsEnabled) {
-                                        navController.navigate(PluginsSettingsRoute(pluginsSettingsTitle))
-                                    }
-                                },
-                                onAccountSettingsClick = { navController.navigate(AccountSettingsRoute(accountSettingsTitle)) },
-                                onSupportersContributorsSettingsClick = {
-                                    if (AppFeaturePolicy.supportersContributorsPageEnabled) {
-                                        navController.navigate(SupportersContributorsSettingsRoute(supportersSettingsTitle))
-                                    }
-                                },
-                                onLicensesAttributionsSettingsClick = {
-                                    navController.navigate(LicensesAttributionsSettingsRoute(licensesSettingsTitle))
-                                },
-                                onCheckForUpdatesClick = if (AppFeaturePolicy.inAppUpdaterEnabled) {
-                                    {
-                                        appUpdaterController.checkForUpdates(
-                                            force = true,
-                                            showNoUpdateFeedback = true,
-                                        )
-                                    }
-                                } else {
-                                    null
-                                },
-                                onTestUpdateBannerClick = if (
-                                    AppFeaturePolicy.inAppUpdaterEnabled && AppUpdaterPlatform.isDebugBuild
-                                ) {
-                                    appUpdaterController::showDebugTestUpdate
-                                } else {
-                                    null
-                                },
-                                onCollectionsSettingsClick = { navController.navigate(CollectionsRoute(collectionsTitle)) },
-                                onFolderClick = { collectionId, folderId ->
-                                    val folderTitle = CollectionRepository.collections.value
-                                        .firstOrNull { it.id == collectionId }
-                                        ?.folders
-                                        ?.firstOrNull { it.id == folderId }
-                                        ?.title
-                                        .orEmpty()
-                                    navController.navigate(
-                                        FolderDetailRoute(
-                                            collectionId = collectionId,
-                                            folderId = folderId,
-                                            title = folderTitle.ifBlank { collectionsTitle },
-                                        )
-                                    )
-                                },
-                                onRequestedSettingsPageConsumed = {
-                                    requestedSettingsPageName = null
-                                },
+                                activateTab = ::activateTab,
+                                onRequestSettingsPage = { pageName -> requestedSettingsPageName = pageName },
                                 onInitialHomeContentRendered = { initialHomeReady = true },
                             )
                         },
@@ -681,180 +555,6 @@ internal fun MainAppContent(
                         },
                         onAddProfileRequested = onSwitchProfile,
                     )
-                }
-                entry<DetailRoute> { route ->
-                    DetailsDestination(
-                        route = route,
-                        navController = navController,
-                        onPlay = playback.onPlay,
-                        onPlayManually = playback.onPlayManually,
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-                    )
-                }
-                entry<PersonDetailRoute> { route ->
-                    PersonDestination(
-                        route = route,
-                        navController = navController,
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-                    )
-                }
-                entry<EntityBrowseRoute> { route ->
-                    EntityDestination(route = route, navController = navController)
-                }
-                entry<StreamRoute>(metadata = sheetRouteMetadata()) { route ->
-                    StreamDestination(
-                        route = route,
-                        onLandscapeLoadingChanged = { visible ->
-                            if (currentRoute == route) streamLandscapeLoadingVisible = visible
-                        },
-                        navController = navController,
-                        p2pEnabled = p2pSettingsUiState.p2pEnabled,
-                        openExternalPlayback = playback::openExternalPlayback,
-                        openExternalStreamUrl = playback::openExternalStreamUrl,
-                    )
-                }
-                entry<PlayerRoute>(
-                    metadata = if (isIos) {
-                        NavDisplay.transitionSpec {
-                            fadeIn(animationSpec = tween(220)) togetherWith
-                                fadeOut(animationSpec = tween(220))
-                        } + NavDisplay.popTransitionSpec {
-                            fadeIn(animationSpec = tween(220)) togetherWith
-                                fadeOut(animationSpec = tween(220))
-                        }
-                    } else {
-                        emptyMap()
-                    },
-                ) { route ->
-                    if (!isIos) {
-                        DisposableEffect(route) {
-                            visiblePlayerEntries += 1
-                            onDispose { visiblePlayerEntries -= 1 }
-                        }
-                    }
-                    PlayerDestination(
-                        route = route,
-                        navController = navController,
-                        externalPlayerId = playerSettingsUiState.externalPlayerId,
-                        externalPlayerNotConfiguredText = playback.strings.externalPlayerNotConfigured,
-                        externalPlayerFailedText = playback.strings.externalPlayerFailed,
-                        onExternalPlayerLaunch = playback.recordExternalLaunch,
-                        launchExternalPlayer = playback.launchExternalPlayer,
-                        openExternalStreamUrl = playback::openExternalStreamUrl,
-                    )
-                }
-                entry<CatalogRoute> { route ->
-                    CatalogDestination(
-                        route = route,
-                        navController = navController,
-                        onPosterLongClick = openPosterActions,
-                    )
-                }
-                entry<HomescreenSettingsRoute> { route ->
-                    SettingsDestination(route, navController) { onBack ->
-                        HomescreenSettingsScreen(onBack = onBack)
-                    }
-                }
-                entry<MetaScreenSettingsRoute> { route ->
-                    SettingsDestination(route, navController) { onBack ->
-                        MetaScreenSettingsScreen(onBack = onBack)
-                    }
-                }
-                entry<ContinueWatchingSettingsRoute> { route ->
-                    SettingsDestination(route, navController) { onBack ->
-                        ContinueWatchingSettingsScreen(onBack = onBack)
-                    }
-                }
-                entry<SettingsPageRoute> { route ->
-                    SettingsRootDestination(
-                        route = route,
-                        navController = navController,
-                        useNativeNavigation = useNativeNavigation,
-                        downloadsTitle = downloadsSettingsTitle,
-                        collectionsTitle = collectionsTitle,
-                        onCheckForUpdates = if (AppFeaturePolicy.inAppUpdaterEnabled) {
-                            { appUpdaterController.checkForUpdates(force = true, showNoUpdateFeedback = true) }
-                        } else null,
-                        onTestUpdateBanner = if (
-                            AppFeaturePolicy.inAppUpdaterEnabled && AppUpdaterPlatform.isDebugBuild
-                        ) appUpdaterController::showDebugTestUpdate else null,
-                    )
-                }
-                entry<DownloadsSettingsRoute> { route ->
-                    DownloadsDestination(
-                        route = route,
-                        navController = navController,
-                        useNativeNavigation = useNativeNavigation,
-                        onOpenDownload = playback::openDownloadedItem,
-                    )
-                }
-                entry<DownloadShowRoute> { route ->
-                    DownloadShowDestination(
-                        route = route,
-                        navController = navController,
-                        onOpenDownload = playback::openDownloadedItem,
-                    )
-                }
-                entry<AddonsSettingsRoute> { route ->
-                    SettingsDestination(route, navController) { onBack ->
-                        AddonsSettingsScreen(onBack = onBack)
-                    }
-                }
-                if (AppFeaturePolicy.pluginsEnabled) {
-                    entry<PluginsSettingsRoute> { route ->
-                        SettingsDestination(route, navController) { onBack ->
-                            PluginsSettingsScreen(onBack = onBack)
-                        }
-                    }
-                }
-                entry<AccountSettingsRoute> { route ->
-                    SettingsDestination(route, navController) { onBack ->
-                        AccountSettingsScreen(onBack = onBack)
-                    }
-                }
-                entry<SupportersContributorsSettingsRoute> { route ->
-                    SettingsDestination(route, navController) { onBack ->
-                        if (AppFeaturePolicy.supportersContributorsPageEnabled) {
-                            SupportersContributorsSettingsScreen(onBack = onBack)
-                        } else {
-                            LaunchedEffect(Unit) { onBack() }
-                        }
-                    }
-                }
-                entry<LicensesAttributionsSettingsRoute> { route ->
-                    SettingsDestination(route, navController) { onBack ->
-                        LicensesAttributionsSettingsScreen(onBack = onBack)
-                    }
-                }
-                entry<CollectionsRoute> { route ->
-                    CollectionsDestination(
-                        route = route,
-                        navController = navController,
-                        newCollectionTitle = newCollectionTitle,
-                    )
-                }
-                entry<CollectionEditorRoute> { route ->
-                    CollectionEditorDestination(
-                        route = route,
-                        navController = navController,
-                        useNativeNavigation = useNativeNavigation,
-                    )
-                }
-                entry<CollectionEditorPageRoute> { route ->
-                    CollectionEditorPageDestination(
-                        route = route,
-                        navController = navController,
-                    )
-                }
-                entry<FolderDetailRoute> { route ->
-                    FolderDestination(
-                        route = route,
-                        navController = navController,
-                        onCatalogClick = onCatalogClick,
-                    )
-                }
                     }.let { provider ->
                         { key ->
                             routeDisposalDecorator.register(

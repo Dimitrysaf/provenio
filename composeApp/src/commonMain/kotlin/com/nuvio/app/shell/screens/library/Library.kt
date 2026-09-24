@@ -3,16 +3,13 @@ package com.nuvio.app.shell.screens.library
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,7 +52,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.shell.components.ScreenActivityEffect
@@ -138,7 +134,6 @@ fun LibraryScreen(
         LibraryDisplaySettingsRepository.uiState
     }.collectAsStateWithLifecycle()
     val networkStatusUiState by NetworkStatusRepository.uiState.collectAsStateWithLifecycle()
-    var observedOfflineState by remember { mutableStateOf(false) }
     var sourceModeName by rememberSaveable { mutableStateOf(LibraryViewMode.Saved.name) }
     val sourceMode = remember(sourceModeName) {
         runCatching { LibraryViewMode.valueOf(sourceModeName) }.getOrDefault(LibraryViewMode.Saved)
@@ -209,30 +204,7 @@ fun LibraryScreen(
         }
     }
 
-    ScreenActivityEffect(networkStatusUiState.condition, isRemoteSource) { screenActive ->
-        if (!screenActive) return@ScreenActivityEffect
-        when (networkStatusUiState.condition) {
-            NetworkCondition.NoInternet,
-            NetworkCondition.ServersUnreachable,
-            -> {
-                observedOfflineState = true
-            }
-
-            NetworkCondition.Online -> {
-                if (!observedOfflineState) return@ScreenActivityEffect
-                observedOfflineState = false
-                if (isRemoteSource) {
-                    coroutineScope.launch {
-                        LibraryRepository.pullFromServer(ProfileRepository.activeProfileId)
-                    }
-                }
-            }
-
-            NetworkCondition.Unknown,
-            NetworkCondition.Checking,
-            -> Unit
-        }
-    }
+    LibraryReconnectEffect(networkStatusUiState.condition, isRemoteSource)
 
     ScreenActivityEffect(scrollToTopRequests) { screenActive ->
         if (!screenActive) return@ScreenActivityEffect
@@ -272,52 +244,22 @@ fun LibraryScreen(
         val gridColumns = rememberPosterGridColumnCount(maxWidth - LibraryGridHorizontalPadding * 2)
 
         NuvioScreen(
-            title = if (sourceMode == LibraryViewMode.Cloud) {
-                                stringResource(Res.string.library_title)
-                            } else {
-                                when (uiState.sourceMode) {
-                                    LibrarySourceMode.LOCAL -> stringResource(Res.string.library_title)
-                                    LibrarySourceMode.TRAKT -> stringResource(Res.string.library_trakt_title)
-                                    LibrarySourceMode.SIMKL -> stringResource(Res.string.library_simkl_title)
-                                }
-                            },
+            title = when {
+                sourceMode == LibraryViewMode.Cloud -> stringResource(Res.string.library_title)
+                else -> when (uiState.sourceMode) {
+                    LibrarySourceMode.LOCAL -> stringResource(Res.string.library_title)
+                    LibrarySourceMode.TRAKT -> stringResource(Res.string.library_trakt_title)
+                    LibrarySourceMode.SIMKL -> stringResource(Res.string.library_simkl_title)
+                }
+            },
             modifier = Modifier.fillMaxSize(),
             horizontalPadding = 0.dp,
             listState = listState,
             actions = {
-            if (sourceMode == LibraryViewMode.Saved) {
-                                    val targetLayout = if (displaySettings.layoutMode == LibraryLayoutMode.HORIZONTAL) {
-                                        LibraryLayoutMode.VERTICAL
-                                    } else {
-                                        LibraryLayoutMode.HORIZONTAL
-                                    }
-                                    IconButton(
-                                        onClick = {
-                                            LibraryDisplaySettingsRepository.setLayoutMode(targetLayout)
-                                        },
-                                    ) {
-                                        Crossfade(
-                                            targetState = targetLayout,
-                                            animationSpec = tween(durationMillis = 140),
-                                            label = "libraryLayoutAction",
-                                        ) { animatedTargetLayout ->
-                                            Icon(
-                                                imageVector = if (animatedTargetLayout == LibraryLayoutMode.VERTICAL) {
-                                                    Icons.Rounded.GridView
-                                                } else {
-                                                    Icons.Rounded.ViewAgenda
-                                                },
-                                                contentDescription = if (animatedTargetLayout == LibraryLayoutMode.VERTICAL) {
-                                                    stringResource(Res.string.library_layout_show_vertical)
-                                                } else {
-                                                    stringResource(Res.string.library_layout_show_horizontal)
-                                                },
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                        }
-                                    }
-                                }
-        },
+                if (sourceMode == LibraryViewMode.Saved) {
+                    LibraryLayoutToggle(displaySettings.layoutMode)
+                }
+            },
         ) {
 
             if (sourceMode == LibraryViewMode.Cloud) {
@@ -368,45 +310,18 @@ fun LibraryScreen(
 
                     !uiState.errorMessage.isNullOrBlank() && uiState.sections.isEmpty() -> {
                         item {
-                            if (networkStatusUiState.isOfflineLike) {
-                                NuvioNetworkOfflineCard(
-                                    condition = networkStatusUiState.condition,
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    onRetry = retryLibraryLoad,
-                                )
-                            } else {
-                                HomeEmptyStateCard(
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    title = when (uiState.sourceMode) {
-                                        LibrarySourceMode.LOCAL -> stringResource(Res.string.library_load_failed)
-                                        LibrarySourceMode.TRAKT -> stringResource(Res.string.library_trakt_load_failed)
-                                        LibrarySourceMode.SIMKL -> stringResource(Res.string.library_simkl_load_failed)
-                                    },
-                                    message = uiState.errorMessage.orEmpty(),
-                                    actionLabel = stringResource(Res.string.action_retry),
-                                    onActionClick = retryLibraryLoad,
-                                )
-                            }
+                            LibraryLoadError(
+                                sourceMode = uiState.sourceMode,
+                                condition = networkStatusUiState.condition,
+                                isOfflineLike = networkStatusUiState.isOfflineLike,
+                                errorMessage = uiState.errorMessage.orEmpty(),
+                                onRetry = retryLibraryLoad,
+                            )
                         }
                     }
 
                     uiState.sections.isEmpty() -> {
-                        item {
-                            EmptyState(
-                                icon = Icons.Rounded.VideoLibrary,
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                                title = when (uiState.sourceMode) {
-                                    LibrarySourceMode.LOCAL -> stringResource(Res.string.library_empty_title)
-                                    LibrarySourceMode.TRAKT -> stringResource(Res.string.library_trakt_empty_title)
-                                    LibrarySourceMode.SIMKL -> stringResource(Res.string.library_simkl_empty_title)
-                                },
-                                message = when (uiState.sourceMode) {
-                                    LibrarySourceMode.LOCAL -> stringResource(Res.string.library_empty_message)
-                                    LibrarySourceMode.TRAKT -> stringResource(Res.string.library_trakt_empty_message)
-                                    LibrarySourceMode.SIMKL -> stringResource(Res.string.library_simkl_empty_message)
-                                },
-                            )
-                        }
+                        item { LibraryEmptyState(uiState.sourceMode) }
                     }
 
                     else -> {
@@ -1291,4 +1206,113 @@ private class LibraryDisintegrationHolder {
 
         return result
     }
+}
+
+// Pulls the remote library again once the connection comes back.
+@Composable
+private fun LibraryReconnectEffect(condition: NetworkCondition, isRemoteSource: Boolean) {
+    var observedOfflineState by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    ScreenActivityEffect(condition, isRemoteSource) { screenActive ->
+        if (!screenActive) return@ScreenActivityEffect
+        when (condition) {
+            NetworkCondition.NoInternet,
+            NetworkCondition.ServersUnreachable,
+            -> {
+                observedOfflineState = true
+            }
+
+            NetworkCondition.Online -> {
+                if (!observedOfflineState) return@ScreenActivityEffect
+                observedOfflineState = false
+                if (isRemoteSource) {
+                    coroutineScope.launch {
+                        LibraryRepository.pullFromServer(ProfileRepository.activeProfileId)
+                    }
+                }
+            }
+
+            NetworkCondition.Unknown,
+            NetworkCondition.Checking,
+            -> Unit
+        }
+    }
+}
+
+// Switches the saved library between rows and a grid.
+@Composable
+private fun LibraryLayoutToggle(layoutMode: LibraryLayoutMode) {
+    val targetLayout = if (layoutMode == LibraryLayoutMode.HORIZONTAL) {
+        LibraryLayoutMode.VERTICAL
+    } else {
+        LibraryLayoutMode.HORIZONTAL
+    }
+    IconButton(onClick = { LibraryDisplaySettingsRepository.setLayoutMode(targetLayout) }) {
+        Crossfade(
+            targetState = targetLayout,
+            animationSpec = tween(durationMillis = 140),
+            label = "libraryLayoutAction",
+        ) { animatedTargetLayout ->
+            Icon(
+                imageVector = if (animatedTargetLayout == LibraryLayoutMode.VERTICAL) {
+                    Icons.Rounded.GridView
+                } else {
+                    Icons.Rounded.ViewAgenda
+                },
+                contentDescription = if (animatedTargetLayout == LibraryLayoutMode.VERTICAL) {
+                    stringResource(Res.string.library_layout_show_vertical)
+                } else {
+                    stringResource(Res.string.library_layout_show_horizontal)
+                },
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LibraryLoadError(
+    sourceMode: LibrarySourceMode,
+    condition: NetworkCondition,
+    isOfflineLike: Boolean,
+    errorMessage: String,
+    onRetry: () -> Unit,
+) {
+    if (isOfflineLike) {
+        NuvioNetworkOfflineCard(
+            condition = condition,
+            modifier = Modifier.padding(horizontal = 16.dp),
+            onRetry = onRetry,
+        )
+    } else {
+        HomeEmptyStateCard(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            title = when (sourceMode) {
+                LibrarySourceMode.LOCAL -> stringResource(Res.string.library_load_failed)
+                LibrarySourceMode.TRAKT -> stringResource(Res.string.library_trakt_load_failed)
+                LibrarySourceMode.SIMKL -> stringResource(Res.string.library_simkl_load_failed)
+            },
+            message = errorMessage,
+            actionLabel = stringResource(Res.string.action_retry),
+            onActionClick = onRetry,
+        )
+    }
+}
+
+@Composable
+private fun LibraryEmptyState(sourceMode: LibrarySourceMode) {
+    EmptyState(
+        icon = Icons.Rounded.VideoLibrary,
+        modifier = Modifier.padding(horizontal = 16.dp),
+        title = when (sourceMode) {
+            LibrarySourceMode.LOCAL -> stringResource(Res.string.library_empty_title)
+            LibrarySourceMode.TRAKT -> stringResource(Res.string.library_trakt_empty_title)
+            LibrarySourceMode.SIMKL -> stringResource(Res.string.library_simkl_empty_title)
+        },
+        message = when (sourceMode) {
+            LibrarySourceMode.LOCAL -> stringResource(Res.string.library_empty_message)
+            LibrarySourceMode.TRAKT -> stringResource(Res.string.library_trakt_empty_message)
+            LibrarySourceMode.SIMKL -> stringResource(Res.string.library_simkl_empty_message)
+        },
+    )
 }
