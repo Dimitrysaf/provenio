@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - provenio-migration
       - 'feature/**'
       - 'fix/**'
 
@@ -21,6 +20,10 @@ jobs:
     name: Build Android Debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
 
     steps:
       - name: Check out source
@@ -40,15 +43,29 @@ jobs:
       - name: Create placeholder local.properties
         run: touch local.properties
 
-      - name: Build full debug APK
+      - name: Build full debug APKs
         # Override the low-priority setting from gradle.properties
         # (runners have nothing else to starve)
-        run: ./gradlew :androidApp:assembleFullDebug --stacktrace --no-configuration-cache --priority=normal
+        run: ./gradlew :androidApp:assembleFullDebug -Pprovenio.abiSplits=true --stacktrace --no-configuration-cache --priority=normal
+
+      - name: Name the APKs
+        run: ./.github/scripts/name-apks.sh androidApp/build/outputs/apk/full/debug dist
 
       - name: Upload Android artifact
         uses: actions/upload-artifact@v7
         with:
-          name: provenio-prerelease-android-full-debug
-          path: androidApp/build/outputs/apk/full/debug/*.apk
+          name: provenio-beta-android
+          path: dist/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Keep only the channel releases
+        if: github.ref == 'refs/heads/main'
+        run: ./.github/scripts/prune-releases.sh
+
+      - name: Publish the beta channel
+        if: github.ref == 'refs/heads/main'
+        run: |
+          short_sha="${GITHUB_SHA::7}"
+          gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}" --jq '.commit.message' > beta-notes.md
+          ./.github/scripts/replace-channel-release.sh beta "Provenio Beta channel ${short_sha}" beta-notes.md --prerelease

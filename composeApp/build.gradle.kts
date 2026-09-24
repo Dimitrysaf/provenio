@@ -32,6 +32,9 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
     abstract val appVersionCode: Property<Int>
 
     @get:Input
+    abstract val buildCommit: Property<String>
+
+    @get:Input
     abstract val supabaseUrl: Property<String>
 
     @get:Input
@@ -176,6 +179,7 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
                 |object AppVersionConfig {
                 |    const val VERSION_NAME = "${appVersionName.get()}"
                 |    const val VERSION_CODE = ${appVersionCode.get()}
+                |    const val BUILD_COMMIT = "${buildCommit.get()}"
                 |}
                 """.trimMargin()
             )
@@ -345,6 +349,8 @@ val generateRuntimeConfigs = tasks.register<GenerateRuntimeConfigsTask>("generat
     localPropertiesFile.set(rootProject.layout.projectDirectory.file("local.properties"))
     appVersionName.set(releaseAppVersionName)
     appVersionCode.set(releaseAppVersionCode)
+    // The short commit a CI build was made from; beta updates compare against it. Empty for local builds.
+    buildCommit.set(providers.environmentVariable("GITHUB_SHA").map { it.take(7) }.orElse(""))
     supabaseUrl.set(runtimeConfigValue("PROVENIO_SUPABASE_URL"))
     supabaseAnonKey.set(runtimeConfigValue("PROVENIO_SUPABASE_ANON_KEY"))
     supabaseFallbackUrl.set(runtimeConfigValue("PROVENIO_SUPABASE_FALLBACK_URL"))

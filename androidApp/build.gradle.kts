@@ -46,6 +46,8 @@ val requestedTaskNames = gradle.startParameter.taskNames.map { it.substringAfter
 val buildsReleaseApks = requestedTaskNames.any {
     it.startsWith("assemble", ignoreCase = true) && it.endsWith("Release", ignoreCase = true)
 }
+// Channel builds ship one APK per ABI plus a universal one; beta passes -Pprovenio.abiSplits=true.
+val buildsSplitApks = buildsReleaseApks || providers.gradleProperty("provenio.abiSplits").orNull == "true"
 
 android {
     namespace = "io.github.dimitrysaf.provenio.android"
@@ -118,10 +120,10 @@ android {
 
     splits {
         abi {
-            isEnable = buildsReleaseApks
+            isEnable = buildsSplitApks
             reset()
             include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
-            isUniversalApk = false
+            isUniversalApk = true
         }
     }
 

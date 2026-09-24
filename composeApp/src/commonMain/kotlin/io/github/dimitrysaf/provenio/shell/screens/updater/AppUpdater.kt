@@ -28,9 +28,23 @@ private const val gitHubOwner = "Dimitrysaf"
 private const val gitHubRepo = "provenio"
 private const val gitHubApiBase = "https://api.github.com"
 
-// Debug builds come from the prerelease pipeline, so they follow pre-releases; release builds follow releases.
-private val followsPrereleases: Boolean
-    get() = AppUpdaterPlatform.isDebugBuild
+// Each channel is one release under a fixed tag, replaced on every publish.
+// Debug builds come from the beta pipeline; release builds from the stable one.
+private val channelTag: String
+    get() = if (AppUpdaterPlatform.isDebugBuild) "beta" else "stable"
+
+// The release title ends with what identifies the build: a short commit for beta, a version for stable.
+private val channelBuildId: String
+    get() = if (AppUpdaterPlatform.isDebugBuild) AppVersionConfig.BUILD_COMMIT else AppVersionConfig.VERSION_NAME
+
+// The APK each ABI installs; the universal one is the fallback.
+private val apkNameByAbi = mapOf(
+    "arm64-v8a" to "Provenio-arm64v8.apk",
+    "armeabi-v7a" to "Provenio-armv7.apk",
+    "x86_64" to "Provenio-x86_64.apk",
+    "x86" to "Provenio-x86.apk",
+)
+private const val universalApkName = "Provenio.apk"
 
 data class AppUpdate(
     val tag: String,
@@ -84,6 +98,14 @@ private class NoChannelReleaseException : IllegalStateException(
     runBlocking { getString(Res.string.updates_no_channel_release) },
 )
 
+// Beta has no order between commits, so any other commit is newer; a local build without one never updates.
+private fun isChannelBuildNewer(remoteBuildId: String): Boolean =
+    if (AppUpdaterPlatform.isDebugBuild) {
+        channelBuildId.isNotBlank() && !remoteBuildId.equals(channelBuildId, ignoreCase = true)
+    } else {
+        VersionUtils.isRemoteNewer(remoteBuildId, channelBuildId)
+    }
+
 private object VersionUtils {
     fun normalize(raw: String?): String {
         if (raw.isNullOrBlank()) return ""
@@ -125,23 +147,22 @@ private object AppUpdaterRepository {
     suspend fun getLatestChannelUpdate(): Result<AppUpdate> = runCatching {
         val response = httpRequestRaw(
             method = "GET",
-            url = "$gitHubApiBase/repos/$gitHubOwner/$gitHubRepo/releases?per_page=20",
+            url = "$gitHubApiBase/repos/$gitHubOwner/$gitHubRepo/releases/tags/$channelTag",
             headers = mapOf(
                 "Accept" to "application/vnd.github+json",
                 "User-Agent" to "Provenio",
             ),
             body = "",
         )
+        if (response.status == 404) throw NoChannelReleaseException()
         if (response.status !in 200..299) {
             error(getString(Res.string.updates_github_api_error, response.status))
         }
 
-        val releases = appUpdaterJson.decodeFromString<List<GitHubReleaseDto>>(response.body)
-        val release = releases.firstOrNull { !it.draft && it.prerelease == followsPrereleases }
-            ?: throw NoChannelReleaseException()
+        val release = appUpdaterJson.decodeFromString<GitHubReleaseDto>(response.body)
+        if (release.draft) throw NoChannelReleaseException()
 
-        val tag = release.tagName?.takeIf { it.isNotBlank() }
-            ?: release.name?.takeIf { it.isNotBlank() }
+        val tag = release.name?.trim()?.substringAfterLast(' ')?.takeIf { it.isNotBlank() }
             ?: error(getString(Res.string.updates_release_missing_title))
 
         val asset = chooseBestApkAsset(release.assets)
@@ -159,25 +180,10 @@ private object AppUpdaterRepository {
     }
 
     private fun chooseBestApkAsset(assets: List<GitHubAssetDto>): GitHubAssetDto? {
-        val apkAssets = assets.filter { asset ->
-            asset.name.endsWith(".apk", ignoreCase = true) ||
-                asset.contentType == "application/vnd.android.package-archive"
-        }
-        if (apkAssets.isEmpty()) return null
-        if (apkAssets.size == 1) return apkAssets.first()
-
-        val supportedAbis = AppUpdaterPlatform.getSupportedAbis()
-        for (abi in supportedAbis) {
-            val candidate = apkAssets.firstOrNull { asset ->
-                asset.name.contains(abi, ignoreCase = true)
-            }
-            if (candidate != null) return candidate
-        }
-
-        return apkAssets.firstOrNull { asset ->
-            val name = asset.name.lowercase()
-            name.contains("universal") || name.contains("all")
-        } ?: apkAssets.first()
+        val byName = assets.associateBy { it.name }
+        return AppUpdaterPlatform.getSupportedAbis()
+            .firstNotNullOfOrNull { abi -> apkNameByAbi[abi]?.let(byName::get) }
+            ?: byName[universalApkName]
     }
 }
 
@@ -221,7 +227,7 @@ class AppUpdaterController internal constructor(
             val result = AppUpdaterRepository.getLatestChannelUpdate()
 
             result.onSuccess { update ->
-                val remoteNewer = VersionUtils.isRemoteNewer(update.tag, AppVersionConfig.VERSION_NAME)
+                val remoteNewer = isChannelBuildNewer(update.tag)
                 val ignored = ignoredTag != null && ignoredTag == update.tag
                 val shouldShowDialog = force || (remoteNewer && !ignored)
 
