@@ -36,7 +36,7 @@ import coil3.compose.AsyncImage
 import com.nuvio.app.shell.components.NuvioBackButton
 import com.nuvio.app.shell.components.platformPhysicalTopInset
 import com.nuvio.app.core.metadata.MetaDetails
-import com.nuvio.app.isIos
+import com.nuvio.app.core.build.isIos
 import com.nuvio.app.shell.nav.LocalUseNativeNavigation
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource

@@ -28,9 +28,6 @@
 -keep class com.nuvio.app.shell.screens.streams.StreamBadgeChipSize { *; }
 -keep class com.nuvio.app.shell.screens.streams.StreamBadgeChipDefaults { *; }
 
--keep class com.nuvio.app.shell.screens.streams.StreamsScreenKt { *; }
--keep class com.nuvio.app.shell.screens.streams.StreamsScreenKt$* { *; }
-
 # Avoid R8 producing verifier-invalid bytecode for the large player composable.
 -keep class com.nuvio.app.shell.screens.player.PlayerKt { *; }
 -keep class com.nuvio.app.shell.screens.player.PlayerKt$* { *; }

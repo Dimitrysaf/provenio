@@ -1,6 +1,6 @@
 package com.nuvio.app.core.playback
 
-import com.nuvio.app.isIos
+import com.nuvio.app.core.build.isIos
 
 data class AudioTrack(
     val index: Int,

@@ -167,8 +167,8 @@ import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
-import com.nuvio.app.isIos
-import com.nuvio.app.supportsPosterNavigationMotion
+import com.nuvio.app.core.build.isIos
+import com.nuvio.app.core.build.supportsPosterNavigationMotion
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable

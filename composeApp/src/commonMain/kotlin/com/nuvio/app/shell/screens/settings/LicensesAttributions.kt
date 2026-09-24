@@ -25,7 +25,7 @@ import com.nuvio.app.shell.components.NuvioScreen
 import com.nuvio.app.core.cloud.PremiumizeCloudLibraryPosterUrl
 import com.nuvio.app.core.cloud.TorboxCloudLibraryPosterUrl
 import com.nuvio.app.core.cloud.cloudLibraryDisplayArtworkUrl
-import com.nuvio.app.isIos
+import com.nuvio.app.core.build.isIos
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource

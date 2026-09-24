@@ -9,7 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import com.nuvio.app.supportsPosterNavigationMotion
+import com.nuvio.app.core.build.supportsPosterNavigationMotion
 
 @Composable
 internal fun Modifier.detailsContentReveal(enabled: Boolean): Modifier {

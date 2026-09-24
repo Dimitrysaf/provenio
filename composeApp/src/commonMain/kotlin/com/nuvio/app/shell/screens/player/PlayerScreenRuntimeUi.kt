@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import com.nuvio.app.core.p2p.P2pStreamingState
 import com.nuvio.app.core.p2p.formatP2pSpeed
-import com.nuvio.app.isIos
+import com.nuvio.app.core.build.isIos
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import com.nuvio.app.core.playback.ExternalPlayerPlaybackRequest

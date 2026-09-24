@@ -55,8 +55,8 @@ import androidx.compose.ui.unit.dp
 import com.nuvio.app.shell.components.NuvioSearchField
 import com.nuvio.app.shell.theme.NuvioTokens
 import com.nuvio.app.shell.theme.nuvio
-import com.nuvio.app.isIos
-import com.nuvio.app.supportsPosterNavigationMotion
+import com.nuvio.app.core.build.isIos
+import com.nuvio.app.core.build.supportsPosterNavigationMotion
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.core.settings.SentrySettingsRepository

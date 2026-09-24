@@ -61,7 +61,7 @@ import com.nuvio.app.core.plugins.PluginsUiState
 import com.nuvio.app.core.plugins.PluginRepository
 import com.nuvio.app.core.streams.StreamAutoPlayMode
 import com.nuvio.app.core.streams.StreamAutoPlaySource
-import com.nuvio.app.isIos
+import com.nuvio.app.core.build.isIos
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.StringResource

@@ -1,7 +1,7 @@
 package com.nuvio.app.shell.screens.player
 
 import androidx.compose.runtime.Composable
-import com.nuvio.app.isIos
+import com.nuvio.app.core.build.isIos
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_player_track_number
 import org.jetbrains.compose.resources.stringResource

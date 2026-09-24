@@ -56,7 +56,7 @@ import com.nuvio.app.core.metadata.MetaScreenSectionItem
 import com.nuvio.app.core.metadata.MetaScreenSectionKey
 import com.nuvio.app.core.metadata.MetaScreenSettingsRepository
 import com.nuvio.app.core.metadata.MetaScreenSettingsUiState
-import com.nuvio.app.supportsPosterNavigationMotion
+import com.nuvio.app.core.build.supportsPosterNavigationMotion
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_reorder
 import nuvio.composeapp.generated.resources.action_reset
