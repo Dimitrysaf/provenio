@@ -9,6 +9,7 @@ on:
       - 'fix/**'
     paths-ignore:
       - 'engine/**'
+      - '.github/workflows/engine.yml'
 
 permissions:
   contents: read
@@ -18,8 +19,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Check for engine changes
+    runs-on: ubuntu-latest
+    outputs:
+      engine: ${{ steps.check.outputs.engine }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # The Engine workflow starts this build itself once the new engine is committed.
+      - id: check
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          engine=false
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == "refs/heads/main" ]] \
+            && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null \
+            && git diff --name-only "${BEFORE}" "${GITHUB_SHA}" | grep -qE '^(engine/|\.github/workflows/engine\.yml$)'; then
+            engine=true
+          fi
+          echo "engine=${engine}" >> "${GITHUB_OUTPUT}"
+
   beta:
     name: Build beta
+    needs: changes
+    if: needs.changes.outputs.engine != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
