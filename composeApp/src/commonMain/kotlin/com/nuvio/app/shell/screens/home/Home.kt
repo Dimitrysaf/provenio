@@ -7,8 +7,6 @@ import androidx.compose.foundation.gestures.stopScroll
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,7 +16,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.auth.AuthRepository
@@ -38,59 +35,31 @@ import com.nuvio.app.shell.components.withDuplicateSafeLazyKeys
 import com.nuvio.app.core.addons.AddonRepository
 import com.nuvio.app.core.addons.enabledAddons
 import com.nuvio.app.core.addons.firstEnabledManifestError
-import com.nuvio.app.core.cloud.CloudLibraryContentType
 import com.nuvio.app.core.cloud.CloudLibraryRepository
-import com.nuvio.app.core.cloud.CloudLibraryUiState
-import com.nuvio.app.core.cloud.findPlaybackTargetForProgress
-import com.nuvio.app.core.metadata.MetaDetails
-import com.nuvio.app.core.metadata.MetaDetailsRepository
-import com.nuvio.app.core.metadata.MetaVideo
-import com.nuvio.app.core.metadata.SeriesPrimaryAction
-import com.nuvio.app.core.metadata.seriesPrimaryAction
 import com.nuvio.app.shell.screens.home.components.HomeCatalogRowSection
-import com.nuvio.app.shell.screens.home.components.HomeContinueWatchingSection
 import com.nuvio.app.shell.screens.home.components.HomeEmptyStateCard
 import com.nuvio.app.shell.screens.home.components.HomeHeroReservedSpace
 import com.nuvio.app.shell.screens.home.components.HomeHeroSection
 import com.nuvio.app.shell.screens.home.components.HomeSkeletonHero
 import com.nuvio.app.shell.screens.home.components.HomeSkeletonRow
-import com.nuvio.app.shell.screens.home.components.HomeContinueWatchingSectionBottomPadding
-import com.nuvio.app.shell.screens.home.components.ContinueWatchingLayout
 import com.nuvio.app.core.tracking.TrackingSettingsRepository
-import com.nuvio.app.core.tracking.WatchProgressSource
-import com.nuvio.app.core.watch.watched.WatchedItem
 import com.nuvio.app.core.watch.watched.WatchedRepository
 import com.nuvio.app.core.watch.watched.WatchedUiState
-import com.nuvio.app.core.watch.watched.episodePlaybackId
 import com.nuvio.app.core.watch.watched.resolveWatchedBadgesBulk
-import com.nuvio.app.core.watch.watched.watchedItemKey
-import com.nuvio.app.core.watch.progress.CachedInProgressItem
-import com.nuvio.app.core.watch.progress.CachedNextUpItem
 import com.nuvio.app.core.watch.progress.ContinueWatchingEnrichmentCache
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
-import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesUiState
 import com.nuvio.app.core.watch.progress.ContinueWatchingItem
-import com.nuvio.app.core.watch.progress.ContinueWatchingSortMode
-import com.nuvio.app.core.watch.progress.isMalformedNextUpSeedContentId
 import com.nuvio.app.core.watch.progress.isSeriesTypeForContinueWatching
 import com.nuvio.app.core.watch.progress.nextUpDismissKey
-import com.nuvio.app.core.watch.progress.parseReleaseDateToEpochMs
 import com.nuvio.app.core.watch.progress.resolvedProgressKey
-import com.nuvio.app.core.watch.progress.shouldTreatAsInProgressForContinueWatching
-import com.nuvio.app.core.watch.progress.shouldUseAsCompletedSeedForContinueWatching
 import com.nuvio.app.core.watch.progress.WatchProgressClock
 import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import com.nuvio.app.core.watch.progress.WatchProgressRepository
 import com.nuvio.app.core.watch.progress.WatchProgressSourceCoordinator
-import com.nuvio.app.core.watch.progress.buildContinueWatchingEpisodeSubtitle
 import com.nuvio.app.core.watch.progress.continueWatchingEntries
 import com.nuvio.app.core.watch.progress.toContinueWatchingItem
-import com.nuvio.app.core.watch.progress.toUpNextContinueWatchingItem
 import com.nuvio.app.shell.components.DisintegrationRequest
-import com.nuvio.app.core.watch.watching.application.WatchingState
-import com.nuvio.app.core.watch.watching.domain.WatchingContentRef
-import com.nuvio.app.core.watch.watching.domain.isReleasedBy
 import com.nuvio.app.core.collection.CollectionRepository
 import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.shell.screens.home.components.HomeCollectionRowSection
@@ -118,8 +87,6 @@ import com.nuvio.app.core.home.shouldShowInitialHomeLoading
 import com.nuvio.app.core.home.CachedNextUpRelease
 import com.nuvio.app.core.home.CompletedSeriesCandidate
 import com.nuvio.app.core.home.HomeContinueWatchingMaxRecentProgressItems
-import com.nuvio.app.core.home.HomeNextUpCandidateMetadataDecision
-import com.nuvio.app.core.home.HomeNextUpCandidateMetadataOutcome
 import com.nuvio.app.core.home.buildHomeNextUpSeedCandidates
 import com.nuvio.app.core.home.cachedNextUpHasAired
 import com.nuvio.app.core.home.filterEntriesForContinueWatchingWindow
@@ -133,10 +100,7 @@ import com.nuvio.app.core.home.HomeCatalogSettingsItem
 import com.nuvio.app.core.home.HomeCatalogSettingsRepository
 import com.nuvio.app.core.home.HomeRepository
 import com.nuvio.app.core.home.buildHomeContinueWatchingItems
-import com.nuvio.app.core.home.buildHomeInProgressCacheSnapshot
-import com.nuvio.app.core.home.classifyHomeNextUpCandidateMetadata
 import com.nuvio.app.core.home.mergeHomeNextUpItemsWithCache
-import com.nuvio.app.core.home.nonBlankOrNull
 import com.nuvio.app.core.home.toContinueWatchingItem
 
 @Composable
@@ -1192,304 +1156,11 @@ fun HomeScreen(
     }
 }
 
-private fun LazyListScope.homeContinueWatchingSections(
-    preferences: ContinueWatchingPreferencesUiState,
-    continueWatchingItems: List<ContinueWatchingItem>,
-    upcomingItems: List<ContinueWatchingItem>,
-    dataSourceKey: WatchProgressSource,
-    sectionPadding: Dp,
-    layout: ContinueWatchingLayout,
-    continueWatchingListState: LazyListState,
-    upcomingListState: LazyListState,
-    onItemClick: ((ContinueWatchingItem) -> Unit)?,
-    onItemLongPress: ((ContinueWatchingItem) -> Unit)?,
-    disintegrationRequest: DisintegrationRequest<String>?,
-) {
-    if (!preferences.isVisible) return
-
-    if (continueWatchingItems.isNotEmpty()) {
-        item(key = HOME_CONTINUE_WATCHING_SECTION_KEY, contentType = "continue_watching") {
-            HomeContinueWatchingSection(
-                items = continueWatchingItems,
-                dataSourceKey = dataSourceKey,
-                style = preferences.style,
-                useEpisodeThumbnails = preferences.useEpisodeThumbnails,
-                blurNextUp = preferences.blurNextUp,
-                modifier = Modifier.padding(bottom = HomeContinueWatchingSectionBottomPadding),
-                sectionPadding = sectionPadding,
-                layout = layout,
-                listState = continueWatchingListState,
-                onItemClick = onItemClick,
-                onItemLongPress = onItemLongPress,
-                disintegrationRequest = disintegrationRequest,
-            )
-        }
-    }
-
-    if (upcomingItems.isNotEmpty()) {
-        item(key = HOME_UPCOMING_SECTION_KEY, contentType = "continue_watching") {
-            HomeContinueWatchingSection(
-                items = upcomingItems,
-                dataSourceKey = dataSourceKey,
-                style = preferences.style,
-                useEpisodeThumbnails = preferences.useEpisodeThumbnails,
-                blurNextUp = preferences.blurNextUp,
-                modifier = Modifier.padding(bottom = HomeContinueWatchingSectionBottomPadding),
-                title = stringResource(Res.string.upcoming_section_title),
-                sectionPadding = sectionPadding,
-                layout = layout,
-                listState = upcomingListState,
-                onItemClick = onItemClick,
-                onItemLongPress = onItemLongPress,
-                disintegrationRequest = disintegrationRequest,
-            )
-        }
-    }
-}
-
 private const val HOME_CATALOG_PREVIEW_LIMIT = 18
 
-private const val HOME_CONTINUE_WATCHING_SECTION_KEY = "home_continue_watching"
+internal const val HOME_CONTINUE_WATCHING_SECTION_KEY = "home_continue_watching"
 
-private const val HOME_UPCOMING_SECTION_KEY = "home_upcoming"
-
-private const val NEXT_UP_RESOLUTION_CONCURRENCY = 4
-
-private const val MAX_NEXT_UP_RESOLUTION_RETRIES = 3
-
-private const val NEXT_UP_RESOLUTION_RETRY_BASE_DELAY_MS = 1_500L
+internal const val HOME_UPCOMING_SECTION_KEY = "home_upcoming"
 
 private fun String.isHomeSeriesLikeType(): Boolean =
     trim().lowercase() in setOf("series", "show", "tv", "tvshow")
-
-internal fun filterHomeNextUpCandidatesForContinueWatchingWindow(
-    candidates: List<CompletedSeriesCandidate>,
-    cutoffEpochMs: Long?,
-): List<CompletedSeriesCandidate> = cutoffEpochMs
-    ?.let { cutoff -> candidates.filter { candidate -> candidate.markedAtEpochMs >= cutoff } }
-    ?: candidates
-
-private suspend fun resolveHomeNextUpCandidate(
-    completedEntry: CompletedSeriesCandidate,
-    watchProgressEntries: List<WatchProgressEntry>,
-    watchedItems: List<WatchedItem>,
-    cachedFallbackItem: ContinueWatchingItem?,
-    todayIsoDate: String,
-    preferFurthestEpisode: Boolean,
-    showUnairedNextUp: Boolean,
-    dismissedNextUpKeys: Set<String>,
-    providerOwnsCompletedHistory: Boolean,
-): HomeNextUpResolutionAttempt {
-    val contentId = completedEntry.content.id
-    val meta = try {
-        MetaDetailsRepository.fetch(
-            type = completedEntry.content.type,
-            id = contentId,
-        )
-    } catch (error: Throwable) {
-        if (error is CancellationException) throw error
-        null
-    }
-    if (meta == null) {
-        return HomeNextUpResolutionAttempt.transientFailure()
-    }
-
-    val resolvedProgressEntries = WatchProgressRepository.prepareNextUpProgressEntries(
-        entries = watchProgressEntries,
-        contentId = contentId,
-    )
-    val resolvedWatchedItems = watchedItems
-    val resolvedWatchedKeys = resolvedWatchedItems.mapTo(linkedSetOf()) { item ->
-        watchedItemKey(item.type, item.id, item.season, item.episode)
-    }
-
-    if (!providerOwnsCompletedHistory) {
-        WatchedRepository.reconcileFullyWatchedSeriesState(
-            meta = meta,
-            todayIsoDate = todayIsoDate,
-            isEpisodeWatched = { episode ->
-                watchedItemKey(meta.type, meta.id, episode.season, episode.episode) in resolvedWatchedKeys
-            },
-            isEpisodeCompleted = { episode ->
-                val playbackId = meta.episodePlaybackId(episode)
-                resolvedProgressEntries.any { entry ->
-                    entry.videoId == playbackId && entry.isEffectivelyCompleted
-                }
-            },
-        )
-    }
-
-    val action = meta.seriesPrimaryAction(
-        content = completedEntry.content,
-        entries = resolvedProgressEntries,
-        watchedItems = resolvedWatchedItems,
-        todayIsoDate = todayIsoDate,
-        preferFurthestEpisode = preferFurthestEpisode,
-        showUnairedNextUp = showUnairedNextUp,
-    )
-    if (action == null) {
-        return HomeNextUpResolutionAttempt.conclusiveNone()
-    }
-    if (action.resumePositionMs != null) {
-        return HomeNextUpResolutionAttempt.conclusiveNone()
-    }
-
-    val nextEpisode = meta.videoForSeriesAction(action)
-    if (nextEpisode == null) {
-        return HomeNextUpResolutionAttempt.conclusiveNone()
-    }
-    val metadataDecision = classifyHomeNextUpCandidateMetadata(
-        freshItem = completedEntry.toContinueWatchingSeed(meta)
-            .toUpNextContinueWatchingItem(nextEpisode),
-        cachedFallbackItem = cachedFallbackItem,
-        dismissedNextUpKeys = dismissedNextUpKeys,
-    )
-    val item = metadataDecision.item
-    if (metadataDecision.outcome == HomeNextUpCandidateMetadataOutcome.Dismissed) {
-        return HomeNextUpResolutionAttempt.conclusiveNone()
-    }
-    if (metadataDecision.outcome == HomeNextUpCandidateMetadataOutcome.Transient) {
-        return HomeNextUpResolutionAttempt.transientFailure()
-    }
-
-    val sortTimestamp = if (item.isReleaseAlert) {
-        com.nuvio.app.core.watch.progress.parseReleaseDateToEpochMs(item.released) ?: completedEntry.markedAtEpochMs
-    } else {
-        completedEntry.markedAtEpochMs
-    }
-    return HomeNextUpResolutionAttempt.success(
-        contentId to (sortTimestamp to item),
-    )
-}
-
-private fun MetaDetails.videoForSeriesAction(action: SeriesPrimaryAction): MetaVideo? {
-    if (action.seasonNumber != null && action.episodeNumber != null) {
-        videos.firstOrNull { video ->
-            video.season == action.seasonNumber &&
-                video.episode == action.episodeNumber
-        }?.let { return it }
-    }
-    return videos.firstOrNull { video ->
-        com.nuvio.app.core.watch.progress.buildPlaybackVideoId(
-            parentMetaId = id,
-            seasonNumber = video.season,
-            episodeNumber = video.episode,
-            fallbackVideoId = video.id,
-        ) == action.videoId || video.id == action.videoId
-    }
-}
-
-private fun shouldTreatAsActiveInProgressForNextUpSuppression(
-    progress: WatchProgressEntry,
-    latestCompletedAt: Long?,
-): Boolean {
-    if (!progress.shouldTreatAsInProgressForContinueWatching()) return false
-    if (latestCompletedAt == null || latestCompletedAt == Long.MIN_VALUE) return true
-    return progress.lastUpdatedEpochMs >= latestCompletedAt
-}
-
-private data class HomeNextUpCandidateResolution(
-    val candidate: CompletedSeriesCandidate,
-    val attempt: HomeNextUpResolutionAttempt,
-)
-
-private data class HomeNextUpResolutionAttempt(
-    val resolved: Pair<String, Pair<Long, ContinueWatchingItem>>?,
-    val isConclusive: Boolean,
-) {
-    companion object {
-        fun success(
-            resolved: Pair<String, Pair<Long, ContinueWatchingItem>>,
-        ): HomeNextUpResolutionAttempt =
-            HomeNextUpResolutionAttempt(
-                resolved = resolved,
-                isConclusive = true,
-            )
-
-        fun conclusiveNone(): HomeNextUpResolutionAttempt =
-            HomeNextUpResolutionAttempt(
-                resolved = null,
-                isConclusive = true,
-            )
-
-        fun transientFailure(): HomeNextUpResolutionAttempt =
-            HomeNextUpResolutionAttempt(
-                resolved = null,
-                isConclusive = false,
-            )
-    }
-}
-
-private fun saveContinueWatchingSnapshots(
-    profileId: Int,
-    source: WatchProgressSource,
-    cacheGeneration: Int,
-    nextUpItemsBySeries: Map<String, Pair<Long, ContinueWatchingItem>>,
-    visibleContinueWatchingEntries: List<WatchProgressEntry>,
-    todayIsoDate: String,
-    seedLastWatchedMap: Map<String, Long>,
-) {
-    val nextUpCache = nextUpItemsBySeries.mapNotNull { (contentId, pair) ->
-        val item = pair.second
-        CachedNextUpItem(
-            contentId = contentId,
-            contentType = item.parentMetaType,
-            name = item.title,
-            poster = item.poster,
-            backdrop = item.background,
-            logo = item.logo,
-            videoId = item.videoId,
-            season = item.seasonNumber,
-            episode = item.episodeNumber,
-            episodeTitle = item.episodeTitle,
-            episodeThumbnail = item.episodeThumbnail,
-            pauseDescription = item.pauseDescription,
-            released = item.released,
-            hasAired = item.released?.let { released ->
-                isReleasedBy(todayIsoDate = todayIsoDate, releasedDate = released)
-            } ?: true,
-            lastWatched = seedLastWatchedMap[contentId] ?: pair.first,
-            sortTimestamp = pair.first,
-            seedSeason = item.nextUpSeedSeasonNumber,
-            seedEpisode = item.nextUpSeedEpisodeNumber,
-            isReleaseAlert = item.isReleaseAlert,
-            isNewSeasonRelease = item.isNewSeasonRelease,
-        )
-    }
-    val inProgressCache = buildHomeInProgressCacheSnapshot(
-        visibleEntries = visibleContinueWatchingEntries,
-        cachedEntries = ContinueWatchingEnrichmentCache.getInProgressSnapshot(
-            profileId = profileId,
-            source = source,
-        ),
-    )
-    ContinueWatchingEnrichmentCache.saveSnapshots(
-        profileId = profileId,
-        source = source,
-        generation = cacheGeneration,
-        nextUp = nextUpCache,
-        inProgress = inProgressCache,
-    )
-}
-
-private fun CompletedSeriesCandidate.toContinueWatchingSeed(meta: com.nuvio.app.core.metadata.MetaDetails) =
-    WatchProgressEntry(
-        contentType = content.type,
-        parentMetaId = content.id,
-        parentMetaType = content.type,
-        videoId = "${content.id}:${seasonNumber}:${episodeNumber}",
-        title = meta.name,
-        logo = meta.logo,
-        poster = meta.poster,
-        background = meta.background,
-        seasonNumber = seasonNumber,
-        episodeNumber = episodeNumber,
-        lastPositionMs = 0L,
-        durationMs = 0L,
-        lastUpdatedEpochMs = markedAtEpochMs,
-        isCompleted = true,
-    )
-
-private fun WatchProgressEntry.isCloudLibraryProgressEntry(): Boolean =
-    contentType.equals(CloudLibraryContentType, ignoreCase = true) ||
-        parentMetaType.equals(CloudLibraryContentType, ignoreCase = true)
