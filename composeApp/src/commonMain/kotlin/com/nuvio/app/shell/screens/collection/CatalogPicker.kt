@@ -73,7 +73,7 @@ private sealed interface CatalogPickerRow {
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun CatalogPickerSheet(
+internal fun CatalogPickerSheet(
     availableCatalogs: List<AvailableCatalog>,
     selectedSources: List<CollectionCatalogSource>,
     onToggle: (AvailableCatalog) -> Unit,
