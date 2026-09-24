@@ -1,15 +1,21 @@
+import java.util.Properties
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
-import java.util.Properties
 
 abstract class GenerateRuntimeConfigsTask : DefaultTask() {
     @get:OutputDirectory
@@ -193,6 +199,42 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
     }
 }
 
+// Fails the build when core reaches into the UI: no Composables, no Compose UI, no shell imports.
+abstract class CheckCoreBoundaryTask : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val sources: ConfigurableFileCollection
+
+    @get:OutputFile
+    abstract val report: RegularFileProperty
+
+    @TaskAction
+    fun verify() {
+        val allowedComposeImports = setOf(
+            "androidx.compose.runtime.Immutable",
+            "androidx.compose.runtime.Stable",
+        )
+        val violations = mutableListOf<String>()
+        sources.files.filter { it.extension == "kt" }.sortedBy { it.path }.forEach { file ->
+            file.readLines().forEachIndexed { index, line ->
+                val text = line.trim()
+                val imported = text.removePrefix("import ").trim()
+                val violates = text.startsWith("import com.nuvio.app.shell.") ||
+                    (text.startsWith("import androidx.compose.") && imported !in allowedComposeImports) ||
+                    text.startsWith("@Composable")
+                if (violates) violations += "${file.path}:${index + 1}: $text"
+            }
+        }
+        report.get().asFile.apply {
+            parentFile.mkdirs()
+            writeText(violations.joinToString("\n"))
+        }
+        if (violations.isNotEmpty()) {
+            throw GradleException("core must stay free of UI code:\n" + violations.joinToString("\n"))
+        }
+    }
+}
+
 fun readXcconfigValue(file: File, key: String): String? {
     if (!file.exists()) return null
     return file.readLines()
@@ -317,8 +359,14 @@ val generateRuntimeConfigs = tasks.register<GenerateRuntimeConfigsTask>("generat
     )
 }
 
+val checkCoreBoundary = tasks.register<CheckCoreBoundaryTask>("checkCoreBoundary") {
+    sources.from(fileTree("src") { include("*/kotlin/com/nuvio/app/core/**/*.kt") })
+    report.set(layout.buildDirectory.file("reports/core-boundary.txt"))
+}
+
 tasks.withType<KotlinCompilationTask<*>>().configureEach {
     dependsOn(generateRuntimeConfigs)
+    dependsOn(checkCoreBoundary)
 }
 
 kotlin {
