@@ -1745,8 +1745,7 @@ private fun androidx.compose.ui.graphics.Color.toMpvColor(): String {
     return "#%02X%02X%02X%02X".format(alpha, red, green, blue)
 }
 
-private fun androidx.compose.ui.graphics.Color.alphaByte(): Int =
-    (toArgb() ushr 24) and 0xff
+private fun Long.alphaByte(): Int = ((this ushr 24) and 0xFF).toInt()
 
 private fun SubtitleStyleState.toMpvSubtitleFontSize(): Int =
     (fontSizeSp * MPV_SUBTITLE_FONT_SIZE_SCALE).toInt().coerceIn(

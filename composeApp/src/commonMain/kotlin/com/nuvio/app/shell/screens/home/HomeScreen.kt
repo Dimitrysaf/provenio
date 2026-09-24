@@ -137,6 +137,7 @@ import com.nuvio.app.core.home.buildHomeInProgressCacheSnapshot
 import com.nuvio.app.core.home.classifyHomeNextUpCandidateMetadata
 import com.nuvio.app.core.home.mergeHomeNextUpItemsWithCache
 import com.nuvio.app.core.home.nonBlankOrNull
+import com.nuvio.app.core.home.toContinueWatchingItem
 
 @Composable
 fun HomeScreen(
@@ -1488,50 +1489,6 @@ private fun CompletedSeriesCandidate.toContinueWatchingSeed(meta: com.nuvio.app.
         lastUpdatedEpochMs = markedAtEpochMs,
         isCompleted = true,
     )
-
-private fun CachedInProgressItem.toContinueWatchingItem(): ContinueWatchingItem {
-    val explicitResumeProgressFraction = progressPercent
-        ?.takeIf { duration <= 0L && it > 0f }
-        ?.let { (it / 100f).coerceIn(0f, 1f) }
-    val normalizedProgressFraction = progressPercent
-        ?.let { (it / 100f).coerceIn(0f, 1f) }
-        ?: if (duration > 0L) {
-            (position.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
-        } else {
-            0f
-        }
-    val resolvedPoster = poster.nonBlankOrNull()
-    val resolvedBackdrop = backdrop.nonBlankOrNull()
-    val resolvedEpisodeThumbnail = episodeThumbnail.nonBlankOrNull()
-
-    return ContinueWatchingItem(
-        parentMetaId = contentId,
-        parentMetaType = contentType,
-        videoId = videoId,
-        title = name,
-        subtitle = buildContinueWatchingEpisodeSubtitle(
-            seasonNumber = season,
-            episodeNumber = episode,
-            episodeTitle = episodeTitle,
-        ),
-        imageUrl = resolvedEpisodeThumbnail ?: resolvedBackdrop ?: resolvedPoster,
-        logo = logo.nonBlankOrNull(),
-        poster = resolvedPoster,
-        background = resolvedBackdrop,
-        seasonNumber = season,
-        episodeNumber = episode,
-        episodeTitle = episodeTitle.nonBlankOrNull(),
-        episodeThumbnail = resolvedEpisodeThumbnail,
-        pauseDescription = pauseDescription.nonBlankOrNull(),
-        isNextUp = false,
-        nextUpSeedSeasonNumber = null,
-        nextUpSeedEpisodeNumber = null,
-        resumePositionMs = if (explicitResumeProgressFraction != null) 0L else position,
-        resumeProgressFraction = explicitResumeProgressFraction,
-        durationMs = duration,
-        progressFraction = normalizedProgressFraction,
-    )
-}
 
 private fun WatchProgressEntry.isCloudLibraryProgressEntry(): Boolean =
     contentType.equals(CloudLibraryContentType, ignoreCase = true) ||

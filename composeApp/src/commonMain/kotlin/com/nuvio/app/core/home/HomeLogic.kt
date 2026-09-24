@@ -387,7 +387,7 @@ internal fun buildHomeInProgressCacheSnapshot(
 private fun ContinueWatchingItem.shouldDisplayInContinueWatching(): Boolean =
     isNextUp || progressFraction < 0.995f
 
-private fun CachedNextUpItem.toContinueWatchingItem(
+internal fun CachedNextUpItem.toContinueWatchingItem(
     releaseEpochMs: Long?,
     nowEpochMs: Long,
 ): ContinueWatchingItem {
@@ -501,3 +501,47 @@ private fun ContinueWatchingItem.hasPlaceholderHomeTitle(): Boolean {
 
 private fun ContinueWatchingItem.isCloudLibraryContinueWatchingItem(): Boolean =
     parentMetaType.equals(CloudLibraryContentType, ignoreCase = true)
+
+internal fun CachedInProgressItem.toContinueWatchingItem(): ContinueWatchingItem {
+    val explicitResumeProgressFraction = progressPercent
+        ?.takeIf { duration <= 0L && it > 0f }
+        ?.let { (it / 100f).coerceIn(0f, 1f) }
+    val normalizedProgressFraction = progressPercent
+        ?.let { (it / 100f).coerceIn(0f, 1f) }
+        ?: if (duration > 0L) {
+            (position.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+        } else {
+            0f
+        }
+    val resolvedPoster = poster.nonBlankOrNull()
+    val resolvedBackdrop = backdrop.nonBlankOrNull()
+    val resolvedEpisodeThumbnail = episodeThumbnail.nonBlankOrNull()
+
+    return ContinueWatchingItem(
+        parentMetaId = contentId,
+        parentMetaType = contentType,
+        videoId = videoId,
+        title = name,
+        subtitle = buildContinueWatchingEpisodeSubtitle(
+            seasonNumber = season,
+            episodeNumber = episode,
+            episodeTitle = episodeTitle,
+        ),
+        imageUrl = resolvedEpisodeThumbnail ?: resolvedBackdrop ?: resolvedPoster,
+        logo = logo.nonBlankOrNull(),
+        poster = resolvedPoster,
+        background = resolvedBackdrop,
+        seasonNumber = season,
+        episodeNumber = episode,
+        episodeTitle = episodeTitle.nonBlankOrNull(),
+        episodeThumbnail = resolvedEpisodeThumbnail,
+        pauseDescription = pauseDescription.nonBlankOrNull(),
+        isNextUp = false,
+        nextUpSeedSeasonNumber = null,
+        nextUpSeedEpisodeNumber = null,
+        resumePositionMs = if (explicitResumeProgressFraction != null) 0L else position,
+        resumeProgressFraction = explicitResumeProgressFraction,
+        durationMs = duration,
+        progressFraction = normalizedProgressFraction,
+    )
+}
