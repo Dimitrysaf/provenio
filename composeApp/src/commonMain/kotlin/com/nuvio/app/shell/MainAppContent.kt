@@ -11,11 +11,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CheckCircleOutline
-import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -48,14 +43,11 @@ import com.nuvio.app.shell.nav.PosterNavigationState
 import com.nuvio.app.shell.nav.posterNavigationEntry
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.build.AppFeaturePolicy
-import com.nuvio.app.core.format.formatReleaseDateForDisplay
 import com.nuvio.app.core.network.NetworkCondition
 import com.nuvio.app.core.network.NetworkStatusRepository
 import com.nuvio.app.core.sync.SyncManager
 import com.nuvio.app.shell.components.DisintegrationRequestController
 import com.nuvio.app.shell.components.NativeTabBridge
-import com.nuvio.app.shell.components.MediaActionsSheet
-import com.nuvio.app.shell.components.MediaSheetAction
 import com.nuvio.app.shell.components.NuvioContinueWatchingActionSheet
 import com.nuvio.app.shell.components.NuvioStatusModal
 import com.nuvio.app.shell.components.NuvioToastController
@@ -81,9 +73,6 @@ import com.nuvio.app.shell.screens.library.LibraryListPickerHost
 import com.nuvio.app.shell.screens.library.rememberLibraryListPickerState
 import com.nuvio.app.shell.screens.library.PendingTrackingMembershipRemoval
 import com.nuvio.app.shell.screens.library.TrackingMembershipRemovalConfirmationHost
-import com.nuvio.app.shell.screens.library.executeTrackingMembershipOperation
-import com.nuvio.app.core.library.librarySectionItemKey
-import com.nuvio.app.core.library.toLibraryItem
 import com.nuvio.app.core.library.toMetaPreview
 import com.nuvio.app.core.notifications.EpisodeReleaseNotificationsRepository
 import com.nuvio.app.core.p2p.P2pSettingsRepository
@@ -100,14 +89,10 @@ import com.nuvio.app.shell.screens.settings.MetaScreenSettingsScreen
 import com.nuvio.app.shell.screens.settings.PluginsSettingsScreen
 import com.nuvio.app.shell.screens.settings.SupportersContributorsSettingsScreen
 import com.nuvio.app.core.streams.StreamAutoPlayPolicy
-import com.nuvio.app.core.tracking.TrackingMembershipApplyResult
-import com.nuvio.app.core.tracking.TrackingProviderId
 import com.nuvio.app.shell.screens.updater.AppUpdaterHost
 import com.nuvio.app.core.updater.AppUpdaterPlatform
 import com.nuvio.app.shell.screens.updater.rememberAppUpdaterController
 import com.nuvio.app.core.watch.watched.WatchedRepository
-import com.nuvio.app.core.watch.watching.application.WatchingActions
-import com.nuvio.app.core.watch.watching.application.WatchingState
 import com.nuvio.app.core.watch.progress.ContinueWatchingItem
 import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
 import com.nuvio.app.core.watch.progress.WatchProgressRepository
@@ -188,7 +173,6 @@ internal fun MainAppContent(
         var requestedSettingsPageName by rememberSaveable { mutableStateOf<String?>(null) }
         val libraryListPicker = rememberLibraryListPickerState()
         var pendingTrackingRemoval by remember { mutableStateOf<PendingTrackingMembershipRemoval?>(null) }
-        val trackingListsUpdateFailedMessage = stringResource(Res.string.tracking_lists_update_failed)
         val addonsUiState by remember {
             AddonRepository.initialize()
             AddonRepository.uiState
@@ -890,132 +874,15 @@ internal fun MainAppContent(
 
             selectedPosterActionTarget?.let { posterActionTarget ->
                 key(posterActionTarget) {
-                    val preview = posterActionTarget.preview
-                    val isSaved = LibraryRepository.isSaved(preview.id, preview.type)
-                    val isWatched = WatchingState.isPosterWatched(
+                    PosterActionsSheet(
+                        target = posterActionTarget,
                         watchedKeys = watchedUiState.watchedKeys,
-                        item = preview,
                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                    )
-                    val removesFromLibrary = isSaved &&
-                        (posterActionTarget.libraryItem != null || !isRemoteLibrarySource)
-                    MediaActionsSheet(
-                        imageUrl = preview.poster,
-                        title = preview.name,
-                        subtitle = preview.releaseInfo
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let { formatReleaseDateForDisplay(it) }
-                            ?: preview.type.replaceFirstChar { char ->
-                                if (char.isLowerCase()) char.titlecase() else char.toString()
-                            },
-                        actions = listOf(
-                            MediaSheetAction(
-                                icon = if (isSaved) Icons.Default.DeleteOutline else Icons.Default.Add,
-                                label = if (isSaved) {
-                                    stringResource(Res.string.hero_remove_from_library)
-                                } else {
-                                    stringResource(Res.string.hero_add_to_library)
-                                },
-                                isDestructive = removesFromLibrary,
-                                onSelected = {
-                                    val libraryItem = posterActionTarget.libraryItem
-                                        ?: preview.toLibraryItem(savedAtEpochMs = 0L)
-                                    if (posterActionTarget.libraryItem != null) {
-                                        val animationKey = posterActionTarget.libraryListKey
-                                            ?.let { listKey -> librarySectionItemKey(listKey, libraryItem) }
-                                        if (isRemoteLibrarySource) {
-                                            coroutineScope.launch {
-                                                val listKey = posterActionTarget.libraryListKey
-                                                val removeMembership: suspend (Set<TrackingProviderId>) ->
-                                                    TrackingMembershipApplyResult = { confirmedProviders ->
-                                                    if (listKey.isNullOrBlank()) {
-                                                        val currentMembership = LibraryRepository.getMembershipSnapshot(libraryItem)
-                                                        LibraryRepository.applyMembershipChanges(
-                                                            item = libraryItem,
-                                                            desiredMembership = currentMembership.mapValues { false },
-                                                            confirmedRemovalProviders = confirmedProviders,
-                                                        )
-                                                    } else {
-                                                        LibraryRepository.removeFromList(
-                                                            item = libraryItem,
-                                                            listKey = listKey,
-                                                            confirmedRemovalProviders = confirmedProviders,
-                                                        )
-                                                    }
-                                                }
-                                                val removeMembershipWithAnimation:
-                                                    suspend (Set<TrackingProviderId>) -> TrackingMembershipApplyResult =
-                                                    { confirmedProviders ->
-                                                        val request = if (removesFromLibrary) {
-                                                            animationKey?.let(libraryDisintegrationRequests::arm)
-                                                        } else {
-                                                            null
-                                                        }
-                                                        try {
-                                                            removeMembership(confirmedProviders).also { result ->
-                                                                if (result.requiresRemovalConfirmation && request != null) {
-                                                                    libraryDisintegrationRequests.cancel(request)
-                                                                }
-                                                            }
-                                                        } catch (error: Throwable) {
-                                                            request?.let(libraryDisintegrationRequests::cancel)
-                                                            throw error
-                                                        }
-                                                    }
-                                                executeTrackingMembershipOperation(
-                                                    operation = { removeMembershipWithAnimation(emptySet()) },
-                                                    onSuccess = { result ->
-                                                        if (result.requiresRemovalConfirmation) {
-                                                            pendingTrackingRemoval = PendingTrackingMembershipRemoval(
-                                                                itemTitle = libraryItem.name,
-                                                                confirmations = result.requiredRemovalConfirmations,
-                                                                retry = removeMembershipWithAnimation,
-                                                                onApplied = {},
-                                                                onFailure = { error ->
-                                                                    NuvioToastController.show(
-                                                                        error.message
-                                                                            ?: trackingListsUpdateFailedMessage,
-                                                                    )
-                                                                },
-                                                            )
-                                                        }
-                                                    },
-                                                    onFailure = { error ->
-                                                        NuvioToastController.show(
-                                                            error.message ?: trackingListsUpdateFailedMessage,
-                                                        )
-                                                    },
-                                                )
-                                            }
-                                        } else {
-                                            if (removesFromLibrary) {
-                                                animationKey?.let(libraryDisintegrationRequests::arm)
-                                            }
-                                            LibraryRepository.remove(libraryItem.id)
-                                        }
-                                    } else {
-                                        if (!isRemoteLibrarySource) {
-                                            LibraryRepository.toggleLocalSaved(libraryItem)
-                                        } else {
-                                            libraryListPicker.open(libraryItem, preview.name)
-                                        }
-                                    }
-                                },
-                            ),
-                            MediaSheetAction(
-                                icon = if (isWatched) Icons.Default.CheckCircle else Icons.Default.CheckCircleOutline,
-                                label = if (isWatched) {
-                                    stringResource(Res.string.hero_mark_unwatched)
-                                } else {
-                                    stringResource(Res.string.hero_mark_watched)
-                                },
-                                onSelected = {
-                                    coroutineScope.launch {
-                                        WatchingActions.togglePosterWatched(preview)
-                                    }
-                                },
-                            ),
-                        ),
+                        isRemoteLibrarySource = isRemoteLibrarySource,
+                        scope = coroutineScope,
+                        libraryDisintegrationRequests = libraryDisintegrationRequests,
+                        libraryListPicker = libraryListPicker,
+                        onRemovalNeedsConfirmation = { pendingTrackingRemoval = it },
                         onDismiss = { selectedPosterActionTarget = null },
                     )
                 }
