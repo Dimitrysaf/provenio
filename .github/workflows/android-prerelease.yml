@@ -49,7 +49,24 @@ jobs:
         run: ./gradlew :androidApp:assembleFullDebug -Pprovenio.abiSplits=true --stacktrace --no-configuration-cache --priority=normal
 
       - name: Name the APKs
-        run: ./.github/scripts/name-apks.sh androidApp/build/outputs/apk/full/debug dist
+        run: |
+          mkdir -p dist
+          for apk in androidApp/build/outputs/apk/full/debug/*.apk; do
+            case "$(basename "${apk}")" in
+              *-universal-*) name="Provenio.apk" ;;
+              *-arm64-v8a-*) name="Provenio-arm64v8.apk" ;;
+              *-armeabi-v7a-*) name="Provenio-armv7.apk" ;;
+              *-x86_64-*) name="Provenio-x86_64.apk" ;;
+              *-x86-*) name="Provenio-x86.apk" ;;
+              *) continue ;;
+            esac
+            cp "${apk}" "dist/${name}"
+          done
+          if [[ ! -f dist/Provenio.apk ]]; then
+            echo "No universal APK was built." >&2
+            exit 1
+          fi
+          ls -l dist
 
       - name: Upload Android artifact
         uses: actions/upload-artifact@v7
@@ -64,4 +81,18 @@ jobs:
         run: |
           short_sha="${GITHUB_SHA::7}"
           gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}" --jq '.commit.message' > beta-notes.md
-          ./.github/scripts/replace-channel-release.sh beta "Provenio Beta channel ${short_sha}" beta-notes.md --prerelease
+          if gh release view beta --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1 </dev/null; then
+            echo "Deleting the previous beta release"
+            gh release delete beta --repo "${GITHUB_REPOSITORY}" --yes </dev/null
+          fi
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/beta" >/dev/null 2>&1 </dev/null; then
+            echo "Deleting the previous beta tag"
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/tags/beta" </dev/null
+          fi
+          gh release create beta \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --title "Provenio Beta channel ${short_sha}" \
+            --notes-file beta-notes.md \
+            --prerelease \
+            dist/*.apk </dev/null
