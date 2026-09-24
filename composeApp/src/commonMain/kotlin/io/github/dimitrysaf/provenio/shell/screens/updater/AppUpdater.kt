@@ -24,10 +24,13 @@ import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 import io.github.dimitrysaf.provenio.core.updater.AppUpdaterPlatform
 
-private const val gitHubOwner = "NuvioMedia"
-private const val gitHubRepo = "NuvioMobile"
+private const val gitHubOwner = "Dimitrysaf"
+private const val gitHubRepo = "provenio"
 private const val gitHubApiBase = "https://api.github.com"
-private const val releaseChannelBranch = "cmp-rewrite"
+
+// Debug builds come from the prerelease pipeline, so they follow pre-releases; release builds follow releases.
+private val followsPrereleases: Boolean
+    get() = AppUpdaterPlatform.isDebugBuild
 
 data class AppUpdate(
     val tag: String,
@@ -125,7 +128,7 @@ private object AppUpdaterRepository {
             url = "$gitHubApiBase/repos/$gitHubOwner/$gitHubRepo/releases?per_page=20",
             headers = mapOf(
                 "Accept" to "application/vnd.github+json",
-                "User-Agent" to "NuvioMobile",
+                "User-Agent" to "Provenio",
             ),
             body = "",
         )
@@ -134,7 +137,7 @@ private object AppUpdaterRepository {
         }
 
         val releases = appUpdaterJson.decodeFromString<List<GitHubReleaseDto>>(response.body)
-        val release = releases.firstOrNull { it.matchesRequestedChannel() && !it.draft && !it.prerelease }
+        val release = releases.firstOrNull { !it.draft && it.prerelease == followsPrereleases }
             ?: throw NoChannelReleaseException()
 
         val tag = release.tagName?.takeIf { it.isNotBlank() }
@@ -153,17 +156,6 @@ private object AppUpdaterRepository {
             assetUrl = asset.browserDownloadUrl,
             assetSizeBytes = asset.size,
         )
-    }
-
-    private fun GitHubReleaseDto.matchesRequestedChannel(): Boolean {
-        val channel = releaseChannelBranch
-        if (targetCommitish?.trim()?.equals(channel, ignoreCase = true) == true) {
-            return true
-        }
-
-        return listOf(tagName, name)
-            .filterNotNull()
-            .any { value -> value.contains(channel, ignoreCase = true) }
     }
 
     private fun chooseBestApkAsset(assets: List<GitHubAssetDto>): GitHubAssetDto? {
