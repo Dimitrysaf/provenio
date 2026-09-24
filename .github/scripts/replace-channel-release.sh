@@ -6,12 +6,17 @@ tag="$1"
 title="$2"
 notes="$3"
 shift 3
-gh release delete "${tag}" --repo "${GITHUB_REPOSITORY}" --cleanup-tag --yes 2>/dev/null || true
-gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" 2>/dev/null || true
+repo="${GITHUB_REPOSITORY}"
+if gh release view "${tag}" --repo "${repo}" >/dev/null 2>&1 </dev/null; then
+  gh release delete "${tag}" --repo "${repo}" --yes </dev/null
+fi
+if gh api "repos/${repo}/git/ref/tags/${tag}" >/dev/null 2>&1 </dev/null; then
+  gh api -X DELETE "repos/${repo}/git/refs/tags/${tag}" </dev/null
+fi
 gh release create "${tag}" \
-  --repo "${GITHUB_REPOSITORY}" \
+  --repo "${repo}" \
   --target "${GITHUB_SHA}" \
   --title "${title}" \
   --notes-file "${notes}" \
   "$@" \
-  dist/*.apk
+  dist/*.apk </dev/null

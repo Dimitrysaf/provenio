@@ -74,9 +74,6 @@ jobs:
           fi
           [[ -s changelog.md ]] || echo "- No changes since the last stable release." > changelog.md
 
-      - name: Keep only the channel releases
-        run: ./.github/scripts/prune-releases.sh
-
       - name: Publish the stable channel
         run: |
           version="$(sed -n 's/^MARKETING_VERSION=//p' iosApp/Configuration/Version.xcconfig)"
