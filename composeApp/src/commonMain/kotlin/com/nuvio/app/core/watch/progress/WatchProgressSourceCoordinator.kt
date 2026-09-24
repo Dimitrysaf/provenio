@@ -4,7 +4,7 @@ import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
 import com.nuvio.app.core.tracking.ensureTrackingProvidersRegistered
-import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.shell.screens.profiles.ProfileRepository
 import com.nuvio.app.core.tracking.DEFAULT_WATCH_PROGRESS_SOURCE
 import com.nuvio.app.core.tracking.TrackingProviderId
 import com.nuvio.app.core.tracking.TrackingProviderRegistry
@@ -34,7 +34,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import com.nuvio.app.features.watchprogress.WatchProgressRepository
+import com.nuvio.app.shell.screens.watchprogress.WatchProgressRepository
 
 data class WatchProgressSourceTransitionState(
     val profileId: Int? = null,

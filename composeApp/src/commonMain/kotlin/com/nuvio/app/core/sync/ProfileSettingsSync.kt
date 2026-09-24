@@ -14,13 +14,13 @@ import com.nuvio.app.core.metadata.mdblist.MdbListMetadataService
 import com.nuvio.app.core.metadata.mdblist.MdbListSettingsStorage
 import com.nuvio.app.core.metadata.mdblist.MdbListSettingsRepository
 import com.nuvio.app.core.notifications.EpisodeReleaseNotificationsRepository
-import com.nuvio.app.features.player.PlayerSettingsStorage
-import com.nuvio.app.features.player.PlayerSettingsRepository
-import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.shell.screens.player.PlayerSettingsStorage
+import com.nuvio.app.shell.screens.player.PlayerSettingsRepository
+import com.nuvio.app.shell.screens.profiles.ProfileRepository
 import com.nuvio.app.core.settings.PosterCardStyleRepository
 import com.nuvio.app.core.settings.PosterCardStyleStorage
 import com.nuvio.app.core.settings.ThemeSettingsStorage
-import com.nuvio.app.features.settings.ThemeSettingsRepository
+import com.nuvio.app.shell.screens.settings.ThemeSettingsRepository
 import com.nuvio.app.core.streams.StreamBadgeSettingsRepository
 import com.nuvio.app.core.streams.StreamBadgeSettingsStorage
 import com.nuvio.app.core.metadata.tmdb.TmdbSettingsStorage

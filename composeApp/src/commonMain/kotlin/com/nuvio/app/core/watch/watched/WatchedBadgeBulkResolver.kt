@@ -2,7 +2,7 @@ package com.nuvio.app.core.watch.watched
 
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.metadata.MetaDetails
-import com.nuvio.app.features.details.MetaDetailsRepository
+import com.nuvio.app.shell.screens.details.MetaDetailsRepository
 import com.nuvio.app.core.tracking.simkl.SimklSyncRepository
 import com.nuvio.app.core.tracking.simkl.toSimklShowIdSiblings
 import com.nuvio.app.core.tracking.TrackingProviderId
@@ -13,7 +13,7 @@ import com.nuvio.app.core.tracking.providerId
 import com.nuvio.app.core.tracking.trakt.TraktProgressRepository
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import com.nuvio.app.core.watch.progress.WatchProgressEntry
-import com.nuvio.app.features.watchprogress.WatchProgressRepository
+import com.nuvio.app.shell.screens.watchprogress.WatchProgressRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Semaphore

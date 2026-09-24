@@ -2,7 +2,7 @@ package com.nuvio.app.core.tracking.simkl
 
 import com.nuvio.app.core.library.LibraryItem
 import com.nuvio.app.core.library.LibrarySection
-import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.shell.screens.profiles.ProfileRepository
 import com.nuvio.app.core.tracking.TrackingLibraryProvider
 import com.nuvio.app.core.tracking.TrackingLibrarySnapshot
 import com.nuvio.app.core.tracking.TrackingLibraryTab

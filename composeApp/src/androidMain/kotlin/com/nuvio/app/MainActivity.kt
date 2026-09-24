@@ -31,12 +31,12 @@ import com.nuvio.app.core.home.HomeCatalogSettingsStorage
 import com.nuvio.app.core.metadata.mdblist.MdbListSettingsStorage
 import com.nuvio.app.core.notifications.EpisodeReleaseNotificationPlatform
 import com.nuvio.app.core.notifications.EpisodeReleaseNotificationsStorage
-import com.nuvio.app.features.player.PlayerSettingsStorage
+import com.nuvio.app.shell.screens.player.PlayerSettingsStorage
 import com.nuvio.app.core.playback.PlayerTrackPreferenceStorage
 import com.nuvio.app.core.playback.ExternalPlayerPlatform
 import com.nuvio.app.core.playback.SubtitleFileCache
-import com.nuvio.app.features.player.PlayerPictureInPictureManager
-import com.nuvio.app.features.player.PipRemoteActionReceiver
+import com.nuvio.app.shell.screens.player.PlayerPictureInPictureManager
+import com.nuvio.app.shell.screens.player.PipRemoteActionReceiver
 import com.nuvio.app.core.p2p.P2pSettingsStorage
 import com.nuvio.app.core.p2p.P2pStreamingEngine
 import com.nuvio.app.core.plugins.PluginStorage
@@ -66,6 +66,7 @@ import com.nuvio.app.core.streams.BingeGroupCacheStorage
 import com.nuvio.app.core.watch.progress.ContinueWatchingEnrichmentStorage
 import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesStorage
 import com.nuvio.app.core.watch.progress.WatchProgressStorage
+import com.nuvio.app.shell.App
 
 open class MainActivity : AppCompatActivity() {
     private var pipRemoteActionReceiver: PipRemoteActionReceiver? = null

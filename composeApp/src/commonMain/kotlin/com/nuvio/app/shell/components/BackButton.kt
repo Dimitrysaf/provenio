@@ -14,8 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.navigation.LocalNativeNavigationBarHidden
-import com.nuvio.app.navigation.LocalUseNativeNavigation
+import com.nuvio.app.shell.nav.LocalNativeNavigationBarHidden
+import com.nuvio.app.shell.nav.LocalUseNativeNavigation
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_back
 import org.jetbrains.compose.resources.stringResource

@@ -6,12 +6,12 @@ import com.nuvio.app.core.auth.AuthState
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.time.EpisodeReleaseDatePlatform
 import com.nuvio.app.core.addons.AddonRepository
-import com.nuvio.app.features.collection.CollectionSyncService
-import com.nuvio.app.features.home.HomeCatalogSettingsSyncService
+import com.nuvio.app.shell.screens.collection.CollectionSyncService
+import com.nuvio.app.shell.screens.home.HomeCatalogSettingsSyncService
 import com.nuvio.app.core.library.LibrarySourceMode
 import com.nuvio.app.core.library.LibraryRepository
 import com.nuvio.app.core.plugins.PluginRepository
-import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.shell.screens.profiles.ProfileRepository
 import com.nuvio.app.core.tracking.TrackingProviderRegistry
 import com.nuvio.app.core.tracking.TrackingSettingsRepository
 import com.nuvio.app.core.tracking.WatchProgressSource

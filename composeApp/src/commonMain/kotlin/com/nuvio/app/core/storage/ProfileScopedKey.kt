@@ -1,6 +1,6 @@
 package com.nuvio.app.core.storage
 
-import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.shell.screens.profiles.ProfileRepository
 
 
 object ProfileScopedKey {

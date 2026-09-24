@@ -9,9 +9,9 @@ import com.nuvio.app.core.debrid.DebridSettings
 import com.nuvio.app.core.debrid.DebridSettingsRepository
 import com.nuvio.app.core.metadata.mdblist.MdbListSettings
 import com.nuvio.app.core.metadata.mdblist.MdbListSettingsRepository
-import com.nuvio.app.features.player.PlayerSettingsRepository
-import com.nuvio.app.features.player.PlayerSettingsUiState
-import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.shell.screens.player.PlayerSettingsRepository
+import com.nuvio.app.shell.screens.player.PlayerSettingsUiState
+import com.nuvio.app.shell.screens.profiles.ProfileRepository
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 import kotlinx.atomicfu.locks.SynchronizedObject

@@ -4,7 +4,7 @@ import co.touchlab.kermit.Logger
 import com.nuvio.app.core.addons.httpGetTextWithHeaders
 import com.nuvio.app.core.addons.httpPostJsonWithHeaders
 import com.nuvio.app.core.addons.httpRequestRaw
-import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.shell.screens.profiles.ProfileRepository
 import com.nuvio.app.core.tracking.TrackingAuthProvider
 import com.nuvio.app.core.tracking.TrackingCapability
 import com.nuvio.app.core.tracking.TrackingProviderDescriptor

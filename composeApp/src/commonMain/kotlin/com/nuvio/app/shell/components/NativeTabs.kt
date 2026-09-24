@@ -4,10 +4,10 @@ import com.nuvio.app.core.profiles.AvatarCatalogItem
 import com.nuvio.app.core.profiles.AvatarRepository
 import com.nuvio.app.core.profiles.MAX_PROFILES
 import com.nuvio.app.core.profiles.NuvioProfile
-import com.nuvio.app.features.profiles.PinVerifyResult
-import com.nuvio.app.features.profiles.ProfileRepository
-import com.nuvio.app.features.profiles.profileAvatarImageUrl
-import com.nuvio.app.features.profiles.showAlreadyActiveProfileToast
+import com.nuvio.app.shell.screens.profiles.PinVerifyResult
+import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.shell.screens.profiles.profileAvatarImageUrl
+import com.nuvio.app.shell.screens.profiles.showAlreadyActiveProfileToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

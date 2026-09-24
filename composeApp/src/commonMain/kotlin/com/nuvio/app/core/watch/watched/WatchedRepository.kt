@@ -6,7 +6,7 @@ import com.nuvio.app.core.auth.AuthState
 import com.nuvio.app.core.tracking.ensureTrackingProvidersRegistered
 import com.nuvio.app.core.metadata.MetaDetails
 import com.nuvio.app.core.metadata.MetaVideo
-import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.shell.screens.profiles.ProfileRepository
 import com.nuvio.app.core.tracking.TrackingProviderId
 import com.nuvio.app.core.tracking.TrackingProviderRegistry
 import com.nuvio.app.core.tracking.TrackingSettingsRepository

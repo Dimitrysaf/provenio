@@ -2,7 +2,7 @@ package com.nuvio.app.core.tracking.trakt
 
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.addons.httpGetTextWithHeaders
-import com.nuvio.app.features.details.MetaDetailsRepository
+import com.nuvio.app.shell.screens.details.MetaDetailsRepository
 import com.nuvio.app.core.metadata.MetaVideo
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CancellationException

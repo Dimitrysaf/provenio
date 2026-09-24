@@ -24,25 +24,25 @@
 -keep class com.nuvio.app.core.catalog.CatalogTargetKind { *; }
 
 # Avoid R8 merging/optimizing the stream badge chip used in lazy stream rows.
--keep class com.nuvio.app.features.streams.StreamBadgeChipKt { *; }
--keep class com.nuvio.app.features.streams.StreamBadgeChipSize { *; }
--keep class com.nuvio.app.features.streams.StreamBadgeChipDefaults { *; }
+-keep class com.nuvio.app.shell.screens.streams.StreamBadgeChipKt { *; }
+-keep class com.nuvio.app.shell.screens.streams.StreamBadgeChipSize { *; }
+-keep class com.nuvio.app.shell.screens.streams.StreamBadgeChipDefaults { *; }
 
--keep class com.nuvio.app.features.streams.StreamsScreenKt { *; }
--keep class com.nuvio.app.features.streams.StreamsScreenKt$* { *; }
+-keep class com.nuvio.app.shell.screens.streams.StreamsScreenKt { *; }
+-keep class com.nuvio.app.shell.screens.streams.StreamsScreenKt$* { *; }
 
 # Avoid R8 producing verifier-invalid bytecode for the large player composable.
--keep class com.nuvio.app.features.player.PlayerScreenKt { *; }
--keep class com.nuvio.app.features.player.PlayerScreenKt$* { *; }
+-keep class com.nuvio.app.shell.screens.player.PlayerScreenKt { *; }
+-keep class com.nuvio.app.shell.screens.player.PlayerScreenKt$* { *; }
 
 # QuickJS plugin runtime is dynamic; keep runtime and app plugin classes.
 -keep class com.dokar.quickjs.** { *; }
--keep class com.nuvio.app.features.plugins.** { *; }
+-keep class com.nuvio.app.shell.screens.plugins.** { *; }
 -keep class com.nuvio.app.core.plugins.** { *; }
 
 # P2P runtime and Nuvio Engine JNI bridge. Native libraries are not processed
 # by R8, but their Kotlin/JNI wrapper classes and method names must stay stable.
--keep class com.nuvio.app.features.p2p.** { *; }
+-keep class com.nuvio.app.shell.screens.p2p.** { *; }
 -keep class com.nuvio.app.core.p2p.** { *; }
 -keep class com.nuvio.engine.** { *; }
 -keep interface com.nuvio.engine.** { *; }

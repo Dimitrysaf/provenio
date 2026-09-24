@@ -1,7 +1,7 @@
 package com.nuvio.app.core.tracking.simkl
 
 import co.touchlab.kermit.Logger
-import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.shell.screens.profiles.ProfileRepository
 import com.nuvio.app.core.tracking.TrackingProfileStore
 import com.nuvio.app.core.tracking.TrackingProviderId
 import com.nuvio.app.core.tracking.TrackingProviderRegistry

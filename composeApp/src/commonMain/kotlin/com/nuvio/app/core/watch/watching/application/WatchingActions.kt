@@ -1,7 +1,7 @@
 package com.nuvio.app.core.watch.watching.application
 
 import com.nuvio.app.core.metadata.MetaDetails
-import com.nuvio.app.features.details.MetaDetailsRepository
+import com.nuvio.app.shell.screens.details.MetaDetailsRepository
 import com.nuvio.app.core.metadata.MetaVideo
 import com.nuvio.app.core.home.MetaPreview
 import com.nuvio.app.core.watch.watched.WatchedItem
@@ -13,7 +13,7 @@ import com.nuvio.app.core.watch.watched.toSeriesWatchedItem
 import com.nuvio.app.core.watch.watched.toWatchedItem
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import com.nuvio.app.core.watch.progress.WatchProgressEntry
-import com.nuvio.app.features.watchprogress.WatchProgressRepository
+import com.nuvio.app.shell.screens.watchprogress.WatchProgressRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

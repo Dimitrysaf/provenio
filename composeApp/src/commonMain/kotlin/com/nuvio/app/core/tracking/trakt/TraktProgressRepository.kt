@@ -4,7 +4,7 @@ import co.touchlab.kermit.Logger
 import com.nuvio.app.core.addons.httpGetTextWithHeaders
 import com.nuvio.app.core.addons.httpRequestRaw
 import com.nuvio.app.core.metadata.MetaDetails
-import com.nuvio.app.features.details.MetaDetailsRepository
+import com.nuvio.app.shell.screens.details.MetaDetailsRepository
 import com.nuvio.app.core.metadata.tmdb.TmdbService
 import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
 import com.nuvio.app.core.watch.progress.WatchProgressEntry

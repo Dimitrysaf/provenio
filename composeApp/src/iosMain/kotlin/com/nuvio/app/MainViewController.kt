@@ -4,9 +4,13 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.window.ComposeUIViewController
 import com.nuvio.app.shell.components.NativeProfileSwitcherController
-import com.nuvio.app.navigation.AppRoute
+import com.nuvio.app.shell.nav.AppRoute
 import platform.UIKit.UIColor
 import platform.UIKit.UIViewController
+import com.nuvio.app.shell.App
+import com.nuvio.app.shell.AppGateController
+import com.nuvio.app.shell.AppGateOverlay
+import com.nuvio.app.shell.AppScreenTab
 
 private val nuvioBackgroundColor = UIColor(red = 0.051, green = 0.051, blue = 0.051, alpha = 1.0)
 
