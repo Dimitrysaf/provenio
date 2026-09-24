@@ -54,19 +54,19 @@ jobs:
             const issueComment = [
               'Thanks for taking the time to report this.',
               '',
-              'The current Nuvio Mobile app is being discontinued in favor of a full Compose Multiplatform rewrite. Because of that, issue tracking for the legacy React Native codebase is being closed out.',
+              'The current Provenio Mobile app is being discontinued in favor of a full Compose Multiplatform rewrite. Because of that, issue tracking for the legacy React Native codebase is being closed out.',
               '',
               'This does not mean your report was ignored. It means we are no longer planning fixes against the outgoing app, and we want to avoid leaving old tickets open without active follow-up.',
               '',
               'If the same problem still exists once the new version enters public beta, please open a fresh issue for the rewrite at that time.',
               '',
-              'Thank you for the report and for helping improve Nuvio.'
+              'Thank you for the report and for helping improve Provenio.'
             ].join('\n');
 
             const pullRequestComment = [
               'Thanks for the pull request and for the time put into it.',
               '',
-              'The current Nuvio Mobile app is being discontinued in favor of a full Compose Multiplatform rewrite, so changes against the legacy React Native codebase are no longer being reviewed or merged.',
+              'The current Provenio Mobile app is being discontinued in favor of a full Compose Multiplatform rewrite, so changes against the legacy React Native codebase are no longer being reviewed or merged.',
               '',
               'For that reason, this pull request is being closed as part of the wind-down of the old app.',
               '',
@@ -140,11 +140,11 @@ jobs:
             const issueComment = [
               'Thanks for taking the time to report this.',
               '',
-              'The current Nuvio Mobile app is being discontinued in favor of a full Compose Multiplatform rewrite. Because of that, issue tracking for the legacy React Native codebase is being closed out.',
+              'The current Provenio Mobile app is being discontinued in favor of a full Compose Multiplatform rewrite. Because of that, issue tracking for the legacy React Native codebase is being closed out.',
               '',
               'If the same problem still exists once the new version enters public beta, please open a fresh issue for the rewrite at that time.',
               '',
-              'Thank you for the report and for helping improve Nuvio.'
+              'Thank you for the report and for helping improve Provenio.'
             ].join('\n');
 
             await github.rest.issues.createComment({
@@ -175,7 +175,7 @@ jobs:
             const pullRequestComment = [
               'Thanks for the pull request and for the time put into it.',
               '',
-              'The current Nuvio Mobile app is being discontinued in favor of a full Compose Multiplatform rewrite, so changes against the legacy React Native codebase are no longer being reviewed or merged.',
+              'The current Provenio Mobile app is being discontinued in favor of a full Compose Multiplatform rewrite, so changes against the legacy React Native codebase are no longer being reviewed or merged.',
               '',
               'For that reason, this pull request is being closed as part of the wind-down of the old app.',
               '',

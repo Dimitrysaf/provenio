@@ -22,7 +22,7 @@ jobs:
             const NEEDS_INFO = "needs-info";
             const CLOSE_AFTER_DAYS = 1;
 
-            const closeMarker = "<!-- nuvio-bot:stale-close -->";
+            const closeMarker = "<!-- provenio-bot:stale-close -->";
 
             const now = Date.now();
             const closeCutoff = now - CLOSE_AFTER_DAYS * 24 * 60 * 60 * 1000;

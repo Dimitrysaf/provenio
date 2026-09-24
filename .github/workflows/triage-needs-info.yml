@@ -180,7 +180,7 @@ jobs:
                 });
               }
 
-              const marker = "<!-- nuvio-bot:crash-logs-required-close -->";
+              const marker = "<!-- provenio-bot:crash-logs-required-close -->";
               const comments = await github.paginate(github.rest.issues.listComments, {
                 owner,
                 repo,
@@ -224,7 +224,7 @@ jobs:
                 });
               }
 
-              const marker = "<!-- nuvio-bot:needs-info -->";
+              const marker = "<!-- provenio-bot:needs-info -->";
               const commentBody =
                 `${marker}\n` +
                 `Thanks for the report. Could you add more detail so we can reproduce it?\n\n` +

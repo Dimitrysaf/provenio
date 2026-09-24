@@ -55,11 +55,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
         localPropertiesFile.asFile.orNull?.takeIf { it.exists() }?.inputStream()?.use { props.load(it) }
 
         val outDir = outputDir.get().asFile
-        outDir.resolve("com/nuvio/app/core/network").apply {
+        outDir.resolve("io/github/dimitrysaf/provenio/core/network").apply {
             mkdirs()
             resolve("SupabaseConfig.kt").writeText(
                 """
-                |package com.nuvio.app.core.network
+                |package io.github.dimitrysaf.provenio.core.network
                 |
                 |object SupabaseConfig {
                 |    const val URL = "${supabaseUrl.get()}"
@@ -70,11 +70,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/core/diagnostics").apply {
+        outDir.resolve("io/github/dimitrysaf/provenio/core/diagnostics").apply {
             mkdirs()
             resolve("SentryConfig.kt").writeText(
                 """
-                |package com.nuvio.app.core.diagnostics
+                |package io.github.dimitrysaf.provenio.core.diagnostics
                 |
                 |object SentryConfig {
                 |    const val DSN = "${sentryDsn.get()}"
@@ -84,11 +84,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/core/metadata/tmdb").apply {
+        outDir.resolve("io/github/dimitrysaf/provenio/core/metadata/tmdb").apply {
             mkdirs()
             resolve("TmdbConfig.kt").writeText(
                 """
-                |package com.nuvio.app.core.metadata.tmdb
+                |package io.github.dimitrysaf.provenio.core.metadata.tmdb
                 |
                 |object TmdbConfig {
                 |    const val API_KEY = "${tmdbApiKey.get()}"
@@ -97,41 +97,41 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/core/tracking/trakt").apply {
+        outDir.resolve("io/github/dimitrysaf/provenio/core/tracking/trakt").apply {
             mkdirs()
             resolve("TraktConfig.kt").writeText(
                 """
-                |package com.nuvio.app.core.tracking.trakt
+                |package io.github.dimitrysaf.provenio.core.tracking.trakt
                 |
                 |object TraktConfig {
                 |    const val CLIENT_ID = "${props.getProperty("TRAKT_CLIENT_ID", "")}" 
                 |    const val CLIENT_SECRET = "${props.getProperty("TRAKT_CLIENT_SECRET", "")}" 
-                |    const val REDIRECT_URI = "${props.getProperty("TRAKT_REDIRECT_URI", "nuvio://auth/trakt")}" 
+                |    const val REDIRECT_URI = "${props.getProperty("TRAKT_REDIRECT_URI", "provenio://auth/trakt")}" 
                 |}
                 """.trimMargin()
             )
         }
 
-        outDir.resolve("com/nuvio/app/core/tracking/simkl").apply {
+        outDir.resolve("io/github/dimitrysaf/provenio/core/tracking/simkl").apply {
             mkdirs()
             resolve("SimklConfig.kt").writeText(
                 """
-                |package com.nuvio.app.core.tracking.simkl
+                |package io.github.dimitrysaf.provenio.core.tracking.simkl
                 |
                 |object SimklConfig {
                 |    const val CLIENT_ID = "${props.getProperty("SIMKL_CLIENT_ID", "")}"
-                |    const val REDIRECT_URI = "${props.getProperty("SIMKL_REDIRECT_URI", "nuvio://auth/simkl")}"
-                |    const val APP_NAME = "${props.getProperty("SIMKL_APP_NAME", "nuvio")}"
+                |    const val REDIRECT_URI = "${props.getProperty("SIMKL_REDIRECT_URI", "provenio://auth/simkl")}"
+                |    const val APP_NAME = "${props.getProperty("SIMKL_APP_NAME", "provenio")}"
                 |}
                 """.trimMargin()
             )
         }
 
-        outDir.resolve("com/nuvio/app/core/playback/skip").apply {
+        outDir.resolve("io/github/dimitrysaf/provenio/core/playback/skip").apply {
             mkdirs()
             resolve("IntroDbConfig.kt").writeText(
                 """
-                |package com.nuvio.app.core.playback.skip
+                |package io.github.dimitrysaf.provenio.core.playback.skip
                 |
                 |object IntroDbConfig {
                 |    const val URL = "${props.getProperty("INTRODB_API_URL", "")}" 
@@ -140,11 +140,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/core/metadata").apply {
+        outDir.resolve("io/github/dimitrysaf/provenio/core/metadata").apply {
             mkdirs()
             resolve("ImdbEpisodeRatingsConfig.kt").writeText(
                 """
-                |package com.nuvio.app.core.metadata
+                |package io.github.dimitrysaf.provenio.core.metadata
                 |
                 |object ImdbEpisodeRatingsConfig {
                 |    const val IMDB_RATINGS_API_BASE_URL = "${props.getProperty("IMDB_RATINGS_API_BASE_URL", "")}" 
@@ -154,11 +154,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/core/debrid").apply {
+        outDir.resolve("io/github/dimitrysaf/provenio/core/debrid").apply {
             mkdirs()
             resolve("PremiumizeConfig.kt").writeText(
                 """
-                |package com.nuvio.app.core.debrid
+                |package io.github.dimitrysaf.provenio.core.debrid
                 |
                 |object PremiumizeConfig {
                 |    const val CLIENT_ID = "${props.getProperty("PREMIUMIZE_CLIENT_ID", "")}"
@@ -167,11 +167,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/core/build").apply {
+        outDir.resolve("io/github/dimitrysaf/provenio/core/build").apply {
             mkdirs()
             resolve("AppVersionConfig.kt").writeText(
                 """
-                |package com.nuvio.app.core.build
+                |package io.github.dimitrysaf.provenio.core.build
                 |
                 |object AppVersionConfig {
                 |    const val VERSION_NAME = "${appVersionName.get()}"
@@ -181,11 +181,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
             )
         }
 
-        outDir.resolve("com/nuvio/app/core/settings").apply {
+        outDir.resolve("io/github/dimitrysaf/provenio/core/settings").apply {
             mkdirs()
             resolve("CommunityConfig.kt").writeText(
                 """
-                |package com.nuvio.app.core.settings
+                |package io.github.dimitrysaf.provenio.core.settings
                 |
                 |object CommunityConfig {
                 |    const val CONTRIBUTIONS_URL = "${props.getProperty("CONTRIBUTIONS_URL", "")}" 
@@ -219,7 +219,7 @@ abstract class CheckCoreBoundaryTask : DefaultTask() {
             file.readLines().forEachIndexed { index, line ->
                 val text = line.trim()
                 val imported = text.removePrefix("import ").trim()
-                val violates = text.startsWith("import com.nuvio.app.shell.") ||
+                val violates = text.startsWith("import io.github.dimitrysaf.provenio.shell.") ||
                     (text.startsWith("import androidx.compose.") && imported !in allowedComposeImports) ||
                     text.startsWith("@Composable")
                 if (violates) violations += "${file.path}:${index + 1}: $text"
@@ -268,21 +268,21 @@ val releaseAppVersionCode = readXcconfigValue(appVersionConfigFile, "CURRENT_PRO
     ?.toIntOrNull()
     ?: error("CURRENT_PROJECT_VERSION is missing or invalid in ${appVersionConfigFile.path}")
 val iosDistribution = (
-    providers.gradleProperty("nuvio.ios.distribution").orNull
-        ?: System.getenv("NUVIO_IOS_DISTRIBUTION")
-        ?: supabaseProps.getProperty("NUVIO_IOS_DISTRIBUTION")
+    providers.gradleProperty("provenio.ios.distribution").orNull
+        ?: System.getenv("PROVENIO_IOS_DISTRIBUTION")
+        ?: supabaseProps.getProperty("PROVENIO_IOS_DISTRIBUTION")
         ?: "appstore"
     ).trim().lowercase()
 require(iosDistribution == "appstore" || iosDistribution == "full") {
-    "NUVIO_IOS_DISTRIBUTION must be 'appstore' or 'full'."
+    "PROVENIO_IOS_DISTRIBUTION must be 'appstore' or 'full'."
 }
 val iosDistributionSourceDir = if (iosDistribution == "full") {
     "src/iosFull/kotlin"
 } else {
     "src/iosAppStore/kotlin"
 }
-val iosFrameworkBundleId = "com.nuvio.media"
-val nuvioEngineAppleFramework = rootProject.file("../nuvio-engine/platform/apple/NuvioEngine.xcframework")
+val iosFrameworkBundleId = "io.github.dimitrysaf.provenio"
+val engineAppleFramework = rootProject.file("../nuvio-engine/platform/apple/NuvioEngine.xcframework")
 val fullCommonSourceDir = project.file("src/fullCommonMain/kotlin")
 val generatedRuntimeConfigDir = layout.buildDirectory.dir("generated/runtime-config/kotlin")
 val requestedGradleTasks = gradle.startParameter.taskNames.map { taskName ->
@@ -296,17 +296,17 @@ val requestedAndroidDistributions = requestedGradleTasks.mapNotNull { taskName -
     }
 }.toSet()
 require(requestedAndroidDistributions.size <= 1) {
-    "Build Android full and playstore distributions separately, or set -Pnuvio.android.distribution=full|playstore."
+    "Build Android full and playstore distributions separately, or set -Pprovenio.android.distribution=full|playstore."
 }
-val configuredAndroidDistribution = providers.gradleProperty("nuvio.android.distribution").orNull
-    ?: supabaseProps.getProperty("NUVIO_ANDROID_DISTRIBUTION")
+val configuredAndroidDistribution = providers.gradleProperty("provenio.android.distribution").orNull
+    ?: supabaseProps.getProperty("PROVENIO_ANDROID_DISTRIBUTION")
 val isAmbiguousAndroidPackageTask = requestedGradleTasks.any { taskName ->
     taskName == "build" ||
         taskName.startsWith("assemble") ||
         taskName.startsWith("bundle")
 } && requestedAndroidDistributions.isEmpty()
 require(configuredAndroidDistribution != null || !isAmbiguousAndroidPackageTask) {
-    "Set -Pnuvio.android.distribution=full|playstore for aggregate Android assemble/bundle tasks."
+    "Set -Pprovenio.android.distribution=full|playstore for aggregate Android assemble/bundle tasks."
 }
 val androidDistribution = (
     configuredAndroidDistribution
@@ -314,7 +314,7 @@ val androidDistribution = (
         ?: "playstore"
     ).trim().lowercase()
 require(androidDistribution == "playstore" || androidDistribution == "full") {
-    "nuvio.android.distribution must be 'playstore' or 'full'."
+    "provenio.android.distribution must be 'playstore' or 'full'."
 }
 val androidDistributionSourceDir = if (androidDistribution == "full") {
     "src/androidFull/kotlin"
@@ -345,9 +345,9 @@ val generateRuntimeConfigs = tasks.register<GenerateRuntimeConfigsTask>("generat
     localPropertiesFile.set(rootProject.layout.projectDirectory.file("local.properties"))
     appVersionName.set(releaseAppVersionName)
     appVersionCode.set(releaseAppVersionCode)
-    supabaseUrl.set(runtimeConfigValue("NUVIO_SUPABASE_URL"))
-    supabaseAnonKey.set(runtimeConfigValue("NUVIO_SUPABASE_ANON_KEY"))
-    supabaseFallbackUrl.set(runtimeConfigValue("NUVIO_SUPABASE_FALLBACK_URL"))
+    supabaseUrl.set(runtimeConfigValue("PROVENIO_SUPABASE_URL"))
+    supabaseAnonKey.set(runtimeConfigValue("PROVENIO_SUPABASE_ANON_KEY"))
+    supabaseFallbackUrl.set(runtimeConfigValue("PROVENIO_SUPABASE_FALLBACK_URL"))
     sentryDsn.set(runtimeConfigValue("SENTRY_DSN"))
     tmdbApiKey.set(runtimeConfigValue("TMDB_API_KEY"))
     sentryEnvironment.set(
@@ -360,7 +360,7 @@ val generateRuntimeConfigs = tasks.register<GenerateRuntimeConfigsTask>("generat
 }
 
 val checkCoreBoundary = tasks.register<CheckCoreBoundaryTask>("checkCoreBoundary") {
-    sources.from(fileTree("src") { include("*/kotlin/com/nuvio/app/core/**/*.kt") })
+    sources.from(fileTree("src") { include("*/kotlin/io/github/dimitrysaf/provenio/core/**/*.kt") })
     report.set(layout.buildDirectory.file("reports/core-boundary.txt"))
 }
 
@@ -371,7 +371,7 @@ tasks.withType<KotlinCompilationTask<*>>().configureEach {
 
 kotlin {
     android {
-        namespace = "com.nuvio.app"
+        namespace = "io.github.dimitrysaf.provenio"
         compileSdk {
             version = release(libs.versions.android.compileSdk.get().toInt()) {
                 minorApiLevel = libs.versions.android.compileSdkMinor.get().toInt()
@@ -392,12 +392,12 @@ kotlin {
     )
 
     iosTargets.forEach { iosTarget ->
-        val nuvioEngineSlice = if (iosTarget.name == "iosArm64") {
+        val engineSlice = if (iosTarget.name == "iosArm64") {
             "ios-arm64"
         } else {
             "ios-arm64_x86_64-simulator"
         }
-        val nuvioEngineSliceDirectory = nuvioEngineAppleFramework.resolve(nuvioEngineSlice)
+        val engineSliceDirectory = engineAppleFramework.resolve(engineSlice)
         iosTarget.compilations.getByName("main") {
             cinterops {
                 create("commoncrypto") {
@@ -409,13 +409,13 @@ kotlin {
                     compilerOpts("-I${project.projectDir}/src/nativeInterop/cinterop")
                 }
                 if (iosDistribution == "full") {
-                    check(nuvioEngineSliceDirectory.resolve("libCNuvioEngine.a").isFile) {
+                    check(engineSliceDirectory.resolve("libCNuvioEngine.a").isFile) {
                         "Build the local Nuvio Engine Apple XCFramework before compiling iOS Full."
                     }
                     create("nuvioengine") {
                         defFile(project.file("src/nativeInterop/cinterop/nuvioengine.def"))
-                        compilerOpts("-I${nuvioEngineSliceDirectory.resolve("Headers").absolutePath}")
-                        extraOpts("-libraryPath", nuvioEngineSliceDirectory.absolutePath)
+                        compilerOpts("-I${engineSliceDirectory.resolve("Headers").absolutePath}")
+                        extraOpts("-libraryPath", engineSliceDirectory.absolutePath)
                     }
                 }
                 configureEach {
@@ -557,4 +557,8 @@ configurations.matching { it.name == "iosMainImplementation" }.configureEach {
 configurations.all {
     exclude(group = "androidx.media3", module = "media3-exoplayer")
     exclude(group = "androidx.media3", module = "media3-ui")
+}
+
+compose.resources {
+    packageOfResClass = "provenio.composeapp.generated.resources"
 }

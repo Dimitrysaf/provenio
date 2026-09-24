@@ -1,0 +1,104 @@
+package io.github.dimitrysaf.provenio.shell.components
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Replay
+import androidx.compose.runtime.Composable
+import io.github.dimitrysaf.provenio.core.cloud.CloudLibraryContentType
+import io.github.dimitrysaf.provenio.core.cloud.cloudLibraryDisplayArtworkUrl
+import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingItem
+import provenio.composeapp.generated.resources.*
+import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.cw_action_go_to_details
+import provenio.composeapp.generated.resources.cw_action_remove
+import provenio.composeapp.generated.resources.cw_action_start_from_beginning
+import provenio.composeapp.generated.resources.play_manually
+import org.jetbrains.compose.resources.stringResource
+
+/**
+ * What can be done with something already being watched.
+ *
+ * The same sheet a poster's long press opens, given this card's actions: one long press, one
+ * presentation. It used to draw its own header and rows, which is why it had accent-tinted icons
+ * and dividers nothing else in the app has.
+ */
+@Composable
+fun ContinueWatchingActionSheet(
+    item: ContinueWatchingItem,
+    showManualPlayOption: Boolean,
+    showDetailsOption: Boolean = true,
+    blurThumbnail: Boolean = false,
+    onDismiss: () -> Unit,
+    onOpenDetails: () -> Unit,
+    onStartFromBeginning: (() -> Unit)? = null,
+    onPlayManually: (() -> Unit)? = null,
+    onRemove: () -> Unit,
+) {
+    val actions = buildList {
+        if (showDetailsOption) {
+            add(
+                MediaSheetAction(
+                    icon = Icons.Rounded.Info,
+                    label = stringResource(Res.string.cw_action_go_to_details),
+                    onSelected = onOpenDetails,
+                ),
+            )
+        }
+        if (showManualPlayOption && onPlayManually != null) {
+            add(
+                MediaSheetAction(
+                    icon = Icons.Rounded.PlayArrow,
+                    label = stringResource(Res.string.play_manually),
+                    onSelected = onPlayManually,
+                ),
+            )
+        }
+        if (!item.isNextUp && onStartFromBeginning != null) {
+            add(
+                MediaSheetAction(
+                    icon = Icons.Rounded.Replay,
+                    label = stringResource(Res.string.cw_action_start_from_beginning),
+                    onSelected = onStartFromBeginning,
+                ),
+            )
+        }
+        add(
+            MediaSheetAction(
+                icon = Icons.Rounded.DeleteOutline,
+                label = stringResource(Res.string.cw_action_remove),
+                isDestructive = true,
+                onSelected = onRemove,
+            ),
+        )
+    }
+
+    MediaActionsSheet(
+        imageUrl = (item.poster ?: item.imageUrl)?.let { cloudLibraryDisplayArtworkUrl(it) },
+        title = item.title,
+        subtitle = localizedContinueWatchingSubtitle(item),
+        actions = actions,
+        onDismiss = onDismiss,
+        landscapeThumbnail = item.poster == null && item.imageUrl != null,
+        blurThumbnail = blurThumbnail,
+    )
+}
+
+@Composable
+fun localizedContinueWatchingSubtitle(item: ContinueWatchingItem, compact: Boolean = false): String {
+    val seasonNumber = item.seasonNumber
+    val episodeNumber = item.episodeNumber
+    val episodeTitle = item.episodeTitle?.takeIf { it.isNotBlank() }
+
+    val base = when {
+        seasonNumber != null && episodeNumber != null ->
+            stringResource(Res.string.compose_player_episode_code_full, seasonNumber, episodeNumber)
+        item.parentMetaType.equals(CloudLibraryContentType, ignoreCase = true) ->
+            stringResource(Res.string.library_source_cloud)
+        else ->
+            stringResource(Res.string.media_movie)
+    }
+
+    return episodeTitle?.let { "$base • $it" } ?: base
+}

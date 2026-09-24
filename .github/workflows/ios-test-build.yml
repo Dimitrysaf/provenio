@@ -29,9 +29,9 @@ jobs:
       GRADLE_OPTS: -Dfile.encoding=UTF-8
       IOS_CONFIGURATION: ${{ inputs.configuration }}
       KOTLIN_DAEMON_JVMARGS: -Xmx2048M
-      NUVIO_GRADLE_JVMARGS: -Xmx4608M -Dfile.encoding=UTF-8 -XX:MaxMetaspaceSize=768M
-      NUVIO_KOTLIN_NATIVE_JVMARGS: -Xmx4608M
-      RELEASE_PROPERTIES_BASE64: ${{ secrets.NUVIO_LOCAL_PROPERTIES_BASE64 }}
+      PROVENIO_GRADLE_JVMARGS: -Xmx4608M -Dfile.encoding=UTF-8 -XX:MaxMetaspaceSize=768M
+      PROVENIO_KOTLIN_NATIVE_JVMARGS: -Xmx4608M
+      RELEASE_PROPERTIES_BASE64: ${{ secrets.PROVENIO_LOCAL_PROPERTIES_BASE64 }}
 
     steps:
       - name: Check out source
@@ -63,7 +63,7 @@ jobs:
         if: env.RELEASE_PROPERTIES_BASE64 != ''
         run: |
           printf '%s' "${RELEASE_PROPERTIES_BASE64}" | base64 --decode > local.properties
-          sed -i '' -E '/^[[:space:]]*(sdk\.dir|NUVIO_RELEASE_STORE_FILE)[[:space:]]*=/d' local.properties
+          sed -i '' -E '/^[[:space:]]*(sdk\.dir|PROVENIO_RELEASE_STORE_FILE)[[:space:]]*=/d' local.properties
 
       - name: Prepare iOS dependencies
         run: ./scripts/prepare-ios-dependencies.sh
@@ -106,7 +106,7 @@ jobs:
       - name: Upload test IPA
         uses: actions/upload-artifact@v7
         with:
-          name: nuvio-test-${{ inputs.configuration }}-ipa-${{ github.sha }}
+          name: provenio-test-${{ inputs.configuration }}-ipa-${{ github.sha }}
           path: build/ios-ipa/*.ipa
           if-no-files-found: error
           retention-days: 7

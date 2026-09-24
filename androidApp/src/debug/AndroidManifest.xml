@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <activity
-            android:name="com.nuvio.android.BackgroundDownloadTestActivity"
+            android:name="io.github.dimitrysaf.provenio.android.BackgroundDownloadTestActivity"
             android:exported="true"
-            android:theme="@style/Theme.Nuvio" />
+            android:theme="@style/Theme.Provenio" />
     </application>
 </manifest>

@@ -28,7 +28,7 @@ jobs:
 
             const dryRun = String(inputs.dry_run || "false").toLowerCase() === "true";
             const CLOSE_AFTER_DAYS = 30;
-            const closeMarker = "<!-- nuvio-bot:close-stale-issue -->";
+            const closeMarker = "<!-- provenio-bot:close-stale-issue -->";
 
             const cutoff = new Date(Date.now() - CLOSE_AFTER_DAYS * 24 * 60 * 60 * 1000)
               .toISOString()

@@ -17,7 +17,7 @@
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             tools:node="remove" />
         <service
-            android:name="com.nuvio.app.core.playback.PlayerNowPlayingService"
+            android:name="io.github.dimitrysaf.provenio.core.playback.PlayerNowPlayingService"
             tools:node="remove" />
     </application>
 

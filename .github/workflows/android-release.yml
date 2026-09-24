@@ -33,8 +33,8 @@ jobs:
       version: ${{ steps.release.outputs.version }}
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_PROPERTIES_BASE64: ${{ secrets.NUVIO_LOCAL_PROPERTIES_BASE64 }}
-      RELEASE_KEYSTORE_BASE64: ${{ secrets.NUVIO_RELEASE_KEYSTORE_BASE64 }}
+      RELEASE_PROPERTIES_BASE64: ${{ secrets.PROVENIO_LOCAL_PROPERTIES_BASE64 }}
+      RELEASE_KEYSTORE_BASE64: ${{ secrets.PROVENIO_RELEASE_KEYSTORE_BASE64 }}
 
     steps:
       - name: Check out full history
@@ -141,8 +141,8 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     env:
-      RELEASE_PROPERTIES_BASE64: ${{ secrets.NUVIO_LOCAL_PROPERTIES_BASE64 }}
-      RELEASE_KEYSTORE_BASE64: ${{ secrets.NUVIO_RELEASE_KEYSTORE_BASE64 }}
+      RELEASE_PROPERTIES_BASE64: ${{ secrets.PROVENIO_LOCAL_PROPERTIES_BASE64 }}
+      RELEASE_KEYSTORE_BASE64: ${{ secrets.PROVENIO_RELEASE_KEYSTORE_BASE64 }}
 
     steps:
       - name: Check out source
@@ -159,17 +159,17 @@ jobs:
 
       - name: Configure release properties
         run: |
-          keystore_path="${RUNNER_TEMP}/nuvio-release.jks"
+          keystore_path="${RUNNER_TEMP}/provenio-release.jks"
           printf '%s' "${RELEASE_KEYSTORE_BASE64}" | base64 --decode > "${keystore_path}"
           printf '%s' "${RELEASE_PROPERTIES_BASE64}" | base64 --decode > local.properties
 
-          sed -i -E '/^[[:space:]]*(sdk\.dir|NUVIO_RELEASE_STORE_FILE)[[:space:]]*=/d' local.properties
-          printf '\nNUVIO_RELEASE_STORE_FILE=%s\n' "${keystore_path}" >> local.properties
+          sed -i -E '/^[[:space:]]*(sdk\.dir|PROVENIO_RELEASE_STORE_FILE)[[:space:]]*=/d' local.properties
+          printf '\nPROVENIO_RELEASE_STORE_FILE=%s\n' "${keystore_path}" >> local.properties
 
           required_properties=(
-            NUVIO_RELEASE_STORE_PASSWORD
-            NUVIO_RELEASE_KEY_ALIAS
-            NUVIO_RELEASE_KEY_PASSWORD
+            PROVENIO_RELEASE_STORE_PASSWORD
+            PROVENIO_RELEASE_KEY_ALIAS
+            PROVENIO_RELEASE_KEY_PASSWORD
             TRAKT_CLIENT_ID
             TRAKT_CLIENT_SECRET
           )
@@ -186,7 +186,7 @@ jobs:
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: nuvio-${{ needs.prepare.outputs.version }}-android-full-release
+          name: provenio-${{ needs.prepare.outputs.version }}-android-full-release
           path: androidApp/build/outputs/apk/full/release/*.apk
           if-no-files-found: error
 
@@ -200,9 +200,9 @@ jobs:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
       GRADLE_OPTS: -Dfile.encoding=UTF-8
       KOTLIN_DAEMON_JVMARGS: -Xmx2048M
-      NUVIO_GRADLE_JVMARGS: -Xmx4608M -Dfile.encoding=UTF-8 -XX:MaxMetaspaceSize=768M
-      NUVIO_KOTLIN_NATIVE_JVMARGS: -Xmx4608M
-      RELEASE_PROPERTIES_BASE64: ${{ secrets.NUVIO_LOCAL_PROPERTIES_BASE64 }}
+      PROVENIO_GRADLE_JVMARGS: -Xmx4608M -Dfile.encoding=UTF-8 -XX:MaxMetaspaceSize=768M
+      PROVENIO_KOTLIN_NATIVE_JVMARGS: -Xmx4608M
+      RELEASE_PROPERTIES_BASE64: ${{ secrets.PROVENIO_LOCAL_PROPERTIES_BASE64 }}
 
     steps:
       - name: Check out source
@@ -233,7 +233,7 @@ jobs:
       - name: Configure runtime properties
         run: |
           printf '%s' "${RELEASE_PROPERTIES_BASE64}" | base64 --decode > local.properties
-          sed -i '' -E '/^[[:space:]]*(sdk\.dir|NUVIO_RELEASE_STORE_FILE)[[:space:]]*=/d' local.properties
+          sed -i '' -E '/^[[:space:]]*(sdk\.dir|PROVENIO_RELEASE_STORE_FILE)[[:space:]]*=/d' local.properties
 
       - name: Prepare iOS dependencies
         run: ./scripts/prepare-ios-dependencies.sh
@@ -256,7 +256,7 @@ jobs:
       - name: Upload iOS artifact
         uses: actions/upload-artifact@v7
         with:
-          name: nuvio-${{ needs.prepare.outputs.version }}-ios-full-release
+          name: provenio-${{ needs.prepare.outputs.version }}-ios-full-release
           path: build/ios-ipa/*-full-release.ipa
           if-no-files-found: error
 

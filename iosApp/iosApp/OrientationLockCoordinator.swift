@@ -2,8 +2,8 @@ import UIKit
 import UserNotifications
 import ComposeApp
 
-private let lockPlayerToLandscapeNotification = Notification.Name("NuvioPlayerLockLandscape")
-private let unlockPlayerOrientationNotification = Notification.Name("NuvioPlayerUnlockOrientation")
+private let lockPlayerToLandscapeNotification = Notification.Name("ProvenioPlayerLockLandscape")
+private let unlockPlayerOrientationNotification = Notification.Name("ProvenioPlayerUnlockOrientation")
 
 final class OrientationLockAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(

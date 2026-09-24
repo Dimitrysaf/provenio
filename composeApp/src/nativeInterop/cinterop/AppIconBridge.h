@@ -2,8 +2,8 @@
 
 #include <stdbool.h>
 
-typedef void (*NuvioAppIconCompletion)(bool);
+typedef void (*AppIconCompletion)(bool);
 
-bool NuvioSupportsAlternateAppIcons(void);
-bool NuvioIsCurrentAlternateAppIcon(const char *name);
-void NuvioSetAlternateAppIconName(const char *name, NuvioAppIconCompletion completion);
+bool SupportsAlternateAppIcons(void);
+bool IsCurrentAlternateAppIcon(const char *name);
+void SetAlternateAppIconName(const char *name, AppIconCompletion completion);

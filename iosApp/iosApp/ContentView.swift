@@ -3,16 +3,16 @@ import SwiftUI
 import UIKit
 import ComposeApp
 
-private let nuvioBackgroundColor = UIColor(
+private let appBackgroundColor = UIColor(
     red: 0.051,
     green: 0.051,
     blue: 0.051,
     alpha: 1.0
 )
 
-private enum NuvioComposeHost {
+private enum ComposeHost {
     static let registerPlayerBridge: Void = {
-        NuvioPlayerRegistration.register()
+        PlayerRegistration.register()
     }()
 
     static func wrap(
@@ -21,7 +21,7 @@ private enum NuvioComposeHost {
         onTabBarControllerAvailable: ((UITabBarController) -> Void)? = nil
     ) -> RootComposeViewController {
         _ = registerPlayerBridge
-        contentController.view.backgroundColor = nuvioBackgroundColor
+        contentController.view.backgroundColor = appBackgroundColor
         return RootComposeViewController(
             contentController: contentController,
             disablesInteractiveContentPopGesture: disablesInteractiveContentPopGesture,
@@ -57,8 +57,8 @@ final class RootComposeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = nuvioBackgroundColor
-        contentController.view.backgroundColor = nuvioBackgroundColor
+        view.backgroundColor = appBackgroundColor
+        contentController.view.backgroundColor = appBackgroundColor
 
         addChild(contentController)
         view.addSubview(contentController.view)
@@ -159,7 +159,7 @@ final class RootComposeViewController: UIViewController {
 
 struct ComposeView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
-        NuvioComposeHost.wrap(MainViewControllerKt.MainViewController())
+        ComposeHost.wrap(MainViewControllerKt.MainViewController())
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
@@ -230,7 +230,7 @@ final class TabNavigationCoordinator: ObservableObject {
 }
 
 @available(iOS 16.0, *)
-enum NuvioAppTab: String, CaseIterable, Hashable {
+enum AppTab: String, CaseIterable, Hashable {
     case home = "Home"
     case search = "Search"
     case library = "Library"
@@ -240,7 +240,7 @@ enum NuvioAppTab: String, CaseIterable, Hashable {
         String(localized: String.LocalizationValue(rawValue))
     }
 
-    static func from(kotlinName: String?) -> NuvioAppTab? {
+    static func from(kotlinName: String?) -> AppTab? {
         switch kotlinName?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
         case "home": return .home
         case "search": return .search
@@ -252,10 +252,10 @@ enum NuvioAppTab: String, CaseIterable, Hashable {
 
     var iconAssetName: String {
         switch self {
-        case .home: return "NuvioTabHome"
-        case .search: return "NuvioTabSearch"
-        case .library: return "NuvioTabLibrary"
-        case .settings: return "NuvioTabProfile"
+        case .home: return "TabHome"
+        case .search: return "TabSearch"
+        case .library: return "TabLibrary"
+        case .settings: return "TabProfile"
         }
     }
 
@@ -269,10 +269,10 @@ enum NuvioAppTab: String, CaseIterable, Hashable {
     }
 }
 
-private enum NuvioNativeTabIcon {
+private enum NativeTabIcon {
     private static let legacyStaticIconSize = CGSize(width: 25, height: 25)
 
-    static func image(for tab: NuvioAppTab) -> UIImage {
+    static func image(for tab: AppTab) -> UIImage {
         if let asset = UIImage(named: tab.iconAssetName) {
             return UIGraphicsImageRenderer(size: legacyStaticIconSize).image { _ in
                 asset
@@ -359,12 +359,12 @@ private enum NuvioNativeTabIcon {
 
 @available(iOS 16.0, *)
 final class NativeTabIconStore: ObservableObject {
-    private static let chromeDidChange = Notification.Name("NuvioNativeTabChromeDidChange")
-    private static let accentKey = "NuvioNativeTabAccentColor"
-    private static let profileNameKey = "NuvioNativeProfileName"
-    private static let profileColorKey = "NuvioNativeProfileAvatarColor"
-    private static let profileURLKey = "NuvioNativeProfileAvatarURL"
-    private static let profileBackgroundKey = "NuvioNativeProfileAvatarBackgroundColor"
+    private static let chromeDidChange = Notification.Name("ProvenioNativeTabChromeDidChange")
+    private static let accentKey = "ProvenioNativeTabAccentColor"
+    private static let profileNameKey = "ProvenioNativeProfileName"
+    private static let profileColorKey = "ProvenioNativeProfileAvatarColor"
+    private static let profileURLKey = "ProvenioNativeProfileAvatarURL"
+    private static let profileBackgroundKey = "ProvenioNativeProfileAvatarBackgroundColor"
 
     @Published private(set) var revision = 0
     @Published private(set) var accentColor = UIColor(
@@ -403,13 +403,13 @@ final class NativeTabIconStore: ObservableObject {
         profileAvatarTask?.cancel()
     }
 
-    func image(for tab: NuvioAppTab, selected: Bool) -> UIImage {
+    func image(for tab: AppTab, selected: Bool) -> UIImage {
         guard tab == .settings else {
-            return NuvioNativeTabIcon.image(for: tab)
+            return NativeTabIcon.image(for: tab)
         }
 
         let defaults = UserDefaults.standard
-        return NuvioNativeTabIcon.profileAvatar(
+        return NativeTabIcon.profileAvatar(
             name: defaults.string(forKey: Self.profileNameKey),
             avatarColor: UIColor(hexString: defaults.string(forKey: Self.profileColorKey)),
             backgroundColor: UIColor(hexString: defaults.string(forKey: Self.profileBackgroundKey)),
@@ -539,11 +539,11 @@ final class NativeProfileTabInteractionCoordinator: NSObject, UIGestureRecognize
 @available(iOS 16.0, *)
 @MainActor
 final class AppNavigationCoordinator: ObservableObject {
-    @Published var selectedTab: NuvioAppTab = .home
+    @Published var selectedTab: AppTab = .home
     @Published private(set) var isMainContentMounted = false
     @Published private(set) var isMainContentVisible = false
     @Published private(set) var isAppReady = false
-    @Published private var localizedTabTitles: [NuvioAppTab: String] = [:]
+    @Published private var localizedTabTitles: [AppTab: String] = [:]
     @Published private(set) var localizedSwitchProfileTitle = ""
     @Published private(set) var localizedAddProfileTitle = ""
     @Published var isProfileSwitcherPresented = false
@@ -567,7 +567,7 @@ final class AppNavigationCoordinator: ObservableObject {
         [homeCoordinator, searchCoordinator, libraryCoordinator, settingsCoordinator]
     }
 
-    func coordinator(for tab: NuvioAppTab) -> TabNavigationCoordinator {
+    func coordinator(for tab: AppTab) -> TabNavigationCoordinator {
         switch tab {
         case .home: return homeCoordinator
         case .search: return searchCoordinator
@@ -577,13 +577,13 @@ final class AppNavigationCoordinator: ObservableObject {
     }
 
     func activateTab(named tabName: String) {
-        guard let tab = NuvioAppTab.from(kotlinName: tabName) else { return }
+        guard let tab = AppTab.from(kotlinName: tabName) else { return }
         if tab == .home || isAppReady {
             selectedTab = tab
         }
     }
 
-    func title(for tab: NuvioAppTab) -> String {
+    func title(for tab: AppTab) -> String {
         localizedTabTitles[tab] ?? tab.fallbackTitle
     }
 
@@ -630,8 +630,8 @@ final class AppNavigationCoordinator: ObservableObject {
         profileSwitcherController.requestManageProfiles()
     }
 
-    func tab(for target: TabNavigationCoordinator) -> NuvioAppTab? {
-        NuvioAppTab.allCases.first { coordinator(for: $0) === target }
+    func tab(for target: TabNavigationCoordinator) -> AppTab? {
+        AppTab.allCases.first { coordinator(for: $0) === target }
     }
 
     func push(
@@ -643,7 +643,7 @@ final class AppNavigationCoordinator: ObservableObject {
             AppKt.disposeRoute(route: route)
             return
         }
-        let targetTab = NuvioAppTab.from(kotlinName: route.preferredTabName)
+        let targetTab = AppTab.from(kotlinName: route.preferredTabName)
             ?? tab(for: origin)
             ?? selectedTab
         let target = coordinator(for: targetTab)
@@ -665,7 +665,7 @@ final class AppNavigationCoordinator: ObservableObject {
 
 @available(iOS 16.0, *)
 struct NativeNavComposeView: UIViewControllerRepresentable {
-    let tab: NuvioAppTab
+    let tab: AppTab
     let usesNativeTabBar: Bool
     let usesTabletFloatingTabBar: Bool
     let coordinator: TabNavigationCoordinator
@@ -704,7 +704,7 @@ struct NativeNavComposeView: UIViewControllerRepresentable {
             },
             appGateController: appCoordinator.appGateController
         )
-        return NuvioComposeHost.wrap(
+        return ComposeHost.wrap(
             controller,
             onTabBarControllerAvailable: { tabBarController in
                 appCoordinator.profileTabInteraction.attach(to: tabBarController)
@@ -771,7 +771,7 @@ struct DetailComposeView: UIViewControllerRepresentable {
             },
             appGateController: appCoordinator.appGateController
         )
-        return NuvioComposeHost.wrap(
+        return ComposeHost.wrap(
             controller,
             disablesInteractiveContentPopGesture: route is PlayerRoute
         )
@@ -782,7 +782,7 @@ struct DetailComposeView: UIViewControllerRepresentable {
 
 @available(iOS 16.0, *)
 struct TabContentView: View {
-    let tab: NuvioAppTab
+    let tab: AppTab
     let usesNativeTabBar: Bool
     let usesTabletFloatingTabBar: Bool
     @ObservedObject var coordinator: TabNavigationCoordinator
@@ -841,9 +841,9 @@ private struct NativeToolbarReadabilityFade: View {
             .fill(
                 LinearGradient(
                     stops: [
-                        .init(color: Color(uiColor: nuvioBackgroundColor), location: 0),
-                        .init(color: Color(uiColor: nuvioBackgroundColor).opacity(0.78), location: 0.55),
-                        .init(color: Color(uiColor: nuvioBackgroundColor).opacity(0), location: 1),
+                        .init(color: Color(uiColor: appBackgroundColor), location: 0),
+                        .init(color: Color(uiColor: appBackgroundColor).opacity(0.78), location: 0.55),
+                        .init(color: Color(uiColor: appBackgroundColor).opacity(0), location: 1),
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -1216,7 +1216,7 @@ struct NativeNavContentView: View {
         UIDevice.current.userInterfaceIdiom == .pad
     }
 
-    private var tabSelection: Binding<NuvioAppTab> {
+    private var tabSelection: Binding<AppTab> {
         Binding(
             get: { appCoordinator.selectedTab },
             set: { newTab in
@@ -1237,7 +1237,7 @@ struct NativeNavContentView: View {
 
     private var legacyTabs: some View {
         TabView(selection: tabSelection) {
-            ForEach(NuvioAppTab.allCases, id: \.self) { tab in
+            ForEach(AppTab.allCases, id: \.self) { tab in
                 TabContentView(
                     tab: tab,
                     usesNativeTabBar: usesNativeTabBar,
@@ -1270,7 +1270,7 @@ struct NativeNavContentView: View {
     @available(iOS 26.0, *)
     private var nativeTabs: some View {
         TabView(selection: tabSelection) {
-            ForEach(NuvioAppTab.allCases, id: \.self) { tab in
+            ForEach(AppTab.allCases, id: \.self) { tab in
                 if tab == .settings {
                     Tab(value: tab) {
                         TabContentView(
@@ -1351,7 +1351,7 @@ struct NativeNavContentView: View {
                         legacyTabs
                     }
                 } else {
-                    Color(uiColor: nuvioBackgroundColor)
+                    Color(uiColor: appBackgroundColor)
                         .ignoresSafeArea(.all)
                 }
             }

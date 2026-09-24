@@ -1,2 +1,2 @@
 headers = AppIconBridge.h
-package = com.nuvio.app.nativebridge
+package = io.github.dimitrysaf.provenio.nativebridge

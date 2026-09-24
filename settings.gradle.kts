@@ -1,4 +1,4 @@
-rootProject.name = "Nuvio"
+rootProject.name = "Provenio"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {

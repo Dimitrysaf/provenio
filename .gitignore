@@ -2,8 +2,8 @@
 .kotlin
 .gradle
 **/build/
-!composeApp/src/**/kotlin/com/nuvio/app/core/build/
-!composeApp/src/**/kotlin/com/nuvio/app/core/build/**
+!composeApp/src/**/kotlin/io/github/dimitrysaf/provenio/core/build/
+!composeApp/src/**/kotlin/io/github/dimitrysaf/provenio/core/build/**
 xcuserdata
 !src/**/build/
 local.properties

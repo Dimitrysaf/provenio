@@ -21,26 +21,26 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
--keep class com.nuvio.app.core.catalog.CatalogTargetKind { *; }
+-keep class io.github.dimitrysaf.provenio.core.catalog.CatalogTargetKind { *; }
 
 # Avoid R8 merging/optimizing the stream badge chip used in lazy stream rows.
--keep class com.nuvio.app.shell.screens.streams.StreamBadgeChipKt { *; }
--keep class com.nuvio.app.shell.screens.streams.StreamBadgeChipSize { *; }
--keep class com.nuvio.app.shell.screens.streams.StreamBadgeChipDefaults { *; }
+-keep class io.github.dimitrysaf.provenio.shell.screens.streams.StreamBadgeChipKt { *; }
+-keep class io.github.dimitrysaf.provenio.shell.screens.streams.StreamBadgeChipSize { *; }
+-keep class io.github.dimitrysaf.provenio.shell.screens.streams.StreamBadgeChipDefaults { *; }
 
 # Avoid R8 producing verifier-invalid bytecode for the large player composable.
--keep class com.nuvio.app.shell.screens.player.PlayerKt { *; }
--keep class com.nuvio.app.shell.screens.player.PlayerKt$* { *; }
+-keep class io.github.dimitrysaf.provenio.shell.screens.player.PlayerKt { *; }
+-keep class io.github.dimitrysaf.provenio.shell.screens.player.PlayerKt$* { *; }
 
 # QuickJS plugin runtime is dynamic; keep runtime and app plugin classes.
 -keep class com.dokar.quickjs.** { *; }
--keep class com.nuvio.app.shell.screens.plugins.** { *; }
--keep class com.nuvio.app.core.plugins.** { *; }
+-keep class io.github.dimitrysaf.provenio.shell.screens.plugins.** { *; }
+-keep class io.github.dimitrysaf.provenio.core.plugins.** { *; }
 
 # P2P runtime and Nuvio Engine JNI bridge. Native libraries are not processed
 # by R8, but their Kotlin/JNI wrapper classes and method names must stay stable.
--keep class com.nuvio.app.shell.screens.p2p.** { *; }
--keep class com.nuvio.app.core.p2p.** { *; }
+-keep class io.github.dimitrysaf.provenio.shell.screens.p2p.** { *; }
+-keep class io.github.dimitrysaf.provenio.core.p2p.** { *; }
 -keep class com.nuvio.engine.** { *; }
 -keep interface com.nuvio.engine.** { *; }
 
