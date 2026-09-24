@@ -17,7 +17,7 @@ import com.nuvio.app.core.addons.isWaitingForFirstEnabledManifest
 import com.nuvio.app.core.collection.CollectionRepository
 import com.nuvio.app.core.metadata.MetaScreenSettingsRepository
 import com.nuvio.app.core.plugins.PluginRepository
-import com.nuvio.app.shell.screens.home.HomeCatalogSettingsRepository
+import com.nuvio.app.core.home.HomeCatalogSettingsRepository
 import com.nuvio.app.core.home.buildAddonCatalogRefreshSignature
 import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
 import nuvio.composeapp.generated.resources.Res

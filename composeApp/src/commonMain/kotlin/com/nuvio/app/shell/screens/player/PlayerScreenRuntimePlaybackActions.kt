@@ -8,7 +8,7 @@ import com.nuvio.app.core.tracking.TrackingScrobbleEvent
 import com.nuvio.app.core.tracking.buildTrackingMediaReference
 import com.nuvio.app.core.watch.progress.WatchProgressClock
 import com.nuvio.app.core.watch.progress.WatchProgressPlaybackSession
-import com.nuvio.app.shell.screens.watchprogress.WatchProgressRepository
+import com.nuvio.app.core.watch.progress.WatchProgressRepository
 import com.nuvio.app.core.watch.progress.buildPlaybackVideoId
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
@@ -18,6 +18,8 @@ import com.nuvio.app.core.playback.extractParentalGuideTmdbId
 import com.nuvio.app.core.playback.TrackingScrobbleItemInputs
 import com.nuvio.app.core.playback.shouldSendStopScrobble
 import com.nuvio.app.core.playback.shouldUpdateTrackingScrobbleAfterSeek
+import com.nuvio.app.core.playback.PlayerPlaybackSnapshot
+import com.nuvio.app.core.playback.buildMedia
 
 internal val PlayerScreenRuntime.activePlaybackIdentity: String
     get() = activeTorrentInfoHash
@@ -103,17 +105,6 @@ internal fun PlayerScreenRuntime.snapshotTrackingScrobbleItemInputs() = Tracking
     episodeNumber = activeEpisodeNumber,
     episodeTitle = activeEpisodeTitle,
 )
-
-private fun TrackingScrobbleItemInputs.buildMedia(): TrackingMediaReference =
-    buildTrackingMediaReference(
-        contentType = contentType,
-        parentMetaId = parentMetaId,
-        videoId = videoId,
-        title = title,
-        seasonNumber = seasonNumber,
-        episodeNumber = episodeNumber,
-        episodeTitle = episodeTitle,
-    )
 
 internal fun PlayerScreenRuntime.currentTrackingMedia(): TrackingMediaReference =
     snapshotTrackingScrobbleItemInputs().buildMedia()

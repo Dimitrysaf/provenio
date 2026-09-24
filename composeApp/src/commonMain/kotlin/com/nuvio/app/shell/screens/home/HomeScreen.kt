@@ -43,7 +43,7 @@ import com.nuvio.app.core.cloud.CloudLibraryRepository
 import com.nuvio.app.core.cloud.CloudLibraryUiState
 import com.nuvio.app.core.cloud.findPlaybackTargetForProgress
 import com.nuvio.app.core.metadata.MetaDetails
-import com.nuvio.app.shell.screens.details.MetaDetailsRepository
+import com.nuvio.app.core.metadata.MetaDetailsRepository
 import com.nuvio.app.core.metadata.MetaVideo
 import com.nuvio.app.core.metadata.SeriesPrimaryAction
 import com.nuvio.app.core.metadata.seriesPrimaryAction
@@ -81,7 +81,7 @@ import com.nuvio.app.core.watch.progress.shouldTreatAsInProgressForContinueWatch
 import com.nuvio.app.core.watch.progress.shouldUseAsCompletedSeedForContinueWatching
 import com.nuvio.app.core.watch.progress.WatchProgressClock
 import com.nuvio.app.core.watch.progress.WatchProgressEntry
-import com.nuvio.app.shell.screens.watchprogress.WatchProgressRepository
+import com.nuvio.app.core.watch.progress.WatchProgressRepository
 import com.nuvio.app.core.watch.progress.WatchProgressSourceCoordinator
 import com.nuvio.app.core.watch.progress.buildContinueWatchingEpisodeSubtitle
 import com.nuvio.app.core.watch.progress.continueWatchingEntries
@@ -92,7 +92,7 @@ import com.nuvio.app.core.watch.watching.application.WatchingState
 import com.nuvio.app.core.watch.watching.domain.WatchingContentRef
 import com.nuvio.app.core.watch.watching.domain.isReleasedBy
 import com.nuvio.app.core.collection.CollectionRepository
-import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.shell.screens.home.components.HomeCollectionRowSection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -129,6 +129,14 @@ import com.nuvio.app.core.home.hasUsableHomeNextUpMetadata
 import com.nuvio.app.core.home.isHomeNextUpSeedSourceLoaded
 import com.nuvio.app.core.home.planHomeNextUpResolutionCandidates
 import com.nuvio.app.core.home.splitUpcomingItems
+import com.nuvio.app.core.home.HomeCatalogSettingsItem
+import com.nuvio.app.core.home.HomeCatalogSettingsRepository
+import com.nuvio.app.core.home.HomeRepository
+import com.nuvio.app.core.home.buildHomeContinueWatchingItems
+import com.nuvio.app.core.home.buildHomeInProgressCacheSnapshot
+import com.nuvio.app.core.home.classifyHomeNextUpCandidateMetadata
+import com.nuvio.app.core.home.mergeHomeNextUpItemsWithCache
+import com.nuvio.app.core.home.nonBlankOrNull
 
 @Composable
 fun HomeScreen(
@@ -1260,42 +1268,6 @@ internal fun filterHomeNextUpCandidatesForContinueWatchingWindow(
     ?.let { cutoff -> candidates.filter { candidate -> candidate.markedAtEpochMs >= cutoff } }
     ?: candidates
 
-internal fun mergeHomeNextUpItemsWithCache(
-    resolvedItems: Map<String, Pair<Long, ContinueWatchingItem>>,
-    cachedItems: Map<String, Pair<Long, ContinueWatchingItem>>,
-    conclusivelyProcessedContentIds: Set<String>,
-): Map<String, Pair<Long, ContinueWatchingItem>> {
-    val retainedCachedItems = cachedItems.filterKeys { contentId ->
-        contentId !in conclusivelyProcessedContentIds || contentId in resolvedItems
-    }
-    val resolvedItemsWithCacheFallback = resolvedItems.mapValues { (contentId, pair) ->
-        pair.first to pair.second.withFallbackMetadata(cachedItems[contentId]?.second)
-    }
-    return retainedCachedItems + resolvedItemsWithCacheFallback
-}
-
-internal fun classifyHomeNextUpCandidateMetadata(
-    freshItem: ContinueWatchingItem,
-    cachedFallbackItem: ContinueWatchingItem?,
-    dismissedNextUpKeys: Set<String>,
-): HomeNextUpCandidateMetadataDecision {
-    val mergedItem = freshItem.withFallbackMetadata(cachedFallbackItem)
-    val dismissKey = nextUpDismissKey(
-        mergedItem.parentMetaId,
-        mergedItem.nextUpSeedSeasonNumber,
-        mergedItem.nextUpSeedEpisodeNumber,
-    )
-    val outcome = when {
-        dismissKey in dismissedNextUpKeys -> HomeNextUpCandidateMetadataOutcome.Dismissed
-        hasUsableHomeNextUpMetadata(mergedItem) -> HomeNextUpCandidateMetadataOutcome.Ready
-        else -> HomeNextUpCandidateMetadataOutcome.Transient
-    }
-    return HomeNextUpCandidateMetadataDecision(
-        item = mergedItem,
-        outcome = outcome,
-    )
-}
-
 private suspend fun resolveHomeNextUpCandidate(
     completedEntry: CompletedSeriesCandidate,
     watchProgressEntries: List<WatchProgressEntry>,
@@ -1415,116 +1387,6 @@ private fun shouldTreatAsActiveInProgressForNextUpSuppression(
     return progress.lastUpdatedEpochMs >= latestCompletedAt
 }
 
-internal fun buildHomeContinueWatchingItems(
-    visibleEntries: List<WatchProgressEntry>,
-    cachedInProgressByProgressKey: Map<String, ContinueWatchingItem> = emptyMap(),
-    nextUpItemsBySeries: Map<String, Pair<Long, ContinueWatchingItem>>,
-    nextUpSuppressedSeriesIds: Set<String>? = null,
-    sortMode: ContinueWatchingSortMode = ContinueWatchingSortMode.DEFAULT,
-    todayIsoDate: String = "",
-    cloudLibraryUiState: CloudLibraryUiState? = null,
-): List<ContinueWatchingItem> {
-    val suppressedSeriesIds = nextUpSuppressedSeriesIds
-        ?: visibleEntries
-            .asSequence()
-            .filter { entry -> entry.parentMetaType.isSeriesTypeForContinueWatching() }
-            .map { entry -> entry.parentMetaId }
-            .filter(String::isNotBlank)
-            .toSet()
-
-    val candidates = buildList {
-        addAll(
-            visibleEntries.map { entry ->
-                val liveItem = entry.toContinueWatchingItem()
-                HomeContinueWatchingCandidate(
-                    lastUpdatedEpochMs = entry.lastUpdatedEpochMs,
-                    item = liveItem
-                        .withFallbackMetadata(
-                            fallback = cachedInProgressByProgressKey[entry.resolvedProgressKey()],
-                            preserveFallbackPlaybackIdentity = true,
-                        )
-                        .withCloudLibraryMetadata(cloudLibraryUiState),
-                    isProgressEntry = true,
-                )
-            },
-        )
-        addAll(
-            nextUpItemsBySeries.values.mapNotNull { (lastUpdatedEpochMs, item) ->
-                if (item.parentMetaId in suppressedSeriesIds) return@mapNotNull null
-                HomeContinueWatchingCandidate(
-                    lastUpdatedEpochMs = lastUpdatedEpochMs,
-                    item = item,
-                    isProgressEntry = false,
-                )
-            },
-        )
-    }
-
-    // Deduplicate by series/content id first (order-stable)
-    val seen = mutableSetOf<String>()
-    val deduplicated = candidates
-        .sortedWith(
-            compareByDescending<HomeContinueWatchingCandidate> { it.lastUpdatedEpochMs }
-                .thenByDescending { it.isProgressEntry },
-        )
-        .filter { candidate -> candidate.item.shouldDisplayInContinueWatching() }
-        .filter { candidate ->
-            val key = candidate.item.parentMetaId.ifBlank { candidate.item.videoId }
-            seen.add(key)
-        }
-
-    return when (sortMode) {
-        ContinueWatchingSortMode.DEFAULT,
-        ContinueWatchingSortMode.SPLIT_UPCOMING,
-        -> deduplicated.map(HomeContinueWatchingCandidate::item)
-        ContinueWatchingSortMode.STREAMING_STYLE -> applyStreamingStyleSort(deduplicated, todayIsoDate)
-    }
-}
-
-private fun applyStreamingStyleSort(
-    candidates: List<HomeContinueWatchingCandidate>,
-    todayIsoDate: String,
-): List<ContinueWatchingItem> {
-    val (released, unreleased) = candidates.partition { candidate ->
-        val item = candidate.item
-        if (!item.isNextUp) {
-            true // in-progress items are always "released"
-        } else {
-            val itemReleased = item.released
-            if (itemReleased.isNullOrBlank() || todayIsoDate.isBlank()) {
-                true // no date info → treat as released
-            } else {
-                isReleasedBy(todayIsoDate = todayIsoDate, releasedDate = itemReleased)
-            }
-        }
-    }
-
-    // Released: most recently watched first (already sorted by dedup pass)
-    val sortedReleased = released.map(HomeContinueWatchingCandidate::item)
-
-    // Unaired: soonest air date first; unknown dates go to the end
-    val sortedUnreleased = unreleased
-        .sortedWith { a, b ->
-            val dateA = a.item.released?.takeIf { it.isNotBlank() }
-            val dateB = b.item.released?.takeIf { it.isNotBlank() }
-            when {
-                dateA == null && dateB == null -> 0
-                dateA == null -> 1
-                dateB == null -> -1
-                else -> dateA.compareTo(dateB)
-            }
-        }
-        .map(HomeContinueWatchingCandidate::item)
-
-    return sortedReleased + sortedUnreleased
-}
-
-private data class HomeContinueWatchingCandidate(
-    val lastUpdatedEpochMs: Long,
-    val item: ContinueWatchingItem,
-    val isProgressEntry: Boolean,
-)
-
 private data class HomeNextUpCandidateResolution(
     val candidate: CompletedSeriesCandidate,
     val attempt: HomeNextUpResolutionAttempt,
@@ -1609,40 +1471,6 @@ private fun saveContinueWatchingSnapshots(
     )
 }
 
-internal fun buildHomeInProgressCacheSnapshot(
-    visibleEntries: List<WatchProgressEntry>,
-    cachedEntries: List<CachedInProgressItem>,
-): List<CachedInProgressItem> {
-    val cachedByProgressKey = cachedEntries.associateBy(CachedInProgressItem::resolvedProgressKey)
-    return visibleEntries.map { entry ->
-        val item = entry
-            .toContinueWatchingItem()
-            .withFallbackMetadata(
-                fallback = cachedByProgressKey[entry.resolvedProgressKey()]?.toContinueWatchingItem(),
-                preserveFallbackPlaybackIdentity = true,
-            )
-        CachedInProgressItem(
-            contentId = entry.parentMetaId,
-            contentType = entry.contentType,
-            name = item.title,
-            poster = item.poster,
-            backdrop = item.background,
-            logo = item.logo,
-            videoId = entry.videoId,
-            season = entry.seasonNumber,
-            episode = entry.episodeNumber,
-            episodeTitle = item.episodeTitle,
-            episodeThumbnail = item.episodeThumbnail,
-            pauseDescription = item.pauseDescription,
-            position = entry.lastPositionMs,
-            duration = entry.durationMs,
-            lastWatched = entry.lastUpdatedEpochMs,
-            progressPercent = entry.progressPercent,
-            progressKey = entry.resolvedProgressKey(),
-        )
-    }
-}
-
 private fun CompletedSeriesCandidate.toContinueWatchingSeed(meta: com.nuvio.app.core.metadata.MetaDetails) =
     WatchProgressEntry(
         contentType = content.type,
@@ -1660,56 +1488,6 @@ private fun CompletedSeriesCandidate.toContinueWatchingSeed(meta: com.nuvio.app.
         lastUpdatedEpochMs = markedAtEpochMs,
         isCompleted = true,
     )
-
-private fun ContinueWatchingItem.shouldDisplayInContinueWatching(): Boolean =
-    isNextUp || progressFraction < 0.995f
-
-private fun CachedNextUpItem.toContinueWatchingItem(
-    releaseEpochMs: Long?,
-    nowEpochMs: Long,
-): ContinueWatchingItem {
-    val alertState = com.nuvio.app.core.watch.progress.calculateReleaseAlertState(
-        seedLastUpdatedEpochMs = lastWatched,
-        seedSeasonNumber = seedSeason,
-        nextSeasonNumber = season,
-        releasedIso = released,
-        releaseEpochMs = releaseEpochMs,
-        nowEpochMs = nowEpochMs,
-    )
-    val resolvedPoster = poster.nonBlankOrNull()
-    val resolvedBackdrop = backdrop.nonBlankOrNull()
-    val resolvedEpisodeThumbnail = episodeThumbnail.nonBlankOrNull()
-    return ContinueWatchingItem(
-        parentMetaId = contentId,
-        parentMetaType = contentType,
-        videoId = videoId,
-        title = name,
-        subtitle = buildContinueWatchingEpisodeSubtitle(
-            seasonNumber = season,
-            episodeNumber = episode,
-            episodeTitle = episodeTitle,
-        ),
-        imageUrl = resolvedEpisodeThumbnail ?: resolvedBackdrop ?: resolvedPoster,
-        logo = logo.nonBlankOrNull(),
-        poster = resolvedPoster,
-        background = resolvedBackdrop,
-        seasonNumber = season,
-        episodeNumber = episode,
-        episodeTitle = episodeTitle.nonBlankOrNull(),
-        episodeThumbnail = resolvedEpisodeThumbnail,
-        pauseDescription = pauseDescription.nonBlankOrNull(),
-        released = released.nonBlankOrNull(),
-        isNextUp = true,
-        nextUpSeedSeasonNumber = seedSeason,
-        nextUpSeedEpisodeNumber = seedEpisode,
-        resumePositionMs = 0L,
-        resumeProgressFraction = null,
-        durationMs = 0L,
-        progressFraction = 0f,
-        isReleaseAlert = alertState.isReleaseAlert,
-        isNewSeasonRelease = alertState.isNewSeasonRelease,
-    )
-}
 
 private fun CachedInProgressItem.toContinueWatchingItem(): ContinueWatchingItem {
     val explicitResumeProgressFraction = progressPercent
@@ -1754,74 +1532,6 @@ private fun CachedInProgressItem.toContinueWatchingItem(): ContinueWatchingItem 
         progressFraction = normalizedProgressFraction,
     )
 }
-
-private fun ContinueWatchingItem.withFallbackMetadata(
-    fallback: ContinueWatchingItem?,
-    preserveFallbackPlaybackIdentity: Boolean = false,
-): ContinueWatchingItem {
-    val nonBlankFallbackTitle = fallback?.title?.takeIf { it.isNotBlank() }
-    val fallbackHasPlaceholderTitle = fallback?.hasPlaceholderHomeTitle() == true
-    val fallbackTitle = nonBlankFallbackTitle
-        ?.takeUnless { fallbackHasPlaceholderTitle }
-
-    return copy(
-        title = when {
-            title.isBlank() && nonBlankFallbackTitle != null -> nonBlankFallbackTitle
-            hasPlaceholderHomeTitle() && fallbackTitle != null -> fallbackTitle
-            else -> title
-        },
-        subtitle = when {
-            subtitle.isBlank() -> fallback?.subtitle?.takeIf { it.isNotBlank() }.orEmpty()
-            preserveFallbackPlaybackIdentity && !fallback?.subtitle.isNullOrBlank() -> fallback.subtitle
-            else -> subtitle
-        },
-        imageUrl = imageUrl.orNonBlank(fallback?.imageUrl),
-        logo = logo.orNonBlank(fallback?.logo),
-        poster = poster.orNonBlank(fallback?.poster),
-        background = background.orNonBlank(fallback?.background),
-        videoId = if (preserveFallbackPlaybackIdentity) {
-            fallback?.videoId?.takeIf { it.isNotBlank() } ?: videoId
-        } else {
-            videoId
-        },
-        episodeTitle = episodeTitle.orNonBlank(fallback?.episodeTitle),
-        episodeThumbnail = episodeThumbnail.orNonBlank(fallback?.episodeThumbnail),
-        pauseDescription = pauseDescription.orNonBlank(fallback?.pauseDescription),
-        released = released.orNonBlank(fallback?.released),
-    )
-}
-
-private fun String?.nonBlankOrNull(): String? = this?.takeIf { it.isNotBlank() }
-
-private fun String?.orNonBlank(fallback: String?): String? =
-    nonBlankOrNull() ?: fallback.nonBlankOrNull()
-
-private fun ContinueWatchingItem.withCloudLibraryMetadata(
-    cloudLibraryUiState: CloudLibraryUiState?,
-): ContinueWatchingItem {
-    if (!isCloudLibraryContinueWatchingItem() || cloudLibraryUiState == null) return this
-    val target = cloudLibraryUiState.findPlaybackTargetForProgress(
-        contentId = parentMetaId,
-        videoId = videoId,
-    ) ?: return this
-    val fileName = target.file.name.trim().takeIf { it.isNotBlank() }
-        ?: target.item.name.trim().takeIf { it.isNotBlank() }
-        ?: return this
-    return copy(
-        title = fileName,
-        pauseDescription = pauseDescription
-            ?: target.item.name.takeIf { itemName -> itemName.isNotBlank() && itemName != fileName },
-    )
-}
-
-private fun ContinueWatchingItem.hasPlaceholderHomeTitle(): Boolean {
-    val normalizedTitle = title.trim()
-    return normalizedTitle.equals(parentMetaId, ignoreCase = true) ||
-        (isCloudLibraryContinueWatchingItem() && normalizedTitle.equals(videoId, ignoreCase = true))
-}
-
-private fun ContinueWatchingItem.isCloudLibraryContinueWatchingItem(): Boolean =
-    parentMetaType.equals(CloudLibraryContentType, ignoreCase = true)
 
 private fun WatchProgressEntry.isCloudLibraryProgressEntry(): Boolean =
     contentType.equals(CloudLibraryContentType, ignoreCase = true) ||

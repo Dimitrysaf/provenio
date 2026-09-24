@@ -9,7 +9,7 @@ import com.nuvio.app.shell.screens.collection.CollectionEditorPage
 import com.nuvio.app.shell.screens.collection.CollectionEditorScreen
 import com.nuvio.app.shell.screens.collection.CollectionManagementScreen
 import com.nuvio.app.core.collection.CollectionRepository
-import com.nuvio.app.shell.screens.collection.FolderDetailRepository
+import com.nuvio.app.core.collection.FolderDetailRepository
 import com.nuvio.app.shell.screens.collection.FolderDetailScreen
 import com.nuvio.app.core.downloads.DownloadItem
 import com.nuvio.app.shell.screens.downloads.DownloadsScreen

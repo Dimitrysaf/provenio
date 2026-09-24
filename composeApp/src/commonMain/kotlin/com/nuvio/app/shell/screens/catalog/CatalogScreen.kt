@@ -60,7 +60,7 @@ import com.nuvio.app.shell.components.posterCardClickable
 import com.nuvio.app.shell.components.rememberPosterCardStyleUiState
 import com.nuvio.app.shell.components.withDuplicateSafeLazyKeys
 import com.nuvio.app.core.home.MetaPreview
-import com.nuvio.app.shell.screens.home.HomeCatalogSettingsRepository
+import com.nuvio.app.core.home.HomeCatalogSettingsRepository
 import com.nuvio.app.core.home.PosterShape
 import com.nuvio.app.shell.screens.home.components.HomeEmptyStateCard
 import com.nuvio.app.core.home.stableKey
@@ -73,6 +73,7 @@ import kotlinx.coroutines.flow.map
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.core.catalog.CatalogTarget
+import com.nuvio.app.core.catalog.CatalogRepository
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable

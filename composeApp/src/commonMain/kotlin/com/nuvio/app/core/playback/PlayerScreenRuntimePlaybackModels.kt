@@ -1,5 +1,8 @@
 package com.nuvio.app.core.playback
 
+import com.nuvio.app.core.tracking.TrackingMediaReference
+import com.nuvio.app.core.tracking.buildTrackingMediaReference
+
 internal data class TrackingScrobbleItemInputs(
     val contentType: String,
     val parentMetaId: String,
@@ -19,3 +22,14 @@ internal fun shouldUpdateTrackingScrobbleAfterSeek(
     hasActiveScrobble: Boolean,
     progressPercent: Float,
 ): Boolean = hasActiveScrobble && progressPercent >= 1f && progressPercent < 80f
+
+internal fun TrackingScrobbleItemInputs.buildMedia(): TrackingMediaReference =
+    buildTrackingMediaReference(
+        contentType = contentType,
+        parentMetaId = parentMetaId,
+        videoId = videoId,
+        title = title,
+        seasonNumber = seasonNumber,
+        episodeNumber = episodeNumber,
+        episodeTitle = episodeTitle,
+    )

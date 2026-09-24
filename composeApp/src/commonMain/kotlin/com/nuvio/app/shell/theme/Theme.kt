@@ -23,6 +23,8 @@ import nuvio.composeapp.generated.resources.roboto_bold
 import nuvio.composeapp.generated.resources.roboto_medium
 import nuvio.composeapp.generated.resources.roboto_regular
 import org.jetbrains.compose.resources.Font
+import com.nuvio.app.core.settings.AppTheme
+import com.nuvio.app.core.settings.CustomThemeColors
 
 val LocalAppTheme = staticCompositionLocalOf { AppTheme.WHITE }
 

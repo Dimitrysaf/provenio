@@ -80,6 +80,13 @@ import nuvio.composeapp.generated.resources.lang_vietnamese
 import nuvio.composeapp.generated.resources.lang_welsh
 import nuvio.composeapp.generated.resources.lang_zulu
 import org.jetbrains.compose.resources.StringResource
+import nuvio.composeapp.generated.resources.settings_playback_option_default
+import nuvio.composeapp.generated.resources.settings_playback_option_device_language
+import nuvio.composeapp.generated.resources.settings_playback_option_forced
+import nuvio.composeapp.generated.resources.settings_playback_option_none
+import nuvio.composeapp.generated.resources.settings_playback_option_original
+import nuvio.composeapp.generated.resources.subtitle_language_unknown
+import org.jetbrains.compose.resources.getString
 
 data class LanguagePreferenceOption(
     val code: String,
@@ -440,4 +447,62 @@ fun languageMatchesPreference(trackLanguage: String?, targetLanguage: String): B
 
 internal expect object DeviceLanguagePreferences {
     fun preferredLanguageCodes(): List<String>
+}
+
+fun resolvePreferredSubtitleLanguageTargets(
+    preferredSubtitleLanguage: String,
+    secondaryPreferredSubtitleLanguage: String?,
+    deviceLanguages: List<String>,
+): List<String> {
+    fun normalize(language: String?): String? {
+        val normalized = normalizeLanguageCode(language)
+        return when (normalized) {
+            null,
+            SubtitleLanguageOption.NONE,
+            -> null
+            AudioLanguageOption.DEFAULT -> null
+            else -> normalized
+        }
+    }
+
+    val primary = normalizeLanguageCode(preferredSubtitleLanguage) ?: SubtitleLanguageOption.NONE
+
+    return when (primary) {
+        SubtitleLanguageOption.NONE -> listOfNotNull(
+            normalize(secondaryPreferredSubtitleLanguage),
+        ).distinct()
+
+        SubtitleLanguageOption.DEVICE -> (
+            deviceLanguages.mapNotNull(::normalize)
+                + listOfNotNull(normalize(secondaryPreferredSubtitleLanguage))
+            ).distinct()
+
+        else -> listOfNotNull(
+            normalize(preferredSubtitleLanguage),
+            normalize(secondaryPreferredSubtitleLanguage),
+        ).distinct()
+    }
+}
+
+internal fun languageLabelResForCode(code: String?): StringResource? {
+    val normalized = normalizeLanguageCode(code) ?: return null
+    return AvailableLanguageOptions.firstOrNull {
+        normalizeLanguageCode(it.code) == normalized
+    }?.labelRes
+}
+
+suspend fun getLanguageLabelForCode(code: String?): String = when {
+    code.isNullOrBlank() || code.equals(SubtitleLanguageOption.NONE, ignoreCase = true) ->
+        getString(Res.string.settings_playback_option_none)
+    code.equals(SubtitleLanguageOption.FORCED, ignoreCase = true) ->
+        getString(Res.string.settings_playback_option_forced)
+    code.equals(AudioLanguageOption.DEFAULT, ignoreCase = true) ->
+        getString(Res.string.settings_playback_option_default)
+    code.equals(AudioLanguageOption.DEVICE, ignoreCase = true) ||
+        code.equals(SubtitleLanguageOption.DEVICE, ignoreCase = true) ->
+        getString(Res.string.settings_playback_option_device_language)
+    code.equals(AudioLanguageOption.ORIGINAL, ignoreCase = true) ->
+        getString(Res.string.settings_playback_option_original)
+    else -> languageLabelResForCode(code)?.let { getString(it) }
+        ?: getString(Res.string.subtitle_language_unknown)
 }

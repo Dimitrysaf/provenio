@@ -102,7 +102,7 @@ import com.nuvio.app.shell.screens.details.components.DetailTrailersSection
 import com.nuvio.app.shell.screens.details.components.EpisodeWatchedActionSheet
 import com.nuvio.app.shell.screens.details.components.SeasonWatchedActionSheet
 import com.nuvio.app.shell.screens.settings.ListItemBetweenSpace
-import com.nuvio.app.shell.screens.home.HomeRepository
+import com.nuvio.app.core.home.HomeRepository
 import com.nuvio.app.core.home.MetaPreview
 import com.nuvio.app.core.library.LibraryRepository
 import com.nuvio.app.shell.screens.library.PendingTrackingMembershipRemoval
@@ -110,7 +110,7 @@ import com.nuvio.app.shell.screens.library.TrackingMembershipRemovalConfirmation
 import com.nuvio.app.shell.screens.library.executeTrackingMembershipOperation
 import com.nuvio.app.shell.screens.library.showTrackingMembershipRewriteFeedback
 import com.nuvio.app.core.library.toLibraryItem
-import com.nuvio.app.shell.screens.player.PlayerSettingsRepository
+import com.nuvio.app.core.playback.PlayerSettingsRepository
 import com.nuvio.app.shell.screens.streams.rememberPlaybackAvailability
 import com.nuvio.app.core.streams.StreamAutoPlayPolicy
 import com.nuvio.app.core.metadata.tmdb.TmdbSettingsRepository
@@ -131,7 +131,7 @@ import com.nuvio.app.core.watch.watched.releasedEpisodesForSeason
 import com.nuvio.app.core.watch.watched.watchedItemKey
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import com.nuvio.app.core.watch.progress.WatchProgressEntry
-import com.nuvio.app.shell.screens.watchprogress.WatchProgressRepository
+import com.nuvio.app.core.watch.progress.WatchProgressRepository
 import com.nuvio.app.core.watch.progress.buildPlaybackVideoId
 import com.nuvio.app.core.watch.progress.ContinueWatchingPreferencesRepository
 import com.nuvio.app.core.watch.watching.application.WatchingActions
@@ -162,6 +162,7 @@ import com.nuvio.app.core.metadata.playLabel
 import com.nuvio.app.core.metadata.seriesPrimaryAction
 import com.nuvio.app.core.metadata.tabGroupForRendering
 import com.nuvio.app.core.metadata.detailSidePaneSection
+import com.nuvio.app.core.metadata.MetaDetailsRepository
 
 private val watchedMarkerDiagnosticLog = Logger.withTag("WatchedMarkerDiag")
 

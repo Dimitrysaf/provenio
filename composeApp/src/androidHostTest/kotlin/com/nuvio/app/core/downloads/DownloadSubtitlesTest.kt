@@ -7,9 +7,9 @@ import com.nuvio.app.R
 import com.nuvio.app.core.playback.ExternalPlayerPlaybackRequest
 import com.nuvio.app.core.playback.PlayerSubtitleCueParser
 import com.nuvio.app.core.playback.SubtitleFileCache
-import com.nuvio.app.shell.screens.player.prepareExternalPlayerLaunch
+import com.nuvio.app.core.playback.prepareExternalPlayerLaunch
 import com.nuvio.app.core.playback.SubtitleAddonRequest
-import com.nuvio.app.shell.screens.player.SubtitleRepository
+import com.nuvio.app.core.playback.SubtitleRepository
 import com.nuvio.app.core.streams.StreamSubtitle
 import java.io.File
 import java.net.URI

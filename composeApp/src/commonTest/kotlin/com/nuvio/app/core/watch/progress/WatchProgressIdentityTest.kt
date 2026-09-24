@@ -9,7 +9,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
-import com.nuvio.app.shell.screens.watchprogress.WatchProgressRepository
 
 class WatchProgressIdentityTest {
     @Test

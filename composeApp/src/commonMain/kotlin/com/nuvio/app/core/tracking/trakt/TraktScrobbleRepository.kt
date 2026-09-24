@@ -3,7 +3,7 @@ package com.nuvio.app.core.tracking.trakt
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.build.AppVersionConfig
 import com.nuvio.app.core.addons.httpRequestRaw
-import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.core.tracking.TrackingMediaKind
 import com.nuvio.app.core.tracking.TrackingMediaReference
 import com.nuvio.app.core.tracking.TrackingProviderId

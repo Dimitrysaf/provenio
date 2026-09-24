@@ -15,9 +15,12 @@ import com.nuvio.app.shell.components.NativeProfileSwitcherController
 import com.nuvio.app.shell.theme.NuvioTheme
 import com.nuvio.app.shell.components.configurePlatformImageLoader
 import com.nuvio.app.shell.theme.isDynamicColorAvailable
-import com.nuvio.app.shell.screens.settings.ThemeSettingsRepository
+import com.nuvio.app.core.settings.ThemeSettingsRepository
 import com.nuvio.app.shell.nav.AppRoute
 import com.nuvio.app.shell.nav.TabsRoute
+import androidx.compose.runtime.LaunchedEffect
+import com.nuvio.app.shell.components.NativeTabBridge
+import com.nuvio.app.shell.theme.ThemeColors
 
 fun disposeRoute(route: AppRoute) {
     disposeRouteResources(route)
@@ -94,6 +97,11 @@ internal fun AppEnvironment(content: @Composable () -> Unit) {
     }.collectAsStateWithLifecycle()
 
     val customThemeColors by ThemeSettingsRepository.customThemeColors.collectAsStateWithLifecycle()
+    // The native iOS tab bar takes its accent from the active theme.
+    LaunchedEffect(selectedTheme, customThemeColors) {
+        val palette = ThemeColors.getColorPalette(selectedTheme, customThemeColors)
+        NativeTabBridge.publishAccentColor(palette.nativeAccentHex)
+    }
     val useDynamicColor = remember { isDynamicColorAvailable() }
 
     NuvioTheme(

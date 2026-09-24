@@ -51,7 +51,7 @@ import com.nuvio.app.shell.components.NuvioBackButton
 import com.nuvio.app.shell.components.ListSubheader
 import com.nuvio.app.shell.theme.nuvio
 import com.nuvio.app.shell.components.nuvioConsumePointerEvents
-import com.nuvio.app.shell.screens.home.HomeCatalogSettingsItem
+import com.nuvio.app.core.home.HomeCatalogSettingsItem
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.settings_homescreen_collection_with_addon
 import nuvio.composeapp.generated.resources.settings_homescreen_hero_source

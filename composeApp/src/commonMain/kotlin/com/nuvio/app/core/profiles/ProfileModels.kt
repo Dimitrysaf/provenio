@@ -56,3 +56,31 @@ data class ProfileLockState(
     @kotlinx.serialization.SerialName("pin_enabled") val pinEnabled: Boolean = false,
     @kotlinx.serialization.SerialName("pin_locked_until") val pinLockedUntil: String? = null,
 )
+
+@Serializable
+data class ProfilePushPayload(
+    @SerialName("profile_index") val profileIndex: Int,
+    val name: String,
+    @SerialName("avatar_color_hex") val avatarColorHex: String,
+    @SerialName("uses_primary_addons") val usesPrimaryAddons: Boolean = false,
+    @SerialName("uses_primary_plugins") val usesPrimaryPlugins: Boolean = false,
+    @SerialName("avatar_id") val avatarId: String? = null,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+    @SerialName("profile_background_id") val profileBackgroundId: String? = null,
+    @SerialName("profile_background_url") val profileBackgroundUrl: String? = null,
+)
+
+@Serializable
+data class PinVerifyResult(
+    val unlocked: Boolean = false,
+    @SerialName("retry_after_seconds") val retryAfterSeconds: Int = 0,
+    val message: String? = null,
+)
+
+data class ProfileState(
+    val profiles: List<NuvioProfile> = emptyList(),
+    val activeProfile: NuvioProfile? = null,
+    val isLoaded: Boolean = false,
+    val hasEverSelectedProfile: Boolean = false,
+    val rememberLastProfileEnabled: Boolean = false,
+)

@@ -7,6 +7,7 @@ import com.nuvio.app.core.tracking.TrackingProviderRegistry
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.tracking_list_status_rewritten
 import org.jetbrains.compose.resources.getString
+import com.nuvio.app.core.library.statusTitle
 
 internal suspend fun showTrackingMembershipRewriteFeedback(result: TrackingMembershipApplyResult) {
     val rewrite = result.rewrites.firstOrNull() ?: return
@@ -26,11 +27,3 @@ internal suspend fun showTrackingMembershipRewriteFeedback(result: TrackingMembe
         ),
     )
 }
-
-private fun List<TrackingLibraryTab>.statusTitle(
-    key: String,
-    providerName: String,
-): String = firstOrNull { tab -> tab.key == key }
-    ?.title
-    ?.removePrefix("$providerName ")
-    ?: key.substringAfterLast(':')

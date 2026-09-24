@@ -9,6 +9,9 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import com.nuvio.app.core.settings.AppTheme
+import com.nuvio.app.core.settings.CustomThemeColors
+import com.nuvio.app.core.settings.parseHexColor
 
 class CustomThemeColorsTest {
     @Test

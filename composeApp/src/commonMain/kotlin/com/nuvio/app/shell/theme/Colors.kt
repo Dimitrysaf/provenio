@@ -18,6 +18,8 @@ import nuvio.composeapp.generated.resources.theme_rose_gold
 import nuvio.composeapp.generated.resources.theme_violet
 import nuvio.composeapp.generated.resources.theme_white
 import org.jetbrains.compose.resources.StringResource
+import com.nuvio.app.core.settings.AppTheme
+import com.nuvio.app.core.settings.CustomThemeColors
 
 data class ThemeColorPalette(
     val secondary: Color,
@@ -208,22 +210,6 @@ object ThemeColors {
         AppTheme.ROSE -> Rose
         AppTheme.WHITE -> White
     }
-}
-
-enum class AppTheme {
-    GOLD,
-    JADE,
-    ROSE_GOLD,
-    ARCTIC_BLUE,
-    GRAPHITE,
-    CUSTOM,
-    CRIMSON,
-    OCEAN,
-    VIOLET,
-    EMERALD,
-    AMBER,
-    ROSE,
-    WHITE,
 }
 
 val AppTheme.labelRes: StringResource

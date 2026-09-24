@@ -9,6 +9,7 @@ import com.nuvio.app.core.playback.PlayerTrackPreferenceStorage
 import com.nuvio.app.core.playback.SUBTITLE_DELAY_MAX_MS
 import com.nuvio.app.core.playback.SUBTITLE_DELAY_MIN_MS
 import com.nuvio.app.core.playback.SubtitleSyncCue
+import com.nuvio.app.core.playback.SubtitleRepository
 
 internal fun PlayerScreenRuntime.fetchAddonSubtitlesForActiveItem() {
     if (activeSourceUrl.startsWith("file:") && externalSubtitles.isNotEmpty()) {

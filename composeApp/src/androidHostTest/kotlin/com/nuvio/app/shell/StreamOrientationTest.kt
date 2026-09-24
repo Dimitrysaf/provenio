@@ -5,11 +5,11 @@ import android.app.Application
 import android.content.pm.ActivityInfo
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.nuvio.app.shell.theme.NuvioTheme
-import com.nuvio.app.shell.screens.player.PlayerSettingsRepository
-import com.nuvio.app.shell.screens.player.PlayerSettingsStorage
+import com.nuvio.app.core.playback.PlayerSettingsRepository
+import com.nuvio.app.core.playback.PlayerSettingsStorage
 import com.nuvio.app.core.streams.StreamLaunch
 import com.nuvio.app.core.streams.StreamLaunchStore
-import com.nuvio.app.shell.screens.streams.StreamsRepository
+import com.nuvio.app.core.streams.StreamsRepository
 import com.nuvio.app.shell.nav.StreamRoute
 import org.junit.Rule
 import org.junit.runner.RunWith

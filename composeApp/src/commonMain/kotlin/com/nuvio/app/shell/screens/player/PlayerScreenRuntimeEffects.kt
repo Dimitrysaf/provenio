@@ -7,7 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.nuvio.app.shell.screens.details.MetaDetailsRepository
+import com.nuvio.app.core.metadata.MetaDetailsRepository
 import com.nuvio.app.core.p2p.P2pSettingsRepository
 import com.nuvio.app.core.p2p.P2pStreamRequest
 import com.nuvio.app.core.p2p.P2pStreamingEngine
@@ -20,7 +20,7 @@ import com.nuvio.app.core.streams.StreamLinkCacheRepository
 import com.nuvio.app.core.streams.StreamItem
 import com.nuvio.app.core.streams.hasLikelyExpiringPlaybackCredentials
 import com.nuvio.app.core.tracking.TrackingScrobbleAction
-import com.nuvio.app.shell.screens.watchprogress.WatchProgressRepository
+import com.nuvio.app.core.watch.progress.WatchProgressRepository
 import com.nuvio.app.core.watch.progress.buildPlaybackVideoId
 import com.nuvio.app.core.watch.watching.application.WatchingState
 import kotlinx.coroutines.CancellationException
@@ -32,6 +32,9 @@ import com.nuvio.app.core.playback.ParentalGuideRepository
 import com.nuvio.app.core.playback.PlayerStreamsRepository
 import com.nuvio.app.core.playback.buildParentalWarnings
 import com.nuvio.app.core.playback.PlayerTrackPreferenceStorage
+import com.nuvio.app.core.playback.PlayerNowPlayingInfo
+import com.nuvio.app.core.playback.PlayerPlaybackSnapshot
+import com.nuvio.app.core.playback.SubtitleRepository
 
 @Composable
 internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {

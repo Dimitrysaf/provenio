@@ -36,3 +36,5 @@ private fun saturatingProgress(value: Long, midpoint: Long): Float {
     val safeValue = value.coerceAtLeast(0L).toDouble()
     return (safeValue / (safeValue + midpoint.toDouble())).toFloat()
 }
+
+internal const val NEXT_EPISODE_HARD_TIMEOUT_MS = 120_000L

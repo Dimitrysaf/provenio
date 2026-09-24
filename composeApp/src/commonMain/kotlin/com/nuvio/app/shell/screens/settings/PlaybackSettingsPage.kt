@@ -52,26 +52,27 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.addons.AddonRepository
 import com.nuvio.app.core.addons.enabledAddons
-import com.nuvio.app.shell.screens.player.AndroidLibmpvVideoOutput
-import com.nuvio.app.shell.screens.player.AndroidPlaybackEngine
+import com.nuvio.app.core.playback.AndroidLibmpvVideoOutput
+import com.nuvio.app.core.playback.AndroidPlaybackEngine
 import com.nuvio.app.core.playback.AudioLanguageOption
 import com.nuvio.app.core.playback.AvailableLanguageOptions
 import com.nuvio.app.core.playback.ExternalPlayerApp
 import com.nuvio.app.core.playback.ExternalPlayerPlatform
-import com.nuvio.app.shell.screens.player.IosAudioOutputMode
-import com.nuvio.app.shell.screens.player.IosHardwareDecoderMode
+import com.nuvio.app.core.playback.IosAudioOutputMode
+import com.nuvio.app.core.playback.IosHardwareDecoderMode
 import com.nuvio.app.shell.screens.player.localizedLabel
-import com.nuvio.app.shell.screens.player.IosTargetPrimaries
-import com.nuvio.app.shell.screens.player.IosTargetTransfer
-import com.nuvio.app.shell.screens.player.PlayerSettingsRepository
+import com.nuvio.app.core.playback.IosTargetPrimaries
+import com.nuvio.app.core.playback.IosTargetTransfer
+import com.nuvio.app.core.playback.PlayerSettingsRepository
 import com.nuvio.app.core.playback.STREAM_AUTO_PLAY_TIMEOUT_VALUES
 import com.nuvio.app.shell.screens.player.SubtitleBackgroundColorSwatches
 import com.nuvio.app.shell.screens.player.SubtitleColorSwatches
 import com.nuvio.app.core.playback.SubtitleLanguageOption
 import com.nuvio.app.shell.screens.player.formatPlaybackSpeedLabel
 import com.nuvio.app.shell.screens.player.languageLabelForCode
-import com.nuvio.app.shell.screens.player.subtitleFontSizeRangeSp
-import com.nuvio.app.shell.screens.player.toStorageHexString
+import com.nuvio.app.core.playback.subtitleFontSizeRangeSp
+import com.nuvio.app.shell.screens.player.isTransparentArgb
+import com.nuvio.app.core.playback.toStorageHexString
 import com.nuvio.app.shell.screens.p2p.P2pConsentDialog
 import com.nuvio.app.core.p2p.P2pCacheClearResult
 import com.nuvio.app.core.p2p.P2pCacheSize
@@ -283,8 +284,8 @@ private fun SettingsSliderContainer(
 }
 
 @Composable
-private fun subtitleColorLabel(color: Color): String {
-    return if (color.alpha == 0f) {
+private fun subtitleColorLabel(color: Long): String {
+    return if (color.isTransparentArgb()) {
         stringResource(Res.string.settings_playback_subtitle_color_transparent)
     } else {
         color.toStorageHexString()
@@ -1777,9 +1778,9 @@ private fun LibassRenderTypeDialog(
 @Composable
 private fun SubtitleColorDialog(
     title: String,
-    colors: List<Color>,
-    selectedColor: Color,
-    onColorSelected: (Color) -> Unit,
+    colors: List<Long>,
+    selectedColor: Long,
+    onColorSelected: (Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
     SingleChoiceBottomSheet(
@@ -1794,13 +1795,13 @@ private fun SubtitleColorDialog(
                         shape = MaterialTheme.shapes.small,
                         // A fully transparent swatch would be invisible, so it shows the surface
                         // it sits on and relies on its outline to read as a swatch at all.
-                        color = if (color.alpha == 0f) MaterialTheme.colorScheme.surface else color,
+                        color = if (color.isTransparentArgb()) MaterialTheme.colorScheme.surface else Color(color),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     ) {}
                 },
             )
         },
-        isSelected = { it.toStorageHexString() == selectedColor.toStorageHexString() },
+        isSelected = { it == selectedColor },
         onSelected = onColorSelected,
         onDismiss = onDismiss,
     )

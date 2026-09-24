@@ -29,6 +29,7 @@ import com.nuvio.app.core.profiles.AvatarRepository
 import com.nuvio.app.core.profiles.NuvioProfile
 import com.nuvio.app.core.profiles.avatarImageUrl
 import com.nuvio.app.core.profiles.routeProfileSelection
+import com.nuvio.app.core.profiles.ProfileRepository
 
 /**
  * The profile tab, and the switcher it opens.

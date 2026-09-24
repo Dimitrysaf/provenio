@@ -106,6 +106,13 @@ import com.nuvio.app.core.playback.SubtitleLanguageOption
 import com.nuvio.app.core.playback.SubtitleTrack
 import com.nuvio.app.core.playback.normalizeLanguageCode
 import com.nuvio.app.core.playback.DeviceLanguagePreferences
+import com.nuvio.app.core.playback.AndroidLibmpvVideoOutput
+import com.nuvio.app.core.playback.AndroidPlaybackEngine
+import com.nuvio.app.core.playback.AndroidPlayerNowPlayingController
+import com.nuvio.app.core.playback.PlayerNowPlayingInfo
+import com.nuvio.app.core.playback.PlayerPlaybackSnapshot
+import com.nuvio.app.core.playback.PlayerSettingsRepository
+import com.nuvio.app.core.playback.SubtitleStyleState
 
 private const val TAG = "NuvioPlayer"
 
@@ -1727,6 +1734,8 @@ private fun MPVNode.nodeInt(key: String): Int? =
 private fun MPVNode.nodeBoolean(key: String): Boolean? =
     runCatching { this[key]?.asBoolean() }.getOrNull()
 
+private fun Long.toMpvColor(): String = androidx.compose.ui.graphics.Color(this).toMpvColor()
+
 private fun androidx.compose.ui.graphics.Color.toMpvColor(): String {
     val argb = toArgb()
     val alpha = (argb ushr 24) and 0xff
@@ -1971,11 +1980,11 @@ private fun PlayerView.applySubtitleStyle(style: SubtitleStyleState, pipScale: F
         setBottomPaddingFraction(bottomPaddingFraction)
         setStyle(
             CaptionStyleCompat(
-                style.textColor.toArgb(),
-                style.backgroundColor.toArgb(),
+                style.textColor.toInt(),
+                style.backgroundColor.toInt(),
                 android.graphics.Color.TRANSPARENT,
                 if (style.outlineEnabled) CaptionStyleCompat.EDGE_TYPE_OUTLINE else CaptionStyleCompat.EDGE_TYPE_NONE,
-                style.outlineColor.toArgb(),
+                style.outlineColor.toInt(),
                 if (style.bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT,
             )
         )

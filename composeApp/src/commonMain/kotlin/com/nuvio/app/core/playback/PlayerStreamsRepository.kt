@@ -10,7 +10,7 @@ import com.nuvio.app.core.debrid.DebridSettingsRepository
 import com.nuvio.app.core.debrid.DebridStreamPresentation
 import com.nuvio.app.core.debrid.DirectDebridStreamPreparer
 import com.nuvio.app.core.debrid.LocalDebridAvailabilityService
-import com.nuvio.app.shell.screens.details.MetaDetailsRepository
+import com.nuvio.app.core.metadata.MetaDetailsRepository
 import com.nuvio.app.core.plugins.PluginRepository
 import com.nuvio.app.core.plugins.PluginsUiState
 import com.nuvio.app.core.plugins.pluginContentId
@@ -41,7 +41,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
-import com.nuvio.app.shell.screens.player.PlayerSettingsRepository
 
 /**
  * Dedicated stream fetcher for use inside the player (sources & episodes panels).

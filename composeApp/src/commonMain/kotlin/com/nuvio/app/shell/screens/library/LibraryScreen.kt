@@ -82,7 +82,7 @@ import com.nuvio.app.shell.screens.home.components.HomeEmptyStateCard
 import com.nuvio.app.shell.screens.home.components.HomePosterCard
 import com.nuvio.app.shell.screens.home.components.HomeSkeletonRow
 import com.nuvio.app.shell.screens.home.components.rememberPosterGridColumnCount
-import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.core.tracking.TrackingRefreshIntent
 import com.nuvio.app.core.watch.watched.WatchedRepository
 import com.nuvio.app.core.watch.watching.application.WatchingState

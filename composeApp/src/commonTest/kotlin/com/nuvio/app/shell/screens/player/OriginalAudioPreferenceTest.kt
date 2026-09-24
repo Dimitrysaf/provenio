@@ -16,6 +16,9 @@ import com.nuvio.app.core.playback.PersistedPlayerTrackPreference
 import com.nuvio.app.core.playback.SubtitleLanguageOption
 import com.nuvio.app.core.playback.SubtitleTrack
 import com.nuvio.app.core.playback.DeviceLanguagePreferences
+import com.nuvio.app.core.playback.PlayerPlaybackSnapshot
+import com.nuvio.app.core.playback.PlayerSettingsUiState
+import com.nuvio.app.core.playback.SubtitleStyleState
 
 class OriginalAudioPreferenceTest {
     @Test

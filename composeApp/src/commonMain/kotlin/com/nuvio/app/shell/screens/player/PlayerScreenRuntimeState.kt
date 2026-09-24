@@ -28,6 +28,8 @@ import com.nuvio.app.core.playback.AddonSubtitle
 import com.nuvio.app.core.playback.AudioTrack
 import com.nuvio.app.core.playback.PlayerResizeMode
 import com.nuvio.app.core.playback.SubtitleTrack
+import com.nuvio.app.core.playback.PlayerPlaybackSnapshot
+import com.nuvio.app.core.playback.PlayerSettingsUiState
 
 internal class PlayerScreenRuntime(
     args: PlayerScreenArgs,

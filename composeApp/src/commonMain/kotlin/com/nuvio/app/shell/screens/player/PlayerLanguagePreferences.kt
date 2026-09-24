@@ -94,13 +94,7 @@ import com.nuvio.app.core.playback.AvailableLanguageOptions
 import com.nuvio.app.core.playback.SubtitleLanguageOption
 import com.nuvio.app.core.playback.labelRes
 import com.nuvio.app.core.playback.normalizeLanguageCode
-
-private fun languageLabelResForCode(code: String?): StringResource? {
-    val normalized = normalizeLanguageCode(code) ?: return null
-    return AvailableLanguageOptions.firstOrNull {
-        normalizeLanguageCode(it.code) == normalized
-    }?.labelRes
-}
+import com.nuvio.app.core.playback.languageLabelResForCode
 
 @Composable
 fun languageLabelForCode(code: String?): String = when {
@@ -117,22 +111,6 @@ fun languageLabelForCode(code: String?): String = when {
         stringResource(Res.string.settings_playback_option_original)
     else -> languageLabelResForCode(code)?.let { stringResource(it) }
         ?: stringResource(Res.string.subtitle_language_unknown)
-}
-
-suspend fun getLanguageLabelForCode(code: String?): String = when {
-    code.isNullOrBlank() || code.equals(SubtitleLanguageOption.NONE, ignoreCase = true) ->
-        getString(Res.string.settings_playback_option_none)
-    code.equals(SubtitleLanguageOption.FORCED, ignoreCase = true) ->
-        getString(Res.string.settings_playback_option_forced)
-    code.equals(AudioLanguageOption.DEFAULT, ignoreCase = true) ->
-        getString(Res.string.settings_playback_option_default)
-    code.equals(AudioLanguageOption.DEVICE, ignoreCase = true) ||
-        code.equals(SubtitleLanguageOption.DEVICE, ignoreCase = true) ->
-        getString(Res.string.settings_playback_option_device_language)
-    code.equals(AudioLanguageOption.ORIGINAL, ignoreCase = true) ->
-        getString(Res.string.settings_playback_option_original)
-    else -> languageLabelResForCode(code)?.let { getString(it) }
-        ?: getString(Res.string.subtitle_language_unknown)
 }
 
 fun resolvePreferredAudioLanguageTargets(
@@ -185,41 +163,6 @@ fun resolvePreferredAudioLanguageTargets(
         else -> listOfNotNull(
             normalize(preferredAudioLanguage),
             normalize(secondaryPreferredAudioLanguage),
-        ).distinct()
-    }
-}
-
-fun resolvePreferredSubtitleLanguageTargets(
-    preferredSubtitleLanguage: String,
-    secondaryPreferredSubtitleLanguage: String?,
-    deviceLanguages: List<String>,
-): List<String> {
-    fun normalize(language: String?): String? {
-        val normalized = normalizeLanguageCode(language)
-        return when (normalized) {
-            null,
-            SubtitleLanguageOption.NONE,
-            -> null
-            AudioLanguageOption.DEFAULT -> null
-            else -> normalized
-        }
-    }
-
-    val primary = normalizeLanguageCode(preferredSubtitleLanguage) ?: SubtitleLanguageOption.NONE
-
-    return when (primary) {
-        SubtitleLanguageOption.NONE -> listOfNotNull(
-            normalize(secondaryPreferredSubtitleLanguage),
-        ).distinct()
-
-        SubtitleLanguageOption.DEVICE -> (
-            deviceLanguages.mapNotNull(::normalize)
-                + listOfNotNull(normalize(secondaryPreferredSubtitleLanguage))
-            ).distinct()
-
-        else -> listOfNotNull(
-            normalize(preferredSubtitleLanguage),
-            normalize(secondaryPreferredSubtitleLanguage),
         ).distinct()
     }
 }

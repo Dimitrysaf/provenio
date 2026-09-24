@@ -7,7 +7,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import com.nuvio.app.shell.screens.search.SearchRepository
 
 class SearchRequestStateTest {
     @Test

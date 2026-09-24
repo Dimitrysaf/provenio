@@ -3,7 +3,7 @@ package com.nuvio.app.core.plugins
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.network.SupabaseProvider
 import com.nuvio.app.core.addons.httpGetText
-import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.core.metadata.tmdb.TmdbService
 import com.nuvio.app.core.plugins.runtime.PluginRuntime
 import io.github.jan.supabase.postgrest.postgrest

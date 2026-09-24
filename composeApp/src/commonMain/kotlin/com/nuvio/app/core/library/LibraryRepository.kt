@@ -9,7 +9,7 @@ import com.nuvio.app.core.library.sync.SupabaseLibrarySyncAdapter
 import com.nuvio.app.core.library.sync.consumeCursorPages
 import com.nuvio.app.core.library.sync.libraryDeltaPageSize
 import com.nuvio.app.core.library.sync.librarySnapshotPageSize
-import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.core.tracking.TrackingLibraryProvider
 import com.nuvio.app.core.tracking.TrackingLibraryTab
 import com.nuvio.app.core.tracking.TrackingLibraryTabKind

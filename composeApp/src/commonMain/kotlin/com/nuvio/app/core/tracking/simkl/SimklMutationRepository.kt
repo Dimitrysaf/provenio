@@ -1,6 +1,6 @@
 package com.nuvio.app.core.tracking.simkl
 
-import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.core.tracking.TrackingEpisode
 import com.nuvio.app.core.tracking.TrackingExternalIds
 import com.nuvio.app.core.tracking.TrackingHistoryItem

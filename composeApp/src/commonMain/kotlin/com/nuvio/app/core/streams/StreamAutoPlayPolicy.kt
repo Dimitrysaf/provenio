@@ -1,6 +1,6 @@
 package com.nuvio.app.core.streams
 
-import com.nuvio.app.shell.screens.player.PlayerSettingsUiState
+import com.nuvio.app.core.playback.PlayerSettingsUiState
 
 object StreamAutoPlayPolicy {
     fun isEffectivelyEnabled(settings: PlayerSettingsUiState): Boolean {

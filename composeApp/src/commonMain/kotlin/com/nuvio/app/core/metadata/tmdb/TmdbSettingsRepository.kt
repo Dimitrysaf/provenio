@@ -1,7 +1,7 @@
 package com.nuvio.app.core.metadata.tmdb
 
-import com.nuvio.app.shell.screens.details.MetaDetailsRepository
-import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.core.metadata.MetaDetailsRepository
+import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.core.watch.progress.ContinueWatchingEnrichmentCache
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

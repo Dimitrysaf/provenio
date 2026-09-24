@@ -38,7 +38,7 @@ import com.nuvio.app.core.membership.MemberAccessRepository
 import com.nuvio.app.core.profiles.AvatarRepository
 import com.nuvio.app.core.profiles.NuvioProfile
 import com.nuvio.app.shell.screens.profiles.ProfileEditScreen
-import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.shell.screens.profiles.ProfileSelectionScreen
 import com.nuvio.app.shell.screens.profiles.profileAvatarImageUrl
 import com.nuvio.app.shell.nav.AppRoute

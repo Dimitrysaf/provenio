@@ -13,6 +13,8 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import com.nuvio.app.core.playback.PlayerStreamsRepository
 import com.nuvio.app.core.playback.PlayerResizeMode
+import com.nuvio.app.core.playback.PlayerSettingsRepository
+import com.nuvio.app.core.playback.next
 
 internal data class PlayerSurfaceGestureCallbacks(
     val onSurfaceTap: State<(Offset) -> Unit>,

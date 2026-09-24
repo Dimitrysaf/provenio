@@ -75,17 +75,17 @@ import com.nuvio.app.core.addons.hasPendingEnabledManifests
 import com.nuvio.app.core.addons.isWaitingForFirstEnabledManifest
 import com.nuvio.app.core.debrid.DebridSettings
 import com.nuvio.app.core.debrid.DebridSettingsRepository
-import com.nuvio.app.shell.screens.home.HomeCatalogSettingsItem
-import com.nuvio.app.shell.screens.home.HomeCatalogSettingsRepository
+import com.nuvio.app.core.home.HomeCatalogSettingsItem
+import com.nuvio.app.core.home.HomeCatalogSettingsRepository
 import com.nuvio.app.core.home.buildAddonCatalogRefreshSignature
 import com.nuvio.app.core.metadata.mdblist.MdbListSettings
 import com.nuvio.app.core.metadata.mdblist.MdbListSettingsRepository
 import com.nuvio.app.core.notifications.EpisodeReleaseNotificationsRepository
 import com.nuvio.app.core.notifications.EpisodeReleaseNotificationsUiState
-import com.nuvio.app.shell.screens.player.PlayerSettingsRepository
-import com.nuvio.app.shell.screens.player.AndroidLibmpvVideoOutput
-import com.nuvio.app.shell.screens.player.AndroidPlaybackEngine
-import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.core.playback.PlayerSettingsRepository
+import com.nuvio.app.core.playback.AndroidLibmpvVideoOutput
+import com.nuvio.app.core.playback.AndroidPlaybackEngine
+import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.core.tracking.simkl.SimklAuthRepository
 import com.nuvio.app.core.tracking.simkl.SimklAuthUiState
 import com.nuvio.app.core.tracking.trakt.TraktAuthUiState
@@ -109,6 +109,7 @@ import com.nuvio.app.core.settings.AppIconOption
 import com.nuvio.app.core.settings.AppIconRepository
 import com.nuvio.app.core.settings.AppIconSettingsState
 import com.nuvio.app.core.settings.AppLanguage
+import com.nuvio.app.core.settings.ThemeSettingsRepository
 
 private val SettingsSearchRevealThreshold = 28.dp
 private const val SettingsSearchRevealAnimationMillis = 240L

@@ -5,6 +5,10 @@ import androidx.compose.ui.Modifier
 import com.nuvio.app.core.playback.AudioTrack
 import com.nuvio.app.core.playback.PlayerResizeMode
 import com.nuvio.app.core.playback.SubtitleTrack
+import com.nuvio.app.core.playback.PlayerNowPlayingInfo
+import com.nuvio.app.core.playback.PlayerPlaybackSnapshot
+import com.nuvio.app.core.playback.PlayerSettingsUiState
+import com.nuvio.app.core.playback.SubtitleStyleState
 
 interface PlayerEngineController {
     fun play()

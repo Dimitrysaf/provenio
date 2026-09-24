@@ -8,7 +8,7 @@ import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.addons.AddonManifest
 import com.nuvio.app.core.addons.AddonRepository
 import com.nuvio.app.core.addons.ManagedAddon
-import com.nuvio.app.shell.screens.details.MetaDetailsRepository
+import com.nuvio.app.core.metadata.MetaDetailsRepository
 import com.nuvio.app.core.downloads.DownloadsRepository
 import com.nuvio.app.core.plugins.PluginRepository
 import com.nuvio.app.core.plugins.PluginsUiState

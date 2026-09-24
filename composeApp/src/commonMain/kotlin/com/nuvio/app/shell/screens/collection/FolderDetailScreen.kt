@@ -74,6 +74,7 @@ import nuvio.composeapp.generated.resources.collections_tab_all
 import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.core.collection.FolderDetailUiState
 import com.nuvio.app.core.collection.FolderViewMode
+import com.nuvio.app.core.collection.FolderDetailRepository
 
 private val FolderCoverHeight = 176.dp
 

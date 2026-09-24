@@ -9,8 +9,8 @@ import androidx.compose.ui.Modifier
 import com.nuvio.app.shell.components.NuvioToastController
 import com.nuvio.app.core.playback.ExternalPlayerIntentResult
 import com.nuvio.app.core.playback.ExternalPlayerPlatform
-import com.nuvio.app.shell.screens.player.PlayerLaunch
-import com.nuvio.app.shell.screens.player.PlayerLaunchStore
+import com.nuvio.app.core.playback.PlayerLaunch
+import com.nuvio.app.core.playback.PlayerLaunchStore
 import com.nuvio.app.shell.screens.player.PlayerScreen
 import com.nuvio.app.shell.nav.NuvioNavigator
 import com.nuvio.app.shell.nav.PlayerRoute

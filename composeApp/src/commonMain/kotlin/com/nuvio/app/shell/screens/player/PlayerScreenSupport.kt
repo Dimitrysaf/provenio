@@ -26,8 +26,6 @@ internal const val PlayerVerticalGestureDominanceRatio = 1.2f
 
 internal const val PlayerSeekProgressSyncDebounceMs = 700L
 
-internal const val NEXT_EPISODE_HARD_TIMEOUT_MS = 120_000L
-
 internal val PlayerSideGestureSystemEdgeExclusion = 72.dp
 
 internal val PlayerSliderOverlayGap = 12.dp

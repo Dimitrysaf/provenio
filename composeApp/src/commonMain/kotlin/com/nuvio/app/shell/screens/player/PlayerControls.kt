@@ -88,6 +88,7 @@ import kotlin.math.sin
 import com.nuvio.app.core.playback.ParentalWarning
 import com.nuvio.app.core.playback.PlayerResizeMode
 import com.nuvio.app.core.playback.labelRes
+import com.nuvio.app.core.playback.PlayerPlaybackSnapshot
 
 @Composable
 internal fun PlayerControlsShell(

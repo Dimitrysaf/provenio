@@ -20,12 +20,12 @@ import com.nuvio.app.shell.theme.nuvio
 import com.nuvio.app.core.debrid.DirectDebridPlayableResult
 import com.nuvio.app.core.debrid.DirectDebridPlaybackResolver
 import com.nuvio.app.core.debrid.toastMessage
-import com.nuvio.app.shell.screens.details.MetaDetailsRepository
+import com.nuvio.app.core.metadata.MetaDetailsRepository
 import com.nuvio.app.shell.screens.p2p.P2pConsentDialog
 import com.nuvio.app.core.p2p.P2pSettingsRepository
-import com.nuvio.app.shell.screens.player.PlayerLaunch
-import com.nuvio.app.shell.screens.player.PlayerLaunchStore
-import com.nuvio.app.shell.screens.player.PlayerSettingsRepository
+import com.nuvio.app.core.playback.PlayerLaunch
+import com.nuvio.app.core.playback.PlayerLaunchStore
+import com.nuvio.app.core.playback.PlayerSettingsRepository
 import com.nuvio.app.shell.screens.player.resolveContentLanguage
 import com.nuvio.app.shell.screens.player.sanitizePlaybackHeaders
 import com.nuvio.app.shell.screens.player.sanitizePlaybackResponseHeaders
@@ -33,7 +33,7 @@ import com.nuvio.app.core.streams.StreamBehaviorHints
 import com.nuvio.app.core.streams.StreamItem
 import com.nuvio.app.core.streams.StreamLaunchStore
 import com.nuvio.app.core.streams.StreamLinkCacheRepository
-import com.nuvio.app.shell.screens.streams.StreamsRepository
+import com.nuvio.app.core.streams.StreamsRepository
 import com.nuvio.app.shell.screens.streams.ActiveStreamStore
 import com.nuvio.app.shell.screens.streams.StreamsSheet
 import com.nuvio.app.core.streams.shouldShowAutoPlayLoading

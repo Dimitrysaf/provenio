@@ -524,3 +524,11 @@ internal fun findPersistedSubtitleTrackIndex(
     }
     return -1
 }
+
+internal fun preferredSubtitleTargetsForSettings(settings: PlayerSettingsUiState): List<String> {
+    return resolvePreferredSubtitleLanguageTargets(
+        preferredSubtitleLanguage = settings.preferredSubtitleLanguage,
+        secondaryPreferredSubtitleLanguage = settings.secondaryPreferredSubtitleLanguage,
+        deviceLanguages = DeviceLanguagePreferences.preferredLanguageCodes(),
+    ).filterNot { it == SubtitleLanguageOption.FORCED }
+}

@@ -54,7 +54,7 @@ import com.nuvio.app.shell.components.withDuplicateSafeLazyKeys
 import com.nuvio.app.core.addons.AddonRepository
 import com.nuvio.app.core.addons.firstEnabledManifestError
 import com.nuvio.app.core.addons.hasPendingEnabledManifests
-import com.nuvio.app.shell.screens.home.HomeCatalogSettingsRepository
+import com.nuvio.app.core.home.HomeCatalogSettingsRepository
 import com.nuvio.app.core.home.MetaPreview
 import com.nuvio.app.core.home.buildAddonCatalogRefreshSignature
 import com.nuvio.app.shell.screens.home.components.HomeCatalogRowSection
@@ -84,6 +84,7 @@ import nuvio.composeapp.generated.resources.compose_search_remove_recent_search
 import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.core.search.SearchEmptyStateReason
 import com.nuvio.app.core.search.SearchHistoryRepository
+import com.nuvio.app.core.search.SearchRepository
 
 /** The side margin the discover grid sits in, which its column count has to allow for. */
 private val DiscoverGridHorizontalPadding = 16.dp

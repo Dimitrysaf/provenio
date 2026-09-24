@@ -44,6 +44,10 @@ import nuvio.composeapp.generated.resources.player_video_settings_title
 import nuvio.composeapp.generated.resources.player_video_settings_tone_mapping
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
+import com.nuvio.app.core.playback.IosToneMappingMode
+import com.nuvio.app.core.playback.IosVideoOutputPreset
+import com.nuvio.app.core.playback.PlayerSettingsRepository
+import com.nuvio.app.core.playback.PlayerSettingsUiState
 
 @Composable
 internal fun IosVideoSettingsModal(

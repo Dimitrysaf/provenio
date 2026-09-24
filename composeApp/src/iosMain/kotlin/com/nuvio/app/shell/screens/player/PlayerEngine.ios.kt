@@ -41,6 +41,11 @@ import com.nuvio.app.core.playback.PlayerResizeMode
 import com.nuvio.app.core.playback.SUBTITLE_DELAY_MAX_MS
 import com.nuvio.app.core.playback.SUBTITLE_DELAY_MIN_MS
 import com.nuvio.app.core.playback.SubtitleTrack
+import com.nuvio.app.core.playback.PlayerNowPlayingInfo
+import com.nuvio.app.core.playback.PlayerPlaybackSnapshot
+import com.nuvio.app.core.playback.PlayerSettingsRepository
+import com.nuvio.app.core.playback.PlayerSettingsUiState
+import com.nuvio.app.core.playback.SubtitleStyleState
 
 private const val TAG = "NuvioiOSPlayer"
 
@@ -429,6 +434,8 @@ private fun NuvioPlayerBridge.applyIosVideoOutputSettings(settings: PlayerSettin
         gamma = settings.iosGamma,
     )
 }
+
+private fun Long.toMpvColorString(): String = Color(this).toMpvColorString()
 
 private fun Color.toMpvColorString(): String {
     val alphaInt = (alpha * 255f).toInt().coerceIn(0, 255)

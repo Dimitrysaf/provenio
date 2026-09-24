@@ -16,8 +16,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import com.nuvio.app.shell.screens.player.PlayerSettingsRepository
-import com.nuvio.app.shell.screens.player.PlayerSettingsStorage
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)

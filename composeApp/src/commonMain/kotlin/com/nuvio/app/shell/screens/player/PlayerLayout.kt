@@ -123,13 +123,6 @@ internal fun playerHorizontalSafePadding(): Dp {
     return if (left > right) left else right
 }
 
-internal fun PlayerResizeMode.next(): PlayerResizeMode =
-    when (this) {
-        PlayerResizeMode.Fit -> PlayerResizeMode.Fill
-        PlayerResizeMode.Fill -> PlayerResizeMode.Zoom
-        PlayerResizeMode.Zoom -> PlayerResizeMode.Fit
-    }
-
 internal fun formatPlaybackTime(positionMs: Long): String {
     val totalSeconds = (positionMs / 1000L).coerceAtLeast(0L)
     val seconds = totalSeconds % 60

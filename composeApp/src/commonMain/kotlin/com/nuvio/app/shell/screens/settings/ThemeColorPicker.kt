@@ -32,7 +32,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.nuvio.app.shell.theme.HsvColor
 import com.nuvio.app.shell.theme.NuvioTokens
-import com.nuvio.app.shell.theme.formatHexColor
+import com.nuvio.app.core.settings.formatHexColor
 import com.nuvio.app.shell.theme.nuvio
 import kotlin.math.roundToInt
 import nuvio.composeapp.generated.resources.Res

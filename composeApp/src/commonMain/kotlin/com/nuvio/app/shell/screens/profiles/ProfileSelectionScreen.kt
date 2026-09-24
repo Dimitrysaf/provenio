@@ -88,6 +88,7 @@ import com.nuvio.app.core.profiles.MAX_PROFILES
 import com.nuvio.app.core.profiles.NuvioProfile
 import com.nuvio.app.core.profiles.avatarImageUrl
 import com.nuvio.app.core.profiles.routeProfileSelection
+import com.nuvio.app.core.profiles.ProfileRepository
 
 /** m3.material.io/components/side-sheets/specs — max-width. */
 private val SideSheetMaxWidth = 400.dp

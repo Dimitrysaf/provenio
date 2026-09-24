@@ -1,6 +1,6 @@
 package com.nuvio.app.core.streams
 
-import com.nuvio.app.shell.screens.player.PlayerSettingsUiState
+import com.nuvio.app.core.playback.PlayerSettingsUiState
 
 internal fun StreamsUiState.shouldShowAutoPlayLoading(
     expectedRequestToken: String,

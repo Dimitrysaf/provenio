@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.shell.components.NuvioLoadingIndicator
 import com.nuvio.app.shell.theme.nuvio
-import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.core.tracking.simkl.SimklAuthError
 import com.nuvio.app.core.tracking.simkl.SimklAuthRepository
 import com.nuvio.app.core.tracking.simkl.SimklAuthUiState

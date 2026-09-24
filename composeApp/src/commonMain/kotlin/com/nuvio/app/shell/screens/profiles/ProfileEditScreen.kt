@@ -82,6 +82,7 @@ import com.nuvio.app.core.profiles.AvatarCatalogItem
 import com.nuvio.app.core.profiles.AvatarRepository
 import com.nuvio.app.core.profiles.NuvioProfile
 import com.nuvio.app.core.profiles.avatarImageUrl
+import com.nuvio.app.core.profiles.ProfileRepository
 
 /**
  * The profile editor. [embedded] hosts it inside a layout pane instead of as a full window: the

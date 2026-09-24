@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.profiles.PinVerifyResult
 
 /** Every PIN in the app is four digits, so every reading of one is four dots long. */
 private const val PIN_LENGTH = 4

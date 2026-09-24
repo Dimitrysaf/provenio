@@ -53,3 +53,5 @@ internal fun StreamItem.playerSourceIdentityKey(): String? {
         .takeIf { parts -> parts.any { it.isNotBlank() } }
         ?.joinToString(separator = "|", prefix = "meta:")
 }
+
+internal data class EpisodeResume(val positionMs: Long, val fraction: Float?)

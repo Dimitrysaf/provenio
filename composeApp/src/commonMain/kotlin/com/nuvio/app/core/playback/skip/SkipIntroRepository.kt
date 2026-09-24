@@ -1,6 +1,6 @@
 package com.nuvio.app.core.playback.skip
 
-import com.nuvio.app.shell.screens.player.PlayerSettingsRepository
+import com.nuvio.app.core.playback.PlayerSettingsRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 

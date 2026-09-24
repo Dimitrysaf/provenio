@@ -12,3 +12,10 @@ internal val PlayerResizeMode.labelRes: StringResource
         PlayerResizeMode.Fill -> Res.string.compose_player_resize_fill
         PlayerResizeMode.Zoom -> Res.string.compose_player_resize_zoom
     }
+
+internal fun PlayerResizeMode.next(): PlayerResizeMode =
+    when (this) {
+        PlayerResizeMode.Fit -> PlayerResizeMode.Fill
+        PlayerResizeMode.Fill -> PlayerResizeMode.Zoom
+        PlayerResizeMode.Zoom -> PlayerResizeMode.Fit
+    }

@@ -14,12 +14,12 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.addons.AddonRepository
-import com.nuvio.app.shell.screens.details.MetaDetailsRepository
+import com.nuvio.app.core.metadata.MetaDetailsRepository
 import com.nuvio.app.core.metadata.MetaScreenSettingsRepository
 import com.nuvio.app.core.p2p.P2pSettingsRepository
 import com.nuvio.app.core.p2p.P2pStreamingEngine
 import com.nuvio.app.core.watch.watched.WatchedRepository
-import com.nuvio.app.shell.screens.watchprogress.WatchProgressRepository
+import com.nuvio.app.core.watch.progress.WatchProgressRepository
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_player_airs_prefix
 import nuvio.composeapp.generated.resources.compose_player_downloaded
@@ -40,6 +40,8 @@ import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.core.playback.ParentalGuideLabels
 import com.nuvio.app.core.playback.PlayerStreamsRepository
 import com.nuvio.app.core.playback.mergeStreamAndAddonSubtitles
+import com.nuvio.app.core.playback.PlayerSettingsRepository
+import com.nuvio.app.core.playback.SubtitleRepository
 
 @Composable
 internal fun PlayerScreenContent(args: PlayerScreenArgs) {

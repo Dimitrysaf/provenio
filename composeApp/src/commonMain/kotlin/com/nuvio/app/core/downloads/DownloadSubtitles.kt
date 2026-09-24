@@ -2,7 +2,7 @@ package com.nuvio.app.core.downloads
 
 import com.nuvio.app.core.addons.httpGetTextWithHeaders
 import com.nuvio.app.core.playback.PlayerSubtitleCueParser
-import com.nuvio.app.shell.screens.player.loadAddonSubtitles
+import com.nuvio.app.core.playback.loadAddonSubtitles
 import com.nuvio.app.core.streams.StreamSubtitle
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

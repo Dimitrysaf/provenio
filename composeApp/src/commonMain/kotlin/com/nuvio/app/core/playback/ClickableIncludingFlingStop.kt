@@ -1,6 +1,5 @@
 package com.nuvio.app.core.playback
 
-import androidx.compose.runtime.getValue
 
 internal fun shouldDeliverFlingStopClick(
     downConsumed: Boolean,

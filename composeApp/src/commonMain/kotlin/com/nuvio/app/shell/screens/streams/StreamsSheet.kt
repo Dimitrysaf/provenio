@@ -54,8 +54,8 @@ import com.nuvio.app.core.debrid.DebridSettingsRepository
 import com.nuvio.app.core.debrid.DirectDebridPlayableResult
 import com.nuvio.app.core.debrid.DirectDebridPlaybackResolver
 import com.nuvio.app.core.debrid.toastMessage
-import com.nuvio.app.shell.screens.player.PlayerSettingsRepository
-import com.nuvio.app.shell.screens.watchprogress.WatchProgressRepository
+import com.nuvio.app.core.playback.PlayerSettingsRepository
+import com.nuvio.app.core.watch.progress.WatchProgressRepository
 import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -65,6 +65,7 @@ import com.nuvio.app.core.streams.AddonStreamGroup
 import com.nuvio.app.core.streams.StreamBadgeSettingsRepository
 import com.nuvio.app.core.streams.StreamItem
 import com.nuvio.app.core.streams.resolveStreamResumeState
+import com.nuvio.app.core.streams.StreamsRepository
 
 // ---------------------------------------------------------------------------
 // Streams sheet

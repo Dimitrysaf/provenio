@@ -15,7 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.nuvio.app.shell.theme.CustomThemeColors
+import com.nuvio.app.core.settings.CustomThemeColors
 import com.nuvio.app.shell.theme.NuvioTokens
 import com.nuvio.app.shell.theme.accentBrush
 import com.nuvio.app.shell.theme.nuvio

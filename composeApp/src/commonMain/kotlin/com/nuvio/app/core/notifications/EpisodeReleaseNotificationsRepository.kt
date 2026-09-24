@@ -3,11 +3,11 @@ package com.nuvio.app.core.notifications
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.deeplink.buildMetaDeepLinkUrl
 import com.nuvio.app.core.addons.AddonRepository
-import com.nuvio.app.shell.screens.details.MetaDetailsRepository
+import com.nuvio.app.core.metadata.MetaDetailsRepository
 import com.nuvio.app.core.library.LibraryItem
 import com.nuvio.app.core.library.LibraryRepository
 import com.nuvio.app.core.library.LibraryUiState
-import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.core.time.EpisodeReleaseDatePlatform
 import com.nuvio.app.core.watch.progress.CurrentDateProvider
 import kotlinx.coroutines.CoroutineScope

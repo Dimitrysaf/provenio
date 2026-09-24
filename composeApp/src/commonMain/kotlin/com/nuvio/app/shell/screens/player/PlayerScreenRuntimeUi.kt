@@ -18,6 +18,7 @@ import com.nuvio.app.core.playback.ExternalPlayerPlaybackRequest
 import com.nuvio.app.core.playback.PlayerStreamsRepository
 import com.nuvio.app.core.playback.SubtitleInput
 import com.nuvio.app.core.playback.selectionKey
+import com.nuvio.app.core.playback.PlayerSettingsRepository
 
 @Composable
 internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {

@@ -17,6 +17,8 @@ import com.nuvio.app.core.playback.AddonSubtitle
 import com.nuvio.app.core.playback.AudioTrack
 import com.nuvio.app.core.playback.PlayerResizeMode
 import com.nuvio.app.core.playback.SubtitleTrack
+import com.nuvio.app.core.playback.PlayerSettingsUiState
+import com.nuvio.app.core.playback.SubtitleStyleState
 
 @Composable
 internal fun PlayerScreenModalHosts(

@@ -1,7 +1,5 @@
 package com.nuvio.app.core.streams
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import nuvio.composeapp.generated.resources.*
 

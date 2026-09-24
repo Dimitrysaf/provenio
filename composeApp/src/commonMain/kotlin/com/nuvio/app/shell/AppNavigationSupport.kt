@@ -2,18 +2,18 @@ package com.nuvio.app.shell
 
 import androidx.navigation3.runtime.NavKey
 import androidx.savedstate.serialization.SavedStateConfiguration
-import com.nuvio.app.shell.screens.catalog.CatalogRepository
+import com.nuvio.app.core.catalog.CatalogRepository
 import com.nuvio.app.shell.screens.collection.CollectionEditorPage
 import com.nuvio.app.core.collection.CollectionEditorRepository
-import com.nuvio.app.shell.screens.collection.FolderDetailRepository
+import com.nuvio.app.core.collection.FolderDetailRepository
 import com.nuvio.app.shell.screens.collection.disposeCollectionEditorPage
 import com.nuvio.app.core.home.MetaPreview
 import com.nuvio.app.core.library.LibraryItem
 import com.nuvio.app.core.playback.ExternalPlayerPlaybackRequest
-import com.nuvio.app.shell.screens.player.PlayerLaunch
-import com.nuvio.app.shell.screens.player.PlayerLaunchStore
+import com.nuvio.app.core.playback.PlayerLaunch
+import com.nuvio.app.core.playback.PlayerLaunchStore
 import com.nuvio.app.core.streams.StreamLaunchStore
-import com.nuvio.app.shell.screens.streams.StreamsRepository
+import com.nuvio.app.core.streams.StreamsRepository
 import com.nuvio.app.shell.nav.*
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic

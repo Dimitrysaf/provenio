@@ -166,7 +166,7 @@
             android:stopWithTask="false" />
 
         <receiver
-            android:name="com.nuvio.app.shell.screens.player.PlayerNowPlayingActionReceiver"
+            android:name="com.nuvio.app.core.playback.PlayerNowPlayingActionReceiver"
             android:exported="false" />
 
         <receiver

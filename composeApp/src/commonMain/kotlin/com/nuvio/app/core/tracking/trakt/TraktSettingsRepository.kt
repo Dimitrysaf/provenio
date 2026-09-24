@@ -3,7 +3,7 @@ package com.nuvio.app.core.tracking.trakt
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
 import com.nuvio.app.core.library.LibrarySourceMode
-import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.core.tracking.simkl.DEFAULT_SIMKL_ANIME_ID_PREFERENCE
 import com.nuvio.app.core.tracking.simkl.SimklAnimeIdPreference
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -50,8 +50,8 @@ import com.nuvio.app.shell.components.NuvioLoadingIndicator
 import com.nuvio.app.shell.components.NuvioToastController
 import com.nuvio.app.shell.theme.nuvio
 import com.nuvio.app.core.addons.AddonRepository
-import com.nuvio.app.shell.screens.home.HomeCatalogSettingsItem
-import com.nuvio.app.shell.screens.home.HomeCatalogSettingsRepository
+import com.nuvio.app.core.home.HomeCatalogSettingsItem
+import com.nuvio.app.core.home.HomeCatalogSettingsRepository
 import com.nuvio.app.shell.screens.home.components.HomeEmptyStateCard
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_cancel

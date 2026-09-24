@@ -17,6 +17,8 @@ import com.nuvio.app.core.playback.findPersistedSubtitleTrackIndex
 import com.nuvio.app.core.playback.findPreferredSubtitleTrackIndex
 import com.nuvio.app.core.playback.resolveAudioTrackLanguageTarget
 import com.nuvio.app.core.playback.resolveSubtitleAutoSelectionPlan
+import com.nuvio.app.core.playback.PlayerSettingsUiState
+import com.nuvio.app.core.playback.SubtitleStyleState
 
 class PlayerTrackSelectionTest {
 

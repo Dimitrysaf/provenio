@@ -4,7 +4,7 @@ import com.nuvio.app.shell.components.NuvioToastController
 import com.nuvio.app.core.debrid.DirectDebridPlayableResult
 import com.nuvio.app.core.debrid.DirectDebridPlaybackResolver
 import com.nuvio.app.core.debrid.toastMessage
-import com.nuvio.app.shell.screens.details.MetaDetailsRepository
+import com.nuvio.app.core.metadata.MetaDetailsRepository
 import com.nuvio.app.core.metadata.MetaVideo
 import com.nuvio.app.core.downloads.DownloadItem
 import com.nuvio.app.core.downloads.DownloadSubtitles
@@ -14,11 +14,13 @@ import com.nuvio.app.core.p2p.P2pStreamingEngine
 import com.nuvio.app.shell.screens.streams.ActiveStreamStore
 import com.nuvio.app.core.streams.StreamItem
 import com.nuvio.app.core.streams.StreamLinkCacheRepository
-import com.nuvio.app.shell.screens.watchprogress.WatchProgressRepository
+import com.nuvio.app.core.watch.progress.WatchProgressRepository
 import com.nuvio.app.core.watch.progress.buildPlaybackVideoId
 import kotlinx.coroutines.launch
 import com.nuvio.app.core.playback.PlayerStreamsRepository
 import com.nuvio.app.core.playback.playerSourceIdentityKey
+import com.nuvio.app.core.playback.launchPlayerNextEpisodeAutoPlay
+import com.nuvio.app.core.playback.EpisodeResume
 
 internal fun PlayerScreenRuntime.resolveDebridForPlayer(
     stream: StreamItem,
@@ -390,8 +392,6 @@ internal fun PlayerScreenRuntime.openEpisodesPanel() {
     showSourcesPanel = false
     controlsVisible = false
 }
-
-private data class EpisodeResume(val positionMs: Long, val fraction: Float?)
 
 private fun PlayerScreenRuntime.resetEpisodePanelAndNextEpisodeState() {
     showNextEpisodeCard = false

@@ -1,6 +1,5 @@
 package com.nuvio.app.core.streams
 
-import androidx.compose.runtime.getValue
 import com.nuvio.app.core.addons.AddonManifest
 import com.nuvio.app.core.addons.ManagedAddon
 import com.nuvio.app.core.plugins.PluginsUiState

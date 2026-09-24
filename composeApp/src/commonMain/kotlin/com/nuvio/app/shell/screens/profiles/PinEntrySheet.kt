@@ -30,6 +30,7 @@ import com.nuvio.app.shell.components.dismissNuvioBottomSheet
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import com.nuvio.app.core.profiles.PinVerifyResult
 
 /**
  * The PIN a locked profile asks for before it opens.

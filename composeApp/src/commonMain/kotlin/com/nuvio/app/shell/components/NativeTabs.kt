@@ -4,8 +4,8 @@ import com.nuvio.app.core.profiles.AvatarCatalogItem
 import com.nuvio.app.core.profiles.AvatarRepository
 import com.nuvio.app.core.profiles.MAX_PROFILES
 import com.nuvio.app.core.profiles.NuvioProfile
-import com.nuvio.app.shell.screens.profiles.PinVerifyResult
-import com.nuvio.app.shell.screens.profiles.ProfileRepository
+import com.nuvio.app.core.profiles.PinVerifyResult
+import com.nuvio.app.core.profiles.ProfileRepository
 import com.nuvio.app.shell.screens.profiles.profileAvatarImageUrl
 import com.nuvio.app.shell.screens.profiles.showAlreadyActiveProfileToast
 import kotlinx.coroutines.CoroutineScope
