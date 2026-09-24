@@ -108,8 +108,10 @@ for abi in armeabi-v7a arm64-v8a x86 x86_64; do
         echo "$abi does not contain the pinned OpenSSL 3.5.7 provider" >&2
         exit 1
     fi
-    if rg -q '/openssl-|/var/folders/' "$binary_strings"; then
+    # Relative source paths such as ../../src/openssl-3.5.7 are expected; only absolute ones leak the build machine.
+    if leaks=$(rg '(^|[^.[:alnum:]])/[^[:space:]]*/openssl-|/var/folders/' "$binary_strings"); then
         echo "$abi leaks an OpenSSL build-machine path" >&2
+        head -n 5 <<< "$leaks" >&2
         exit 1
     fi
 done
