@@ -2,10 +2,6 @@ package io.github.dimitrysaf.provenio.shell
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -98,7 +94,6 @@ internal fun MainAppContent(
     useNativeTabBar: Boolean = false,
     useTabletFloatingTabBar: Boolean = false,
     ownsAppRuntime: Boolean = true,
-    showLaunchOverlay: Boolean = true,
     onNavigate: ((AppRoute, launchSingleTop: Boolean) -> Unit)? = null,
     onGoBack: (() -> Unit)? = null,
     onReplace: ((AppRoute) -> Unit)? = null,
@@ -172,7 +167,6 @@ internal fun MainAppContent(
             }
         }
         val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
-        val launchOverlayProfile = profileState.activeProfile ?: profileState.profiles.firstOrNull()
     val playerSettingsUiState by remember {
         PlayerSettingsRepository.ensureLoaded()
         PlayerSettingsRepository.uiState
@@ -280,13 +274,6 @@ internal fun MainAppContent(
     var profileSwitchLoading by remember { mutableStateOf(false) }
 
     val rootContentReady = !ownsAppRuntime || (initialHomeReady && !profileSwitchLoading)
-    val launchOverlayVisible = ownsAppRuntime && showLaunchOverlay && !rootContentReady
-    val launchOverlayState = remember(ownsAppRuntime, showLaunchOverlay) {
-        MutableTransitionState(
-            launchOverlayVisible,
-        )
-    }
-    launchOverlayState.targetState = launchOverlayVisible
 
     LaunchedEffect(
         rootContentReady,
@@ -643,17 +630,6 @@ internal fun MainAppContent(
                     showExitConfirmation = false
                 },
             )
-
-            androidx.compose.animation.AnimatedVisibility(
-                visibleState = launchOverlayState,
-                enter = fadeIn(),
-                exit = fadeOut(androidx.compose.animation.core.tween(400)),
-            ) {
-                AppLaunchOverlay(
-                    profile = launchOverlayProfile,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
 
             if (profileSwitchLoading) {
                 LaunchedEffect(Unit) {

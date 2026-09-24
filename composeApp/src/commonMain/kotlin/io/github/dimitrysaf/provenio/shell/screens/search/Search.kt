@@ -243,7 +243,6 @@ fun SearchScreen(
                     query = query,
                     onQueryChange = { query = it },
                     placeholder = stringResource(Res.string.compose_search_placeholder),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     focusRequester = focusRequester,
                 )
             }

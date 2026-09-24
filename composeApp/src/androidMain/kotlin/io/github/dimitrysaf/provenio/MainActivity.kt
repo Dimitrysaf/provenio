@@ -9,6 +9,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import io.github.dimitrysaf.provenio.core.auth.AuthRepository
+import io.github.dimitrysaf.provenio.core.auth.AuthState
 import io.github.dimitrysaf.provenio.core.auth.AuthStorage
 import io.github.dimitrysaf.provenio.core.network.ServerConfigurationStorage
 import io.github.dimitrysaf.provenio.core.diagnostics.SentryInitializer
@@ -42,6 +44,7 @@ import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
 import io.github.dimitrysaf.provenio.core.plugins.PluginStorage
 import io.github.dimitrysaf.provenio.core.profiles.AvatarStorage
 import io.github.dimitrysaf.provenio.core.profiles.ProfilePinCacheStorage
+import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.profiles.ProfileStorage
 import io.github.dimitrysaf.provenio.core.metadata.SeasonViewModeStorage
 import io.github.dimitrysaf.provenio.core.search.DiscoverSelectionStorage
@@ -72,7 +75,11 @@ open class MainActivity : AppCompatActivity() {
     private var pipRemoteActionReceiver: PipRemoteActionReceiver? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        // The splash stays until sign-in resolves, unless cached profiles let the gate open sooner.
+        installSplashScreen().setKeepOnScreenCondition {
+            AuthRepository.state.value is AuthState.Loading &&
+                ProfileRepository.state.value.profiles.isEmpty()
+        }
         enableEdgeToEdge(
             navigationBarStyle = SystemBarStyle.dark(
                 scrim = 0xFF020404.toInt(),

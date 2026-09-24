@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -69,6 +70,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
@@ -238,41 +240,44 @@ private fun PlayerHeader(
     ) {
         PlayerOverlayBackButton(onClick = onBack, metrics = metrics)
 
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                text = title,
-                style = typeScale.titleLg.copy(
-                    fontSize = metrics.titleSize,
-                    lineHeight = metrics.titleSize * 1.16f,
-                    fontWeight = FontWeight.Bold,
-                ),
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (seasonNumber != null && episodeNumber != null) {
+        Column(modifier = Modifier.weight(1f)) {
+            // Title and episode line sit centred against the back button, with or without the episode line.
+            Column(
+                modifier = Modifier.heightIn(min = metrics.headerIconSize + 16.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+            ) {
                 Text(
-                    text = if (episodeTitle.isNullOrBlank()) {
-                        stringResource(Res.string.compose_player_episode_code_full, seasonNumber, episodeNumber)
-                    } else {
-                        stringResource(
-                            Res.string.compose_player_episode_title_format,
-                            seasonNumber,
-                            episodeNumber,
-                            episodeTitle,
-                        )
-                    },
-                    style = typeScale.bodyMd.copy(
-                        fontSize = metrics.episodeInfoSize,
-                        lineHeight = metrics.episodeInfoSize * 1.3f,
+                    text = title,
+                    style = typeScale.titleLg.copy(
+                        fontSize = metrics.titleSize,
+                        lineHeight = metrics.titleSize * 1.16f,
+                        fontWeight = FontWeight.Bold,
                     ),
-                    color = Color.White.copy(alpha = 0.9f),
+                    color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                if (seasonNumber != null && episodeNumber != null) {
+                    Text(
+                        text = if (episodeTitle.isNullOrBlank()) {
+                            stringResource(Res.string.compose_player_episode_code_full, seasonNumber, episodeNumber)
+                        } else {
+                            stringResource(
+                                Res.string.compose_player_episode_title_format,
+                                seasonNumber,
+                                episodeNumber,
+                                episodeTitle,
+                            )
+                        },
+                        style = typeScale.bodyMd.copy(
+                            fontSize = metrics.episodeInfoSize,
+                            lineHeight = metrics.episodeInfoSize * 1.3f,
+                        ),
+                        color = Color.White.copy(alpha = 0.9f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
             ParentalGuideIcons(
                 warnings = parentalWarnings,
@@ -496,12 +501,12 @@ private fun PrimaryControlButton(
         label = "player_primary_corner",
     )
     val shape = RoundedCornerShape(corner)
-    val contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+    val contentColor = MaterialTheme.colorScheme.onPrimary
     Box(
         modifier = Modifier
             .size(size)
             .clip(shape)
-            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .background(MaterialTheme.colorScheme.primary)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
@@ -808,18 +813,19 @@ private fun WavyProgressTrack(
             )
         }
         if (playedX > 0f) {
+            val waveY = { x: Float -> centerY + amplitudePx * sin(2f * PI.toFloat() * x / wavelengthPx - phase) }
             val path = Path().apply {
-                moveTo(0f, centerY)
+                moveTo(0f, waveY(0f))
                 var x = 0f
                 while (x < playedX) {
-                    x = minOf(x + 2f, playedX)
-                    lineTo(x, centerY + amplitudePx * sin(2f * PI.toFloat() * x / wavelengthPx - phase))
+                    x = minOf(x + 1f, playedX)
+                    lineTo(x, waveY(x))
                 }
             }
             drawPath(
                 path = path,
                 color = activeColor,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
         }
     }

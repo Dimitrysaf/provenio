@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.update
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 import kotlinx.coroutines.launch
+import io.ktor.util.date.GMTDate
 
 object StreamsRepository {
     private val log = Logger.withTag("StreamsRepo")
@@ -37,6 +38,9 @@ object StreamsRepository {
 
     private var activeJob: Job? = null
     private var activeRequestKey: String? = null
+
+    // Finished stream lists per title, reused for ten minutes unless the sheet's reload forces a fetch.
+    private val streamCache = MutableStateFlow<Map<String, CachedStreams>>(emptyMap())
 
     fun requestToken(
         type: String,
@@ -88,6 +92,7 @@ object StreamsRepository {
             manualSelection = manualSelection,
         )
         val requestKey = "$requestToken::pluginsGrouped=${pluginUiState.groupStreamsByRepository}"
+        val cacheKey = "$type::$videoId::$season::$episode::pluginsGrouped=${pluginUiState.groupStreamsByRepository}"
         val currentState = _uiState.value
         if (
             !forceRefresh &&
@@ -125,6 +130,21 @@ object StreamsRepository {
             persistedBingeGroup != null &&
             autoPlayMode == StreamAutoPlayMode.MANUAL
         val isDirectAutoPlayFlow = isAutoPlayEnabled || bingeGroupDirectFlow
+
+        val cachedStreams = streamCache.value[cacheKey]
+            ?.takeIf { GMTDate().timestamp - it.cachedAtMs < StreamCacheTtlMs }
+        if (!forceRefresh && !isDirectAutoPlayFlow && cachedStreams != null) {
+            log.d { "Using cached streams for type=$type id=$videoId" }
+            _uiState.value = StreamsUiState(
+                requestToken = requestToken,
+                groups = cachedStreams.groups,
+                activeAddonIds = cachedStreams.groups.map { it.addonId }.toSet(),
+                isAnyLoading = false,
+                emptyStateReason = cachedStreams.groups.toEmptyStateReason(anyLoading = false),
+                autoPlayDecided = true,
+            )
+            return
+        }
 
         if (isDirectAutoPlayFlow) {
             _uiState.value = StreamsUiState(
@@ -565,6 +585,13 @@ object StreamsRepository {
                 availabilityJob.join()
             }
 
+            val finishedGroups = _uiState.value.groups
+            if (finishedGroups.any { it.streams.isNotEmpty() }) {
+                streamCache.update { cache ->
+                    cache + (cacheKey to CachedStreams(finishedGroups, GMTDate().timestamp))
+                }
+            }
+
             launch {
                 DirectDebridStreamPreparer.prepare(
                     streams = _uiState.value.groups
@@ -669,3 +696,10 @@ object StreamsRepository {
         _uiState.update { it.copy(showDirectAutoPlayOverlay = visible, overlayMessage = message) }
     }
 }
+
+private class CachedStreams(
+    val groups: List<AddonStreamGroup>,
+    val cachedAtMs: Long,
+)
+
+private const val StreamCacheTtlMs = 10 * 60 * 1000L

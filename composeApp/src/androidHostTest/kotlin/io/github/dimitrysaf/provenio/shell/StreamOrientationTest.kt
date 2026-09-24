@@ -97,7 +97,6 @@ class StreamOrientationTest {
                 MainAppContent(
                     initialRoute = StreamRoute(launchId, "Example movie"),
                     ownsAppRuntime = false,
-                    showLaunchOverlay = false,
                 )
             }
         }

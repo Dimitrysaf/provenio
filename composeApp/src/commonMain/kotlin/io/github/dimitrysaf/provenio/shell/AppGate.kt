@@ -19,7 +19,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,7 +30,6 @@ import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
 import io.github.dimitrysaf.provenio.core.sync.SyncManager
 import io.github.dimitrysaf.provenio.shell.components.NativeProfileSwitcherController
 import io.github.dimitrysaf.provenio.shell.components.NativeTabBridge
-import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.theme.Tokens
 import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
 import io.github.dimitrysaf.provenio.shell.screens.auth.AuthScreen
@@ -169,7 +167,6 @@ internal fun AppGate(
             useNativeTabBar = useNativeTabBar,
             useTabletFloatingTabBar = useTabletFloatingTabBar,
             ownsAppRuntime = ownsAppRuntime,
-            showLaunchOverlay = appGateController == null,
             onNavigate = onNavigate,
             onGoBack = onGoBack,
             onReplace = onReplace,
@@ -292,7 +289,7 @@ internal fun AppGate(
         }
     }
 
-    val profileOverlayVisible = gate.isOn(AppGateScreen.ProfileSelection) || gate.profileSelectionLoading
+    val profileOverlayVisible = gate.isOn(AppGateScreen.ProfileSelection)
     val profileOverlayState = remember {
         MutableTransitionState(profileOverlayVisible)
     }
@@ -341,15 +338,13 @@ internal fun AppGate(
             },
         ) { currentGate ->
             when (currentGate) {
+                // The system splash stays up while the gate is loading, so this is only its backdrop.
                 AppGateScreen.Loading.name -> {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(MaterialTheme.colorScheme.surface),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        LoadingSpinner()
-                    }
+                    )
                 }
                 AppGateScreen.Auth.name -> {
                     AuthScreen(modifier = Modifier.fillMaxSize())
@@ -381,7 +376,6 @@ internal fun AppGate(
                             useNativeTabBar = useNativeTabBar,
                             useTabletFloatingTabBar = useTabletFloatingTabBar,
                             ownsAppRuntime = ownsAppRuntime,
-                            showLaunchOverlay = !gate.profileSelectionLoading,
                             onNavigate = onNavigate,
                             onGoBack = onGoBack,
                             onReplace = onReplace,
@@ -605,14 +599,6 @@ private fun ProfileSelectionOverlay(
                 contentVisible = !gate.profileSelectionTransitionActive,
                 modifier = Modifier.fillMaxSize(),
             )
-            androidx.compose.animation.AnimatedVisibility(
-                visible = gate.profileSelectionTransitionActive,
-                enter = fadeIn(tween(180)),
-                exit = fadeOut(tween(180)),
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                AppLoadingContent(modifier = Modifier.fillMaxSize())
-            }
         }
     }
 }
