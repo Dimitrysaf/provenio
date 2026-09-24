@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - 'engine/**'
+      - '.github/workflows/engine.yml'
 
 permissions:
   contents: read
@@ -51,7 +52,10 @@ jobs:
         run: ./gradlew :engine:assembleRelease --no-daemon
 
       - name: Verify engine
-        run: engine/scripts/verify-android-aar.sh engine/platform/android/engine/build/outputs/aar/engine-release.aar
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ripgrep > /dev/null
+          engine/scripts/verify-android-aar.sh engine/platform/android/engine/build/outputs/aar/engine-release.aar
 
       - name: Commit engine binaries
         run: |
