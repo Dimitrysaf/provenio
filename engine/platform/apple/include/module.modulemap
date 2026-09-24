@@ -1,0 +1,4 @@
+module CEngine [system] {
+    header "engine/engine.h"
+    export *
+}

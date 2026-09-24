@@ -1,0 +1,7 @@
+ENGINE_0.1 {
+    global:
+        engine_*;
+        Java_com_engine_internal_NativeBridge_*;
+    local:
+        *;
+};

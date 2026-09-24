@@ -4,12 +4,12 @@ import android.content.Context
 import android.os.SystemClock
 import android.util.Log
 import io.github.dimitrysaf.provenio.core.i18n.localizedP2pUnknownTorrentError
-import com.nuvio.engine.NuvioEngine
-import com.nuvio.engine.NuvioEngineConfig
-import com.nuvio.engine.NuvioEventType
-import com.nuvio.engine.NuvioStream
-import com.nuvio.engine.NuvioTorrentProfile
-import com.nuvio.engine.NuvioUploadMode
+import com.engine.Engine
+import com.engine.EngineConfig
+import com.engine.EventType
+import com.engine.Stream
+import com.engine.TorrentProfile
+import com.engine.UploadMode
 import java.io.File
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
@@ -41,19 +41,19 @@ internal fun buildEngineConfig(
     uploadEnabled: Boolean,
     torrentProfile: P2pTorrentProfile,
     diskCacheCapacityBytes: Long,
-): NuvioEngineConfig = NuvioEngineConfig(
+): EngineConfig = EngineConfig(
     dataDirectory = stateDirectory,
     cacheDirectory = cacheDirectory,
     diskCacheCapacityBytes = diskCacheCapacityBytes,
     torrentProfile = when (torrentProfile) {
-        P2pTorrentProfile.SOFT -> NuvioTorrentProfile.Soft
-        P2pTorrentProfile.BALANCED -> NuvioTorrentProfile.Balanced
-        P2pTorrentProfile.FAST -> NuvioTorrentProfile.Fast
+        P2pTorrentProfile.SOFT -> TorrentProfile.Soft
+        P2pTorrentProfile.BALANCED -> TorrentProfile.Balanced
+        P2pTorrentProfile.FAST -> TorrentProfile.Fast
     },
     uploadMode = if (uploadEnabled) {
-        NuvioUploadMode.Unlimited
+        UploadMode.Unlimited
     } else {
-        NuvioUploadMode.Disabled
+        UploadMode.Disabled
     },
     streamInactivityTimeoutMilliseconds = 0,
 )
@@ -100,7 +100,7 @@ actual object P2pStreamingEngine {
     )
 
     private data class DetachedStream(
-        val engine: NuvioEngine?,
+        val engine: Engine?,
         val streamId: String?,
     )
 
@@ -122,7 +122,7 @@ actual object P2pStreamingEngine {
     private var currentStreamId: String? = null
     private var appContext: Context? = null
     @Volatile
-    private var engine: NuvioEngine? = null
+    private var engine: Engine? = null
     private var engineConfigurationKey: EngineConfigurationKey? = null
     private val knownTorrentIds = mutableSetOf<String>()
     private var diagnosticRequestSequence = 0L
@@ -183,9 +183,9 @@ actual object P2pStreamingEngine {
         logPhase(requestSequence, startedAtMs, phase.get())
         val generation = beginStreamGeneration()
 
-        var activeEngine: NuvioEngine? = null
+        var activeEngine: Engine? = null
         var payloadDownloadBaseline = 0L
-        var preparedStream: NuvioStream? = null
+        var preparedStream: Stream? = null
         var attached = false
         var startupStatsJob: Job? = null
         return try {
@@ -285,7 +285,7 @@ actual object P2pStreamingEngine {
                 )) {
                 throw CancellationException("P2P stream start was cancelled")
             }
-            Log.i(TAG, "Nuvio Engine stream ready: ${stream.url}")
+            Log.i(TAG, "Engine stream ready: ${stream.url}")
             Log.i(
                 DIAGNOSTIC_TAG,
                 "start request=$requestSequence phase=route_ready elapsedMs=${elapsedSince(startedAtMs)} " +
@@ -417,8 +417,8 @@ actual object P2pStreamingEngine {
 
     private suspend fun cleanupFailedStart(
         generation: Long,
-        activeEngine: NuvioEngine?,
-        preparedStream: NuvioStream?,
+        activeEngine: Engine?,
+        preparedStream: Stream?,
         attached: Boolean,
         terminalState: P2pStreamingState,
     ) {
@@ -432,17 +432,17 @@ actual object P2pStreamingEngine {
         }
     }
 
-    private suspend fun stopPreparedStream(activeEngine: NuvioEngine?, streamId: String) {
+    private suspend fun stopPreparedStream(activeEngine: Engine?, streamId: String) {
         try {
             activeEngine?.stopStream(streamId)
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (error: Exception) {
-            Log.w(TAG, "Error stopping Nuvio Engine stream route", error)
+            Log.w(TAG, "Error stopping Engine stream route", error)
         }
     }
 
-    private suspend fun ensureEngine(): NuvioEngine {
+    private suspend fun ensureEngine(): Engine {
         val startedAtMs = SystemClock.elapsedRealtime()
         P2pSettingsRepository.ensureLoaded()
         val settings = P2pSettingsRepository.uiState.value
@@ -466,15 +466,15 @@ actual object P2pStreamingEngine {
         closeEngine(engine)
         currentCoroutineContext().ensureActive()
         val context = requireContext()
-        val stateDirectory = File(context.noBackupFilesDir, "nuvio-engine/state")
-        val cacheDirectory = File(context.cacheDir, "nuvio-engine/payload")
+        val stateDirectory = File(context.noBackupFilesDir, "engine/state")
+        val cacheDirectory = File(context.cacheDir, "engine/payload")
         check(stateDirectory.mkdirs() || stateDirectory.isDirectory) {
-            "Could not create the Nuvio Engine state directory"
+            "Could not create the Engine state directory"
         }
         check(cacheDirectory.mkdirs() || cacheDirectory.isDirectory) {
-            "Could not create the Nuvio Engine cache directory"
+            "Could not create the Engine cache directory"
         }
-        return NuvioEngine.create(
+        return Engine.create(
             buildEngineConfig(
                 stateDirectory = stateDirectory,
                 cacheDirectory = cacheDirectory,
@@ -488,17 +488,17 @@ actual object P2pStreamingEngine {
             observeEngineEvents(created)
             Log.i(
                 TAG,
-                "Using Nuvio Engine ${NuvioEngine.version} (${NuvioEngine.protocolBackendVersion})"
+                "Using Engine ${Engine.version} (${Engine.protocolBackendVersion})"
             )
             Log.i(
                 DIAGNOSTIC_TAG,
                 "engine create complete configuration=$configurationKey elapsedMs=${elapsedSince(startedAtMs)} " +
-                    "version=${NuvioEngine.version} backend=${NuvioEngine.protocolBackendVersion}",
+                    "version=${Engine.version} backend=${Engine.protocolBackendVersion}",
             )
         }
     }
 
-    private suspend fun closeEngine(target: NuvioEngine?) {
+    private suspend fun closeEngine(target: Engine?) {
         if (target == null) return
         val startedAtMs = SystemClock.elapsedRealtime()
         Log.i(DIAGNOSTIC_TAG, "engine shutdown begin active=${engine === target}")
@@ -513,7 +513,7 @@ actual object P2pStreamingEngine {
             try {
                 target.shutdown()
             } catch (error: Exception) {
-                Log.w(TAG, "Error shutting down Nuvio Engine", error)
+                Log.w(TAG, "Error shutting down Engine", error)
             }
         }
         Log.i(
@@ -522,7 +522,7 @@ actual object P2pStreamingEngine {
         )
     }
 
-    private fun observeEngineEvents(activeEngine: NuvioEngine) {
+    private fun observeEngineEvents(activeEngine: Engine) {
         engineEventsJob?.cancel()
         engineEventsJob = scope.launch {
             activeEngine.events.collect { event ->
@@ -535,7 +535,7 @@ actual object P2pStreamingEngine {
                 )
                 if (engine !== activeEngine) return@collect
                 when (event.type) {
-                    NuvioEventType.TorrentError -> {
+                    EventType.TorrentError -> {
                         val fallbackMessage = localizedP2pUnknownTorrentError()
                         synchronized(lifecycleLock) {
                             if (engine !== activeEngine) return@synchronized
@@ -552,7 +552,7 @@ actual object P2pStreamingEngine {
                             _state.value = terminalError
                         }
                     }
-                    NuvioEventType.StreamStopped -> {
+                    EventType.StreamStopped -> {
                         if (event.requestId != 0L) return@collect
                         val fallbackMessage = localizedP2pUnknownTorrentError()
                         synchronized(lifecycleLock) {
@@ -579,8 +579,8 @@ actual object P2pStreamingEngine {
     }
 
     private fun startStatsPolling(
-        activeEngine: NuvioEngine,
-        stream: NuvioStream,
+        activeEngine: Engine,
+        stream: Stream,
         generation: Long,
         requestSequence: Long,
         startedAtMs: Long,
@@ -598,7 +598,7 @@ actual object P2pStreamingEngine {
                     } catch (cancellation: CancellationException) {
                         throw cancellation
                     } catch (error: Exception) {
-                        Log.w(TAG, "Error sampling Nuvio Engine stream progress", error)
+                        Log.w(TAG, "Error sampling Engine stream progress", error)
                         null
                     }
                     val aggregate = activeEngine.stats.value
@@ -687,7 +687,7 @@ actual object P2pStreamingEngine {
     }
 
     private fun startStartupStatsPolling(
-        activeEngine: NuvioEngine,
+        activeEngine: Engine,
         generation: Long,
         phase: AtomicReference<String>,
         requestSequence: Long,

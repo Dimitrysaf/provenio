@@ -1,0 +1,25 @@
+LIBRARY engine
+EXPORTS
+    engine_add_torrent
+    engine_api_version
+    engine_config_init_sized
+    engine_create
+    engine_destroy
+    engine_event_init_sized
+    engine_file_init_sized
+    engine_get_file
+    engine_get_file_count
+    engine_get_stats
+    engine_get_stream_stats
+    engine_poll_event
+    engine_prepare_stream
+    engine_protocol_backend_version
+    engine_reclaim_disk_cache
+    engine_remove_torrent
+    engine_stats_init_sized
+    engine_status_message
+    engine_stop_stream
+    engine_stream_request_init_sized
+    engine_stream_stats_init_sized
+    engine_torrent_request_init_sized
+    engine_version_string

@@ -1,0 +1,6 @@
+ENGINE_1.0 {
+    global:
+        engine_*;
+    local:
+        *;
+};

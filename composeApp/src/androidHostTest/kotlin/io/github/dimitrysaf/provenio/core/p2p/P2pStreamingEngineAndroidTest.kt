@@ -1,7 +1,7 @@
 package io.github.dimitrysaf.provenio.core.p2p
 
-import com.nuvio.engine.NuvioUploadMode
-import com.nuvio.engine.NuvioTorrentProfile
+import com.engine.UploadMode
+import com.engine.TorrentProfile
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -29,12 +29,12 @@ class P2pStreamingEngineAndroidTest {
         )
 
         assertEquals(0, uploading.streamInactivityTimeoutMilliseconds)
-        assertEquals(NuvioUploadMode.Unlimited, uploading.uploadMode)
-        assertEquals(NuvioTorrentProfile.Fast, uploading.torrentProfile)
+        assertEquals(UploadMode.Unlimited, uploading.uploadMode)
+        assertEquals(TorrentProfile.Fast, uploading.torrentProfile)
         assertEquals(P2pCacheSize.GB_5.bytes, uploading.diskCacheCapacityBytes)
         assertEquals(0, downloadOnly.streamInactivityTimeoutMilliseconds)
-        assertEquals(NuvioUploadMode.Disabled, downloadOnly.uploadMode)
-        assertEquals(NuvioTorrentProfile.Soft, downloadOnly.torrentProfile)
+        assertEquals(UploadMode.Disabled, downloadOnly.uploadMode)
+        assertEquals(TorrentProfile.Soft, downloadOnly.torrentProfile)
         assertEquals(0L, downloadOnly.diskCacheCapacityBytes)
     }
 
