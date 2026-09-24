@@ -14,7 +14,7 @@ jobs:
   stable:
     name: Build stable
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     permissions:
       contents: write
     env:
@@ -37,6 +37,11 @@ jobs:
         with:
           build-type: release
           artifact-name: provenio-stable
+
+      - name: Building Flatpak
+        uses: ./.github/actions/flatpak
+        with:
+          artifact-name: provenio-stable-linux
 
       - name: Publish stable app
         run: |
@@ -63,4 +68,4 @@ jobs:
             --title "Provenio Stable channel ${version}" \
             --notes-file notes.md \
             --latest \
-            dist/*.apk </dev/null
+            dist/*.apk dist/Provenio.flatpak </dev/null

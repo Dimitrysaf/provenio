@@ -49,7 +49,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.engine != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 120
     permissions:
       contents: write
     env:
@@ -68,6 +68,11 @@ jobs:
           build-type: debug
           gradle-args: -Pprovenio.abiSplits=true --no-configuration-cache
           artifact-name: provenio-beta
+
+      - name: Building Flatpak
+        uses: ./.github/actions/flatpak
+        with:
+          artifact-name: provenio-beta-linux
 
       - name: Publish beta app
         if: github.ref == 'refs/heads/main'
@@ -88,4 +93,4 @@ jobs:
             --title "Provenio Beta channel ${short_sha}" \
             --notes-file notes.md \
             --prerelease \
-            dist/*.apk </dev/null
+            dist/*.apk dist/Provenio.flatpak </dev/null

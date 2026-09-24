@@ -1,15 +1,19 @@
 package io.github.dimitrysaf.provenio.core.build
 
+// Desktop ships what the Play Store build ships: no plugin runtime, no in-app updater.
+
 actual object AppFeaturePolicy {
     actual val pluginsEnabled: Boolean = false
     actual val supportersContributorsPageEnabled: Boolean = true
-    actual val accountDeletionEnabled: Boolean = false
+    actual val donationActionsEnabled: Boolean = false
+    actual val donationProgressEnabled: Boolean = true
+    actual val accountDeletionEnabled: Boolean = true
     actual val personalMediaAddonCopyEnabled: Boolean = false
-    actual val p2pEnabled: Boolean = false
+    actual val p2pEnabled: Boolean = true
     actual val trailerPlaybackMode: TrailerPlaybackMode = TrailerPlaybackMode.EXTERNAL
     actual val heroTrailerPlaybackSupported: Boolean = false
     actual val inAppUpdaterEnabled: Boolean = false
-    actual val imdbRatingLogoEnabled: Boolean = true
+    actual val imdbRatingLogoEnabled: Boolean = false
     actual val mediaPlaybackForegroundServiceEnabled: Boolean = false
     actual val downloadForegroundServiceEnabled: Boolean = false
     actual val customServerConnectionsEnabled: Boolean = false

@@ -139,6 +139,76 @@ struct BackendStats {
     std::vector<Stream> streams{};
 };
 
+struct PeerDetails {
+    std::uint32_t flags = 0;
+    std::uint32_t source = 0;
+    std::uint32_t progress_ppm = 0;
+    std::string address;
+    std::string client;
+    std::uint64_t download_rate_bytes_per_second = 0;
+    std::uint64_t upload_rate_bytes_per_second = 0;
+    std::uint64_t total_download_bytes = 0;
+    std::uint64_t total_upload_bytes = 0;
+    std::uint32_t rtt_milliseconds = 0;
+    std::uint32_t download_queue_length = 0;
+    std::uint32_t hash_failures = 0;
+    std::int32_t downloading_piece = -1;
+};
+
+struct TrackerDetails {
+    std::string url;
+    std::string message;
+    std::uint32_t tier = 0;
+    engine_tracker_status status = ENGINE_TRACKER_NOT_CONTACTED;
+    std::int32_t seeds = -1;
+    std::int32_t leechers = -1;
+    std::int32_t downloaded = -1;
+    std::uint32_t failures = 0;
+    std::int64_t next_announce_seconds = -1;
+};
+
+struct TorrentDetails {
+    std::string torrent_id;
+    engine_torrent_state state = ENGINE_TORRENT_STATE_UNKNOWN;
+    std::string name;
+    std::string current_tracker;
+    bool has_metadata = false;
+    std::uint32_t piece_count = 0;
+    std::uint32_t piece_length = 0;
+    std::uint32_t pieces_have = 0;
+    std::uint32_t file_count = 0;
+    std::uint32_t progress_ppm = 0;
+    std::int32_t distributed_copies_milli = -1;
+    std::uint32_t connected_peers = 0;
+    std::uint32_t connected_seeds = 0;
+    std::uint32_t known_peers = 0;
+    std::uint32_t known_seeds = 0;
+    std::uint32_t connect_candidates = 0;
+    std::int32_t swarm_seeds = -1;
+    std::int32_t swarm_leechers = -1;
+    std::uint64_t total_size = 0;
+    std::uint64_t total_wanted = 0;
+    std::uint64_t total_wanted_done = 0;
+    std::uint64_t total_done = 0;
+    std::uint64_t download_rate_bytes_per_second = 0;
+    std::uint64_t upload_rate_bytes_per_second = 0;
+    std::uint64_t download_payload_rate_bytes_per_second = 0;
+    std::uint64_t upload_payload_rate_bytes_per_second = 0;
+    std::uint64_t session_payload_download_bytes = 0;
+    std::uint64_t session_payload_upload_bytes = 0;
+    std::uint64_t all_time_download_bytes = 0;
+    std::uint64_t all_time_upload_bytes = 0;
+    std::uint64_t failed_bytes = 0;
+    std::uint64_t redundant_bytes = 0;
+    std::int64_t added_time_unix_seconds = 0;
+    std::int64_t active_seconds = 0;
+    std::int64_t next_announce_seconds = -1;
+    std::vector<PeerDetails> peers{};
+    std::vector<TrackerDetails> trackers{};
+    std::vector<std::uint8_t> piece_states{};
+    std::vector<std::uint8_t> piece_availability{};
+};
+
 class ProtocolBackend {
 public:
     virtual ~ProtocolBackend() = default;
@@ -168,6 +238,14 @@ public:
     virtual void shutdown() = 0;
     [[nodiscard]] virtual std::vector<BackendEvent> pop_events() = 0;
     [[nodiscard]] virtual BackendStats statistics() = 0;
+    virtual void set_upload_mode(
+        engine_upload_mode /*upload_mode*/,
+        std::uint64_t /*upload_limit_bytes_per_second*/
+    ) {
+    }
+    [[nodiscard]] virtual std::vector<TorrentDetails> torrent_details() {
+        return {};
+    }
 };
 
 [[nodiscard]] std::unique_ptr<ProtocolBackend> create_protocol_backend(

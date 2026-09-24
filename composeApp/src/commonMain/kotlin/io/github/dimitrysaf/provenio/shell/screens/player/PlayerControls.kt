@@ -120,6 +120,7 @@ internal fun PlayerControlsShell(
     onOpenInExternalPlayer: (() -> Unit)? = null,
     onSubmitIntroClick: (() -> Unit)? = null,
     statusLines: List<String> = emptyList(),
+    onStatusClick: (() -> Unit)? = null,
     parentalWarnings: List<ParentalWarning> = emptyList(),
     showParentalGuide: Boolean = false,
     onParentalGuideAnimationComplete: () -> Unit = {},
@@ -159,6 +160,7 @@ internal fun PlayerControlsShell(
             episodeTitle = episodeTitle,
             metrics = metrics,
             statusLines = if (showPlaybackControls) statusLines else emptyList(),
+            onStatusClick = onStatusClick,
             parentalWarnings = parentalWarnings,
             showParentalGuide = showParentalGuide,
             onParentalGuideAnimationComplete = onParentalGuideAnimationComplete,
@@ -226,6 +228,7 @@ private fun PlayerHeader(
     episodeTitle: String?,
     metrics: PlayerLayoutMetrics,
     statusLines: List<String>,
+    onStatusClick: (() -> Unit)?,
     parentalWarnings: List<ParentalWarning>,
     showParentalGuide: Boolean,
     onParentalGuideAnimationComplete: () -> Unit,
@@ -287,7 +290,7 @@ private fun PlayerHeader(
             )
         }
 
-        PlayerStatusColumn(lines = statusLines)
+        PlayerStatusColumn(lines = statusLines, onClick = onStatusClick)
     }
 }
 
@@ -313,10 +316,20 @@ internal fun PlayerOverlayBackButton(
 internal fun PlayerStatusColumn(
     lines: List<String>,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
     if (lines.isEmpty()) return
     Column(
-        modifier = modifier,
+        modifier = modifier.then(
+            if (onClick != null) {
+                Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(onClick = onClick)
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            } else {
+                Modifier
+            },
+        ),
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {

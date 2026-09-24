@@ -9,6 +9,11 @@ actual object P2pStreamingEngine {
     actual val state: StateFlow<P2pStreamingState> = _state.asStateFlow()
     private val _cacheState = MutableStateFlow(P2pCacheUiState())
     actual val cacheState: StateFlow<P2pCacheUiState> = _cacheState.asStateFlow()
+    // The iOS engine build does not expose per-torrent details yet.
+    actual val torrentDetails: StateFlow<P2pTorrentDetails?> =
+        MutableStateFlow<P2pTorrentDetails?>(null).asStateFlow()
+    actual fun acquireTorrentDetails() = Unit
+    actual fun releaseTorrentDetails() = Unit
 
     actual suspend fun startStream(request: P2pStreamRequest): String {
         val message = "P2P streaming is not available on this platform"

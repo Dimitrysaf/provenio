@@ -7,7 +7,8 @@ import kotlinx.coroutines.flow.asStateFlow
 
 data class P2pSettingsUiState(
     val p2pEnabled: Boolean = false,
-    val enableUpload: Boolean = true,
+    /** Seeding: off unless the user turns it on in settings. */
+    val enableUpload: Boolean = false,
     val hideTorrentStats: Boolean = false,
     val torrentProfile: P2pTorrentProfile = P2pTorrentProfile.BALANCED,
     val cacheSize: P2pCacheSize = P2pCacheSize.GB_2,
@@ -48,7 +49,7 @@ object P2pSettingsRepository {
 
     private var hasLoaded = false
     private var p2pEnabled = false
-    private var enableUpload = true
+    private var enableUpload = false
     private var hideTorrentStats = false
     private var torrentProfile = P2pTorrentProfile.BALANCED
     private var cacheSize = P2pCacheSize.GB_2
@@ -65,7 +66,7 @@ object P2pSettingsRepository {
     fun clearLocalState() {
         hasLoaded = false
         p2pEnabled = false
-        enableUpload = true
+        enableUpload = false
         hideTorrentStats = false
         torrentProfile = P2pTorrentProfile.BALANCED
         cacheSize = P2pCacheSize.GB_2
@@ -115,7 +116,7 @@ object P2pSettingsRepository {
     private fun loadFromDisk() {
         hasLoaded = true
         p2pEnabled = P2pSettingsStorage.loadP2pEnabled() ?: false
-        enableUpload = P2pSettingsStorage.loadEnableUpload() ?: true
+        enableUpload = P2pSettingsStorage.loadEnableUpload() ?: false
         hideTorrentStats = P2pSettingsStorage.loadHideTorrentStats() ?: false
         torrentProfile = P2pSettingsStorage.loadTorrentProfile()
             ?.let { stored -> P2pTorrentProfile.entries.firstOrNull { it.name == stored } }
@@ -229,6 +230,10 @@ class P2pStreamingException(message: String) : Exception(message)
 expect object P2pStreamingEngine {
     val state: StateFlow<P2pStreamingState>
     val cacheState: StateFlow<P2pCacheUiState>
+    /** Filled only while something holds [acquireTorrentDetails]; null when nothing is loaded. */
+    val torrentDetails: StateFlow<P2pTorrentDetails?>
+    fun acquireTorrentDetails()
+    fun releaseTorrentDetails()
     suspend fun startStream(request: P2pStreamRequest): String
     suspend fun clearCache(): P2pCacheClearResult
     fun stopStream()

@@ -210,6 +210,112 @@ engine_status EngineRuntime::reclaim_disk_cache(
     return enqueue(std::move(command), request_id);
 }
 
+engine_status EngineRuntime::set_upload_mode(
+    const engine_upload_mode upload_mode,
+    const std::uint64_t upload_limit_bytes_per_second
+) {
+    Command command{};
+    command.type = CommandType::set_upload_mode;
+    command.upload_mode = upload_mode;
+    command.target_bytes = upload_limit_bytes_per_second;
+    std::uint64_t request_id = 0;
+    return enqueue(std::move(command), request_id);
+}
+
+engine_status EngineRuntime::get_torrent_details(
+    const std::string& torrent_id,
+    engine_torrent_details& details
+) {
+    std::lock_guard lock(details_mutex_);
+    const auto found = torrent_details_.find(torrent_id);
+    if (found == torrent_details_.end()) {
+        return ENGINE_STATUS_NOT_FOUND;
+    }
+    const auto& source = found->second;
+    details = {};
+    details.struct_size = sizeof(engine_torrent_details);
+    details.state = source.state;
+    details.name_truncated = source.name.size() >= sizeof(details.name) ? 1 : 0;
+    copy_text(details.name, source.name);
+    details.has_metadata = source.has_metadata ? 1 : 0;
+    copy_text(details.current_tracker, source.current_tracker);
+    details.piece_count = source.piece_count;
+    details.piece_length = source.piece_length;
+    details.pieces_have = source.pieces_have;
+    details.file_count = source.file_count;
+    details.progress_ppm = source.progress_ppm;
+    details.distributed_copies_milli = source.distributed_copies_milli;
+    details.connected_peers = source.connected_peers;
+    details.connected_seeds = source.connected_seeds;
+    details.known_peers = source.known_peers;
+    details.known_seeds = source.known_seeds;
+    details.connect_candidates = source.connect_candidates;
+    details.swarm_seeds = source.swarm_seeds;
+    details.swarm_leechers = source.swarm_leechers;
+    details.peer_count = static_cast<std::uint32_t>(source.peers.size());
+    details.tracker_count = static_cast<std::uint32_t>(source.trackers.size());
+    details.total_size = source.total_size;
+    details.total_wanted = source.total_wanted;
+    details.total_wanted_done = source.total_wanted_done;
+    details.total_done = source.total_done;
+    details.download_rate_bytes_per_second = source.download_rate_bytes_per_second;
+    details.upload_rate_bytes_per_second = source.upload_rate_bytes_per_second;
+    details.download_payload_rate_bytes_per_second =
+        source.download_payload_rate_bytes_per_second;
+    details.upload_payload_rate_bytes_per_second = source.upload_payload_rate_bytes_per_second;
+    details.session_payload_download_bytes = source.session_payload_download_bytes;
+    details.session_payload_upload_bytes = source.session_payload_upload_bytes;
+    details.all_time_download_bytes = source.all_time_download_bytes;
+    details.all_time_upload_bytes = source.all_time_upload_bytes;
+    details.failed_bytes = source.failed_bytes;
+    details.redundant_bytes = source.redundant_bytes;
+    details.added_time_unix_seconds = source.added_time_unix_seconds;
+    details.active_seconds = source.active_seconds;
+    details.next_announce_seconds = source.next_announce_seconds;
+    return ENGINE_STATUS_OK;
+}
+
+engine_status EngineRuntime::get_peers(
+    const std::string& torrent_id,
+    std::vector<torrent::PeerDetails>& peers
+) {
+    std::lock_guard lock(details_mutex_);
+    const auto found = torrent_details_.find(torrent_id);
+    if (found == torrent_details_.end()) {
+        return ENGINE_STATUS_NOT_FOUND;
+    }
+    peers = found->second.peers;
+    return ENGINE_STATUS_OK;
+}
+
+engine_status EngineRuntime::get_trackers(
+    const std::string& torrent_id,
+    std::vector<torrent::TrackerDetails>& trackers
+) {
+    std::lock_guard lock(details_mutex_);
+    const auto found = torrent_details_.find(torrent_id);
+    if (found == torrent_details_.end()) {
+        return ENGINE_STATUS_NOT_FOUND;
+    }
+    trackers = found->second.trackers;
+    return ENGINE_STATUS_OK;
+}
+
+engine_status EngineRuntime::get_piece_map(
+    const std::string& torrent_id,
+    std::vector<std::uint8_t>& states,
+    std::vector<std::uint8_t>& availability
+) {
+    std::lock_guard lock(details_mutex_);
+    const auto found = torrent_details_.find(torrent_id);
+    if (found == torrent_details_.end()) {
+        return ENGINE_STATUS_NOT_FOUND;
+    }
+    states = found->second.piece_states;
+    availability = found->second.piece_availability;
+    return ENGINE_STATUS_OK;
+}
+
 void EngineRuntime::run() {
     while (true) {
         std::optional<Command> command;
@@ -275,6 +381,9 @@ void EngineRuntime::process_command(Command command) {
         case CommandType::remove_torrent:
             backend_->remove_torrent(command.request_id, command.torrent_id);
             break;
+        case CommandType::set_upload_mode:
+            backend_->set_upload_mode(command.upload_mode, command.target_bytes);
+            break;
         }
     } catch (const std::exception& error) {
         push_event({
@@ -301,6 +410,19 @@ void EngineRuntime::collect_backend_events() {
     }
     for (auto& event : backend_->pop_events()) {
         push_event(std::move(event));
+    }
+    // Details carry peer lists and piece maps, so they refresh at the backend's
+    // telemetry cadence rather than on every 25 ms pass.
+    const auto now = std::chrono::steady_clock::now();
+    if (now >= next_details_refresh_) {
+        next_details_refresh_ = now + std::chrono::milliseconds(500);
+        std::unordered_map<std::string, torrent::TorrentDetails> details;
+        for (auto& torrent : backend_->torrent_details()) {
+            auto id = torrent.torrent_id;
+            details.insert_or_assign(std::move(id), std::move(torrent));
+        }
+        std::lock_guard lock(details_mutex_);
+        torrent_details_ = std::move(details);
     }
     const auto backend_stats = backend_->statistics();
     engine_stats stats{};

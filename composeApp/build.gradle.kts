@@ -392,6 +392,14 @@ kotlin {
         }
     }
     
+    // Linux desktop (the Flatpak). It builds like the Play Store distribution: no plugin
+    // runtime, so the full-distribution sources stay out.
+    jvm("desktop") {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+    }
+
     val iosTargets = listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -492,7 +500,22 @@ kotlin {
                 implementation(libs.androidx.media3.container)
                 implementation(libs.androidx.media3.extractor)
                 implementation(libs.mpv.android.lib)
-                implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("lib-*.aar"))))
+                // settings.gradle.kts includes :engine when the engine is built from source;
+                // otherwise the committed engine AAR in libs/ stands in for it.
+                if (rootProject.findProject(":engine") != null) {
+                    implementation(project(":engine"))
+                    implementation(
+                        fileTree(
+                            mapOf(
+                                "dir" to "libs",
+                                "include" to listOf("lib-*.aar"),
+                                "exclude" to listOf("lib-engine-android-*.aar"),
+                            ),
+                        ),
+                    )
+                } else {
+                    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("lib-*.aar"))))
+                }
                 if (androidDistribution == "full") {
                     implementation(files("libs/quickjs-kt-android-1.0.5-nuvio.aar"))
                     implementation(libs.ksoup)
@@ -553,6 +576,19 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+        val desktopMain by getting {
+            // The engine's Kotlin wrapper is shared with Android; only its trust-store export is
+            // Android-specific, and desktop provides its own.
+            kotlin.srcDir(rootProject.file("engine/platform/android/engine/src/main/kotlin"))
+            kotlin.exclude("**/com/engine/internal/AndroidTrustStore.kt")
+            dependencies {
+                implementation(compose.desktop.currentOs)
+                implementation(libs.kotlinx.coroutines.swing)
+                implementation(libs.ktor.client.okhttp)
+                implementation(libs.jna)
+                implementation("com.squareup.okhttp3:okhttp:4.12.0")
+            }
+        }
     }
 }
 
@@ -567,4 +603,25 @@ configurations.all {
 
 compose.resources {
     packageOfResClass = "provenio.composeapp.generated.resources"
+}
+
+// The desktop app for Linux. `createReleaseDistributable` produces the self-contained app image
+// (with its own Java runtime) that scripts/build-linux.sh packages into the Flatpak.
+compose.desktop {
+    application {
+        mainClass = "io.github.dimitrysaf.provenio.MainKt"
+        jvmArgs += listOf("-Dsun.java2d.uiScale.enabled=true", "-Xmx1g")
+        nativeDistributions {
+            packageName = "Provenio"
+            packageVersion = releaseAppVersionName
+            vendor = "Provenio"
+            description = "Stream movies and shows"
+            includeAllModules = true
+            // Native libraries built by scripts/build-linux.sh (the engine's JNI library).
+            appResourcesRootDir.set(rootProject.layout.projectDirectory.dir("build/linux/app-resources"))
+        }
+        buildTypes.release.proguard {
+            isEnabled.set(false)
+        }
+    }
 }

@@ -728,6 +728,12 @@ private fun P2pGroup(
                 },
             )
             switchRow(
+                title = stringResource(Res.string.settings_p2p_seeding_title),
+                description = stringResource(Res.string.settings_p2p_seeding_subtitle),
+                checked = { p2pSettings.enableUpload },
+                onCheckedChange = P2pSettingsRepository::setEnableUpload,
+            )
+            switchRow(
                 title = stringResource(Res.string.settings_p2p_hide_stats_title),
                 description = stringResource(Res.string.settings_p2p_hide_stats_subtitle),
                 checked = { p2pSettings.hideTorrentStats },

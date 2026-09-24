@@ -114,8 +114,21 @@ if (( jobs > 8 )); then
     jobs=8
 fi
 
-abis=(armeabi-v7a arm64-v8a x86 x86_64)
-targets=(android-arm android-arm64 android-x86 android-x86_64)
+all_abis=(armeabi-v7a arm64-v8a x86 x86_64)
+all_targets=(android-arm android-arm64 android-x86 android-x86_64)
+# ENGINE_ANDROID_ABIS narrows the build to a space-separated subset of ABIs.
+abis=()
+targets=()
+for index in "${!all_abis[@]}"; do
+    if [[ -z "${ENGINE_ANDROID_ABIS:-}" || " ${ENGINE_ANDROID_ABIS} " == *" ${all_abis[$index]} "* ]]; then
+        abis+=("${all_abis[$index]}")
+        targets+=("${all_targets[$index]}")
+    fi
+done
+if (( ${#abis[@]} == 0 )); then
+    echo "ENGINE_ANDROID_ABIS selects no known ABI: ${ENGINE_ANDROID_ABIS}" >&2
+    exit 2
+fi
 export ANDROID_NDK_ROOT="$ndk_root"
 export PATH="$toolchain:$PATH"
 runtime_prefix=/engine/openssl
@@ -134,8 +147,7 @@ for index in "${!abis[@]}"; do
         continue
     fi
 
-    cmake -E remove_directory "$build_directory"
-    cmake -E remove_directory "$install_directory"
+    rm -rf "$build_directory" "$install_directory"
     mkdir -p "$build_directory"
     build_log="$build_directory/build.log"
     if ! (
@@ -163,9 +175,8 @@ for index in "${!abis[@]}"; do
         cat "$build_log" >&2
         exit 1
     fi
-    cmake -E copy_directory \
-        "$build_directory/stage$runtime_prefix" \
-        "$install_directory"
+    mkdir -p "$install_directory"
+    cp -R "$build_directory/stage$runtime_prefix/." "$install_directory"
     printf '%s\n' "$openssl_sha256" > "$marker"
 done
 

@@ -2,7 +2,15 @@ package com.engine.internal
 
 internal object NativeBridge {
     init {
-        System.loadLibrary("engine")
+        // A Compose Desktop app bundles its native libraries in its resources directory; Android
+        // and plain JVM hosts find the library on the usual search path.
+        val bundled = System.getProperty("compose.application.resources.dir")
+            ?.let { java.io.File(it, System.mapLibraryName("engine")) }
+        if (bundled != null && bundled.isFile) {
+            System.load(bundled.absolutePath)
+        } else {
+            System.loadLibrary("engine")
+        }
     }
 
     external fun nativeCreate(
@@ -35,6 +43,8 @@ internal object NativeBridge {
     external fun nativeGetStats(handle: Long): LongArray
     external fun nativeGetStreamStats(handle: Long, streamId: String): LongArray
     external fun nativeReclaimDiskCache(handle: Long, targetBytes: Long): LongArray
+    external fun nativeSetUploadMode(handle: Long, uploadMode: Int, uploadLimitBytesPerSecond: Long): Int
+    external fun nativeGetTorrentDetails(handle: Long, torrentId: String): NativeTorrentDetailsPayload?
     external fun nativeStatusMessage(status: Int): String
     external fun nativeEngineVersion(): String
     external fun nativeBackendVersion(): String
@@ -64,4 +74,27 @@ internal class NativeFilePayload(
 internal class NativeFilesPayload(
     @JvmField val status: Int,
     @JvmField val files: Array<NativeFilePayload>,
+)
+
+internal class NativePeerPayload(
+    @JvmField val values: LongArray,
+    @JvmField val address: String,
+    @JvmField val client: String,
+)
+
+internal class NativeTrackerPayload(
+    @JvmField val values: LongArray,
+    @JvmField val url: String,
+    @JvmField val message: String,
+)
+
+internal class NativeTorrentDetailsPayload(
+    @JvmField val status: Int,
+    @JvmField val values: LongArray,
+    @JvmField val name: String,
+    @JvmField val currentTracker: String,
+    @JvmField val peers: Array<NativePeerPayload>,
+    @JvmField val trackers: Array<NativeTrackerPayload>,
+    @JvmField val pieceStates: ByteArray,
+    @JvmField val pieceAvailability: ByteArray,
 )

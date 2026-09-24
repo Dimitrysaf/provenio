@@ -5,7 +5,9 @@ import platform.Foundation.NSUserDefaults
 
 internal actual object P2pSettingsStorage {
     private const val p2pEnabledKey = "p2p_enabled"
-    private const val enableUploadKey = "enable_upload"
+    // Replaces "enable_upload", which defaulted to on. Seeding is opt-in, so a value the user
+    // never chose is not carried over.
+    private const val enableUploadKey = "seeding_enabled"
     private const val hideTorrentStatsKey = "hide_torrent_stats"
     private const val torrentProfileKey = "torrent_profile"
     private const val cacheSizeKey = "cache_size"

@@ -194,6 +194,7 @@ internal class PlayerScreenRuntime(
     var showSubtitleModal by mutableStateOf(false)
     var showSpeedSheet by mutableStateOf(false)
     var showResizeSheet by mutableStateOf(false)
+    var showTorrentDetailsSheet by mutableStateOf(false)
     var showVideoSettingsModal by mutableStateOf(false)
     var audioTracks by mutableStateOf<List<AudioTrack>>(emptyList())
     var subtitleTracks by mutableStateOf<List<SubtitleTrack>>(emptyList())

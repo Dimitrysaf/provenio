@@ -1,0 +1,117 @@
+# Provenio for Linux. scripts/build-linux.sh prepares build/linux/flatpak-input (the app JAR and
+# the engine's JNI library) and then builds this manifest into Provenio.flatpak.
+app-id: io.github.dimitrysaf.Provenio
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.openjdk21
+command: provenio
+
+finish-args:
+  # Streams, add-ons, sign-in and the P2P engine's peers.
+  - --share=network
+  # The desktop app draws through Java AWT, which speaks X11 (XWayland on Wayland sessions).
+  - --share=ipc
+  - --socket=x11
+  # Playback.
+  - --socket=pulseaudio
+  - --device=dri
+  # Downloads land in the user's Downloads folder.
+  - --filesystem=xdg-download
+  # Keep the screen awake while a video plays.
+  - --talk-name=org.freedesktop.ScreenSaver
+  - --talk-name=org.freedesktop.portal.Inhibit
+
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /lib/cmake
+  - /share/doc
+  - /share/man
+  - '*.a'
+  - '*.la'
+
+modules:
+  - name: openjdk
+    buildsystem: simple
+    build-commands:
+      - /usr/lib/sdk/openjdk21/install.sh
+
+  # Subtitle rendering for mpv.
+  - name: libass
+    buildsystem: autotools
+    config-opts:
+      - --disable-static
+      - --enable-fontconfig
+    sources:
+      - type: git
+        url: https://github.com/libass/libass.git
+        tag: 0.17.4
+
+  # mpv's rendering library; the app renders in software, so only OpenGL support is built.
+  - name: libplacebo
+    buildsystem: meson
+    config-opts:
+      - -Dvulkan=disabled
+      - -Dopengl=enabled
+      - -Dshaderc=disabled
+      - -Dglslang=disabled
+      - -Dd3d11=disabled
+      - -Dlcms=disabled
+      - -Ddemos=false
+      - -Dtests=false
+    sources:
+      - type: git
+        url: https://github.com/haasn/libplacebo.git
+        tag: v7.351.0
+
+  - name: ffmpeg
+    config-opts:
+      - --enable-shared
+      - --disable-static
+      - --disable-programs
+      - --disable-doc
+      - --enable-gnutls
+      - --enable-libdrm
+      - --enable-vaapi
+    sources:
+      - type: git
+        url: https://github.com/FFmpeg/FFmpeg.git
+        tag: n7.1.1
+
+  - name: mpv
+    buildsystem: meson
+    config-opts:
+      - -Dlibmpv=true
+      - -Dcplayer=false
+      - -Dlua=disabled
+      - -Djavascript=disabled
+      - -Dvulkan=disabled
+      - -Dlibarchive=disabled
+      - -Dlibbluray=disabled
+      - -Ddvdnav=disabled
+      - -Dcdda=disabled
+      - -Drubberband=disabled
+      - -Duchardet=disabled
+      - -Dzimg=disabled
+      - -Dmanpage-build=disabled
+      - -Dhtml-build=disabled
+      - -Dpdf-build=disabled
+    sources:
+      - type: git
+        url: https://github.com/mpv-player/mpv.git
+        tag: v0.40.0
+
+  - name: provenio
+    buildsystem: simple
+    build-commands:
+      - install -Dm644 provenio.jar /app/lib/provenio/provenio.jar
+      - install -Dm755 libengine.so /app/lib/provenio/libengine.so
+      - install -Dm755 provenio.sh /app/bin/provenio
+      - install -Dm644 io.github.dimitrysaf.Provenio.desktop /app/share/applications/io.github.dimitrysaf.Provenio.desktop
+      - install -Dm644 io.github.dimitrysaf.Provenio.metainfo.xml /app/share/metainfo/io.github.dimitrysaf.Provenio.metainfo.xml
+      - install -Dm644 io.github.dimitrysaf.Provenio.png /app/share/icons/hicolor/512x512/apps/io.github.dimitrysaf.Provenio.png
+    sources:
+      - type: dir
+        path: ../../build/linux/flatpak-input

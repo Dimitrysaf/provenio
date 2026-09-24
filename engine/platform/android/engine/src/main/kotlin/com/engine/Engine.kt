@@ -2,6 +2,7 @@ package com.engine
 
 import com.engine.internal.NativeBridge
 import com.engine.internal.NativeEventPayload
+import com.engine.internal.NativeTorrentDetailsPayload
 import com.engine.internal.AndroidTrustStore
 import java.io.Closeable
 import java.net.HttpURLConnection
@@ -195,6 +196,47 @@ public class Engine private constructor(
                 secondaryDemandEnd = values[15],
                 scheduleRevision = values[16],
             )
+        }
+
+    /**
+     * Changes uploading while the engine runs. [UploadMode.Disabled] takes effect within one
+     * engine tick and from then on no block is sent to any peer.
+     */
+    public fun setUploadMode(mode: UploadMode, uploadLimitBytesPerSecond: Long = 0L) {
+        when (mode) {
+            UploadMode.Limited -> require(uploadLimitBytesPerSecond > 0) {
+                "limited upload mode requires a positive byte rate"
+            }
+            UploadMode.Disabled, UploadMode.Unlimited -> require(uploadLimitBytesPerSecond == 0L) {
+                "only limited upload mode accepts a byte rate"
+            }
+        }
+        val status = synchronized(nativeLock) {
+            ensureOpen()
+            NativeBridge.nativeSetUploadMode(nativeHandle, mode.nativeValue, uploadLimitBytesPerSecond)
+        }
+        checkStatus(status)
+    }
+
+    /**
+     * The latest snapshot the engine holds for [torrentId], or null when the torrent is not
+     * loaded or has not reported yet.
+     */
+    public suspend fun currentTorrentDetails(torrentId: String): TorrentDetails? =
+        withContext(dispatcher) {
+            validateTorrentId(torrentId)
+            val payload = synchronized(nativeLock) {
+                ensureOpen()
+                NativeBridge.nativeGetTorrentDetails(nativeHandle, torrentId)
+            } ?: throw EngineException(-1, "invalid native torrent details result")
+            if (payload.status == STATUS_NOT_FOUND) {
+                return@withContext null
+            }
+            checkStatus(payload.status)
+            require(payload.values.size == NATIVE_TORRENT_DETAILS_VALUE_COUNT) {
+                "invalid native torrent details result"
+            }
+            payload.toTorrentDetails(torrentId.lowercase())
         }
 
     public suspend fun preloadStream(
@@ -430,6 +472,8 @@ public class Engine private constructor(
 
     public companion object {
         private const val STATUS_OK = 0
+        private const val STATUS_NOT_FOUND = 8
+        private const val NATIVE_TORRENT_DETAILS_VALUE_COUNT = 32
         private const val EVENT_POLL_INTERVAL_MILLISECONDS = 20L
         private const val NATIVE_STATS_VALUE_COUNT = 53
         private const val NATIVE_STREAM_STATS_VALUE_COUNT = 17
@@ -503,3 +547,80 @@ private fun NativeEventPayload.toPublicEvent(): Event = Event(
     streamId = streamId.ifEmpty { null },
     streamUrl = streamUrl.ifEmpty { null },
 )
+
+private fun NativeTorrentDetailsPayload.toTorrentDetails(torrentId: String): TorrentDetails {
+    val v = values
+    return TorrentDetails(
+        torrentId = torrentId,
+        name = name,
+        state = TorrentState.fromNative(v[0].toInt()),
+        hasMetadata = v[1] != 0L,
+        currentTracker = currentTracker.ifEmpty { null },
+        pieceCount = v[2].toInt(),
+        pieceLength = v[3].toInt(),
+        piecesHave = v[4].toInt(),
+        fileCount = v[5].toInt(),
+        progress = (v[6] / 1_000_000.0).coerceIn(0.0, 1.0).toFloat(),
+        availability = v[7].takeIf { it >= 0L }?.let { (it / 1000.0).toFloat() },
+        connectedPeers = v[8].toInt(),
+        connectedSeeds = v[9].toInt(),
+        knownPeers = v[10].toInt(),
+        knownSeeds = v[11].toInt(),
+        connectCandidates = v[12].toInt(),
+        swarmSeeds = v[13].toInt().takeIf { it >= 0 },
+        swarmLeechers = v[14].toInt().takeIf { it >= 0 },
+        totalSize = v[15],
+        totalWanted = v[16],
+        totalWantedDone = v[17],
+        totalDone = v[18],
+        downloadRateBytesPerSecond = v[19],
+        uploadRateBytesPerSecond = v[20],
+        downloadPayloadRateBytesPerSecond = v[21],
+        uploadPayloadRateBytesPerSecond = v[22],
+        sessionPayloadDownloadBytes = v[23],
+        sessionPayloadUploadBytes = v[24],
+        allTimeDownloadBytes = v[25],
+        allTimeUploadBytes = v[26],
+        failedBytes = v[27],
+        redundantBytes = v[28],
+        addedAtEpochSeconds = v[29],
+        activeSeconds = v[30],
+        nextAnnounceSeconds = v[31].takeIf { it >= 0L },
+        peers = peers.mapNotNull { peer ->
+            val p = peer.values
+            if (p.size != 11) return@mapNotNull null
+            TorrentPeer(
+                address = peer.address,
+                client = peer.client,
+                flags = p[0].toInt(),
+                sources = PeerSource.entries.filterTo(mutableSetOf()) { p[1].toInt() and it.nativeMask != 0 },
+                progress = (p[2] / 1_000_000.0).coerceIn(0.0, 1.0).toFloat(),
+                downloadRateBytesPerSecond = p[3],
+                uploadRateBytesPerSecond = p[4],
+                totalDownloadBytes = p[5],
+                totalUploadBytes = p[6],
+                rttMilliseconds = p[7].toInt(),
+                downloadQueueLength = p[8].toInt(),
+                hashFailures = p[9].toInt(),
+                downloadingPiece = p[10].toInt().takeIf { it >= 0 },
+            )
+        },
+        trackers = trackers.mapNotNull { tracker ->
+            val t = tracker.values
+            if (t.size != 7) return@mapNotNull null
+            TorrentTracker(
+                url = tracker.url,
+                tier = t[0].toInt(),
+                status = TrackerStatus.fromNative(t[1].toInt()),
+                message = tracker.message.ifEmpty { null },
+                seeds = t[2].toInt().takeIf { it >= 0 },
+                leechers = t[3].toInt().takeIf { it >= 0 },
+                downloaded = t[4].toInt().takeIf { it >= 0 },
+                failures = t[5].toInt(),
+                nextAnnounceSeconds = t[6].takeIf { it >= 0L },
+            )
+        },
+        pieceStates = pieceStates,
+        pieceAvailability = pieceAvailability,
+    )
+}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.dimitrysaf.Provenio</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Provenio</name>
+  <summary>Stream movies and shows</summary>
+  <description>
+    <p>Browse catalogs from your add-ons, track what you watch, and stream from direct links or peer-to-peer sources.</p>
+  </description>
+  <launchable type="desktop-id">io.github.dimitrysaf.Provenio.desktop</launchable>
+  <url type="homepage">https://github.com/Dimitrysaf/provenio</url>
+  <developer id="io.github.dimitrysaf">
+    <name>Dimitrysaf</name>
+  </developer>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.4.21" date="2026-09-24"/>
+  </releases>
+</component>

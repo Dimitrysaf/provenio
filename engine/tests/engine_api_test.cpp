@@ -413,6 +413,139 @@ TEST("valid magnet produces a canonical correlated torrent event") {
     engine_destroy(engine);
 }
 
+TEST("torrent details reject malformed arguments and unknown torrents") {
+    EngineTestDirectories directories;
+    engine_config config;
+    engine_config_init(&config);
+    directories.apply(config);
+    engine* engine = nullptr;
+    EXPECT_EQ(engine_create(&config, &engine), ENGINE_STATUS_OK);
+
+    const std::string unknown_id(40, 'a');
+    engine_torrent_details details;
+    engine_torrent_details_init(&details);
+    EXPECT_EQ(details.struct_size, sizeof(engine_torrent_details));
+    EXPECT_EQ(
+        engine_get_torrent_details(engine, "not-a-hash", &details),
+        ENGINE_STATUS_INVALID_ARGUMENT
+    );
+    EXPECT_EQ(
+        engine_get_torrent_details(engine, unknown_id.c_str(), &details),
+        ENGINE_STATUS_NOT_FOUND
+    );
+    details.struct_size = 1;
+    EXPECT_EQ(
+        engine_get_torrent_details(engine, unknown_id.c_str(), &details),
+        ENGINE_STATUS_INCOMPATIBLE_ABI
+    );
+
+    std::size_t count = 7;
+    EXPECT_EQ(
+        engine_get_peers(engine, unknown_id.c_str(), nullptr, 0, 0, &count),
+        ENGINE_STATUS_NOT_FOUND
+    );
+    EXPECT_EQ(count, std::size_t(0));
+    engine_peer peer{};
+    EXPECT_EQ(
+        engine_get_peers(engine, unknown_id.c_str(), &peer, 4, 1, &count),
+        ENGINE_STATUS_INCOMPATIBLE_ABI
+    );
+    EXPECT_EQ(
+        engine_get_peers(engine, unknown_id.c_str(), nullptr, sizeof(engine_peer), 1, &count),
+        ENGINE_STATUS_INVALID_ARGUMENT
+    );
+    EXPECT_EQ(
+        engine_get_trackers(engine, unknown_id.c_str(), nullptr, 0, 0, &count),
+        ENGINE_STATUS_NOT_FOUND
+    );
+    EXPECT_EQ(
+        engine_get_piece_map(engine, unknown_id.c_str(), nullptr, nullptr, 0, &count),
+        ENGINE_STATUS_NOT_FOUND
+    );
+    EXPECT_EQ(
+        engine_get_piece_map(engine, unknown_id.c_str(), nullptr, nullptr, 0, nullptr),
+        ENGINE_STATUS_INVALID_ARGUMENT
+    );
+    engine_destroy(engine);
+}
+
+TEST("torrent details describe an added torrent and its piece map") {
+    EngineTestDirectories directories;
+    std::string torrent =
+        "d4:infod6:lengthi4e4:name8:test.bin12:piece lengthi16384e6:pieces20:";
+    torrent.append(20, '\0');
+    torrent += "ee";
+
+    engine_config config;
+    engine_config_init(&config);
+    directories.apply(config);
+    engine* engine = nullptr;
+    EXPECT_EQ(engine_create(&config, &engine), ENGINE_STATUS_OK);
+
+    engine_torrent_request request;
+    engine_torrent_request_init(&request);
+    request.source_type = ENGINE_TORRENT_SOURCE_DATA;
+    request.torrent_data = reinterpret_cast<const std::uint8_t*>(torrent.data());
+    request.torrent_data_size = torrent.size();
+    std::uint64_t request_id = 0;
+    EXPECT_EQ(engine_add_torrent(engine, &request, &request_id), ENGINE_STATUS_OK);
+
+    engine_event event;
+    engine_event_init(&event);
+    bool received_metadata = false;
+    for (int attempt = 0; attempt < 100 && !received_metadata; ++attempt) {
+        const auto status = engine_poll_event(engine, &event);
+        if (status == ENGINE_STATUS_NO_EVENT) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            continue;
+        }
+        received_metadata = event.type == ENGINE_EVENT_TORRENT_METADATA_READY;
+    }
+    EXPECT_TRUE(received_metadata);
+    const std::string torrent_id = event.torrent_id;
+
+    engine_torrent_details details;
+    engine_torrent_details_init(&details);
+    bool described = false;
+    for (int attempt = 0; attempt < 300 && !described; ++attempt) {
+        described =
+            engine_get_torrent_details(engine, torrent_id.c_str(), &details) == ENGINE_STATUS_OK &&
+            details.piece_count == 1;
+        if (!described) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    }
+    EXPECT_TRUE(described);
+    EXPECT_EQ(std::string(details.name), std::string("test.bin"));
+    EXPECT_EQ(details.has_metadata, std::uint8_t(1));
+    EXPECT_EQ(details.piece_length, std::uint32_t(16384));
+    EXPECT_EQ(details.file_count, std::uint32_t(1));
+    EXPECT_EQ(details.total_size, std::uint64_t(4));
+
+    std::size_t piece_count = 0;
+    EXPECT_EQ(
+        engine_get_piece_map(engine, torrent_id.c_str(), nullptr, nullptr, 0, &piece_count),
+        ENGINE_STATUS_OK
+    );
+    EXPECT_EQ(piece_count, std::size_t(1));
+    std::uint8_t state = 0xff;
+    std::uint8_t availability = 0xff;
+    EXPECT_EQ(
+        engine_get_piece_map(engine, torrent_id.c_str(), &state, &availability, 1, &piece_count),
+        ENGINE_STATUS_OK
+    );
+    EXPECT_TRUE(state <= ENGINE_PIECE_BLOCKING);
+    EXPECT_EQ(availability, std::uint8_t(0));
+
+    std::size_t peer_count = 1;
+    EXPECT_EQ(
+        engine_get_peers(engine, torrent_id.c_str(), nullptr, 0, 0, &peer_count),
+        ENGINE_STATUS_OK
+    );
+    EXPECT_EQ(peer_count, std::size_t(0));
+    engine_destroy(engine);
+}
+
 TEST("torrent bytes expose a canonical zero-based metadata snapshot") {
     EngineTestDirectories directories;
     std::string torrent =

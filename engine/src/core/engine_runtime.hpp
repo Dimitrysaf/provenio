@@ -1,6 +1,7 @@
 #ifndef ENGINE_ENGINE_RUNTIME_HPP
 #define ENGINE_ENGINE_RUNTIME_HPP
 
+#include <chrono>
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
@@ -11,6 +12,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <vector>
 
 #include "engine/engine.h"
 #include "torrent/protocol_backend.hpp"
@@ -67,6 +69,27 @@ public:
         std::uint64_t target_bytes,
         std::uint64_t& request_id
     );
+    [[nodiscard]] engine_status set_upload_mode(
+        engine_upload_mode upload_mode,
+        std::uint64_t upload_limit_bytes_per_second
+    );
+    [[nodiscard]] engine_status get_torrent_details(
+        const std::string& torrent_id,
+        engine_torrent_details& details
+    );
+    [[nodiscard]] engine_status get_peers(
+        const std::string& torrent_id,
+        std::vector<torrent::PeerDetails>& peers
+    );
+    [[nodiscard]] engine_status get_trackers(
+        const std::string& torrent_id,
+        std::vector<torrent::TrackerDetails>& trackers
+    );
+    [[nodiscard]] engine_status get_piece_map(
+        const std::string& torrent_id,
+        std::vector<std::uint8_t>& states,
+        std::vector<std::uint8_t>& availability
+    );
 
 private:
     enum class CommandType {
@@ -75,6 +98,7 @@ private:
         stop_stream,
         reclaim_disk_cache,
         remove_torrent,
+        set_upload_mode,
     };
 
     struct Command {
@@ -86,6 +110,7 @@ private:
         std::uint32_t file_index = 0;
         torrent::TorrentFileInfo file;
         std::uint64_t target_bytes = 0;
+        engine_upload_mode upload_mode = ENGINE_UPLOAD_DISABLED;
     };
 
     [[nodiscard]] engine_status enqueue(Command command, std::uint64_t& request_id);
@@ -108,6 +133,9 @@ private:
     std::mutex stats_mutex_;
     engine_stats stats_{};
     std::unordered_map<std::string, engine_stream_stats> stream_stats_;
+    std::mutex details_mutex_;
+    std::unordered_map<std::string, torrent::TorrentDetails> torrent_details_;
+    std::chrono::steady_clock::time_point next_details_refresh_{};
     std::thread worker_;
     bool stopping_ = false;
     std::uint64_t next_request_id_ = 1;

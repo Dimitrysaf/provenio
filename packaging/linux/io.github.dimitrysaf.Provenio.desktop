@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Provenio
+Comment=Stream movies and shows
+Exec=provenio %u
+Icon=io.github.dimitrysaf.Provenio
+Terminal=false
+Categories=AudioVideo;Video;Player;TV;
+Keywords=movies;shows;streaming;torrent;
+StartupWMClass=io-github-dimitrysaf-provenio-MainKt
+MimeType=x-scheme-handler/provenio;x-scheme-handler/stremio;

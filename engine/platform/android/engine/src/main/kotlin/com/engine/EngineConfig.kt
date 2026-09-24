@@ -21,7 +21,7 @@ public data class EngineConfig(
     val diskCacheCapacityBytes: Long = 2L * 1024L * 1024L * 1024L,
     val torrentProfile: TorrentProfile = TorrentProfile.Balanced,
     val listenPort: Int = 0,
-    val uploadMode: UploadMode = UploadMode.Unlimited,
+    val uploadMode: UploadMode = UploadMode.Disabled,
     val uploadLimitBytesPerSecond: Long = 0L,
     val streamInactivityTimeoutMilliseconds: Int = 30_000,
     val warmTorrentTimeoutMilliseconds: Int = 60_000,

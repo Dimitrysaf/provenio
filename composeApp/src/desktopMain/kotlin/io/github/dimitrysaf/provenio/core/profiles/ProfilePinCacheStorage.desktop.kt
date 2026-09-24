@@ -1,0 +1,33 @@
+package io.github.dimitrysaf.provenio.core.profiles
+
+import io.github.dimitrysaf.provenio.desktop.Context
+import io.github.dimitrysaf.provenio.desktop.SharedPreferences
+
+actual object ProfilePinCacheStorage {
+    private const val preferencesName = "provenio_profile_pin_cache"
+
+    private var preferences: SharedPreferences? = null
+
+    fun initialize(context: Context) {
+        preferences = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
+    }
+
+    actual fun loadPayload(profileIndex: Int): String? =
+        preferences?.getString(payloadKey(profileIndex), null)
+
+    actual fun savePayload(profileIndex: Int, payload: String) {
+        preferences
+            ?.edit()
+            ?.putString(payloadKey(profileIndex), payload)
+            ?.commit()
+    }
+
+    actual fun removePayload(profileIndex: Int) {
+        preferences
+            ?.edit()
+            ?.remove(payloadKey(profileIndex))
+            ?.commit()
+    }
+
+    private fun payloadKey(profileIndex: Int): String = "profile_pin_cache_$profileIndex"
+}

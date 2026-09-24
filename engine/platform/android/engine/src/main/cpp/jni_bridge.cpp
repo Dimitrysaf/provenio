@@ -2,9 +2,11 @@
 
 #include "engine/engine.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -546,6 +548,338 @@ Java_com_engine_internal_NativeBridge_nativeGetStreamStats(
     const auto result = env->NewLongArray(static_cast<jsize>(values.size()));
     if (result != nullptr) {
         env->SetLongArrayRegion(result, 0, static_cast<jsize>(values.size()), values.data());
+    }
+    return result;
+}
+
+namespace {
+
+// The snapshot can grow between the sizing call and the copy, so retry with the
+// larger count a few times before settling for what fits.
+template <typename Element, typename Read>
+engine_status read_list(std::vector<Element>& output, Read read) {
+    std::size_t count = 0;
+    auto status = read(static_cast<Element*>(nullptr), std::size_t{0}, &count);
+    for (int attempt = 0; attempt < 3 && status == ENGINE_STATUS_OK; ++attempt) {
+        output.assign(count + 4, Element{});
+        std::size_t available = 0;
+        status = read(output.data(), output.size(), &available);
+        if (status != ENGINE_STATUS_OK || available <= output.size()) {
+            output.resize(std::min(available, output.size()));
+            return status;
+        }
+        count = available;
+    }
+    output.clear();
+    return status;
+}
+
+jlongArray make_long_array(JNIEnv* const env, const jlong* const values, const jsize size) {
+    const auto result = env->NewLongArray(size);
+    if (result != nullptr) {
+        env->SetLongArrayRegion(result, 0, size, values);
+    }
+    return result;
+}
+
+jbyteArray make_byte_array(JNIEnv* const env, const std::vector<std::uint8_t>& values) {
+    const auto size = static_cast<jsize>(values.size());
+    const auto result = env->NewByteArray(size);
+    if (result != nullptr && size > 0) {
+        env->SetByteArrayRegion(
+            result,
+            0,
+            size,
+            reinterpret_cast<const jbyte*>(values.data())
+        );
+    }
+    return result;
+}
+
+jobjectArray make_peer_payloads(JNIEnv* const env, const std::vector<engine_peer>& peers) {
+    const auto peer_class = env->FindClass("com/engine/internal/NativePeerPayload");
+    if (peer_class == nullptr) {
+        return nullptr;
+    }
+    const auto constructor = env->GetMethodID(
+        peer_class,
+        "<init>",
+        "([JLjava/lang/String;Ljava/lang/String;)V"
+    );
+    const auto result = constructor == nullptr
+        ? nullptr
+        : env->NewObjectArray(static_cast<jsize>(peers.size()), peer_class, nullptr);
+    if (result != nullptr) {
+        for (std::size_t index = 0; index < peers.size(); ++index) {
+            const auto& peer = peers[index];
+            const std::array<jlong, 11> values{
+                static_cast<jlong>(peer.flags),
+                static_cast<jlong>(peer.source),
+                static_cast<jlong>(peer.progress_ppm),
+                static_cast<jlong>(peer.download_rate_bytes_per_second),
+                static_cast<jlong>(peer.upload_rate_bytes_per_second),
+                static_cast<jlong>(peer.total_download_bytes),
+                static_cast<jlong>(peer.total_upload_bytes),
+                static_cast<jlong>(peer.rtt_milliseconds),
+                static_cast<jlong>(peer.download_queue_length),
+                static_cast<jlong>(peer.hash_failures),
+                static_cast<jlong>(peer.downloading_piece),
+            };
+            const auto value_array = make_long_array(
+                env,
+                values.data(),
+                static_cast<jsize>(values.size())
+            );
+            const auto address = make_utf8(env, peer.address);
+            const auto client = make_utf8(env, peer.client);
+            const auto payload = env->NewObject(peer_class, constructor, value_array, address, client);
+            env->SetObjectArrayElement(result, static_cast<jsize>(index), payload);
+            env->DeleteLocalRef(payload);
+            env->DeleteLocalRef(client);
+            env->DeleteLocalRef(address);
+            env->DeleteLocalRef(value_array);
+            if (env->ExceptionCheck()) {
+                break;
+            }
+        }
+    }
+    env->DeleteLocalRef(peer_class);
+    return result;
+}
+
+jobjectArray make_tracker_payloads(
+    JNIEnv* const env,
+    const std::vector<engine_tracker>& trackers
+) {
+    const auto tracker_class = env->FindClass("com/engine/internal/NativeTrackerPayload");
+    if (tracker_class == nullptr) {
+        return nullptr;
+    }
+    const auto constructor = env->GetMethodID(
+        tracker_class,
+        "<init>",
+        "([JLjava/lang/String;Ljava/lang/String;)V"
+    );
+    const auto result = constructor == nullptr
+        ? nullptr
+        : env->NewObjectArray(static_cast<jsize>(trackers.size()), tracker_class, nullptr);
+    if (result != nullptr) {
+        for (std::size_t index = 0; index < trackers.size(); ++index) {
+            const auto& tracker = trackers[index];
+            const std::array<jlong, 7> values{
+                static_cast<jlong>(tracker.tier),
+                static_cast<jlong>(tracker.status),
+                static_cast<jlong>(tracker.seeds),
+                static_cast<jlong>(tracker.leechers),
+                static_cast<jlong>(tracker.downloaded),
+                static_cast<jlong>(tracker.failures),
+                static_cast<jlong>(tracker.next_announce_seconds),
+            };
+            const auto value_array = make_long_array(
+                env,
+                values.data(),
+                static_cast<jsize>(values.size())
+            );
+            const auto url = make_utf8(env, tracker.url);
+            const auto message = make_utf8(env, tracker.message);
+            const auto payload = env->NewObject(
+                tracker_class,
+                constructor,
+                value_array,
+                url,
+                message
+            );
+            env->SetObjectArrayElement(result, static_cast<jsize>(index), payload);
+            env->DeleteLocalRef(payload);
+            env->DeleteLocalRef(message);
+            env->DeleteLocalRef(url);
+            env->DeleteLocalRef(value_array);
+            if (env->ExceptionCheck()) {
+                break;
+            }
+        }
+    }
+    env->DeleteLocalRef(tracker_class);
+    return result;
+}
+
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_engine_internal_NativeBridge_nativeSetUploadMode(
+    JNIEnv*,
+    jobject,
+    const jlong handle,
+    const jint upload_mode,
+    const jlong upload_limit
+) {
+    if (upload_limit < 0) {
+        return static_cast<jint>(ENGINE_STATUS_INVALID_ARGUMENT);
+    }
+    return static_cast<jint>(engine_set_upload_mode(
+        engine_from_handle(handle),
+        static_cast<engine_upload_mode>(upload_mode),
+        static_cast<std::uint64_t>(upload_limit)
+    ));
+}
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_engine_internal_NativeBridge_nativeGetTorrentDetails(
+    JNIEnv* const env,
+    jobject,
+    const jlong handle,
+    jstring torrent_id_value
+) {
+    std::string torrent_id;
+    if (!read_utf8(env, torrent_id_value, torrent_id)) {
+        return nullptr;
+    }
+    const auto native = engine_from_handle(handle);
+    engine_torrent_details details{};
+    engine_torrent_details_init(&details);
+    auto status = engine_get_torrent_details(native, torrent_id.c_str(), &details);
+
+    std::vector<engine_peer> peers;
+    std::vector<engine_tracker> trackers;
+    std::vector<std::uint8_t> piece_states;
+    std::vector<std::uint8_t> piece_availability;
+    if (status == ENGINE_STATUS_OK) {
+        status = read_list(peers, [&](engine_peer* const output, const std::size_t capacity, std::size_t* const count) {
+            return engine_get_peers(
+                native,
+                torrent_id.c_str(),
+                output,
+                sizeof(engine_peer),
+                capacity,
+                count
+            );
+        });
+    }
+    if (status == ENGINE_STATUS_OK) {
+        status = read_list(trackers, [&](engine_tracker* const output, const std::size_t capacity, std::size_t* const count) {
+            return engine_get_trackers(
+                native,
+                torrent_id.c_str(),
+                output,
+                sizeof(engine_tracker),
+                capacity,
+                count
+            );
+        });
+    }
+    if (status == ENGINE_STATUS_OK) {
+        std::size_t count = 0;
+        status = engine_get_piece_map(native, torrent_id.c_str(), nullptr, nullptr, 0, &count);
+        if (status == ENGINE_STATUS_OK) {
+            piece_states.assign(count, ENGINE_PIECE_MISSING);
+            piece_availability.assign(count, 0);
+            std::size_t available = 0;
+            status = engine_get_piece_map(
+                native,
+                torrent_id.c_str(),
+                piece_states.data(),
+                piece_availability.data(),
+                count,
+                &available
+            );
+            // A piece map only changes size when metadata arrives; keep what was copied.
+            piece_states.resize(std::min(available, count));
+            piece_availability.resize(std::min(available, count));
+        }
+    }
+    if (status != ENGINE_STATUS_OK) {
+        peers.clear();
+        trackers.clear();
+        piece_states.clear();
+        piece_availability.clear();
+    }
+
+    const std::array<jlong, 32> values{
+        static_cast<jlong>(details.state),
+        static_cast<jlong>(details.has_metadata),
+        static_cast<jlong>(details.piece_count),
+        static_cast<jlong>(details.piece_length),
+        static_cast<jlong>(details.pieces_have),
+        static_cast<jlong>(details.file_count),
+        static_cast<jlong>(details.progress_ppm),
+        static_cast<jlong>(details.distributed_copies_milli),
+        static_cast<jlong>(details.connected_peers),
+        static_cast<jlong>(details.connected_seeds),
+        static_cast<jlong>(details.known_peers),
+        static_cast<jlong>(details.known_seeds),
+        static_cast<jlong>(details.connect_candidates),
+        static_cast<jlong>(details.swarm_seeds),
+        static_cast<jlong>(details.swarm_leechers),
+        static_cast<jlong>(details.total_size),
+        static_cast<jlong>(details.total_wanted),
+        static_cast<jlong>(details.total_wanted_done),
+        static_cast<jlong>(details.total_done),
+        static_cast<jlong>(details.download_rate_bytes_per_second),
+        static_cast<jlong>(details.upload_rate_bytes_per_second),
+        static_cast<jlong>(details.download_payload_rate_bytes_per_second),
+        static_cast<jlong>(details.upload_payload_rate_bytes_per_second),
+        static_cast<jlong>(details.session_payload_download_bytes),
+        static_cast<jlong>(details.session_payload_upload_bytes),
+        static_cast<jlong>(details.all_time_download_bytes),
+        static_cast<jlong>(details.all_time_upload_bytes),
+        static_cast<jlong>(details.failed_bytes),
+        static_cast<jlong>(details.redundant_bytes),
+        static_cast<jlong>(details.added_time_unix_seconds),
+        static_cast<jlong>(details.active_seconds),
+        static_cast<jlong>(details.next_announce_seconds),
+    };
+    const auto value_array = make_long_array(env, values.data(), static_cast<jsize>(values.size()));
+    const auto name = make_utf8(env, details.name);
+    const auto current_tracker = make_utf8(env, details.current_tracker);
+    const auto peer_array = make_peer_payloads(env, peers);
+    const auto tracker_array = make_tracker_payloads(env, trackers);
+    const auto state_array = make_byte_array(env, piece_states);
+    const auto availability_array = make_byte_array(env, piece_availability);
+    jobject result = nullptr;
+    if (!env->ExceptionCheck() && value_array != nullptr && name != nullptr &&
+        current_tracker != nullptr && peer_array != nullptr && tracker_array != nullptr &&
+        state_array != nullptr && availability_array != nullptr) {
+        const auto result_class = env->FindClass("com/engine/internal/NativeTorrentDetailsPayload");
+        const auto constructor = result_class == nullptr
+            ? nullptr
+            : env->GetMethodID(
+                result_class,
+                "<init>",
+                "(I[JLjava/lang/String;Ljava/lang/String;"
+                "[Lcom/engine/internal/NativePeerPayload;"
+                "[Lcom/engine/internal/NativeTrackerPayload;[B[B)V"
+            );
+        if (constructor != nullptr) {
+            result = env->NewObject(
+                result_class,
+                constructor,
+                static_cast<jint>(status),
+                value_array,
+                name,
+                current_tracker,
+                peer_array,
+                tracker_array,
+                state_array,
+                availability_array
+            );
+        }
+        if (result_class != nullptr) {
+            env->DeleteLocalRef(result_class);
+        }
+    }
+    const jobject locals[] = {
+        value_array,
+        name,
+        current_tracker,
+        peer_array,
+        tracker_array,
+        state_array,
+        availability_array,
+    };
+    for (const auto local : locals) {
+        if (local != nullptr) {
+            env->DeleteLocalRef(local);
+        }
     }
     return result;
 }

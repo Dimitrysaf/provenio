@@ -1,0 +1,40 @@
+name: Build Flatpak
+description: Builds the Linux desktop app as dist/Provenio.flatpak and uploads it as an artifact.
+
+inputs:
+  artifact-name:
+    description: Name of the uploaded artifact
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq flatpak flatpak-builder ninja-build ccache > /dev/null
+
+    # flatpak-builder's per-module cache: libass, libplacebo, FFmpeg and mpv only rebuild when the
+    # manifest changes.
+    - uses: actions/cache@v4
+      with:
+        path: build/linux/flatpak-state
+        key: flatpak-${{ runner.arch }}-${{ hashFiles('packaging/linux/io.github.dimitrysaf.Provenio.yml') }}-${{ github.sha }}
+        restore-keys: |
+          flatpak-${{ runner.arch }}-${{ hashFiles('packaging/linux/io.github.dimitrysaf.Provenio.yml') }}-
+          flatpak-${{ runner.arch }}-
+
+    - uses: actions/cache@v4
+      with:
+        path: build/linux/deps
+        key: linux-deps-${{ runner.arch }}-${{ hashFiles('engine/scripts/build-linux-openssl.sh') }}
+
+    - shell: bash
+      run: scripts/build-linux.sh
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: dist/Provenio.flatpak
+        if-no-files-found: error
+        retention-days: 14

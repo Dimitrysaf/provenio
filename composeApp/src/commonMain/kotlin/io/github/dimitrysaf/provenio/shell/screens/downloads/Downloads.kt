@@ -17,6 +17,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Pause
@@ -56,6 +57,7 @@ import io.github.dimitrysaf.provenio.shell.components.ListSubheader
 import io.github.dimitrysaf.provenio.shell.components.ScreenScaffold
 import io.github.dimitrysaf.provenio.shell.components.StatusModal
 import io.github.dimitrysaf.provenio.shell.components.ToastController
+import io.github.dimitrysaf.provenio.shell.screens.p2p.TorrentDetailsSheet
 import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
 import io.github.dimitrysaf.provenio.shell.screens.settings.segmentShape
 import provenio.composeapp.generated.resources.*
@@ -322,6 +324,7 @@ private fun DownloadRow(
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
+    var showTorrentDetails by remember { mutableStateOf(false) }
     val displayTitle = item.displayTitle()
     val displaySubtitle = downloadDisplaySubtitle(item = item, displayTitle = displayTitle)
     val failureMessage = item.errorMessage?.takeIf { it.isNotBlank() }
@@ -403,6 +406,16 @@ private fun DownloadRow(
                             }
                         }
                     }
+                    // Only a running torrent download holds the engine, so only it has live details.
+                    if (item.torrentInfoHash != null && item.status == DownloadStatus.Downloading) {
+                        DownloadMenuItem(
+                            label = stringResource(Res.string.torrent_details_title),
+                            icon = Icons.Rounded.Info,
+                        ) {
+                            menuOpen = false
+                            showTorrentDetails = true
+                        }
+                    }
                     DropdownMenuItem(
                         text = { Text(stringResource(Res.string.action_delete)) },
                         leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
@@ -420,6 +433,13 @@ private fun DownloadRow(
         },
     ) {
         Text(displayTitle)
+    }
+
+    if (showTorrentDetails) {
+        TorrentDetailsSheet(
+            infoHash = item.torrentInfoHash,
+            onDismiss = { showTorrentDetails = false },
+        )
     }
 
     if (showError && failureMessage != null) {

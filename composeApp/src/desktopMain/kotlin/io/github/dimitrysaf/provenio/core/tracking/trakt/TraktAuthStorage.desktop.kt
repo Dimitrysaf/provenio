@@ -1,0 +1,33 @@
+package io.github.dimitrysaf.provenio.core.tracking.trakt
+
+import io.github.dimitrysaf.provenio.desktop.Context
+import io.github.dimitrysaf.provenio.desktop.SharedPreferences
+import io.github.dimitrysaf.provenio.core.storage.ProfileScopedKey
+
+internal actual object TraktAuthStorage {
+    private const val preferencesName = "provenio_trakt_auth"
+    private const val payloadKey = "trakt_auth_payload"
+
+    private var preferences: SharedPreferences? = null
+
+    fun initialize(context: Context) {
+        preferences = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
+    }
+
+    actual fun loadPayload(profileId: Int): String? =
+        preferences?.getString(ProfileScopedKey.of(payloadKey, profileId), null)
+
+    actual fun savePayload(profileId: Int, payload: String) {
+        preferences
+            ?.edit()
+            ?.putString(ProfileScopedKey.of(payloadKey, profileId), payload)
+            ?.apply()
+    }
+
+    actual fun removeProfile(profileId: Int) {
+        preferences
+            ?.edit()
+            ?.remove(ProfileScopedKey.of(payloadKey, profileId))
+            ?.apply()
+    }
+}

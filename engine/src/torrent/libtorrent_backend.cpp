@@ -4,6 +4,7 @@
 #include "storage/atomic_file.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cctype>
 #include <filesystem>
@@ -19,18 +20,24 @@
 #include <vector>
 
 #include <libtorrent/alert.hpp>
+#include <libtorrent/announce_entry.hpp>
 #include <libtorrent/alert_types.hpp>
 #include <libtorrent/client_data.hpp>
 #include <libtorrent/download_priority.hpp>
+#include <libtorrent/extensions.hpp>
 #include <libtorrent/hex.hpp>
 #include <libtorrent/load_torrent.hpp>
 #include <libtorrent/magnet_uri.hpp>
+#include <libtorrent/peer_connection_handle.hpp>
+#include <libtorrent/peer_info.hpp>
+#include <libtorrent/peer_request.hpp>
 #include <libtorrent/read_resume_data.hpp>
 #include <libtorrent/session.hpp>
 #include <libtorrent/session_params.hpp>
 #include <libtorrent/settings_pack.hpp>
 #include <libtorrent/torrent_status.hpp>
 #include <libtorrent/torrent_flags.hpp>
+#include <libtorrent/torrent_info.hpp>
 #include <libtorrent/version.hpp>
 #include <libtorrent/write_resume_data.hpp>
 
@@ -95,6 +102,84 @@ int bounded_rate(const std::uint64_t value) {
     ));
 }
 
+// Choking alone does not stop uploads: optimistic unchokes and BEP 6 allowed-fast pieces can
+// still serve a choked peer. The session is kept from offering slots, and UploadGate refuses
+// whatever requests still arrive.
+void apply_upload_mode(
+    lt::settings_pack& settings,
+    const engine_upload_mode upload_mode,
+    const std::uint64_t upload_limit_bytes_per_second
+) {
+    const auto defaults = lt::default_settings();
+    const bool disabled = upload_mode == ENGINE_UPLOAD_DISABLED;
+    settings.set_int(
+        lt::settings_pack::upload_rate_limit,
+        upload_mode == ENGINE_UPLOAD_LIMITED ? bounded_rate(upload_limit_bytes_per_second) : 0
+    );
+    settings.set_int(
+        lt::settings_pack::unchoke_slots_limit,
+        disabled ? 0 : defaults.get_int(lt::settings_pack::unchoke_slots_limit)
+    );
+    settings.set_int(
+        lt::settings_pack::allowed_fast_set_size,
+        disabled ? 0 : defaults.get_int(lt::settings_pack::allowed_fast_set_size)
+    );
+}
+
+// Drops every block request a peer sends while uploading is off, so not a single byte of
+// payload leaves the device. Returning true tells libtorrent the request was handled.
+class UploadGatePeer final : public lt::peer_plugin {
+public:
+    explicit UploadGatePeer(std::shared_ptr<const std::atomic<bool>> allowed)
+        : allowed_(std::move(allowed)) {}
+
+    bool on_request(const lt::peer_request&) override {
+        return !allowed_->load(std::memory_order_acquire);
+    }
+
+private:
+    std::shared_ptr<const std::atomic<bool>> allowed_;
+};
+
+class UploadGateTorrent final : public lt::torrent_plugin {
+public:
+    explicit UploadGateTorrent(std::shared_ptr<const std::atomic<bool>> allowed)
+        : allowed_(std::move(allowed)) {}
+
+    std::shared_ptr<lt::peer_plugin> new_connection(const lt::peer_connection_handle&) override {
+        return std::make_shared<UploadGatePeer>(allowed_);
+    }
+
+private:
+    std::shared_ptr<const std::atomic<bool>> allowed_;
+};
+
+class UploadGate final : public lt::plugin {
+public:
+    explicit UploadGate(std::shared_ptr<const std::atomic<bool>> allowed)
+        : allowed_(std::move(allowed)) {}
+
+    std::shared_ptr<lt::torrent_plugin> new_torrent(
+        const lt::torrent_handle&,
+        lt::client_data_t
+    ) override {
+        return std::make_shared<UploadGateTorrent>(allowed_);
+    }
+
+private:
+    std::shared_ptr<const std::atomic<bool>> allowed_;
+};
+
+// Installed through the session parameters so the gate is in place before the session opens
+// a single connection.
+lt::session_params with_upload_gate(
+    lt::session_params params,
+    std::shared_ptr<const std::atomic<bool>> allowed
+) {
+    params.extensions.push_back(std::make_shared<UploadGate>(std::move(allowed)));
+    return params;
+}
+
 lt::settings_pack make_settings(const ProtocolBackendConfig& config) {
     lt::settings_pack settings;
     const auto profile = torrent_profile_settings(config.torrent_profile);
@@ -133,17 +218,10 @@ lt::settings_pack make_settings(const ProtocolBackendConfig& config) {
             lt::alert_category::status |
             lt::alert_category::performance_warning |
             lt::alert_category::dht |
-            lt::alert_category::file_progress
+            lt::alert_category::file_progress |
+            lt::alert_category::upload
     );
-    if (config.upload_mode == ENGINE_UPLOAD_LIMITED) {
-        settings.set_int(
-            lt::settings_pack::upload_rate_limit,
-            bounded_rate(config.upload_limit_bytes_per_second)
-        );
-    }
-    if (config.upload_mode == ENGINE_UPLOAD_DISABLED) {
-        settings.set_int(lt::settings_pack::unchoke_slots_limit, 0);
-    }
+    apply_upload_mode(settings, config.upload_mode, config.upload_limit_bytes_per_second);
     return settings;
 }
 
@@ -211,6 +289,148 @@ std::uint32_t bounded_count(const std::uint64_t value) {
         value,
         static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max())
     ));
+}
+
+std::int32_t bounded_signed(const std::int64_t value) {
+    return static_cast<std::int32_t>(std::clamp<std::int64_t>(
+        value,
+        -1,
+        std::numeric_limits<std::int32_t>::max()
+    ));
+}
+
+template <typename Duration>
+std::int64_t whole_seconds(const Duration duration) {
+    return std::chrono::duration_cast<std::chrono::seconds>(duration).count();
+}
+
+engine_torrent_state torrent_state(const lt::torrent_status::state_t state) {
+    switch (state) {
+    case lt::torrent_status::checking_files:
+        return ENGINE_TORRENT_STATE_CHECKING_FILES;
+    case lt::torrent_status::downloading_metadata:
+        return ENGINE_TORRENT_STATE_DOWNLOADING_METADATA;
+    case lt::torrent_status::downloading:
+        return ENGINE_TORRENT_STATE_DOWNLOADING;
+    case lt::torrent_status::finished:
+        return ENGINE_TORRENT_STATE_FINISHED;
+    case lt::torrent_status::seeding:
+        return ENGINE_TORRENT_STATE_SEEDING;
+    case lt::torrent_status::checking_resume_data:
+        return ENGINE_TORRENT_STATE_CHECKING_RESUME_DATA;
+    default:
+        return ENGINE_TORRENT_STATE_UNKNOWN;
+    }
+}
+
+PeerDetails peer_details(const lt::peer_info& peer) {
+    PeerDetails details;
+    const auto flag = [&](const lt::peer_flags_t mask, const std::uint32_t value) {
+        if (peer.flags & mask) {
+            details.flags |= value;
+        }
+    };
+    flag(lt::peer_info::seed, ENGINE_PEER_FLAG_SEED);
+    flag(lt::peer_info::interesting, ENGINE_PEER_FLAG_INTERESTING);
+    flag(lt::peer_info::choked, ENGINE_PEER_FLAG_CHOKED);
+    flag(lt::peer_info::remote_interested, ENGINE_PEER_FLAG_REMOTE_INTERESTED);
+    flag(lt::peer_info::remote_choked, ENGINE_PEER_FLAG_REMOTE_CHOKED);
+    flag(lt::peer_info::snubbed, ENGINE_PEER_FLAG_SNUBBED);
+    flag(lt::peer_info::optimistic_unchoke, ENGINE_PEER_FLAG_OPTIMISTIC_UNCHOKE);
+    flag(lt::peer_info::outgoing_connection, ENGINE_PEER_FLAG_OUTGOING);
+    flag(lt::peer_info::rc4_encrypted, ENGINE_PEER_FLAG_ENCRYPTED);
+    flag(lt::peer_info::plaintext_encrypted, ENGINE_PEER_FLAG_ENCRYPTED);
+    flag(lt::peer_info::utp_socket, ENGINE_PEER_FLAG_UTP);
+    flag(lt::peer_info::connecting, ENGINE_PEER_FLAG_CONNECTING);
+    flag(lt::peer_info::handshake, ENGINE_PEER_FLAG_HANDSHAKE);
+    flag(lt::peer_info::on_parole, ENGINE_PEER_FLAG_ON_PAROLE);
+    flag(lt::peer_info::upload_only, ENGINE_PEER_FLAG_UPLOAD_ONLY);
+    flag(lt::peer_info::endgame_mode, ENGINE_PEER_FLAG_ENDGAME);
+    flag(lt::peer_info::holepunched, ENGINE_PEER_FLAG_HOLEPUNCHED);
+    if (peer.connection_type != lt::peer_info::standard_bittorrent) {
+        details.flags |= ENGINE_PEER_FLAG_WEB_SEED;
+    }
+    const auto source = [&](const lt::peer_source_flags_t mask, const std::uint32_t value) {
+        if (peer.source & mask) {
+            details.source |= value;
+        }
+    };
+    source(lt::peer_info::tracker, ENGINE_PEER_SOURCE_TRACKER);
+    source(lt::peer_info::dht, ENGINE_PEER_SOURCE_DHT);
+    source(lt::peer_info::pex, ENGINE_PEER_SOURCE_PEX);
+    source(lt::peer_info::lsd, ENGINE_PEER_SOURCE_LSD);
+    source(lt::peer_info::resume_data, ENGINE_PEER_SOURCE_RESUME_DATA);
+    source(lt::peer_info::incoming, ENGINE_PEER_SOURCE_INCOMING);
+    details.progress_ppm = bounded_count(nonnegative(peer.progress_ppm));
+    const auto address = peer.ip.address();
+    details.address = address.is_v6()
+        ? "[" + address.to_string() + "]:" + std::to_string(peer.ip.port())
+        : address.to_string() + ":" + std::to_string(peer.ip.port());
+    details.client = peer.client;
+    details.download_rate_bytes_per_second = nonnegative(peer.payload_down_speed);
+    details.upload_rate_bytes_per_second = nonnegative(peer.payload_up_speed);
+    details.total_download_bytes = nonnegative(peer.total_download);
+    details.total_upload_bytes = nonnegative(peer.total_upload);
+    details.rtt_milliseconds = bounded_count(nonnegative(peer.rtt));
+    details.download_queue_length = bounded_count(nonnegative(peer.download_queue_length));
+    details.hash_failures = bounded_count(nonnegative(peer.num_hashfails));
+    details.downloading_piece = static_cast<std::int32_t>(
+        static_cast<int>(peer.downloading_piece_index)
+    );
+    return details;
+}
+
+TrackerDetails tracker_details(const lt::announce_entry& entry) {
+    TrackerDetails details;
+    details.url = entry.url;
+    details.tier = entry.tier;
+    bool working = false;
+    bool updating = false;
+    bool failed = false;
+    bool contacted = false;
+    const auto now = lt::clock_type::now();
+    for (const auto& endpoint : entry.endpoints) {
+        for (const auto& hash : endpoint.info_hashes) {
+            // Announced at least once and not failing since.
+            working = working || (hash.start_sent && hash.fails == 0 && !hash.last_error);
+            updating = updating || hash.updating;
+            contacted = contacted || hash.start_sent || hash.fails > 0;
+            if (hash.last_error) {
+                failed = true;
+                if (details.message.empty()) {
+                    details.message = hash.last_error.message();
+                }
+            }
+            if (details.message.empty() && !hash.message.empty()) {
+                details.message = hash.message;
+            }
+            details.seeds = std::max(details.seeds, bounded_signed(hash.scrape_complete));
+            details.leechers = std::max(
+                details.leechers,
+                bounded_signed(hash.scrape_incomplete)
+            );
+            details.downloaded = std::max(
+                details.downloaded,
+                bounded_signed(hash.scrape_downloaded)
+            );
+            details.failures = std::max(details.failures, static_cast<std::uint32_t>(hash.fails));
+            const auto next = whole_seconds(hash.next_announce - now);
+            if (next >= 0 &&
+                (details.next_announce_seconds < 0 || next < details.next_announce_seconds)) {
+                details.next_announce_seconds = next;
+            }
+        }
+    }
+    if (updating) {
+        details.status = ENGINE_TRACKER_UPDATING;
+    } else if (working) {
+        details.status = ENGINE_TRACKER_WORKING;
+    } else if (failed) {
+        details.status = ENGINE_TRACKER_ERROR;
+    } else {
+        details.status = contacted ? ENGINE_TRACKER_ERROR : ENGINE_TRACKER_NOT_CONTACTED;
+    }
+    return details;
 }
 
 class LibtorrentBackend final : public ProtocolBackend {
@@ -535,6 +755,8 @@ public:
                 handle_tracker_error(*tracker_error);
             } else if (const auto* dht = lt::alert_cast<lt::dht_reply_alert>(alert)) {
                 handle_dht_reply(*dht);
+            } else if (const auto* uploaded = lt::alert_cast<lt::block_uploaded_alert>(alert)) {
+                handle_block_uploaded(*uploaded);
             }
         }
         run_periodic_checkpoints(events);
@@ -678,6 +900,110 @@ public:
         return result;
     }
 
+    void set_upload_mode(
+        const engine_upload_mode upload_mode,
+        const std::uint64_t upload_limit_bytes_per_second
+    ) override {
+        // The gate closes first, so turning uploads off takes effect before the session
+        // settings catch up.
+        upload_allowed_->store(upload_mode != ENGINE_UPLOAD_DISABLED, std::memory_order_release);
+        lt::settings_pack settings;
+        apply_upload_mode(settings, upload_mode, upload_limit_bytes_per_second);
+        session_.apply_settings(std::move(settings));
+    }
+
+    std::vector<TorrentDetails> torrent_details() override {
+        std::vector<TorrentDetails> result;
+        result.reserve(telemetry_.size());
+        for (const auto& [id, telemetry] : telemetry_) {
+            if (!handles_.contains(id)) {
+                continue;
+            }
+            auto& details = result.emplace_back();
+            details.torrent_id = id;
+            details.peers = telemetry.peers;
+            details.trackers = telemetry.trackers;
+            if (!telemetry.has_status) {
+                continue;
+            }
+            const auto& status = telemetry.status;
+            details.state = torrent_state(status.state);
+            details.name = status.name;
+            details.current_tracker = status.current_tracker;
+            details.has_metadata = status.has_metadata;
+            details.progress_ppm = bounded_count(nonnegative(status.progress_ppm));
+            details.distributed_copies_milli = status.distributed_copies < 0.0f
+                ? -1
+                : bounded_signed(static_cast<std::int64_t>(status.distributed_copies * 1000.0f));
+            details.connected_peers = bounded_count(nonnegative(status.num_peers));
+            details.connected_seeds = bounded_count(nonnegative(status.num_seeds));
+            details.known_peers = bounded_count(nonnegative(status.list_peers));
+            details.known_seeds = bounded_count(nonnegative(status.list_seeds));
+            details.connect_candidates = bounded_count(nonnegative(status.connect_candidates));
+            details.swarm_seeds = bounded_signed(status.num_complete);
+            details.swarm_leechers = bounded_signed(status.num_incomplete);
+            details.total_wanted = nonnegative(status.total_wanted);
+            details.total_wanted_done = nonnegative(status.total_wanted_done);
+            details.total_done = nonnegative(status.total_done);
+            details.download_rate_bytes_per_second = nonnegative(status.download_rate);
+            details.upload_rate_bytes_per_second = nonnegative(status.upload_rate);
+            details.download_payload_rate_bytes_per_second =
+                nonnegative(status.download_payload_rate);
+            details.upload_payload_rate_bytes_per_second =
+                nonnegative(status.upload_payload_rate);
+            details.session_payload_download_bytes = nonnegative(status.total_payload_download);
+            details.session_payload_upload_bytes = nonnegative(status.total_payload_upload);
+            details.all_time_download_bytes = nonnegative(status.all_time_download);
+            details.all_time_upload_bytes = nonnegative(status.all_time_upload);
+            details.failed_bytes = nonnegative(status.total_failed_bytes);
+            details.redundant_bytes = nonnegative(status.total_redundant_bytes);
+            details.added_time_unix_seconds = static_cast<std::int64_t>(status.added_time);
+            details.active_seconds = whole_seconds(status.active_duration);
+            const auto next_announce = whole_seconds(status.next_announce);
+            details.next_announce_seconds = next_announce >= 0 ? next_announce : -1;
+            // A magnet's torrent_info exists before its metadata does; reading an empty one
+            // trips libtorrent's assertions.
+            if (const auto info = status.torrent_file.lock(); info && info->is_valid()) {
+                details.piece_length = bounded_count(nonnegative(info->piece_length()));
+                details.file_count = bounded_count(nonnegative(info->num_files()));
+                details.total_size = nonnegative(info->total_size());
+            }
+            const auto piece_count = static_cast<std::size_t>(std::max(status.pieces.size(), 0));
+            details.piece_count = bounded_count(piece_count);
+            details.pieces_have = bounded_count(nonnegative(status.num_pieces));
+            details.piece_states.assign(piece_count, ENGINE_PIECE_MISSING);
+            details.piece_availability.assign(piece_count, 0);
+            for (std::size_t piece = 0; piece < piece_count; ++piece) {
+                if (status.pieces[lt::piece_index_t(static_cast<int>(piece))]) {
+                    details.piece_states[piece] =
+                        piece < telemetry.seeded_pieces.size() && telemetry.seeded_pieces[piece]
+                        ? ENGINE_PIECE_SEEDED
+                        : ENGINE_PIECE_HAVE;
+                }
+                if (piece < telemetry.piece_availability.size()) {
+                    details.piece_availability[piece] = static_cast<std::uint8_t>(std::min<std::uint16_t>(
+                        telemetry.piece_availability[piece],
+                        std::numeric_limits<std::uint8_t>::max()
+                    ));
+                }
+            }
+            const auto mark_missing = [&](const std::int64_t piece, const std::uint8_t state) {
+                if (piece >= 0 && static_cast<std::size_t>(piece) < piece_count &&
+                    details.piece_states[static_cast<std::size_t>(piece)] != ENGINE_PIECE_HAVE &&
+                    details.piece_states[static_cast<std::size_t>(piece)] != ENGINE_PIECE_SEEDED) {
+                    details.piece_states[static_cast<std::size_t>(piece)] = state;
+                }
+            };
+            for (const auto& peer : telemetry.peers) {
+                mark_missing(peer.downloading_piece, ENGINE_PIECE_DOWNLOADING);
+            }
+            for (const auto piece : stream_bridge_->blocking_pieces(id)) {
+                mark_missing(piece, ENGINE_PIECE_BLOCKING);
+            }
+        }
+        return result;
+    }
+
 private:
     struct RequestContext {
         std::uint64_t request_id = 0;
@@ -729,6 +1055,13 @@ private:
         std::uint64_t peer_disconnect_turnover = 0;
         std::uint64_t peer_disconnect_other = 0;
         std::uint64_t torrent_finished_events = 0;
+        bool has_status = false;
+        lt::torrent_status status{};
+        std::vector<PeerDetails> peers{};
+        std::vector<std::uint16_t> piece_availability{};
+        std::vector<bool> seeded_pieces{};
+        std::vector<TrackerDetails> trackers{};
+        std::chrono::steady_clock::time_point next_tracker_refresh{};
     };
 
     struct PendingDiskReclaim {
@@ -748,7 +1081,10 @@ private:
           ),
           warm_torrent_timeout_(config.warm_torrent_timeout_milliseconds),
           disk_cache_(payload_directory_, config.disk_cache_capacity_bytes),
-          session_(std::move(bootstrap.params)) {
+          upload_allowed_(std::make_shared<std::atomic<bool>>(
+              config.upload_mode != ENGINE_UPLOAD_DISABLED
+          )),
+          session_(with_upload_gate(std::move(bootstrap.params), upload_allowed_)) {
         if (!bootstrap.diagnostic.empty()) {
             queued_events_.push_back({
                 BackendEventType::torrent_error,
@@ -1072,11 +1408,26 @@ private:
         if (now - last_telemetry_request_ < std::chrono::seconds(1)) {
             return;
         }
-        session_.post_torrent_updates(lt::status_flags_t{});
+        session_.post_torrent_updates(
+            lt::torrent_handle::query_pieces |
+            lt::torrent_handle::query_name |
+            lt::torrent_handle::query_torrent_file |
+            lt::torrent_handle::query_distributed_copies
+        );
         for (const auto& [id, handle] : handles_) {
-            static_cast<void>(id);
-            if (handle.is_valid()) {
-                handle.post_peer_info();
+            if (!handle.is_valid()) {
+                continue;
+            }
+            handle.post_peer_info();
+            // Tracker state changes on announce intervals, so a slower refresh is enough.
+            const auto telemetry = telemetry_.find(id);
+            if (telemetry != telemetry_.end() && now >= telemetry->second.next_tracker_refresh) {
+                auto& trackers = telemetry->second.trackers;
+                trackers.clear();
+                for (const auto& entry : handle.trackers()) {
+                    trackers.push_back(tracker_details(entry));
+                }
+                telemetry->second.next_tracker_refresh = now + std::chrono::seconds(5);
             }
         }
         last_telemetry_request_ = now;
@@ -1276,6 +1627,8 @@ private:
             telemetry.upload_rate = nonnegative(status.upload_payload_rate);
             telemetry.total_download = nonnegative(status.total_payload_download);
             telemetry.total_upload = nonnegative(status.total_payload_upload);
+            telemetry.status = status;
+            telemetry.has_status = true;
         }
     }
 
@@ -1305,7 +1658,22 @@ private:
             const auto value = static_cast<std::uint32_t>(static_cast<int>(piece));
             return std::ranges::find(blocking, value) != blocking.end();
         };
+        std::vector<PeerDetails> peer_list;
+        peer_list.reserve(alert.peer_info.size());
+        std::vector<std::uint16_t> availability;
         for (const auto& peer : alert.peer_info) {
+            peer_list.push_back(peer_details(peer));
+            const auto piece_count = peer.pieces.size();
+            if (piece_count > 0 && availability.size() < static_cast<std::size_t>(piece_count)) {
+                availability.resize(static_cast<std::size_t>(piece_count), 0);
+            }
+            for (int piece = 0; piece < piece_count; ++piece) {
+                if (peer.pieces[lt::piece_index_t(piece)] &&
+                    availability[static_cast<std::size_t>(piece)] !=
+                        std::numeric_limits<std::uint16_t>::max()) {
+                    ++availability[static_cast<std::size_t>(piece)];
+                }
+            }
             if (peer.flags & lt::peer_info::connecting) {
                 ++connecting;
             }
@@ -1349,6 +1717,8 @@ private:
             }
         }
         auto& telemetry = telemetry_[id];
+        telemetry.peers = std::move(peer_list);
+        telemetry.piece_availability = std::move(availability);
         telemetry.interested_peers = bounded_count(interested);
         telemetry.unchoked_peers = bounded_count(unchoked);
         telemetry.downloading_peers = bounded_count(downloading);
@@ -1427,6 +1797,19 @@ private:
             found->second.tracker_error_events != std::numeric_limits<std::uint32_t>::max()) {
             ++found->second.tracker_error_events;
         }
+    }
+
+    void handle_block_uploaded(const lt::block_uploaded_alert& alert) {
+        const auto found = telemetry_.find(torrent_id(alert.handle));
+        const auto piece = static_cast<int>(alert.piece_index);
+        if (found == telemetry_.end() || piece < 0) {
+            return;
+        }
+        auto& seeded = found->second.seeded_pieces;
+        if (seeded.size() <= static_cast<std::size_t>(piece)) {
+            seeded.resize(static_cast<std::size_t>(piece) + 1, false);
+        }
+        seeded[static_cast<std::size_t>(piece)] = true;
     }
 
     void handle_dht_reply(const lt::dht_reply_alert& alert) {
@@ -1726,6 +2109,7 @@ private:
     std::chrono::steady_clock::time_point next_disk_cache_check_{};
     std::string last_disk_cache_error_;
     bool shutting_down_ = false;
+    std::shared_ptr<std::atomic<bool>> upload_allowed_;
     lt::session session_;
     std::unique_ptr<LibtorrentStreamBridge> stream_bridge_;
 };

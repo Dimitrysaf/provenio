@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-#define ENGINE_API_VERSION 3U
+#define ENGINE_API_VERSION 4U
 
 typedef struct engine engine;
 
@@ -200,6 +200,140 @@ typedef struct engine_stream_stats {
     uint64_t schedule_revision;
 } engine_stream_stats;
 
+typedef uint32_t engine_torrent_state;
+enum engine_torrent_state_value {
+    ENGINE_TORRENT_STATE_UNKNOWN = 0,
+    ENGINE_TORRENT_STATE_CHECKING_FILES = 1,
+    ENGINE_TORRENT_STATE_DOWNLOADING_METADATA = 2,
+    ENGINE_TORRENT_STATE_DOWNLOADING = 3,
+    ENGINE_TORRENT_STATE_FINISHED = 4,
+    ENGINE_TORRENT_STATE_SEEDING = 5,
+    ENGINE_TORRENT_STATE_CHECKING_RESUME_DATA = 6
+};
+
+/* Snapshot of one torrent, refreshed about once per second. Counts that the
+ * swarm has not reported (scrape results, availability) are -1. */
+typedef struct engine_torrent_details {
+    uint32_t struct_size;
+    engine_torrent_state state;
+    char name[256];
+    uint8_t name_truncated;
+    uint8_t has_metadata;
+    uint8_t reserved_0[6];
+    char current_tracker[512];
+    uint32_t piece_count;
+    uint32_t piece_length;
+    uint32_t pieces_have;
+    uint32_t file_count;
+    uint32_t progress_ppm;
+    int32_t distributed_copies_milli;
+    uint32_t connected_peers;
+    uint32_t connected_seeds;
+    uint32_t known_peers;
+    uint32_t known_seeds;
+    uint32_t connect_candidates;
+    int32_t swarm_seeds;
+    int32_t swarm_leechers;
+    uint32_t peer_count;
+    uint32_t tracker_count;
+    uint32_t reserved_1;
+    uint64_t total_size;
+    uint64_t total_wanted;
+    uint64_t total_wanted_done;
+    uint64_t total_done;
+    uint64_t download_rate_bytes_per_second;
+    uint64_t upload_rate_bytes_per_second;
+    uint64_t download_payload_rate_bytes_per_second;
+    uint64_t upload_payload_rate_bytes_per_second;
+    uint64_t session_payload_download_bytes;
+    uint64_t session_payload_upload_bytes;
+    uint64_t all_time_download_bytes;
+    uint64_t all_time_upload_bytes;
+    uint64_t failed_bytes;
+    uint64_t redundant_bytes;
+    int64_t added_time_unix_seconds;
+    int64_t active_seconds;
+    int64_t next_announce_seconds;
+} engine_torrent_details;
+
+enum engine_peer_flag_value {
+    ENGINE_PEER_FLAG_SEED = 1u << 0,
+    ENGINE_PEER_FLAG_INTERESTING = 1u << 1,
+    ENGINE_PEER_FLAG_CHOKED = 1u << 2,
+    ENGINE_PEER_FLAG_REMOTE_INTERESTED = 1u << 3,
+    ENGINE_PEER_FLAG_REMOTE_CHOKED = 1u << 4,
+    ENGINE_PEER_FLAG_SNUBBED = 1u << 5,
+    ENGINE_PEER_FLAG_OPTIMISTIC_UNCHOKE = 1u << 6,
+    ENGINE_PEER_FLAG_OUTGOING = 1u << 7,
+    ENGINE_PEER_FLAG_ENCRYPTED = 1u << 8,
+    ENGINE_PEER_FLAG_UTP = 1u << 9,
+    ENGINE_PEER_FLAG_CONNECTING = 1u << 10,
+    ENGINE_PEER_FLAG_HANDSHAKE = 1u << 11,
+    ENGINE_PEER_FLAG_ON_PAROLE = 1u << 12,
+    ENGINE_PEER_FLAG_UPLOAD_ONLY = 1u << 13,
+    ENGINE_PEER_FLAG_ENDGAME = 1u << 14,
+    ENGINE_PEER_FLAG_HOLEPUNCHED = 1u << 15,
+    ENGINE_PEER_FLAG_WEB_SEED = 1u << 16
+};
+
+enum engine_peer_source_value {
+    ENGINE_PEER_SOURCE_TRACKER = 1u << 0,
+    ENGINE_PEER_SOURCE_DHT = 1u << 1,
+    ENGINE_PEER_SOURCE_PEX = 1u << 2,
+    ENGINE_PEER_SOURCE_LSD = 1u << 3,
+    ENGINE_PEER_SOURCE_RESUME_DATA = 1u << 4,
+    ENGINE_PEER_SOURCE_INCOMING = 1u << 5
+};
+
+typedef struct engine_peer {
+    uint32_t struct_size;
+    uint32_t flags;
+    uint32_t source;
+    uint32_t progress_ppm;
+    char address[64];
+    char client[64];
+    uint64_t download_rate_bytes_per_second;
+    uint64_t upload_rate_bytes_per_second;
+    uint64_t total_download_bytes;
+    uint64_t total_upload_bytes;
+    uint32_t rtt_milliseconds;
+    uint32_t download_queue_length;
+    uint32_t hash_failures;
+    int32_t downloading_piece;
+} engine_peer;
+
+typedef uint32_t engine_tracker_status;
+enum engine_tracker_status_value {
+    ENGINE_TRACKER_NOT_CONTACTED = 0,
+    ENGINE_TRACKER_WORKING = 1,
+    ENGINE_TRACKER_UPDATING = 2,
+    ENGINE_TRACKER_ERROR = 3
+};
+
+typedef struct engine_tracker {
+    uint32_t struct_size;
+    uint32_t tier;
+    engine_tracker_status status;
+    int32_t seeds;
+    int32_t leechers;
+    int32_t downloaded;
+    uint32_t failures;
+    uint32_t reserved_0;
+    int64_t next_announce_seconds;
+    char url[512];
+    char message[256];
+} engine_tracker;
+
+typedef uint8_t engine_piece_state;
+enum engine_piece_state_value {
+    ENGINE_PIECE_MISSING = 0,
+    ENGINE_PIECE_HAVE = 1,
+    ENGINE_PIECE_DOWNLOADING = 2,
+    ENGINE_PIECE_BLOCKING = 3,
+    /* Have, and this device has sent it to at least one peer. */
+    ENGINE_PIECE_SEEDED = 4
+};
+
 ENGINE_API uint32_t engine_api_version(void);
 ENGINE_API const char* engine_version_string(void);
 ENGINE_API const char* engine_protocol_backend_version(void);
@@ -286,6 +420,51 @@ ENGINE_API engine_status engine_reclaim_disk_cache(
     uint64_t target_bytes,
     uint64_t* request_id
 );
+/* Changes whether and how fast the engine uploads, effective immediately. With
+ * ENGINE_UPLOAD_DISABLED no block is sent to any peer. */
+ENGINE_API engine_status engine_set_upload_mode(
+    engine* engine,
+    engine_upload_mode upload_mode,
+    uint64_t upload_limit_bytes_per_second
+);
+ENGINE_API void engine_torrent_details_init_sized(
+    engine_torrent_details* details,
+    uint32_t struct_size
+);
+ENGINE_API engine_status engine_get_torrent_details(
+    engine* engine,
+    const char* torrent_id,
+    engine_torrent_details* details
+);
+/* The list getters copy up to `capacity` entries laid out `element_size`
+ * bytes apart and set `*count` to the number available, which may exceed
+ * `capacity`; pass a capacity of 0 to query the count alone. */
+ENGINE_API engine_status engine_get_peers(
+    engine* engine,
+    const char* torrent_id,
+    engine_peer* peers,
+    uint32_t element_size,
+    size_t capacity,
+    size_t* count
+);
+ENGINE_API engine_status engine_get_trackers(
+    engine* engine,
+    const char* torrent_id,
+    engine_tracker* trackers,
+    uint32_t element_size,
+    size_t capacity,
+    size_t* count
+);
+/* One engine_piece_state per piece, and how many connected peers have it
+ * (capped at 255). Either output may be null. */
+ENGINE_API engine_status engine_get_piece_map(
+    engine* engine,
+    const char* torrent_id,
+    uint8_t* states,
+    uint8_t* availability,
+    size_t capacity,
+    size_t* count
+);
 
 #define engine_config_init(value) \
     engine_config_init_sized((value), (uint32_t)sizeof(*(value)))
@@ -301,6 +480,8 @@ ENGINE_API engine_status engine_reclaim_disk_cache(
     engine_stats_init_sized((value), (uint32_t)sizeof(*(value)))
 #define engine_stream_stats_init(value) \
     engine_stream_stats_init_sized((value), (uint32_t)sizeof(*(value)))
+#define engine_torrent_details_init(value) \
+    engine_torrent_details_init_sized((value), (uint32_t)sizeof(*(value)))
 
 #ifdef __cplusplus
 }

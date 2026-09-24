@@ -10,6 +10,7 @@
 #include <new>
 #include <optional>
 #include <string>
+#include <vector>
 
 #if defined(ENGINE_HAS_LIBTORRENT)
 const char* libtorrent_version_string();
@@ -61,6 +62,42 @@ constexpr std::size_t stats_v1_size =
     offsetof(engine_stats, memory_cache_entries) + sizeof(std::uint64_t);
 constexpr std::size_t stream_stats_v1_size =
     offsetof(engine_stream_stats, delivered_bytes) + sizeof(std::uint64_t);
+constexpr std::size_t torrent_details_v1_size =
+    offsetof(engine_torrent_details, next_announce_seconds) + sizeof(std::int64_t);
+constexpr std::size_t peer_v1_size =
+    offsetof(engine_peer, downloading_piece) + sizeof(std::int32_t);
+constexpr std::size_t tracker_v1_size =
+    offsetof(engine_tracker, message) + sizeof(engine_tracker{}.message);
+
+template <std::size_t Size>
+void copy_text(char (&destination)[Size], const std::string& source) {
+    const auto length = std::min(source.size(), Size - 1);
+    std::memcpy(destination, source.data(), length);
+    destination[length] = '\0';
+}
+
+// Writes each snapshot entry into a caller array whose elements may be an older,
+// shorter revision of the structure, so the stride is the caller's element size.
+template <typename Structure, typename Source, typename Convert>
+void copy_elements(
+    Structure* const output,
+    const std::uint32_t element_size,
+    const std::size_t capacity,
+    const std::vector<Source>& source,
+    Convert convert
+) {
+    const auto copied_size = std::min<std::size_t>(element_size, sizeof(Structure));
+    auto* const bytes = reinterpret_cast<unsigned char*>(output);
+    const auto count = std::min(capacity, source.size());
+    for (std::size_t index = 0; index < count; ++index) {
+        Structure element{};
+        convert(source[index], element);
+        element.struct_size = static_cast<std::uint32_t>(copied_size);
+        auto* const destination = bytes + index * element_size;
+        std::memset(destination, 0, element_size);
+        std::memcpy(destination, &element, copied_size);
+    }
+}
 
 template <typename Structure>
 bool initialize_structure(Structure* const value, const std::uint32_t struct_size) {
@@ -200,7 +237,8 @@ void engine_config_init_sized(
     }
     config->memory_cache_capacity_bytes = default_memory_cache_capacity;
     config->disk_cache_capacity_bytes = default_disk_cache_capacity;
-    config->upload_mode = ENGINE_UPLOAD_UNLIMITED;
+    // Uploading is opt-in: a caller that sets nothing never seeds.
+    config->upload_mode = ENGINE_UPLOAD_DISABLED;
     if (struct_size >= config_v2_size) {
         config->stream_inactivity_timeout_milliseconds =
             default_stream_inactivity_timeout_milliseconds;
@@ -642,6 +680,215 @@ engine_status engine_reclaim_disk_cache(
     *request_id = 0;
     try {
         return engine->runtime->reclaim_disk_cache(target_bytes, *request_id);
+    } catch (const std::bad_alloc&) {
+        return ENGINE_STATUS_ALLOCATION_FAILED;
+    } catch (...) {
+        return ENGINE_STATUS_INITIALIZATION_FAILED;
+    }
+}
+
+engine_status engine_set_upload_mode(
+    engine* const engine,
+    const engine_upload_mode upload_mode,
+    const std::uint64_t upload_limit_bytes_per_second
+) {
+    if (engine == nullptr) {
+        return ENGINE_STATUS_INVALID_ARGUMENT;
+    }
+    engine_config config{};
+    config.upload_mode = upload_mode;
+    config.upload_limit_bytes_per_second = upload_limit_bytes_per_second;
+    if (!valid_upload_configuration(config)) {
+        return ENGINE_STATUS_INVALID_ARGUMENT;
+    }
+    try {
+        return engine->runtime->set_upload_mode(upload_mode, upload_limit_bytes_per_second);
+    } catch (const std::bad_alloc&) {
+        return ENGINE_STATUS_ALLOCATION_FAILED;
+    } catch (...) {
+        return ENGINE_STATUS_INITIALIZATION_FAILED;
+    }
+}
+
+void engine_torrent_details_init_sized(
+    engine_torrent_details* const details,
+    const std::uint32_t struct_size
+) {
+    initialize_structure(details, struct_size);
+}
+
+engine_status engine_get_torrent_details(
+    engine* const engine,
+    const char* const torrent_id,
+    engine_torrent_details* const details
+) {
+    if (engine == nullptr || details == nullptr) {
+        return ENGINE_STATUS_INVALID_ARGUMENT;
+    }
+    const auto caller_size = static_cast<std::size_t>(details->struct_size);
+    if (caller_size < torrent_details_v1_size) {
+        return ENGINE_STATUS_INCOMPATIBLE_ABI;
+    }
+    try {
+        const auto normalized = normalize_torrent_id(torrent_id);
+        if (!normalized.has_value()) {
+            return ENGINE_STATUS_INVALID_ARGUMENT;
+        }
+        engine_torrent_details snapshot{};
+        const auto status = engine->runtime->get_torrent_details(*normalized, snapshot);
+        if (status != ENGINE_STATUS_OK) {
+            return status;
+        }
+        snapshot.struct_size = static_cast<std::uint32_t>(
+            std::min(caller_size, sizeof(snapshot))
+        );
+        std::memcpy(details, &snapshot, std::min(caller_size, sizeof(snapshot)));
+        return ENGINE_STATUS_OK;
+    } catch (const std::bad_alloc&) {
+        return ENGINE_STATUS_ALLOCATION_FAILED;
+    } catch (...) {
+        return ENGINE_STATUS_INITIALIZATION_FAILED;
+    }
+}
+
+engine_status engine_get_peers(
+    engine* const engine,
+    const char* const torrent_id,
+    engine_peer* const peers,
+    const std::uint32_t element_size,
+    const std::size_t capacity,
+    std::size_t* const count
+) {
+    if (engine == nullptr || count == nullptr || (capacity > 0 && peers == nullptr)) {
+        return ENGINE_STATUS_INVALID_ARGUMENT;
+    }
+    *count = 0;
+    if (capacity > 0 && element_size < peer_v1_size) {
+        return ENGINE_STATUS_INCOMPATIBLE_ABI;
+    }
+    try {
+        const auto normalized = normalize_torrent_id(torrent_id);
+        if (!normalized.has_value()) {
+            return ENGINE_STATUS_INVALID_ARGUMENT;
+        }
+        std::vector<torrent::PeerDetails> snapshot;
+        const auto status = engine->runtime->get_peers(*normalized, snapshot);
+        if (status != ENGINE_STATUS_OK) {
+            return status;
+        }
+        copy_elements(peers, element_size, capacity, snapshot, [](const auto& source, engine_peer& peer) {
+            peer.flags = source.flags;
+            peer.source = source.source;
+            peer.progress_ppm = source.progress_ppm;
+            copy_text(peer.address, source.address);
+            copy_text(peer.client, source.client);
+            peer.download_rate_bytes_per_second = source.download_rate_bytes_per_second;
+            peer.upload_rate_bytes_per_second = source.upload_rate_bytes_per_second;
+            peer.total_download_bytes = source.total_download_bytes;
+            peer.total_upload_bytes = source.total_upload_bytes;
+            peer.rtt_milliseconds = source.rtt_milliseconds;
+            peer.download_queue_length = source.download_queue_length;
+            peer.hash_failures = source.hash_failures;
+            peer.downloading_piece = source.downloading_piece;
+        });
+        *count = snapshot.size();
+        return ENGINE_STATUS_OK;
+    } catch (const std::bad_alloc&) {
+        return ENGINE_STATUS_ALLOCATION_FAILED;
+    } catch (...) {
+        return ENGINE_STATUS_INITIALIZATION_FAILED;
+    }
+}
+
+engine_status engine_get_trackers(
+    engine* const engine,
+    const char* const torrent_id,
+    engine_tracker* const trackers,
+    const std::uint32_t element_size,
+    const std::size_t capacity,
+    std::size_t* const count
+) {
+    if (engine == nullptr || count == nullptr || (capacity > 0 && trackers == nullptr)) {
+        return ENGINE_STATUS_INVALID_ARGUMENT;
+    }
+    *count = 0;
+    if (capacity > 0 && element_size < tracker_v1_size) {
+        return ENGINE_STATUS_INCOMPATIBLE_ABI;
+    }
+    try {
+        const auto normalized = normalize_torrent_id(torrent_id);
+        if (!normalized.has_value()) {
+            return ENGINE_STATUS_INVALID_ARGUMENT;
+        }
+        std::vector<torrent::TrackerDetails> snapshot;
+        const auto status = engine->runtime->get_trackers(*normalized, snapshot);
+        if (status != ENGINE_STATUS_OK) {
+            return status;
+        }
+        copy_elements(
+            trackers,
+            element_size,
+            capacity,
+            snapshot,
+            [](const auto& source, engine_tracker& tracker) {
+                tracker.tier = source.tier;
+                tracker.status = source.status;
+                tracker.seeds = source.seeds;
+                tracker.leechers = source.leechers;
+                tracker.downloaded = source.downloaded;
+                tracker.failures = source.failures;
+                tracker.next_announce_seconds = source.next_announce_seconds;
+                copy_text(tracker.url, source.url);
+                copy_text(tracker.message, source.message);
+            }
+        );
+        *count = snapshot.size();
+        return ENGINE_STATUS_OK;
+    } catch (const std::bad_alloc&) {
+        return ENGINE_STATUS_ALLOCATION_FAILED;
+    } catch (...) {
+        return ENGINE_STATUS_INITIALIZATION_FAILED;
+    }
+}
+
+engine_status engine_get_piece_map(
+    engine* const engine,
+    const char* const torrent_id,
+    std::uint8_t* const states,
+    std::uint8_t* const availability,
+    const std::size_t capacity,
+    std::size_t* const count
+) {
+    if (engine == nullptr || count == nullptr) {
+        return ENGINE_STATUS_INVALID_ARGUMENT;
+    }
+    *count = 0;
+    try {
+        const auto normalized = normalize_torrent_id(torrent_id);
+        if (!normalized.has_value()) {
+            return ENGINE_STATUS_INVALID_ARGUMENT;
+        }
+        std::vector<std::uint8_t> piece_states;
+        std::vector<std::uint8_t> piece_availability;
+        const auto status = engine->runtime->get_piece_map(
+            *normalized,
+            piece_states,
+            piece_availability
+        );
+        if (status != ENGINE_STATUS_OK) {
+            return status;
+        }
+        const auto copied = std::min(capacity, piece_states.size());
+        if (states != nullptr && copied > 0) {
+            std::memcpy(states, piece_states.data(), copied);
+        }
+        if (availability != nullptr && copied > 0) {
+            const auto available = std::min(copied, piece_availability.size());
+            std::memcpy(availability, piece_availability.data(), available);
+            std::memset(availability + available, 0, copied - available);
+        }
+        *count = piece_states.size();
+        return ENGINE_STATUS_OK;
     } catch (const std::bad_alloc&) {
         return ENGINE_STATUS_ALLOCATION_FAILED;
     } catch (...) {

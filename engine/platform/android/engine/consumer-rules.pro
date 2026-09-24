@@ -5,3 +5,7 @@
 }
 -keep class com.engine.internal.NativeEventPayload { *; }
 -keep class com.engine.internal.NativeFilePayload { *; }
+-keep class com.engine.internal.NativeFilesPayload { *; }
+-keep class com.engine.internal.NativeTorrentDetailsPayload { *; }
+-keep class com.engine.internal.NativePeerPayload { *; }
+-keep class com.engine.internal.NativeTrackerPayload { *; }

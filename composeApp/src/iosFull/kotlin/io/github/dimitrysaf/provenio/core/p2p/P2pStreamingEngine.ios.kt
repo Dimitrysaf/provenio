@@ -119,6 +119,11 @@ actual object P2pStreamingEngine {
     actual val state: StateFlow<P2pStreamingState> = _state.asStateFlow()
     private val _cacheState = MutableStateFlow(P2pCacheUiState())
     actual val cacheState: StateFlow<P2pCacheUiState> = _cacheState.asStateFlow()
+    // The iOS engine build does not expose per-torrent details yet.
+    actual val torrentDetails: StateFlow<P2pTorrentDetails?> =
+        MutableStateFlow<P2pTorrentDetails?>(null).asStateFlow()
+    actual fun acquireTorrentDetails() = Unit
+    actual fun releaseTorrentDetails() = Unit
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val lifecycleMutex = Mutex()

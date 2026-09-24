@@ -12,6 +12,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingState
 import io.github.dimitrysaf.provenio.core.p2p.formatP2pSpeed
 import io.github.dimitrysaf.provenio.core.build.isIos
+import io.github.dimitrysaf.provenio.shell.screens.p2p.TorrentDetailsSheet
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlaybackRequest
@@ -148,6 +149,12 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             openingStatusLines = openingStatusLines,
         )
         RenderPlayerModals(displayedPositionMs = displayedPositionMs)
+        if (showTorrentDetailsSheet) {
+            TorrentDetailsSheet(
+                infoHash = activeTorrentInfoHash,
+                onDismiss = { showTorrentDetailsSheet = false },
+            )
+        }
     }
 }
 
@@ -189,6 +196,11 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             showPlaybackControls = controlsVisible,
             hideSeekForward = isSeries && showNextEpisodeCard,
             statusLines = statusLines,
+            onStatusClick = if (activeTorrentInfoHash != null) {
+                { showTorrentDetailsSheet = true }
+            } else {
+                null
+            },
             onLockToggle = {
                 if (playerControlsLocked) unlockPlayerControls() else lockPlayerControls()
             },

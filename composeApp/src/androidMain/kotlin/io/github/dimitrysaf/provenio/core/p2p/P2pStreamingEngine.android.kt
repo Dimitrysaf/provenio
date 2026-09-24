@@ -7,10 +7,17 @@ import io.github.dimitrysaf.provenio.core.i18n.localizedP2pUnknownTorrentError
 import com.engine.Engine
 import com.engine.EngineConfig
 import com.engine.EventType
+import com.engine.PeerSource
+import com.engine.PieceState
 import com.engine.Stream
+import com.engine.StreamStats
+import com.engine.TorrentDetails
 import com.engine.TorrentProfile
+import com.engine.TorrentState
+import com.engine.TrackerStatus
 import com.engine.UploadMode
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -25,6 +32,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -93,8 +102,9 @@ internal fun unexpectedTorrentError(
 }
 
 actual object P2pStreamingEngine {
+    // Seeding is not part of the key: it is switched on the running engine instead, so turning
+    // it off stops uploads at once rather than at the next stream.
     private data class EngineConfigurationKey(
-        val uploadEnabled: Boolean,
         val torrentProfile: P2pTorrentProfile,
         val diskCacheCapacityBytes: Long,
     )
@@ -108,6 +118,8 @@ actual object P2pStreamingEngine {
     actual val state: StateFlow<P2pStreamingState> = _state.asStateFlow()
     private val _cacheState = MutableStateFlow(P2pCacheUiState())
     actual val cacheState: StateFlow<P2pCacheUiState> = _cacheState.asStateFlow()
+    private val _torrentDetails = MutableStateFlow<P2pTorrentDetails?>(null)
+    actual val torrentDetails: StateFlow<P2pTorrentDetails?> = _torrentDetails.asStateFlow()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val lifecycleLock = Any()
@@ -126,9 +138,48 @@ actual object P2pStreamingEngine {
     private var engineConfigurationKey: EngineConfigurationKey? = null
     private val knownTorrentIds = mutableSetOf<String>()
     private var diagnosticRequestSequence = 0L
+    private val torrentDetailsObservers = AtomicInteger(0)
+    private var torrentDetailsJob: Job? = null
+    @Volatile
+    private var currentStream: Stream? = null
+    private val speedHistory = ArrayDeque<P2pSpeedSample>()
 
     fun initialize(context: Context) {
         appContext = context.applicationContext
+    }
+
+    init {
+        scope.launch {
+            P2pSettingsRepository.uiState
+                .map { it.enableUpload }
+                .distinctUntilChanged()
+                .collect { enabled -> engine?.let { applySeeding(it, enabled) } }
+        }
+    }
+
+    private fun applySeeding(target: Engine, enabled: Boolean) {
+        try {
+            target.setUploadMode(if (enabled) UploadMode.Unlimited else UploadMode.Disabled)
+            Log.i(TAG, "Seeding ${if (enabled) "enabled" else "disabled"}")
+        } catch (error: Exception) {
+            Log.w(TAG, "Could not change seeding", error)
+        }
+    }
+
+    actual fun acquireTorrentDetails() {
+        if (torrentDetailsObservers.incrementAndGet() == 1) {
+            startTorrentDetailsPolling()
+        }
+    }
+
+    actual fun releaseTorrentDetails() {
+        if (torrentDetailsObservers.decrementAndGet() <= 0) {
+            torrentDetailsObservers.set(0)
+            synchronized(lifecycleLock) {
+                torrentDetailsJob?.cancel()
+                torrentDetailsJob = null
+            }
+        }
     }
 
     actual suspend fun startStream(request: P2pStreamRequest): String = withContext(Dispatchers.IO) {
@@ -447,7 +498,6 @@ actual object P2pStreamingEngine {
         P2pSettingsRepository.ensureLoaded()
         val settings = P2pSettingsRepository.uiState.value
         val configurationKey = EngineConfigurationKey(
-            uploadEnabled = settings.enableUpload,
             torrentProfile = settings.torrentProfile,
             diskCacheCapacityBytes = settings.cacheSize.bytes,
         )
@@ -478,13 +528,15 @@ actual object P2pStreamingEngine {
             buildEngineConfig(
                 stateDirectory = stateDirectory,
                 cacheDirectory = cacheDirectory,
-                uploadEnabled = configurationKey.uploadEnabled,
+                uploadEnabled = settings.enableUpload,
                 torrentProfile = configurationKey.torrentProfile,
                 diskCacheCapacityBytes = configurationKey.diskCacheCapacityBytes,
             )
         ).also { created ->
             engine = created
             engineConfigurationKey = configurationKey
+            // The setting may have changed while the engine was being created.
+            applySeeding(created, P2pSettingsRepository.uiState.value.enableUpload)
             observeEngineEvents(created)
             Log.i(
                 TAG,
@@ -586,6 +638,7 @@ actual object P2pStreamingEngine {
         startedAtMs: Long,
         payloadDownloadBaseline: Long,
     ) {
+        currentStream = stream
         statsJob?.cancel()
         statsJob = scope.launch {
             var nextDiagnosticSampleAtMs = 0L
@@ -609,6 +662,12 @@ actual object P2pStreamingEngine {
                     val nowMs = SystemClock.elapsedRealtime()
                     if (nowMs >= nextDiagnosticSampleAtMs) {
                         nextDiagnosticSampleAtMs = nowMs + DIAGNOSTIC_SAMPLE_INTERVAL_MS
+                        recordSpeedSample(
+                            P2pSpeedSample(
+                                downloadBytesPerSecond = aggregate.downloadRateBytesPerSecond,
+                                uploadBytesPerSecond = aggregate.uploadRateBytesPerSecond,
+                            ),
+                        )
                         Log.i(
                             DIAGNOSTIC_TAG,
                             "sample request=$requestSequence elapsedMs=${elapsedSince(startedAtMs)} " +
@@ -678,6 +737,198 @@ actual object P2pStreamingEngine {
         }
     }
 
+    private fun recordSpeedSample(sample: P2pSpeedSample) = synchronized(speedHistory) {
+        if (speedHistory.size >= P2P_SPEED_HISTORY_SIZE) speedHistory.removeFirst()
+        speedHistory.addLast(sample)
+    }
+
+    private data class StreamedFile(
+        val streamId: String,
+        val path: String,
+        val offset: Long,
+        val size: Long,
+    )
+
+    private fun startTorrentDetailsPolling() = synchronized(lifecycleLock) {
+        torrentDetailsJob?.cancel()
+        torrentDetailsJob = scope.launch {
+            var streamedFile: StreamedFile? = null
+            while (isActive) {
+                val activeEngine = engine
+                val torrentId = currentTorrentId
+                val stream = currentStream?.takeIf { it.id == currentStreamId }
+                _torrentDetails.value = if (activeEngine == null || torrentId == null) {
+                    null
+                } else {
+                    try {
+                        val details = activeEngine.currentTorrentDetails(torrentId)
+                        if (stream != null && streamedFile?.streamId != stream.id) {
+                            streamedFile = activeEngine.files(stream.torrentId)
+                                .firstOrNull { it.index == stream.fileIndex }
+                                ?.let { StreamedFile(stream.id, it.path, it.offset, it.size) }
+                        }
+                        // A stopped stream no longer has stats, while its torrent still does.
+                        val route = stream?.let {
+                            try {
+                                activeEngine.currentStreamStats(it.id)
+                            } catch (_: com.engine.EngineException) {
+                                null
+                            }
+                        }
+                        details?.toP2pTorrentDetails(
+                            file = streamedFile?.takeIf { it.streamId == stream?.id },
+                            route = route,
+                            history = synchronized(speedHistory) { speedHistory.toList() },
+                        )
+                    } catch (cancellation: CancellationException) {
+                        throw cancellation
+                    } catch (error: Exception) {
+                        Log.w(TAG, "Error sampling torrent details", error)
+                        _torrentDetails.value
+                    }
+                }
+                delay(1_000L)
+            }
+        }
+    }
+
+    private fun TorrentDetails.toP2pTorrentDetails(
+        file: StreamedFile?,
+        route: StreamStats?,
+        history: List<P2pSpeedSample>,
+    ): P2pTorrentDetails = P2pTorrentDetails(
+        infoHash = torrentId,
+        name = name,
+        // `this.`: the engine object has a `state` of its own.
+        state = when (this.state) {
+            TorrentState.CheckingFiles -> P2pTorrentState.CHECKING_FILES
+            TorrentState.DownloadingMetadata -> P2pTorrentState.DOWNLOADING_METADATA
+            TorrentState.Downloading -> P2pTorrentState.DOWNLOADING
+            TorrentState.Finished -> P2pTorrentState.FINISHED
+            TorrentState.Seeding -> P2pTorrentState.SEEDING
+            TorrentState.CheckingResumeData -> P2pTorrentState.CHECKING_RESUME_DATA
+            TorrentState.Unknown -> P2pTorrentState.UNKNOWN
+        },
+        hasMetadata = hasMetadata,
+        fileName = file?.path?.substringAfterLast('/'),
+        fileSize = file?.size,
+        fileProgress = route?.takeIf { it.fileSize > 0L }?.fileProgress,
+        pieceCount = pieceCount,
+        pieceLength = pieceLength,
+        piecesHave = piecesHave,
+        fileCount = fileCount,
+        progress = progress,
+        availability = availability,
+        connectedPeers = connectedPeers,
+        connectedSeeds = connectedSeeds,
+        knownPeers = knownPeers,
+        knownSeeds = knownSeeds,
+        swarmSeeds = swarmSeeds,
+        swarmLeechers = swarmLeechers,
+        totalSize = totalSize,
+        totalWanted = totalWanted,
+        totalWantedDone = totalWantedDone,
+        downloadSpeed = downloadPayloadRateBytesPerSecond,
+        uploadSpeed = uploadPayloadRateBytesPerSecond,
+        downloadSpeedWithOverhead = downloadRateBytesPerSecond,
+        uploadSpeedWithOverhead = uploadRateBytesPerSecond,
+        sessionDownloaded = sessionPayloadDownloadBytes,
+        sessionUploaded = sessionPayloadUploadBytes,
+        allTimeDownloaded = allTimeDownloadBytes,
+        allTimeUploaded = allTimeUploadBytes,
+        hashFailedBytes = failedBytes,
+        redundantBytes = redundantBytes,
+        addedAtEpochSeconds = addedAtEpochSeconds,
+        activeSeconds = activeSeconds,
+        nextAnnounceSeconds = nextAnnounceSeconds,
+        currentTracker = currentTracker,
+        peers = peers
+            .sortedWith(compareByDescending<com.engine.TorrentPeer> { it.downloadRateBytesPerSecond }
+                .thenByDescending { it.totalDownloadBytes })
+            .map { peer ->
+                P2pPeerDetails(
+                    address = peer.address,
+                    client = peer.client,
+                    progress = peer.progress,
+                    downloadSpeed = peer.downloadRateBytesPerSecond,
+                    uploadSpeed = peer.uploadRateBytesPerSecond,
+                    totalDownloaded = peer.totalDownloadBytes,
+                    totalUploaded = peer.totalUploadBytes,
+                    rttMs = peer.rttMilliseconds,
+                    sources = peer.sources.mapTo(mutableSetOf()) { source ->
+                        when (source) {
+                            PeerSource.Tracker -> P2pPeerSource.TRACKER
+                            PeerSource.Dht -> P2pPeerSource.DHT
+                            PeerSource.Pex -> P2pPeerSource.PEX
+                            PeerSource.Lsd -> P2pPeerSource.LSD
+                            PeerSource.ResumeData -> P2pPeerSource.RESUME_DATA
+                            PeerSource.Incoming -> P2pPeerSource.INCOMING
+                        }
+                    },
+                    isSeed = peer.isSeed,
+                    isEncrypted = peer.isEncrypted,
+                    isUtp = peer.isUtp,
+                    isSnubbed = peer.isSnubbed,
+                    isChokingUs = peer.isRemoteChoked,
+                    isInteresting = peer.isInteresting,
+                    isOutgoing = peer.isOutgoing,
+                    isWebSeed = peer.isWebSeed,
+                    isConnecting = peer.isConnecting || peer.isHandshaking,
+                )
+            },
+        trackers = trackers.map { tracker ->
+            P2pTrackerDetails(
+                url = tracker.url,
+                tier = tracker.tier,
+                status = when (tracker.status) {
+                    TrackerStatus.NotContacted -> P2pTrackerStatus.NOT_CONTACTED
+                    TrackerStatus.Working -> P2pTrackerStatus.WORKING
+                    TrackerStatus.Updating -> P2pTrackerStatus.UPDATING
+                    TrackerStatus.Error -> P2pTrackerStatus.ERROR
+                },
+                message = tracker.message,
+                seeds = tracker.seeds,
+                leechers = tracker.leechers,
+                downloaded = tracker.downloaded,
+                nextAnnounceSeconds = tracker.nextAnnounceSeconds,
+            )
+        },
+        pieces = pieceMap(file, route),
+        speedHistory = history,
+    )
+
+    /** The slice of the piece map covering [file], or the whole torrent when no file is known. */
+    private fun TorrentDetails.pieceMap(file: StreamedFile?, route: StreamStats?): P2pPieceMap? {
+        if (pieceMapSize == 0 || pieceLength <= 0) return null
+        val first: Int
+        val last: Int
+        if (file != null && file.size > 0L) {
+            first = (file.offset / pieceLength).toInt().coerceIn(0, pieceMapSize - 1)
+            last = ((file.offset + file.size - 1) / pieceLength).toInt().coerceIn(first, pieceMapSize - 1)
+        } else {
+            first = 0
+            last = pieceMapSize - 1
+        }
+        val count = last - first + 1
+        val states = ByteArray(count) { index ->
+            when (pieceState(first + index)) {
+                PieceState.Missing -> 0
+                PieceState.Have -> 1
+                PieceState.Downloading -> 2
+                PieceState.Blocking -> 3
+                PieceState.Seeded -> 4
+            }.toByte()
+        }
+        val availability = ByteArray(count) { index -> pieceAvailability(first + index).toByte() }
+        val readyFraction = if (route != null && route.fileSize > 0L) route.bufferProgress else 0f
+        return P2pPieceMap(
+            states = states,
+            availability = availability,
+            firstPiece = first,
+            readyFraction = readyFraction,
+        )
+    }
+
     private fun updateCacheState(usedBytes: Long, protectedBytes: Long) {
         _cacheState.value = _cacheState.value.copy(
             usedBytes = usedBytes,
@@ -729,6 +980,7 @@ actual object P2pStreamingEngine {
     }
 
     private fun beginStreamGeneration(): Long = synchronized(lifecycleLock) {
+        synchronized(speedHistory) { speedHistory.clear() }
         streamGeneration += 1
         _state.value = P2pStreamingState.Connecting()
         streamGeneration
