@@ -18,6 +18,17 @@ import com.nuvio.app.core.watch.progress.WatchProgressEntry
 import com.nuvio.app.core.watch.progress.WatchProgressRepository
 import com.nuvio.app.core.watch.progress.toUpNextContinueWatchingItem
 import kotlinx.coroutines.CancellationException
+import com.nuvio.app.core.home.HomeContinueWatchingMaxRecentProgressItems
+import com.nuvio.app.core.home.hasUsableHomeNextUpMetadata
+import com.nuvio.app.core.home.mergeHomeNextUpItemsWithCache
+import com.nuvio.app.core.home.planHomeNextUpResolutionCandidates
+import com.nuvio.app.core.watch.progress.CurrentDateProvider
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.yield
 import nuvio.composeapp.generated.resources.*
 import com.nuvio.app.core.home.CompletedSeriesCandidate
 import com.nuvio.app.core.home.HomeNextUpCandidateMetadataOutcome
@@ -185,4 +196,131 @@ internal data class HomeNextUpResolutionAttempt(
                 isConclusive = false,
             )
     }
+}
+
+// Resolves the next up item of every completed series, reusing cached items whose seed still matches.
+// Publishes results as they stream in, and returns the content ids that failed only transiently.
+internal suspend fun resolveHomeNextUpItems(
+    completedSeriesCandidates: List<CompletedSeriesCandidate>,
+    cachedNextUpItems: Map<String, Pair<Long, ContinueWatchingItem>>,
+    watchProgressEntries: List<WatchProgressEntry>,
+    watchedItems: List<WatchedItem>,
+    preferFurthestEpisode: Boolean,
+    showUnairedNextUp: Boolean,
+    dismissedNextUpKeys: Set<String>,
+    providerOwnsCompletedHistory: Boolean,
+    publish: suspend (
+        items: Map<String, Pair<Long, ContinueWatchingItem>>,
+        processedContentIds: Set<String>,
+        todayIsoDate: String,
+    ) -> Unit,
+): List<String> {
+    val cachedResolvedNextUpItems = completedSeriesCandidates.mapNotNull { candidate ->
+        val cached = cachedNextUpItems[candidate.content.id] ?: return@mapNotNull null
+        val item = cached.second
+        if (
+            item.nextUpSeedSeasonNumber != candidate.seasonNumber ||
+            item.nextUpSeedEpisodeNumber != candidate.episodeNumber
+        ) {
+            return@mapNotNull null
+        }
+        if (!hasUsableHomeNextUpMetadata(item)) {
+            return@mapNotNull null
+        }
+        candidate.content.id to cached
+    }.toMap()
+    val candidatesToResolve = completedSeriesCandidates.filter { candidate ->
+        candidate.content.id !in cachedResolvedNextUpItems
+    }
+    val todayIsoDate = CurrentDateProvider.todayIsoDate()
+    if (candidatesToResolve.isEmpty()) {
+        publish(
+            mergeHomeNextUpItemsWithCache(
+                resolvedItems = cachedResolvedNextUpItems,
+                cachedItems = cachedNextUpItems,
+                conclusivelyProcessedContentIds = cachedResolvedNextUpItems.keys,
+            ),
+            cachedResolvedNextUpItems.keys,
+            todayIsoDate,
+        )
+        return emptyList()
+    }
+
+    val resolutionPlan = planHomeNextUpResolutionCandidates(candidatesToResolve)
+    val semaphore = Semaphore(NEXT_UP_RESOLUTION_CONCURRENCY)
+    val freshResults = mutableMapOf<String, Pair<Long, ContinueWatchingItem>>()
+    val processedFreshContentIds = mutableSetOf<String>()
+
+    suspend fun publishCurrent() {
+        val conclusiveContentIds = cachedResolvedNextUpItems.keys + processedFreshContentIds
+        publish(
+            mergeHomeNextUpItemsWithCache(
+                resolvedItems = cachedResolvedNextUpItems + freshResults,
+                cachedItems = cachedNextUpItems,
+                conclusivelyProcessedContentIds = conclusiveContentIds,
+            ),
+            conclusiveContentIds,
+            todayIsoDate,
+        )
+    }
+
+    suspend fun resolveCandidatesStreaming(candidates: List<CompletedSeriesCandidate>) {
+        if (candidates.isEmpty()) return
+        coroutineScope {
+            val results = Channel<HomeNextUpCandidateResolution>(Channel.UNLIMITED)
+            candidates.forEach { completedEntry ->
+                launch {
+                    val attempt = try {
+                        semaphore.withPermit {
+                            resolveHomeNextUpCandidate(
+                                completedEntry = completedEntry,
+                                watchProgressEntries = watchProgressEntries,
+                                watchedItems = watchedItems,
+                                cachedFallbackItem = cachedNextUpItems[completedEntry.content.id]?.second,
+                                todayIsoDate = todayIsoDate,
+                                preferFurthestEpisode = preferFurthestEpisode,
+                                showUnairedNextUp = showUnairedNextUp,
+                                dismissedNextUpKeys = dismissedNextUpKeys,
+                                providerOwnsCompletedHistory = providerOwnsCompletedHistory,
+                            )
+                        }
+                    } catch (error: Throwable) {
+                        if (error is CancellationException) throw error
+                        HomeNextUpResolutionAttempt.transientFailure()
+                    }
+                    results.send(HomeNextUpCandidateResolution(candidate = completedEntry, attempt = attempt))
+                }
+            }
+
+            repeat(candidates.size) {
+                val resolution = results.receive()
+                if (resolution.attempt.isConclusive) {
+                    processedFreshContentIds += resolution.candidate.content.id
+                }
+                var changed = false
+                resolution.attempt.resolved?.let { (contentId, item) ->
+                    if (cachedResolvedNextUpItems.size + freshResults.size < HomeContinueWatchingMaxRecentProgressItems) {
+                        val previous = freshResults.put(contentId, item)
+                        changed = previous != item
+                    }
+                }
+                if (changed || resolution.attempt.isConclusive) {
+                    publishCurrent()
+                }
+                yield()
+            }
+            results.close()
+        }
+    }
+
+    resolveCandidatesStreaming(resolutionPlan.initialCandidates)
+    publishCurrent()
+    if (resolutionPlan.deferredCandidates.isNotEmpty()) {
+        resolveCandidatesStreaming(resolutionPlan.deferredCandidates)
+        publishCurrent()
+    }
+
+    return candidatesToResolve
+        .map { candidate -> candidate.content.id }
+        .filterNot { contentId -> contentId in processedFreshContentIds }
 }
