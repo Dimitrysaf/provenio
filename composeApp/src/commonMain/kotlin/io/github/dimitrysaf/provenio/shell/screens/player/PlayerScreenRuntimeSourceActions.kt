@@ -117,7 +117,7 @@ internal fun PlayerScreenRuntime.switchToP2pSourceStream(stream: StreamItem) {
         pendingP2pSwitch = PendingPlayerP2pSwitch(stream = stream, episode = null, isAutoPlay = false)
         return
     }
-    val currentPositionMs = playbackSnapshot.positionMs.coerceAtLeast(0L)
+    val currentPositionMs = positionForReloadMs()
     flushWatchProgress()
     stopActiveP2pStream()
     saveP2pStreamForReuse(
@@ -143,7 +143,8 @@ internal fun PlayerScreenRuntime.switchToP2pSourceStream(stream: StreamItem) {
     activeProviderAddonId = stream.addonId
     currentStreamBingeGroup = stream.behaviorHints.bingeGroup
     activeInitialPositionMs = currentPositionMs
-    activeInitialProgressFraction = null
+    // A resume point kept as a fraction still applies if nothing has played yet.
+    if (currentPositionMs > 0L) activeInitialProgressFraction = null
     showSourcesPanel = false
     controlsVisible = true
     PlayerStreamsRepository.pauseSearchForPlayback()
@@ -218,7 +219,7 @@ internal fun PlayerScreenRuntime.switchToSource(stream: StreamItem, recordAsActi
         activeSourceIdentityKey = sourceIdentityKey ?: activeSourceIdentityKey
         return
     }
-    val currentPositionMs = playbackSnapshot.positionMs.coerceAtLeast(0L)
+    val currentPositionMs = positionForReloadMs()
     flushWatchProgress()
     stopActiveP2pStream()
     val currentVideoId = activeVideoId
@@ -238,7 +239,8 @@ internal fun PlayerScreenRuntime.switchToSource(stream: StreamItem, recordAsActi
     activeProviderAddonId = stream.addonId
     currentStreamBingeGroup = stream.behaviorHints.bingeGroup
     activeInitialPositionMs = currentPositionMs
-    activeInitialProgressFraction = null
+    // A resume point kept as a fraction still applies if nothing has played yet.
+    if (currentPositionMs > 0L) activeInitialProgressFraction = null
     showSourcesPanel = false
     controlsVisible = true
     PlayerStreamsRepository.pauseSearchForPlayback()

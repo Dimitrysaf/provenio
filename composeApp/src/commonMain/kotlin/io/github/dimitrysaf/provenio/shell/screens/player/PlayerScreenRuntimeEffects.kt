@@ -685,7 +685,7 @@ internal fun PlayerScreenRuntime.tryRefreshCredentialedSourceAfterError(message:
     credentialRefreshAttemptedSourceUrl = failedUrl
     removeFailedStreamFromCache()
 
-    val savedPositionMs = playbackSnapshot.positionMs.coerceAtLeast(0L)
+    val savedPositionMs = positionForReloadMs()
     val expectedProviderAddonId = activeProviderAddonId
     val expectedProviderName = activeProviderName
     val expectedStreamTitle = activeStreamTitle
@@ -757,7 +757,8 @@ internal fun PlayerScreenRuntime.tryRefreshCredentialedSourceAfterError(message:
             activeProviderAddonId = stream.addonId
             currentStreamBingeGroup = stream.behaviorHints.bingeGroup
             activeInitialPositionMs = savedPositionMs
-            activeInitialProgressFraction = null
+            // A resume point kept as a fraction still applies if nothing has played yet.
+            if (savedPositionMs > 0L) activeInitialProgressFraction = null
             showSourcesPanel = false
             controlsVisible = true
         } finally {

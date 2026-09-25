@@ -605,6 +605,8 @@ private fun ExoPlayerSurface(
                         }
                         if (probedMime != null) {
                             Log.d(TAG, "Playback failed with source error. Probed MIME type: $probedMime. Retrying...")
+                            // Reloading with the probed type must pick up where playback was, not at the start.
+                            exoPlayer.currentPosition.takeIf { it > 0L }?.let { fallbackStartPositionMs = it }
                             resolvedMediaItem = resolvedMediaItem.buildUpon()
                                 .setMimeType(probedMime)
                                 .build()

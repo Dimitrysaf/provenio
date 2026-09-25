@@ -227,6 +227,10 @@ internal suspend fun PlayerScreenRuntime.resolveParentalGuideImdbId(): String? {
     )
 }
 
+// Where a reloaded stream should start: a stream still loading reports 0, so until it plays it keeps the resume point it was opened with.
+internal fun PlayerScreenRuntime.positionForReloadMs(): Long =
+    playbackSnapshot.positionMs.takeIf { it > 0L } ?: activeInitialPositionMs.coerceAtLeast(0L)
+
 internal fun PlayerScreenRuntime.flushWatchProgress(
     scrobbleAction: TrackingScrobbleAction = TrackingScrobbleAction.STOP,
 ) {
