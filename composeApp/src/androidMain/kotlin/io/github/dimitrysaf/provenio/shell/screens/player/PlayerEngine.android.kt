@@ -33,6 +33,7 @@ import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
@@ -446,6 +447,15 @@ private fun ExoPlayerSurface(
                 .build()
         }
 
+        // Pauses for calls and other apps' audio, and when headphones disconnect.
+        player.setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(C.USAGE_MEDIA)
+                .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+                .build(),
+            true,
+        )
+        player.setHandleAudioBecomingNoisy(true)
         player.applySubtitleTrackPreferences(
             preferredLanguage = playerSettings.preferredSubtitleLanguage,
             useForcedSubtitles = playerSettings.subtitleStyle.useForcedSubtitles,
