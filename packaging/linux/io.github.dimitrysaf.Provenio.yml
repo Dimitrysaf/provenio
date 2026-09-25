@@ -53,6 +53,7 @@ modules:
   - name: libplacebo
     buildsystem: meson
     config-opts:
+      - --libdir=lib
       - -Dvulkan=disabled
       - -Dopengl=enabled
       - -Dshaderc=disabled
@@ -83,6 +84,7 @@ modules:
   - name: mpv
     buildsystem: meson
     config-opts:
+      - --libdir=lib
       - -Dlibmpv=true
       - -Dcplayer=false
       - -Dlua=disabled
