@@ -41,6 +41,14 @@ jobs:
       CMAKE_VERSION: 4.1.2
       # Tree hash of engine/ that the committed binary was built from.
       STAMP: composeApp/libs/lib-engine-android.source
+      # CMake runs every native compile through ccache.
+      CMAKE_C_COMPILER_LAUNCHER: ccache
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_NOHASHDIR: 'true'
+      CCACHE_COMPILERCHECK: content
+      CCACHE_SLOPPINESS: include_file_ctime,include_file_mtime
+      CCACHE_MAXSIZE: 2G
 
     steps:
       - name: Check out source
@@ -69,7 +77,21 @@ jobs:
           yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
           "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "ndk;${NDK_VERSION}" "cmake;${CMAKE_VERSION}"
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ripgrep > /dev/null
+          sudo apt-get install -y -qq ripgrep ccache > /dev/null
+
+      # Static OpenSSL for every ABI; the build script skips ABIs that are already built.
+      - uses: actions/cache@v4
+        if: steps.check.outputs.changed == 'true'
+        with:
+          path: engine/platform/android/.deps
+          key: android-openssl-${{ env.NDK_VERSION }}-${{ hashFiles('engine/scripts/build-android-openssl.sh') }}
+
+      - uses: actions/cache@v4
+        if: steps.check.outputs.changed == 'true'
+        with:
+          path: ~/.cache/ccache
+          key: ccache-android-${{ github.sha }}
+          restore-keys: ccache-android-
 
       - uses: actions/setup-java@v5
         if: steps.check.outputs.changed == 'true'
@@ -85,7 +107,10 @@ jobs:
       - name: Building engine
         if: steps.check.outputs.changed == 'true'
         working-directory: engine/platform/android
-        run: ./gradlew :engine:assembleRelease --no-daemon
+        run: |
+          ccache --zero-stats
+          ./gradlew :engine:assembleRelease --no-daemon
+          ccache --show-stats
 
       - name: Verify engine
         if: steps.check.outputs.changed == 'true'

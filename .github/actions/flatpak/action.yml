@@ -29,8 +29,32 @@ runs:
         path: build/linux/deps
         key: linux-deps-${{ runner.arch }}-${{ hashFiles('engine/scripts/build-linux-openssl.sh') }}
 
+    # Flathub runtimes and SDKs that flatpak-builder installs for the manifest.
+    - uses: actions/cache@v4
+      with:
+        path: ~/.local/share/flatpak
+        key: flatpak-runtimes-${{ runner.arch }}-${{ hashFiles('packaging/linux/io.github.dimitrysaf.Provenio.yml') }}
+        restore-keys: flatpak-runtimes-${{ runner.arch }}-
+
+    # Compiler cache for the engine JNI library.
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/ccache
+        key: ccache-linux-${{ runner.arch }}-${{ github.sha }}
+        restore-keys: ccache-linux-${{ runner.arch }}-
+
     - shell: bash
-      run: scripts/build-linux.sh
+      env:
+        CMAKE_C_COMPILER_LAUNCHER: ccache
+        CMAKE_CXX_COMPILER_LAUNCHER: ccache
+        CCACHE_BASEDIR: ${{ github.workspace }}
+        CCACHE_NOHASHDIR: 'true'
+        CCACHE_SLOPPINESS: include_file_ctime,include_file_mtime
+        CCACHE_MAXSIZE: 1G
+      run: |
+        ccache --zero-stats
+        scripts/build-linux.sh
+        ccache --show-stats
 
     - uses: actions/upload-artifact@v7
       with:
