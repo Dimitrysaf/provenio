@@ -41,9 +41,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -83,7 +86,9 @@ import io.github.dimitrysaf.provenio.shell.components.ModalSheet
 import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsListScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.TimeSource
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
@@ -209,6 +214,7 @@ private fun TorrentDetailsContent(details: P2pTorrentDetails, seedingEnabled: Bo
             } else {
                 stringResource(Res.string.torrent_details_seeding_off)
             }
+            val etaSeconds = rememberTickingSeconds(details.etaSeconds, countDown = true)
             Section {
                 detailRow(
                     icon = Icons.Rounded.DataUsage,
@@ -231,7 +237,7 @@ private fun TorrentDetailsContent(details: P2pTorrentDetails, seedingEnabled: Bo
                 detailRow(
                     icon = Icons.Rounded.Schedule,
                     title = stringResource(Res.string.torrent_details_eta),
-                    value = details.etaSeconds?.let(::formatDuration) ?: "∞",
+                    value = etaSeconds?.let(::formatDuration) ?: "∞",
                 )
                 detailRow(
                     icon = Icons.Rounded.SwapVert,
@@ -295,9 +301,10 @@ private fun TorrentDetailsContent(details: P2pTorrentDetails, seedingEnabled: Bo
                 formatBytes(details.pieceLength.toLong()),
             )
             val state = stateLabel(details.state)
-            val nextAnnounce = details.nextAnnounceSeconds?.let {
+            val nextAnnounce = rememberTickingSeconds(details.nextAnnounceSeconds, countDown = true)?.let {
                 stringResource(Res.string.torrent_details_in, formatDuration(it))
             } ?: unknown
+            val activeSeconds = rememberTickingSeconds(details.activeSeconds, countDown = false) ?: 0L
             Section {
                 details.fileName?.let { fileName ->
                     detailRow(
@@ -312,7 +319,7 @@ private fun TorrentDetailsContent(details: P2pTorrentDetails, seedingEnabled: Bo
                 detailRow(title = stringResource(Res.string.torrent_details_state), value = state)
                 detailRow(
                     title = stringResource(Res.string.torrent_details_active_time),
-                    value = formatDuration(details.activeSeconds),
+                    value = formatDuration(activeSeconds),
                 )
                 detailRow(title = stringResource(Res.string.torrent_details_next_announce), value = nextAnnounce)
                 details.currentTracker?.let { tracker ->
@@ -836,7 +843,7 @@ private fun trackerDescription(tracker: P2pTrackerDetails): String {
     } else {
         null
     }
-    val next = tracker.nextAnnounceSeconds?.let {
+    val next = rememberTickingSeconds(tracker.nextAnnounceSeconds, countDown = true)?.let {
         stringResource(Res.string.torrent_details_in, formatDuration(it))
     }
     return listOfNotNull(tracker.message ?: status, scrape, next).joinToString(" · ")
@@ -883,6 +890,21 @@ private fun formatBytes(bytes: Long): String {
         value >= kib -> "${formatDecimal((value / kib).toFloat(), 0)} ${localizedByteUnit("KB")}"
         else -> "$bytes ${localizedByteUnit("B")}"
     }
+}
+
+// The engine only re-reports a timer when other torrent state changes, so it ticks here in between.
+@Composable
+private fun rememberTickingSeconds(reported: Long?, countDown: Boolean): Long? {
+    var elapsed by remember(reported) { mutableLongStateOf(0L) }
+    LaunchedEffect(reported) {
+        if (reported == null) return@LaunchedEffect
+        val start = TimeSource.Monotonic.markNow()
+        while (true) {
+            delay(1_000L - start.elapsedNow().inWholeMilliseconds % 1_000L)
+            elapsed = start.elapsedNow().inWholeSeconds
+        }
+    }
+    return reported?.let { (if (countDown) it - elapsed else it + elapsed).coerceAtLeast(0L) }
 }
 
 private fun formatDuration(totalSeconds: Long): String {
