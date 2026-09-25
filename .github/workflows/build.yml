@@ -1,0 +1,216 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'fix/**'
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Channel to build
+        type: choice
+        options:
+          - beta
+          - stable
+        default: beta
+      rebuild-engine:
+        description: Rebuild the engine even if it is unchanged
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}-${{ inputs.channel || 'beta' }}
+  cancel-in-progress: ${{ inputs.channel != 'stable' }}
+
+jobs:
+  engine:
+    name: Engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.commit.outputs.sha || github.sha }}
+    env:
+      NDK_VERSION: 29.0.14206865
+      CMAKE_VERSION: 4.1.2
+      # Tree hash of engine/ that the committed binary was built from.
+      STAMP: composeApp/libs/lib-engine-android.source
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check for engine changes
+        id: check
+        env:
+          FORCE: ${{ inputs.rebuild-engine || false }}
+        run: |
+          current="$(git rev-parse HEAD:engine)"
+          built="$(cat "${STAMP}" 2>/dev/null || true)"
+          if [[ "${FORCE}" == "true" || "${current}" != "${built}" ]]; then
+            echo "Engine changed (${built:-none} -> ${current})"
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "Engine is unchanged"
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Set up environment
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "ndk;${NDK_VERSION}" "cmake;${CMAKE_VERSION}"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ripgrep > /dev/null
+
+      - uses: actions/setup-java@v5
+        if: steps.check.outputs.changed == 'true'
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v6
+        if: steps.check.outputs.changed == 'true'
+        with:
+          cache-read-only: false
+
+      - name: Building engine
+        if: steps.check.outputs.changed == 'true'
+        working-directory: engine/platform/android
+        run: ./gradlew :engine:assembleRelease --no-daemon
+
+      - name: Verify engine
+        if: steps.check.outputs.changed == 'true'
+        run: engine/scripts/verify-android-aar.sh engine/platform/android/engine/build/outputs/aar/engine-release.aar
+
+      # Pushes made with the workflow token do not start another workflow run.
+      - name: Commit engine binaries
+        id: commit
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          version="$(sed -n 's/^version = "\(.*\)"$/\1/p' engine/platform/android/engine/build.gradle.kts)"
+          rm -f composeApp/libs/lib-engine-android-*.aar
+          cp engine/platform/android/engine/build/outputs/aar/engine-release.aar "composeApp/libs/lib-engine-android-${version}.aar"
+          git rev-parse HEAD:engine > "${STAMP}"
+          git add -A composeApp/libs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "build: Update the engine binaries"
+
+          for attempt in 1 2 3 4; do
+            if git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          echo "Could not push the engine binaries" >&2
+          exit 1
+
+  app:
+    name: App
+    needs: engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.engine.outputs.sha }}
+
+      - name: Set up environment
+        uses: ./.github/actions/setup-environment
+        with:
+          local-properties-base64: ${{ inputs.channel == 'stable' && secrets.PROVENIO_LOCAL_PROPERTIES_BASE64 || '' }}
+          keystore-base64: ${{ inputs.channel == 'stable' && secrets.PROVENIO_RELEASE_KEYSTORE_BASE64 || '' }}
+
+      - name: Building app
+        uses: ./.github/actions/build-app
+        with:
+          build-type: ${{ inputs.channel == 'stable' && 'release' || 'debug' }}
+          gradle-args: ${{ inputs.channel != 'stable' && '-Pprovenio.abiSplits=true --no-configuration-cache' || '' }}
+          artifact-name: provenio-${{ inputs.channel || 'beta' }}
+
+      - name: Packaging Flatpak
+        continue-on-error: true
+        uses: ./.github/actions/flatpak
+        with:
+          artifact-name: provenio-${{ inputs.channel || 'beta' }}-linux
+
+  publish:
+    name: Publish
+    needs: [engine, app]
+    if: github.ref == 'refs/heads/main' || inputs.channel == 'stable'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CHANNEL: ${{ inputs.channel || 'beta' }}
+      SHA: ${{ needs.engine.outputs.sha }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.engine.outputs.sha }}
+          fetch-depth: 0
+
+      - name: Download packages
+        uses: actions/download-artifact@v8
+        with:
+          pattern: provenio-${{ inputs.channel || 'beta' }}*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish release
+        run: |
+          files=(dist/*.apk)
+          if [[ -f dist/Provenio.flatpak ]]; then
+            files+=(dist/Provenio.flatpak)
+          else
+            echo "::warning::Flatpak is missing, publishing the APKs only"
+          fi
+
+          if [[ "${CHANNEL}" == "stable" ]]; then
+            version="$(sed -n 's/^MARKETING_VERSION=//p' iosApp/Configuration/Version.xcconfig)"
+            title="Provenio Stable channel ${version}"
+            flag="--latest"
+            previous="$(git rev-list -n 1 stable 2>/dev/null || true)"
+            if [[ -n "${previous}" ]]; then
+              git log --no-merges --pretty='- %s' "${previous}..HEAD" > notes.md
+            else
+              git log --no-merges --pretty='- %s' -n 50 > notes.md
+            fi
+            [[ -s notes.md ]] || echo "- No changes since the last stable release." > notes.md
+          else
+            title="Provenio Beta channel ${SHA::7}"
+            flag="--prerelease"
+            git log -1 --format=%B "${GITHUB_SHA}" > notes.md
+          fi
+
+          if gh release view "${CHANNEL}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1 </dev/null; then
+            echo "Deleting the previous ${CHANNEL} release"
+            gh release delete "${CHANNEL}" --repo "${GITHUB_REPOSITORY}" --yes </dev/null
+          fi
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${CHANNEL}" >/dev/null 2>&1 </dev/null; then
+            echo "Deleting the previous ${CHANNEL} tag"
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/tags/${CHANNEL}" </dev/null
+          fi
+          gh release create "${CHANNEL}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${SHA}" \
+            --title "${title}" \
+            --notes-file notes.md \
+            "${flag}" \
+            "${files[@]}" </dev/null
