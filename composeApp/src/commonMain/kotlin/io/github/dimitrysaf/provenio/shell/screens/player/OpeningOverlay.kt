@@ -53,6 +53,7 @@ internal fun OpeningOverlay(
     modifier: Modifier = Modifier,
     metrics: PlayerLayoutMetrics = PlayerLayoutMetrics.fromWidth(0.dp),
     statusLines: List<String> = emptyList(),
+    backdropOnly: Boolean = false,
 ) {
     val contentAlpha by animateFloatAsState(
         targetValue = 1f,
@@ -104,7 +105,8 @@ internal fun OpeningOverlay(
             )
         }
 
-        Box(
+        // Behind the player's own controls only the artwork shows.
+        if (!backdropOnly) Box(
             modifier = Modifier
                 .align(Alignment.Center)
                 .graphicsLayer {
@@ -145,7 +147,7 @@ internal fun OpeningOverlay(
         }
 
         // Same top row as the controls: back at the start, status at the end.
-        Row(
+        if (!backdropOnly) Row(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .fillMaxWidth()

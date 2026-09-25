@@ -143,11 +143,31 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             )
         }
 
-        RenderPlayerControls(displayedPositionMs = displayedPositionMs, statusLines = torrentStatusLines)
-        RenderPlaybackOverlays(
-            runtime = runtime,
-            openingStatusLines = openingStatusLines,
+        // The artwork sits under the controls, which stay usable while the stream loads.
+        AnimatedVisibility(
+            visible = playerSettingsUiState.showLoadingOverlay && isStillLoading(),
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            OpeningOverlay(
+                artwork = background ?: poster,
+                logo = logo,
+                title = title,
+                onBack = {},
+                metrics = metrics,
+                modifier = Modifier.fillMaxSize(),
+                backdropOnly = true,
+            )
+        }
+        RenderPlayerControls(
+            displayedPositionMs = displayedPositionMs,
+            statusLines = if (isStillLoading()) openingStatusLines else torrentStatusLines,
         )
+        PlayerGestureFeedbackOverlay(
+            visible = (liveGestureFeedback ?: gestureFeedback) != null,
+            feedback = renderedGestureFeedback,
+        )
+        RenderPlaybackOverlays(runtime = runtime)
         RenderPlayerModals(displayedPositionMs = displayedPositionMs)
         if (showTorrentDetailsSheet) {
             TorrentDetailsSheet(
@@ -157,6 +177,9 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
         }
     }
 }
+
+// Until the first frame is ready the player shows its artwork and only the controls that need no stream.
+internal fun PlayerScreenRuntime.isStillLoading(): Boolean = !initialLoadCompleted && errorMessage == null
 
 @Composable
 private fun p2pConnectingPhaseLabel(phase: String): String = when (phase) {
@@ -179,8 +202,9 @@ private fun PlayerScreenRuntime.currentInitialPositionRequestKey(): String? {
 @Composable
 private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, statusLines: List<String>) {
     val isInPip = rememberIsInPictureInPicture()
+    val loading = isStillLoading()
     AnimatedVisibility(
-        visible = (controlsVisible || showParentalGuide) && !playerControlsLocked && !isInPip,
+        visible = (controlsVisible || showParentalGuide || loading) && !playerControlsLocked && !isInPip,
         enter = fadeIn(),
         exit = fadeOut(),
     ) {
@@ -193,7 +217,9 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             displayedPositionMs = displayedPositionMs,
             metrics = metrics,
             resizeMode = resizeMode,
-            showPlaybackControls = controlsVisible,
+            showPlaybackControls = controlsVisible || loading,
+            controlsReady = !loading && playerController != null,
+            playbackRequested = shouldPlay,
             hideSeekForward = isSeries && showNextEpisodeCard,
             statusLines = statusLines,
             onStatusClick = if (activeTorrentInfoHash != null) {
@@ -297,7 +323,6 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
 @Composable
 private fun BoxScope.RenderPlaybackOverlays(
     runtime: PlayerScreenRuntime,
-    openingStatusLines: List<String>,
 ) {
     runtime.run {
         PlayerPlaybackOverlays(
@@ -305,17 +330,6 @@ private fun BoxScope.RenderPlaybackOverlays(
             lockedOverlayVisible = lockedOverlayVisible,
             metrics = metrics,
             onUnlock = { unlockPlayerControls() },
-            showOpeningOverlay = playerSettingsUiState.showLoadingOverlay &&
-                !initialLoadCompleted &&
-                errorMessage == null,
-            backdropArtwork = background ?: poster,
-            logo = logo,
-            title = title,
-            onBackWithProgress = {
-                flushWatchProgress()
-                args.onBack()
-            },
-            openingStatusLines = openingStatusLines,
             initialLoadCompleted = initialLoadCompleted,
             activeSkipInterval = activeSkipInterval,
             skipIntervalDismissed = skipIntervalDismissed,

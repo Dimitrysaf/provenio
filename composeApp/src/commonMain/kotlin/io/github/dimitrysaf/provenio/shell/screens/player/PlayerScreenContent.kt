@@ -140,8 +140,9 @@ internal fun PlayerScreenContent(args: PlayerScreenArgs) {
             (runtime.playbackSnapshot.isPlaying ||
                 (runtime.shouldPlay && runtime.playbackSnapshot.isLoading))
         EnterImmersivePlayerMode(keepScreenAwake = keepScreenAwake)
+        // Loading counts as playing so the player can float while a stream starts.
         ManagePlayerPictureInPicture(
-            isPlaying = runtime.playbackSnapshot.isPlaying,
+            isPlaying = keepScreenAwake,
             videoSize = IntSize(
                 runtime.playbackSnapshot.videoWidth,
                 runtime.playbackSnapshot.videoHeight,

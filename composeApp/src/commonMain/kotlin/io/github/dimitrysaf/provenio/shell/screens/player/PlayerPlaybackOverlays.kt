@@ -27,12 +27,6 @@ internal fun BoxScope.PlayerPlaybackOverlays(
     lockedOverlayVisible: Boolean,
     metrics: PlayerLayoutMetrics,
     onUnlock: () -> Unit,
-    showOpeningOverlay: Boolean,
-    backdropArtwork: String?,
-    logo: String?,
-    title: String,
-    onBackWithProgress: () -> Unit,
-    openingStatusLines: List<String>,
     initialLoadCompleted: Boolean,
     activeSkipInterval: SkipInterval?,
     skipIntervalDismissed: Boolean,
@@ -58,22 +52,6 @@ internal fun BoxScope.PlayerPlaybackOverlays(
             metrics = metrics,
             onUnlock = onUnlock,
             modifier = Modifier.fillMaxSize(),
-        )
-    }
-
-    AnimatedVisibility(
-        visible = showOpeningOverlay,
-        enter = fadeIn(),
-        exit = fadeOut(),
-    ) {
-        OpeningOverlay(
-            artwork = backdropArtwork,
-            logo = logo,
-            title = title,
-            onBack = onBackWithProgress,
-            metrics = metrics,
-            modifier = Modifier.fillMaxSize(),
-            statusLines = openingStatusLines,
         )
     }
 

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
@@ -51,6 +52,7 @@ import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -103,6 +105,8 @@ internal fun PlayerControlsShell(
     metrics: PlayerLayoutMetrics,
     resizeMode: PlayerResizeMode,
     showPlaybackControls: Boolean = true,
+    controlsReady: Boolean = true,
+    playbackRequested: Boolean = true,
     hideSeekForward: Boolean = false,
     onLockToggle: () -> Unit,
     onBack: () -> Unit,
@@ -183,6 +187,8 @@ internal fun PlayerControlsShell(
                 CenterControls(
                     snapshot = playbackSnapshot,
                     metrics = metrics,
+                    controlsReady = controlsReady,
+                    playbackRequested = playbackRequested,
                     hideSeekForward = hideSeekForward,
                     onSeekBack = onSeekBack,
                     onSeekForward = onSeekForward,
@@ -196,6 +202,7 @@ internal fun PlayerControlsShell(
                     displayedPositionMs = displayedPositionMs,
                     metrics = metrics,
                     resizeMode = resizeMode,
+                    controlsReady = controlsReady,
                     onScrubChange = onScrubChange,
                     onScrubFinished = onScrubFinished,
                     onResizeModeClick = onResizeModeClick,
@@ -408,6 +415,8 @@ private fun ParentalWarning.icon(): ImageVector = when (category) {
 private fun CenterControls(
     snapshot: PlayerPlaybackSnapshot,
     metrics: PlayerLayoutMetrics,
+    controlsReady: Boolean,
+    playbackRequested: Boolean,
     hideSeekForward: Boolean,
     onSeekBack: () -> Unit,
     onSeekForward: () -> Unit,
@@ -424,7 +433,7 @@ private fun CenterControls(
             icon = Icons.Rounded.Replay10,
             contentDescription = stringResource(Res.string.compose_player_seek_back_10),
             metrics = metrics,
-            onClick = onSeekBack,
+            onClick = onSeekBack.takeIf { controlsReady },
         )
         // Square when paused or finished, round while playing or buffering.
         val isRound = !snapshot.isEnded && (snapshot.isLoading || snapshot.isPlaying)
@@ -443,12 +452,18 @@ private fun CenterControls(
                 isRound = isRound,
                 onClick = onTogglePlayback,
             )
+            // Loading still pauses and resumes; the ring shows it is waiting for data.
             snapshot.isLoading -> PrimaryControlButton(
-                icon = null,
-                contentDescription = null,
+                icon = if (playbackRequested) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                contentDescription = if (playbackRequested) {
+                    stringResource(Res.string.compose_action_pause)
+                } else {
+                    stringResource(Res.string.detail_btn_play)
+                },
                 metrics = metrics,
-                isRound = isRound,
-                onClick = null,
+                isRound = true,
+                loading = playbackRequested,
+                onClick = onTogglePlayback,
             )
             else -> PrimaryControlButton(
                 icon = if (snapshot.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
@@ -468,7 +483,7 @@ private fun CenterControls(
                 icon = Icons.Rounded.Forward10,
                 contentDescription = stringResource(Res.string.compose_player_seek_forward_10),
                 metrics = metrics,
-                onClick = { if (!hideSeekForward) onSeekForward() },
+                onClick = if (controlsReady) { { if (!hideSeekForward) onSeekForward() } } else null,
             )
         }
     }
@@ -479,20 +494,20 @@ private fun CenterControlButton(
     icon: ImageVector,
     contentDescription: String,
     metrics: PlayerLayoutMetrics,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
 ) {
     Box(
         modifier = Modifier
             .clip(CircleShape)
             .background(PlayerScrimColor)
-            .clickable(onClick = onClick)
+            .clickable(enabled = onClick != null) { onClick?.invoke() }
             .padding(metrics.sideButtonPadding),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = Color.White,
+            tint = if (onClick != null) Color.White else Color.White.copy(alpha = 0.38f),
             modifier = Modifier.size(metrics.sideIconSize),
         )
     }
@@ -506,6 +521,7 @@ private fun PrimaryControlButton(
     metrics: PlayerLayoutMetrics,
     isRound: Boolean,
     onClick: (() -> Unit)?,
+    loading: Boolean = false,
 ) {
     val size = metrics.playIconSize + metrics.playButtonPadding * 2
     val corner by animateDpAsState(
@@ -515,26 +531,36 @@ private fun PrimaryControlButton(
     )
     val shape = RoundedCornerShape(corner)
     val contentColor = MaterialTheme.colorScheme.onPrimary
-    Box(
-        modifier = Modifier
-            .size(size)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.primary)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (icon == null) {
-            LoadingSpinner(
-                color = contentColor,
-                modifier = Modifier.size(metrics.playIconSize),
+    Box(modifier = Modifier.size(size), contentAlignment = Alignment.Center) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.requiredSize(size + 16.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = PlayerScrimColor,
+                strokeWidth = 4.dp,
             )
-        } else {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                tint = contentColor,
-                modifier = Modifier.size(metrics.playIconSize),
-            )
+        }
+        Box(
+            modifier = Modifier
+                .size(size)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.primary)
+                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (icon == null) {
+                LoadingSpinner(
+                    color = contentColor,
+                    modifier = Modifier.size(metrics.playIconSize),
+                )
+            } else {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = contentDescription,
+                    tint = contentColor,
+                    modifier = Modifier.size(metrics.playIconSize),
+                )
+            }
         }
     }
 }
@@ -545,6 +571,7 @@ private fun BottomControls(
     displayedPositionMs: Long,
     metrics: PlayerLayoutMetrics,
     resizeMode: PlayerResizeMode,
+    controlsReady: Boolean,
     onScrubChange: (Long) -> Unit,
     onScrubFinished: (Long) -> Unit,
     onResizeModeClick: () -> Unit,
@@ -562,15 +589,16 @@ private fun BottomControls(
     val speedLabel = formatPlaybackSpeedLabel(playbackSnapshot.playbackSpeed)
     val leftActions = listOf(
         PlayerGroupAction(stringResource(resizeMode.labelRes), onResizeModeClick, icon = Icons.Rounded.AspectRatio),
-        PlayerGroupAction(speedLabel, onSpeedClick, label = speedLabel),
+        // Speed and tracks need a loaded stream, so they wait until it is ready.
+        PlayerGroupAction(speedLabel, onSpeedClick.takeIf { controlsReady }, label = speedLabel),
         PlayerGroupAction(
             stringResource(Res.string.compose_player_subs),
-            onSubtitleClick,
+            onSubtitleClick.takeIf { controlsReady },
             icon = Icons.Rounded.Subtitles,
         ),
         PlayerGroupAction(
             stringResource(Res.string.compose_player_audio),
-            onAudioClick,
+            onAudioClick.takeIf { controlsReady },
             icon = Icons.Rounded.Audiotrack,
         ),
         // Casting is not built yet, so the button is shown but does nothing.
@@ -583,7 +611,13 @@ private fun BottomControls(
     )
     val rightActions = buildList {
         onSubmitIntroClick?.let {
-            add(PlayerGroupAction(stringResource(Res.string.submit_intro_action), it, icon = Icons.Rounded.Flag))
+            add(
+                PlayerGroupAction(
+                    stringResource(Res.string.submit_intro_action),
+                    it.takeIf { controlsReady },
+                    icon = Icons.Rounded.Flag,
+                ),
+            )
         }
         onOpenInExternalPlayer?.let {
             add(
@@ -598,7 +632,7 @@ private fun BottomControls(
             add(
                 PlayerGroupAction(
                     stringResource(Res.string.player_action_video_settings),
-                    it,
+                    it.takeIf { controlsReady },
                     icon = Icons.Rounded.Tune,
                 ),
             )

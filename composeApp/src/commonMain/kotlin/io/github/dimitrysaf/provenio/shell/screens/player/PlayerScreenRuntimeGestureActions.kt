@@ -133,6 +133,7 @@ internal fun PlayerScreenRuntime.showBrightnessFeedback(level: Float) {
             messageRes = Res.string.compose_player_brightness_level,
             messageArgs = listOf("$percentage%"),
             icon = GestureFeedbackIcon.Brightness,
+            level = level.coerceIn(0f, 1f),
         ),
     )
 }
@@ -149,12 +150,14 @@ internal fun PlayerScreenRuntime.showVolumeFeedback(level: PlayerAudioLevel) {
             messageArgs = if (level.isMuted) emptyList() else listOf("$percentage%"),
             icon = if (level.isMuted) GestureFeedbackIcon.VolumeMuted else GestureFeedbackIcon.Volume,
             isDanger = level.isMuted,
+            level = if (level.isMuted) 0f else level.fraction.coerceIn(0f, 1f),
         ),
     )
 }
 
 internal fun PlayerScreenRuntime.togglePlayback() {
-    if (playbackSnapshot.isPlaying) {
+    // While loading, the request to play is what the button shows, so that is what it toggles.
+    if (playbackSnapshot.isPlaying || (playbackSnapshot.isLoading && shouldPlay)) {
         shouldPlay = false
         playerController?.pause()
     } else {
