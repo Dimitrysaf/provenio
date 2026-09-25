@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -76,6 +78,10 @@ import provenio.composeapp.generated.resources.settings_tracking_anime_id_mal_de
 import provenio.composeapp.generated.resources.settings_tracking_anime_id_subtitle
 import provenio.composeapp.generated.resources.settings_tracking_anime_id_title
 import provenio.composeapp.generated.resources.settings_tracking_anime_section
+import provenio.composeapp.generated.resources.settings_tracking_advanced
+import provenio.composeapp.generated.resources.settings_tracking_show_trakt
+import provenio.composeapp.generated.resources.settings_tracking_show_trakt_connected
+import provenio.composeapp.generated.resources.settings_tracking_show_trakt_description
 import provenio.composeapp.generated.resources.settings_trakt_comments
 import provenio.composeapp.generated.resources.settings_trakt_comments_description
 import provenio.composeapp.generated.resources.tracking_source_simkl
@@ -116,6 +122,10 @@ internal fun LazyListScope.trackingSettingsContent(
     commentsEnabled: Boolean,
     onCommentsEnabledChange: (Boolean) -> Unit,
 ) {
+    val traktConnected = traktUiState.mode == TraktConnectionMode.CONNECTED
+    // A live Trakt connection is never hidden, whatever the switch says.
+    val showTrakt = settingsUiState.traktEnabled || traktConnected
+
     item {
         SettingsSection(
             title = stringResource(Res.string.settings_tracking_services),
@@ -125,6 +135,7 @@ internal fun LazyListScope.trackingSettingsContent(
                 isTablet = isTablet,
                 traktUiState = traktUiState,
                 simklUiState = simklUiState,
+                showTrakt = showTrakt,
             )
         }
     }
@@ -137,13 +148,14 @@ internal fun LazyListScope.trackingSettingsContent(
             TrackingDataSources(
                 isTablet = isTablet,
                 settingsUiState = settingsUiState,
-                traktConnected = traktUiState.mode == TraktConnectionMode.CONNECTED,
+                traktConnected = traktConnected,
                 simklConnected = simklUiState.mode == SimklConnectionMode.CONNECTED,
+                showTrakt = showTrakt,
             )
         }
     }
 
-    if (traktUiState.mode == TraktConnectionMode.CONNECTED) {
+    if (traktConnected) {
         item {
             SettingsSection(
                 title = stringResource(Res.string.settings_tracking_viewing_discovery),
@@ -173,6 +185,28 @@ internal fun LazyListScope.trackingSettingsContent(
             }
         }
     }
+
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_tracking_advanced),
+            isTablet = isTablet,
+        ) {
+            val traktDescription = listOfNotNull(
+                stringResource(Res.string.settings_tracking_show_trakt_description),
+                stringResource(Res.string.settings_tracking_show_trakt_connected).takeIf { traktConnected },
+            ).joinToString("\n")
+            SettingsList {
+                switchRow(
+                    title = stringResource(Res.string.settings_tracking_show_trakt),
+                    description = traktDescription,
+                    icon = Icons.Rounded.Science,
+                    checked = { showTrakt },
+                    enabled = !traktConnected,
+                    onCheckedChange = TrackingSettingsRepository::setTraktEnabled,
+                )
+            }
+        }
+    }
 }
 
 private enum class TrackingDataPicker {
@@ -186,6 +220,7 @@ private fun TrackingDataSources(
     settingsUiState: TrackingSettingsUiState,
     traktConnected: Boolean,
     simklConnected: Boolean,
+    showTrakt: Boolean,
 ) {
     var activePickerName by rememberSaveable { mutableStateOf<String?>(null) }
     val activePicker = activePickerName?.let(TrackingDataPicker::valueOf)
@@ -256,7 +291,7 @@ private fun TrackingDataSources(
             title = stringResource(Res.string.trakt_library_source_dialog_title),
             subtitle = stringResource(Res.string.trakt_library_source_dialog_subtitle),
             selectedValue = effectiveLibrarySource,
-            options = librarySourceOptions(traktConnected, simklConnected),
+            options = librarySourceOptions(traktConnected, simklConnected, showTrakt),
             onSelected = TrackingSettingsRepository::setLibrarySourceMode,
             onDismiss = { activePickerName = null },
         )
@@ -264,7 +299,7 @@ private fun TrackingDataSources(
             title = stringResource(Res.string.trakt_watch_progress_dialog_title),
             subtitle = stringResource(Res.string.tracking_watch_progress_dialog_subtitle),
             selectedValue = effectiveProgressSource,
-            options = watchProgressSourceOptions(traktConnected, simklConnected),
+            options = watchProgressSourceOptions(traktConnected, simklConnected, showTrakt),
             onSelected = { source ->
                 scope.launch {
                     WatchProgressSourceCoordinator.selectSource(
@@ -452,6 +487,7 @@ private fun SettingsListScope.TrackingInlineErrorRow(
 private fun librarySourceOptions(
     traktConnected: Boolean,
     simklConnected: Boolean,
+    showTrakt: Boolean,
 ): List<TrackingPickerOption<LibrarySourceMode>> {
     val traktAvailable = isTrackingBrandAvailable(TrackingBrand.TRAKT, traktConnected, simklConnected)
     val simklAvailable = isTrackingBrandAvailable(TrackingBrand.SIMKL, traktConnected, simklConnected)
@@ -475,13 +511,14 @@ private fun librarySourceOptions(
             enabled = simklAvailable,
             unavailableReason = trackingUnavailableReason(TrackingBrand.SIMKL, simklAvailable),
         ),
-    )
+    ).filter { showTrakt || it.value != LibrarySourceMode.TRAKT }
 }
 
 @Composable
 private fun watchProgressSourceOptions(
     traktConnected: Boolean,
     simklConnected: Boolean,
+    showTrakt: Boolean,
 ): List<TrackingPickerOption<WatchProgressSource>> {
     val traktAvailable = isTrackingBrandAvailable(TrackingBrand.TRAKT, traktConnected, simklConnected)
     val simklAvailable = isTrackingBrandAvailable(TrackingBrand.SIMKL, traktConnected, simklConnected)
@@ -505,7 +542,7 @@ private fun watchProgressSourceOptions(
             enabled = simklAvailable,
             unavailableReason = trackingUnavailableReason(TrackingBrand.SIMKL, simklAvailable),
         ),
-    )
+    ).filter { showTrakt || it.value != WatchProgressSource.TRAKT }
 }
 
 @Composable

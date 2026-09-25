@@ -3,7 +3,6 @@ package io.github.dimitrysaf.provenio.core.settings
 import io.github.dimitrysaf.provenio.core.membership.MemberAccessRepository
 import io.github.dimitrysaf.provenio.core.membership.availableAppThemes
 import io.github.dimitrysaf.provenio.core.membership.resolveAppTheme
-import io.github.dimitrysaf.provenio.core.membership.resolveCustomThemeColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -86,8 +85,7 @@ object ThemeSettingsRepository {
 
     fun setCustomTheme(colors: CustomThemeColors) {
         ensureLoaded()
-        val access = MemberAccessRepository.access.value
-        val selectedColors = resolveCustomThemeColors(colors, access.tier)
+        val selectedColors = colors
         ThemeSettingsStorage.saveCustomThemeColors(selectedColors.encode())
         ThemeSettingsStorage.saveSelectedTheme(AppTheme.CUSTOM.name)
         _customThemePreference.value = selectedColors
@@ -123,11 +121,12 @@ object ThemeSettingsRepository {
 
     private fun applyEffectiveTheme() {
         val access = MemberAccessRepository.access.value
+        // Unlocking the supporter themes should not change the look of anyone who never picked one.
         val effective = resolveAppTheme(
-            selectedTheme = _selectedThemePreference.value,
+            selectedTheme = _selectedThemePreference.value ?: AppTheme.WHITE,
             entitlements = access.entitlements,
         )
-        _customThemeColors.value = resolveCustomThemeColors(_customThemePreference.value, access.tier)
+        _customThemeColors.value = _customThemePreference.value
         _selectedTheme.value = effective
     }
 }

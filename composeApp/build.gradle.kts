@@ -454,6 +454,8 @@ kotlin {
                 implementation(libs.androidx.activity.compose)
                 implementation(libs.androidx.core.splashscreen)
                 implementation(libs.androidx.work.runtime)
+                // Supplies ProcessLifecycleOwner, which used to arrive through the Supabase client.
+                implementation("androidx.lifecycle:lifecycle-process:2.9.0")
                 implementation(libs.coil.gif)
                 implementation("androidx.recyclerview:recyclerview:1.4.0")
                 implementation("com.squareup.okhttp3:okhttp:4.12.0")

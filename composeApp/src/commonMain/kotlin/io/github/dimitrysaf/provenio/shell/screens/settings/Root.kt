@@ -30,6 +30,7 @@ import io.github.dimitrysaf.provenio.core.build.AppVersionConfig
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.compose_about_made_with
 import provenio.composeapp.generated.resources.compose_about_version_format
+import provenio.composeapp.generated.resources.settings_category_profile_tracking
 import provenio.composeapp.generated.resources.compose_settings_page_account
 import provenio.composeapp.generated.resources.compose_settings_page_advanced
 import provenio.composeapp.generated.resources.compose_settings_page_appearance

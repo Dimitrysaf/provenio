@@ -56,6 +56,7 @@ data class TraktSettingsUiState(
     val librarySourceMode: LibrarySourceMode = DEFAULT_LIBRARY_SOURCE_MODE,
     val moreLikeThisSource: MoreLikeThisSourcePreference = DEFAULT_MORE_LIKE_THIS_SOURCE,
     val simklAnimeIdPreference: SimklAnimeIdPreference = DEFAULT_SIMKL_ANIME_ID_PREFERENCE,
+    val traktEnabled: Boolean = false,
 )
 
 @Serializable
@@ -65,6 +66,7 @@ private data class StoredTraktSettings(
     val librarySourceMode: String? = null,
     val moreLikeThisSource: String? = null,
     val simklAnimeIdPreference: String? = null,
+    val traktEnabled: Boolean = false,
 )
 
 object TraktSettingsRepository {
@@ -133,6 +135,14 @@ object TraktSettingsRepository {
         io.github.dimitrysaf.provenio.core.tracking.simkl.SimklSyncRepository.invalidateProjections()
     }
 
+    // Trakt is for people who already use it, so it stays out of the way until they turn it on.
+    fun setTraktEnabled(enabled: Boolean) {
+        ensureLoaded()
+        if (_uiState.value.traktEnabled == enabled) return
+        _uiState.value = _uiState.value.copy(traktEnabled = enabled)
+        persist()
+    }
+
     private fun loadFromDisk() {
         hasLoaded = true
 
@@ -153,6 +163,7 @@ object TraktSettingsRepository {
                 librarySourceMode = librarySourceModeFromStorage(stored.librarySourceMode),
                 moreLikeThisSource = MoreLikeThisSourcePreference.fromStorage(stored.moreLikeThisSource),
                 simklAnimeIdPreference = SimklAnimeIdPreference.fromStorage(stored.simklAnimeIdPreference),
+                traktEnabled = stored.traktEnabled,
             )
         } else {
             TraktSettingsUiState()
@@ -168,6 +179,7 @@ object TraktSettingsRepository {
                     librarySourceMode = state.librarySourceMode.name,
                     moreLikeThisSource = state.moreLikeThisSource.name,
                     simklAnimeIdPreference = state.simklAnimeIdPreference.name,
+                    traktEnabled = state.traktEnabled,
                 ),
             ),
         )

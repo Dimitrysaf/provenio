@@ -46,9 +46,9 @@ class ThemeSettingsRepositoryTest {
     }
 
     @Test
-    fun savingAGradientWithoutMembershipStoresOnlyItsMainColor() {
-        ThemeSettingsRepository.setCustomTheme(CustomThemeColors(0x112233, 0x445566, 0x778899))
-        val expected = CustomThemeColors.solid(0x445566)
+    fun savingAGradientKeepsAllItsStops() {
+        val expected = CustomThemeColors(0x112233, 0x445566, 0x778899)
+        ThemeSettingsRepository.setCustomTheme(expected)
 
         assertEquals(AppTheme.CUSTOM, ThemeSettingsRepository.selectedTheme.value)
         assertEquals(expected, ThemeSettingsRepository.customThemeColors.value)
@@ -57,7 +57,7 @@ class ThemeSettingsRepositoryTest {
     }
 
     @Test
-    fun loadingASyncedGradientWithoutMembershipPreservesTheSavedStops() {
+    fun loadingASavedGradientShowsAllItsStops() {
         val saved = CustomThemeColors(0x112233, 0x445566, 0x778899)
         ThemeSettingsStorage.saveCustomThemeColors(saved.encode())
         ThemeSettingsStorage.saveSelectedTheme(AppTheme.CUSTOM.name)
@@ -67,7 +67,7 @@ class ThemeSettingsRepositoryTest {
         ThemeSettingsRepository.setTheme(AppTheme.CUSTOM)
 
         assertEquals(AppTheme.CUSTOM, ThemeSettingsRepository.selectedTheme.value)
-        assertEquals(CustomThemeColors.solid(0x445566), ThemeSettingsRepository.customThemeColors.value)
+        assertEquals(saved, ThemeSettingsRepository.customThemeColors.value)
         assertEquals(saved, ThemeSettingsRepository.customThemePreference.value)
         assertEquals(saved.encode(), ThemeSettingsStorage.exportToSyncPayload().decodeSyncString("custom_theme_colors"))
     }

@@ -6,25 +6,35 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Forum
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.LinkOff
+import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.Sensors
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
@@ -100,6 +111,15 @@ import provenio.composeapp.generated.resources.settings_trakt_missing_credential
 import provenio.composeapp.generated.resources.settings_trakt_open_login
 import provenio.composeapp.generated.resources.settings_trakt_save_actions_description
 import provenio.composeapp.generated.resources.settings_trakt_sign_in_description
+import provenio.composeapp.generated.resources.tracking_feature_comments
+import provenio.composeapp.generated.resources.tracking_feature_lists
+import provenio.composeapp.generated.resources.tracking_feature_progress
+import provenio.composeapp.generated.resources.tracking_feature_recommendations
+import provenio.composeapp.generated.resources.tracking_feature_scrobbling
+import provenio.composeapp.generated.resources.tracking_feature_watched
+import provenio.composeapp.generated.resources.tracking_features_available
+import provenio.composeapp.generated.resources.tracking_features_syncing
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.settings.TrackingBrand
 import io.github.dimitrysaf.provenio.core.settings.TrackingConnectionCardMode
@@ -110,6 +130,7 @@ internal fun TrackingProviderCards(
     isTablet: Boolean,
     traktUiState: TraktAuthUiState,
     simklUiState: SimklAuthUiState,
+    showTrakt: Boolean,
 ) {
     val syncState by remember {
         SimklSyncRepository.ensureLoaded()
@@ -129,26 +150,31 @@ internal fun TrackingProviderCards(
         }
     }
 
+    // Simkl is the tracker the app is built around, so it always leads; Trakt only joins it when
+    // the person has asked for it.
+    val simklCard: @Composable (Modifier) -> Unit = { cardModifier ->
+        SimklProviderCard(
+            uiState = simklUiState,
+            isSyncing = syncState.isLoading,
+            syncErrorMessage = syncState.errorMessage,
+            onSyncRequested = onSimklSyncRequested,
+            onInfoRequested = { showSyncInfo = true },
+            modifier = cardModifier,
+        )
+    }
+
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val useTwoColumns = maxWidth >= 600.dp
+        val useTwoColumns = showTrakt && maxWidth >= 600.dp
         if (useTwoColumns) {
-            // The two are lists now, each as tall as its own rows, so neither is stretched to
-            // match the other: a row with nothing in it would just be a gap.
+            // Each list is as tall as its own rows, so neither is stretched to match the other.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.Top,
             ) {
+                simklCard(Modifier.weight(1f))
                 TraktProviderCard(
                     uiState = traktUiState,
-                    modifier = Modifier.weight(1f),
-                )
-                SimklProviderCard(
-                    uiState = simklUiState,
-                    isSyncing = syncState.isLoading,
-                    syncErrorMessage = syncState.errorMessage,
-                    onSyncRequested = onSimklSyncRequested,
-                    onInfoRequested = { showSyncInfo = true },
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -157,18 +183,13 @@ internal fun TrackingProviderCards(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(if (isTablet) 16.dp else 12.dp),
             ) {
-                TraktProviderCard(
-                    uiState = traktUiState,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                SimklProviderCard(
-                    uiState = simklUiState,
-                    isSyncing = syncState.isLoading,
-                    syncErrorMessage = syncState.errorMessage,
-                    onSyncRequested = onSimklSyncRequested,
-                    onInfoRequested = { showSyncInfo = true },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                simklCard(Modifier.fillMaxWidth())
+                if (showTrakt) {
+                    TraktProviderCard(
+                        uiState = traktUiState,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
     }
@@ -186,6 +207,7 @@ private fun TraktProviderCard(
     TrackingProviderCard(
         brand = TrackingBrand.TRAKT,
         mode = uiState.mode.toTrackingConnectionCardMode(),
+        features = TraktFeatures,
         credentialsConfigured = uiState.credentialsConfigured,
         isLoading = uiState.isLoading,
         connectedLabel = stringResource(
@@ -227,6 +249,7 @@ private fun SimklProviderCard(
     TrackingProviderCard(
         brand = TrackingBrand.SIMKL,
         mode = uiState.mode.toTrackingConnectionCardMode(),
+        features = SimklFeatures,
         credentialsConfigured = uiState.credentialsConfigured,
         isLoading = uiState.isLoading,
         connectedLabel = stringResource(
@@ -271,6 +294,7 @@ private fun SimklProviderCard(
 private fun TrackingProviderCard(
     brand: TrackingBrand,
     mode: TrackingConnectionCardMode,
+    features: List<TrackingFeature>,
     credentialsConfigured: Boolean,
     isLoading: Boolean,
     connectedLabel: String,
@@ -326,6 +350,13 @@ private fun TrackingProviderCard(
     SettingsList(modifier = modifier) {
         shapedRow { shape ->
             TrackingBrandBanner(brand = brand, shape = shape)
+        }
+        shapedRow { shape ->
+            TrackingFeaturesRow(
+                features = features,
+                active = mode == TrackingConnectionCardMode.CONNECTED,
+                shape = shape,
+            )
         }
 
         when (mode) {
@@ -435,6 +466,96 @@ private fun TrackingProviderCard(
             },
             onDismiss = { showDisconnectDialog = false },
         )
+    }
+}
+
+/** One kind of data a tracker keeps in step with the app. */
+private data class TrackingFeature(
+    val icon: ImageVector,
+    val label: StringResource,
+)
+
+private val SimklFeatures = listOf(
+    TrackingFeature(Icons.Rounded.BookmarkBorder, Res.string.tracking_feature_lists),
+    TrackingFeature(Icons.Rounded.History, Res.string.tracking_feature_watched),
+    TrackingFeature(Icons.Rounded.PlayCircle, Res.string.tracking_feature_progress),
+    TrackingFeature(Icons.Rounded.Sensors, Res.string.tracking_feature_scrobbling),
+)
+
+private val TraktFeatures = SimklFeatures + listOf(
+    TrackingFeature(Icons.Rounded.Forum, Res.string.tracking_feature_comments),
+    TrackingFeature(Icons.Rounded.AutoAwesome, Res.string.tracking_feature_recommendations),
+)
+
+/** What the tracker syncs, as tonal chips: filled in once it is connected, muted until then. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TrackingFeaturesRow(
+    features: List<TrackingFeature>,
+    active: Boolean,
+    shape: RoundedCornerShape,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(
+                    if (active) Res.string.tracking_features_syncing else Res.string.tracking_features_available,
+                ),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                features.forEach { feature ->
+                    TrackingFeatureChip(feature = feature, active = active)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TrackingFeatureChip(
+    feature: TrackingFeature,
+    active: Boolean,
+) {
+    Surface(
+        shape = CircleShape,
+        color = if (active) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHighest
+        },
+        contentColor = if (active) {
+            MaterialTheme.colorScheme.onSecondaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 10.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = feature.icon,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = stringResource(feature.label),
+                style = MaterialTheme.typography.labelLarge,
+            )
+        }
     }
 }
 
