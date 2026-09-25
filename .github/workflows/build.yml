@@ -155,8 +155,9 @@ jobs:
       - name: Set up environment
         uses: ./.github/actions/setup-environment
         with:
-          local-properties-base64: ${{ inputs.channel == 'stable' && secrets.PROVENIO_LOCAL_PROPERTIES_BASE64 || '' }}
+          local-properties-base64: ${{ secrets.PROVENIO_LOCAL_PROPERTIES_BASE64 }}
           keystore-base64: ${{ inputs.channel == 'stable' && secrets.PROVENIO_RELEASE_KEYSTORE_BASE64 || '' }}
+          simkl-client-id: ${{ secrets.SIMKL_CLIENT_ID }}
 
       - name: Building app
         uses: ./.github/actions/build-app

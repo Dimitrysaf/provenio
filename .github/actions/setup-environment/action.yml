@@ -10,6 +10,10 @@ inputs:
     description: Base64 release keystore. Empty for an unsigned build.
     required: false
     default: ""
+  simkl-client-id:
+    description: Simkl client ID, written into local.properties. Empty to leave it unset.
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -27,18 +31,29 @@ runs:
       env:
         LOCAL_PROPERTIES_BASE64: ${{ inputs.local-properties-base64 }}
         KEYSTORE_BASE64: ${{ inputs.keystore-base64 }}
+        SIMKL_CLIENT_ID: ${{ inputs.simkl-client-id }}
       run: |
-        if [[ -z "${KEYSTORE_BASE64}" ]]; then
-          echo "No keystore given, writing a placeholder local.properties"
+        # Every build shares the same app keys; only a keystore makes it a signed release.
+        if [[ -n "${LOCAL_PROPERTIES_BASE64}" ]]; then
+          printf '%s' "${LOCAL_PROPERTIES_BASE64}" | base64 --decode > local.properties
+        else
+          echo "No local.properties given, writing a placeholder"
           touch local.properties
+        fi
+        sed -i -E '/^[[:space:]]*(sdk\.dir|PROVENIO_RELEASE_STORE_FILE)[[:space:]]*=/d' local.properties
+
+        if [[ -n "${SIMKL_CLIENT_ID}" ]]; then
+          sed -i -E '/^[[:space:]]*SIMKL_CLIENT_ID[[:space:]]*=/d' local.properties
+          printf '\nSIMKL_CLIENT_ID=%s\n' "${SIMKL_CLIENT_ID}" >> local.properties
+        fi
+
+        if [[ -z "${KEYSTORE_BASE64}" ]]; then
           exit 0
         fi
 
         echo "Setting up release signing"
         keystore_path="${RUNNER_TEMP}/provenio-release.jks"
         printf '%s' "${KEYSTORE_BASE64}" | base64 --decode > "${keystore_path}"
-        printf '%s' "${LOCAL_PROPERTIES_BASE64}" | base64 --decode > local.properties
-        sed -i -E '/^[[:space:]]*(sdk\.dir|PROVENIO_RELEASE_STORE_FILE)[[:space:]]*=/d' local.properties
         printf '\nPROVENIO_RELEASE_STORE_FILE=%s\n' "${keystore_path}" >> local.properties
 
         for property_name in PROVENIO_RELEASE_STORE_PASSWORD PROVENIO_RELEASE_KEY_ALIAS PROVENIO_RELEASE_KEY_PASSWORD; do
