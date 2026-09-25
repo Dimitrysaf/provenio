@@ -11,8 +11,7 @@
 -keepattributes EnclosingMethod
 -keepattributes RuntimeVisibleAnnotations
 
-# Ktor / Supabase client stack (runtime reflective paths in serializers/plugins).
--keep class io.github.jan.supabase.** { *; }
+# Ktor client stack (runtime reflective paths in serializers/plugins).
 -keep class io.ktor.** { *; }
 -dontwarn io.ktor.**
 

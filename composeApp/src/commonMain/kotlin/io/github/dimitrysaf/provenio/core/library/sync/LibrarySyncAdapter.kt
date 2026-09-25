@@ -16,31 +16,6 @@ data class LibraryDeltaEvent(
     val item: LibraryItem,
 )
 
-interface LibrarySyncAdapter {
-    suspend fun pullSnapshot(
-        profileId: Int,
-        pageSize: Int,
-    ): List<LibraryItem>
-
-    suspend fun getDeltaCursor(profileId: Int): Long
-
-    suspend fun pullDelta(
-        profileId: Int,
-        sinceEventId: Long,
-        limit: Int,
-    ): List<LibraryDeltaEvent>
-
-    suspend fun pushItems(
-        profileId: Int,
-        items: Collection<LibraryItem>,
-    )
-
-    suspend fun deleteItems(
-        profileId: Int,
-        keys: Collection<LibrarySyncKey>,
-    )
-}
-
 fun LibraryItem.toLibrarySyncKey(): LibrarySyncKey =
     LibrarySyncKey(
         contentId = id,

@@ -1,8 +1,6 @@
 package io.github.dimitrysaf.provenio.core.storage
 
 import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
-import io.github.dimitrysaf.provenio.core.sync.SyncManager
-import io.github.dimitrysaf.provenio.core.sync.ProfileSettingsSync
 import io.github.dimitrysaf.provenio.core.tracking.ensureTrackingProvidersRegistered
 import io.github.dimitrysaf.provenio.core.addons.AddonRepository
 import io.github.dimitrysaf.provenio.core.catalog.CatalogRepository
@@ -42,9 +40,7 @@ internal object LocalAccountDataCleaner {
     fun wipe() {
         ensureTrackingProvidersRegistered()
         TrackingProviderRegistry.removeStoredProfiles(1..MAX_PROFILES)
-        SyncManager.cancelAccountSync()
         WatchProgressSourceCoordinator.clearLocalState()
-        ProfileSettingsSync.clearAccountState()
         ContinueWatchingEnrichmentCache.clearLocalState()
         WatchProgressRepository.clearLocalState()
         WatchedRepository.clearLocalState()

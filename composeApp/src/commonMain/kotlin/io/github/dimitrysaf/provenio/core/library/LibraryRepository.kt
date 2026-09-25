@@ -1,14 +1,7 @@
 package io.github.dimitrysaf.provenio.core.library
 
 import co.touchlab.kermit.Logger
-import io.github.dimitrysaf.provenio.core.auth.AuthRepository
-import io.github.dimitrysaf.provenio.core.auth.AuthState
 import io.github.dimitrysaf.provenio.core.tracking.ensureTrackingProvidersRegistered
-import io.github.dimitrysaf.provenio.core.library.sync.LibrarySyncAdapter
-import io.github.dimitrysaf.provenio.core.library.sync.SupabaseLibrarySyncAdapter
-import io.github.dimitrysaf.provenio.core.library.sync.consumeCursorPages
-import io.github.dimitrysaf.provenio.core.library.sync.libraryDeltaPageSize
-import io.github.dimitrysaf.provenio.core.library.sync.librarySnapshotPageSize
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.tracking.TrackingLibraryProvider
 import io.github.dimitrysaf.provenio.core.tracking.TrackingLibraryTab
@@ -26,10 +19,8 @@ import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -38,8 +29,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.library_local_tab_title
 import provenio.composeapp.generated.resources.library_other
@@ -47,8 +36,6 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 
 object LibraryRepository {
-    private const val pushDebounceMs = 500L
-
     private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val log = Logger.withTag("LibraryRepository")
 
@@ -57,10 +44,8 @@ object LibraryRepository {
 
     private val localState = LibraryLocalState()
     private val loadLock = SynchronizedObject()
-    private val accountSyncMutex = Mutex()
     private val persistenceLock = SynchronizedObject()
     private val lastPersistedRevisionByProfile = mutableMapOf<Int, Long>()
-    internal var syncAdapter: LibrarySyncAdapter = SupabaseLibrarySyncAdapter
 
     init {
         ensureTrackingProvidersRegistered()
@@ -202,72 +187,6 @@ object LibraryRepository {
             publish()
             return
         }
-
-        accountSyncMutex.withLock {
-            val serializedToken = activeOperationToken(profileId) ?: return@withLock
-            val pullSnapshot = localState.markPullStarted(serializedToken) ?: return@withLock
-
-            try {
-                if (!pullSnapshot.deltaInitialized) {
-                    val cursorBeforeSnapshot = syncAdapter.getDeltaCursor(profileId)
-                    val serverItems = syncAdapter.pullSnapshot(
-                        profileId = profileId,
-                        pageSize = librarySnapshotPageSize,
-                    )
-                    val applyResult = localState.applyServerItems(
-                        pullSnapshot = pullSnapshot,
-                        serverItems = serverItems,
-                        cursorEventId = cursorBeforeSnapshot,
-                    ) ?: return@withLock
-                    persist(applyResult.snapshot)
-                    publish()
-                    if (applyResult.preservedLocalItems) {
-                        log.i {
-                            "Merged pending local library changes during snapshot bootstrap " +
-                                "profile=$profileId items=${applyResult.snapshot.items.size}"
-                        }
-                    }
-                }
-                pullLibraryDelta(serializedToken, profileId)
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Throwable) {
-                log.e(error) { "Failed to pull library from server" }
-            }
-        }
-    }
-
-    private suspend fun pullLibraryDelta(
-        token: LibraryProfileToken,
-        profileId: Int,
-    ) {
-        val initialSnapshot = localState.snapshot()
-        if (initialSnapshot.token != token) return
-        consumeCursorPages(
-            initialCursor = initialSnapshot.deltaCursorEventId,
-            pageSize = libraryDeltaPageSize,
-            fetchPage = { cursor, limit ->
-                if (isActiveOperation(token)) {
-                    syncAdapter.pullDelta(
-                        profileId = profileId,
-                        sinceEventId = cursor,
-                        limit = limit,
-                    )
-                } else {
-                    emptyList()
-                }
-            },
-            applyPage = { events, _ ->
-                if (!isActiveOperation(token)) {
-                    null
-                } else {
-                    localState.applyDeltaEvents(token, events)?.also { snapshot ->
-                        persist(snapshot)
-                        publish()
-                    }?.deltaCursorEventId
-                }
-            },
-        )
     }
 
     private fun activeOperationToken(profileId: Int): LibraryProfileToken? {
@@ -327,7 +246,6 @@ object LibraryRepository {
         }
         persist(result.snapshot)
         publish()
-        pushToServer(result.snapshot)
         return TrackingMembershipApplyResult()
     }
 
@@ -339,7 +257,6 @@ object LibraryRepository {
         }
         persist(snapshot)
         publish()
-        pushToServer(snapshot)
     }
 
     fun remove(id: String) {
@@ -352,7 +269,6 @@ object LibraryRepository {
             }
             persist(result.snapshot)
             publish()
-            pushToServer(result.snapshot)
         }
     }
 
@@ -365,7 +281,6 @@ object LibraryRepository {
             }
             persist(result.snapshot)
             publish()
-            pushToServer(result.snapshot)
         }
     }
 
@@ -505,71 +420,6 @@ object LibraryRepository {
             targetProviderIds = targetProvider?.let { provider -> setOf(provider.providerId) }.orEmpty(),
             updateLocal = listKey == LOCAL_LIBRARY_LIST_KEY,
         )
-    }
-
-    private fun pushToServer(
-        snapshot: LibraryLocalSnapshot,
-        delayMs: Long = pushDebounceMs,
-    ) {
-        if (!snapshot.hasPendingPush) return
-        val authState = AuthRepository.state.value
-        val profileId = snapshot.token.profileId
-        if (authState !is AuthState.Authenticated) {
-            log.w { "Skipping library push: auth state is ${authState::class.simpleName} profile=$profileId" }
-            return
-        }
-        if (authState.isAnonymous) {
-            log.w { "Skipping library push: anonymous auth user=${authState.userId} profile=$profileId" }
-            return
-        }
-        val pushJob = syncScope.launch(start = CoroutineStart.LAZY) {
-            delay(delayMs)
-            accountSyncMutex.withLock {
-                if (!localState.isCurrent(snapshot)) {
-                    val current = localState.snapshot()
-                    log.d {
-                        "Skipping stale debounced library push scheduled=${snapshot.token} " +
-                            "current=${current.token} scheduledRevision=${snapshot.revision} " +
-                            "currentRevision=${current.revision}"
-                    }
-                    return@withLock
-                }
-                val currentAuthState = AuthRepository.state.value
-                if (currentAuthState !is AuthState.Authenticated || currentAuthState.isAnonymous) {
-                    return@withLock
-                }
-                runCatching {
-                    val itemsByKey = snapshot.items.associateBy { item ->
-                        libraryItemKey(item.id, item.type)
-                    }
-                    val upsertItems = snapshot.pendingUpsertKeys.mapNotNull { key ->
-                        itemsByKey[libraryItemKey(key.contentId, key.contentType)]
-                    }
-                    syncAdapter.pushItems(profileId, upsertItems)
-                    syncAdapter.deleteItems(profileId, snapshot.pendingDeleteKeys)
-                    localState.markPushCompleted(snapshot)?.let(::persist)
-                    log.i {
-                        "Library delta push completed profile=$profileId " +
-                            "upserts=${upsertItems.size} deletes=${snapshot.pendingDeleteKeys.size}"
-                    }
-                }.onFailure { error ->
-                    if (error is CancellationException) throw error
-                    log.e(error) {
-                        "Failed to push library delta profile=$profileId " +
-                            "upserts=${snapshot.pendingUpsertKeys.size} deletes=${snapshot.pendingDeleteKeys.size}"
-                    }
-                }
-            }
-        }
-        pushJob.invokeOnCompletion { localState.clearPushJob(pushJob) }
-
-        val installResult = localState.installPushJob(snapshot, pushJob)
-        if (!installResult.installed) {
-            pushJob.cancel()
-            return
-        }
-        installResult.detachedPushJob?.cancel()
-        pushJob.start()
     }
 
     private fun publish() {

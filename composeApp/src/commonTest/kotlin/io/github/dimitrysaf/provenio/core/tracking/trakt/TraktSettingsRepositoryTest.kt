@@ -4,36 +4,9 @@ import io.github.dimitrysaf.provenio.core.library.LibrarySourceMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TraktSettingsRepositoryTest {
-
-    @Test
-    fun `watch source outbox survives restart and a stale push cannot clear a newer choice`() {
-        val disk = mutableMapOf<Int, String>()
-        fun newOutbox() = WatchProgressSourceSettingsOutbox(
-            loadPayload = disk::get,
-            savePayload = disk::set,
-            clearPayload = disk::remove,
-        )
-        val traktChoice = PendingWatchProgressSourceChange(
-            accountId = "account-a",
-            profileId = 2,
-            source = WatchProgressSource.TRAKT,
-        )
-        val accountChoice = traktChoice.copy(source = WatchProgressSource.ACCOUNT_SYNC)
-
-        newOutbox().record(traktChoice)
-        val afterProcessRestart = newOutbox()
-        assertEquals(traktChoice, afterProcessRestart.pendingFor("account-a", 2))
-
-        afterProcessRestart.record(accountChoice)
-        assertFalse(afterProcessRestart.clearIfMatches(traktChoice))
-        assertEquals(accountChoice, afterProcessRestart.pendingFor("account-a", 2))
-        assertTrue(afterProcessRestart.clearIfMatches(accountChoice))
-        assertNull(afterProcessRestart.pendingFor("account-a", 2))
-    }
 
     @Test
     fun `watch progress source defaults to Trakt for unset or invalid storage`() {

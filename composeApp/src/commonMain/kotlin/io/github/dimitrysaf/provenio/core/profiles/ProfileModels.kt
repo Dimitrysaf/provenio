@@ -39,23 +39,11 @@ data class AvatarCatalogItem(
     @Transient val memberOnly: Boolean = false,
 )
 
-fun avatarStorageUrl(storagePath: String): String =
-    if (storagePath.startsWith("https://") || storagePath.startsWith("http://")) {
-        storagePath
-    } else {
-        "${io.github.dimitrysaf.provenio.core.network.ServerConfigurationRepository.active.value.backendUrl}/storage/v1/object/public/avatars/$storagePath"
-    }
-
 fun avatarImageUrl(avatar: AvatarCatalogItem): String? =
     avatar.localImageUrl
-        ?: avatar.storagePath.takeIf { it.isNotBlank() && !avatar.memberOnly }?.let(::avatarStorageUrl)
-
-@kotlinx.serialization.Serializable
-data class ProfileLockState(
-    @kotlinx.serialization.SerialName("profile_index") val profileIndex: Int,
-    @kotlinx.serialization.SerialName("pin_enabled") val pinEnabled: Boolean = false,
-    @kotlinx.serialization.SerialName("pin_locked_until") val pinLockedUntil: String? = null,
-)
+        ?: avatar.storagePath.takeIf {
+            !avatar.memberOnly && (it.startsWith("https://") || it.startsWith("http://"))
+        }
 
 @Serializable
 data class ProfilePushPayload(

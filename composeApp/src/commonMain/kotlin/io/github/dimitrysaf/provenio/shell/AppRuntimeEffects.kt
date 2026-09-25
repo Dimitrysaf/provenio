@@ -12,11 +12,8 @@ import androidx.compose.runtime.setValue
 import io.github.dimitrysaf.provenio.core.addons.AddAddonResult
 import io.github.dimitrysaf.provenio.core.addons.AddonRepository
 import io.github.dimitrysaf.provenio.core.auth.AuthState
-import io.github.dimitrysaf.provenio.core.auth.DeviceSessionRegistration
-import io.github.dimitrysaf.provenio.core.collection.CollectionSyncService
 import io.github.dimitrysaf.provenio.core.deeplink.AppDeepLink
 import io.github.dimitrysaf.provenio.core.deeplink.AppDeepLinkRepository
-import io.github.dimitrysaf.provenio.core.membership.MemberAccessRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
 import io.github.dimitrysaf.provenio.core.network.NetworkCondition
 import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
@@ -24,8 +21,6 @@ import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificati
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.sync.AppForegroundMonitor
 import io.github.dimitrysaf.provenio.core.sync.AppVisibility
-import io.github.dimitrysaf.provenio.core.sync.ProfileSettingsSync
-import io.github.dimitrysaf.provenio.core.sync.SyncManager
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressSourceCoordinator
 import io.github.dimitrysaf.provenio.shell.components.NativeTabBridge
 import io.github.dimitrysaf.provenio.shell.components.ToastController
@@ -41,12 +36,6 @@ internal fun AppRuntimeServices(enabled: Boolean) {
     if (enabled) {
         remember {
             EpisodeReleaseNotificationsRepository.ensureLoaded()
-        }
-        remember {
-            CollectionSyncService.startObserving()
-        }
-        remember {
-            ProfileSettingsSync.startObserving()
         }
     }
 }
@@ -148,7 +137,6 @@ internal fun NetworkToastEffect(enabled: Boolean, condition: NetworkCondition) {
                     previousConditionName == NetworkCondition.NoInternet.name ||
                     previousConditionName == NetworkCondition.ServersUnreachable.name
                 ) {
-                    MemberAccessRepository.refresh()
                     ToastController.show(getString(Res.string.network_back_online))
                 }
             }
@@ -187,18 +175,12 @@ internal fun WatchSourceReconnectEffect(
 
                 val profileId = activeProfileIndex
                     ?: ProfileRepository.activeProfileId
-                val authenticatedState = authState as? AuthState.Authenticated
-                if (authenticatedState != null && !authenticatedState.isAnonymous) {
-                    SyncManager.requestForegroundPull(profileId = profileId)
+                val result = WatchProgressSourceCoordinator.refreshActiveSource(
+                    profileId = profileId,
+                    force = true,
+                )
+                if (result.succeeded) {
                     watchSourceReconnectPending = false
-                } else {
-                    val result = WatchProgressSourceCoordinator.refreshActiveSource(
-                        profileId = profileId,
-                        force = true,
-                    )
-                    if (result.succeeded) {
-                        watchSourceReconnectPending = false
-                    }
                 }
             }
 
@@ -209,40 +191,13 @@ internal fun WatchSourceReconnectEffect(
     }
 }
 
-// Pulls sync data while the app is in the foreground.
+// Refreshes the network status whenever the app returns to the foreground.
 @Composable
-internal fun ForegroundSyncEffect(
-    enabled: Boolean,
-    authState: AuthState,
-    activeProfileIndex: Int?,
-) {
-    LaunchedEffect(authState, activeProfileIndex) {
+internal fun ForegroundSyncEffect(enabled: Boolean) {
+    LaunchedEffect(Unit) {
         if (!enabled) return@LaunchedEffect
-        val authenticatedState = authState as? AuthState.Authenticated
-        val activeProfileId = activeProfileIndex
-        val syncProfileId = activeProfileId?.takeIf {
-            authenticatedState != null && !authenticatedState.isAnonymous
-        }
-        syncProfileId?.let(SyncManager::pullAllForProfile)
-        try {
-            AppForegroundMonitor.events().collect { visibility ->
-                when (visibility) {
-                    AppVisibility.Foreground -> {
-                        NetworkStatusRepository.requestForegroundRefresh()
-                        DeviceSessionRegistration.registerIfAuthenticated()
-                        MemberAccessRepository.refreshIfStale()
-                        if (syncProfileId != null) {
-                            SyncManager.startPeriodicAccountSyncPull(syncProfileId)
-                            SyncManager.requestForegroundPull(syncProfileId)
-                        } else {
-                            SyncManager.stopPeriodicAccountSyncPull()
-                        }
-                    }
-                    AppVisibility.Background -> SyncManager.stopPeriodicAccountSyncPull()
-                }
-            }
-        } finally {
-            SyncManager.stopPeriodicAccountSyncPull()
+        AppForegroundMonitor.events().collect { visibility ->
+            if (visibility == AppVisibility.Foreground) NetworkStatusRepository.requestForegroundRefresh()
         }
     }
 }

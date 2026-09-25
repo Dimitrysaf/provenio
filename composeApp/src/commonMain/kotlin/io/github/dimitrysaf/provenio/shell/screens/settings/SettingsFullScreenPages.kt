@@ -165,17 +165,4 @@ fun PluginsSettingsScreen(
     }
 }
 
-@Composable
-fun AccountSettingsScreen(
-    onBack: () -> Unit,
-) {
-    ScreenScaffold(
-        title = stringResource(Res.string.compose_settings_page_account),
-        modifier = Modifier.fillMaxSize(),
-        onBack = onBack,
-    ) {
-        accountSettingsContent(
-            isTablet = false,
-        )
-    }
-}
+

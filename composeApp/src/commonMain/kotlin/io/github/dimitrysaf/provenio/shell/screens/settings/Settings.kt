@@ -146,7 +146,6 @@ fun SettingsScreen(
     onAddonsClick: () -> Unit = {},
     onPluginsClick: () -> Unit = {},
     onDownloadsClick: () -> Unit = {},
-    onAccountClick: () -> Unit = {},
     onSupportersContributorsClick: () -> Unit = {},
     onLicensesAttributionsClick: () -> Unit = {},
     onCheckForUpdatesClick: (() -> Unit)? = null,
@@ -228,11 +227,6 @@ fun SettingsScreen(
         } else {
             onPluginsClick
         }
-        val openAccount = if (onNavigatePage != null) {
-            { openPage(SettingsPage.Account) }
-        } else {
-            onAccountClick
-        }
         val openSupportersContributors = if (onNavigatePage != null) {
             { openPage(SettingsPage.SupportersContributors) }
         } else {
@@ -311,7 +305,6 @@ fun SettingsScreen(
                         onAddonsClick = openAddons,
                         onPluginsClick = openPlugins,
                         onDownloadsClick = onDownloadsClick,
-                        onAccountClick = openAccount,
                         onSupportersContributorsClick = openSupportersContributors,
                         onLicensesAttributionsClick = openLicensesAttributions,
                         onCheckForUpdatesClick = onCheckForUpdatesClick,
@@ -345,7 +338,6 @@ private fun MobileSettingsScreen(
     onAddonsClick: () -> Unit = {},
     onPluginsClick: () -> Unit = {},
     onDownloadsClick: () -> Unit = {},
-    onAccountClick: () -> Unit = {},
     onSupportersContributorsClick: () -> Unit = {},
     onLicensesAttributionsClick: () -> Unit = {},
     onCheckForUpdatesClick: (() -> Unit)? = null,
@@ -380,7 +372,6 @@ private fun MobileSettingsScreen(
         fun openSearchTarget(target: SettingsSearchTarget) {
             when (target) {
                 is SettingsSearchTarget.Page -> when (target.page) {
-                    SettingsPage.Account -> onAccountClick()
                     SettingsPage.SupportersContributors -> {
                         if (AppFeaturePolicy.supportersContributorsPageEnabled) {
                             onSupportersContributorsClick()
@@ -451,7 +442,6 @@ private fun MobileSettingsScreen(
                                 isTablet = false,
                                 pluginsEnabled = AppFeaturePolicy.pluginsEnabled,
                                 supportersContributorsPageEnabled = AppFeaturePolicy.supportersContributorsPageEnabled,
-                                accountDeletionEnabled = AppFeaturePolicy.accountDeletionEnabled,
                                 personalMediaAddonCopyEnabled = AppFeaturePolicy.personalMediaAddonCopyEnabled,
                                 switchProfileAvailable = onSwitchProfile != null,
                                 checkForUpdatesAvailable = onCheckForUpdatesClick != null,
@@ -478,7 +468,6 @@ private fun MobileSettingsScreen(
                             onCheckForUpdatesClick = onCheckForUpdatesClick,
                             onTestUpdateBannerClick = onTestUpdateBannerClick,
                             onDownloadsClick = onDownloadsClick,
-                            onAccountClick = onAccountClick,
                             onSwitchProfileClick = onSwitchProfile,
                             showSupportersContributorsPage = AppFeaturePolicy.supportersContributorsPageEnabled,
                         )
@@ -748,8 +737,7 @@ private fun TabletSettingsScreen(
                                     isTablet = true,
                                     pluginsEnabled = AppFeaturePolicy.pluginsEnabled,
                                     supportersContributorsPageEnabled = AppFeaturePolicy.supportersContributorsPageEnabled,
-                                    accountDeletionEnabled = AppFeaturePolicy.accountDeletionEnabled,
-                                    personalMediaAddonCopyEnabled = AppFeaturePolicy.personalMediaAddonCopyEnabled,
+                                        personalMediaAddonCopyEnabled = AppFeaturePolicy.personalMediaAddonCopyEnabled,
                                     switchProfileAvailable = onSwitchProfile != null,
                                     checkForUpdatesAvailable = onCheckForUpdatesClick != null,
                                 )
@@ -775,9 +763,8 @@ private fun TabletSettingsScreen(
                                 onCheckForUpdatesClick = onCheckForUpdatesClick,
                                 onTestUpdateBannerClick = onTestUpdateBannerClick,
                                 onDownloadsClick = onDownloadsClick,
-                                onAccountClick = { openInlinePage(SettingsPage.Account) },
                                 onSwitchProfileClick = onSwitchProfile,
-                                showAccountSection = activeCategory == SettingsCategory.Account,
+                                showAccountSection = activeCategory == SettingsCategory.Profile,
                                 showGeneralSection = activeCategory == SettingsCategory.General,
                                 showAboutSection = activeCategory == SettingsCategory.About,
                                 showAdvancedSection = activeCategory == SettingsCategory.Advanced,
@@ -954,7 +941,6 @@ internal fun LazyListScope.settingsPageContent(
     val player = data.playerSettings
     when (page) {
         SettingsPage.Root -> Unit
-        SettingsPage.Account -> accountSettingsContent(isTablet = isTablet)
         SettingsPage.SupportersContributors -> {
             if (AppFeaturePolicy.supportersContributorsPageEnabled) {
                 supportersContributorsContent(isTablet = isTablet)

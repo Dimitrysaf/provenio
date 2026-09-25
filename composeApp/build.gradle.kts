@@ -35,15 +35,6 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
     abstract val buildCommit: Property<String>
 
     @get:Input
-    abstract val supabaseUrl: Property<String>
-
-    @get:Input
-    abstract val supabaseAnonKey: Property<String>
-
-    @get:Input
-    abstract val supabaseFallbackUrl: Property<String>
-
-    @get:Input
     abstract val sentryDsn: Property<String>
 
     @get:Input
@@ -58,21 +49,6 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
         localPropertiesFile.asFile.orNull?.takeIf { it.exists() }?.inputStream()?.use { props.load(it) }
 
         val outDir = outputDir.get().asFile
-        outDir.resolve("io/github/dimitrysaf/provenio/core/network").apply {
-            mkdirs()
-            resolve("SupabaseConfig.kt").writeText(
-                """
-                |package io.github.dimitrysaf.provenio.core.network
-                |
-                |object SupabaseConfig {
-                |    const val URL = "${supabaseUrl.get()}"
-                |    const val ANON_KEY = "${supabaseAnonKey.get()}"
-                |    const val FALLBACK_URL = "${supabaseFallbackUrl.get()}"
-                |}
-                """.trimMargin()
-            )
-        }
-
         outDir.resolve("io/github/dimitrysaf/provenio/core/diagnostics").apply {
             mkdirs()
             resolve("SentryConfig.kt").writeText(
@@ -261,7 +237,7 @@ plugins {
     alias(libs.plugins.kotlinxSerialization)
 }
 
-val supabaseProps = Properties().apply {
+val localProps = Properties().apply {
     val propsFile = rootProject.file("local.properties")
     if (propsFile.exists()) propsFile.inputStream().use { load(it) }
 }
@@ -274,7 +250,7 @@ val releaseAppVersionCode = readXcconfigValue(appVersionConfigFile, "CURRENT_PRO
 val iosDistribution = (
     providers.gradleProperty("provenio.ios.distribution").orNull
         ?: System.getenv("PROVENIO_IOS_DISTRIBUTION")
-        ?: supabaseProps.getProperty("PROVENIO_IOS_DISTRIBUTION")
+        ?: localProps.getProperty("PROVENIO_IOS_DISTRIBUTION")
         ?: "appstore"
     ).trim().lowercase()
 require(iosDistribution == "appstore" || iosDistribution == "full") {
@@ -303,7 +279,7 @@ require(requestedAndroidDistributions.size <= 1) {
     "Build Android full and playstore distributions separately, or set -Pprovenio.android.distribution=full|playstore."
 }
 val configuredAndroidDistribution = providers.gradleProperty("provenio.android.distribution").orNull
-    ?: supabaseProps.getProperty("PROVENIO_ANDROID_DISTRIBUTION")
+    ?: localProps.getProperty("PROVENIO_ANDROID_DISTRIBUTION")
 val isAmbiguousAndroidPackageTask = requestedGradleTasks.any { taskName ->
     taskName == "build" ||
         taskName.startsWith("assemble") ||
@@ -351,9 +327,6 @@ val generateRuntimeConfigs = tasks.register<GenerateRuntimeConfigsTask>("generat
     appVersionCode.set(releaseAppVersionCode)
     // The short commit a CI build was made from; beta updates compare against it. Empty for local builds.
     buildCommit.set(providers.environmentVariable("GITHUB_SHA").map { it.take(7) }.orElse(""))
-    supabaseUrl.set(runtimeConfigValue("PROVENIO_SUPABASE_URL"))
-    supabaseAnonKey.set(runtimeConfigValue("PROVENIO_SUPABASE_ANON_KEY"))
-    supabaseFallbackUrl.set(runtimeConfigValue("PROVENIO_SUPABASE_FALLBACK_URL"))
     sentryDsn.set(runtimeConfigValue("SENTRY_DSN"))
     tmdbApiKey.set(runtimeConfigValue("TMDB_API_KEY"))
     sentryEnvironment.set(
@@ -563,14 +536,11 @@ kotlin {
             implementation(libs.androidx.savedstate.compose)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.ktor.client.core)
             implementation(libs.kotlinx.atomicfu)
             implementation(libs.kmpalette.core)
             implementation(libs.androidx.navigation3.ui)
             implementation(libs.kermit)
-            implementation(libs.supabase.postgrest)
-            implementation(libs.supabase.auth)
-            implementation(libs.supabase.functions)
-            implementation(libs.supabase.storage)
             implementation(libs.reorderable)
         }
         commonTest.dependencies {

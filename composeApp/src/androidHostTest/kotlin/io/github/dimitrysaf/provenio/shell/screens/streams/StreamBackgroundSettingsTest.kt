@@ -142,7 +142,6 @@ class StreamBackgroundSettingsTest {
                     isTablet = isTablet.value,
                     pluginsEnabled = false,
                     supportersContributorsPageEnabled = false,
-                    accountDeletionEnabled = false,
                     personalMediaAddonCopyEnabled = false,
                     switchProfileAvailable = false,
                     checkForUpdatesAvailable = false,

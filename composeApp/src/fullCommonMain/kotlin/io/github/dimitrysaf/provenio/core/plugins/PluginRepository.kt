@@ -1,14 +1,10 @@
 package io.github.dimitrysaf.provenio.core.plugins
 
 import co.touchlab.kermit.Logger
-import io.github.dimitrysaf.provenio.core.network.SupabaseProvider
 import io.github.dimitrysaf.provenio.core.addons.httpGetText
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbService
 import io.github.dimitrysaf.provenio.core.plugins.runtime.PluginRuntime
-import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.Order
-import io.github.jan.supabase.postgrest.rpc
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
@@ -27,9 +23,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.put
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.plugins_error_enter_repo_url
 import provenio.composeapp.generated.resources.plugins_error_enter_valid_url
@@ -38,22 +31,6 @@ import provenio.composeapp.generated.resources.plugins_repository_already_instal
 import provenio.composeapp.generated.resources.plugins_repository_install_failed
 import provenio.composeapp.generated.resources.plugins_repository_refresh_failed
 import org.jetbrains.compose.resources.getString
-
-@Serializable
-private data class PluginRow(
-    val url: String,
-    val name: String? = null,
-    val enabled: Boolean = true,
-    @SerialName("sort_order") val sortOrder: Int = 0,
-)
-
-@Serializable
-private data class PluginPushItem(
-    val url: String,
-    val name: String = "",
-    val enabled: Boolean = true,
-    @SerialName("sort_order") val sortOrder: Int = 0,
-)
 
 private data class PluginPersistenceSnapshot(
     val profileId: Int,
@@ -116,64 +93,6 @@ actual object PluginRepository {
         _uiState.value = PluginsUiState()
     }
 
-    actual suspend fun pullFromServer(profileId: Int) {
-        val effectiveProfileId = resolveEffectiveProfileId(profileId)
-        ensureStateLoadedForProfile(effectiveProfileId)
-        runCatching {
-            val rows = SupabaseProvider.client.postgrest
-                .from("plugins")
-                .select {
-                    filter { eq("profile_id", currentProfileId) }
-                    order("sort_order", Order.ASCENDING)
-                }
-                .decodeList<PluginRow>()
-
-            val urls = dedupeManifestUrls(rows.map { it.url })
-            val existingState = _uiState.value
-            val existingReposByUrl = existingState.repositories.associateBy { it.manifestUrl }
-            val nowEpochMs = currentEpochMillis()
-            val nextRepos = urls.map { url ->
-                val existing = existingReposByUrl[url]
-                if (existing == null) {
-                    PluginRepositoryItem(
-                        manifestUrl = url,
-                        name = url.substringBefore("?").substringAfterLast('/'),
-                        isRefreshing = true,
-                    )
-                } else {
-                    val shouldRefresh = shouldRefreshRepository(
-                        repository = existing,
-                        scrapers = existingState.scrapers,
-                        nowEpochMs = nowEpochMs,
-                    )
-                    existing.copy(
-                        isRefreshing = shouldRefresh,
-                        errorMessage = if (shouldRefresh) null else existing.errorMessage,
-                    )
-                }
-            }
-            val nextScrapers = existingState.scrapers.filter { scraper ->
-                urls.contains(scraper.repositoryUrl)
-            }
-
-            _uiState.value = PluginsUiState(
-                pluginsEnabled = _uiState.value.pluginsEnabled,
-                groupStreamsByRepository = _uiState.value.groupStreamsByRepository,
-                repositories = nextRepos,
-                scrapers = nextScrapers,
-            )
-            persist()
-
-            nextRepos.filter(PluginRepositoryItem::isRefreshing).forEach { repository ->
-                refreshRepository(repository.manifestUrl, pushAfterRefresh = false)
-            }
-
-            initialized = true
-        }.onFailure { error ->
-            log.e(error) { "pullFromServer failed" }
-        }
-    }
-
     actual suspend fun addRepository(rawUrl: String): AddPluginRepositoryResult {
         initialize()
         val manifestUrl = try {
@@ -199,7 +118,6 @@ actual object PluginRepository {
                 )
             }
             persist()
-            pushToServer()
             AddPluginRepositoryResult.Success(repo)
         } catch (error: Throwable) {
             AddPluginRepositoryResult.Error(error.message ?: getString(Res.string.plugins_repository_install_failed))
@@ -215,7 +133,6 @@ actual object PluginRepository {
             )
         }
         persist()
-        pushToServer()
     }
 
     actual fun refreshAll() {
@@ -278,9 +195,6 @@ actual object PluginRepository {
                     )
                 }
                 persist()
-                if (pushAfterRefresh) {
-                    pushToServer()
-                }
             } finally {
                 if (activeRefreshJobs[manifestUrl] === refreshJob) {
                     activeRefreshJobs.remove(manifestUrl)
@@ -499,29 +413,6 @@ actual object PluginRepository {
                     }
                 },
             )
-        }
-    }
-
-    private fun pushToServer() {
-        scope.launch {
-            runCatching {
-                val repos = _uiState.value.repositories.mapIndexed { index, repo ->
-                    PluginPushItem(
-                        url = repo.manifestUrl,
-                        name = repo.name,
-                        enabled = true,
-                        sortOrder = index,
-                    )
-                }
-
-                val params = buildJsonObject {
-                    put("p_profile_id", currentProfileId)
-                    put("p_plugins", json.encodeToJsonElement(repos))
-                }
-                SupabaseProvider.client.postgrest.rpc("sync_push_plugins", params)
-            }.onFailure { error ->
-                log.e(error) { "pushToServer failed" }
-            }
         }
     }
 

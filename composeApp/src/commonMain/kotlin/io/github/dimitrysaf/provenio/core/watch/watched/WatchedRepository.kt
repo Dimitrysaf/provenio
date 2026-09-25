@@ -1,8 +1,6 @@
 package io.github.dimitrysaf.provenio.core.watch.watched
 
 import co.touchlab.kermit.Logger
-import io.github.dimitrysaf.provenio.core.auth.AuthRepository
-import io.github.dimitrysaf.provenio.core.auth.AuthState
 import io.github.dimitrysaf.provenio.core.tracking.ensureTrackingProvidersRegistered
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
 import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
@@ -13,7 +11,6 @@ import io.github.dimitrysaf.provenio.core.tracking.TrackingSettingsRepository
 import io.github.dimitrysaf.provenio.core.tracking.WatchProgressSource
 import io.github.dimitrysaf.provenio.core.tracking.effectiveWatchProgressSource
 import io.github.dimitrysaf.provenio.core.tracking.providerId
-import io.github.dimitrysaf.provenio.core.watch.watching.sync.SupabaseWatchedSyncAdapter
 import io.github.dimitrysaf.provenio.core.watch.watching.sync.WatchedDeltaEvent
 import io.github.dimitrysaf.provenio.core.watch.watching.sync.WatchedSyncAdapter
 import kotlinx.atomicfu.locks.SynchronizedObject
@@ -152,7 +149,6 @@ object WatchedRepository {
     private var lastSuccessfulPushEpochMs: Long = 0L
     private var deltaCursorEventId: Long = 0L
     private var deltaInitialized: Boolean = false
-    internal var syncAdapter: WatchedSyncAdapter = SupabaseWatchedSyncAdapter
     private var extraKeysObserverJob: Job? = null
 
     fun ensureLoaded() {
@@ -380,74 +376,31 @@ object WatchedRepository {
                 "forceSnapshot=$forceSnapshot profileGeneration=$profileGeneration " +
                 "sourceGeneration=$sourceGeneration"
         }
-        if (effectiveSource.providerId == null) {
-            val authState = AuthRepository.state.value
-            if (authState !is AuthState.Authenticated || authState.isAnonymous) {
-                // Local watched state is authoritative when this account has no Provenio upstream.
-                accountHasLoaded = true
-                accountHasLoadedRemote = true
-                publish()
-                return true
-            }
+        val providerId = effectiveSource.providerId ?: run {
+            // Watched history on this device is the only copy when no tracker is the source.
+            accountHasLoaded = true
+            accountHasLoadedRemote = true
+            publish()
+            return true
         }
         return try {
-            effectiveSource.providerId?.let { providerId ->
-                val provider = TrackingProviderRegistry.watchedProvider(providerId)
-                    ?: run {
-                        log.w { "Watched provider missing provider=${providerId.storageId} source=$effectiveSource" }
-                        return false
-                    }
-                pullSnapshotFromAdapter(
-                    adapter = provider,
-                    operation = operation,
-                    profileId = profileId,
-                    resetDeltaState = true,
-                )
-            } ?: if (forceSnapshot) {
-                refreshAccountSnapshot(
-                    operation = operation,
-                    profileId = profileId,
-                )
-            } else {
-                pullSupabaseDeltaFromServer(
-                    operation = operation,
-                    profileId = profileId,
-                )
-            }
+            val provider = TrackingProviderRegistry.watchedProvider(providerId)
+                ?: run {
+                    log.w { "Watched provider missing provider=${providerId.storageId} source=$effectiveSource" }
+                    return false
+                }
+            pullSnapshotFromAdapter(
+                adapter = provider,
+                operation = operation,
+                profileId = profileId,
+                resetDeltaState = true,
+            )
         } catch (error: CancellationException) {
             throw error
         } catch (error: Throwable) {
             log.e(error) { "Failed to refresh watched items from $effectiveSource" }
             false
         }
-    }
-
-    private suspend fun refreshAccountSnapshot(
-        operation: WatchedRefreshOperation,
-        profileId: Int,
-    ): Boolean {
-        val cursorBeforeSnapshot = try {
-            syncAdapter.getDeltaCursor(profileId)
-        } catch (error: CancellationException) {
-            throw error
-        } catch (_: Throwable) {
-            null
-        }
-        if (!isActiveOperation(operation)) return false
-
-        val applied = pullSnapshotFromAdapter(
-            adapter = syncAdapter,
-            operation = operation,
-            profileId = profileId,
-            resetDeltaState = cursorBeforeSnapshot == null,
-        )
-        if (!applied || !isActiveOperation(operation)) return false
-        if (cursorBeforeSnapshot != null) {
-            deltaCursorEventId = cursorBeforeSnapshot
-            deltaInitialized = true
-            persist()
-        }
-        return true
     }
 
     private suspend fun pullSnapshotFromAdapter(
@@ -522,181 +475,6 @@ object WatchedRepository {
         publish()
         persist()
         return true
-    }
-
-    private suspend fun pullSupabaseDeltaFromServer(
-        operation: WatchedRefreshOperation,
-        profileId: Int,
-    ): Boolean {
-        if (!isActiveOperation(operation)) return false
-        if (!deltaInitialized) {
-            val cursorBeforeSnapshot = try {
-                syncAdapter.getDeltaCursor(profileId)
-            } catch (error: CancellationException) {
-                throw error
-            } catch (_: Throwable) {
-                null
-            }
-            if (!isActiveOperation(operation)) return false
-            if (cursorBeforeSnapshot == null) {
-                return pullSnapshotFromAdapter(
-                    adapter = syncAdapter,
-                    operation = operation,
-                    profileId = profileId,
-                    resetDeltaState = true,
-                )
-            }
-            val applied = pullSnapshotFromAdapter(
-                adapter = syncAdapter,
-                operation = operation,
-                profileId = profileId,
-                resetDeltaState = false,
-            )
-            if (!applied || !isActiveOperation(operation)) return false
-            deltaCursorEventId = cursorBeforeSnapshot
-            deltaInitialized = true
-            persist()
-            return true
-        }
-
-        var cursor = deltaCursorEventId
-        var changed = false
-
-        while (true) {
-            val events = syncAdapter.pullDelta(
-                profileId = profileId,
-                sinceEventId = cursor,
-                limit = watchedItemsDeltaPageSize,
-            )
-            if (!isActiveOperation(operation)) return false
-            if (events.isEmpty()) break
-
-            itemsStore.update { accountItems, _, dirtyAccountKeys, _ ->
-                applyWatchedDeltaEvents(
-                    targetItems = accountItems,
-                    dirtyKeys = dirtyAccountKeys,
-                    events = events,
-                )
-            }
-            cursor = maxOf(cursor, events.maxOf { it.eventId })
-            deltaCursorEventId = cursor
-            deltaInitialized = true
-            changed = true
-
-            if (events.size < watchedItemsDeltaPageSize) break
-        }
-
-        if (!isActiveOperation(operation)) return false
-        accountHasLoaded = true
-        val remoteReadinessChanged = !accountHasLoadedRemote
-        accountHasLoadedRemote = true
-        if (changed || remoteReadinessChanged) {
-            publish()
-        }
-        if (changed) {
-            persist()
-        }
-        return true
-    }
-
-    private fun applyWatchedDeltaEvents(
-        targetItems: MutableMap<String, WatchedItem>,
-        dirtyKeys: MutableSet<String>,
-        events: Collection<WatchedDeltaEvent>,
-    ) {
-        var upsertCount = 0
-        var deleteCount = 0
-        var removedCount = 0
-        var removedByFallbackKeyCount = 0
-        var preservedDirtyCount = 0
-        var acknowledgedDirtyCount = 0
-        var ignoredCount = 0
-
-        events.forEach { event ->
-            val key = watchedItemKey(event.contentType, event.contentId, event.season, event.episode)
-            when (event.operation.lowercase()) {
-                watchedDeltaOperationUpsert -> {
-                    upsertCount += 1
-                    val remoteItem = WatchedItem(
-                        id = event.contentId,
-                        type = event.contentType,
-                        name = event.title,
-                        season = event.season,
-                        episode = event.episode,
-                        markedAtEpochMs = normalizeWatchedMarkedAtEpochMs(event.watchedAt),
-                    )
-                    val localItem = targetItems[key]?.normalizedMarkedAt()
-                    if (
-                        key in dirtyKeys &&
-                        localItem != null &&
-                        remoteItem.markedAtEpochMs < localItem.markedAtEpochMs
-                    ) {
-                        preservedDirtyCount += 1
-                    } else {
-                        targetItems[key] = remoteItem
-                        if (dirtyKeys.remove(key)) {
-                            acknowledgedDirtyCount += 1
-                        }
-                    }
-                }
-                watchedDeltaOperationDelete -> {
-                    deleteCount += 1
-                    val matchingKey = if (key in targetItems) {
-                        key
-                    } else {
-                        findWatchedItemStableDeleteKey(
-                            targetItems = targetItems,
-                            contentId = event.contentId,
-                            contentType = event.contentType,
-                            season = event.season,
-                            episode = event.episode,
-                        )
-                    }
-                    if (matchingKey == null) {
-                        return@forEach
-                    }
-                    if (matchingKey in dirtyKeys) {
-                        preservedDirtyCount += 1
-                        return@forEach
-                    }
-                    val removedItem = targetItems.remove(matchingKey)
-                    if (removedItem != null) {
-                        removedCount += 1
-                        if (matchingKey != key) {
-                            removedByFallbackKeyCount += 1
-                        }
-                    }
-                }
-                else -> {
-                    ignoredCount += 1
-                }
-            }
-        }
-
-        log.i {
-            "Applied watched delta events total=${events.size} upserts=$upsertCount deletes=$deleteCount " +
-                "removed=$removedCount removedByFallbackKey=$removedByFallbackKeyCount " +
-                "preservedDirty=$preservedDirtyCount acknowledgedDirty=$acknowledgedDirtyCount " +
-                "ignored=$ignoredCount"
-        }
-    }
-
-    private fun findWatchedItemStableDeleteKey(
-        targetItems: Map<String, WatchedItem>,
-        contentId: String,
-        contentType: String,
-        season: Int?,
-        episode: Int?,
-    ): String? = targetItems.entries.firstOrNull { (_, item) ->
-        item.id == contentId &&
-            watchedDeleteTypesCompatible(remoteType = contentType, localType = item.type) &&
-            item.season == season &&
-            item.episode == episode
-    }?.key
-
-    private fun watchedDeleteTypesCompatible(remoteType: String, localType: String): Boolean {
-        if (remoteType.equals(localType, ignoreCase = true)) return true
-        return remoteType.isSeriesLikeWatchedType() && localType.isSeriesLikeWatchedType()
     }
 
     private fun itemsForSourceSnapshot(source: WatchProgressSource): List<WatchedItem> =
@@ -1261,18 +1039,7 @@ object WatchedRepository {
         trackerHistorySync: WatchedTrackerHistorySync,
         source: WatchProgressSource,
     ): WatchedPushOutcome {
-        var accountSyncSucceeded = false
         val succeededTrackerProviderIds = linkedSetOf<TrackingProviderId>()
-        if (source.providerId == null) {
-            try {
-                syncAdapter.push(profileId = profileId, items = items)
-                accountSyncSucceeded = true
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Throwable) {
-                log.e(error) { "Failed to push watched items to Provenio Sync" }
-            }
-        }
 
         if (trackerHistorySync == WatchedTrackerHistorySync.Mirror) {
             TrackingProviderRegistry.connectedWatchedProviders().forEach { provider ->
@@ -1287,7 +1054,7 @@ object WatchedRepository {
             }
         }
         return WatchedPushOutcome(
-            accountSyncSucceeded = accountSyncSucceeded,
+            accountSyncSucceeded = false,
             succeededTrackerProviderIds = succeededTrackerProviderIds,
         )
     }
@@ -1297,16 +1064,6 @@ object WatchedRepository {
         items: Collection<WatchedItem>,
         source: WatchProgressSource,
     ) {
-        if (source.providerId == null) {
-            try {
-                syncAdapter.delete(profileId = profileId, items = items)
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Throwable) {
-                log.e(error) { "Failed to delete watched items from Provenio Sync" }
-            }
-        }
-
         TrackingProviderRegistry.connectedWatchedProviders().forEach { provider ->
             try {
                 provider.delete(profileId = profileId, items = items)

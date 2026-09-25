@@ -1,12 +1,7 @@
 package io.github.dimitrysaf.provenio.core.profiles
 
-import co.touchlab.kermit.Logger
 import io.github.dimitrysaf.provenio.core.auth.AuthRepository
 import io.github.dimitrysaf.provenio.core.auth.AuthState
-import io.github.dimitrysaf.provenio.core.auth.isAnonymous
-import io.github.dimitrysaf.provenio.core.network.SupabaseProvider
-import io.github.dimitrysaf.provenio.core.sync.ProfileSettingsSync
-import io.github.dimitrysaf.provenio.core.sync.putSyncOriginClientId
 import io.github.dimitrysaf.provenio.core.tracking.ensureTrackingProvidersRegistered
 import io.github.dimitrysaf.provenio.core.addons.AddonRepository
 import io.github.dimitrysaf.provenio.core.collection.CollectionMobileSettingsRepository
@@ -33,11 +28,6 @@ import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbSettingsRepository
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedRepository
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPreferencesRepository
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressRepository
-import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.rpc
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,9 +36,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.put
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
@@ -63,8 +50,6 @@ private data class StoredProfilePayload(
 )
 
 object ProfileRepository {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val log = Logger.withTag("ProfileRepository")
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private fun localizedString(resource: StringResource): String = runBlocking { getString(resource) }
 
@@ -96,14 +81,9 @@ object ProfileRepository {
 
         val stored = decodeStoredPayload()
         loadedCacheForUserId = userId
-        if (stored == null) {
-            _state.value = ProfileState()
-            activeProfileIndex = 1
-            return
-        }
-
-        if (stored.userId != userId) {
-            _state.value = ProfileState()
+        // Profiles live only on this device, so an empty store is already the complete list.
+        if (stored == null || stored.userId != userId) {
+            _state.value = ProfileState(isLoaded = true)
             activeProfileIndex = 1
             return
         }
@@ -115,35 +95,6 @@ object ProfileRepository {
         loadedCacheForUserId = null
         activeProfileIndex = 1
         _state.value = ProfileState()
-    }
-
-    suspend fun pullProfiles() {
-        if (AuthRepository.state.value.isAnonymous) {
-            if (!_state.value.isLoaded) {
-                _state.value = _state.value.copy(isLoaded = true)
-            }
-            return
-        }
-        try {
-            val result = SupabaseProvider.client.postgrest.rpc("sync_pull_profiles")
-            val profiles = result.decodeList<Profile>()
-            _state.value = _state.value.copy(
-                profiles = profiles.sortedBy { it.profileIndex },
-                isLoaded = true,
-                activeProfile = profiles.find { it.profileIndex == activeProfileIndex }
-                    ?: profiles.firstOrNull(),
-            )
-            if (_state.value.activeProfile != null) {
-                activeProfileIndex = _state.value.activeProfile!!.profileIndex
-            }
-            persist()
-        } catch (e: Throwable) {
-            if (AuthRepository.signOutIfSessionInvalid(e, "Profile pull")) return
-            log.e(e) { "Failed to pull profiles" }
-            if (!_state.value.isLoaded) {
-                _state.value = _state.value.copy(isLoaded = true)
-            }
-        }
     }
 
     fun selectProfile(profileIndex: Int) {
@@ -183,26 +134,10 @@ object ProfileRepository {
         CollectionRepository.onProfileChanged()
         CollectionMobileSettingsRepository.onProfileChanged()
         DownloadsRepository.onProfileChanged()
-        ProfileSettingsSync.onProfileChanged()
     }
 
-    suspend fun pushProfiles(profiles: List<ProfilePushPayload>) {
-        if (AuthRepository.state.value.isAnonymous) {
-            applyPayloadsLocally(profiles)
-            return
-        }
-        try {
-            val params = buildJsonObject {
-                put("p_client_max_profiles", MAX_PROFILES)
-                put("p_profiles", json.encodeToJsonElement(profiles))
-                putSyncOriginClientId()
-            }
-            SupabaseProvider.client.postgrest.rpc("sync_push_profiles", params)
-            pullProfiles()
-        } catch (e: Throwable) {
-            if (AuthRepository.signOutIfSessionInvalid(e, "Profile push")) return
-            log.e(e) { "Failed to push profiles" }
-        }
+    fun pushProfiles(profiles: List<ProfilePushPayload>) {
+        applyPayloadsLocally(profiles)
     }
 
     suspend fun createProfile(
@@ -279,125 +214,55 @@ object ProfileRepository {
         pushProfiles(allPayloads)
     }
 
-    suspend fun deleteProfile(profileIndex: Int) {
-        if (AuthRepository.state.value.isAnonymous) {
-            val remaining = _state.value.profiles.filter { it.profileIndex != profileIndex }
-            ProfilePinCacheStorage.removePayload(profileIndex)
-            _state.value = _state.value.copy(
-                profiles = remaining,
-                activeProfile = if (_state.value.activeProfile?.profileIndex == profileIndex) remaining.firstOrNull() else _state.value.activeProfile,
-            )
-            if (_state.value.activeProfile != null) {
-                activeProfileIndex = _state.value.activeProfile!!.profileIndex
-            }
-            persist()
-            return
+    fun deleteProfile(profileIndex: Int) {
+        val remaining = _state.value.profiles.filter { it.profileIndex != profileIndex }
+        ProfilePinCacheStorage.removePayload(profileIndex)
+        _state.value = _state.value.copy(
+            profiles = remaining,
+            activeProfile = if (_state.value.activeProfile?.profileIndex == profileIndex) remaining.firstOrNull() else _state.value.activeProfile,
+        )
+        if (_state.value.activeProfile != null) {
+            activeProfileIndex = _state.value.activeProfile!!.profileIndex
         }
-        try {
-            val params = buildJsonObject {
-                put("p_profile_id", profileIndex)
-                putSyncOriginClientId()
-            }
-            SupabaseProvider.client.postgrest.rpc("sync_delete_profile_data", params)
-            pullProfiles()
-        } catch (e: Throwable) {
-            if (AuthRepository.signOutIfSessionInvalid(e, "Profile delete")) return
-            log.e(e) { "Failed to delete profile $profileIndex" }
-        }
+        persist()
     }
 
-    suspend fun verifyPin(profileIndex: Int, pin: String): PinVerifyResult {
-        if (AuthRepository.state.value !is AuthState.Authenticated) {
-            return verifyPinLocally(profileIndex, pin)
-        }
+    fun verifyPin(profileIndex: Int, pin: String): PinVerifyResult = verifyPinLocally(profileIndex, pin)
 
-        return runCatching {
-            val params = buildJsonObject {
-                put("p_profile_id", profileIndex)
-                put("p_pin", pin)
-            }
-            val result = SupabaseProvider.client.postgrest.rpc("verify_profile_pin", params)
-            result.decodeSingle<PinVerifyResult>().also { verifyResult ->
-                if (verifyResult.unlocked) {
-                    pullProfiles()
-                    rememberVerifiedPin(profileIndex = profileIndex, pin = pin)
-                }
-            }
-        }.getOrElse { e ->
-            log.e(e) { "Failed to verify pin" }
-            verifyPinLocally(profileIndex, pin)
+    fun setPin(profileIndex: Int, pin: String, currentPin: String? = null): PinVerifyResult {
+        val profile = _state.value.profiles.find { it.profileIndex == profileIndex }
+            ?: return PinVerifyResult(unlocked = false, message = localizedString(Res.string.profile_pin_set_failed))
+        if (profile.pinEnabled) {
+            val current = verifyPinLocally(profileIndex, currentPin.orEmpty())
+            if (!current.unlocked) return current
         }
+        rememberVerifiedPin(profileIndex = profileIndex, pin = pin)
+        updatePinEnabled(profileIndex, enabled = true)
+        return PinVerifyResult(unlocked = true)
     }
 
-    suspend fun setPin(profileIndex: Int, pin: String, currentPin: String? = null): PinVerifyResult {
-        if (AuthRepository.state.value !is AuthState.Authenticated) {
-            return PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_set_requires_internet))
-        }
-
-        return runCatching {
-            val params = buildJsonObject {
-                put("p_profile_id", profileIndex)
-                put("p_pin", pin)
-                currentPin?.let { put("p_current_pin", it) }
-            }
-            SupabaseProvider.client.postgrest.rpc("set_profile_pin", params)
-            pullProfiles()
-            rememberVerifiedPin(profileIndex = profileIndex, pin = pin)
-            PinVerifyResult(unlocked = true)
-        }.onFailure { e ->
-            log.e(e) { "Failed to set pin" }
-        }.getOrElse {
-            PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_set_failed))
-        }
+    fun clearPin(profileIndex: Int, currentPin: String? = null): PinVerifyResult {
+        val current = verifyPinLocally(profileIndex, currentPin.orEmpty())
+        if (!current.unlocked) return current
+        ProfilePinCacheStorage.removePayload(profileIndex)
+        updatePinEnabled(profileIndex, enabled = false)
+        return PinVerifyResult(unlocked = true)
     }
 
-    suspend fun clearPin(profileIndex: Int, currentPin: String? = null): PinVerifyResult {
-        if (AuthRepository.state.value !is AuthState.Authenticated) {
-            return PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_clear_requires_internet))
+    private fun updatePinEnabled(profileIndex: Int, enabled: Boolean) {
+        val profiles = _state.value.profiles.map { profile ->
+            if (profile.profileIndex == profileIndex) profile.copy(pinEnabled = enabled) else profile
         }
-
-        return runCatching {
-            val params = buildJsonObject {
-                put("p_profile_id", profileIndex)
-                currentPin?.let { put("p_current_pin", it) }
-            }
-            SupabaseProvider.client.postgrest.rpc("clear_profile_pin", params)
-            pullProfiles()
-            ProfilePinCacheStorage.removePayload(profileIndex)
-            PinVerifyResult(unlocked = true)
-        }.onFailure { e ->
-            log.e(e) { "Failed to clear pin" }
-        }.getOrElse {
-            PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_clear_failed))
-        }
-    }
-
-    suspend fun clearPinWithPassword(profileIndex: Int, accountPassword: String) {
-        runCatching {
-            val params = buildJsonObject {
-                put("p_account_password", accountPassword)
-                put("p_profile_id", profileIndex)
-            }
-            SupabaseProvider.client.postgrest.rpc("clear_profile_pin_with_account_password", params)
-            pullProfiles()
-            ProfilePinCacheStorage.removePayload(profileIndex)
-        }.onFailure { e ->
-            log.e(e) { "Failed to clear pin with password" }
-        }
-    }
-
-    suspend fun pullProfileLocks(): List<ProfileLockState> {
-        return runCatching {
-            val result = SupabaseProvider.client.postgrest.rpc("sync_pull_profile_locks")
-            result.decodeList<ProfileLockState>()
-        }.getOrElse { e ->
-            log.e(e) { "Failed to pull profile locks" }
-            emptyList()
-        }
+        _state.value = _state.value.copy(
+            profiles = profiles,
+            activeProfile = profiles.find { it.profileIndex == _state.value.activeProfile?.profileIndex },
+        )
+        persist()
     }
 
     private fun applyPayloadsLocally(payloads: List<ProfilePushPayload>) {
         val authState = AuthRepository.state.value as? AuthState.Authenticated ?: return
+        val existing = _state.value.profiles.associateBy { it.profileIndex }
         val profiles = payloads.map { p ->
             Profile(
                 id = "",
@@ -411,6 +276,7 @@ object ProfileRepository {
                 profileBackgroundUrl = p.profileBackgroundUrl,
                 usesPrimaryAddons = p.usesPrimaryAddons,
                 usesPrimaryPlugins = p.usesPrimaryPlugins,
+                pinEnabled = existing[p.profileIndex]?.pinEnabled == true,
             )
         }.sortedBy { it.profileIndex }
         _state.value = _state.value.copy(
@@ -424,6 +290,9 @@ object ProfileRepository {
         syncPinCache(profiles)
         persist()
     }
+
+    // The owner of the profiles saved on this device, so an upgrade keeps them under the same user.
+    fun storedUserId(): String? = decodeStoredPayload()?.userId?.takeIf { it.isNotBlank() }
 
     private fun decodeStoredPayload(): StoredProfilePayload? {
         val payload = ProfileStorage.loadPayload().orEmpty().trim()
@@ -440,7 +309,7 @@ object ProfileRepository {
         _state.value = ProfileState(
             profiles = profiles,
             activeProfile = profiles.find { it.profileIndex == activeProfileIndex } ?: profiles.firstOrNull(),
-            isLoaded = profiles.isNotEmpty(),
+            isLoaded = true,
             hasEverSelectedProfile = stored.hasEverSelectedProfile,
             rememberLastProfileEnabled = stored.rememberLastProfileEnabled,
         )
@@ -449,12 +318,11 @@ object ProfileRepository {
     }
 
     private fun rememberVerifiedPin(profileIndex: Int, pin: String) {
-        val profile = _state.value.profiles.find { it.profileIndex == profileIndex }
         val salt = generateProfilePinSalt()
         val payload = CachedProfilePinPayload(
             salt = salt,
             digest = hashProfilePin(profileIndex = profileIndex, salt = salt, pin = pin),
-            profileUpdatedAt = profile?.updatedAt.orEmpty(),
+            profileUpdatedAt = "",
         )
         ProfilePinCacheStorage.savePayload(profileIndex, json.encodeToString(payload))
     }
@@ -467,10 +335,9 @@ object ProfileRepository {
 
         val payload = ProfilePinCacheStorage.loadPayload(profileIndex).orEmpty().trim()
         if (payload.isEmpty()) {
-            return PinVerifyResult(
-                unlocked = false,
-                message = localizedString(Res.string.profile_pin_offline_verification_requires_online),
-            )
+            // A PIN set through the old account server was never stored here, so it cannot be checked.
+            updatePinEnabled(profileIndex, enabled = false)
+            return PinVerifyResult(unlocked = true)
         }
 
         val cached = runCatching {

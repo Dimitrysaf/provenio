@@ -1,7 +1,5 @@
 package io.github.dimitrysaf.provenio.core.tracking.trakt
 
-import io.github.dimitrysaf.provenio.core.auth.AuthRepository
-import io.github.dimitrysaf.provenio.core.auth.AuthState
 import io.github.dimitrysaf.provenio.core.library.LibrarySourceMode
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.tracking.simkl.DEFAULT_SIMKL_ANIME_ID_PREFERENCE
@@ -102,14 +100,6 @@ object TraktSettingsRepository {
         if (_uiState.value.watchProgressSource == source) return
         val nextState = _uiState.value.copy(watchProgressSource = source)
         persist(nextState)
-        val authState = AuthRepository.state.value
-        if (authState is AuthState.Authenticated && !authState.isAnonymous) {
-            ProfileSettingsWatchSourceOutbox.record(
-                accountId = authState.userId,
-                profileId = profileId,
-                source = source,
-            )
-        }
         _uiState.value = nextState
     }
 

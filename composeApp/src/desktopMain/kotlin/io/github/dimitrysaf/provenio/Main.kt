@@ -29,7 +29,6 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsStorage
 import io.github.dimitrysaf.provenio.core.metadata.SeasonViewModeStorage
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListSettingsStorage
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbSettingsStorage
-import io.github.dimitrysaf.provenio.core.network.ServerConfigurationStorage
 import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificationsStorage
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsStorage
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
@@ -114,7 +113,6 @@ private fun initializePlatform(context: Context) {
     AddonHttpClientProvider.initialize(context)
     AddonStorage.initialize(context)
     AuthStorage.initialize(context)
-    ServerConfigurationStorage.initialize(context)
     LibraryStorage.initialize(context)
     WatchedStorage.initialize(context)
     MetaScreenSettingsStorage.initialize(context)

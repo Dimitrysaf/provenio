@@ -12,7 +12,6 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.github.dimitrysaf.provenio.core.auth.AuthRepository
 import io.github.dimitrysaf.provenio.core.auth.AuthState
 import io.github.dimitrysaf.provenio.core.auth.AuthStorage
-import io.github.dimitrysaf.provenio.core.network.ServerConfigurationStorage
 import io.github.dimitrysaf.provenio.core.diagnostics.SentryInitializer
 import io.github.dimitrysaf.provenio.core.deeplink.handleAppUrl
 import io.github.dimitrysaf.provenio.core.storage.PlatformLocalAccountDataCleaner
@@ -95,7 +94,6 @@ open class MainActivity : AppCompatActivity() {
         AddonHttpClientProvider.initialize(applicationContext)
         AddonStorage.initialize(applicationContext)
         AuthStorage.initialize(applicationContext)
-        ServerConfigurationStorage.initialize(applicationContext)
         LibraryStorage.initialize(applicationContext)
         WatchedStorage.initialize(applicationContext)
         MetaScreenSettingsStorage.initialize(applicationContext)

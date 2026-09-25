@@ -22,8 +22,6 @@ import io.github.dimitrysaf.provenio.core.addons.ManagedAddon
 import io.github.dimitrysaf.provenio.core.collection.Collection
 import io.github.dimitrysaf.provenio.shell.components.DuplicateSafeLazyEntry
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.dimitrysaf.provenio.core.auth.AuthRepository
-import io.github.dimitrysaf.provenio.core.auth.AuthState
 import io.github.dimitrysaf.provenio.core.network.NetworkCondition
 import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
 import io.github.dimitrysaf.provenio.shell.components.LocalBottomNavigationOverlayPadding
@@ -96,10 +94,7 @@ fun HomeScreen(
         ContinueWatchingPreferencesRepository.ensureLoaded()
         WatchedRepository.ensureLoaded()
         WatchProgressRepository.ensureLoaded()
-        val authState = AuthRepository.state.value
-        if (authState !is AuthState.Authenticated || authState.isAnonymous) {
-            WatchProgressSourceCoordinator.ensureStarted()
-        }
+        WatchProgressSourceCoordinator.ensureStarted()
     }
 
     val addonsUiState by AddonRepository.uiState.collectAsStateWithLifecycle()

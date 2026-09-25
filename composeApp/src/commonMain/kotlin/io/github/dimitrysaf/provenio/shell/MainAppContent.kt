@@ -37,7 +37,6 @@ import io.github.dimitrysaf.provenio.shell.nav.posterNavigationEntry
 import io.github.dimitrysaf.provenio.core.auth.AuthRepository
 import io.github.dimitrysaf.provenio.core.network.NetworkCondition
 import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
-import io.github.dimitrysaf.provenio.core.sync.SyncManager
 import io.github.dimitrysaf.provenio.shell.components.DisintegrationRequestController
 import io.github.dimitrysaf.provenio.shell.components.NativeTabBridge
 import io.github.dimitrysaf.provenio.shell.components.ContinueWatchingActionSheet
@@ -337,11 +336,7 @@ internal fun MainAppContent(
         }
     }
 
-    ForegroundSyncEffect(
-        enabled = ownsAppRuntime,
-        authState = authState,
-        activeProfileIndex = profileState.activeProfile?.profileIndex,
-    )
+    ForegroundSyncEffect(enabled = ownsAppRuntime)
     val activePlaybackProfileId = profileState.activeProfile?.profileIndex ?: ProfileRepository.activeProfileId
     val playback = rememberAppPlayback(navController, activePlaybackProfileId)
     val continueWatchingPreferencesUiState by remember {
@@ -537,7 +532,6 @@ internal fun MainAppContent(
                                 profileSwitchLoading = true
                                 activateTab(AppScreenTab.Home)
                                 ProfileRepository.selectProfile(profile.profileIndex)
-                                SyncManager.pullAllForProfile(profile.profileIndex)
                             }
                         },
                         onAddProfileRequested = onSwitchProfile,

@@ -1,18 +1,11 @@
 package io.github.dimitrysaf.provenio.core.addons
 
 import co.touchlab.kermit.Logger
-import io.github.dimitrysaf.provenio.core.network.SupabaseProvider
-import io.github.dimitrysaf.provenio.core.sync.putSyncOriginClientId
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
-import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.Order
-import io.github.jan.supabase.postgrest.rpc
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,44 +14,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.put
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
-
-@Serializable
-private data class AddonRow(
-    val url: String,
-    val name: String? = null,
-    val enabled: Boolean = true,
-    @SerialName("sort_order") val sortOrder: Int = 0,
-)
-
-@Serializable
-private data class AddonPushItem(
-    val url: String,
-    val name: String = "",
-    val enabled: Boolean = true,
-    @SerialName("sort_order") val sortOrder: Int = 0,
-)
-
-private const val ADDON_PUSH_DEBOUNCE_MS = 500L
 
 object AddonRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val log = Logger.withTag("AddonRepository")
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val _uiState = MutableStateFlow(AddonsUiState())
     val uiState: StateFlow<AddonsUiState> = _uiState.asStateFlow()
 
     private var initialized = false
     private var currentProfileId: Int = 1
     private val activeRefreshJobs = mutableMapOf<String, Job>()
-    private val pushJobsByProfile = mutableMapOf<Int, Job>()
 
     fun initialize() {
         val effectiveProfileId = resolveEffectiveProfileId(ProfileRepository.activeProfileId)
@@ -102,61 +69,9 @@ object AddonRepository {
 
     fun clearLocalState() {
         cancelActiveRefreshes()
-        pushJobsByProfile.values.forEach(Job::cancel)
-        pushJobsByProfile.clear()
         currentProfileId = 1
         initialized = false
         _uiState.value = AddonsUiState()
-    }
-
-    suspend fun pullFromServer(profileId: Int) {
-        currentProfileId = resolveEffectiveProfileId(profileId)
-        log.i { "pullFromServer() — profileId=$profileId, initialized=$initialized" }
-        runCatching {
-            val rows = SupabaseProvider.client.postgrest
-                .from("addons")
-                .select {
-                    filter { eq("profile_id", currentProfileId) }
-                    order("sort_order", Order.ASCENDING)
-                }
-                .decodeList<AddonRow>()
-
-            val rowsByUrl = linkedMapOf<String, AddonRow>()
-            rows.forEach { row ->
-                val manifestUrl = ensureManifestSuffix(row.url)
-                if (!rowsByUrl.containsKey(manifestUrl)) {
-                    rowsByUrl[manifestUrl] = row.copy(url = manifestUrl)
-                }
-            }
-
-            val urls = rowsByUrl.keys.toList()
-            log.i { "pullFromServer() — server returned ${rows.size} addons" }
-            urls.forEachIndexed { i, u -> log.d { "  server[$i]: $u" } }
-
-            val existingByUrl = _uiState.value.addons.associateBy(ManagedAddon::manifestUrl)
-            _uiState.value = AddonsUiState(
-                addons = urls.map { url ->
-                    val row = rowsByUrl[url]
-                    existingByUrl[url].toPendingAddon(
-                        manifestUrl = url,
-                        userSetName = row?.name?.takeIf { it.isNotBlank() },
-                        enabled = row?.enabled,
-                    )
-                },
-            )
-            persist()
-            urls.forEach { url ->
-                val existing = existingByUrl[url]
-                val addon = _uiState.value.addons.firstOrNull { it.manifestUrl == url }
-                if (addon?.enabled == true && (existing == null || (addon.manifest == null && !addon.isRefreshing))) {
-                    refreshAddon(url)
-                }
-            }
-            initialized = true
-            log.i { "pullFromServer() — applied ${urls.size} addons to state" }
-        }.onFailure { e ->
-            log.e(e) { "pullFromServer() — FAILED" }
-        }
     }
 
     suspend fun awaitManifestsLoaded() {
@@ -206,7 +121,6 @@ object AddonRepository {
             )
         }
         persist()
-        pushToServer()
         return AddAddonResult.Success(manifest)
     }
 
@@ -221,7 +135,6 @@ object AddonRepository {
         }
         if (!changed) return
         persist()
-        pushToServer()
     }
 
     fun moveAddon(fromIndex: Int, toIndex: Int) {
@@ -245,7 +158,6 @@ object AddonRepository {
         }
         if (!changed) return
         persist()
-        pushToServer()
     }
 
     fun setAddonEnabled(manifestUrl: String, enabled: Boolean) {
@@ -267,7 +179,6 @@ object AddonRepository {
         }
         if (!changed) return
         persist()
-        pushToServer()
         if (shouldRefresh) {
             refreshAddon(manifestUrl)
         }
@@ -336,45 +247,6 @@ object AddonRepository {
             }
         }
         activeRefreshJobs[manifestUrl] = refreshJob
-    }
-
-    private fun pushToServer() {
-        if (isUsingPrimaryAddonsFromSecondaryProfile()) return
-        val profileId = currentProfileId
-        val addons = _uiState.value.addons
-            .distinctBy { it.manifestUrl }
-            .mapIndexed { index, addon ->
-                AddonPushItem(
-                    url = addon.manifestUrl,
-                    name = addon.userSetName?.takeIf { it.isNotBlank() } ?: addon.manifest?.name ?: "",
-                    enabled = addon.enabled,
-                    sortOrder = index,
-                )
-            }
-        pushJobsByProfile[profileId]?.cancel()
-        var pushJob: Job? = null
-        pushJob = scope.launch {
-            try {
-                delay(ADDON_PUSH_DEBOUNCE_MS)
-                log.d { "pushToServer() — profileId=$profileId, pushing ${addons.size} addons" }
-                val params = buildJsonObject {
-                    put("p_profile_id", profileId)
-                    put("p_addons", json.encodeToJsonElement(addons))
-                    putSyncOriginClientId()
-                }
-                SupabaseProvider.client.postgrest.rpc("sync_push_addons", params)
-                log.d { "pushToServer() — success" }
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Throwable) {
-                log.e(error) { "pushToServer() — FAILED" }
-            } finally {
-                if (pushJobsByProfile[profileId] === pushJob) {
-                    pushJobsByProfile.remove(profileId)
-                }
-            }
-        }
-        pushJobsByProfile[profileId] = pushJob
     }
 
     private fun markRefreshing(manifestUrl: String) {

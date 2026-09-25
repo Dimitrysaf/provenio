@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.compose_settings_category_about
 import provenio.composeapp.generated.resources.compose_settings_category_general
-import provenio.composeapp.generated.resources.compose_settings_page_account
 import provenio.composeapp.generated.resources.compose_settings_page_addons
 import provenio.composeapp.generated.resources.compose_settings_page_advanced
 import provenio.composeapp.generated.resources.compose_settings_page_appearance
@@ -32,14 +31,14 @@ import provenio.composeapp.generated.resources.compose_settings_page_supporters_
 import provenio.composeapp.generated.resources.compose_settings_page_tmdb_enrichment
 import provenio.composeapp.generated.resources.compose_settings_page_trakt
 import provenio.composeapp.generated.resources.compose_settings_page_tracking
-import provenio.composeapp.generated.resources.settings_account
+import provenio.composeapp.generated.resources.settings_category_profile_tracking
 import org.jetbrains.compose.resources.StringResource
 
 internal enum class SettingsCategory(
     val labelRes: StringResource,
     val icon: ImageVector,
 ) {
-    Account(Res.string.settings_account, Icons.Rounded.AccountCircle),
+    Profile(Res.string.settings_category_profile_tracking, Icons.Rounded.AccountCircle),
     General(Res.string.compose_settings_category_general, Icons.Rounded.Settings),
     About(Res.string.compose_settings_category_about, Icons.Rounded.Info),
     Advanced(Res.string.compose_settings_page_advanced, Icons.Rounded.Tune),
@@ -54,11 +53,6 @@ internal enum class SettingsPage(
         titleRes = Res.string.compose_settings_page_root,
         category = SettingsCategory.General,
         parentPage = null,
-    ),
-    Account(
-        titleRes = Res.string.compose_settings_page_account,
-        category = SettingsCategory.Account,
-        parentPage = Root,
     ),
     SupportersContributors(
         titleRes = Res.string.compose_settings_page_supporters_contributors,
@@ -153,7 +147,7 @@ internal enum class SettingsPage(
     TraktAuthentication(
         // Keep the enum name for saved navigation-state compatibility.
         titleRes = Res.string.compose_settings_page_tracking,
-        category = SettingsCategory.Account,
+        category = SettingsCategory.Profile,
         parentPage = Root,
     ),
 }

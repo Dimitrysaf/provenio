@@ -82,7 +82,6 @@ internal fun LazyListScope.settingsRootContent(
     onCheckForUpdatesClick: (() -> Unit)? = null,
     onTestUpdateBannerClick: (() -> Unit)? = null,
     onDownloadsClick: () -> Unit,
-    onAccountClick: () -> Unit,
     onSwitchProfileClick: (() -> Unit)? = null,
     showAccountSection: Boolean = true,
     showGeneralSection: Boolean = true,
@@ -93,7 +92,7 @@ internal fun LazyListScope.settingsRootContent(
     if (showAccountSection) {
         item {
             SettingsSection(
-                title = stringResource(Res.string.compose_settings_root_account_section),
+                title = stringResource(Res.string.settings_category_profile_tracking),
                 isTablet = isTablet,
                 showTitle = !isTablet,
             ) {
@@ -106,12 +105,6 @@ internal fun LazyListScope.settingsRootContent(
                             onClick = onSwitchProfileClick,
                         )
                     }
-                    navigationRow(
-                        title = stringResource(Res.string.compose_settings_page_account),
-                        description = stringResource(Res.string.compose_settings_root_account_description),
-                        icon = Icons.Rounded.AccountCircle,
-                        onClick = onAccountClick,
-                    )
                     navigationRow(
                         title = stringResource(Res.string.compose_settings_page_tracking),
                         description = stringResource(Res.string.compose_settings_root_tracking_description),

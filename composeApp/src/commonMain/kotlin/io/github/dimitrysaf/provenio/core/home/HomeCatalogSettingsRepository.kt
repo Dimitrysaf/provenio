@@ -192,7 +192,6 @@ object HomeCatalogSettingsRepository {
         publish()
         persist()
         HomeRepository.applyCurrentSettings()
-        HomeCatalogSettingsSyncService.triggerPush()
     }
 
     fun setHideUnreleasedContent(enabled: Boolean) {
@@ -202,11 +201,10 @@ object HomeCatalogSettingsRepository {
         publish()
         persist()
         HomeRepository.applyCurrentSettings()
-        HomeCatalogSettingsSyncService.triggerPush()
     }
 
     fun setHeroSourceEnabled(key: String, enabled: Boolean) {
-        updatePreference(key, pushRemote = false) { preference ->
+        updatePreference(key) { preference ->
             if (!enabled) {
                 preference.copy(heroSourceEnabled = false)
             } else if (selectedHeroSourceCount(excludingKey = key) >= HERO_SOURCE_SELECTION_LIMIT) {
@@ -256,7 +254,6 @@ object HomeCatalogSettingsRepository {
         publish()
         persist()
         HomeRepository.applyCurrentSettings()
-        HomeCatalogSettingsSyncService.triggerPush()
     }
 
     fun moveUp(key: String) {
@@ -284,7 +281,6 @@ object HomeCatalogSettingsRepository {
         publish()
         persist()
         HomeRepository.applyCurrentSettings()
-        HomeCatalogSettingsSyncService.triggerPush()
     }
 
     private fun ensureLoaded() {
@@ -421,7 +417,6 @@ object HomeCatalogSettingsRepository {
 
     private fun updatePreference(
         key: String,
-        pushRemote: Boolean = true,
         transform: (StoredHomeCatalogPreference) -> StoredHomeCatalogPreference,
     ) {
         ensureLoaded()
@@ -432,9 +427,6 @@ object HomeCatalogSettingsRepository {
         publish()
         persist()
         HomeRepository.applyCurrentSettings()
-        if (pushRemote) {
-            HomeCatalogSettingsSyncService.triggerPush()
-        }
     }
 
     private fun selectedHeroSourceCount(excludingKey: String? = null): Int {
@@ -471,7 +463,6 @@ object HomeCatalogSettingsRepository {
         publish()
         persist()
         HomeRepository.applyCurrentSettings()
-        HomeCatalogSettingsSyncService.triggerPush()
     }
 
     fun exportToSyncPayload(): SyncHomeCatalogPayload {

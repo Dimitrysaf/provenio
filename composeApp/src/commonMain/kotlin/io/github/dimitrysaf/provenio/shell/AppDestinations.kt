@@ -29,7 +29,6 @@ import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressRepository
 import io.github.dimitrysaf.provenio.core.watch.progress.toContinueWatchingItem
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.nav.*
-import io.github.dimitrysaf.provenio.shell.screens.settings.AccountSettingsScreen
 import io.github.dimitrysaf.provenio.shell.screens.settings.AddonsSettingsScreen
 import io.github.dimitrysaf.provenio.shell.screens.settings.ContinueWatchingSettingsScreen
 import io.github.dimitrysaf.provenio.shell.screens.settings.HomescreenSettingsScreen
@@ -52,7 +51,6 @@ internal data class AppPageTitles(
     val downloads: String,
     val addons: String,
     val plugins: String,
-    val account: String,
     val supporters: String,
     val licenses: String,
     val collections: String,
@@ -68,7 +66,6 @@ internal fun appPageTitles(): AppPageTitles = AppPageTitles(
     downloads = stringResource(Res.string.compose_settings_root_downloads_title),
     addons = stringResource(Res.string.compose_settings_page_addons),
     plugins = stringResource(Res.string.compose_settings_page_plugins),
-    account = stringResource(Res.string.compose_settings_page_account),
     supporters = stringResource(Res.string.compose_settings_page_supporters_contributors),
     licenses = stringResource(Res.string.compose_settings_page_licenses_attributions),
     collections = stringResource(Res.string.collections_header),
@@ -173,7 +170,6 @@ internal fun buildAppTabActions(
                 navController.navigate(PluginsSettingsRoute(titles.plugins))
             }
         },
-        onAccountSettingsClick = { navController.navigate(AccountSettingsRoute(titles.account)) },
         onSupportersContributorsSettingsClick = {
             if (AppFeaturePolicy.supportersContributorsPageEnabled) {
                 navController.navigate(SupportersContributorsSettingsRoute(titles.supporters))
@@ -365,11 +361,6 @@ internal fun appEntryProvider(
             SettingsDestination(route, navController) { onBack ->
                 PluginsSettingsScreen(onBack = onBack)
             }
-        }
-    }
-    entry<AccountSettingsRoute> { route ->
-        SettingsDestination(route, navController) { onBack ->
-            AccountSettingsScreen(onBack = onBack)
         }
     }
     entry<SupportersContributorsSettingsRoute> { route ->

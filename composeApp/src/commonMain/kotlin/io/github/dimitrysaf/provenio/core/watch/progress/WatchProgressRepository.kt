@@ -1,8 +1,6 @@
 package io.github.dimitrysaf.provenio.core.watch.progress
 
 import co.touchlab.kermit.Logger
-import io.github.dimitrysaf.provenio.core.auth.AuthRepository
-import io.github.dimitrysaf.provenio.core.auth.AuthState
 import io.github.dimitrysaf.provenio.core.tracking.ensureTrackingProvidersRegistered
 import io.github.dimitrysaf.provenio.core.addons.AddonManifest
 import io.github.dimitrysaf.provenio.core.addons.AddonRepository
@@ -22,8 +20,6 @@ import io.github.dimitrysaf.provenio.core.tracking.providerId
 import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingActions
 import io.github.dimitrysaf.provenio.core.watch.watching.sync.ProgressDeltaEvent
 import io.github.dimitrysaf.provenio.core.watch.watching.sync.ProgressSyncRecord
-import io.github.dimitrysaf.provenio.core.watch.watching.sync.ProgressSyncAdapter
-import io.github.dimitrysaf.provenio.core.watch.watching.sync.SupabaseProgressSyncAdapter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CoroutineScope
@@ -53,7 +49,6 @@ private const val WATCH_PROGRESS_METADATA_FETCH_ATTEMPTS = 3
 
 private const val WATCH_PROGRESS_METADATA_RETRY_BASE_DELAY_MS = 750L
 
-private const val WATCH_PROGRESS_DELTA_PAGE_SIZE = 900
 
 private const val WATCH_PROGRESS_DELTA_OPERATION_UPSERT = "upsert"
 
@@ -105,12 +100,10 @@ object WatchProgressRepository {
     private var metadataResolutionJob: Job? = null
     private val metadataResolutionRetryCoordinator = MetadataResolutionRetryCoordinator()
     private val providerMetadataOverlay = ProviderProgressMetadataOverlay()
-    private val accountPullMutex = Mutex()
     private var lastSuccessfulPushEpochMs = 0L
     private var deltaCursorEventId = 0L
     private var deltaInitialized = false
     private val remoteWriteDeduplicator = RemoteProgressWriteDeduplicator()
-    internal var syncAdapter: ProgressSyncAdapter = SupabaseProgressSyncAdapter
 
     init {
         ensureTrackingProvidersRegistered()
@@ -374,315 +367,15 @@ object WatchProgressRepository {
         }
     }
 
-    private suspend fun refreshAccountSource(
+    // Progress on this device is the only copy, so there is nothing upstream to pull.
+    private fun refreshAccountSource(
         profileId: Int,
         operationGeneration: Long,
         force: Boolean,
     ): Boolean {
-        val authState = AuthRepository.state.value
-        if (authState !is AuthState.Authenticated || authState.isAnonymous) {
-            // There is no upstream source for this account, so local state is authoritative.
-            hasLoadedAccountRemoteProgress = true
-            publish()
-            return true
-        }
-
-        return accountPullMutex.withLock {
-            try {
-                if (force) {
-                    pullAccountSnapshotFromServer(
-                        profileId = profileId,
-                        operationGeneration = operationGeneration,
-                    )
-                } else {
-                    pullSupabaseDeltaFromServer(
-                        profileId = profileId,
-                        operationGeneration = operationGeneration,
-                    )
-                }
-                true
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Throwable) {
-                log.e(error) { "Failed to refresh Provenio watch progress" }
-                false
-            }
-        }
-    }
-
-    private suspend fun pullAccountSnapshotFromServer(
-        profileId: Int,
-        operationGeneration: Long,
-    ) {
-        val cursorBeforeSnapshot = try {
-            syncAdapter.getDeltaCursor(profileId)
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Throwable) {
-            log.w { "Watch progress cursor unavailable during snapshot refresh: ${error.message}" }
-            null
-        }
-
-        pullFullFromAdapter(
-            profileId = profileId,
-            resetDeltaState = cursorBeforeSnapshot == null,
-            operationGeneration = operationGeneration,
-            preserveLocalEntries = true,
-        )
-        if (!isActiveOperation(profileId, operationGeneration)) return
-
-        if (cursorBeforeSnapshot != null) {
-            deltaCursorEventId = cursorBeforeSnapshot
-            deltaInitialized = true
-            persist()
-        }
-    }
-
-    private suspend fun pullSupabaseDeltaFromServer(
-        profileId: Int,
-        operationGeneration: Long,
-    ) {
-        if (!isActiveOperation(profileId, operationGeneration)) return
-        log.d {
-            "Watch progress delta sync start: profile=$profileId entries=${localEntryCount()} " +
-                "deltaInitialized=$deltaInitialized cursor=$deltaCursorEventId lastPush=$lastSuccessfulPushEpochMs"
-        }
-        if (!deltaInitialized) {
-            log.d { "Watch progress delta not initialized for profile $profileId; requesting cursor before snapshot" }
-            val cursorBeforeSnapshot = try {
-                syncAdapter.getDeltaCursor(profileId)
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Throwable) {
-                log.w { "Watch progress delta cursor unavailable, falling back to full pull: ${error.message}" }
-                null
-            }
-            if (cursorBeforeSnapshot == null) {
-                log.d { "Watch progress delta cursor unavailable for profile $profileId; using snapshot fallback" }
-                pullFullFromAdapter(
-                    profileId = profileId,
-                    resetDeltaState = true,
-                    operationGeneration = operationGeneration,
-                )
-                return
-            }
-
-            log.d { "Watch progress delta cursor before snapshot for profile $profileId is $cursorBeforeSnapshot" }
-            pullFullFromAdapter(
-                profileId = profileId,
-                resetDeltaState = false,
-                operationGeneration = operationGeneration,
-            )
-            if (!isActiveOperation(profileId, operationGeneration)) return
-            deltaCursorEventId = cursorBeforeSnapshot
-            deltaInitialized = true
-            persist()
-            log.d {
-                "Watch progress delta initialized for profile $profileId: cursor=$deltaCursorEventId " +
-                    "entries=${localEntryCount()}"
-            }
-            return
-        }
-
-        var cursor = deltaCursorEventId
-        var changed = false
-        var totalUpserts = 0
-        var totalDeletes = 0
-        var preservedLocalItems = false
-        var cursorAdvanced = false
-        var page = 1
-
-        while (true) {
-            log.d { "Pulling watch progress delta page $page for profile $profileId from cursor $cursor" }
-            val events = try {
-                syncAdapter.pullDelta(
-                    profileId = profileId,
-                    sinceEventId = cursor,
-                    limit = WATCH_PROGRESS_DELTA_PAGE_SIZE,
-                )
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Throwable) {
-                log.w { "Watch progress delta pull unavailable, falling back to full pull: ${error.message}" }
-                pullFullFromAdapter(
-                    profileId = profileId,
-                    resetDeltaState = true,
-                    operationGeneration = operationGeneration,
-                )
-                return
-            }
-            if (!isActiveOperation(profileId, operationGeneration)) return
-            if (events.isEmpty()) {
-                log.d { "Watch progress delta page $page returned no events for profile $profileId at cursor $cursor" }
-                break
-            }
-
-            val firstEvent = events.firstOrNull()?.eventId
-            val lastEvent = events.lastOrNull()?.eventId
-            val eventUpserts = events.count { it.operation.equals(WATCH_PROGRESS_DELTA_OPERATION_UPSERT, ignoreCase = true) }
-            val eventDeletes = events.count { it.operation.equals(WATCH_PROGRESS_DELTA_OPERATION_DELETE, ignoreCase = true) }
-            log.d {
-                "Watch progress delta page $page fetched ${events.size} events for profile $profileId " +
-                    "first=$firstEvent last=$lastEvent upserts=$eventUpserts deletes=$eventDeletes"
-            }
-
-            val pageResult = applyWatchProgressDeltaEvents(events = events)
-            changed = pageResult.changed || changed
-            totalUpserts += pageResult.appliedUpserts
-            totalDeletes += pageResult.appliedDeletes
-            preservedLocalItems = preservedLocalItems || pageResult.preservedLocalItems
-            val previousCursor = cursor
-            cursor = maxOf(cursor, events.maxOf { it.eventId })
-            cursorAdvanced = cursorAdvanced || cursor > previousCursor
-            deltaCursorEventId = cursor
-            deltaInitialized = true
-            log.d {
-                "Watch progress delta page $page applied for profile $profileId: " +
-                    "appliedUpserts=${pageResult.appliedUpserts} appliedDeletes=${pageResult.appliedDeletes} " +
-                    "preservedLocal=${pageResult.preservedLocalItems} newCursor=$cursor"
-            }
-
-            if (events.size < WATCH_PROGRESS_DELTA_PAGE_SIZE) break
-            page += 1
-        }
-
-        hasLoaded = true
-        val remoteReadinessChanged = !hasLoadedAccountRemoteProgress
-        hasLoadedAccountRemoteProgress = true
-        if (changed || remoteReadinessChanged) {
-            publish()
-        }
-        if (changed || cursorAdvanced) {
-            persist()
-        }
-        if (changed) {
-            resolveRemoteMetadata()
-        }
-        log.d {
-            "Watch progress delta sync finished for profile $profileId: changed=$changed " +
-                "appliedUpserts=$totalUpserts appliedDeletes=$totalDeletes preservedLocal=$preservedLocalItems " +
-                "cursor=$deltaCursorEventId entries=${localEntryCount()}"
-        }
-    }
-
-    private suspend fun pullFullFromAdapter(
-        profileId: Int,
-        resetDeltaState: Boolean,
-        operationGeneration: Long,
-        preserveLocalEntries: Boolean = true,
-    ) {
-        val serverEntries = syncAdapter.pull(profileId = profileId)
-        if (!isActiveOperation(profileId, operationGeneration)) return
-        log.d {
-            "Watch progress snapshot fetched ${serverEntries.size} entries for profile $profileId " +
-                "resetDeltaState=$resetDeltaState preserveLocalEntries=$preserveLocalEntries"
-        }
-        val localBeforePull = localEntriesSnapshot()
-        val reconciliation = reconcileLocalProgressKeysWithSnapshot(
-            serverEntries = serverEntries,
-            localEntries = localBeforePull,
-        )
-        migrateDirtyProgressKeys(reconciliation.migratedKeys)
-        val dirtyBeforeApply = dirtyProgressKeysSnapshot()
-        val updatedEntries = if (preserveLocalEntries) {
-            mergeWatchProgressEntriesPreservingUnsynced(
-                serverEntries = serverEntries,
-                localEntries = reconciliation.entries,
-                dirtyProgressKeys = dirtyBeforeApply,
-            )
-        } else {
-            val newestRemoteByKey = linkedMapOf<String, WatchProgressEntry>()
-            serverEntries.forEach { record ->
-                val key = record.resolvedProgressKey()
-                val candidate = record.toWatchProgressEntry(cached = null)
-                val existing = newestRemoteByKey[key]
-                if (existing == null || candidate.isFresherThan(existing)) {
-                    newestRemoteByKey[key] = candidate
-                }
-            }
-            newestRemoteByKey
-        }
-        replaceLocalEntries(updatedEntries)
-        acknowledgeDirtyProgressFromSnapshot(
-            serverEntries = serverEntries,
-            localEntriesBeforeApply = reconciliation.entries,
-            dirtyKeysBeforeApply = dirtyBeforeApply,
-        )
-        if (resetDeltaState) {
-            deltaCursorEventId = 0L
-            deltaInitialized = false
-        }
-        hasLoaded = true
         hasLoadedAccountRemoteProgress = true
         publish()
-        persist()
-        resolveRemoteMetadata()
-        log.d {
-            "Watch progress snapshot applied for profile $profileId: entries=${localEntryCount()} " +
-                "deltaInitialized=$deltaInitialized cursor=$deltaCursorEventId"
-        }
-    }
-
-    private fun applyWatchProgressDeltaEvents(
-        events: Collection<ProgressDeltaEvent>,
-    ): WatchProgressDeltaApplyResult {
-        var changed = false
-        var appliedUpserts = 0
-        var appliedDeletes = 0
-        var preservedLocalItems = false
-        val latestEventByProgressKey = linkedMapOf<String, ProgressDeltaEvent>()
-        events.sortedBy(ProgressDeltaEvent::eventId).forEach { event ->
-            val progressKey = event.resolvedProgressKey()
-            if (progressKey.isBlank()) {
-                return@forEach
-            }
-            when (event.operation.lowercase()) {
-                WATCH_PROGRESS_DELTA_OPERATION_DELETE -> {
-                    latestEventByProgressKey[progressKey] = event
-                }
-                WATCH_PROGRESS_DELTA_OPERATION_UPSERT -> {
-                    if (event.videoId.isNotBlank()) {
-                        latestEventByProgressKey[progressKey] = event
-                    }
-                }
-                else -> Unit
-            }
-        }
-
-        latestEventByProgressKey.forEach { (progressKey, event) ->
-            val current = localEntry(progressKey)
-            val decision = decideWatchProgressDeltaEvent(
-                current = current,
-                event = event,
-                isLocalDirty = progressKey in dirtyProgressKeysSnapshot(),
-            )
-            when (decision.type) {
-                WatchProgressDeltaDecisionType.UPSERT -> {
-                    upsertLocalEntry(requireNotNull(decision.updatedEntry))
-                    changed = true
-                    appliedUpserts += 1
-                }
-                WatchProgressDeltaDecisionType.DELETE -> {
-                    if (removeLocalEntry(progressKey) != null) {
-                        changed = true
-                        appliedDeletes += 1
-                    }
-                }
-                WatchProgressDeltaDecisionType.PRESERVE_LOCAL -> {
-                    preservedLocalItems = true
-                }
-                WatchProgressDeltaDecisionType.IGNORE -> Unit
-            }
-            if (decision.clearsDirtyProgress) {
-                clearProgressDirty(progressKey)
-            }
-        }
-        return WatchProgressDeltaApplyResult(
-            appliedUpserts = appliedUpserts,
-            appliedDeletes = appliedDeletes,
-            preservedLocalItems = preservedLocalItems,
-            changed = changed,
-        )
+        return true
     }
 
     internal fun decideWatchProgressDeltaEvent(
@@ -999,7 +692,6 @@ object WatchProgressRepository {
         if (removedEntries.isNotEmpty()) {
             publish()
             persist()
-            pushDeleteToServer(removedEntries)
         }
     }
 
@@ -1039,7 +731,6 @@ object WatchProgressRepository {
         }
         publish()
         persist()
-        pushDeleteToServer(entriesToRemove)
     }
 
     fun progressForVideo(
@@ -1155,9 +846,6 @@ object WatchProgressRepository {
             } else {
                 resolvedEntry
             }
-            if (syncRemote) {
-                pushScrobbleToServer(entry = entry, profileId = targetProfileId)
-            }
             return
         }
 
@@ -1184,9 +872,6 @@ object WatchProgressRepository {
         if (persist) persist()
         if (entry.needsRemoteMetadataEnrichment()) {
             resolveRemoteMetadata()
-        }
-        if (syncRemote) {
-            pushScrobbleToServer(entry = entry, profileId = targetProfileId)
         }
         if (
             shouldCascadeCompletedProgressToWatchedHistory(
@@ -1236,35 +921,6 @@ object WatchProgressRepository {
             WatchProgressCodec.decodePayload(payload).entries
         }
         return storedEntries.resolveIdentityForUpsert(entry)
-    }
-
-    private fun pushScrobbleToServer(entry: WatchProgressEntry, profileId: Int) {
-        val operationGeneration = profileGeneration.takeIf { profileId == currentProfileId }
-        accountScopeSnapshot().launch {
-            runCatching {
-                syncAdapter.push(profileId = profileId, entries = listOf(entry))
-                recordSuccessfulPush(
-                    profileId = profileId,
-                    operationGeneration = operationGeneration,
-                    entries = listOf(entry),
-                )
-            }.onFailure { e ->
-                log.e(e) { "Failed to push watch progress scrobble" }
-            }
-        }
-    }
-
-    private fun pushDeleteToServer(entries: Collection<WatchProgressEntry>) {
-        if (activeSource.providerId != null) return
-        val profileId = currentProfileId
-        accountScopeSnapshot().launch {
-            runCatching {
-                if (entries.isEmpty()) return@runCatching
-                syncAdapter.delete(profileId = profileId, entries = entries)
-            }.onFailure { e ->
-                log.e(e) { "Failed to push watch progress delete" }
-            }
-        }
     }
 
     private fun publish() {

@@ -11,7 +11,6 @@ expect object PluginRepository {
 
     fun clearLocalState()
 
-    suspend fun pullFromServer(profileId: Int)
 
     suspend fun addRepository(rawUrl: String): AddPluginRepositoryResult
 
