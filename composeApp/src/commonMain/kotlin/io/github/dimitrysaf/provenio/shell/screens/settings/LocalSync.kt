@@ -18,12 +18,14 @@ import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Keyboard
+import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material.icons.rounded.QrCode
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -56,7 +58,6 @@ import io.github.dimitrysaf.provenio.core.localsync.LocalSyncPeer
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncRepository
 import io.github.dimitrysaf.provenio.core.time.EpisodeReleaseDatePlatform
 import io.github.dimitrysaf.provenio.shell.components.ContentDialog
-import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.getString
@@ -78,17 +79,7 @@ internal fun LocalSyncCard(modifier: Modifier = Modifier) {
     }
 
     LaunchedEffect(Unit) { LocalSyncRepository.start() }
-
-    // Pairing and failures of something the person asked for are said once, as a snackbar.
-    LaunchedEffect(state.activity) {
-        val message = when (val activity = state.activity) {
-            is LocalSyncActivity.Paired -> getString(Res.string.local_sync_paired, activity.peerName)
-            is LocalSyncActivity.Failed -> getString(activity.error.messageRes())
-            LocalSyncActivity.Idle -> null
-        } ?: return@LaunchedEffect
-        ToastController.show(message)
-        LocalSyncRepository.clearActivity()
-    }
+    LocalSyncFeedbackEffect(state.activity)
 
     val forgetLabel = stringResource(Res.string.local_sync_forget)
     SettingsList(modifier = modifier) {
@@ -111,7 +102,7 @@ internal fun LocalSyncCard(modifier: Modifier = Modifier) {
                 enabled = !syncing,
                 trailingContent = {
                     if (syncing) {
-                        LoadingSpinner(size = 18.dp)
+                        LocalSyncProgress()
                     } else {
                         IconButton(onClick = { peerToForgetId = peer.deviceId }) {
                             Icon(imageVector = Icons.Rounded.Delete, contentDescription = forgetLabel)
@@ -136,7 +127,7 @@ internal fun LocalSyncCard(modifier: Modifier = Modifier) {
                 icon = Icons.Rounded.QrCodeScanner,
                 enabled = !state.joining,
                 trailingContent = if (state.joining) {
-                    { LoadingSpinner(size = 18.dp) }
+                    { LocalSyncProgress() }
                 } else {
                     null
                 },
@@ -149,7 +140,7 @@ internal fun LocalSyncCard(modifier: Modifier = Modifier) {
             icon = Icons.Rounded.Keyboard,
             enabled = !state.joining,
             trailingContent = if (state.joining && scan == null) {
-                { LoadingSpinner(size = 18.dp) }
+                { LocalSyncProgress() }
             } else {
                 null
             },
@@ -187,7 +178,31 @@ internal fun LocalSyncCard(modifier: Modifier = Modifier) {
     }
 }
 
+// Pairing and failures of something the person asked for are said once, as a snackbar.
+@Composable
+internal fun LocalSyncFeedbackEffect(activity: LocalSyncActivity) {
+    LaunchedEffect(activity) {
+        val message = when (activity) {
+            is LocalSyncActivity.Paired -> getString(Res.string.local_sync_paired, activity.peerName)
+            is LocalSyncActivity.Failed -> getString(activity.error.messageRes())
+            LocalSyncActivity.Idle -> null
+        } ?: return@LaunchedEffect
+        ToastController.show(message)
+        LocalSyncRepository.clearActivity()
+    }
+}
+
+// A plain circular indicator sized for a list row's trailing slot or a button.
+@Composable
+internal fun LocalSyncProgress(modifier: Modifier = Modifier) {
+    CircularProgressIndicator(
+        modifier = modifier.size(20.dp),
+        strokeWidth = 2.dp,
+    )
+}
+
 private val LocalSyncFeatures = listOf(
+    TrackingFeature(Icons.Rounded.People, Res.string.tracking_feature_profiles),
     TrackingFeature(Icons.Rounded.BookmarkBorder, Res.string.tracking_feature_lists),
     TrackingFeature(Icons.Rounded.History, Res.string.tracking_feature_watched),
     TrackingFeature(Icons.Rounded.PlayCircle, Res.string.tracking_feature_progress),
@@ -249,7 +264,7 @@ private fun lastSyncedLabel(lastSyncedAtEpochMs: Long?, nowEpochMs: Long): Strin
 }
 
 @Composable
-private fun LocalSyncPairingDialog(
+internal fun LocalSyncPairingDialog(
     code: String,
     qr: List<BooleanArray>?,
     onDismiss: () -> Unit,
@@ -329,7 +344,7 @@ private fun LocalSyncQrCode(
 }
 
 @Composable
-private fun LocalSyncCodeDialog(
+internal fun LocalSyncCodeDialog(
     onConnect: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {

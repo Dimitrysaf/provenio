@@ -260,6 +260,30 @@ object ProfileRepository {
         persist()
     }
 
+    // The profiles on this device as another device would receive them.
+    internal fun profilesForSync(): List<ProfilePushPayload> = _state.value.profiles.map { it.toPushPayload() }
+
+    // Takes another device's profiles, keeping this device's PIN state for the ones both have.
+    internal fun applySyncedProfiles(upserts: Collection<ProfilePushPayload>, removedIndexes: Collection<Int>) {
+        if (upserts.isEmpty() && removedIndexes.isEmpty()) return
+        val byIndex = _state.value.profiles.associate { it.profileIndex to it.toPushPayload() }.toMutableMap()
+        removedIndexes.forEach { byIndex.remove(it) }
+        upserts.forEach { byIndex[it.profileIndex] = it }
+        applyPayloadsLocally(byIndex.values.sortedBy { it.profileIndex })
+    }
+
+    private fun Profile.toPushPayload(): ProfilePushPayload = ProfilePushPayload(
+        profileIndex = profileIndex,
+        name = name,
+        avatarColorHex = avatarColorHex,
+        usesPrimaryAddons = usesPrimaryAddons,
+        usesPrimaryPlugins = usesPrimaryPlugins,
+        avatarId = avatarId,
+        avatarUrl = avatarUrl,
+        profileBackgroundId = profileBackgroundId,
+        profileBackgroundUrl = profileBackgroundUrl,
+    )
+
     private fun applyPayloadsLocally(payloads: List<ProfilePushPayload>) {
         val authState = AuthRepository.state.value as? AuthState.Authenticated ?: return
         val existing = _state.value.profiles.associateBy { it.profileIndex }

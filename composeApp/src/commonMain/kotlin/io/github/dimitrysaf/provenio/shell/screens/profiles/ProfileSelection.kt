@@ -157,15 +157,6 @@ fun ProfileSelectionScreen(
         val breakpoint = WindowBreakpoint.forWidth(maxWidth)
         val usePane = breakpoint.isTwoPane
 
-        // Nothing to choose between when there are no profiles, so go straight to creating one
-        // instead of making the user find "Manage profiles" first. On a window too narrow for a
-        // second pane the editor is still a full-window destination, so defer to the host.
-        LaunchedEffect(profileState.isLoaded, profileState.profiles.isEmpty(), usePane) {
-            if (profileState.isLoaded && profileState.profiles.isEmpty()) {
-                if (usePane) editorTarget = ProfileEditorTarget.Create else onAddProfile()
-            }
-        }
-
         AnimatedVisibility(
             visible = contentVisible,
             enter = fadeIn(tween(180)),
@@ -178,6 +169,17 @@ fun ProfileSelectionScreen(
 
             val openCreate: () -> Unit = {
                 if (usePane) editorTarget = ProfileEditorTarget.Create else onAddProfile()
+            }
+
+            // With no profiles there is nothing to choose, so the device is set up here: a new profile, or another device's.
+            if (profileState.isLoaded && profiles.isEmpty() && editorTarget == null) {
+                ProfileWelcome(
+                    onCreateProfile = openCreate,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = statusBarTop, bottom = navigationBarBottom),
+                )
+                return@AnimatedVisibility
             }
 
             if (usePane) {

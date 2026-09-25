@@ -25,6 +25,8 @@ internal data class SyncHello(
     val host: String? = null,
     val port: Int? = null,
     val hasSyncedBefore: Boolean = false,
+    val fresh: Boolean = false,
+    val hostWins: Boolean = true,
 )
 
 @Serializable
@@ -36,6 +38,7 @@ internal data class LocalSyncIdentity(
     val name: String,
     val host: String?,
     val port: Int?,
+    val fresh: Boolean,
 )
 
 /** What a finished session learned about the other device. */
@@ -75,7 +78,7 @@ internal suspend fun runClientSession(
     expectedPeerId: String?,
     hasSyncedBefore: Boolean,
     ledger: SyncLedger,
-    applyMerge: (peerId: String, remote: SyncLedger, firstSync: Boolean) -> LocalSyncMerge,
+    applyMerge: (peerId: String, remote: SyncLedger, policy: SyncConflictPolicy) -> LocalSyncMerge,
 ): LocalSyncOutcome {
     val nonce = encodeSyncBytes(LocalSyncPlatform.randomBytes(NONCE_SIZE))
     val hello = SyncHello(
@@ -83,24 +86,37 @@ internal suspend fun runClientSession(
         deviceId = identity.deviceId,
         name = identity.name,
         nonce = nonce,
-        proof = proof(secret, "client", nonce, identity.deviceId, hasSyncedBefore.toString()),
+        proof = proof(secret, "client", nonce, identity.deviceId, hasSyncedBefore.toString(), identity.fresh.toString()),
         host = identity.host,
         port = identity.port,
         hasSyncedBefore = hasSyncedBefore,
+        fresh = identity.fresh,
     )
     connection.writeJson(sessionJson.encodeToString(hello))
 
     val reply = sessionJson.decodeFromString<SyncHello>(connection.readJson())
-    val expectedProof = proof(secret, "server", nonce, reply.nonce, reply.deviceId, reply.hasSyncedBefore.toString())
+    val expectedProof = proof(
+        secret,
+        "server",
+        nonce,
+        reply.nonce,
+        reply.deviceId,
+        reply.hasSyncedBefore.toString(),
+        reply.hostWins.toString(),
+    )
     if (reply.version != PROTOCOL_VERSION || reply.proof != expectedProof) throw LocalSyncRejectedException()
     if (expectedPeerId != null && reply.deviceId != expectedPeerId) throw LocalSyncRejectedException()
 
     val key = sessionKey(secret, nonce, reply.nonce)
     connection.writeSealed(key, ledger)
     val remote = connection.readSealed(key)
-    // The server reports whether both sides had synced before; on a first sync the host decides.
-    val firstSync = !reply.hasSyncedBefore
-    val merge = applyMerge(reply.deviceId, remote, firstSync)
+    // The server reports whether both sides had synced before, and which one is the source of truth if not.
+    val policy = when {
+        reply.hasSyncedBefore -> SyncConflictPolicy.NEWEST
+        reply.hostWins -> SyncConflictPolicy.TAKE_REMOTE
+        else -> SyncConflictPolicy.KEEP_LOCAL
+    }
+    val merge = applyMerge(reply.deviceId, remote, policy)
     return LocalSyncOutcome(peerHello = reply, secret = secret, merge = merge)
 }
 
@@ -109,32 +125,55 @@ internal suspend fun runServerSession(
     connection: LocalSyncConnection,
     identity: LocalSyncIdentity,
     secretFor: (deviceId: String) -> List<Pair<ByteArray, Boolean>>,
-    applyMerge: (peerId: String, remote: SyncLedger, firstSync: Boolean) -> LocalSyncMerge,
+    applyMerge: (peerId: String, remote: SyncLedger, policy: SyncConflictPolicy) -> LocalSyncMerge,
 ): LocalSyncOutcome {
     val hello = sessionJson.decodeFromString<SyncHello>(connection.readJson())
     if (hello.version != PROTOCOL_VERSION) throw LocalSyncRejectedException()
     val (secret, knowsClient) = secretFor(hello.deviceId).firstOrNull { (candidate, _) ->
-        hello.proof == proof(candidate, "client", hello.nonce, hello.deviceId, hello.hasSyncedBefore.toString())
+        hello.proof == proof(
+            candidate,
+            "client",
+            hello.nonce,
+            hello.deviceId,
+            hello.hasSyncedBefore.toString(),
+            hello.fresh.toString(),
+        )
     } ?: throw LocalSyncRejectedException()
 
     val bothSyncedBefore = knowsClient && hello.hasSyncedBefore
+    // The host is the source of truth on a first sync, unless it is a new device and the client is not.
+    val hostWins = !(identity.fresh && !hello.fresh)
     val nonce = encodeSyncBytes(LocalSyncPlatform.randomBytes(NONCE_SIZE))
     val reply = SyncHello(
         version = PROTOCOL_VERSION,
         deviceId = identity.deviceId,
         name = identity.name,
         nonce = nonce,
-        proof = proof(secret, "server", hello.nonce, nonce, identity.deviceId, bothSyncedBefore.toString()),
+        proof = proof(
+            secret,
+            "server",
+            hello.nonce,
+            nonce,
+            identity.deviceId,
+            bothSyncedBefore.toString(),
+            hostWins.toString(),
+        ),
         host = identity.host,
         port = identity.port,
         hasSyncedBefore = bothSyncedBefore,
+        fresh = identity.fresh,
+        hostWins = hostWins,
     )
     connection.writeJson(sessionJson.encodeToString(reply))
 
     val key = sessionKey(secret, hello.nonce, nonce)
     val remote = connection.readSealed(key)
-    // The host is the source of truth the first time two devices sync.
-    val merge = applyMerge(hello.deviceId, remote, !bothSyncedBefore)
+    val policy = when {
+        bothSyncedBefore -> SyncConflictPolicy.NEWEST
+        hostWins -> SyncConflictPolicy.KEEP_LOCAL
+        else -> SyncConflictPolicy.TAKE_REMOTE
+    }
+    val merge = applyMerge(hello.deviceId, remote, policy)
     connection.writeSealed(key, merge.ledger)
     return LocalSyncOutcome(peerHello = hello, secret = secret, merge = merge)
 }

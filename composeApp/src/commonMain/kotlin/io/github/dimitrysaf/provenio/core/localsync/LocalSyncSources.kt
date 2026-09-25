@@ -9,7 +9,15 @@ import io.github.dimitrysaf.provenio.core.debrid.DebridSettingsRepository
 import io.github.dimitrysaf.provenio.core.debrid.DebridSettingsStorage
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
 import io.github.dimitrysaf.provenio.core.home.SyncHomeCatalogPayload
+import io.github.dimitrysaf.provenio.core.library.LibraryDisplaySettingsRepository
+import io.github.dimitrysaf.provenio.core.library.LibraryDisplaySettingsStorage
 import io.github.dimitrysaf.provenio.core.library.LibraryItem
+import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificationsRepository
+import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificationsStorage
+import io.github.dimitrysaf.provenio.core.profiles.ProfilePushPayload
+import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
+import io.github.dimitrysaf.provenio.core.search.SearchHistoryRepository
+import io.github.dimitrysaf.provenio.core.search.SearchHistoryStorage
 import io.github.dimitrysaf.provenio.core.library.LibraryRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsStorage
@@ -143,6 +151,25 @@ internal fun localSyncSources(): List<LocalSyncSource> = listOf(
         save = TraktSettingsStorage::savePayload,
         reload = TrackingSettingsRepository::onProfileChanged,
     ),
+    SettingsTextSource(
+        name = "library_display",
+        load = LibraryDisplaySettingsStorage::loadPayload,
+        save = LibraryDisplaySettingsStorage::savePayload,
+        reload = LibraryDisplaySettingsRepository::onProfileChanged,
+    ),
+    SettingsTextSource(
+        name = "episode_alerts",
+        load = EpisodeReleaseNotificationsStorage::loadPayload,
+        save = EpisodeReleaseNotificationsStorage::savePayload,
+        reload = EpisodeReleaseNotificationsRepository::onProfileChanged,
+    ),
+    SettingsTextSource(
+        name = "search_history",
+        load = SearchHistoryStorage::loadPayload,
+        save = SearchHistoryStorage::savePayload,
+        reload = SearchHistoryRepository::onProfileChanged,
+    ),
+    ProfilesSyncSource,
     HomeCatalogSyncSource,
     AddonsSyncSource,
     CollectionsSyncSource,
@@ -193,6 +220,29 @@ private class SettingsTextSource(
         val value = changes[prefix] ?: return
         save(value.jsonPrimitive.contentOrNull.orEmpty())
         reload()
+    }
+}
+
+// Profiles are shared by the whole device, so they travel with whichever profile is syncing.
+private object ProfilesSyncSource : LocalSyncSource {
+    override val prefix: String = "profiles/"
+
+    override fun snapshot(): Map<String, JsonElement> =
+        ProfileRepository.profilesForSync().associate { profile ->
+            prefix + profile.profileIndex to syncJson.encodeToJsonElement(profile)
+        }
+
+    override fun apply(changes: Map<String, JsonElement?>) {
+        val upserts = mutableListOf<ProfilePushPayload>()
+        val removals = mutableListOf<Int>()
+        changes.forEach { (key, value) ->
+            if (value == null) {
+                key.removePrefix(prefix).toIntOrNull()?.let { removals += it }
+            } else {
+                upserts += syncJson.decodeFromJsonElement<ProfilePushPayload>(value)
+            }
+        }
+        ProfileRepository.applySyncedProfiles(upserts, removals)
     }
 }
 

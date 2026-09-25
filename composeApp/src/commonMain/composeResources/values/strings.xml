@@ -1266,6 +1266,7 @@
     <string name="tracking_feature_watched">Watched history</string>
     <string name="tracking_feature_progress">Progress</string>
     <string name="tracking_feature_scrobbling">Scrobbling</string>
+    <string name="tracking_feature_profiles">Profiles</string>
     <string name="tracking_feature_addons">Addons</string>
     <string name="tracking_feature_settings">Settings</string>
     <string name="tracking_feature_comments">Comments</string>
@@ -2364,6 +2365,13 @@
     <string name="local_sync_pairing_hint">On the other device, open Sync devices and scan this code, or enter the code below.</string>
     <string name="local_sync_waiting">Waiting for the other device…</string>
     <string name="local_sync_copy_code">Copy code</string>
+    <string name="welcome_title">Welcome</string>
+    <string name="welcome_subtitle">Create a profile to get started, or bring your profiles, library, history and settings over from a device you already use.</string>
+    <string name="welcome_create_profile">Create a profile</string>
+    <string name="welcome_scan_code">Scan a code from another device</string>
+    <string name="welcome_show_code">Show a pairing code</string>
+    <string name="welcome_enter_code">Enter a code</string>
+    <string name="welcome_pairing_hint">On your other device, go to Settings, then Tracking, then Device sync.</string>
     <string name="local_sync_paired">Paired with %1$s</string>
     <string name="local_sync_never_synced">Not synced yet</string>
     <string name="local_sync_synced_just_now">Synced just now</string>

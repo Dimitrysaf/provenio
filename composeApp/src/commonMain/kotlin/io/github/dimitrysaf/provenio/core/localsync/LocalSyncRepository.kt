@@ -294,6 +294,7 @@ object LocalSyncRepository {
             AddonRepository.uiState.map { },
             CollectionRepository.collections.map { },
             HomeCatalogSettingsRepository.uiState.map { },
+            ProfileRepository.state.map { it.profiles },
         )
             .drop(1)
             .debounce(CHANGE_DEBOUNCE_MS)
@@ -322,10 +323,10 @@ object LocalSyncRepository {
                     connection = connection,
                     identity = identity(),
                     secretFor = ::candidateSecrets,
-                ) { remoteId, remote, firstSync ->
+                ) { remoteId, remote, policy ->
                     peerId = remoteId
                     markSyncing(remoteId, true)
-                    commitMerge(refreshedLedger(), remote, if (firstSync) SyncConflictPolicy.KEEP_LOCAL else SyncConflictPolicy.NEWEST)
+                    commitMerge(refreshedLedger(), remote, policy)
                 }
                 val pairedNow = pairingSecret?.contentEquals(outcome.secret) == true
                 rememberPeer(outcome, fallbackHost = null, fallbackPort = null)
@@ -371,8 +372,8 @@ object LocalSyncRepository {
                     expectedPeerId = expectedPeerId,
                     hasSyncedBefore = hasSyncedBefore,
                     ledger = ledger,
-                ) { _, remote, firstSync ->
-                    commitMerge(ledger, remote, if (firstSync) SyncConflictPolicy.TAKE_REMOTE else SyncConflictPolicy.NEWEST)
+                ) { _, remote, policy ->
+                    commitMerge(ledger, remote, policy)
                 }
                 rememberPeer(outcome, fallbackHost = address.first, fallbackPort = address.second)
                 outcome.peerHello.name
@@ -418,6 +419,8 @@ object LocalSyncRepository {
         name = localSyncDeviceName(),
         host = LocalSyncPlatform.localIpv4Address(),
         port = serverPort.value,
+        // A device with no profiles yet is being set up, so it takes the other device's data.
+        fresh = ProfileRepository.state.value.profiles.isEmpty(),
     )
 
     // Stamps local edits since the last sync, leaving out any source that could not be read.
