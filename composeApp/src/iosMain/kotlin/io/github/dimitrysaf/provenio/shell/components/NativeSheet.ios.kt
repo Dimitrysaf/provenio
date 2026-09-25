@@ -18,12 +18,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.window.ComposeUIViewController
-import io.github.dimitrysaf.provenio.shell.theme.LocalAppTheme
 import io.github.dimitrysaf.provenio.shell.theme.LocalThemeTokens
 import io.github.dimitrysaf.provenio.shell.theme.LocalTypeScale
 import io.github.dimitrysaf.provenio.shell.theme.LocalThemePalette
 import io.github.dimitrysaf.provenio.shell.theme.Tokens
-import io.github.dimitrysaf.provenio.shell.theme.appTheme
 import io.github.dimitrysaf.provenio.shell.theme.themePalette
 import platform.UIKit.UIAdaptivePresentationControllerDelegateProtocol
 import platform.UIKit.UIColor
@@ -64,7 +62,6 @@ internal actual fun NativeModalSheet(
     val shapes = MaterialTheme.shapes
     val themeTokens = LocalThemeTokens.current
     val typeScale = LocalTypeScale.current
-    val appTheme = LocalAppTheme.current
     val themePalette = LocalThemePalette.current
     val density = LocalDensity.current
     val rippleConfiguration = LocalRippleConfiguration.current
@@ -74,7 +71,6 @@ internal actual fun NativeModalSheet(
     val latestShapes = rememberUpdatedState(shapes)
     val latestThemeTokens = rememberUpdatedState(themeTokens)
     val latestTypeScale = rememberUpdatedState(typeScale)
-    val latestAppTheme = rememberUpdatedState(appTheme)
     val latestThemePalette = rememberUpdatedState(themePalette)
     val latestDensity = rememberUpdatedState(density)
     val latestRippleConfiguration = rememberUpdatedState(rippleConfiguration)
@@ -88,7 +84,6 @@ internal actual fun NativeModalSheet(
                 ),
                 LocalThemeTokens provides latestThemeTokens.value,
                 LocalTypeScale provides latestTypeScale.value,
-                LocalAppTheme provides latestAppTheme.value,
                 LocalThemePalette provides latestThemePalette.value,
                 LocalRippleConfiguration provides latestRippleConfiguration.value,
             ) {

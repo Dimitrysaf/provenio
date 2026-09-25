@@ -853,6 +853,27 @@ object WatchedRepository {
         }
     }
 
+    // The watched history kept on this device, by storage key, for syncing with another device.
+    internal fun localItemsForSync(): Map<String, WatchedItem> {
+        ensureLoaded()
+        return itemsStore.read { accountItems, _, _, _ -> accountItems.toMap() }
+    }
+
+    // Applies another device's watched history as it was recorded there, without re-stamping it.
+    internal fun applySyncedChanges(upserts: Map<String, WatchedItem>, removedKeys: Collection<String>) {
+        ensureLoaded()
+        if (upserts.isEmpty() && removedKeys.isEmpty()) return
+        itemsStore.update { accountItems, _, dirtyAccountKeys, _ ->
+            accountItems.putAll(upserts)
+            removedKeys.forEach { key ->
+                accountItems.remove(key)
+                dirtyAccountKeys.remove(key)
+            }
+        }
+        publish()
+        persist()
+    }
+
     private fun publish() {
         val (accountItems, providerItems) = itemsStore.read { storedAccountItems, storedProviderItems, _, _ ->
             storedAccountItems.values.toList() to storedProviderItems.mapValues { (_, itemsByKey) ->

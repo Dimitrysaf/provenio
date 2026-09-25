@@ -96,26 +96,19 @@ internal fun AppEnvironment(content: @Composable () -> Unit) {
             .configurePlatformImageLoader()
             .build()
     }
-    val selectedTheme by remember {
-        ThemeSettingsRepository.ensureLoaded()
-        ThemeSettingsRepository.selectedTheme
-    }.collectAsStateWithLifecycle()
     val amoledEnabled by remember {
+        ThemeSettingsRepository.ensureLoaded()
         ThemeSettingsRepository.amoledEnabled
     }.collectAsStateWithLifecycle()
 
-    val customThemeColors by ThemeSettingsRepository.customThemeColors.collectAsStateWithLifecycle()
-    // The native iOS tab bar takes its accent from the active theme.
-    LaunchedEffect(selectedTheme, customThemeColors) {
-        val palette = ThemeColors.getColorPalette(selectedTheme, customThemeColors)
-        NativeTabBridge.publishAccentColor(palette.nativeAccentHex)
+    // The native iOS tab bar takes its accent from the fallback palette.
+    LaunchedEffect(Unit) {
+        NativeTabBridge.publishAccentColor(ThemeColors.White.nativeAccentHex)
     }
     val useDynamicColor = remember { isDynamicColorAvailable() }
 
     Theme(
-        appTheme = selectedTheme,
         amoled = amoledEnabled,
-        customThemeColors = customThemeColors,
         useDynamicColor = useDynamicColor,
     ) {
         content()

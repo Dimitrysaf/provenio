@@ -2,8 +2,6 @@ package io.github.dimitrysaf.provenio.core.settings
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import provenio.composeapp.generated.resources.Res
-import provenio.composeapp.generated.resources.app_logo_wordmark_gold
 
 class AppIconOptionTest {
     @Test
@@ -27,13 +25,5 @@ class AppIconOptionTest {
     @Test
     fun unknownIconFallsBackToOriginal() {
         assertEquals(AppIconOption.ORIGINAL, AppIconOption.fromPlatformName("UnknownIcon"))
-    }
-
-    @Test
-    fun goldThemeUsesGoldWordmark() {
-        assertEquals(
-            Res.drawable.app_logo_wordmark_gold,
-            AppTheme.GOLD.wordmarkResource(AppIconOption.COPPER),
-        )
     }
 }

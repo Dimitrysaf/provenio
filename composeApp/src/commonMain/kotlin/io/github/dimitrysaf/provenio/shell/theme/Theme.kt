@@ -23,22 +23,12 @@ import provenio.composeapp.generated.resources.roboto_bold
 import provenio.composeapp.generated.resources.roboto_medium
 import provenio.composeapp.generated.resources.roboto_regular
 import org.jetbrains.compose.resources.Font
-import io.github.dimitrysaf.provenio.core.settings.AppTheme
-import io.github.dimitrysaf.provenio.core.settings.CustomThemeColors
-
-val LocalAppTheme = staticCompositionLocalOf { AppTheme.WHITE }
-
 val LocalThemePalette = staticCompositionLocalOf { ThemeColors.White }
 
 val MaterialTheme.themePalette: ThemeColorPalette
     @Composable
     @ReadOnlyComposable
     get() = LocalThemePalette.current
-
-val MaterialTheme.appTheme: AppTheme
-    @Composable
-    @ReadOnlyComposable
-    get() = LocalAppTheme.current
 
 // Roboto is the Material You type family. Roboto ships Regular/Medium/Bold as static
 // instances and has no SemiBold, so the theme's SemiBold styles resolve to Medium — the
@@ -176,16 +166,13 @@ private val TypeTokens: TypeScale
 @Composable
 fun Theme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    appTheme: AppTheme = AppTheme.WHITE,
     amoled: Boolean = false,
-    customThemeColors: CustomThemeColors = CustomThemeColors.Default,
     useDynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val dynamicColorScheme = if (useDynamicColor) rememberDynamicColorScheme() else null
-    val palette = remember(appTheme, customThemeColors, dynamicColorScheme, amoled) {
-        dynamicColorScheme?.toDynamicThemeColorPalette(amoled)
-            ?: ThemeColors.getColorPalette(appTheme, customThemeColors)
+    val palette = remember(dynamicColorScheme, amoled) {
+        dynamicColorScheme?.toDynamicThemeColorPalette(amoled) ?: ThemeColors.White
     }
     // Material You's own scheme wherever the platform supplies one (Android 12+). Below that,
     // and on iOS, there is no wallpaper to derive a palette from, so fall back to Material's
@@ -205,7 +192,6 @@ fun Theme(
         ),
         LocalThemeTokens provides tokens,
         LocalTypeScale provides TypeTokens,
-        LocalAppTheme provides appTheme,
         LocalThemePalette provides palette,
     ) {
         MaterialTheme(

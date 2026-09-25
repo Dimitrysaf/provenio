@@ -6,11 +6,6 @@ enum class MemberTier {
 }
 
 enum class CosmeticEntitlement {
-    GOLD_THEME,
-    JADE_THEME,
-    ROSE_GOLD_THEME,
-    ARCTIC_BLUE_THEME,
-    GRAPHITE_THEME,
     PROFILE_BACKGROUNDS,
     PROFILE_AVATARS,
 }

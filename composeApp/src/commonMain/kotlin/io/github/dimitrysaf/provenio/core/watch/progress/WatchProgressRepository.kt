@@ -923,6 +923,22 @@ object WatchProgressRepository {
         return storedEntries.resolveIdentityForUpsert(entry)
     }
 
+    // Playback progress kept on this device, by progress key, for syncing with another device.
+    internal fun localEntriesForSync(): Map<String, WatchProgressEntry> {
+        ensureLoaded()
+        return synchronized(entriesLock) { entriesByProgressKey.toMap() }
+    }
+
+    // Applies another device's playback progress as it was recorded there.
+    internal fun applySyncedChanges(upserts: Collection<WatchProgressEntry>, removedKeys: Collection<String>) {
+        ensureLoaded()
+        if (upserts.isEmpty() && removedKeys.isEmpty()) return
+        upserts.forEach(::upsertLocalEntry)
+        removedKeys.forEach { key -> removeLocalEntry(key) }
+        publish()
+        persist()
+    }
+
     private fun publish() {
         val entries = currentEntries()
         val sortedEntries = entries.sortedByDescending { it.lastUpdatedEpochMs }

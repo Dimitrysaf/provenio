@@ -16,6 +16,7 @@ import io.github.dimitrysaf.provenio.core.diagnostics.SentryInitializer
 import io.github.dimitrysaf.provenio.core.deeplink.handleAppUrl
 import io.github.dimitrysaf.provenio.core.storage.PlatformLocalAccountDataCleaner
 import io.github.dimitrysaf.provenio.core.sync.SyncClientIdentityStorage
+import io.github.dimitrysaf.provenio.core.localsync.LocalSyncStorage
 import io.github.dimitrysaf.provenio.core.addons.AddonHttpClientProvider
 import io.github.dimitrysaf.provenio.core.addons.AddonStorage
 import io.github.dimitrysaf.provenio.core.collection.CollectionMobileSettingsStorage
@@ -91,6 +92,7 @@ open class MainActivity : AppCompatActivity() {
         window.setBackgroundDrawableResource(R.color.provenio_background)
         pipRemoteActionReceiver = PipRemoteActionReceiver.register(this)
         SyncClientIdentityStorage.initialize(applicationContext)
+        LocalSyncStorage.initialize(applicationContext)
         AddonHttpClientProvider.initialize(applicationContext)
         AddonStorage.initialize(applicationContext)
         AuthStorage.initialize(applicationContext)

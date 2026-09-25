@@ -14,13 +14,9 @@ import kotlinx.serialization.json.put
 
 actual object ThemeSettingsStorage {
     private const val preferencesName = "provenio_theme_settings"
-    private const val selectedThemeKey = "selected_theme"
-    private const val customThemeColorsKey = "custom_theme_colors"
     private const val amoledEnabledKey = "amoled_enabled"
     private const val selectedAppLanguageKey = "selected_app_language"
     private val profileScopedSyncKeys = listOf(
-        selectedThemeKey,
-        customThemeColorsKey,
         amoledEnabledKey,
     )
 
@@ -29,26 +25,6 @@ actual object ThemeSettingsStorage {
     fun initialize(context: Context) {
         preferences = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
         applySelectedAppLanguage(loadSelectedAppLanguage() ?: AppLanguage.DEVICE.code)
-    }
-
-    actual fun loadSelectedTheme(): String? =
-        preferences?.getString(ProfileScopedKey.of(selectedThemeKey), null)
-
-    actual fun saveSelectedTheme(themeName: String) {
-        preferences
-            ?.edit()
-            ?.putString(ProfileScopedKey.of(selectedThemeKey), themeName)
-            ?.apply()
-    }
-
-    actual fun loadCustomThemeColors(): String? =
-        preferences?.getString(ProfileScopedKey.of(customThemeColorsKey), null)
-
-    actual fun saveCustomThemeColors(colors: String) {
-        preferences
-            ?.edit()
-            ?.putString(ProfileScopedKey.of(customThemeColorsKey), colors)
-            ?.apply()
     }
 
     actual fun loadAmoledEnabled(): Boolean? =
@@ -89,8 +65,6 @@ actual object ThemeSettingsStorage {
     private val systemLocale: Locale = Locale.getDefault()
 
     actual fun exportToSyncPayload(): JsonObject = buildJsonObject {
-        loadSelectedTheme()?.let { put(selectedThemeKey, encodeSyncString(it)) }
-        loadCustomThemeColors()?.let { put(customThemeColorsKey, encodeSyncString(it)) }
         loadAmoledEnabled()?.let { put(amoledEnabledKey, encodeSyncBoolean(it)) }
     }
 
@@ -99,8 +73,6 @@ actual object ThemeSettingsStorage {
             profileScopedSyncKeys.forEach { remove(ProfileScopedKey.of(it)) }
         }?.apply()
 
-        payload.decodeSyncString(selectedThemeKey)?.let(::saveSelectedTheme)
-        payload.decodeSyncString(customThemeColorsKey)?.let(::saveCustomThemeColors)
         payload.decodeSyncBoolean(amoledEnabledKey)?.let(::saveAmoledEnabled)
         applySelectedAppLanguage(loadSelectedAppLanguage() ?: AppLanguage.DEVICE.code)
     }

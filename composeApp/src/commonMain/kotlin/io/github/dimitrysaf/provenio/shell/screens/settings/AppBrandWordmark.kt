@@ -6,8 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.material3.MaterialTheme
-import io.github.dimitrysaf.provenio.shell.theme.appTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.painterResource
 import io.github.dimitrysaf.provenio.core.settings.AppIconOption
@@ -26,7 +24,7 @@ internal fun AppBrandWordmark(
     }.collectAsStateWithLifecycle()
     Image(
         painter = painterResource(
-            icon?.wordmarkResource ?: MaterialTheme.appTheme.wordmarkResource(state.selected),
+            (icon ?: state.selected).wordmarkResource,
         ),
         contentDescription = contentDescription,
         modifier = modifier,

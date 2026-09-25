@@ -266,6 +266,31 @@ object AddonRepository {
         }
     }
 
+    // The installed addons in order, with whether each is on, for syncing with another device.
+    internal fun addonsForSync(): List<Pair<String, Boolean>> {
+        initialize()
+        return _uiState.value.addons.map { it.manifestUrl to it.enabled }
+    }
+
+    // Takes another device's addon list, keeping the manifests already loaded for shared addons.
+    internal fun applySyncedAddons(addons: List<Pair<String, Boolean>>) {
+        initialize()
+        if (isUsingPrimaryAddonsFromSecondaryProfile()) return
+        val existingByUrl = _uiState.value.addons.associateBy(ManagedAddon::manifestUrl)
+        _uiState.value = AddonsUiState(
+            addons = addons.distinctBy { it.first }.map { (manifestUrl, enabled) ->
+                existingByUrl[manifestUrl].toPendingAddon(manifestUrl = manifestUrl, enabled = enabled)
+            },
+        )
+        persist()
+        _uiState.value.addons.forEach { addon ->
+            val existing = existingByUrl[addon.manifestUrl]
+            if (addon.enabled && (existing == null || (addon.manifest == null && !addon.isRefreshing))) {
+                refreshAddon(addon.manifestUrl)
+            }
+        }
+    }
+
     private fun persist() {
         val addons = _uiState.value.addons
         AddonStorage.saveInstalledAddonUrls(

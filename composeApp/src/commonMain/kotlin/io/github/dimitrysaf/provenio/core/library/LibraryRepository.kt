@@ -422,6 +422,23 @@ object LibraryRepository {
         )
     }
 
+    // The library saved on this device, for syncing with another device.
+    internal fun localItemsForSync(): List<LibraryItem> {
+        ensureLoaded()
+        return localState.snapshot().items
+    }
+
+    // Applies another device's library changes as they are, without stamping them as new saves.
+    internal fun applySyncedChanges(upserts: Collection<LibraryItem>, removals: Collection<Pair<String, String>>) {
+        ensureLoaded()
+        if (upserts.isEmpty() && removals.isEmpty()) return
+        var snapshot = localState.snapshot()
+        upserts.forEach { item -> snapshot = localState.upsert(item) }
+        removals.forEach { (id, type) -> snapshot = localState.remove(id, type).snapshot }
+        persist(snapshot)
+        publish()
+    }
+
     private fun publish() {
         val localSnapshot = localState.snapshot()
         val sourceMode = effectiveLibrarySourceMode()

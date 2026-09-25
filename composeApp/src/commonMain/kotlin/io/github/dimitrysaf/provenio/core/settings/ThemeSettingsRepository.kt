@@ -1,28 +1,10 @@
 package io.github.dimitrysaf.provenio.core.settings
 
-import io.github.dimitrysaf.provenio.core.membership.MemberAccessRepository
-import io.github.dimitrysaf.provenio.core.membership.availableAppThemes
-import io.github.dimitrysaf.provenio.core.membership.resolveAppTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
 object ThemeSettingsRepository {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val _selectedThemePreference = MutableStateFlow<AppTheme?>(null)
-    val selectedThemePreference: StateFlow<AppTheme?> = _selectedThemePreference.asStateFlow()
-    private val _selectedTheme = MutableStateFlow(AppTheme.WHITE)
-    val selectedTheme: StateFlow<AppTheme> = _selectedTheme.asStateFlow()
-
-    private val _customThemePreference = MutableStateFlow(CustomThemeColors.Default)
-    val customThemePreference: StateFlow<CustomThemeColors> = _customThemePreference.asStateFlow()
-    private val _customThemeColors = MutableStateFlow(CustomThemeColors.solid(CustomThemeColors.Default.second))
-    val customThemeColors: StateFlow<CustomThemeColors> = _customThemeColors.asStateFlow()
-
     private val _amoledEnabled = MutableStateFlow(false)
     val amoledEnabled: StateFlow<Boolean> = _amoledEnabled.asStateFlow()
 
@@ -30,10 +12,8 @@ object ThemeSettingsRepository {
     val selectedAppLanguage: StateFlow<AppLanguage> = _selectedAppLanguage.asStateFlow()
 
     private var hasLoaded = false
-    private var observesMembership = false
 
     fun ensureLoaded() {
-        observeMembership()
         if (hasLoaded) return
         loadFromDisk()
     }
@@ -44,53 +24,16 @@ object ThemeSettingsRepository {
 
     fun clearLocalState() {
         hasLoaded = false
-        _selectedThemePreference.value = null
-        _selectedTheme.value = AppTheme.WHITE
-        _customThemePreference.value = CustomThemeColors.Default
-        _customThemeColors.value = CustomThemeColors.solid(CustomThemeColors.Default.second)
         _amoledEnabled.value = false
         _selectedAppLanguage.value = AppLanguage.DEVICE
     }
 
     private fun loadFromDisk() {
         hasLoaded = true
-        val stored = ThemeSettingsStorage.loadSelectedTheme()
-        val theme = if (stored != null) {
-            try {
-                AppTheme.valueOf(stored)
-            } catch (_: IllegalArgumentException) {
-                null
-            }
-        } else {
-            null
-        }
-        _selectedThemePreference.value = theme
-        _customThemePreference.value = CustomThemeColors.decode(ThemeSettingsStorage.loadCustomThemeColors())
-        applyEffectiveTheme()
         _amoledEnabled.value = ThemeSettingsStorage.loadAmoledEnabled() ?: false
         val appLanguage = AppLanguage.fromCode(ThemeSettingsStorage.loadSelectedAppLanguage())
         ThemeSettingsStorage.applySelectedAppLanguage(appLanguage.code)
         _selectedAppLanguage.value = appLanguage
-    }
-
-    fun setTheme(theme: AppTheme) {
-        ensureLoaded()
-        val access = MemberAccessRepository.access.value
-        if (theme !in availableAppThemes(access.entitlements)) return
-        if (_selectedThemePreference.value == theme) return
-        _selectedThemePreference.value = theme
-        ThemeSettingsStorage.saveSelectedTheme(theme.name)
-        applyEffectiveTheme()
-    }
-
-    fun setCustomTheme(colors: CustomThemeColors) {
-        ensureLoaded()
-        val selectedColors = colors
-        ThemeSettingsStorage.saveCustomThemeColors(selectedColors.encode())
-        ThemeSettingsStorage.saveSelectedTheme(AppTheme.CUSTOM.name)
-        _customThemePreference.value = selectedColors
-        _selectedThemePreference.value = AppTheme.CUSTOM
-        applyEffectiveTheme()
     }
 
     fun setAmoled(enabled: Boolean) {
@@ -106,27 +49,5 @@ object ThemeSettingsRepository {
         ThemeSettingsStorage.saveSelectedAppLanguage(language.code)
         ThemeSettingsStorage.applySelectedAppLanguage(language.code)
         _selectedAppLanguage.value = language
-    }
-
-    private fun observeMembership() {
-        if (observesMembership) return
-        observesMembership = true
-        MemberAccessRepository.ensureStarted()
-        scope.launch {
-            MemberAccessRepository.access.collect {
-                if (hasLoaded) applyEffectiveTheme()
-            }
-        }
-    }
-
-    private fun applyEffectiveTheme() {
-        val access = MemberAccessRepository.access.value
-        // Unlocking the supporter themes should not change the look of anyone who never picked one.
-        val effective = resolveAppTheme(
-            selectedTheme = _selectedThemePreference.value ?: AppTheme.WHITE,
-            entitlements = access.entitlements,
-        )
-        _customThemeColors.value = _customThemePreference.value
-        _selectedTheme.value = effective
     }
 }

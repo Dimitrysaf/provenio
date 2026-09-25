@@ -444,6 +444,8 @@ kotlin {
         }
         androidMain {
             kotlin.srcDir(project.file(androidDistributionSourceDir))
+            // Code both JVM targets share, such as the local sync sockets and crypto.
+            kotlin.srcDir(project.file("src/jvmSharedMain/kotlin"))
             if (androidDistribution == "full") {
                 kotlin.srcDir(fullCommonSourceDir)
             }
@@ -456,6 +458,8 @@ kotlin {
                 implementation(libs.androidx.work.runtime)
                 // Supplies ProcessLifecycleOwner, which used to arrive through the Supabase client.
                 implementation("androidx.lifecycle:lifecycle-process:2.9.0")
+                implementation("com.google.zxing:core:3.5.3")
+                implementation("com.journeyapps:zxing-android-embedded:4.3.0")
                 implementation(libs.coil.gif)
                 implementation("androidx.recyclerview:recyclerview:1.4.0")
                 implementation("com.squareup.okhttp3:okhttp:4.12.0")
@@ -553,8 +557,10 @@ kotlin {
             // Android-specific, and desktop provides its own.
             kotlin.srcDir(rootProject.file("engine/platform/android/engine/src/main/kotlin"))
             kotlin.exclude("**/com/engine/internal/AndroidTrustStore.kt")
+            kotlin.srcDir(project.file("src/jvmSharedMain/kotlin"))
             dependencies {
                 implementation(compose.desktop.currentOs)
+                implementation("com.google.zxing:core:3.5.3")
                 implementation(libs.kotlinx.coroutines.swing)
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.jna)

@@ -3,10 +3,6 @@ package io.github.dimitrysaf.provenio.core.settings
 import kotlinx.serialization.json.JsonObject
 
 internal expect object ThemeSettingsStorage {
-    fun loadSelectedTheme(): String?
-    fun saveSelectedTheme(themeName: String)
-    fun loadCustomThemeColors(): String?
-    fun saveCustomThemeColors(colors: String)
     fun loadAmoledEnabled(): Boolean?
     fun saveAmoledEnabled(enabled: Boolean)
     fun loadSelectedAppLanguage(): String?

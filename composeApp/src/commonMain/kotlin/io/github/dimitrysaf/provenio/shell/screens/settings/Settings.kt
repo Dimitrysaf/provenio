@@ -108,6 +108,7 @@ import io.github.dimitrysaf.provenio.core.settings.AppIconRepository
 import io.github.dimitrysaf.provenio.core.settings.AppIconSettingsState
 import io.github.dimitrysaf.provenio.core.settings.AppLanguage
 import io.github.dimitrysaf.provenio.core.settings.ThemeSettingsRepository
+import io.github.dimitrysaf.provenio.core.localsync.LocalSyncRepository
 
 private val SettingsSearchRevealThreshold = 28.dp
 private const val SettingsSearchRevealAnimationMillis = 240L
@@ -463,6 +464,7 @@ private fun MobileSettingsScreen(
                             onContentDiscoveryClick = { onPageChange(SettingsPage.ContentDiscovery) },
                             onIntegrationsClick = { onPageChange(SettingsPage.Integrations) },
                             onTrackingClick = { onPageChange(SettingsPage.TraktAuthentication) },
+                            onLocalSyncClick = { onPageChange(SettingsPage.LocalSync) }.takeIf { LocalSyncRepository.isSupported },
                             onSupportersContributorsClick = onSupportersContributorsClick,
                             onLicensesAttributionsClick = onLicensesAttributionsClick,
                             onCheckForUpdatesClick = onCheckForUpdatesClick,
@@ -758,6 +760,7 @@ private fun TabletSettingsScreen(
                                 onContentDiscoveryClick = { openInlinePage(SettingsPage.ContentDiscovery) },
                                 onIntegrationsClick = { openInlinePage(SettingsPage.Integrations) },
                                 onTrackingClick = { openInlinePage(SettingsPage.TraktAuthentication) },
+                                onLocalSyncClick = { openInlinePage(SettingsPage.LocalSync) }.takeIf { LocalSyncRepository.isSupported },
                                 onSupportersContributorsClick = { openInlinePage(SettingsPage.SupportersContributors) },
                                 onLicensesAttributionsClick = { openInlinePage(SettingsPage.LicensesAttributions) },
                                 onCheckForUpdatesClick = onCheckForUpdatesClick,
@@ -1032,6 +1035,7 @@ internal fun LazyListScope.settingsPageContent(
         SettingsPage.TmdbEnrichment -> tmdbSettingsContent(isTablet = isTablet, settings = data.tmdbSettings)
         SettingsPage.MdbListRatings -> mdbListSettingsContent(isTablet = isTablet, settings = data.mdbListSettings)
         SettingsPage.Debrid -> debridSettingsContent(isTablet = isTablet, settings = data.debridSettings)
+        SettingsPage.LocalSync -> localSyncSettingsContent(isTablet = isTablet)
         SettingsPage.TraktAuthentication -> trackingSettingsContent(
             isTablet = isTablet,
             traktUiState = data.traktAuth,

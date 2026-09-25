@@ -11,29 +11,11 @@ import kotlinx.serialization.json.put
 import platform.Foundation.NSUserDefaults
 
 actual object ThemeSettingsStorage {
-    private const val selectedThemeKey = "selected_theme"
-    private const val customThemeColorsKey = "custom_theme_colors"
     private const val amoledEnabledKey = "amoled_enabled"
     private const val selectedAppLanguageKey = "selected_app_language"
     private val profileScopedSyncKeys = listOf(
-        selectedThemeKey,
-        customThemeColorsKey,
         amoledEnabledKey,
     )
-
-    actual fun loadSelectedTheme(): String? =
-        NSUserDefaults.standardUserDefaults.stringForKey(ProfileScopedKey.of(selectedThemeKey))
-
-    actual fun saveSelectedTheme(themeName: String) {
-        NSUserDefaults.standardUserDefaults.setObject(themeName, forKey = ProfileScopedKey.of(selectedThemeKey))
-    }
-
-    actual fun loadCustomThemeColors(): String? =
-        NSUserDefaults.standardUserDefaults.stringForKey(ProfileScopedKey.of(customThemeColorsKey))
-
-    actual fun saveCustomThemeColors(colors: String) {
-        NSUserDefaults.standardUserDefaults.setObject(colors, forKey = ProfileScopedKey.of(customThemeColorsKey))
-    }
 
     actual fun loadAmoledEnabled(): Boolean? {
         val defaults = NSUserDefaults.standardUserDefaults
@@ -79,8 +61,6 @@ actual object ThemeSettingsStorage {
     }
 
     actual fun exportToSyncPayload(): JsonObject = buildJsonObject {
-        loadSelectedTheme()?.let { put(selectedThemeKey, encodeSyncString(it)) }
-        loadCustomThemeColors()?.let { put(customThemeColorsKey, encodeSyncString(it)) }
         loadAmoledEnabled()?.let { put(amoledEnabledKey, encodeSyncBoolean(it)) }
     }
 
@@ -89,8 +69,6 @@ actual object ThemeSettingsStorage {
             NSUserDefaults.standardUserDefaults.removeObjectForKey(ProfileScopedKey.of(key))
         }
 
-        payload.decodeSyncString(selectedThemeKey)?.let(::saveSelectedTheme)
-        payload.decodeSyncString(customThemeColorsKey)?.let(::saveCustomThemeColors)
         payload.decodeSyncBoolean(amoledEnabledKey)?.let(::saveAmoledEnabled)
         applySelectedAppLanguage(loadSelectedAppLanguage() ?: AppLanguage.DEVICE.code)
     }
