@@ -3,7 +3,6 @@ package io.github.dimitrysaf.provenio.shell.screens.settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -20,16 +19,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Visibility
-import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.Button
-import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import androidx.compose.material3.ExperimentalMaterial3Api
+import io.github.dimitrysaf.provenio.shell.components.ContentDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -268,110 +267,103 @@ private fun BadgeUrlManagerDialog(
     var isImporting by rememberSaveable { mutableStateOf(false) }
     var previewImport by remember { mutableStateOf<StreamBadgeImport?>(null) }
 
-    BasicAlertDialog(onDismissRequest = onDismiss) {
-        SettingsDialogSurface(title = stringResource(Res.string.settings_stream_badge_urls_title)) {
-            Text(
-                text = stringResource(Res.string.settings_stream_badge_urls_description, STREAM_BADGE_IMPORT_LIMIT),
-                style = MaterialTheme.typography.bodyMedium,
-                color = tokens.colors.textSecondary,
-            )
-            OutlinedTextField(
-                value = draftUrl,
-                onValueChange = {
-                    draftUrl = it
-                    errorMessage = null
-                },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(Res.string.settings_fusion_badge_url_label)) },
-                singleLine = false,
-                minLines = 2,
-                maxLines = 4,
+    ContentDialog(
+        onDismissRequest = onDismiss,
+        title = stringResource(Res.string.settings_stream_badge_urls_title),
+        buttons = {
+            TextButton(
                 enabled = !isImporting,
-            )
-            Text(
-                text = stringResource(
-                    Res.string.settings_fusion_badge_urls_imported,
-                    imports.size,
-                    STREAM_BADGE_IMPORT_LIMIT,
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = tokens.colors.textMuted,
-            )
-            errorMessage?.let { message ->
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = tokens.colors.danger,
-                )
-            }
-
-            if (imports.isNotEmpty()) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp),
-                    verticalArrangement = Arrangement.spacedBy(tokens.spacing.controlGap),
-                ) {
-                    items(
-                        items = imports,
-                        key = { import -> import.sourceUrl },
-                    ) { import ->
-                        BadgeUrlRow(
-                            import = import,
-                            showActiveChoice = imports.size > 1,
-                            enabled = !isImporting,
-                            onActivate = {
-                                StreamBadgeSettingsRepository.setActiveStreamBadgeRulesSource(import.sourceUrl)
-                            },
-                            onPreview = { previewImport = import },
-                            onDelete = {
-                                StreamBadgeSettingsRepository.deleteStreamBadgeRulesSource(import.sourceUrl)
-                                if (previewImport?.sourceUrl.equals(import.sourceUrl, ignoreCase = true)) {
-                                    previewImport = null
-                                }
-                            },
-                        )
-                    }
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(tokens.spacing.controlGap, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically,
+                onClick = onDismiss,
             ) {
-                TextButton(
-                    enabled = !isImporting,
-                    onClick = onDismiss,
-                ) {
-                    Text(text = stringResource(Res.string.action_cancel), maxLines = 1)
-                }
-                Button(
-                    enabled = !isImporting && draftUrl.isNotBlank(),
-                    onClick = {
-                        scope.launch {
-                            isImporting = true
-                            errorMessage = null
-                            when (val result = StreamBadgeSettingsRepository.importStreamBadgeRulesFromUrl(draftUrl)) {
-                                is StreamBadgeImportResult.Success -> {
-                                    draftUrl = ""
-                                    isImporting = false
-                                }
-                                is StreamBadgeImportResult.Error -> {
-                                    errorMessage = result.message
-                                    isImporting = false
-                                }
+                Text(text = stringResource(Res.string.action_cancel), maxLines = 1)
+            }
+            TextButton(
+                enabled = !isImporting && draftUrl.isNotBlank(),
+                onClick = {
+                    scope.launch {
+                        isImporting = true
+                        errorMessage = null
+                        when (val result = StreamBadgeSettingsRepository.importStreamBadgeRulesFromUrl(draftUrl)) {
+                            is StreamBadgeImportResult.Success -> {
+                                draftUrl = ""
+                                isImporting = false
+                            }
+                            is StreamBadgeImportResult.Error -> {
+                                errorMessage = result.message
+                                isImporting = false
                             }
                         }
-                    },
-                ) {
-                    if (isImporting) {
-                        LoadingSpinner(
-                            modifier = Modifier.size(tokens.icons.sm),
-                            color = tokens.colors.onAccent,
-                        )
-                    } else {
-                        Text(text = stringResource(Res.string.action_import), maxLines = 1)
                     }
+                },
+            ) {
+                if (isImporting) {
+                    CircularProgressIndicator(modifier = Modifier.size(tokens.icons.sm), strokeWidth = 2.dp)
+                } else {
+                    Text(text = stringResource(Res.string.action_import), maxLines = 1)
+                }
+            }
+        },
+    ) {
+        Text(
+            text = stringResource(Res.string.settings_stream_badge_urls_description, STREAM_BADGE_IMPORT_LIMIT),
+            style = MaterialTheme.typography.bodyMedium,
+                    )
+        OutlinedTextField(
+            value = draftUrl,
+            onValueChange = {
+                draftUrl = it
+                errorMessage = null
+            },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(Res.string.settings_fusion_badge_url_label)) },
+            singleLine = false,
+            minLines = 2,
+            maxLines = 4,
+            enabled = !isImporting,
+        )
+        Text(
+            text = stringResource(
+                Res.string.settings_fusion_badge_urls_imported,
+                imports.size,
+                STREAM_BADGE_IMPORT_LIMIT,
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        errorMessage?.let { message ->
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+
+        if (imports.isNotEmpty()) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 300.dp),
+                verticalArrangement = Arrangement.spacedBy(tokens.spacing.controlGap),
+            ) {
+                items(
+                    items = imports,
+                    key = { import -> import.sourceUrl },
+                ) { import ->
+                    BadgeUrlRow(
+                        import = import,
+                        showActiveChoice = imports.size > 1,
+                        enabled = !isImporting,
+                        onActivate = {
+                            StreamBadgeSettingsRepository.setActiveStreamBadgeRulesSource(import.sourceUrl)
+                        },
+                        onPreview = { previewImport = import },
+                        onDelete = {
+                            StreamBadgeSettingsRepository.deleteStreamBadgeRulesSource(import.sourceUrl)
+                            if (previewImport?.sourceUrl.equals(import.sourceUrl, ignoreCase = true)) {
+                                previewImport = null
+                            }
+                        },
+                    )
                 }
             }
         }
@@ -395,15 +387,15 @@ private fun BadgeUrlRow(
     onDelete: () -> Unit,
 ) {
     val tokens = MaterialTheme.provenio
-    val containerColor = if (import.isActive) {
-        tokens.colors.overlaySelected
-    } else {
-        tokens.colors.surfaceCard
-    }
-    Surface(
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = tokens.shapes.compactCard,
-        color = containerColor,
+        colors = CardDefaults.cardColors(
+            containerColor = if (import.isActive) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerHighest
+            },
+        ),
     ) {
         Column(
             modifier = Modifier
@@ -426,7 +418,7 @@ private fun BadgeUrlRow(
                 Text(
                     text = import.sourceUrl,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = tokens.colors.textPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
@@ -450,7 +442,7 @@ private fun BadgeUrlRow(
                         import.groups.size,
                     ),
                     style = MaterialTheme.typography.bodySmall,
-                    color = tokens.colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f),
                 )
                 TextButton(
@@ -489,102 +481,72 @@ private fun BadgePreviewDialog(
     val sections = badgePreviewSections(import)
     val badgeCount = sections.sumOf { it.filters.size }
 
-    BasicAlertDialog(onDismissRequest = onDismiss) {
-        SettingsDialogSurface(title = stringResource(Res.string.settings_fusion_badge_preview_title)) {
+    ContentDialog(
+        onDismissRequest = onDismiss,
+        title = stringResource(Res.string.settings_fusion_badge_preview_title),
+        buttons = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(Res.string.action_close), maxLines = 1)
+            }
+        },
+    ) {
+        Text(
+            text = import.sourceUrl,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = stringResource(Res.string.settings_fusion_badge_preview_count, badgeCount),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (sections.isEmpty()) {
             Text(
-                text = import.sourceUrl,
-                style = MaterialTheme.typography.bodyMedium,
-                color = tokens.colors.textSecondary,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = stringResource(Res.string.settings_fusion_badge_preview_count, badgeCount),
+                text = stringResource(Res.string.settings_fusion_badge_preview_empty),
                 style = MaterialTheme.typography.bodySmall,
-                color = tokens.colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (sections.isEmpty()) {
-                Text(
-                    text = stringResource(Res.string.settings_fusion_badge_preview_empty),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = tokens.colors.textMuted,
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 460.dp),
-                    verticalArrangement = Arrangement.spacedBy(tokens.spacing.railGap),
-                ) {
-                    items(
-                        items = sections,
-                        key = { section -> section.id },
-                    ) { section ->
-                        Column(
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 460.dp),
+                verticalArrangement = Arrangement.spacedBy(tokens.spacing.railGap),
+            ) {
+                items(
+                    items = sections,
+                    key = { section -> section.id },
+                ) { section ->
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(tokens.spacing.controlGap),
+                    ) {
+                        Text(
+                            text = section.title,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(tokens.spacing.controlGap),
+                            horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s5),
+                            verticalArrangement = Arrangement.spacedBy(Tokens.Space.s5),
                         ) {
-                            Text(
-                                text = section.title,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = tokens.colors.textPrimary,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s5),
-                                verticalArrangement = Arrangement.spacedBy(Tokens.Space.s5),
-                            ) {
-                                section.filters.forEach { filter ->
-                                    StreamBadgeChip(
-                                        imageURL = filter.imageURL,
-                                        name = filter.name,
-                                        tagColor = filter.tagColor,
-                                        tagStyle = filter.tagStyle,
-                                        borderColor = filter.borderColor,
-                                        size = StreamBadgeChipSize.PREVIEW,
-                                    )
-                                }
+                            section.filters.forEach { filter ->
+                                StreamBadgeChip(
+                                    imageURL = filter.imageURL,
+                                    name = filter.name,
+                                    tagColor = filter.tagColor,
+                                    tagStyle = filter.tagStyle,
+                                    borderColor = filter.borderColor,
+                                    size = StreamBadgeChipSize.PREVIEW,
+                                )
                             }
                         }
                     }
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                TextButton(onClick = onDismiss) {
-                    Text(text = stringResource(Res.string.action_close), maxLines = 1)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SettingsDialogSurface(
-    title: String,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    val tokens = MaterialTheme.provenio
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = tokens.shapes.dialog,
-        color = tokens.colors.surfaceDialog,
-    ) {
-        Column(
-            modifier = Modifier.padding(tokens.spacing.dialogPadding),
-            verticalArrangement = Arrangement.spacedBy(tokens.spacing.listGap),
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                color = tokens.colors.textPrimary,
-                fontWeight = FontWeight.SemiBold,
-            )
-            content()
-            Spacer(modifier = Modifier.height(Tokens.Space.s2))
         }
     }
 }

@@ -1117,7 +1117,7 @@ private fun SettingsSearchEmptyState(isTablet: Boolean) {
                 Text(
                     text = stringResource(Res.string.settings_search_empty),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = tokens.colors.textPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium,
                 )
             }

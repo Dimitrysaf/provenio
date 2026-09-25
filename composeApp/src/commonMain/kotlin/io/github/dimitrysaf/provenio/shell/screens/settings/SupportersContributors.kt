@@ -5,8 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,13 +21,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import io.github.dimitrysaf.provenio.shell.components.ContentDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -892,7 +890,6 @@ private fun ErrorState(
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 private fun CommunityDetailsDialog(
     title: String,
     subtitle: String?,
@@ -903,52 +900,24 @@ private fun CommunityDetailsDialog(
     onSecondaryAction: (() -> Unit)?,
     content: @Composable () -> Unit,
 ) {
-    BasicAlertDialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(24.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    subtitle?.takeIf(String::isNotBlank)?.let { text ->
-                        Text(
-                            text = text,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                content()
-
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    if (primaryActionLabel != null && onPrimaryAction != null) {
-                        Button(onClick = onPrimaryAction) {
-                            Text(primaryActionLabel)
-                        }
-                    }
-                    if (secondaryActionLabel != null && onSecondaryAction != null) {
-                        Button(onClick = onSecondaryAction) {
-                            Text(secondaryActionLabel)
-                        }
-                    }
+    ContentDialog(
+        onDismissRequest = onDismiss,
+        title = title,
+        buttons = {
+            if (primaryActionLabel != null && onPrimaryAction != null) {
+                TextButton(onClick = onPrimaryAction) {
+                    Text(primaryActionLabel)
                 }
             }
-        }
+            if (secondaryActionLabel != null && onSecondaryAction != null) {
+                TextButton(onClick = onSecondaryAction) {
+                    Text(secondaryActionLabel)
+                }
+            }
+        },
+    ) {
+        subtitle?.takeIf(String::isNotBlank)?.let { text -> Text(text) }
+        content()
     }
 }
 

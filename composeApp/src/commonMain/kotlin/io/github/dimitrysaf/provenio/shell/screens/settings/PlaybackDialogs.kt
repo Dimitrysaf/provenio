@@ -1,25 +1,22 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.BasicAlertDialog
-import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,12 +26,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.playback.AndroidPlaybackEngine
@@ -403,146 +396,77 @@ internal fun StreamAutoPlayRegexDialog(
         stringResource(Res.string.settings_playback_regex_preset_no_remux_hdr) to "(?is)^(?!.*\\b(hdr|hdr10|dv|dolby|vision|hevc|remux|2160p)\\b).+$",
     )
 
-    BasicAlertDialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surface,
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(20.dp)
-                    .heightIn(max = 520.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = stringResource(Res.string.settings_playback_regex_pattern),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold,
-                )
-
-                Text(
-                    text = stringResource(Res.string.settings_playback_regex_matches_against),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
+        title = { Text(stringResource(Res.string.settings_playback_regex_pattern)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(Res.string.settings_playback_regex_matches_against))
                 Text(
                     text = stringResource(Res.string.settings_playback_presets),
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(
                         count = presets.size,
                         key = { presets[it].first },
                     ) { index ->
                         val (label, pattern) = presets[index]
-                        Surface(
-                            modifier = Modifier.clickable {
+                        FilterChip(
+                            selected = regex == pattern,
+                            onClick = {
                                 regex = pattern
                                 regexError = null
                             },
-                            shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        ) {
-                            Text(
-                                text = label,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
+                            label = { Text(label) },
+                        )
                     }
                 }
-
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                    border = BorderStroke(
-                        1.dp,
-                        if (regexError != null) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    ),
-                ) {
-                    BasicTextField(
-                        value = regex,
-                        onValueChange = {
-                            regex = it
-                            regexError = null
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                        ),
-                        textStyle = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
-                        ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        decorationBox = { innerTextField ->
-                            if (regex.isBlank()) {
-                                Text(
-                                    text = stringResource(Res.string.settings_playback_regex_placeholder),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                )
-                            }
-                            innerTextField()
-                        },
-                    )
-                }
-
-                if (regexError != null) {
-                    Text(
-                        text = regexError ?: "",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(Res.string.action_cancel))
-                    }
-                    TextButton(onClick = {
-                        regex = ""
+                OutlinedTextField(
+                    value = regex,
+                    onValueChange = {
+                        regex = it
                         regexError = null
-                    }) {
-                        Text(stringResource(Res.string.action_clear))
-                    }
-                    TextButton(onClick = {
-                        val value = regex.trim()
-                        if (value.isNotEmpty()) {
-                            val valid = runCatching { Regex(value, RegexOption.IGNORE_CASE) }.isSuccess
-                            if (!valid) {
-                                regexError = invalidRegexPattern
-                                return@TextButton
-                            }
-                        }
-                        onSave(value)
-                    }) {
-                        Text(stringResource(Res.string.action_save))
-                    }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text(stringResource(Res.string.settings_playback_regex_pattern)) },
+                    placeholder = { Text(stringResource(Res.string.settings_playback_regex_placeholder)) },
+                    isError = regexError != null,
+                    supportingText = regexError?.let { error -> { Text(error) } },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val value = regex.trim()
+                if (value.isNotEmpty() && runCatching { Regex(value, RegexOption.IGNORE_CASE) }.isFailure) {
+                    regexError = invalidRegexPattern
+                    return@TextButton
+                }
+                onSave(value)
+            }) {
+                Text(stringResource(Res.string.action_save))
+            }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = {
+                    regex = ""
+                    regexError = null
+                }) {
+                    Text(stringResource(Res.string.action_clear))
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(Res.string.action_cancel))
                 }
             }
-        }
-    }
+        },
+    )
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 internal fun AnimeSkipClientIdDialog(
     initialValue: String,
     onSave: (String) -> Unit,
@@ -550,59 +474,31 @@ internal fun AnimeSkipClientIdDialog(
 ) {
     var value by remember { mutableStateOf(initialValue) }
 
-    BasicAlertDialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surface,
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = stringResource(Res.string.settings_playback_anime_skip_client_id),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = stringResource(Res.string.settings_playback_anime_skip_client_id_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-                ) {
-                    BasicTextField(
-                        value = value,
-                        onValueChange = { value = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
-                        ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        singleLine = true,
-                    )
-                }
-                Row(
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.settings_playback_anime_skip_client_id)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(Res.string.settings_playback_anime_skip_client_id_description))
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { value = it },
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) }
-                    TextButton(onClick = { onSave(value.trim()) }) { Text(stringResource(Res.string.action_save)) }
-                }
+                    singleLine = true,
+                    label = { Text(stringResource(Res.string.settings_playback_anime_skip_client_id)) },
+                )
             }
-        }
-    }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(value.trim()) }) { Text(stringResource(Res.string.action_save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) }
+        },
+    )
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 internal fun IntroDbApiKeyDialog(
     initialValue: String,
     onSave: (String) -> Unit,
@@ -614,27 +510,12 @@ internal fun IntroDbApiKeyDialog(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val invalidKeyMessage = stringResource(Res.string.settings_playback_introdb_invalid_key)
 
-    BasicAlertDialog(onDismissRequest = { if (!isVerifying) onDismiss() }) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surface,
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = stringResource(Res.string.settings_playback_introdb_api_key),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = stringResource(Res.string.settings_playback_introdb_api_key_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+    AlertDialog(
+        onDismissRequest = { if (!isVerifying) onDismiss() },
+        title = { Text(stringResource(Res.string.settings_playback_introdb_api_key)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(Res.string.settings_playback_introdb_api_key_description))
                 SettingsSecretTextField(
                     value = value,
                     onValueChange = {
@@ -645,60 +526,49 @@ internal fun IntroDbApiKeyDialog(
                     modifier = Modifier.fillMaxWidth(),
                     isError = errorMessage != null,
                 )
-                if (errorMessage != null) {
+                errorMessage?.let { error ->
                     Text(
-                        text = errorMessage!!,
+                        text = error,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(start = 4.dp)
                     )
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    TextButton(onClick = onDismiss, enabled = !isVerifying) { 
-                        Text(stringResource(Res.string.action_cancel)) 
-                    }
-                    TextButton(
-                        onClick = { 
-                            val trimmed = value.trim()
-                            if (trimmed.isEmpty()) {
-                                onSave(trimmed)
-                                return@TextButton
-                            }
-                            
-                            if (trimmed == initialValue) {
-                                onDismiss()
-                                return@TextButton
-                            }
-
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val trimmed = value.trim()
+                    when {
+                        trimmed.isEmpty() -> onSave(trimmed)
+                        trimmed == initialValue -> onDismiss()
+                        else -> {
                             isVerifying = true
                             errorMessage = null
                             scope.launch {
-                                val isValid = io.github.dimitrysaf.provenio.core.playback.skip.SkipIntroRepository.verifyIntroDbApiKey(trimmed)
+                                val isValid = io.github.dimitrysaf.provenio.core.playback.skip.SkipIntroRepository
+                                    .verifyIntroDbApiKey(trimmed)
                                 isVerifying = false
-                                if (isValid) {
-                                    onSave(trimmed)
-                                } else {
-                                    errorMessage = invalidKeyMessage
-                                }
+                                if (isValid) onSave(trimmed) else errorMessage = invalidKeyMessage
                             }
-                        },
-                        enabled = !isVerifying
-                    ) { 
-                        if (isVerifying) {
-                            LoadingSpinner(
-                                modifier = Modifier.size(16.dp),
-                            )
-                        } else {
-                            Text(stringResource(Res.string.action_save)) 
                         }
                     }
+                },
+                enabled = !isVerifying,
+            ) {
+                if (isVerifying) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                } else {
+                    Text(stringResource(Res.string.action_save))
                 }
             }
-        }
-    }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isVerifying) {
+                Text(stringResource(Res.string.action_cancel))
+            }
+        },
+    )
 }
 
 @Composable

@@ -1,39 +1,24 @@
 package io.github.dimitrysaf.provenio.shell.screens.player.skip
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.GpsFixed
-import androidx.compose.material.icons.rounded.PlayCircleOutline
-import androidx.compose.material.icons.rounded.Replay
-import androidx.compose.material.icons.rounded.Send
-import androidx.compose.material.icons.rounded.StopCircle
-import androidx.compose.material3.BasicAlertDialog
-import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,18 +27,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.action_cancel
-import provenio.composeapp.generated.resources.action_close
 import provenio.composeapp.generated.resources.submit_intro_button_submit
 import provenio.composeapp.generated.resources.submit_intro_capture_button
 import provenio.composeapp.generated.resources.submit_intro_end_time_label
@@ -84,281 +63,113 @@ fun SubmitIntroDialog(
     onSuccess: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val scrollState = rememberScrollState()
     var isSubmitting by remember { mutableStateOf(false) }
+    val segments = listOf(
+        "intro" to stringResource(Res.string.submit_intro_segment_intro),
+        "recap" to stringResource(Res.string.submit_intro_segment_recap),
+        "outro" to stringResource(Res.string.submit_intro_segment_outro),
+    )
 
-    BasicAlertDialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 24.dp)
-                .widthIn(max = 420.dp)
-                .heightIn(max = 560.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp,
-        ) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.submit_intro_title)) },
+        text = {
             Column(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .heightIn(max = 512.dp)
-                    .verticalScroll(scrollState),
+                modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(Res.string.submit_intro_title),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            Icons.Rounded.Close,
-                            contentDescription = stringResource(Res.string.action_close),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                // Segment Type
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(Res.string.submit_intro_segment_type_label),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        SegmentTypeButton(
-                            label = stringResource(Res.string.submit_intro_segment_intro),
-                            icon = Icons.Rounded.PlayCircleOutline,
-                            selected = segmentType == "intro",
-                            onClick = { onSegmentTypeChange("intro") },
-                            modifier = Modifier.weight(1f)
-                        )
-                        SegmentTypeButton(
-                            label = stringResource(Res.string.submit_intro_segment_recap),
-                            icon = Icons.Rounded.Replay,
-                            selected = segmentType == "recap",
-                            onClick = { onSegmentTypeChange("recap") },
-                            modifier = Modifier.weight(1f)
-                        )
-                        SegmentTypeButton(
-                            label = stringResource(Res.string.submit_intro_segment_outro),
-                            icon = Icons.Rounded.StopCircle,
-                            selected = segmentType == "outro",
-                            onClick = { onSegmentTypeChange("outro") },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-
-                // Start Time
-                TimeInputRow(
-                    label = stringResource(Res.string.submit_intro_start_time_label),
-                    value = startTimeStr,
-                    onValueChange = onStartTimeChange,
-                    onCapture = { onStartTimeChange(formatSecondsToMMSS(currentTimeSec)) }
+                Text(
+                    text = stringResource(Res.string.submit_intro_segment_type_label),
+                    style = MaterialTheme.typography.labelLarge,
                 )
-
-                // End Time
-                TimeInputRow(
-                    label = stringResource(Res.string.submit_intro_end_time_label),
-                    value = endTimeStr,
-                    onValueChange = onEndTimeChange,
-                    onCapture = { onEndTimeChange(formatSecondsToMMSS(currentTimeSec)) }
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Actions
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable(enabled = !isSubmitting, onClick = onDismiss),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(Res.string.action_cancel),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .weight(2f)
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.primary)
-                            .clickable(enabled = !isSubmitting) {
-                                val start = parseTimeToSeconds(startTimeStr)
-                                val end = parseTimeToSeconds(endTimeStr)
-                                if (start != null && end != null && end > start) {
-                                    isSubmitting = true
-                                    scope.launch {
-                                        val result = SkipIntroRepository.submitIntro(
-                                            imdbId = imdbId,
-                                            season = season,
-                                            episode = episode,
-                                            startSec = start,
-                                            endSec = end,
-                                            segmentType = segmentType,
-                                        )
-                                        isSubmitting = false
-                                        if (result) {
-                                            onSuccess()
-                                        }
-                                    }
-                                }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isSubmitting) {
-                            LoadingSpinner(
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(24.dp),
-                            )
-                        } else {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(Icons.Rounded.Send, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
-                                Text(
-                                    text = stringResource(Res.string.submit_intro_button_submit),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    segments.forEachIndexed { index, (type, label) ->
+                        SegmentedButton(
+                            selected = segmentType == type,
+                            onClick = { onSegmentTypeChange(type) },
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = segments.size),
+                        ) {
+                            Text(label)
                         }
                     }
                 }
+                TimeInputField(
+                    label = stringResource(Res.string.submit_intro_start_time_label),
+                    value = startTimeStr,
+                    onValueChange = onStartTimeChange,
+                    onCapture = { onStartTimeChange(formatSecondsToMMSS(currentTimeSec)) },
+                )
+                TimeInputField(
+                    label = stringResource(Res.string.submit_intro_end_time_label),
+                    value = endTimeStr,
+                    onValueChange = onEndTimeChange,
+                    onCapture = { onEndTimeChange(formatSecondsToMMSS(currentTimeSec)) },
+                )
             }
-        }
-    }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !isSubmitting,
+                onClick = {
+                    val start = parseTimeToSeconds(startTimeStr)
+                    val end = parseTimeToSeconds(endTimeStr)
+                    if (start != null && end != null && end > start) {
+                        isSubmitting = true
+                        scope.launch {
+                            val result = SkipIntroRepository.submitIntro(
+                                imdbId = imdbId,
+                                season = season,
+                                episode = episode,
+                                startSec = start,
+                                endSec = end,
+                                segmentType = segmentType,
+                            )
+                            isSubmitting = false
+                            if (result) {
+                                onSuccess()
+                            }
+                        }
+                    }
+                },
+            ) {
+                if (isSubmitting) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    Text(stringResource(Res.string.submit_intro_button_submit))
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(enabled = !isSubmitting, onClick = onDismiss) {
+                Text(stringResource(Res.string.action_cancel))
+            }
+        },
+    )
 }
 
 @Composable
-private fun SegmentTypeButton(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-            .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
-            Text(
-                text = label,
-                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-    }
-}
-
-@Composable
-private fun TimeInputRow(
+private fun TimeInputField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
-    onCapture: () -> Unit
+    onCapture: () -> Unit,
 ) {
-    Row(
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-            ) {
-                BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    singleLine = true,
-                )
-            }
-        }
-        Box(
-            modifier = Modifier
-                .height(48.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .clickable(onClick = onCapture)
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
+        label = { Text(label) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        trailingIcon = {
+            IconButton(onClick = onCapture) {
                 Icon(
-                    Icons.Rounded.GpsFixed,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = stringResource(Res.string.submit_intro_capture_button),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold
+                    imageVector = Icons.Rounded.GpsFixed,
+                    contentDescription = stringResource(Res.string.submit_intro_capture_button),
                 )
             }
-        }
-    }
+        },
+    )
 }
 
 private fun formatSecondsToMMSS(seconds: Double): String {

@@ -8,17 +8,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,11 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.player_skip
 import provenio.composeapp.generated.resources.player_skip_intro
@@ -94,26 +87,13 @@ fun SkipIntroButton(
         exit = fadeOut(tween(200)) + scaleOut(tween(200), targetScale = 0.8f),
         modifier = modifier,
     ) {
-        // A small skip pill, like the one on video ads.
-        Row(
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color.Black.copy(alpha = 0.6f))
-                .clickable { onSkip() }
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = skipLabel(lastType),
-                color = Color.White,
-                style = MaterialTheme.typography.labelLarge,
-            )
+        Button(onClick = onSkip) {
+            Text(skipLabel(lastType))
+            Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
             Icon(
                 imageVector = Icons.Rounded.SkipNext,
                 contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(ButtonDefaults.IconSize),
             )
         }
     }

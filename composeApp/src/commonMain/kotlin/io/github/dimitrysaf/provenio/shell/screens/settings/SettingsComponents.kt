@@ -30,7 +30,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -351,12 +350,6 @@ internal fun SettingsSwitchRow(
             onCheckedChange = onCheckedChange,
             enabled = enabled,
             modifier = Modifier.padding(start = 4.dp),
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = tokens.colors.onAccent,
-                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                uncheckedTrackColor = tokens.colors.borderDefault,
-            ),
         )
     }
 }
@@ -466,12 +459,6 @@ internal fun HomescreenCatalogRow(
                 Switch(
                     checked = item.enabled,
                     onCheckedChange = onEnabledChange,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = tokens.colors.onAccent,
-                        checkedTrackColor = MaterialTheme.colorScheme.primary,
-                        uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        uncheckedTrackColor = tokens.colors.borderDefault,
-                    ),
                 )
                 if (item.isPinnedToTop) {
                     IconButton(

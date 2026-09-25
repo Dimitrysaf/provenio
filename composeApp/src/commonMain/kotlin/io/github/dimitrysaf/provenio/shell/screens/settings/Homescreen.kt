@@ -26,7 +26,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -402,10 +401,6 @@ private fun HomescreenCatalogRenameDialog(
                 // Empty means "use the catalog's own name", so the default is shown as the
                 // placeholder rather than prefilled, which would make clearing it impossible.
                 placeholder = { Text(item.defaultTitle) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = tokens.colors.borderFocus.copy(alpha = tokens.opacity.strong),
-                    unfocusedBorderColor = tokens.colors.borderDefault.copy(alpha = tokens.opacity.medium),
-                ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { onConfirm(draft) }),
             )

@@ -12,15 +12,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,7 +30,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -110,23 +108,10 @@ fun CommentDetailSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (canGoBack) MaterialTheme.colorScheme.surfaceVariant
-                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                            )
-                            .then(if (canGoBack) Modifier.clickable(onClick = onPrevious) else Modifier),
-                        contentAlignment = Alignment.Center,
-                    ) {
+                    FilledTonalIconButton(onClick = onPrevious, enabled = canGoBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
                             contentDescription = stringResource(Res.string.action_previous),
-                            tint = if (canGoBack) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                            modifier = Modifier.size(20.dp),
                         )
                     }
 
@@ -136,23 +121,10 @@ fun CommentDetailSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (canGoForward) MaterialTheme.colorScheme.surfaceVariant
-                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                            )
-                            .then(if (canGoForward) Modifier.clickable(onClick = onNext) else Modifier),
-                        contentAlignment = Alignment.Center,
-                    ) {
+                    FilledTonalIconButton(onClick = onNext, enabled = canGoForward) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                             contentDescription = stringResource(Res.string.action_next),
-                            tint = if (canGoForward) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                            modifier = Modifier.size(20.dp),
                         )
                     }
                 }
