@@ -96,9 +96,12 @@ install -Dm755 "$engine_library" "$build_root/app-resources/$resource_platform/l
 
 echo "==> App JAR"
 # A single-use Gradle with smaller heaps than the Android build's, stopped when done.
+# CI runners have the memory for the Kotlin compiler's full heap.
+kotlin_heap=1536m
+[[ -n "${CI:-}" ]] && kotlin_heap=3g
 (cd "$repository" && ./gradlew --no-daemon --no-configuration-cache \
     -Dorg.gradle.jvmargs="-Xmx2g -XX:MaxMetaspaceSize=768m" \
-    -Pkotlin.daemon.jvmargs=-Xmx1536m \
+    -Pkotlin.daemon.jvmargs=-Xmx$kotlin_heap \
     -Dorg.gradle.workers.max="$BUILD_JOBS" \
     :composeApp:packageUberJarForCurrentOS \
     -Pprovenio.engine.fromSource=false)
