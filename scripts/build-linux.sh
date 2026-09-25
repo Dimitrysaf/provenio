@@ -78,6 +78,7 @@ openssl_root="$build_root/deps/openssl/install/$architecture"
 echo "==> Engine JNI library"
 cmake -S "$repository/engine/platform/jvm" -B "$build_root/engine" -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DENGINE_JNI_INCLUDE_DIRS="$jni_includes" \
     -DOPENSSL_ROOT_DIR="$openssl_root" \
     -DOPENSSL_INCLUDE_DIR="$openssl_root/include" \
