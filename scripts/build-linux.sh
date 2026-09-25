@@ -89,7 +89,7 @@ cmake -S "$repository/engine/platform/jvm" -B "$build_root/engine" -G Ninja \
     -DCMAKE_JOB_POOL_COMPILE=compile \
     -DCMAKE_JOB_POOL_LINK=link
 cmake --build "$build_root/engine" --target engine --parallel "$BUILD_JOBS"
-engine_library=$(find "$build_root/engine" -name libengine.so -type f | head -n 1)
+engine_library=$(find "$build_root/engine" -name 'libengine.so*' -type f | head -n 1)
 [[ -n "$engine_library" ]] || { echo "libengine.so was not built" >&2; exit 1; }
 # Compose Desktop bundles this directory as the app's resources, so `gradlew run` finds it too.
 install -Dm755 "$engine_library" "$build_root/app-resources/$resource_platform/libengine.so"
