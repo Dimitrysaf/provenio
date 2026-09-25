@@ -1,41 +1,49 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Devices
+import androidx.compose.material.icons.rounded.Extension
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Keyboard
+import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material.icons.rounded.QrCode
 import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
@@ -46,156 +54,107 @@ import io.github.dimitrysaf.provenio.core.localsync.LocalSyncActivity
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncError
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncPeer
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncRepository
+import io.github.dimitrysaf.provenio.core.time.EpisodeReleaseDatePlatform
 import io.github.dimitrysaf.provenio.shell.components.ContentDialog
+import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.ToastController
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
-import provenio.composeapp.generated.resources.Res
-import provenio.composeapp.generated.resources.action_cancel
-import provenio.composeapp.generated.resources.action_close
-import provenio.composeapp.generated.resources.local_sync_code_label
-import provenio.composeapp.generated.resources.local_sync_connect
-import provenio.composeapp.generated.resources.local_sync_copy_code
-import provenio.composeapp.generated.resources.local_sync_done
-import provenio.composeapp.generated.resources.local_sync_enter_code
-import provenio.composeapp.generated.resources.local_sync_enter_code_description
-import provenio.composeapp.generated.resources.local_sync_error_code
-import provenio.composeapp.generated.resources.local_sync_error_failed
-import provenio.composeapp.generated.resources.local_sync_error_rejected
-import provenio.composeapp.generated.resources.local_sync_error_unreachable
-import provenio.composeapp.generated.resources.local_sync_error_wifi
-import provenio.composeapp.generated.resources.local_sync_explanation
-import provenio.composeapp.generated.resources.local_sync_forget
-import provenio.composeapp.generated.resources.local_sync_forget_description
-import provenio.composeapp.generated.resources.local_sync_forget_title
-import provenio.composeapp.generated.resources.local_sync_no_devices
-import provenio.composeapp.generated.resources.local_sync_no_devices_description
-import provenio.composeapp.generated.resources.local_sync_paired_devices
-import provenio.composeapp.generated.resources.local_sync_pairing_hint
-import provenio.composeapp.generated.resources.local_sync_pairing_title
-import provenio.composeapp.generated.resources.local_sync_scan_code
-import provenio.composeapp.generated.resources.local_sync_scan_code_description
-import provenio.composeapp.generated.resources.local_sync_show_code
-import provenio.composeapp.generated.resources.local_sync_show_code_description
-import provenio.composeapp.generated.resources.local_sync_syncing
-import provenio.composeapp.generated.resources.local_sync_syncing_with
-import provenio.composeapp.generated.resources.local_sync_tap_to_sync
-import provenio.composeapp.generated.resources.local_sync_this_device
-import provenio.composeapp.generated.resources.local_sync_waiting
-import provenio.composeapp.generated.resources.local_sync_what_syncs
-import provenio.composeapp.generated.resources.local_sync_what_syncs_description
+import provenio.composeapp.generated.resources.*
 
-internal fun LazyListScope.localSyncSettingsContent(isTablet: Boolean) {
-    // One item, so the page keeps listening for as long as it is open rather than as long as a row is on screen.
-    item {
-        LocalSyncPage(isTablet = isTablet)
-    }
-}
-
+// Device sync, laid out like a tracker card: the banner, what it syncs, then its devices and actions.
 @Composable
-private fun LocalSyncPage(isTablet: Boolean) {
+internal fun LocalSyncCard(modifier: Modifier = Modifier) {
     val state by LocalSyncRepository.uiState.collectAsStateWithLifecycle()
     var showCodeEntry by rememberSaveable { mutableStateOf(false) }
     var peerToForgetId by rememberSaveable { mutableStateOf<String?>(null) }
     val scan = rememberLocalSyncScanner { code -> code?.let(LocalSyncRepository::join) }
-
-    DisposableEffect(Unit) {
-        LocalSyncRepository.open()
-        onDispose { LocalSyncRepository.close() }
+    val now by produceState(EpisodeReleaseDatePlatform.nowEpochMs()) {
+        while (true) {
+            delay(30_000L)
+            value = EpisodeReleaseDatePlatform.nowEpochMs()
+        }
     }
 
-    // A finished sync or a failure is said once, as a snackbar, rather than left on the page.
+    LaunchedEffect(Unit) { LocalSyncRepository.start() }
+
+    // Pairing and failures of something the person asked for are said once, as a snackbar.
     LaunchedEffect(state.activity) {
         val message = when (val activity = state.activity) {
-            is LocalSyncActivity.Synced -> getString(Res.string.local_sync_done, activity.peerName, activity.changeCount)
+            is LocalSyncActivity.Paired -> getString(Res.string.local_sync_paired, activity.peerName)
             is LocalSyncActivity.Failed -> getString(activity.error.messageRes())
-            LocalSyncActivity.Idle,
-            is LocalSyncActivity.Syncing,
-            -> null
+            LocalSyncActivity.Idle -> null
         } ?: return@LaunchedEffect
         ToastController.show(message)
         LocalSyncRepository.clearActivity()
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(if (isTablet) 18.dp else 24.dp)) {
-        SettingsSection(
-            title = stringResource(Res.string.local_sync_this_device),
-            isTablet = isTablet,
-        ) {
-            SettingsList {
-                infoRow(
-                    title = state.deviceName,
-                    description = stringResource(Res.string.local_sync_explanation),
-                )
-                navigationRow(
-                    title = stringResource(Res.string.local_sync_show_code),
-                    description = stringResource(Res.string.local_sync_show_code_description),
-                    icon = Icons.Rounded.QrCode,
-                    onClick = LocalSyncRepository::startPairing,
-                )
-                if (scan != null) {
-                    navigationRow(
-                        title = stringResource(Res.string.local_sync_scan_code),
-                        description = stringResource(Res.string.local_sync_scan_code_description),
-                        icon = Icons.Rounded.QrCodeScanner,
-                        onClick = scan,
-                    )
-                }
-                navigationRow(
-                    title = stringResource(Res.string.local_sync_enter_code),
-                    description = stringResource(Res.string.local_sync_enter_code_description),
-                    icon = Icons.Rounded.Keyboard,
-                    onClick = { showCodeEntry = true },
-                )
-            }
+    val forgetLabel = stringResource(Res.string.local_sync_forget)
+    SettingsList(modifier = modifier) {
+        shapedRow { shape ->
+            LocalSyncBanner(shape = shape)
         }
-
-        val syncing = state.activity as? LocalSyncActivity.Syncing
-        if (syncing != null) {
-            LocalSyncProgress(peerName = syncing.peerName)
+        shapedRow { shape ->
+            TrackingFeaturesRow(
+                features = LocalSyncFeatures,
+                active = state.peers.isNotEmpty(),
+                shape = shape,
+            )
         }
-
-        SettingsSection(
-            title = stringResource(Res.string.local_sync_paired_devices),
-            isTablet = isTablet,
-        ) {
-            val tapToSync = stringResource(Res.string.local_sync_tap_to_sync)
-            val forgetLabel = stringResource(Res.string.local_sync_forget)
-            SettingsList {
-                if (state.peers.isEmpty()) {
-                    infoRow(
-                        title = stringResource(Res.string.local_sync_no_devices),
-                        description = stringResource(Res.string.local_sync_no_devices_description),
-                    )
-                }
-                state.peers.forEach { peer ->
-                    navigationRow(
-                        title = peer.name,
-                        description = tapToSync,
-                        icon = Icons.Rounded.Devices,
-                        enabled = syncing == null,
-                        trailingContent = {
-                            IconButton(onClick = { peerToForgetId = peer.deviceId }) {
-                                Icon(imageVector = Icons.Rounded.Delete, contentDescription = forgetLabel)
-                            }
-                        },
-                        onClick = { LocalSyncRepository.syncWith(peer) },
-                    )
-                }
-            }
+        state.peers.forEach { peer ->
+            val syncing = peer.deviceId in state.syncingPeerIds
+            navigationRow(
+                title = peer.name,
+                description = lastSyncedLabel(peer.lastSyncedAtEpochMs, now),
+                icon = Icons.Rounded.Devices,
+                enabled = !syncing,
+                trailingContent = {
+                    if (syncing) {
+                        LoadingSpinner(size = 18.dp)
+                    } else {
+                        IconButton(onClick = { peerToForgetId = peer.deviceId }) {
+                            Icon(imageVector = Icons.Rounded.Delete, contentDescription = forgetLabel)
+                        }
+                    }
+                },
+                onClick = { LocalSyncRepository.syncNow(peer) },
+            )
         }
-
-        SettingsSection(
-            title = stringResource(Res.string.local_sync_what_syncs),
-            isTablet = isTablet,
-        ) {
-            SettingsList {
-                infoRow(
-                    title = stringResource(Res.string.local_sync_what_syncs),
-                    description = stringResource(Res.string.local_sync_what_syncs_description),
-                )
-            }
+        navigationRow(
+            title = stringResource(Res.string.local_sync_show_code),
+            description = stringResource(
+                if (state.peers.isEmpty()) Res.string.local_sync_explanation else Res.string.local_sync_show_code_description,
+            ),
+            icon = Icons.Rounded.QrCode,
+            onClick = LocalSyncRepository::startPairing,
+        )
+        if (scan != null) {
+            navigationRow(
+                title = stringResource(Res.string.local_sync_scan_code),
+                description = stringResource(Res.string.local_sync_scan_code_description),
+                icon = Icons.Rounded.QrCodeScanner,
+                enabled = !state.joining,
+                trailingContent = if (state.joining) {
+                    { LoadingSpinner(size = 18.dp) }
+                } else {
+                    null
+                },
+                onClick = scan,
+            )
         }
+        navigationRow(
+            title = stringResource(Res.string.local_sync_enter_code),
+            description = stringResource(Res.string.local_sync_enter_code_description),
+            icon = Icons.Rounded.Keyboard,
+            enabled = !state.joining,
+            trailingContent = if (state.joining && scan == null) {
+                { LoadingSpinner(size = 18.dp) }
+            } else {
+                null
+            },
+            onClick = { showCodeEntry = true },
+        )
     }
 
     state.pairingCode?.let { code ->
@@ -228,25 +187,64 @@ private fun LocalSyncPage(isTablet: Boolean) {
     }
 }
 
+private val LocalSyncFeatures = listOf(
+    TrackingFeature(Icons.Rounded.BookmarkBorder, Res.string.tracking_feature_lists),
+    TrackingFeature(Icons.Rounded.History, Res.string.tracking_feature_watched),
+    TrackingFeature(Icons.Rounded.PlayCircle, Res.string.tracking_feature_progress),
+    TrackingFeature(Icons.Rounded.Extension, Res.string.tracking_feature_addons),
+    TrackingFeature(Icons.Rounded.Tune, Res.string.tracking_feature_settings),
+)
+
+// The same place and height as a tracker's artwork, drawn from the Material You scheme instead of a brand.
 @Composable
-private fun LocalSyncProgress(peerName: String?) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+private fun LocalSyncBanner(shape: RoundedCornerShape) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(104.dp)
+            .clip(shape)
+            .background(Brush.linearGradient(listOf(colors.primaryContainer, colors.tertiaryContainer))),
+        contentAlignment = Alignment.CenterStart,
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        Icon(
+            imageVector = Icons.Rounded.Devices,
+            contentDescription = null,
+            tint = colors.onPrimaryContainer.copy(alpha = 0.12f),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 12.dp)
+                .size(132.dp),
+        )
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = peerName?.let { stringResource(Res.string.local_sync_syncing_with, it) }
-                    ?: stringResource(Res.string.local_sync_syncing),
-                style = MaterialTheme.typography.titleSmall,
+            Icon(
+                imageVector = Icons.Rounded.Devices,
+                contentDescription = null,
+                tint = colors.onPrimaryContainer,
+                modifier = Modifier.size(32.dp),
             )
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            Text(
+                text = stringResource(Res.string.local_sync_title),
+                style = MaterialTheme.typography.headlineSmall,
+                color = colors.onPrimaryContainer,
+            )
         }
+    }
+}
+
+@Composable
+private fun lastSyncedLabel(lastSyncedAtEpochMs: Long?, nowEpochMs: Long): String {
+    lastSyncedAtEpochMs ?: return stringResource(Res.string.local_sync_never_synced)
+    val minutes = ((nowEpochMs - lastSyncedAtEpochMs) / 60_000L).coerceAtLeast(0L)
+    return when {
+        minutes < 1L -> stringResource(Res.string.local_sync_synced_just_now)
+        minutes < 60L -> stringResource(Res.string.local_sync_synced_minutes, minutes.toInt())
+        minutes < 24L * 60L -> stringResource(Res.string.local_sync_synced_hours, (minutes / 60L).toInt())
+        else -> stringResource(Res.string.local_sync_synced_days, (minutes / (24L * 60L)).toInt())
     }
 }
 

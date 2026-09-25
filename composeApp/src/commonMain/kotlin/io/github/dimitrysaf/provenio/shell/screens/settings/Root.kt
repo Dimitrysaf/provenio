@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.CloudDownload
@@ -32,8 +31,6 @@ import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.compose_about_made_with
 import provenio.composeapp.generated.resources.compose_about_version_format
 import provenio.composeapp.generated.resources.settings_category_profile_tracking
-import provenio.composeapp.generated.resources.local_sync_title
-import provenio.composeapp.generated.resources.local_sync_root_description
 import provenio.composeapp.generated.resources.compose_settings_page_account
 import provenio.composeapp.generated.resources.compose_settings_page_advanced
 import provenio.composeapp.generated.resources.compose_settings_page_appearance
@@ -81,7 +78,6 @@ internal fun LazyListScope.settingsRootContent(
     onContentDiscoveryClick: () -> Unit,
     onIntegrationsClick: () -> Unit,
     onTrackingClick: () -> Unit,
-    onLocalSyncClick: (() -> Unit)? = null,
     onSupportersContributorsClick: () -> Unit,
     onLicensesAttributionsClick: () -> Unit,
     onCheckForUpdatesClick: (() -> Unit)? = null,
@@ -116,14 +112,6 @@ internal fun LazyListScope.settingsRootContent(
                         icon = Icons.Default.Sync,
                         onClick = onTrackingClick,
                     )
-                    if (onLocalSyncClick != null) {
-                        navigationRow(
-                            title = stringResource(Res.string.local_sync_title),
-                            description = stringResource(Res.string.local_sync_root_description),
-                            icon = Icons.Rounded.Devices,
-                            onClick = onLocalSyncClick,
-                        )
-                    }
                 }
             }
         }

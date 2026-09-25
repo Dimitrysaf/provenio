@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.theme.provenio
 import io.github.dimitrysaf.provenio.core.library.LibrarySourceMode
+import io.github.dimitrysaf.provenio.core.localsync.LocalSyncRepository
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklAnimeIdPreference
 import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklAuthUiState
@@ -78,6 +79,7 @@ import provenio.composeapp.generated.resources.settings_tracking_anime_id_mal_de
 import provenio.composeapp.generated.resources.settings_tracking_anime_id_subtitle
 import provenio.composeapp.generated.resources.settings_tracking_anime_id_title
 import provenio.composeapp.generated.resources.settings_tracking_anime_section
+import provenio.composeapp.generated.resources.local_sync_title
 import provenio.composeapp.generated.resources.settings_tracking_advanced
 import provenio.composeapp.generated.resources.settings_tracking_show_trakt
 import provenio.composeapp.generated.resources.settings_tracking_show_trakt_connected
@@ -137,6 +139,17 @@ internal fun LazyListScope.trackingSettingsContent(
                 simklUiState = simklUiState,
                 showTrakt = showTrakt,
             )
+        }
+    }
+
+    if (LocalSyncRepository.isSupported) {
+        item {
+            SettingsSection(
+                title = stringResource(Res.string.local_sync_title),
+                isTablet = isTablet,
+            ) {
+                LocalSyncCard()
+            }
         }
     }
 

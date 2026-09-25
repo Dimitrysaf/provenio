@@ -459,7 +459,7 @@ kotlin {
                 // Supplies ProcessLifecycleOwner, which used to arrive through the Supabase client.
                 implementation("androidx.lifecycle:lifecycle-process:2.9.0")
                 implementation("com.google.zxing:core:3.5.3")
-                implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+                implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
                 implementation(libs.coil.gif)
                 implementation("androidx.recyclerview:recyclerview:1.4.0")
                 implementation("com.squareup.okhttp3:okhttp:4.12.0")

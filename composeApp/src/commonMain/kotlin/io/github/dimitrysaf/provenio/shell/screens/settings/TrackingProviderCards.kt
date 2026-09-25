@@ -150,8 +150,7 @@ internal fun TrackingProviderCards(
         }
     }
 
-    // Simkl is the tracker the app is built around, so it always leads; Trakt only joins it when
-    // the person has asked for it.
+    // Simkl is the tracker the app is built around, so it always leads; Trakt joins only when asked for.
     val simklCard: @Composable (Modifier) -> Unit = { cardModifier ->
         SimklProviderCard(
             uiState = simklUiState,
@@ -470,7 +469,7 @@ private fun TrackingProviderCard(
 }
 
 /** One kind of data a tracker keeps in step with the app. */
-private data class TrackingFeature(
+internal data class TrackingFeature(
     val icon: ImageVector,
     val label: StringResource,
 )
@@ -490,7 +489,7 @@ private val TraktFeatures = SimklFeatures + listOf(
 /** What the tracker syncs, as tonal chips: filled in once it is connected, muted until then. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TrackingFeaturesRow(
+internal fun TrackingFeaturesRow(
     features: List<TrackingFeature>,
     active: Boolean,
     shape: RoundedCornerShape,

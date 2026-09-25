@@ -1,29 +1,42 @@
 package io.github.dimitrysaf.provenio.core.localsync
 
 import co.touchlab.kermit.Logger
+import io.github.dimitrysaf.provenio.core.addons.AddonRepository
+import io.github.dimitrysaf.provenio.core.collection.CollectionRepository
+import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
+import io.github.dimitrysaf.provenio.core.library.LibraryRepository
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.sync.SyncClientIdentity
 import io.github.dimitrysaf.provenio.core.time.EpisodeReleaseDatePlatform
+import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressRepository
+import io.github.dimitrysaf.provenio.core.watch.watched.WatchedRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlin.random.Random
 
 enum class LocalSyncError {
     NOT_ON_WIFI,
@@ -33,10 +46,10 @@ enum class LocalSyncError {
     FAILED,
 }
 
+// Something the person should hear about once; routine background syncs are not reported.
 sealed interface LocalSyncActivity {
     data object Idle : LocalSyncActivity
-    data class Syncing(val peerName: String?) : LocalSyncActivity
-    data class Synced(val peerName: String, val changeCount: Int) : LocalSyncActivity
+    data class Paired(val peerName: String) : LocalSyncActivity
     data class Failed(val error: LocalSyncError) : LocalSyncActivity
 }
 
@@ -45,14 +58,32 @@ data class LocalSyncUiState(
     val peers: List<LocalSyncPeer> = emptyList(),
     val pairingCode: String? = null,
     val pairingQr: List<BooleanArray>? = null,
+    val syncingPeerIds: Set<String> = emptySet(),
+    val joining: Boolean = false,
     val activity: LocalSyncActivity = LocalSyncActivity.Idle,
 )
 
-// Syncs the active profile with other devices on the same Wi-Fi. While the sync page is open this device listens, so a paired device can start a sync from its side too.
+@Serializable
+private data class LocalSyncBeacon(
+    val app: String,
+    val id: String,
+    val port: Int,
+)
+
+// Keeps the active profile in step with paired devices on the same Wi-Fi: it listens while the app runs, announces itself, and syncs whenever something changes on either side.
 object LocalSyncRepository {
     private const val DEFAULT_PORT = 47_631
-    private const val CONNECT_TIMEOUT_MS = 5_000
+    private const val BEACON_PORT = 47_632
+    private const val BEACON_APP = "provenio-sync"
+    private const val BEACON_INTERVAL_MS = 30_000L
+    private const val CHANGE_DEBOUNCE_MS = 8_000L
+    private const val CHANGE_CHECK_INTERVAL_MS = 60_000L
+    private const val STARTUP_SYNC_DELAY_MS = 3_000L
+    private const val CONNECT_TIMEOUT_MS = 4_000
     private const val PORT_WAIT_MS = 5_000L
+    private const val INCOMING_WAIT_MS = 1_500L
+    private const val RETRY_MIN_MS = 1_000L
+    private const val RETRY_MAX_MS = 4_000L
     private const val SECRET_SIZE = 32
     private const val CODE_PREFIX = "provenio-sync"
     private const val CODE_VERSION = "1"
@@ -70,32 +101,40 @@ object LocalSyncRepository {
     val uiState: StateFlow<LocalSyncUiState> = _uiState.asStateFlow()
 
     private val serverPort = MutableStateFlow<Int?>(null)
-    private var server: LocalSyncServer? = null
-    private var listenJob: Job? = null
+    private val beaconAddresses = mutableMapOf<String, Pair<String, Int>>()
     private var pairingSecret: ByteArray? = null
+    private var started = false
 
     val isSupported: Boolean get() = LocalSyncPlatform.isSupported
 
-    // Starts listening for paired devices; the sync page calls it while it is on screen.
-    fun open() {
-        if (!isSupported) return
+    // Called once the app is running; everything after this happens on its own.
+    fun start() {
+        if (!isSupported || started) return
+        started = true
         _uiState.update { it.copy(deviceName = localSyncDeviceName(), peers = loadPeers()) }
-        if (listenJob?.isActive == true) return
-        listenJob = scope.launch { listen() }
+        scope.launch { listen() }
+        scope.launch { receiveBeacons() }
+        scope.launch { announce() }
+        scope.launch { observeLocalChanges() }
+        scope.launch {
+            delay(STARTUP_SYNC_DELAY_MS)
+            syncAll()
+        }
     }
 
-    fun close() {
-        stopPairing()
-        listenJob?.cancel()
-        listenJob = null
-        server?.close()
-        server = null
-        serverPort.value = null
+    // Coming back to the app catches up with whatever the other devices changed meanwhile.
+    fun onForeground() {
+        if (!started) return
+        scope.launch {
+            sendBeacon()
+            syncAll()
+        }
     }
 
-    /** Shows a pairing code for another device to scan or type in. */
+    // Shows a pairing code for another device to scan or type in.
     fun startPairing() {
         if (!isSupported) return
+        start()
         scope.launch {
             val host = LocalSyncPlatform.localIpv4Address()
                 ?: return@launch fail(LocalSyncError.NOT_ON_WIFI)
@@ -105,9 +144,7 @@ object LocalSyncRepository {
             pairingSecret = secret
             val code = listOf(CODE_PREFIX, CODE_VERSION, host, port.toString(), encodeSyncBytes(secret))
                 .joinToString(":")
-            _uiState.update {
-                it.copy(pairingCode = code, pairingQr = localSyncQrMatrix(code), activity = LocalSyncActivity.Idle)
-            }
+            _uiState.update { it.copy(pairingCode = code, pairingQr = localSyncQrMatrix(code)) }
         }
     }
 
@@ -116,32 +153,29 @@ object LocalSyncRepository {
         _uiState.update { it.copy(pairingCode = null, pairingQr = null) }
     }
 
-    /** Pairs with the device showing [code] and syncs with it straight away. */
+    // Pairs with the device showing [code] and syncs with it straight away.
     fun join(code: String) {
         val pairing = parsePairingCode(code.trim()) ?: return fail(LocalSyncError.INVALID_CODE)
+        start()
         scope.launch {
-            connectAndSync(
-                host = pairing.host,
-                port = pairing.port,
-                secret = pairing.secret,
-                expectedPeerId = null,
-                hasSyncedBefore = false,
-                peerName = null,
-            )
+            _uiState.update { it.copy(joining = true) }
+            try {
+                val paired = connectAndSync(
+                    candidates = listOf(pairing.host to pairing.port),
+                    secret = pairing.secret,
+                    expectedPeerId = null,
+                    hasSyncedBefore = false,
+                    userInitiated = true,
+                )
+                paired?.let { name -> report(LocalSyncActivity.Paired(name)) }
+            } finally {
+                _uiState.update { it.copy(joining = false) }
+            }
         }
     }
 
-    fun syncWith(peer: LocalSyncPeer) {
-        scope.launch {
-            connectAndSync(
-                host = peer.host,
-                port = peer.port,
-                secret = decodeSyncBytes(peer.secret),
-                expectedPeerId = peer.deviceId,
-                hasSyncedBefore = peer.lastSyncedAtEpochMs != null,
-                peerName = peer.name,
-            )
-        }
+    fun syncNow(peer: LocalSyncPeer) {
+        scope.launch { syncWith(peer, userInitiated = true) }
     }
 
     fun forget(peer: LocalSyncPeer) {
@@ -150,6 +184,28 @@ object LocalSyncRepository {
 
     fun clearActivity() {
         _uiState.update { it.copy(activity = LocalSyncActivity.Idle) }
+    }
+
+    private suspend fun syncAll() {
+        loadPeers().forEach { peer -> syncWith(peer, userInitiated = false) }
+    }
+
+    private suspend fun syncWith(peer: LocalSyncPeer, userInitiated: Boolean) {
+        val secret = runCatching { decodeSyncBytes(peer.secret) }.getOrNull() ?: return
+        repeat(if (userInitiated) 1 else 2) { attempt ->
+            if (attempt > 0) delay(Random.nextLong(RETRY_MIN_MS, RETRY_MAX_MS))
+            val current = loadPeers().firstOrNull { it.deviceId == peer.deviceId } ?: return
+            // The saved address first, then wherever the device last announced itself from.
+            val candidates = listOfNotNull(current.host to current.port, beaconAddresses[peer.deviceId]).distinct()
+            val synced = connectAndSync(
+                candidates = candidates,
+                secret = secret,
+                expectedPeerId = peer.deviceId,
+                hasSyncedBefore = current.lastSyncedAtEpochMs != null,
+                userInitiated = userInitiated,
+            )
+            if (synced != null) return
+        }
     }
 
     private suspend fun listen() {
@@ -161,7 +217,6 @@ object LocalSyncRepository {
             log.w(error) { "Could not start listening for sync" }
             return
         }
-        server = listening
         serverPort.value = listening.port
         try {
             while (currentCoroutineContext().isActive) {
@@ -171,61 +226,141 @@ object LocalSyncRepository {
         } catch (error: CancellationException) {
             throw error
         } catch (error: Throwable) {
-            log.d { "Stopped listening for sync: ${error.message}" }
+            log.w(error) { "Stopped listening for sync" }
         } finally {
             listening.close()
-            if (server === listening) {
-                server = null
-                serverPort.value = null
-            }
+            serverPort.value = null
         }
     }
 
+    private suspend fun announce() {
+        while (currentCoroutineContext().isActive) {
+            sendBeacon()
+            delay(BEACON_INTERVAL_MS)
+        }
+    }
+
+    private suspend fun sendBeacon() {
+        val port = serverPort.value ?: return
+        val beacon = LocalSyncBeacon(app = BEACON_APP, id = SyncClientIdentity.currentClientId(), port = port)
+        runCatching {
+            LocalSyncPlatform.sendBeacon(json.encodeToString(LocalSyncBeacon.serializer(), beacon).encodeToByteArray(), BEACON_PORT)
+        }.onFailure { error ->
+            if (error is CancellationException) throw error
+            log.d { "Could not announce this device: ${error.message}" }
+        }
+    }
+
+    private suspend fun receiveBeacons() {
+        LocalSyncWifiLock.acquire()
+        try {
+            LocalSyncPlatform.receiveBeacons(BEACON_PORT) { payload, host -> onBeacon(payload, host) }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Throwable) {
+            log.w(error) { "Could not listen for other devices" }
+        } finally {
+            LocalSyncWifiLock.release()
+        }
+    }
+
+    // A paired device announcing itself from a new address, or for the first time since launch, gets a sync.
+    private fun onBeacon(payload: ByteArray, host: String) {
+        val beacon = runCatching {
+            json.decodeFromString(LocalSyncBeacon.serializer(), payload.decodeToString())
+        }.getOrNull() ?: return
+        if (beacon.app != BEACON_APP || beacon.id == SyncClientIdentity.currentClientId()) return
+        val peer = loadPeers().firstOrNull { it.deviceId == beacon.id } ?: return
+        val address = host to beacon.port
+        val previous = beaconAddresses.put(beacon.id, address)
+        if (previous == address) return
+        // Both devices hear each other, so only one of them starts the sync.
+        if (SyncClientIdentity.currentClientId() > beacon.id) return
+        scope.launch { syncWith(peer, userInitiated = false) }
+    }
+
+    @OptIn(FlowPreview::class)
+    private suspend fun observeLocalChanges() {
+        scope.launch {
+            while (currentCoroutineContext().isActive) {
+                delay(CHANGE_CHECK_INTERVAL_MS)
+                syncIfChangedLocally()
+            }
+        }
+        merge(
+            LibraryRepository.uiState.map { },
+            WatchedRepository.uiState.map { },
+            WatchProgressRepository.uiState.map { },
+            AddonRepository.uiState.map { },
+            CollectionRepository.collections.map { },
+            HomeCatalogSettingsRepository.uiState.map { },
+        )
+            .drop(1)
+            .debounce(CHANGE_DEBOUNCE_MS)
+            .collect { syncIfChangedLocally() }
+    }
+
+    private suspend fun syncIfChangedLocally() {
+        if (loadPeers().isEmpty()) return
+        val changed = sessionMutex.withLock {
+            val before = loadLedger().lamport
+            refreshedLedger().lamport != before
+        }
+        if (changed) syncAll()
+    }
+
     private suspend fun serve(connection: LocalSyncConnection) {
-        sessionMutex.withLock {
+        // Two devices syncing each other at once would deadlock here, so the incoming one is turned away quickly.
+        withTimeoutOrNull(INCOMING_WAIT_MS) { sessionMutex.lock() } ?: run {
+            connection.close()
+            return
+        }
+        try {
+            var peerId: String? = null
             try {
                 val outcome = runServerSession(
                     connection = connection,
                     identity = identity(),
                     secretFor = ::candidateSecrets,
-                ) { remote, firstSync ->
-                    _uiState.update { it.copy(activity = LocalSyncActivity.Syncing(null)) }
+                ) { remoteId, remote, firstSync ->
+                    peerId = remoteId
+                    markSyncing(remoteId, true)
                     commitMerge(refreshedLedger(), remote, if (firstSync) SyncConflictPolicy.KEEP_LOCAL else SyncConflictPolicy.NEWEST)
                 }
-                if (pairingSecret?.contentEquals(outcome.secret) == true) stopPairing()
+                val pairedNow = pairingSecret?.contentEquals(outcome.secret) == true
                 rememberPeer(outcome, fallbackHost = null, fallbackPort = null)
-                succeed(outcome)
+                if (pairedNow) {
+                    stopPairing()
+                    report(LocalSyncActivity.Paired(outcome.peerHello.name))
+                }
             } catch (error: CancellationException) {
                 throw error
             } catch (error: LocalSyncRejectedException) {
                 log.i { "Refused a sync from a device without the right code" }
             } catch (error: Throwable) {
                 log.w(error) { "Sync from another device failed" }
-                fail(LocalSyncError.FAILED)
             } finally {
+                peerId?.let { markSyncing(it, false) }
                 connection.close()
             }
+        } finally {
+            sessionMutex.unlock()
         }
     }
 
+    // Returns the other device's name once synced, or null if it could not be reached or refused.
     private suspend fun connectAndSync(
-        host: String,
-        port: Int,
+        candidates: List<Pair<String, Int>>,
         secret: ByteArray,
         expectedPeerId: String?,
         hasSyncedBefore: Boolean,
-        peerName: String?,
-    ) {
-        sessionMutex.withLock {
-            _uiState.update { it.copy(activity = LocalSyncActivity.Syncing(peerName)) }
-            val connection = try {
-                LocalSyncPlatform.connect(host, port, CONNECT_TIMEOUT_MS)
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Throwable) {
-                log.w(error) { "Could not reach $host:$port" }
-                fail(LocalSyncError.UNREACHABLE)
-                return@withLock
+        userInitiated: Boolean,
+    ): String? = sessionMutex.withLock {
+        expectedPeerId?.let { markSyncing(it, true) }
+        try {
+            val (connection, address) = connectAny(candidates) ?: run {
+                if (userInitiated) report(LocalSyncActivity.Failed(LocalSyncError.UNREACHABLE))
+                return@withLock null
             }
             try {
                 val ledger = refreshedLedger()
@@ -236,22 +371,39 @@ object LocalSyncRepository {
                     expectedPeerId = expectedPeerId,
                     hasSyncedBefore = hasSyncedBefore,
                     ledger = ledger,
-                ) { remote, firstSync ->
+                ) { _, remote, firstSync ->
                     commitMerge(ledger, remote, if (firstSync) SyncConflictPolicy.TAKE_REMOTE else SyncConflictPolicy.NEWEST)
                 }
-                rememberPeer(outcome, fallbackHost = host, fallbackPort = port)
-                succeed(outcome)
+                rememberPeer(outcome, fallbackHost = address.first, fallbackPort = address.second)
+                outcome.peerHello.name
             } catch (error: CancellationException) {
                 throw error
             } catch (error: LocalSyncRejectedException) {
-                fail(LocalSyncError.REJECTED)
+                if (userInitiated) report(LocalSyncActivity.Failed(LocalSyncError.REJECTED))
+                null
             } catch (error: Throwable) {
-                log.w(error) { "Sync with $host:$port failed" }
-                fail(LocalSyncError.FAILED)
+                log.w(error) { "Sync with ${address.first} failed" }
+                if (userInitiated) report(LocalSyncActivity.Failed(LocalSyncError.FAILED))
+                null
             } finally {
                 connection.close()
             }
+        } finally {
+            expectedPeerId?.let { markSyncing(it, false) }
         }
+    }
+
+    private suspend fun connectAny(candidates: List<Pair<String, Int>>): Pair<LocalSyncConnection, Pair<String, Int>>? {
+        candidates.filter { (host, _) -> host.isNotBlank() }.forEach { address ->
+            try {
+                return LocalSyncPlatform.connect(address.first, address.second, CONNECT_TIMEOUT_MS) to address
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                log.d { "Could not reach ${address.first}:${address.second}: ${error.message}" }
+            }
+        }
+        return null
     }
 
     private fun candidateSecrets(deviceId: String): List<Pair<ByteArray, Boolean>> {
@@ -324,20 +476,17 @@ object LocalSyncRepository {
         savePeers(listOf(peer) + peers.filterNot { it.deviceId == hello.deviceId })
     }
 
-    private fun succeed(outcome: LocalSyncOutcome) {
+    private fun markSyncing(peerId: String, syncing: Boolean) {
         _uiState.update {
-            it.copy(
-                activity = LocalSyncActivity.Synced(
-                    peerName = outcome.peerHello.name,
-                    changeCount = outcome.merge.changes.size,
-                ),
-            )
+            it.copy(syncingPeerIds = if (syncing) it.syncingPeerIds + peerId else it.syncingPeerIds - peerId)
         }
     }
 
-    private fun fail(error: LocalSyncError) {
-        _uiState.update { it.copy(activity = LocalSyncActivity.Failed(error)) }
+    private fun report(activity: LocalSyncActivity) {
+        _uiState.update { it.copy(activity = activity) }
     }
+
+    private fun fail(error: LocalSyncError) = report(LocalSyncActivity.Failed(error))
 
     private fun loadLedger(): SyncLedger {
         val payload = LocalSyncStorage.loadLedger(ProfileRepository.activeProfileId)?.trim().orEmpty()

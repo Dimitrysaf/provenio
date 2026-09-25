@@ -20,9 +20,19 @@ internal actual object LocalSyncPlatform {
 
     actual suspend fun connect(host: String, port: Int, timeoutMs: Int): LocalSyncConnection = unsupported()
 
+    actual suspend fun sendBeacon(payload: ByteArray, port: Int): Unit = unsupported()
+
+    actual suspend fun receiveBeacons(port: Int, onBeacon: (payload: ByteArray, host: String) -> Unit): Unit = unsupported()
+
     private fun unsupported(): Nothing = throw UnsupportedOperationException("Local sync is not available on iOS")
 }
 
 internal actual fun localSyncDeviceName(): String = UIDevice.currentDevice.name
 
 internal actual fun localSyncQrMatrix(text: String): List<BooleanArray>? = null
+
+internal actual object LocalSyncWifiLock {
+    actual fun acquire() = Unit
+
+    actual fun release() = Unit
+}

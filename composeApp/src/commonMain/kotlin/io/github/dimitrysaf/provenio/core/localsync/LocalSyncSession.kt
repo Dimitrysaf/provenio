@@ -75,7 +75,7 @@ internal suspend fun runClientSession(
     expectedPeerId: String?,
     hasSyncedBefore: Boolean,
     ledger: SyncLedger,
-    applyMerge: (SyncLedger, Boolean) -> LocalSyncMerge,
+    applyMerge: (peerId: String, remote: SyncLedger, firstSync: Boolean) -> LocalSyncMerge,
 ): LocalSyncOutcome {
     val nonce = encodeSyncBytes(LocalSyncPlatform.randomBytes(NONCE_SIZE))
     val hello = SyncHello(
@@ -100,7 +100,7 @@ internal suspend fun runClientSession(
     val remote = connection.readSealed(key)
     // The server reports whether both sides had synced before; on a first sync the host decides.
     val firstSync = !reply.hasSyncedBefore
-    val merge = applyMerge(remote, firstSync)
+    val merge = applyMerge(reply.deviceId, remote, firstSync)
     return LocalSyncOutcome(peerHello = reply, secret = secret, merge = merge)
 }
 
@@ -109,7 +109,7 @@ internal suspend fun runServerSession(
     connection: LocalSyncConnection,
     identity: LocalSyncIdentity,
     secretFor: (deviceId: String) -> List<Pair<ByteArray, Boolean>>,
-    applyMerge: (SyncLedger, Boolean) -> LocalSyncMerge,
+    applyMerge: (peerId: String, remote: SyncLedger, firstSync: Boolean) -> LocalSyncMerge,
 ): LocalSyncOutcome {
     val hello = sessionJson.decodeFromString<SyncHello>(connection.readJson())
     if (hello.version != PROTOCOL_VERSION) throw LocalSyncRejectedException()
@@ -134,7 +134,7 @@ internal suspend fun runServerSession(
     val key = sessionKey(secret, hello.nonce, nonce)
     val remote = connection.readSealed(key)
     // The host is the source of truth the first time two devices sync.
-    val merge = applyMerge(remote, !bothSyncedBefore)
+    val merge = applyMerge(hello.deviceId, remote, !bothSyncedBefore)
     connection.writeSealed(key, merge.ledger)
     return LocalSyncOutcome(peerHello = hello, secret = secret, merge = merge)
 }

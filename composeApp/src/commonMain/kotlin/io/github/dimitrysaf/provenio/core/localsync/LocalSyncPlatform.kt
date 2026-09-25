@@ -10,6 +10,14 @@ internal expect object LocalSyncPlatform {
     fun localIpv4Address(): String?
     suspend fun listen(port: Int): LocalSyncServer
     suspend fun connect(host: String, port: Int, timeoutMs: Int): LocalSyncConnection
+    suspend fun sendBeacon(payload: ByteArray, port: Int)
+    suspend fun receiveBeacons(port: Int, onBeacon: (payload: ByteArray, host: String) -> Unit)
+}
+
+// Android drops Wi-Fi broadcasts unless the app holds a multicast lock while it listens for them.
+internal expect object LocalSyncWifiLock {
+    fun acquire()
+    fun release()
 }
 
 /** One side of a sync connection, carrying length-prefixed frames. */

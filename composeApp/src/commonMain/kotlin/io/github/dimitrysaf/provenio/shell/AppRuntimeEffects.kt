@@ -14,6 +14,7 @@ import io.github.dimitrysaf.provenio.core.addons.AddonRepository
 import io.github.dimitrysaf.provenio.core.auth.AuthState
 import io.github.dimitrysaf.provenio.core.deeplink.AppDeepLink
 import io.github.dimitrysaf.provenio.core.deeplink.AppDeepLinkRepository
+import io.github.dimitrysaf.provenio.core.localsync.LocalSyncRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
 import io.github.dimitrysaf.provenio.core.network.NetworkCondition
 import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
@@ -36,6 +37,9 @@ internal fun AppRuntimeServices(enabled: Boolean) {
     if (enabled) {
         remember {
             EpisodeReleaseNotificationsRepository.ensureLoaded()
+        }
+        remember {
+            LocalSyncRepository.start()
         }
     }
 }
@@ -191,13 +195,16 @@ internal fun WatchSourceReconnectEffect(
     }
 }
 
-// Refreshes the network status whenever the app returns to the foreground.
+// Refreshes the network status and catches up with paired devices whenever the app returns to the foreground.
 @Composable
 internal fun ForegroundSyncEffect(enabled: Boolean) {
     LaunchedEffect(Unit) {
         if (!enabled) return@LaunchedEffect
         AppForegroundMonitor.events().collect { visibility ->
-            if (visibility == AppVisibility.Foreground) NetworkStatusRepository.requestForegroundRefresh()
+            if (visibility == AppVisibility.Foreground) {
+                NetworkStatusRepository.requestForegroundRefresh()
+                LocalSyncRepository.onForeground()
+            }
         }
     }
 }

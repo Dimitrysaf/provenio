@@ -5,23 +5,30 @@ import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.net.DatagramPacket
+import java.net.DatagramSocket
 import java.net.Inet4Address
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
+import java.net.SocketTimeoutException
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.Mac
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 
 private const val IV_SIZE = 12
 private const val TAG_BITS = 128
 private const val MAX_FRAME_BYTES = 64 * 1024 * 1024
 private const val READ_TIMEOUT_MS = 60_000
+private const val BEACON_POLL_MS = 1_000
+private const val BEACON_BUFFER_BYTES = 2_048
 
 internal actual object LocalSyncPlatform {
     private val random = SecureRandom()
@@ -82,6 +89,42 @@ internal actual object LocalSyncPlatform {
                 throw error
             }
         }
+
+    actual suspend fun sendBeacon(payload: ByteArray, port: Int) {
+        withContext(Dispatchers.IO) {
+            DatagramSocket().use { socket ->
+                socket.broadcast = true
+                val address = InetAddress.getByName("255.255.255.255")
+                socket.send(DatagramPacket(payload, payload.size, address, port))
+            }
+        }
+    }
+
+    actual suspend fun receiveBeacons(port: Int, onBeacon: (payload: ByteArray, host: String) -> Unit) {
+        withContext(Dispatchers.IO) {
+            val socket = DatagramSocket(null)
+            try {
+                socket.reuseAddress = true
+                socket.broadcast = true
+                // A short timeout lets the loop notice cancellation between packets.
+                socket.soTimeout = BEACON_POLL_MS
+                socket.bind(InetSocketAddress(port))
+                val buffer = ByteArray(BEACON_BUFFER_BYTES)
+                while (isActive) {
+                    val packet = DatagramPacket(buffer, buffer.size)
+                    try {
+                        socket.receive(packet)
+                    } catch (_: SocketTimeoutException) {
+                        continue
+                    }
+                    val host = packet.address?.hostAddress ?: continue
+                    onBeacon(packet.data.copyOf(packet.length), host)
+                }
+            } finally {
+                socket.close()
+            }
+        }
+    }
 
     private fun bindServer(port: Int): ServerSocket {
         val server = ServerSocket()
