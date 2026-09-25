@@ -73,6 +73,10 @@ public:
         engine_upload_mode upload_mode,
         std::uint64_t upload_limit_bytes_per_second
     );
+    [[nodiscard]] engine_status set_stream_duration(
+        std::string stream_id,
+        std::uint64_t duration_milliseconds
+    );
     [[nodiscard]] engine_status get_torrent_details(
         const std::string& torrent_id,
         engine_torrent_details& details
@@ -99,6 +103,7 @@ private:
         reclaim_disk_cache,
         remove_torrent,
         set_upload_mode,
+        set_stream_duration,
     };
 
     struct Command {

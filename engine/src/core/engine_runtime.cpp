@@ -222,6 +222,18 @@ engine_status EngineRuntime::set_upload_mode(
     return enqueue(std::move(command), request_id);
 }
 
+engine_status EngineRuntime::set_stream_duration(
+    std::string stream_id,
+    const std::uint64_t duration_milliseconds
+) {
+    Command command{};
+    command.type = CommandType::set_stream_duration;
+    command.stream_id = std::move(stream_id);
+    command.target_bytes = duration_milliseconds;
+    std::uint64_t request_id = 0;
+    return enqueue(std::move(command), request_id);
+}
+
 engine_status EngineRuntime::get_torrent_details(
     const std::string& torrent_id,
     engine_torrent_details& details
@@ -383,6 +395,9 @@ void EngineRuntime::process_command(Command command) {
             break;
         case CommandType::set_upload_mode:
             backend_->set_upload_mode(command.upload_mode, command.target_bytes);
+            break;
+        case CommandType::set_stream_duration:
+            backend_->set_stream_duration(command.stream_id, command.target_bytes);
             break;
         }
     } catch (const std::exception& error) {

@@ -427,6 +427,12 @@ ENGINE_API engine_status engine_set_upload_mode(
     engine_upload_mode upload_mode,
     uint64_t upload_limit_bytes_per_second
 );
+/* Sets the stream's video duration so the engine keeps minutes, not bytes, around the playhead. */
+ENGINE_API engine_status engine_set_stream_duration(
+    engine* engine,
+    const char* stream_id,
+    uint64_t duration_milliseconds
+);
 ENGINE_API void engine_torrent_details_init_sized(
     engine_torrent_details* details,
     uint32_t struct_size

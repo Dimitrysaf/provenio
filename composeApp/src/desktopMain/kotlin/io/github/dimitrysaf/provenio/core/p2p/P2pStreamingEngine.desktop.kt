@@ -388,6 +388,17 @@ actual object P2pStreamingEngine {
         scheduleStop(shutdownEngine = false)
     }
 
+    actual fun setStreamDuration(durationMs: Long) {
+        val activeEngine = engine ?: return
+        val streamId = currentStreamId ?: return
+        if (durationMs <= 0L) return
+        try {
+            activeEngine.setStreamDuration(streamId, durationMs)
+        } catch (error: Exception) {
+            Log.w(TAG, "Could not set the stream duration", error)
+        }
+    }
+
     actual fun shutdown() {
         scheduleStop(shutdownEngine = true)
     }

@@ -28,6 +28,8 @@ actual object P2pStreamingEngine {
         _state.value = P2pStreamingState.Idle
     }
 
+    actual fun setStreamDuration(durationMs: Long) = Unit
+
     actual fun shutdown() {
         _state.value = P2pStreamingState.Idle
     }

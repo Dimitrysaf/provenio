@@ -723,6 +723,25 @@ Java_com_engine_internal_NativeBridge_nativeSetUploadMode(
     ));
 }
 
+extern "C" JNIEXPORT jint JNICALL
+Java_com_engine_internal_NativeBridge_nativeSetStreamDuration(
+    JNIEnv* const env,
+    jobject,
+    const jlong handle,
+    jstring stream_id_value,
+    const jlong duration_milliseconds
+) {
+    std::string stream_id;
+    if (duration_milliseconds < 0 || !read_utf8(env, stream_id_value, stream_id)) {
+        return static_cast<jint>(ENGINE_STATUS_INVALID_ARGUMENT);
+    }
+    return static_cast<jint>(engine_set_stream_duration(
+        engine_from_handle(handle),
+        stream_id.c_str(),
+        static_cast<std::uint64_t>(duration_milliseconds)
+    ));
+}
+
 extern "C" JNIEXPORT jobject JNICALL
 Java_com_engine_internal_NativeBridge_nativeGetTorrentDetails(
     JNIEnv* const env,

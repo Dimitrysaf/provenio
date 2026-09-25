@@ -15,6 +15,7 @@ enum class PriorityClass : std::uint8_t {
     playback = 2,
     metadata_tail = 3,
     readahead = 4,
+    backfill = 5,
 };
 
 struct PiecePriority {

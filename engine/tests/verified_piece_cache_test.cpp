@@ -47,3 +47,14 @@ TEST("verified piece cache refuses an entry larger than its capacity") {
     EXPECT_TRUE(cache.get({"torrent", 0}) == nullptr);
     EXPECT_EQ(cache.stats().used_bytes, std::uint64_t(0));
 }
+
+TEST("verified piece cache membership checks do not count as hits or misses") {
+    cache::VerifiedPieceCache cache(8);
+    cache.put({"torrent", 0}, bytes("aaaa"));
+
+    EXPECT_TRUE(cache.contains({"torrent", 0}));
+    EXPECT_TRUE(!cache.contains({"torrent", 1}));
+    const auto stats = cache.stats();
+    EXPECT_EQ(stats.hits, std::uint64_t(0));
+    EXPECT_EQ(stats.misses, std::uint64_t(0));
+}

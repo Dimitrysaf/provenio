@@ -466,6 +466,14 @@ TEST("torrent details reject malformed arguments and unknown torrents") {
         engine_get_piece_map(engine, unknown_id.c_str(), nullptr, nullptr, 0, nullptr),
         ENGINE_STATUS_INVALID_ARGUMENT
     );
+    EXPECT_EQ(
+        engine_set_stream_duration(engine, "not a stream id", 60000),
+        ENGINE_STATUS_INVALID_ARGUMENT
+    );
+    EXPECT_EQ(
+        engine_set_stream_duration(nullptr, "0123456789abcdef0123456789abcdef", 60000),
+        ENGINE_STATUS_INVALID_ARGUMENT
+    );
     engine_destroy(engine);
 }
 

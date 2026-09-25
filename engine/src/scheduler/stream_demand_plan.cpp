@@ -56,6 +56,18 @@ StreamDemandPlan build_stream_demand_plan(
     const std::uint64_t selection_bytes,
     const std::uint64_t critical_front_bytes
 ) {
+    return build_stream_demand_plan(
+        std::move(demands),
+        StreamWindow{selection_bytes, selection_bytes, 0},
+        critical_front_bytes
+    );
+}
+
+StreamDemandPlan build_stream_demand_plan(
+    std::vector<StreamDemand> demands,
+    const StreamWindow window,
+    const std::uint64_t critical_front_bytes
+) {
     StreamDemandPlan result;
     if (demands.empty()) {
         return result;
@@ -99,7 +111,10 @@ StreamDemandPlan build_stream_demand_plan(
         }
     }
 
-    const auto budget_pieces = physical_piece_budget(selection_bytes, focused.piece_size);
+    const auto budget_pieces = physical_piece_budget(window.forward_bytes, focused.piece_size);
+    const auto near_pieces = window.near_bytes >= window.forward_bytes
+        ? std::numeric_limits<std::uint64_t>::max()
+        : physical_piece_budget(window.near_bytes, focused.piece_size);
     const auto target_pieces = std::max(
         budget_pieces,
         static_cast<std::uint64_t>(combined.size())
@@ -133,12 +148,27 @@ StreamDemandPlan build_stream_demand_plan(
             if (combined.contains(piece)) {
                 continue;
             }
-            combined.emplace(
-                piece,
-                critical_pieces.contains(piece)
-                    ? PriorityClass::critical
-                    : PriorityClass::playback
-            );
+            auto priority = PriorityClass::readahead;
+            if (critical_pieces.contains(piece)) {
+                priority = PriorityClass::critical;
+            } else if (candidate - focused_piece <= near_pieces) {
+                priority = PriorityClass::playback;
+            }
+            combined.emplace(piece, priority);
+        }
+
+        const auto first_file_piece = focused.file_offset / focused.piece_size;
+        const auto backward_pieces = physical_piece_budget(
+            window.backward_bytes,
+            focused.piece_size
+        );
+        const auto first_focused = static_cast<std::uint64_t>(*focused_blockers.begin());
+        const auto backward_floor = first_focused - first_file_piece > backward_pieces
+            ? first_focused - backward_pieces
+            : first_file_piece;
+        for (auto candidate = first_focused; candidate > backward_floor;) {
+            --candidate;
+            combined.emplace(static_cast<std::uint32_t>(candidate), PriorityClass::backfill);
         }
     }
 

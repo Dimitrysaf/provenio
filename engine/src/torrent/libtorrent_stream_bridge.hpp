@@ -55,6 +55,7 @@ public:
     [[nodiscard]] std::vector<StoppedStream> pop_expired_streams();
     void handle_read_piece(const lt::read_piece_alert& alert);
     [[nodiscard]] std::string stop_stream(const std::string& stream_id);
+    void set_stream_duration(const std::string& stream_id, std::uint64_t duration_milliseconds);
     [[nodiscard]] bool has_stream_for_torrent(const std::string& torrent_id);
     [[nodiscard]] std::vector<std::uint32_t> blocking_pieces(
         const std::string& torrent_id

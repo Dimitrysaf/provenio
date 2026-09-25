@@ -229,6 +229,8 @@ actual object P2pStreamingEngine {
         }
     }
 
+    actual fun setStreamDuration(durationMs: Long) = Unit
+
     actual fun shutdown() {
         scope.launch {
             lifecycleMutex.withLock { stopLocked(shutdownEngine = true) }

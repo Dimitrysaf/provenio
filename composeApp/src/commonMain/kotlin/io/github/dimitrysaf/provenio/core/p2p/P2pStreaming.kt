@@ -237,6 +237,8 @@ expect object P2pStreamingEngine {
     suspend fun startStream(request: P2pStreamRequest): String
     suspend fun clearCache(): P2pCacheClearResult
     fun stopStream()
+    /** Lets the engine size its download window in minutes of the current stream's video. */
+    fun setStreamDuration(durationMs: Long)
     fun shutdown()
 }
 

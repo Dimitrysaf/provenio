@@ -620,6 +620,27 @@ engine_status engine_stop_stream(
     }
 }
 
+engine_status engine_set_stream_duration(
+    engine* const engine,
+    const char* const stream_id,
+    const std::uint64_t duration_milliseconds
+) {
+    if (engine == nullptr) {
+        return ENGINE_STATUS_INVALID_ARGUMENT;
+    }
+    try {
+        const auto normalized = normalize_stream_id(stream_id);
+        if (!normalized.has_value()) {
+            return ENGINE_STATUS_INVALID_ARGUMENT;
+        }
+        return engine->runtime->set_stream_duration(*normalized, duration_milliseconds);
+    } catch (const std::bad_alloc&) {
+        return ENGINE_STATUS_ALLOCATION_FAILED;
+    } catch (...) {
+        return ENGINE_STATUS_INITIALIZATION_FAILED;
+    }
+}
+
 engine_status engine_get_stats(
     engine* const engine,
     engine_stats* const stats

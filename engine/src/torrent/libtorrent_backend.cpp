@@ -655,6 +655,13 @@ public:
         queued_events_.push_back(std::move(event));
     }
 
+    void set_stream_duration(
+        const std::string& stream_id,
+        const std::uint64_t duration_milliseconds
+    ) override {
+        stream_bridge_->set_stream_duration(stream_id, duration_milliseconds);
+    }
+
     void reclaim_disk_cache(
         const std::uint64_t request_id,
         const std::uint64_t target_bytes

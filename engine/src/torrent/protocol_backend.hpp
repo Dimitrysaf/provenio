@@ -243,6 +243,11 @@ public:
         std::uint64_t /*upload_limit_bytes_per_second*/
     ) {
     }
+    virtual void set_stream_duration(
+        const std::string& /*stream_id*/,
+        std::uint64_t /*duration_milliseconds*/
+    ) {
+    }
     [[nodiscard]] virtual std::vector<TorrentDetails> torrent_details() {
         return {};
     }

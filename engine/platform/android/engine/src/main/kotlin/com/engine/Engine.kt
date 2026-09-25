@@ -218,6 +218,16 @@ public class Engine private constructor(
         checkStatus(status)
     }
 
+    /** Tells the engine how long [streamId]'s video plays, so it keeps minutes around the playhead. */
+    public fun setStreamDuration(streamId: String, durationMilliseconds: Long) {
+        require(durationMilliseconds >= 0) { "duration must not be negative" }
+        val status = synchronized(nativeLock) {
+            ensureOpen()
+            NativeBridge.nativeSetStreamDuration(nativeHandle, streamId, durationMilliseconds)
+        }
+        checkStatus(status)
+    }
+
     /**
      * The latest snapshot the engine holds for [torrentId], or null when the torrent is not
      * loaded or has not reported yet.

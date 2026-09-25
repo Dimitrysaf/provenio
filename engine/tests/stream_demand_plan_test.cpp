@@ -175,3 +175,57 @@ TEST("physical budgeting preserves logical critical coverage") {
     EXPECT_EQ(priority_for(plan, 1), std::optional(PriorityClass::critical));
     EXPECT_EQ(priority_for(plan, 2), std::optional(PriorityClass::playback));
 }
+
+TEST("a stream window splits lookahead into playback and readahead") {
+    const auto plan = build_stream_demand_plan(
+        {demand(1, 10)},
+        scheduler::StreamWindow{20 * mebibyte, 5 * mebibyte, 0},
+        critical_front_bytes
+    );
+
+    EXPECT_EQ(priority_for(plan, 10), std::optional(PriorityClass::blocking));
+    EXPECT_EQ(priority_for(plan, 11), std::optional(PriorityClass::playback));
+    EXPECT_EQ(priority_for(plan, 15), std::optional(PriorityClass::playback));
+    EXPECT_EQ(priority_for(plan, 16), std::optional(PriorityClass::readahead));
+    EXPECT_EQ(priority_for(plan, 29), std::optional(PriorityClass::readahead));
+    EXPECT_TRUE(!priority_for(plan, 30).has_value());
+    EXPECT_TRUE(!priority_for(plan, 9).has_value());
+}
+
+TEST("a stream window backfills pieces behind the focused demand") {
+    const auto plan = build_stream_demand_plan(
+        {demand(1, 10)},
+        scheduler::StreamWindow{4 * mebibyte, 4 * mebibyte, 3 * mebibyte},
+        critical_front_bytes
+    );
+
+    EXPECT_EQ(priority_for(plan, 9), std::optional(PriorityClass::backfill));
+    EXPECT_EQ(priority_for(plan, 7), std::optional(PriorityClass::backfill));
+    EXPECT_TRUE(!priority_for(plan, 6).has_value());
+    EXPECT_EQ(priority_for(plan, 10), std::optional(PriorityClass::blocking));
+    EXPECT_EQ(plan.pieces.back().priority, PriorityClass::backfill);
+}
+
+TEST("backfill stops at the first piece of the file") {
+    const auto plan = build_stream_demand_plan(
+        {demand(1, 2)},
+        scheduler::StreamWindow{4 * mebibyte, 4 * mebibyte, 10 * mebibyte},
+        critical_front_bytes
+    );
+
+    EXPECT_EQ(priority_for(plan, 0), std::optional(PriorityClass::backfill));
+    EXPECT_EQ(priority_for(plan, 1), std::optional(PriorityClass::backfill));
+    EXPECT_EQ(priority_for(plan, 2), std::optional(PriorityClass::blocking));
+}
+
+TEST("backfill never downgrades another demand's blocking piece") {
+    const auto plan = build_stream_demand_plan(
+        {demand(1, 8), demand(2, 10)},
+        scheduler::StreamWindow{4 * mebibyte, 4 * mebibyte, 4 * mebibyte},
+        critical_front_bytes
+    );
+
+    EXPECT_EQ(priority_for(plan, 8), std::optional(PriorityClass::blocking));
+    EXPECT_EQ(priority_for(plan, 9), std::optional(PriorityClass::backfill));
+    EXPECT_EQ(priority_for(plan, 6), std::optional(PriorityClass::backfill));
+}

@@ -168,6 +168,13 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
         }
     }
 
+    LaunchedEffect(p2pResolvedSourceUrl, playbackSnapshot.durationMs) {
+        val durationMs = playbackSnapshot.durationMs
+        if (p2pResolvedSourceUrl != null && durationMs > 0L) {
+            P2pStreamingEngine.setStreamDuration(durationMs)
+        }
+    }
+
     LaunchedEffect(p2pStreamingState, activeTorrentInfoHash) {
         val state = p2pStreamingState
         if (activeTorrentInfoHash != null && state is P2pStreamingState.Error) {
