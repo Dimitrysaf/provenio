@@ -60,7 +60,6 @@ import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklAuthStorage
 import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklSyncStorage
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbSettingsStorage
 import io.github.dimitrysaf.provenio.core.updater.AndroidAppUpdaterPlatform
-import io.github.dimitrysaf.provenio.shell.components.PlatformToast
 import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleStorage
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedStorage
 import io.github.dimitrysaf.provenio.core.streams.StreamLinkCacheStorage
@@ -87,7 +86,6 @@ open class MainActivity : AppCompatActivity() {
         )
         ThemeSettingsStorage.initialize(applicationContext)
         AppIconPlatform.initialize(applicationContext)
-        PlatformToast.initialize(applicationContext)
         SentrySettingsStorage.initialize(applicationContext)
         SentryInitializer.start(application)
         super.onCreate(savedInstanceState)

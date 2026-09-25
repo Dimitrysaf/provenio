@@ -1,27 +1,53 @@
 package io.github.dimitrysaf.provenio.shell.components
 
-/**
- * Shows a brief, self-dismissing message over whatever is on screen.
- *
- * These messages are told, not asked: nothing in them is actionable and nothing waits on them, so
- * they are the platform's own transient notice rather than a surface the app draws and has to find
- * room for. Safe to call from any thread; each platform hands the work to its main thread.
- */
-internal expect fun platformShowToast(message: String)
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 
-/** Clears the message on screen, if any, before it would have gone by itself. */
-internal expect fun platformDismissToast()
-
-/**
- * Brief messages that go away on their own.
- *
- * These are the platform's own toast rather than a snackbar the app draws: nothing in them is
- * actionable and nothing waits on them, so they need no host placed on a screen, no room reserved
- * in a layout, and they outlive whatever screen raised them.
- */
+/** Brief messages that go away on their own, shown as a Material 3 snackbar by the app's root. */
 object ToastController {
+    // Conflated so a burst of messages shows only the latest, and each reaches exactly one host.
+    private val messages = Channel<String>(Channel.CONFLATED)
+    private val dismissals = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
-    fun show(message: String) = platformShowToast(message)
+    fun show(message: String) {
+        messages.trySend(message)
+    }
 
-    fun dismiss() = platformDismissToast()
+    fun dismiss() {
+        dismissals.tryEmit(Unit)
+    }
+
+    internal val incoming = messages.receiveAsFlow()
+    internal val dismissRequests = dismissals
+}
+
+/** Shows ToastController's messages; the app places one at its root, above every screen. */
+@Composable
+fun AppSnackbarHost(modifier: Modifier = Modifier) {
+    val hostState = remember { SnackbarHostState() }
+    LaunchedEffect(hostState) {
+        // A newer message replaces the one on screen instead of queueing behind it.
+        ToastController.incoming.collectLatest { message ->
+            hostState.showSnackbar(message = message, duration = SnackbarDuration.Short)
+        }
+    }
+    LaunchedEffect(hostState) {
+        ToastController.dismissRequests.collect { hostState.currentSnackbarData?.dismiss() }
+    }
+    SnackbarHost(
+        hostState = hostState,
+        modifier = modifier.windowInsetsPadding(WindowInsets.safeDrawing),
+    )
 }

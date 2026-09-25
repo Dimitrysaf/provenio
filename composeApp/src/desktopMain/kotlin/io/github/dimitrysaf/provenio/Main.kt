@@ -1,15 +1,8 @@
 package io.github.dimitrysaf.provenio
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -66,10 +59,8 @@ import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPrefere
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedStorage
 import io.github.dimitrysaf.provenio.desktop.Context
-import io.github.dimitrysaf.provenio.desktop.DesktopToasts
 import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
 import io.github.dimitrysaf.provenio.shell.App
-import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.app_icon_original
@@ -110,23 +101,9 @@ fun main(args: Array<String>) {
                 }
             },
         ) {
-            Box(Modifier.fillMaxSize()) {
-                App()
-                ToastHost(Modifier.align(Alignment.BottomCenter))
-            }
+            App()
         }
     }
-}
-
-@androidx.compose.runtime.Composable
-private fun ToastHost(modifier: Modifier) {
-    val message by DesktopToasts.message.collectAsState()
-    val shown = message ?: return
-    LaunchedEffect(shown) {
-        delay(3_000)
-        DesktopToasts.dismiss()
-    }
-    Snackbar(modifier = modifier.padding(24.dp)) { Text(shown) }
 }
 
 /** The desktop counterpart of MainActivity's storage set-up. */

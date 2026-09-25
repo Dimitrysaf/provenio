@@ -1,6 +1,11 @@
 package io.github.dimitrysaf.provenio.shell
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import io.github.dimitrysaf.provenio.shell.components.AppSnackbarHost
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,26 +52,29 @@ fun App(
     appGateController: AppGateController? = null,
 ) {
     AppEnvironment {
-        AppGate(
-            initialTab = initialTab,
-            initialRoute = initialRoute,
-            useNativeNavigation = useNativeNavigation,
-            useNativeTabBar = useNativeTabBar,
-            useTabletFloatingTabBar = useTabletFloatingTabBar,
-            ownsAppRuntime = ownsAppRuntime,
-            bypassAppGate = bypassAppGate,
-            renderMainContent = true,
-            onNavigate = onNavigate,
-            onGoBack = onGoBack,
-            onReplace = onReplace,
-            onActivate = onActivate,
-            onAppReady = onAppReady,
-            onMainContentMountChanged = null,
-            onMainContentVisibleChanged = null,
-            onTabTitles = onTabTitles,
-            nativeProfileSwitcherController = nativeProfileSwitcherController,
-            appGateController = appGateController,
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            AppGate(
+                initialTab = initialTab,
+                initialRoute = initialRoute,
+                useNativeNavigation = useNativeNavigation,
+                useNativeTabBar = useNativeTabBar,
+                useTabletFloatingTabBar = useTabletFloatingTabBar,
+                ownsAppRuntime = ownsAppRuntime,
+                bypassAppGate = bypassAppGate,
+                renderMainContent = true,
+                onNavigate = onNavigate,
+                onGoBack = onGoBack,
+                onReplace = onReplace,
+                onActivate = onActivate,
+                onAppReady = onAppReady,
+                onMainContentMountChanged = null,
+                onMainContentVisibleChanged = null,
+                onTabTitles = onTabTitles,
+                nativeProfileSwitcherController = nativeProfileSwitcherController,
+                appGateController = appGateController,
+            )
+            AppSnackbarHost(modifier = Modifier.align(Alignment.BottomCenter))
+        }
     }
 }
 
