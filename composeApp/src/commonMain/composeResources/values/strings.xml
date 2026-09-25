@@ -2335,7 +2335,8 @@
         <item quantity="other">%d titles</item>
     </plurals>
     <string name="torrent_details_title">Torrent details</string>
-    <string name="torrent_details_waiting">Waiting for the torrent to start…</string>
+    <string name="torrent_details_starting">Starting download…</string>
+    <string name="torrent_details_waiting">Waiting for the torrent to start downloading, it may take a while.</string>
     <string name="torrent_details_not_active">This torrent isn't active right now. Its details show while it plays or downloads.</string>
     <string name="torrent_details_section_speed">Speed</string>
     <string name="torrent_details_section_pieces">Pieces</string>

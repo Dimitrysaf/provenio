@@ -27,6 +27,7 @@ import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Hub
+import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.Sync
@@ -76,6 +77,7 @@ import io.github.dimitrysaf.provenio.core.p2p.P2pTrackerDetails
 import io.github.dimitrysaf.provenio.core.p2p.P2pTrackerStatus
 import io.github.dimitrysaf.provenio.core.p2p.formatP2pSpeed
 import io.github.dimitrysaf.provenio.shell.components.BottomSheetBodyMargin
+import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
 import io.github.dimitrysaf.provenio.shell.components.ModalSheet
 import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
@@ -136,10 +138,16 @@ fun TorrentDetailsSheet(
                 streamingState is P2pStreamingState.Connecting ||
                     streamingState is P2pStreamingState.Streaming
                 )
+            if (starting) {
+                EmptyState(
+                    icon = Icons.Rounded.RocketLaunch,
+                    title = stringResource(Res.string.torrent_details_starting),
+                    message = stringResource(Res.string.torrent_details_waiting),
+                )
+                return@ModalSheet
+            }
             Text(
-                text = stringResource(
-                    if (starting) Res.string.torrent_details_waiting else Res.string.torrent_details_not_active,
-                ),
+                text = stringResource(Res.string.torrent_details_not_active),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
