@@ -1,6 +1,9 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +24,8 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ShapeDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncRepository
+import io.github.dimitrysaf.provenio.shell.components.LocalWindowBreakpoint
 import io.github.dimitrysaf.provenio.shell.screens.settings.AppBrandWordmark
 import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncCodeDialog
 import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncFeedbackEffect
@@ -62,36 +68,39 @@ internal fun ProfileWelcome(
     val scan = rememberLocalSyncScanner { code -> code?.let(LocalSyncRepository::join) }
     LocalSyncFeedbackEffect(syncState.activity)
 
-    Column(
-        modifier = modifier
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        AppBrandWordmark(modifier = Modifier.height(42.dp))
-        Spacer(modifier = Modifier.height(32.dp))
-        Text(
-            text = stringResource(Res.string.welcome_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = stringResource(Res.string.welcome_subtitle),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.widthIn(max = 420.dp),
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-
-        val buttonModifier = Modifier
-            .widthIn(max = 360.dp)
-            .fillMaxWidth()
+    val intro: @Composable (Alignment.Horizontal, TextAlign) -> Unit = { alignment, textAlign ->
+        Column(horizontalAlignment = alignment) {
+            AppBrandWordmark(modifier = Modifier.height(42.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+            Text(
+                text = stringResource(Res.string.welcome_title),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = textAlign,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = stringResource(Res.string.welcome_subtitle),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = textAlign,
+                modifier = Modifier.widthIn(max = 420.dp),
+            )
+            if (LocalSyncRepository.isSupported) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = stringResource(Res.string.welcome_pairing_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = textAlign,
+                    modifier = Modifier.widthIn(max = 420.dp),
+                )
+            }
+        }
+    }
+    val actions: @Composable (Modifier) -> Unit = { actionsModifier ->
         Column(
-            modifier = buttonModifier,
+            modifier = actionsModifier,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Button(onClick = onCreateProfile, modifier = Modifier.fillMaxWidth()) {
@@ -130,15 +139,40 @@ internal fun ProfileWelcome(
                 }
             }
         }
+    }
 
-        if (LocalSyncRepository.isSupported) {
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                text = stringResource(Res.string.welcome_pairing_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.widthIn(max = 360.dp),
+    if (LocalWindowBreakpoint.current.isTwoPane) {
+        // Large windows read left to right: the welcome on one side, the choices on a card beside it.
+        Row(
+            modifier = modifier.padding(horizontal = 48.dp, vertical = 32.dp),
+            horizontalArrangement = Arrangement.spacedBy(64.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(modifier = Modifier.weight(1f, fill = false).widthIn(max = 480.dp)) {
+                intro(Alignment.Start, TextAlign.Start)
+            }
+            Surface(
+                shape = ShapeDefaults.ExtraLarge,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                modifier = Modifier.width(400.dp),
+            ) {
+                actions(Modifier.fillMaxWidth().padding(24.dp))
+            }
+        }
+    } else {
+        Column(
+            modifier = modifier
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            intro(Alignment.CenterHorizontally, TextAlign.Center)
+            Spacer(modifier = Modifier.height(32.dp))
+            actions(
+                Modifier
+                    .widthIn(max = 360.dp)
+                    .fillMaxWidth(),
             )
         }
     }

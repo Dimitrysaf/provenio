@@ -36,7 +36,16 @@ fun ModalSheet(
     fullHeight: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    if (usesNativeBottomSheet) {
+    if (!usesNativeBottomSheet && LocalWindowBreakpoint.current.isTwoPane) {
+        // Large windows get a side sheet: a bottom sheet stretched across a wide screen reads as a stray panel.
+        ModalSideSheet(
+            onDismissRequest = onDismissRequest,
+            modifier = modifier,
+            containerColor = containerColor,
+            contentColor = contentColor,
+            content = content,
+        )
+    } else if (usesNativeBottomSheet) {
         NativeModalSheet(
             onDismissRequest = onDismissRequest,
             modifier = modifier,

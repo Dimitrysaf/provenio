@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.github.dimitrysaf.provenio.shell.components.AdaptiveWindowRoot
 import io.github.dimitrysaf.provenio.shell.components.AppSnackbarHost
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -111,6 +112,6 @@ internal fun AppEnvironment(content: @Composable () -> Unit) {
         amoled = amoledEnabled,
         useDynamicColor = useDynamicColor,
     ) {
-        content()
+        AdaptiveWindowRoot(content = content)
     }
 }
