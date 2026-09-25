@@ -790,12 +790,15 @@ internal fun PlayerSeekBar(
         onValueChangeFinished = { onScrubFinished(displayedPositionMs.coerceIn(0L, seekDurationMs)) },
         enabled = durationMs > 0L,
         valueRange = 0f..seekDurationMs.toFloat(),
+        // The slider stretches its thumb slot to the bar's height, so the dot keeps its own size in the middle.
         thumb = {
-            Box(
-                modifier = Modifier
-                    .size(SeekThumbSize)
-                    .background(activeColor, CircleShape),
-            )
+            Box(contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .requiredSize(SeekThumbSize)
+                        .background(activeColor, CircleShape),
+                )
+            }
         },
         track = { sliderState ->
             WavyProgressTrack(
@@ -842,30 +845,37 @@ private fun WavyProgressTrack(
         val bufferedX = size.width * maxOf(bufferedFraction, playedFraction)
         val amplitudePx = amplitude.toPx()
         val wavelengthPx = WaveLength.toPx()
+        // M3 leaves a gap on each side of the thumb; round caps reach half a stroke past each end.
+        val gapPx = SeekThumbSize.toPx() / 2f + TrackThumbGap.toPx() + strokeWidth / 2f
+        val playedEndX = playedX - gapPx
+        val restStartX = minOf(playedX + gapPx, size.width)
+        val bufferedStartX = maxOf(bufferedX, restStartX)
 
-        drawLine(
-            color = Color.White.copy(alpha = 0.24f),
-            start = Offset(bufferedX, centerY),
-            end = Offset(size.width, centerY),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        if (bufferedX > playedX) {
+        if (bufferedStartX < size.width) {
             drawLine(
-                color = Color.White.copy(alpha = 0.55f),
-                start = Offset(playedX, centerY),
-                end = Offset(bufferedX, centerY),
+                color = Color.White.copy(alpha = 0.24f),
+                start = Offset(bufferedStartX, centerY),
+                end = Offset(size.width, centerY),
                 strokeWidth = strokeWidth,
                 cap = StrokeCap.Round,
             )
         }
-        if (playedX > 0f) {
+        if (bufferedStartX > restStartX) {
+            drawLine(
+                color = Color.White.copy(alpha = 0.55f),
+                start = Offset(restStartX, centerY),
+                end = Offset(bufferedStartX, centerY),
+                strokeWidth = strokeWidth,
+                cap = StrokeCap.Round,
+            )
+        }
+        if (playedEndX > 0f) {
             val waveY = { x: Float -> centerY + amplitudePx * sin(2f * PI.toFloat() * x / wavelengthPx - phase) }
             val path = Path().apply {
                 moveTo(0f, waveY(0f))
                 var x = 0f
-                while (x < playedX) {
-                    x = minOf(x + 1f, playedX)
+                while (x < playedEndX) {
+                    x = minOf(x + 1f, playedEndX)
                     lineTo(x, waveY(x))
                 }
             }
@@ -919,6 +929,7 @@ private val PlayerGroupInnerCorner = 4.dp
 private val SeekThumbSize = 12.dp
 private val TrackCanvasHeight = 12.dp
 private val TrackStrokeWidth = 4.dp
+private val TrackThumbGap = 4.dp
 private val WaveAmplitude = 1.5.dp
 private val WaveLength = 40.dp
 private const val WavePeriodMs = 2400
