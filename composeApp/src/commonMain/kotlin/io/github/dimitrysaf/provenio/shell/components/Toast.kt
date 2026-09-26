@@ -1,5 +1,11 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -46,8 +52,17 @@ fun AppSnackbarHost(modifier: Modifier = Modifier) {
     LaunchedEffect(hostState) {
         ToastController.dismissRequests.collect { hostState.currentSnackbarData?.dismiss() }
     }
+    // Above the navigation bar while one is showing, otherwise just clear of the system bars.
+    val safeBottom = WindowInsets.safeDrawing.asPaddingValues().calculateBottomPadding()
     SnackbarHost(
         hostState = hostState,
-        modifier = modifier.windowInsetsPadding(WindowInsets.safeDrawing),
+        modifier = modifier
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+            .padding(bottom = maxOf(SnackbarAnchor.bottomInset.value, safeBottom)),
     )
+}
+
+// How much of the bottom edge app chrome such as the navigation bar covers, so snackbars sit above it.
+internal object SnackbarAnchor {
+    val bottomInset = mutableStateOf(0.dp)
 }

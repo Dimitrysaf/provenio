@@ -1,5 +1,14 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.shell.components.SnackbarAnchor
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -131,6 +140,16 @@ internal fun MainTabsDestination(
             ),
         )
 
+        val localDensity = LocalDensity.current
+        var navigationBarHeight by remember { mutableStateOf(0.dp) }
+        val showsBottomBar = !useNativeBottomTabs && !useRail
+        LaunchedEffect(showsBottomBar, rootRouteActive, navigationBarHeight) {
+            SnackbarAnchor.bottomInset.value = if (showsBottomBar && rootRouteActive) navigationBarHeight else 0.dp
+        }
+        DisposableEffect(Unit) {
+            onDispose { SnackbarAnchor.bottomInset.value = 0.dp }
+        }
+
         when {
             useNativeBottomTabs -> content()
 
@@ -172,7 +191,11 @@ internal fun MainTabsDestination(
                     Box(modifier = Modifier.weight(1f)) { content() }
 
                     // The flexible navigation bar; the baseline bar is no longer recommended.
-                    ShortNavigationBar {
+                    ShortNavigationBar(
+                        modifier = Modifier.onSizeChanged { size ->
+                            navigationBarHeight = with(localDensity) { size.height.toDp() }
+                        },
+                    ) {
                         destinations.forEach { destination ->
                             ShortNavigationBarItem(
                                 selected = selectedTab == destination.tab,
