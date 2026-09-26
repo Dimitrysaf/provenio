@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.runtime.LaunchedEffect
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import io.github.dimitrysaf.provenio.core.calendar.UpcomingEpisodesRepository
@@ -268,6 +270,19 @@ fun LibraryScreen(
                 if (sourceMode == LibraryViewMode.Saved) {
                     LibraryLayoutToggle(displaySettings.layoutMode)
                 }
+                if (sourceMode != LibraryViewMode.Cloud) {
+                    IconToggleButton(
+                        checked = sourceMode == LibraryViewMode.Calendar,
+                        onCheckedChange = { checked ->
+                            sourceModeName = if (checked) LibraryViewMode.Calendar.name else LibraryViewMode.Saved.name
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.CalendarMonth,
+                            contentDescription = stringResource(Res.string.library_source_calendar),
+                        )
+                    }
+                }
             },
         ) {
 
@@ -304,13 +319,6 @@ fun LibraryScreen(
                     onConnectCloudClick = onConnectCloudClick,
                 )
             } else {
-                item(key = "library-view-switch") {
-                    LibrarySourceSwitch(
-                        selectedMode = sourceMode,
-                        onModeSelected = { mode -> sourceModeName = mode.name },
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
-                }
                 if (sourceMode == LibraryViewMode.Calendar) {
                     libraryCalendarContent(
                         state = calendarUiState,
@@ -594,29 +602,6 @@ private fun LazyListScope.cloudLibrarySkeletonItems() {
     }
     items(3) {
         CloudLibrarySkeletonRow()
-    }
-}
-
-@Composable
-private fun LibrarySourceSwitch(
-    selectedMode: LibraryViewMode,
-    onModeSelected: (LibraryViewMode) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        LibraryChip(
-            label = stringResource(Res.string.library_source_saved),
-            selected = selectedMode == LibraryViewMode.Saved,
-            onClick = { onModeSelected(LibraryViewMode.Saved) },
-        )
-        LibraryChip(
-            label = stringResource(Res.string.library_source_calendar),
-            selected = selectedMode == LibraryViewMode.Calendar,
-            onClick = { onModeSelected(LibraryViewMode.Calendar) },
-        )
     }
 }
 
