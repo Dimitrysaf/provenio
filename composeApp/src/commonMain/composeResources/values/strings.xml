@@ -1670,6 +1670,11 @@
     <string name="streams_resume_from_percent">Resume from %1$d%</string>
     <string name="streams_resume_from_time">Resume from %1$s</string>
     <string name="streams_size">SIZE %1$s</string>
+    <string name="streams_search_placeholder">Search streams</string>
+    <string name="streams_filter_no_matches">No streams match.</string>
+    <string name="streams_filter_unknown_quality">Unknown</string>
+    <string name="streams_filter_quality">Quality</string>
+    <string name="streams_filter_all_qualities">All qualities</string>
     <string name="streams_torrent_not_supported">This stream type is not supported</string>
     <string name="debrid_missing_api_key">Connect an account in Settings.</string>
     <string name="debrid_not_cached">Not cached on Torbox.</string>

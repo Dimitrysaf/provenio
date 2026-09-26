@@ -228,11 +228,9 @@ internal fun CoroutineScope.launchPlayerNextEpisodeAutoPlay(
             }
             if (selectedStream != null) {
                 innerJob.cancel()
-            } else if (PlayerStreamsRepository.episodeStreamsState.value.groups.flatMap { it.streams }.isNotEmpty()) {
-                innerJob.cancel()
-                finishWithoutSelection()
             } else {
-                val completed = withTimeoutOrNull(timeoutMs) { autoSelectSettled.await() }
+                // Nothing matched yet, so later add-ons still get their turn; each result is tried as it lands.
+                val completed = withTimeoutOrNull(NEXT_EPISODE_HARD_TIMEOUT_MS) { autoSelectSettled.await() }
                 innerJob.cancel()
                 if (completed == null && !autoSelectTriggered) {
                     val allStreams = PlayerStreamsRepository.episodeStreamsState.value.groups.flatMap { it.streams }

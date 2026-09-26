@@ -22,6 +22,7 @@ import io.github.dimitrysaf.provenio.core.streams.StreamBadgeSettingsRepository
 import io.github.dimitrysaf.provenio.core.streams.StreamItem
 import io.github.dimitrysaf.provenio.core.streams.StreamLoadCompletion
 import io.github.dimitrysaf.provenio.core.streams.StreamParser
+import io.github.dimitrysaf.provenio.core.streams.StreamsRepository
 import io.github.dimitrysaf.provenio.core.streams.StreamsUiState
 import io.github.dimitrysaf.provenio.core.streams.runCatchingUnlessCancelled
 import io.github.dimitrysaf.provenio.core.streams.sortedForGroupedDisplay
@@ -199,6 +200,17 @@ object PlayerStreamsRepository {
 
         setRequestKey(requestKey)
         jobHolder()?.cancel()
+        val cachedGroups = if (forceRefresh) null else StreamsRepository.cachedGroups(requestKey)
+        if (cachedGroups != null) {
+            log.d { "Using cached streams for type=$type id=$videoId" }
+            stateFlow.value = StreamsUiState(
+                groups = cachedGroups,
+                activeAddonIds = cachedGroups.map { it.addonId }.toSet(),
+                isAnyLoading = false,
+                emptyStateReason = cachedGroups.toEmptyStateReason(anyLoading = false),
+            )
+            return
+        }
         stateFlow.value = StreamsUiState()
 
         val streamBadgeRules = StreamBadgeSettingsRepository.snapshot()
@@ -500,6 +512,7 @@ object PlayerStreamsRepository {
             for (availabilityJob in debridAvailabilityJobs) {
                 availabilityJob.join()
             }
+            StreamsRepository.cacheGroups(requestKey, stateFlow.value.groups)
             launch {
                 DirectDebridStreamPreparer.prepare(
                     streams = stateFlow.value.groups

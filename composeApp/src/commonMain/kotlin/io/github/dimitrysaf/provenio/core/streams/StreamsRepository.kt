@@ -131,16 +131,15 @@ object StreamsRepository {
             autoPlayMode == StreamAutoPlayMode.MANUAL
         val isDirectAutoPlayFlow = isAutoPlayEnabled || bingeGroupDirectFlow
 
-        val cachedStreams = streamCache.value[cacheKey]
-            ?.takeIf { GMTDate().timestamp - it.cachedAtMs < StreamCacheTtlMs }
-        if (!forceRefresh && !isDirectAutoPlayFlow && cachedStreams != null) {
+        val cachedGroups = cachedGroups(cacheKey)
+        if (!forceRefresh && !isDirectAutoPlayFlow && cachedGroups != null) {
             log.d { "Using cached streams for type=$type id=$videoId" }
             _uiState.value = StreamsUiState(
                 requestToken = requestToken,
-                groups = cachedStreams.groups,
-                activeAddonIds = cachedStreams.groups.map { it.addonId }.toSet(),
+                groups = cachedGroups,
+                activeAddonIds = cachedGroups.map { it.addonId }.toSet(),
                 isAnyLoading = false,
-                emptyStateReason = cachedStreams.groups.toEmptyStateReason(anyLoading = false),
+                emptyStateReason = cachedGroups.toEmptyStateReason(anyLoading = false),
                 autoPlayDecided = true,
             )
             return
@@ -585,12 +584,7 @@ object StreamsRepository {
                 availabilityJob.join()
             }
 
-            val finishedGroups = _uiState.value.groups
-            if (finishedGroups.any { it.streams.isNotEmpty() }) {
-                streamCache.update { cache ->
-                    cache + (cacheKey to CachedStreams(finishedGroups, GMTDate().timestamp))
-                }
-            }
+            cacheGroups(cacheKey, _uiState.value.groups)
 
             launch {
                 DirectDebridStreamPreparer.prepare(
@@ -690,6 +684,17 @@ object StreamsRepository {
         activeJob = null
         activeRequestKey = null
         _uiState.value = StreamsUiState()
+    }
+
+    // Finished stream lists by request, shared with the player's panels so reopening them is instant.
+    internal fun cachedGroups(cacheKey: String): List<AddonStreamGroup>? =
+        streamCache.value[cacheKey]
+            ?.takeIf { GMTDate().timestamp - it.cachedAtMs < StreamCacheTtlMs }
+            ?.groups
+
+    internal fun cacheGroups(cacheKey: String, groups: List<AddonStreamGroup>) {
+        if (groups.none { it.streams.isNotEmpty() }) return
+        streamCache.update { cache -> cache + (cacheKey to CachedStreams(groups, GMTDate().timestamp)) }
     }
 
     fun setOverlayVisible(visible: Boolean, message: String? = null) {

@@ -151,15 +151,7 @@ object StreamAutoPlaySelector {
                 } else null
 
                 candidateStreams.filter { stream ->
-                    val url = stream.playableDirectUrl.orEmpty()
-
-                    val searchableText = buildString {
-                        append(stream.addonName).append(' ')
-                        append(stream.name.orEmpty()).append(' ')
-                        append(stream.streamLabel).append(' ')
-                        append(stream.description.orEmpty()).append(' ')
-                        append(url)
-                    }
+                    val searchableText = stream.searchableText()
 
                     if (!userRegex.containsMatchIn(searchableText)) return@filter false
 
@@ -237,3 +229,19 @@ data class StreamAutoPlayEvaluation(
     val readyStreams: List<StreamItem> = emptyList(),
     val hasPendingDebridCandidate: Boolean = false,
 )
+
+private val Whitespace = Regex("\\s+")
+
+// Every text an add-on sent for a stream on one line, so patterns like .* run across what were separate lines.
+internal fun StreamItem.searchableText(): String =
+    listOfNotNull(
+        addonName,
+        name,
+        title,
+        description,
+        behaviorHints.filename,
+        sourceName,
+        playableDirectUrl,
+    ).plus(badges.map { it.name })
+        .joinToString(" ")
+        .replace(Whitespace, " ")
