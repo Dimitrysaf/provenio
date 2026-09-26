@@ -244,6 +244,7 @@ internal fun appEntryProvider(
             navController = navController,
             onPlay = playback.onPlay,
             onPlayManually = playback.onPlayManually,
+            onPlayTrailer = playback::playTrailer,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )

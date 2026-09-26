@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.watch.progress
 
+import io.github.dimitrysaf.provenio.core.playback.TrailerContentType
 import co.touchlab.kermit.Logger
 import io.github.dimitrysaf.provenio.core.tracking.ensureTrackingProvidersRegistered
 import io.github.dimitrysaf.provenio.core.addons.AddonManifest
@@ -783,6 +784,7 @@ object WatchProgressRepository {
         persist: Boolean,
         syncRemote: Boolean,
     ) {
+        if (session.contentType == TrailerContentType) return
         val targetProfileId = session.profileId
         val positionMs = snapshot.positionMs.coerceAtLeast(0L)
         val durationMs = snapshot.durationMs.coerceAtLeast(0L)

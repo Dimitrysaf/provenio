@@ -88,9 +88,6 @@ android {
         create("full") {
             dimension = "distribution"
         }
-        create("playstore") {
-            dimension = "distribution"
-        }
     }
 
     sourceSets.getByName("full") {

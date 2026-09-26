@@ -7,6 +7,9 @@ enum class PlayerResizeMode {
     Zoom,
 }
 
+// The content type of a trailer launch, which keeps it out of watch progress and tracking.
+const val TrailerContentType = "trailer"
+
 data class PlayerLaunch(
     val profileId: Int,
     val title: String,

@@ -120,16 +120,17 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                 commitHorizontalSeekState = gestureCallbacks.commitHorizontalSeek,
             ),
     ) {
-        val playerSurfaceSourceUrl = if (isP2pPlaybackActive) p2pResolvedSourceUrl else activeSourceUrl
+        val surfaceSource = rememberPlayerSurfaceSource(if (isP2pPlaybackActive) p2pResolvedSourceUrl else activeSourceUrl)
         val initialPositionRequestKey = currentInitialPositionRequestKey()
-        if (playerSurfaceSourceUrl != null) {
+        if (surfaceSource != null) {
             PlatformPlayerSurface(
-                sourceUrl = playerSurfaceSourceUrl,
-                sourceAudioUrl = activeSourceAudioUrl,
+                sourceUrl = surfaceSource.url,
+                sourceAudioUrl = surfaceSource.audioUrl,
                 sourceHeaders = activeSourceHeaders,
                 sourceResponseHeaders = activeSourceResponseHeaders,
                 externalSubtitles = externalSubtitles,
                 streamType = activeStreamType,
+                useYoutubeChunkedPlayback = surfaceSource.isYouTube,
                 modifier = Modifier.fillMaxSize(),
                 playWhenReady = shouldPlay,
                 initialPositionMs = activeInitialPositionMs.takeIf { it > 0L },

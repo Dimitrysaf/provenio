@@ -114,6 +114,7 @@ fun MetaDetailsScreen(
     onBack: () -> Unit,
     onPlay: ((type: String, videoId: String, parentMetaId: String, parentMetaType: String, title: String, logo: String?, poster: String?, background: String?, seasonNumber: Int?, episodeNumber: Int?, episodeTitle: String?, episodeThumbnail: String?, pauseDescription: String?, resumePositionMs: Long?) -> Unit)? = null,
     onPlayManually: ((type: String, videoId: String, parentMetaId: String, parentMetaType: String, title: String, logo: String?, poster: String?, background: String?, seasonNumber: Int?, episodeNumber: Int?, episodeTitle: String?, episodeThumbnail: String?, pauseDescription: String?, resumePositionMs: Long?) -> Unit)? = null,
+    onPlayTrailer: ((MetaTrailer, title: String, logo: String?, poster: String?, background: String?) -> Unit)? = null,
     onOpenMeta: ((MetaPreview) -> Unit)? = null,
     onCastClick: ((MetaPerson, String?) -> Unit)? = null,
     onCompanyClick: ((MetaCompany, String) -> Unit)? = null,
@@ -247,6 +248,7 @@ fun MetaDetailsScreen(
                     onBack = onBack,
                     onPlay = onPlay,
                     onPlayManually = onPlayManually,
+                    onPlayTrailer = onPlayTrailer,
                     onOpenMeta = onOpenMeta,
                     onCastClick = onCastClick,
                     onCompanyClick = onCompanyClick,
@@ -451,6 +453,7 @@ private fun MetaDetailsContent(
     onBack: () -> Unit,
     onPlay: DetailPlayHandler?,
     onPlayManually: DetailPlayHandler?,
+    onPlayTrailer: ((MetaTrailer, title: String, logo: String?, poster: String?, background: String?) -> Unit)?,
     onOpenMeta: ((MetaPreview) -> Unit)?,
     onCastClick: ((MetaPerson, String?) -> Unit)?,
     onCompanyClick: ((MetaCompany, String) -> Unit)?,
@@ -542,8 +545,9 @@ private fun MetaDetailsContent(
         isLeavingDetails = true
         onBack()
     }
-    // Trailers will open in the main player; until then a tap has nowhere to go.
-    val playTrailer: (MetaTrailer) -> Unit = {}
+    val playTrailer: (MetaTrailer) -> Unit = { trailer ->
+        onPlayTrailer?.invoke(trailer, meta.name, meta.logo, meta.poster, meta.background)
+    }
     val primaryVideoId = seriesStreamVideoId ?: seriesAction?.videoId ?: meta.id
     val isPrimaryPlayEnabled = playbackAvailability.canPlay(
         type = meta.type,

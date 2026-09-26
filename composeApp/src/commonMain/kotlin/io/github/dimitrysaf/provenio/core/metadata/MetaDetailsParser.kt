@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.metadata
 
+import io.github.dimitrysaf.provenio.core.trailer.youTubeWatchUrl
 import io.github.dimitrysaf.provenio.core.streams.StreamBehaviorHints
 import io.github.dimitrysaf.provenio.core.streams.StreamItem
 import io.github.dimitrysaf.provenio.core.streams.StreamProxyHeaders
@@ -309,7 +310,8 @@ internal object MetaDetailsParser {
         val arr = this["streams"] as? JsonArray ?: return emptyList()
         return arr.mapNotNull { element ->
             val obj = element as? JsonObject ?: return@mapNotNull null
-            val url = obj.string("url")
+            // A video's embedded YouTube stream comes as a bare video id.
+            val url = obj.string("url") ?: obj.string("ytId")?.takeIf { it.isNotBlank() }?.let(::youTubeWatchUrl)
             val infoHash = obj.string("infoHash")
             val externalUrl = obj.string("externalUrl")
             if (url == null && infoHash == null && externalUrl == null) return@mapNotNull null

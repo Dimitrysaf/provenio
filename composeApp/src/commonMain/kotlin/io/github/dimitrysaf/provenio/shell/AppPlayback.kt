@@ -24,6 +24,9 @@ import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerIntentResult
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlatform
 import io.github.dimitrysaf.provenio.core.playback.PlayerLaunch
 import io.github.dimitrysaf.provenio.core.playback.PlayerLaunchStore
+import io.github.dimitrysaf.provenio.core.playback.TrailerContentType
+import io.github.dimitrysaf.provenio.core.metadata.MetaTrailer
+import io.github.dimitrysaf.provenio.core.metadata.youtubePlaybackUrl
 import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsUiState
@@ -400,6 +403,27 @@ internal class AppPlayback(
         } else {
             openPlayer(playerLaunch)
         }
+    }
+
+    // Trailers always open in the main player; it resolves the YouTube page itself.
+    fun playTrailer(trailer: MetaTrailer, title: String, logo: String?, poster: String?, background: String?) {
+        val trailerId = "trailer:${trailer.key}"
+        openPlayer(
+            PlayerLaunch(
+                profileId = profileId,
+                title = title,
+                sourceUrl = trailer.youtubePlaybackUrl(),
+                logo = logo,
+                poster = poster,
+                background = background,
+                streamTitle = (trailer.displayName ?: trailer.name).ifBlank { title },
+                providerName = "YouTube",
+                contentType = TrailerContentType,
+                videoId = trailerId,
+                parentMetaId = trailerId,
+                parentMetaType = TrailerContentType,
+            ),
+        )
     }
 
     private fun openPlayer(playerLaunch: PlayerLaunch) {

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.streams
 
+import io.github.dimitrysaf.provenio.core.trailer.youTubeWatchUrl
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -24,7 +25,8 @@ object StreamParser {
         val streamsArray = root["streams"] as? JsonArray ?: return emptyList()
         return streamsArray.mapNotNull { element ->
             val obj = element as? JsonObject ?: return@mapNotNull null
-            val url = obj.string("url")
+            // Embedded YouTube videos, such as a special season's extras, arrive as a bare video id.
+            val url = obj.string("url") ?: obj.string("ytId")?.takeIf { it.isNotBlank() }?.let(::youTubeWatchUrl)
             val infoHash = obj.string("infoHash")
             val externalUrl = obj.string("externalUrl")
             val clientResolve = obj.objectValue("clientResolve")?.toClientResolve()

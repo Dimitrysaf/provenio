@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.core.metadata.MetaTrailer
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -75,6 +76,7 @@ internal fun DetailsDestination(
     navController: Navigator,
     onPlay: ContentPlayAction,
     onPlayManually: ContentPlayAction,
+    onPlayTrailer: (MetaTrailer, title: String, logo: String?, poster: String?, background: String?) -> Unit,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
@@ -89,6 +91,7 @@ internal fun DetailsDestination(
         onBack = onBack,
         onPlay = onPlay,
         onPlayManually = onPlayManually,
+        onPlayTrailer = onPlayTrailer,
         onOpenMeta = onOpenMeta,
         onCastClick = { person, avatarTransitionKey ->
             val tmdbId = person.tmdbId

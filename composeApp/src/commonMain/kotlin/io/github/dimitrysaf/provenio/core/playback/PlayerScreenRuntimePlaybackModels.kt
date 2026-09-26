@@ -23,12 +23,13 @@ internal fun shouldUpdateTrackingScrobbleAfterSeek(
     progressPercent: Float,
 ): Boolean = hasActiveScrobble && progressPercent >= 1f && progressPercent < 80f
 
+// A trailer gets no identity, so tracking services never hear about it.
 internal fun TrackingScrobbleItemInputs.buildMedia(): TrackingMediaReference =
     buildTrackingMediaReference(
         contentType = contentType,
-        parentMetaId = parentMetaId,
-        videoId = videoId,
-        title = title,
+        parentMetaId = if (contentType == TrailerContentType) "" else parentMetaId,
+        videoId = videoId.takeUnless { contentType == TrailerContentType },
+        title = title.takeUnless { contentType == TrailerContentType },
         seasonNumber = seasonNumber,
         episodeNumber = episodeNumber,
         episodeTitle = episodeTitle,

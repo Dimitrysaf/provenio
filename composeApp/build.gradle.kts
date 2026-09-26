@@ -265,42 +265,11 @@ val iosDistributionSourceDir = if (iosDistribution == "full") {
 val iosFrameworkBundleId = "io.github.dimitrysaf.provenio"
 val engineAppleFramework = rootProject.file("../nuvio-engine/platform/apple/NuvioEngine.xcframework")
 val fullCommonSourceDir = project.file("src/fullCommonMain/kotlin")
+// The in-app YouTube resolver, shared by Android, desktop and iOS Full.
+val youtubeSourceDir = project.file("src/youtubeMain/kotlin")
 val generatedRuntimeConfigDir = layout.buildDirectory.dir("generated/runtime-config/kotlin")
 val requestedGradleTasks = gradle.startParameter.taskNames.map { taskName ->
     taskName.substringAfterLast(':').lowercase()
-}
-val requestedAndroidDistributions = requestedGradleTasks.mapNotNull { taskName ->
-    when {
-        "playstore" in taskName -> "playstore"
-        "full" in taskName -> "full"
-        else -> null
-    }
-}.toSet()
-require(requestedAndroidDistributions.size <= 1) {
-    "Build Android full and playstore distributions separately, or set -Pprovenio.android.distribution=full|playstore."
-}
-val configuredAndroidDistribution = providers.gradleProperty("provenio.android.distribution").orNull
-    ?: localProps.getProperty("PROVENIO_ANDROID_DISTRIBUTION")
-val isAmbiguousAndroidPackageTask = requestedGradleTasks.any { taskName ->
-    taskName == "build" ||
-        taskName.startsWith("assemble") ||
-        taskName.startsWith("bundle")
-} && requestedAndroidDistributions.isEmpty()
-require(configuredAndroidDistribution != null || !isAmbiguousAndroidPackageTask) {
-    "Set -Pprovenio.android.distribution=full|playstore for aggregate Android assemble/bundle tasks."
-}
-val androidDistribution = (
-    configuredAndroidDistribution
-        ?: requestedAndroidDistributions.singleOrNull()
-        ?: "playstore"
-    ).trim().lowercase()
-require(androidDistribution == "playstore" || androidDistribution == "full") {
-    "provenio.android.distribution must be 'playstore' or 'full'."
-}
-val androidDistributionSourceDir = if (androidDistribution == "full") {
-    "src/androidFull/kotlin"
-} else {
-    "src/androidPlaystore/kotlin"
 }
 val runtimeLocalProperties = Properties().apply {
     val file = rootProject.file("local.properties")
@@ -413,6 +382,7 @@ kotlin {
 
             if (iosDistribution == "full") {
                 defaultSourceSet.kotlin.srcDir(fullCommonSourceDir)
+                defaultSourceSet.kotlin.srcDir(youtubeSourceDir)
             }
             defaultSourceSet.kotlin.srcDir(project.file(iosDistributionSourceDir))
             defaultSourceSet.dependencies {
@@ -444,12 +414,11 @@ kotlin {
             kotlin.srcDir(generatedRuntimeConfigDir)
         }
         androidMain {
-            kotlin.srcDir(project.file(androidDistributionSourceDir))
+            kotlin.srcDir(project.file("src/androidFull/kotlin"))
             // Code both JVM targets share, such as the local sync sockets and crypto.
             kotlin.srcDir(project.file("src/jvmSharedMain/kotlin"))
-            if (androidDistribution == "full") {
-                kotlin.srcDir(fullCommonSourceDir)
-            }
+            kotlin.srcDir(fullCommonSourceDir)
+            kotlin.srcDir(youtubeSourceDir)
 
             dependencies {
                 implementation(libs.compose.uiToolingPreview)
@@ -496,10 +465,8 @@ kotlin {
                 } else {
                     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("lib-*.aar"))))
                 }
-                if (androidDistribution == "full") {
-                    implementation(files("libs/quickjs-kt-android-1.0.5-nuvio.aar"))
-                    implementation(libs.ksoup)
-                }
+                implementation(files("libs/quickjs-kt-android-1.0.5-nuvio.aar"))
+                implementation(libs.ksoup)
             }
         }
         val androidHostTest by getting {
@@ -510,9 +477,7 @@ kotlin {
                 implementation("androidx.work:work-testing:${libs.versions.androidx.work.get()}")
                 implementation("com.squareup.okhttp3:mockwebserver:5.3.2")
             }
-            if (androidDistribution == "full") {
-                kotlin.srcDir(project.file("src/androidFullHostTest/kotlin"))
-            }
+            kotlin.srcDir(project.file("src/androidFullHostTest/kotlin"))
         }
         commonMain.dependencies {
             implementation("io.coil-kt.coil3:coil-compose:${libs.versions.coil.get()}") {
@@ -559,6 +524,7 @@ kotlin {
             kotlin.srcDir(rootProject.file("engine/platform/android/engine/src/main/kotlin"))
             kotlin.exclude("**/com/engine/internal/AndroidTrustStore.kt")
             kotlin.srcDir(project.file("src/jvmSharedMain/kotlin"))
+            kotlin.srcDir(youtubeSourceDir)
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation("com.google.zxing:core:3.5.3")
