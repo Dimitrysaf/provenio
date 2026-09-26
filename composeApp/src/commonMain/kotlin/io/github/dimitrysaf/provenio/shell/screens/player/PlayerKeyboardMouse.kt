@@ -1,5 +1,10 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CoroutineScope
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.focusable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,17 +24,31 @@ import androidx.compose.ui.input.pointer.pointerInput
 
 private const val KeyboardSeekMs = 10_000L
 private const val KeyboardVolumeStep = 0.05f
+private const val SpaceHoldDelayMs = 400L
+
+// Space tapped toggles playback; held, it speeds playback up like holding the screen does.
+private class SpaceHoldState {
+    var pressed = false
+    var boosted = false
+    var job: Job? = null
+}
 
 // Keyboard shortcuts act silently, and moving the mouse brings up the controls and hides the cursor again with them.
 @Composable
 internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
     val focusRequester = remember { FocusRequester() }
+    val scope = rememberCoroutineScope()
+    val spaceHold = remember { SpaceHoldState() }
     LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
     return Modifier
         .focusRequester(focusRequester)
         .focusable()
         .onPreviewKeyEvent { event ->
-            event.type == KeyEventType.KeyDown && handlePlayerKey(event.key)
+            if (event.key == Key.Spacebar) {
+                handleSpaceKey(event.type, scope, spaceHold)
+            } else {
+                event.type == KeyEventType.KeyDown && handlePlayerKey(event.key)
+            }
         }
         .pointerInput(Unit) {
             awaitPointerEventScope {
@@ -49,13 +68,43 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
 private fun PlayerScreenRuntime.handlePlayerKey(key: Key): Boolean {
     if (playerControlsLocked) return false
     when (key) {
-        Key.Spacebar, Key.K -> togglePlaybackQuietly()
+        Key.K -> togglePlaybackQuietly()
         Key.DirectionLeft -> seekByQuietly(-KeyboardSeekMs)
         Key.DirectionRight -> seekByQuietly(KeyboardSeekMs)
         Key.DirectionUp -> changeVolumeQuietly(KeyboardVolumeStep)
         Key.DirectionDown -> changeVolumeQuietly(-KeyboardVolumeStep)
         Key.F -> return togglePlayerFullscreen()
         else -> return false
+    }
+    return true
+}
+
+private fun PlayerScreenRuntime.handleSpaceKey(type: KeyEventType, scope: CoroutineScope, hold: SpaceHoldState): Boolean {
+    if (playerControlsLocked) return false
+    when (type) {
+        KeyEventType.KeyDown -> {
+            // Key repeats while held arrive as more presses; only the first one counts.
+            if (hold.pressed) return true
+            hold.pressed = true
+            hold.job = scope.launch {
+                delay(SpaceHoldDelayMs)
+                if (playbackSnapshot.isPlaying) {
+                    activateHoldToSpeed()
+                    hold.boosted = true
+                }
+            }
+        }
+        KeyEventType.KeyUp -> {
+            hold.pressed = false
+            hold.job?.cancel()
+            hold.job = null
+            if (hold.boosted) {
+                hold.boosted = false
+                deactivateHoldToSpeed()
+            } else {
+                togglePlaybackQuietly()
+            }
+        }
     }
     return true
 }
