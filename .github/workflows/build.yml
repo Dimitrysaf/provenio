@@ -166,16 +166,141 @@ jobs:
           gradle-args: ${{ inputs.channel != 'stable' && '-Pprovenio.abiSplits=true --no-configuration-cache' || '' }}
           artifact-name: provenio-${{ inputs.channel || 'beta' }}
 
+  flatpak:
+    name: Packaging Flatpak
+    needs: engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.engine.outputs.sha }}
+
+      - name: Set up environment
+        uses: ./.github/actions/setup-environment
+        with:
+          local-properties-base64: ${{ secrets.PROVENIO_LOCAL_PROPERTIES_BASE64 }}
+          simkl-client-id: ${{ secrets.SIMKL_CLIENT_ID }}
+
       - name: Packaging Flatpak
-        continue-on-error: true
         uses: ./.github/actions/flatpak
         with:
           artifact-name: provenio-${{ inputs.channel || 'beta' }}-linux
 
+  # The engine's JNI library for Windows, cross-built on Linux with the engine's own llvm-mingw toolchain.
+  windows-engine:
+    name: Windows engine
+    needs: engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      LLVM_MINGW_VERSION: '20260407'
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.engine.outputs.sha }}
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: actions/cache@v4
+        with:
+          path: engine/platform/windows/.deps
+          key: windows-deps-${{ env.LLVM_MINGW_VERSION }}-${{ hashFiles('engine/scripts/prepare-native-dependencies.sh', 'engine/scripts/build-windows-openssl.sh') }}
+
+      - name: Set up environment
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ninja-build imagemagick > /dev/null
+          curl --fail --location --retry 3 --silent --show-error --output /tmp/llvm-mingw.tar.xz \
+            "https://github.com/mstorsjo/llvm-mingw/releases/download/${LLVM_MINGW_VERSION}/llvm-mingw-${LLVM_MINGW_VERSION}-ucrt-ubuntu-22.04-x86_64.tar.xz"
+          sudo mkdir -p /opt/llvm-mingw
+          sudo tar -xJf /tmp/llvm-mingw.tar.xz --strip-components=1 -C /opt/llvm-mingw
+
+      - name: Building engine
+        run: scripts/build-windows-engine.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows-engine
+          path: |
+            build/windows/engine.dll
+            build/windows/provenio.ico
+          if-no-files-found: error
+          retention-days: 1
+
+  windows:
+    name: Packaging Windows
+    needs: [engine, windows-engine]
+    runs-on: windows-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.engine.outputs.sha }}
+
+      - name: Set up environment
+        uses: ./.github/actions/setup-environment
+        with:
+          local-properties-base64: ${{ secrets.PROVENIO_LOCAL_PROPERTIES_BASE64 }}
+          simkl-client-id: ${{ secrets.SIMKL_CLIENT_ID }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: windows-engine
+          path: build/windows
+
+      # libmpv for the player, from the mpv Windows builds that ship it as a single DLL.
+      - name: Download libmpv
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          asset="$(gh release view --repo shinchiro/mpv-winbuild-cmake --json assets \
+            --jq '[.assets[].name | select(test("^mpv-dev-x86_64-[0-9]{8}-git-[0-9a-f]+\\.7z$"))][0]')"
+          [[ -n "${asset}" ]] || { echo "No libmpv build found" >&2; exit 1; }
+          echo "Using ${asset}"
+          gh release download --repo shinchiro/mpv-winbuild-cmake --pattern "${asset}" --dir build/windows
+          7z x -y -obuild/windows/mpv "build/windows/${asset}" > /dev/null
+
+          resources=build/linux/app-resources/windows-x64
+          mkdir -p "${resources}"
+          cp build/windows/engine.dll "${resources}/engine.dll"
+          cp build/windows/mpv/libmpv-2.dll "${resources}/mpv.dll"
+
+      - name: Packaging Windows
+        run: |
+          ./gradlew :composeApp:packageReleaseMsi -Pprovenio.engine.fromSource=false --no-configuration-cache --stacktrace
+          mkdir -p dist
+          msi="$(ls composeApp/build/compose/binaries/main-release/msi/*.msi | head -n 1)"
+          cp "${msi}" dist/Provenio.msi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: provenio-${{ inputs.channel || 'beta' }}-windows
+          path: dist/Provenio.msi
+          if-no-files-found: error
+          retention-days: 14
+
+  # Publishes whatever was packaged, as long as at least one of the app, the Flatpak and the MSI made it.
   publish:
     name: Publish
-    needs: [engine, app]
-    if: github.ref == 'refs/heads/main' || inputs.channel == 'stable'
+    needs: [engine, app, flatpak, windows]
+    if: >-
+      always() &&
+      needs.engine.result == 'success' &&
+      (needs.app.result == 'success' || needs.flatpak.result == 'success' || needs.windows.result == 'success') &&
+      (github.ref == 'refs/heads/main' || inputs.channel == 'stable')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -201,11 +326,20 @@ jobs:
 
       - name: Publish release
         run: |
+          shopt -s nullglob
           files=(dist/*.apk)
+          if (( ${#files[@]} == 0 )); then
+            echo "::warning::APKs are missing"
+          fi
           if [[ -f dist/Provenio.flatpak ]]; then
             files+=(dist/Provenio.flatpak)
           else
-            echo "::warning::Flatpak is missing, publishing the APKs only"
+            echo "::warning::Flatpak is missing"
+          fi
+          if [[ -f dist/Provenio.msi ]]; then
+            files+=(dist/Provenio.msi)
+          else
+            echo "::warning::Windows installer is missing"
           fi
 
           if [[ "${CHANNEL}" == "stable" ]]; then

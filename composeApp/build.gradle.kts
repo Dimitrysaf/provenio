@@ -14,6 +14,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
@@ -583,8 +584,8 @@ compose.resources {
     packageOfResClass = "provenio.composeapp.generated.resources"
 }
 
-// The desktop app for Linux. `createReleaseDistributable` produces the self-contained app image
-// (with its own Java runtime) that scripts/build-linux.sh packages into the Flatpak.
+// The desktop app. On Linux, scripts/build-linux.sh packages the app JAR into the Flatpak; on
+// Windows, `packageReleaseMsi` builds the installer.
 compose.desktop {
     application {
         mainClass = "io.github.dimitrysaf.provenio.MainKt"
@@ -595,8 +596,18 @@ compose.desktop {
             vendor = "Provenio"
             description = "Stream movies and shows"
             includeAllModules = true
-            // Native libraries built by scripts/build-linux.sh (the engine's JNI library).
+            // Native libraries by platform: linux-x64 from scripts/build-linux.sh, windows-x64 from the Windows CI job.
             appResourcesRootDir.set(rootProject.layout.projectDirectory.dir("build/linux/app-resources"))
+            targetFormats(TargetFormat.Msi)
+            windows {
+                // Fixed for good: Windows matches installs by this ID to upgrade them in place.
+                upgradeUuid = "6f3c2b1e-8d4a-4e7b-9c15-2a7d0e5b9f43"
+                perUserInstall = true
+                menu = true
+                shortcut = true
+                menuGroup = "Provenio"
+                rootProject.file("build/windows/provenio.ico").takeIf { it.isFile }?.let { iconFile.set(it) }
+            }
         }
         buildTypes.release.proguard {
             isEnabled.set(false)

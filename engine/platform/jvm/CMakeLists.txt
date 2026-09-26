@@ -21,12 +21,17 @@ add_subdirectory("${ENGINE_ROOT}" "${CMAKE_CURRENT_BINARY_DIR}/engine-core")
 
 target_sources(engine PRIVATE "${ENGINE_JNI_BRIDGE}/jni_bridge.cpp")
 target_include_directories(engine PRIVATE "${ENGINE_JNI_BRIDGE}" ${ENGINE_JNI_INCLUDE_DIRS})
-# The C++ runtime goes inside the library so it runs on any distribution's libstdc++.
-target_link_options(
-    engine
-    PRIVATE
-        "-static-libstdc++"
-        "-static-libgcc"
-        "-Wl,--version-script=${ENGINE_JNI_BRIDGE}/exports.map"
-        "-Wl,--exclude-libs,ALL"
-)
+if(WIN32)
+    # MinGW: the C++ runtime links in statically, and JNIEXPORT already marks the JNI functions for export.
+    target_link_options(engine PRIVATE "-static")
+else()
+    # The C++ runtime goes inside the library so it runs on any distribution's libstdc++.
+    target_link_options(
+        engine
+        PRIVATE
+            "-static-libstdc++"
+            "-static-libgcc"
+            "-Wl,--version-script=${ENGINE_JNI_BRIDGE}/exports.map"
+            "-Wl,--exclude-libs,ALL"
+    )
+endif()

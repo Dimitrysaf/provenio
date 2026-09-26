@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.desktop.mpv
 import com.sun.jna.Callback
 import com.sun.jna.Library
 import com.sun.jna.Native
+import com.sun.jna.NativeLibrary
 import com.sun.jna.Pointer
 import com.sun.jna.Structure
 import com.sun.jna.ptr.PointerByReference
@@ -53,6 +54,8 @@ internal interface LibMpv : Library {
         val instance: LibMpv? by lazy {
             // mpv refuses to start unless numbers are formatted the C way.
             runCatching { CLibrary.INSTANCE.setlocale(LC_NUMERIC, "C") }
+            // The Windows app bundles libmpv as mpv.dll in its resources; elsewhere it comes from the system.
+            System.getProperty("compose.application.resources.dir")?.let { NativeLibrary.addSearchPath("mpv", it) }
             listOf("mpv", "libmpv.so.2", "libmpv.so.1").firstNotNullOfOrNull { name ->
                 runCatching {
                     Native.load(name, LibMpv::class.java, mapOf(Library.OPTION_STRING_ENCODING to "UTF-8"))
