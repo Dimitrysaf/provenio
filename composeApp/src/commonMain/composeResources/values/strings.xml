@@ -2389,6 +2389,8 @@
     <string name="local_sync_error_rejected">The other device did not accept this code</string>
     <string name="local_sync_error_code">That is not a pairing code</string>
     <string name="local_sync_error_failed">The sync did not finish</string>
+    <string name="local_sync_error_version">Update Provenio on this device and on %1$s to the same version to sync.</string>
+    <string name="local_sync_other_device">the other device</string>
     <string name="settings_category_profile_tracking">Profile &amp; tracking</string>
     <string name="torrent_details_starting">Starting download…</string>
     <string name="torrent_details_waiting">Waiting for the torrent to start downloading, it may take a while.</string>

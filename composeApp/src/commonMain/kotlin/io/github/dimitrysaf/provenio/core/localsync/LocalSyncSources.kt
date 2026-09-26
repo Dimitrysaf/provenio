@@ -227,10 +227,13 @@ private class SettingsTextSource(
 private object ProfilesSyncSource : LocalSyncSource {
     override val prefix: String = "profiles/"
 
-    override fun snapshot(): Map<String, JsonElement> =
-        ProfileRepository.profilesForSync().associate { profile ->
+    // Profiles not read yet must not look like deleted ones, so this source counts as unreadable until they load.
+    override fun snapshot(): Map<String, JsonElement> {
+        check(ProfileRepository.state.value.isLoaded) { "Profiles are not loaded yet" }
+        return ProfileRepository.profilesForSync().associate { profile ->
             prefix + profile.profileIndex to syncJson.encodeToJsonElement(profile)
         }
+    }
 
     override fun apply(changes: Map<String, JsonElement?>) {
         val upserts = mutableListOf<ProfilePushPayload>()
@@ -289,13 +292,15 @@ private object AddonsSyncSource : LocalSyncSource {
 private object CollectionsSyncSource : LocalSyncSource {
     override val prefix: String = "collection/"
 
+    // Loaded first, or an unread store would look like every collection had been deleted.
     override fun snapshot(): Map<String, JsonElement> =
-        CollectionRepository.collections.value.associate { collection ->
+        CollectionRepository.also { it.initialize() }.collections.value.associate { collection ->
             prefix + collection.id to syncJson.encodeToJsonElement(collection)
         }
 
     override fun apply(changes: Map<String, JsonElement?>) {
         if (changes.isEmpty()) return
+        CollectionRepository.initialize()
         val collections = CollectionRepository.collections.value.toMutableList()
         changes.forEach { (key, value) ->
             val id = key.removePrefix(prefix)

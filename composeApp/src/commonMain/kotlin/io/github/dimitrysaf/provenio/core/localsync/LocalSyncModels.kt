@@ -27,6 +27,7 @@ data class LocalSyncPeer(
     val host: String,
     val port: Int,
     val lastSyncedAtEpochMs: Long? = null,
+    val appVersion: String? = null,
 )
 
 /** How a record both devices changed is settled. */

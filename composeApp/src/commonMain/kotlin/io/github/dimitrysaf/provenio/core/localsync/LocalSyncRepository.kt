@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.core.localsync
 
 import co.touchlab.kermit.Logger
 import io.github.dimitrysaf.provenio.core.addons.AddonRepository
+import io.github.dimitrysaf.provenio.core.build.AppVersionConfig
 import io.github.dimitrysaf.provenio.core.collection.CollectionRepository
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
 import io.github.dimitrysaf.provenio.core.library.LibraryRepository
@@ -43,6 +44,7 @@ enum class LocalSyncError {
     UNREACHABLE,
     REJECTED,
     INVALID_CODE,
+    VERSION_MISMATCH,
     FAILED,
 }
 
@@ -50,7 +52,7 @@ enum class LocalSyncError {
 sealed interface LocalSyncActivity {
     data object Idle : LocalSyncActivity
     data class Paired(val peerName: String) : LocalSyncActivity
-    data class Failed(val error: LocalSyncError) : LocalSyncActivity
+    data class Failed(val error: LocalSyncError, val peerName: String? = null) : LocalSyncActivity
 }
 
 data class LocalSyncUiState(
@@ -338,6 +340,8 @@ object LocalSyncRepository {
                 throw error
             } catch (error: LocalSyncRejectedException) {
                 log.i { "Refused a sync from a device without the right code" }
+            } catch (error: LocalSyncVersionMismatchException) {
+                report(LocalSyncActivity.Failed(LocalSyncError.VERSION_MISMATCH, error.peerName))
             } catch (error: Throwable) {
                 log.w(error) { "Sync from another device failed" }
             } finally {
@@ -382,6 +386,10 @@ object LocalSyncRepository {
             } catch (error: LocalSyncRejectedException) {
                 if (userInitiated) report(LocalSyncActivity.Failed(LocalSyncError.REJECTED))
                 null
+            } catch (error: LocalSyncVersionMismatchException) {
+                // Always said, since a background sync that can never succeed would otherwise fail in silence.
+                report(LocalSyncActivity.Failed(LocalSyncError.VERSION_MISMATCH, error.peerName))
+                null
             } catch (error: Throwable) {
                 log.w(error) { "Sync with ${address.first} failed" }
                 if (userInitiated) report(LocalSyncActivity.Failed(LocalSyncError.FAILED))
@@ -421,6 +429,7 @@ object LocalSyncRepository {
         port = serverPort.value,
         // A device with no profiles yet is being set up, so it takes the other device's data.
         fresh = ProfileRepository.state.value.profiles.isEmpty(),
+        appVersion = localSyncAppVersion(),
     )
 
     // Stamps local edits since the last sync, leaving out any source that could not be read.
@@ -453,15 +462,31 @@ object LocalSyncRepository {
             sources.firstOrNull { key.startsWith(it.prefix) }
         }
         val current = mutableMapOf<String, JsonElement>()
+        // Changes this device could not take in, because no source here knows them or applying failed.
+        val unapplied = mutableSetOf<String>()
         changesBySource.forEach { (source, entries) ->
-            source ?: return@forEach
+            val keys = entries.map { it.key }
+            if (source == null) {
+                unapplied += keys
+                return@forEach
+            }
             runCatching { source.apply(entries.associate { it.key to it.value }) }
-                .onFailure { error -> log.w(error) { "Could not apply synced ${source.prefix}" } }
+                .onFailure { error ->
+                    unapplied += keys
+                    log.w(error) { "Could not apply synced ${source.prefix}" }
+                }
             runCatching { current.putAll(source.snapshot()) }
         }
-        val adopted = adoptAppliedValues(merge.ledger, current, merge.changes.keys)
+        // They keep this device's own record, so the next sync offers them again instead of treating them as received.
+        val records = merge.ledger.records.toMutableMap()
+        unapplied.forEach { key ->
+            val ours = local.records[key]
+            if (ours != null) records[key] = ours else records.remove(key)
+        }
+        val kept = merge.ledger.copy(records = records)
+        val adopted = adoptAppliedValues(kept, current, merge.changes.keys - unapplied)
         saveLedger(adopted)
-        return merge.copy(ledger = adopted)
+        return merge.copy(ledger = adopted, changes = merge.changes - unapplied)
     }
 
     private fun rememberPeer(outcome: LocalSyncOutcome, fallbackHost: String?, fallbackPort: Int?) {
@@ -475,6 +500,7 @@ object LocalSyncRepository {
             host = hello.host ?: fallbackHost ?: previous?.host.orEmpty(),
             port = hello.port ?: fallbackPort ?: previous?.port ?: DEFAULT_PORT,
             lastSyncedAtEpochMs = EpisodeReleaseDatePlatform.nowEpochMs(),
+            appVersion = hello.appVersion.ifBlank { null },
         )
         savePeers(listOf(peer) + peers.filterNot { it.deviceId == hello.deviceId })
     }
@@ -523,4 +549,10 @@ object LocalSyncRepository {
             ?: return null
         return PairingCode(host = parts[2], port = port, secret = secret)
     }
+}
+
+// How this build names itself to the other device: the version, and the commit for beta builds that share one.
+private fun localSyncAppVersion(): String {
+    val commit = AppVersionConfig.BUILD_COMMIT.take(7)
+    return if (commit.isBlank()) AppVersionConfig.VERSION_NAME else "${AppVersionConfig.VERSION_NAME} ($commit)"
 }

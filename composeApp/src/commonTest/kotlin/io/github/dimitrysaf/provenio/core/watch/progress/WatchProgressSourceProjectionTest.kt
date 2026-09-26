@@ -6,14 +6,9 @@ import kotlin.test.assertEquals
 
 class WatchProgressSourceProjectionTest {
     @Test
-    fun `remote source excludes every Provenio progress entry`() {
-        val accountEntries = listOf(
-            entry(parentMetaId = "shared", updatedAt = 200L),
-            entry(parentMetaId = "provenio-only", updatedAt = 300L),
-        )
-        val providerEntries = listOf(
-            entry(parentMetaId = "shared", updatedAt = 100L),
-        )
+    fun `remote source prefers Provenio progress over the provider's`() {
+        val accountEntries = listOf(entry(parentMetaId = "shared", updatedAt = 100L))
+        val providerEntries = listOf(entry(parentMetaId = "shared", updatedAt = 200L))
 
         listOf(WatchProgressSource.TRAKT, WatchProgressSource.SIMKL).forEach { source ->
             val projected = projectWatchProgressSourceEntries(
@@ -22,8 +17,22 @@ class WatchProgressSourceProjectionTest {
                 providerEntries = providerEntries,
             )
 
-            assertEquals(providerEntries, projected)
+            assertEquals(accountEntries, projected)
         }
+    }
+
+    @Test
+    fun `remote source keeps provider entries Provenio does not have`() {
+        val local = entry(parentMetaId = "local")
+        val provider = entry(parentMetaId = "provider")
+
+        val projected = projectWatchProgressSourceEntries(
+            source = WatchProgressSource.SIMKL,
+            accountEntries = listOf(local),
+            providerEntries = listOf(provider),
+        )
+
+        assertEquals(listOf(provider, local), projected)
     }
 
     @Test

@@ -4,7 +4,8 @@ import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
 import io.github.dimitrysaf.provenio.core.streams.StreamItem
 
-internal const val PlaybackProgressPersistIntervalMs = 60_000L
+// Often enough that a paired device watching along sees the position move within about half a minute.
+internal const val PlaybackProgressPersistIntervalMs = 20_000L
 
 internal const val PlayerDoubleTapSeekStepMs = 10_000L
 

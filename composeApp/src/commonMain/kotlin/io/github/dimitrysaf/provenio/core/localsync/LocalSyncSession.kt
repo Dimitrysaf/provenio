@@ -6,7 +6,8 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-private const val PROTOCOL_VERSION = 1
+// Raised whenever synced data changes in a way an older build would misread; both devices must match.
+internal const val PROTOCOL_VERSION = 2
 private const val NONCE_SIZE = 16
 
 private val sessionJson = Json {
@@ -27,6 +28,7 @@ internal data class SyncHello(
     val hasSyncedBefore: Boolean = false,
     val fresh: Boolean = false,
     val hostWins: Boolean = true,
+    val appVersion: String = "",
 )
 
 @Serializable
@@ -39,6 +41,7 @@ internal data class LocalSyncIdentity(
     val host: String?,
     val port: Int?,
     val fresh: Boolean,
+    val appVersion: String,
 )
 
 /** What a finished session learned about the other device. */
@@ -49,6 +52,12 @@ internal data class LocalSyncOutcome(
 )
 
 internal class LocalSyncRejectedException : Exception("The other device did not accept this pairing")
+
+// The other device runs a build whose sync protocol differs; [peerAppVersion] is what it reported, if anything.
+internal class LocalSyncVersionMismatchException(
+    val peerName: String?,
+    val peerAppVersion: String?,
+) : Exception("The other device runs an incompatible version")
 
 internal fun encodeSyncBytes(bytes: ByteArray): String = Base64.UrlSafe.encode(bytes)
 
@@ -91,10 +100,14 @@ internal suspend fun runClientSession(
         port = identity.port,
         hasSyncedBefore = hasSyncedBefore,
         fresh = identity.fresh,
+        appVersion = identity.appVersion,
     )
     connection.writeJson(sessionJson.encodeToString(hello))
 
     val reply = sessionJson.decodeFromString<SyncHello>(connection.readJson())
+    if (reply.version != PROTOCOL_VERSION) {
+        throw LocalSyncVersionMismatchException(reply.name, reply.appVersion.ifBlank { null })
+    }
     val expectedProof = proof(
         secret,
         "server",
@@ -104,7 +117,7 @@ internal suspend fun runClientSession(
         reply.hasSyncedBefore.toString(),
         reply.hostWins.toString(),
     )
-    if (reply.version != PROTOCOL_VERSION || reply.proof != expectedProof) throw LocalSyncRejectedException()
+    if (reply.proof != expectedProof) throw LocalSyncRejectedException()
     if (expectedPeerId != null && reply.deviceId != expectedPeerId) throw LocalSyncRejectedException()
 
     val key = sessionKey(secret, nonce, reply.nonce)
@@ -128,7 +141,19 @@ internal suspend fun runServerSession(
     applyMerge: (peerId: String, remote: SyncLedger, policy: SyncConflictPolicy) -> LocalSyncMerge,
 ): LocalSyncOutcome {
     val hello = sessionJson.decodeFromString<SyncHello>(connection.readJson())
-    if (hello.version != PROTOCOL_VERSION) throw LocalSyncRejectedException()
+    if (hello.version != PROTOCOL_VERSION) {
+        // Tells the other device which version this one runs, so it can say which of the two needs updating.
+        val refusal = SyncHello(
+            version = PROTOCOL_VERSION,
+            deviceId = identity.deviceId,
+            name = identity.name,
+            nonce = "",
+            proof = "",
+            appVersion = identity.appVersion,
+        )
+        runCatching { connection.writeJson(sessionJson.encodeToString(refusal)) }
+        throw LocalSyncVersionMismatchException(hello.name, hello.appVersion.ifBlank { null })
+    }
     val (secret, knowsClient) = secretFor(hello.deviceId).firstOrNull { (candidate, _) ->
         hello.proof == proof(
             candidate,
@@ -163,6 +188,7 @@ internal suspend fun runServerSession(
         hasSyncedBefore = bothSyncedBefore,
         fresh = identity.fresh,
         hostWins = hostWins,
+        appVersion = identity.appVersion,
     )
     connection.writeJson(sessionJson.encodeToString(reply))
 

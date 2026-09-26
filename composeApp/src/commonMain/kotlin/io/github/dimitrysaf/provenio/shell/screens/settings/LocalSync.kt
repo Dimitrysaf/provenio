@@ -97,7 +97,7 @@ internal fun LocalSyncCard(modifier: Modifier = Modifier) {
             val syncing = peer.deviceId in state.syncingPeerIds
             navigationRow(
                 title = peer.name,
-                description = lastSyncedLabel(peer.lastSyncedAtEpochMs, now),
+                description = listOfNotNull(lastSyncedLabel(peer.lastSyncedAtEpochMs, now), peer.appVersion).joinToString(" · "),
                 icon = Icons.Rounded.Devices,
                 enabled = !syncing,
                 trailingContent = {
@@ -184,7 +184,11 @@ internal fun LocalSyncFeedbackEffect(activity: LocalSyncActivity) {
     LaunchedEffect(activity) {
         val message = when (activity) {
             is LocalSyncActivity.Paired -> getString(Res.string.local_sync_paired, activity.peerName)
-            is LocalSyncActivity.Failed -> getString(activity.error.messageRes())
+            is LocalSyncActivity.Failed -> if (activity.error == LocalSyncError.VERSION_MISMATCH) {
+                getString(Res.string.local_sync_error_version, activity.peerName ?: getString(Res.string.local_sync_other_device))
+            } else {
+                getString(activity.error.messageRes())
+            }
             LocalSyncActivity.Idle -> null
         } ?: return@LaunchedEffect
         ToastController.show(message)
@@ -408,6 +412,7 @@ private fun LocalSyncError.messageRes() = when (this) {
     LocalSyncError.UNREACHABLE -> Res.string.local_sync_error_unreachable
     LocalSyncError.REJECTED -> Res.string.local_sync_error_rejected
     LocalSyncError.INVALID_CODE -> Res.string.local_sync_error_code
+    LocalSyncError.VERSION_MISMATCH -> Res.string.local_sync_error_failed
     LocalSyncError.FAILED -> Res.string.local_sync_error_failed
 }
 
