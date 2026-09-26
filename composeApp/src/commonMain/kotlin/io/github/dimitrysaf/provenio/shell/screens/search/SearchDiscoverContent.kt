@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.search
 
 import androidx.compose.foundation.layout.Arrangement
+import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -256,9 +257,7 @@ private fun CatalogLoadingFooter(modifier: Modifier = Modifier) {
             .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
-        LoadingSpinner(
-            modifier = Modifier.size(22.dp),
-        )
+        SmallLoadingSpinner(size = 22.dp)
     }
 }
 

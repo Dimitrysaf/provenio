@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
 import androidx.compose.animation.AnimatedVisibility
+import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -166,9 +167,7 @@ internal fun PlayerModalLoading(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center,
     ) {
-        LoadingSpinner(
-            modifier = Modifier.size(24.dp),
-        )
+        SmallLoadingSpinner(size = 24.dp)
     }
 }
 
@@ -210,9 +209,9 @@ internal fun AddonFilterChip(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (isLoading) {
-                LoadingSpinner(
+                SmallLoadingSpinner(
                     color = contentColor,
-                    modifier = Modifier.size(12.dp),
+                    size = 12.dp,
                 )
             }
             Text(

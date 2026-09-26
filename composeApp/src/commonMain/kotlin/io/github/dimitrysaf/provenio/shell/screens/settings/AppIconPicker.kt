@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.foundation.Image
+import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -280,7 +281,7 @@ private fun AppIconChoice(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             if (pending) {
-                                LoadingSpinner(
+                                SmallLoadingSpinner(
                                     size = 20.dp,
                                     color = MaterialTheme.colorScheme.onPrimary,
                                 )

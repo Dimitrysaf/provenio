@@ -93,7 +93,7 @@ fun TrackingListPickerSheet(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        LoadingSpinner(modifier = Modifier.size(32.dp))
+                        SmallLoadingSpinner(size = 32.dp)
                         Text(
                             text = stringResource(Res.string.compose_tracking_list_picker_loading),
                             style = MaterialTheme.typography.bodyMedium,

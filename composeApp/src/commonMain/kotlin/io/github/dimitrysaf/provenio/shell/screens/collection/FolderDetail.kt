@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.collection
 
 import androidx.compose.foundation.background
+import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -377,9 +378,7 @@ private fun PaginationLoadingFooter() {
             .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
-        LoadingSpinner(
-            modifier = Modifier.size(28.dp),
-        )
+        SmallLoadingSpinner(size = 28.dp)
     }
 }
 
@@ -398,9 +397,7 @@ private fun LoadingIndicator() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        LoadingSpinner(
-            modifier = Modifier.size(32.dp),
-        )
+        SmallLoadingSpinner(size = 32.dp)
     }
 }
 

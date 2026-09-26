@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.streams
 
 import androidx.compose.animation.core.animateFloatAsState
+import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -344,7 +345,7 @@ internal fun StreamsPreparingBlock(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        LoadingSpinner(modifier = Modifier.size(32.dp))
+        SmallLoadingSpinner(size = 32.dp)
         Text(
             text = stringResource(Res.string.streams_finding_streams),
             style = MaterialTheme.typography.bodyMedium,

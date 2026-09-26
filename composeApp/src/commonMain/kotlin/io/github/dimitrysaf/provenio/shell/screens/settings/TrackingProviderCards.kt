@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.foundation.Image
+import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -367,7 +368,7 @@ private fun TrackingProviderCard(
                         icon = Icons.Rounded.Sync,
                         enabled = !isLoading && !isSyncing,
                         trailingContent = if (isSyncing) {
-                            { LoadingSpinner(size = 18.dp) }
+                            { SmallLoadingSpinner(size = 18.dp) }
                         } else {
                             null
                         },

@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
 import androidx.compose.animation.core.animateIntAsState
+import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -439,8 +440,8 @@ private fun ProfileEditActions(
     ) {
         Button(onClick = onSave, enabled = canSave) {
             if (isSaving) {
-                LoadingIndicator(
-                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                SmallLoadingSpinner(
+                    size = ButtonDefaults.IconSize,
                     color = MaterialTheme.colorScheme.onPrimary,
                 )
             } else {
@@ -512,8 +513,8 @@ private fun ProfileEditDockedActions(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 if (isSaving) {
-                    LoadingIndicator(
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
+                    SmallLoadingSpinner(
+                        size = ButtonDefaults.IconSize,
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {

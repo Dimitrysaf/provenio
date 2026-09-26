@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.animation.animateColorAsState
+import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -140,9 +141,7 @@ internal fun LazyListScope.homescreenSettingsContent(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                LoadingSpinner(
-                    modifier = Modifier.size(28.dp),
-                )
+                SmallLoadingSpinner(size = 28.dp)
             }
         } else if (catalogErrorMessage != null && items.isEmpty()) {
             HomeEmptyStateCard(

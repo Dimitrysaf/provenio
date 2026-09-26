@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
 import androidx.compose.animation.Crossfade
+import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -707,9 +708,7 @@ private fun LibraryChip(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             if (loading) {
-                LoadingSpinner(
-                    modifier = Modifier.size(12.dp),
-                )
+                SmallLoadingSpinner(size = 12.dp)
             }
             Text(
                 text = label,

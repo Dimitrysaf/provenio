@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
 import androidx.compose.animation.Crossfade
+import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -424,7 +425,7 @@ private fun PlayerSheetHeader(
             Crossfade(targetState = fetching, label = "player_sheet_fetch") { isFetching ->
                 Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                     if (isFetching) {
-                        LoadingSpinner(modifier = Modifier.size(24.dp))
+                        SmallLoadingSpinner(size = 24.dp)
                     } else {
                         IconButton(onClick = onFetch) {
                             Icon(

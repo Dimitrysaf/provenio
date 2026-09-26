@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.foundation.layout.Arrangement
+import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -437,7 +438,7 @@ private fun SettingsListScope.TrackingPreferenceActionRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (isLoading) {
-                    LoadingSpinner(size = 16.dp)
+                    SmallLoadingSpinner(size = 16.dp)
                 }
                 Text(
                     text = value,
