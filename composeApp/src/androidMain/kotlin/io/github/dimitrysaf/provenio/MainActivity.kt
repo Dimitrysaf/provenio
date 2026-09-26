@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio
 
+import android.os.SystemClock
+import io.github.dimitrysaf.provenio.core.startup.AppStartupState
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
@@ -9,8 +11,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import io.github.dimitrysaf.provenio.core.auth.AuthRepository
-import io.github.dimitrysaf.provenio.core.auth.AuthState
 import io.github.dimitrysaf.provenio.core.auth.AuthStorage
 import io.github.dimitrysaf.provenio.core.diagnostics.SentryInitializer
 import io.github.dimitrysaf.provenio.core.deeplink.handleAppUrl
@@ -45,7 +45,6 @@ import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
 import io.github.dimitrysaf.provenio.core.plugins.PluginStorage
 import io.github.dimitrysaf.provenio.core.profiles.AvatarStorage
 import io.github.dimitrysaf.provenio.core.profiles.ProfilePinCacheStorage
-import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.profiles.ProfileStorage
 import io.github.dimitrysaf.provenio.core.metadata.SeasonViewModeStorage
 import io.github.dimitrysaf.provenio.core.search.DiscoverSelectionStorage
@@ -71,14 +70,17 @@ import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPrefere
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.shell.App
 
+private const val MaxSplashMillis = 6_000L
+
 open class MainActivity : AppCompatActivity() {
     private var pipRemoteActionReceiver: PipRemoteActionReceiver? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // The splash stays until sign-in resolves, unless cached profiles let the gate open sooner.
+        // The splash stays until the first real screen has content, so no empty backdrop shows in between, and never past a cap.
+        val splashStartedAt = SystemClock.uptimeMillis()
         installSplashScreen().setKeepOnScreenCondition {
-            AuthRepository.state.value is AuthState.Loading &&
-                ProfileRepository.state.value.profiles.isEmpty()
+            !AppStartupState.firstScreenReady.value &&
+                SystemClock.uptimeMillis() - splashStartedAt < MaxSplashMillis
         }
         enableEdgeToEdge(
             navigationBarStyle = SystemBarStyle.dark(

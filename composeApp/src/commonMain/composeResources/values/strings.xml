@@ -1076,7 +1076,7 @@
     <string name="settings_playback_player_preference_description">Choose which player handles new playback.</string>
     <string name="settings_playback_hold_speed">Hold Speed</string>
     <string name="settings_playback_hold_to_speed">Hold To Speed</string>
-    <string name="settings_playback_hold_to_speed_description">Long-press anywhere on the player surface to temporarily boost playback speed.</string>
+    <string name="settings_playback_hold_to_speed_description">Long-press anywhere on the player surface, or hold Space, to temporarily boost playback speed.</string>
     <string name="settings_playback_touch_gestures">Touch Gestures</string>
     <string name="settings_playback_touch_gestures_description">Allow swipes and double-taps on the player surface to seek, adjust brightness, or adjust volume.</string>
     <string name="settings_playback_invalid_regex_pattern">Invalid regex pattern</string>
@@ -1154,7 +1154,7 @@
     <string name="settings_playback_section_subtitle_rendering">SUBTITLE RENDERING</string>
     <string name="settings_playback_selected_count">%1$d selected</string>
     <string name="settings_playback_show_loading_overlay">Loading Overlay</string>
-    <string name="settings_playback_show_loading_overlay_description">Show loading screen until first video frame appears.</string>
+    <string name="settings_playback_show_loading_overlay_description">Show the artwork and a logo that fills as the stream buffers, while it starts and whenever playback stalls.</string>
     <string name="settings_playback_pause_overlay">Pause Overlay</string>
     <string name="settings_playback_pause_overlay_description">Show details overlay after 5 seconds while paused.</string>
     <string name="settings_playback_parental_guide">Content Warnings</string>

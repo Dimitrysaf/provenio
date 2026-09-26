@@ -1,5 +1,9 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktConnectionMode
+import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktAuthRepository
+import io.github.dimitrysaf.provenio.core.tracking.TrackingSettingsRepository
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
@@ -98,6 +102,10 @@ internal fun settingsSearchEntries(
     checkForUpdatesAvailable: Boolean,
 ): List<SettingsSearchEntry> {
     val accountCategory = stringResource(SettingsCategory.Profile.labelRes)
+    val traktSettings by TrackingSettingsRepository.uiState.collectAsStateWithLifecycle()
+    val traktAuth by TraktAuthRepository.uiState.collectAsStateWithLifecycle()
+    // Trakt rows only turn up when the Tracking page shows Trakt too.
+    val showTrakt = traktSettings.traktEnabled || traktAuth.mode == TraktConnectionMode.CONNECTED
     val generalCategory = stringResource(SettingsCategory.General.labelRes)
     val aboutCategory = stringResource(SettingsCategory.About.labelRes)
     val advancedCategory = stringResource(SettingsCategory.Advanced.labelRes)
@@ -342,14 +350,6 @@ internal fun settingsSearchEntries(
     }
 
 
-    addRow(
-        page = SettingsPage.Appearance,
-        key = "theme",
-        title = stringResource(Res.string.settings_appearance_section_theme),
-        pageLabel = layoutPage,
-        section = stringResource(Res.string.settings_appearance_section_theme),
-        icon = Icons.Rounded.Palette,
-    )
     addRow(
         page = SettingsPage.Appearance,
         key = "amoled",
@@ -841,7 +841,7 @@ internal fun settingsSearchEntries(
         icon = Icons.Rounded.Notifications,
     )
 
-    addRow(
+    if (showTrakt) addRow(
         page = SettingsPage.TraktAuthentication,
         key = "trakt-authentication",
         title = stringResource(Res.string.trakt_library_source_trakt),
@@ -867,7 +867,7 @@ internal fun settingsSearchEntries(
         PlaybackSearchRow("trakt-continue-watching-window", stringResource(Res.string.trakt_continue_watching_window), stringResource(Res.string.trakt_continue_watching_subtitle)),
         PlaybackSearchRow("trakt-comments", stringResource(Res.string.settings_trakt_comments), stringResource(Res.string.settings_trakt_comments_description)),
         PlaybackSearchRow("trakt-more-like-this-source", stringResource(Res.string.trakt_more_like_this_source_title), stringResource(Res.string.trakt_more_like_this_source_subtitle)),
-    ).forEach { row ->
+    ).filter { showTrakt }.forEach { row ->
         addRow(
             page = SettingsPage.TraktAuthentication,
             key = row.key,

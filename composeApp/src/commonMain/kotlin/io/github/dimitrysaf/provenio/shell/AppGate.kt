@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.core.startup.AppStartupState
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.fadeIn
@@ -196,6 +197,13 @@ internal fun AppGate(
         }
     }
 
+    // Profile screens are ready as soon as the gate reaches them; the app waits for its first Home content.
+    LaunchedEffect(gate.screen) {
+        if (!gate.isOn(AppGateScreen.Loading) && !gate.isOn(AppGateScreen.Main)) {
+            AppStartupState.markFirstScreenReady()
+        }
+    }
+
     if (!renderMainContent) {
         ExternalMainContentEffects(
             gate = gate,
@@ -321,6 +329,7 @@ internal fun AppGate(
                             onRootContentReady = { ready ->
                                 if (ready) {
                                     gate.profileSelectionLoading = false
+                                    AppStartupState.markFirstScreenReady()
                                 }
                                 onAppReady?.invoke(ready && gate.isOn(AppGateScreen.Main))
                             },
