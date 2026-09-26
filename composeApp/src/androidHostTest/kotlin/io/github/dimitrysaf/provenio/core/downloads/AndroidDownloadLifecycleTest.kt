@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.core.downloads
 import android.app.job.JobInfo
 import org.robolectric.RuntimeEnvironment
 import java.io.File
+import java.net.URI
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -95,9 +96,8 @@ class AndroidDownloadLifecycleTest {
             val recreated = AndroidDownloadScheduler(context)
             val restored = recreated.restore(item)
             assertEquals(DownloadStatus.Completed, restored.status)
-            assertEquals("complete video", File(recreated.directory, item.fileName).readText())
+            assertEquals("complete video", File(URI(assertNotNull(restored.localFileUri))).readText())
             assertEquals(14L, restored.downloadedBytes)
-            assertNotNull(restored.localFileUri)
         }
     }
 

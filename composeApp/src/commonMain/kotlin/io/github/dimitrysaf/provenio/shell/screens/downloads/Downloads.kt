@@ -65,6 +65,7 @@ import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.downloads.DownloadItem
 import io.github.dimitrysaf.provenio.core.downloads.DownloadStatus
+import io.github.dimitrysaf.provenio.core.downloads.DownloadsLocationPlatform
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsPlatformDownloader
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsRepository
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsUiState
@@ -183,6 +184,10 @@ private fun LazyListScope.downloadsRootContent(
             }
         }
         .sortedBy { (item, _) -> item.title.lowercase() }
+
+    if (DownloadsLocationPlatform.isConfigurable) {
+        item { DownloadLocationRow() }
+    }
 
     if (activeItems.isNotEmpty()) {
         item { DownloadsSubheader(stringResource(Res.string.downloads_section_active), activeItems.size) }
@@ -559,6 +564,41 @@ private fun DownloadShowRow(
         },
     ) {
         Text(title)
+    }
+}
+
+// The folder new downloads are saved to, which opens the system folder picker to change.
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun DownloadLocationRow() {
+    var path by remember { mutableStateOf(DownloadsLocationPlatform.currentPath().orEmpty()) }
+    val shape = segmentShape(index = 0, count = 1)
+    val change = {
+        if (DownloadsLocationPlatform.choose()) path = DownloadsLocationPlatform.currentPath().orEmpty()
+    }
+    SegmentedListItem(
+        onClick = change,
+        shapes = ListItemDefaults.shapes(
+            shape = shape,
+            selectedShape = shape,
+            pressedShape = shape,
+            focusedShape = shape,
+            hoveredShape = shape,
+        ),
+        colors = ListItemDefaults.segmentedColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        ),
+        leadingContent = {
+            Icon(imageVector = Icons.Rounded.Folder, contentDescription = null)
+        },
+        supportingContent = { Text(path) },
+        trailingContent = {
+            TextButton(onClick = change) {
+                Text(stringResource(Res.string.downloads_location_change))
+            }
+        },
+    ) {
+        Text(stringResource(Res.string.downloads_location_title))
     }
 }
 

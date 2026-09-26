@@ -12,6 +12,7 @@ internal actual object DownloadsStorage {
 
     fun initialize(context: Context) {
         preferences = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
+            .also(DesktopDownloadsLocation::initialize)
     }
 
     actual fun loadPayload(): String? =

@@ -23,7 +23,7 @@ internal val downloadHttpClient = OkHttpClient.Builder()
 
 internal class DownloadHttpException(val statusCode: Int) : IOException("Download failed: HTTP $statusCode")
 
-internal suspend fun transferAndroidDownload(
+internal suspend fun transferDownload(
     item: DownloadItem,
     directory: File,
     validator: String?,

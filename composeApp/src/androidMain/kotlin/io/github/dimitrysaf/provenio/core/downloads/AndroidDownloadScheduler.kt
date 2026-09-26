@@ -36,7 +36,7 @@ import okhttp3.ConnectionPool
 
 internal class AndroidDownloadScheduler(val context: Context) {
     val store = AndroidDownloadStore(File(context.filesDir, "download-transfers"))
-    val directory = File(context.filesDir, "downloads")
+    val directory = File(context.filesDir, "downloads").also { downloadSubtitlesRoot = it }
     private val locks = ConcurrentHashMap<String, Mutex>()
     private val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -155,7 +155,7 @@ internal class AndroidDownloadScheduler(val context: Context) {
             currentCoroutineContext().ensureActive()
             if (!isActive(transfer)) return@withLock false
             var lastProgressAt = 0L
-            val partial = if (destination.isFile) destination else transferAndroidDownload(
+            val partial = if (destination.isFile) destination else transferDownload(
                 item = transfer.item,
                 directory = directory,
                 validator = transfer.validator,
@@ -174,18 +174,29 @@ internal class AndroidDownloadScheduler(val context: Context) {
                 },
             )
             currentCoroutineContext().ensureActive()
-            updateActive(transfer) { current ->
-                if (partial != destination && !partial.renameTo(destination)) {
-                    throw IOException("Could not finalize the downloaded file")
+            if (partial != destination && !partial.renameTo(destination)) {
+                throw IOException("Could not finalize the downloaded file")
+            }
+            if (!isActive(transfer)) return@withLock false
+            // The move and its record happen together, so a cancel cannot leave a published file nothing knows about.
+            withContext(NonCancellable + Dispatchers.IO) {
+                val published = AndroidDownloadPublisher.publish(context, destination)
+                if (published.name != destination.name) {
+                    File(directory, "${destination.name}.subtitles").renameTo(File(directory, "${published.name}.subtitles"))
                 }
-                val bytes = destination.length()
-                current.copy(item = current.item.copy(
-                    status = DownloadStatus.Completed,
-                    localFileUri = destination.toURI().toString(),
-                    downloadedBytes = bytes,
-                    totalBytes = bytes,
-                    errorMessage = null,
-                ))
+                val bytes = published.length()
+                // A pause during the move still finishes, since the file is whole; only a removal discards it.
+                val completed = store.update(fileName, transfer.generation) { current ->
+                    current.copy(item = current.item.copy(
+                        status = DownloadStatus.Completed,
+                        localFileUri = published.toURI().toString(),
+                        downloadedBytes = bytes,
+                        totalBytes = bytes,
+                        errorMessage = null,
+                        updatedAtEpochMs = System.currentTimeMillis(),
+                    ))
+                }
+                if (completed == null) published.delete()
             }
             false
         } catch (cancelled: CancellationException) {

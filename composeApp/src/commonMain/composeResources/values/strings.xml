@@ -648,6 +648,8 @@
     <string name="downloads_empty_episodes_subtitle">Episodes finish downloading here before you can play them offline.</string>
     <string name="downloads_episode_count">%1$d downloaded episode(s)</string>
     <string name="downloads_open_directory">Open downloads folder</string>
+    <string name="downloads_location_title">Download location</string>
+    <string name="downloads_location_change">Change</string>
     <string name="downloads_open_directory_failed">Couldn&apos;t open downloads folder</string>
     <string name="downloads_row_actions">Download actions</string>
     <string name="downloads_section_active">Active</string>
@@ -2473,5 +2475,4 @@
     <string name="torrent_details_of">%1$s of %2$s</string>
     <string name="torrent_details_rtt">%1$d ms</string>
     <string name="torrent_details_unknown_client">Unknown client</string>
-    <string name="downloads_desktop_unavailable">Downloads aren't available on desktop yet.</string>
 </resources>

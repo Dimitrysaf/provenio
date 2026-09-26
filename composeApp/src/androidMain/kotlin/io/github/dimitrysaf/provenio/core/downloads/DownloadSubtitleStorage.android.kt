@@ -4,8 +4,13 @@ import android.util.AtomicFile
 import java.io.File
 import java.net.URI
 
+// Where the scheduler keeps downloads in progress; subtitles stay there even after their video moves to Movies.
+internal var downloadSubtitlesRoot: File? = null
+
 internal actual class DownloadSubtitleStorage actual constructor(localVideoUri: String) {
-    private val directory = File(File(URI(localVideoUri)).path + ".subtitles")
+    private val directory = File(URI(localVideoUri)).let { video ->
+        downloadSubtitlesRoot?.let { File(it, video.name + ".subtitles") } ?: File(video.path + ".subtitles")
+    }
 
     actual fun read(fileName: String): String? =
         runCatching { AtomicFile(file(fileName)).readFully().decodeToString() }.getOrNull()

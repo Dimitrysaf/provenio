@@ -17,8 +17,9 @@ finish-args:
   # Playback.
   - --socket=pulseaudio
   - --device=dri
-  # Downloads land in the user's Downloads folder.
+  # Downloads land in the user's Videos folder, or Downloads where there is none.
   - --filesystem=xdg-download
+  - --filesystem=xdg-videos
   # Keep the screen awake while a video plays.
   - --talk-name=org.freedesktop.ScreenSaver
   - --talk-name=org.freedesktop.portal.Inhibit
