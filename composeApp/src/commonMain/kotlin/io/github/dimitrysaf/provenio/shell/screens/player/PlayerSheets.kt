@@ -1,21 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
 import androidx.compose.animation.Crossfade
-import androidx.compose.material.icons.rounded.FilterList
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.LocalContentColor
-import io.github.dimitrysaf.provenio.shell.components.LocalWindowBreakpoint
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.ui.graphics.Color
-import io.github.dimitrysaf.provenio.core.streams.StreamQuality
-import io.github.dimitrysaf.provenio.core.streams.filteredBy
-import io.github.dimitrysaf.provenio.core.streams.quality
-import io.github.dimitrysaf.provenio.core.streams.streamQueryRegex
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -63,7 +48,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.ModalSheet
-import io.github.dimitrysaf.provenio.shell.components.MultiChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
@@ -84,7 +68,10 @@ import io.github.dimitrysaf.provenio.shell.screens.streams.ActiveStreamStore
 import io.github.dimitrysaf.provenio.shell.screens.streams.LocalStreamSizeLabelFormat
 import io.github.dimitrysaf.provenio.core.streams.StreamBadgeSettingsRepository
 import io.github.dimitrysaf.provenio.core.streams.StreamItem
+import io.github.dimitrysaf.provenio.shell.screens.streams.StreamFilterBar
 import io.github.dimitrysaf.provenio.shell.screens.streams.StreamsEmptyBlock
+import io.github.dimitrysaf.provenio.shell.screens.streams.StreamsNoMatchesBlock
+import io.github.dimitrysaf.provenio.shell.screens.streams.rememberStreamFilterState
 import io.github.dimitrysaf.provenio.shell.screens.streams.StreamsHorizontalPadding
 import io.github.dimitrysaf.provenio.shell.screens.streams.StreamsPreparingBlock
 import io.github.dimitrysaf.provenio.core.streams.StreamsUiState
@@ -202,7 +189,6 @@ internal fun PlayerStreamsSheet(
             onReload = onReload,
             reloadEnabled = !streamsUiState.isAnyLoading,
         )
-        HorizontalDivider()
         PlayerStreamGroupsList(
             streamsUiState = streamsUiState,
             isStreamSelected = isStreamSelected,
@@ -250,7 +236,6 @@ internal fun PlayerEpisodesSheet(
                 onReload = onReloadEpisodeStreams,
                 reloadEnabled = !episodeStreams.streamsUiState.isAnyLoading,
             )
-            HorizontalDivider()
             PlayerStreamGroupsList(
                 streamsUiState = episodeStreams.streamsUiState,
                 isStreamSelected = { stream -> ActiveStreamStore.isActive(selectedEpisode.id, stream) },
@@ -366,27 +351,15 @@ private fun PlayerStreamGroupsList(
     val formatStreamSize = rememberStreamSizeLabelFormat()
     val torrentNotSupportedText = stringResource(Res.string.streams_torrent_not_supported)
     val hasVisibleRows = streamsUiState.groups.any { it.streams.isNotEmpty() || it.isLoading }
-    var query by remember { mutableStateOf("") }
-    var selectedQualities by remember { mutableStateOf(emptySet<StreamQuality>()) }
-    val qualities = remember(streamsUiState.groups) {
-        streamsUiState.groups.flatMap { it.streams }.map { it.quality() }.toSet().sorted()
-    }
-    val filteredGroups = remember(streamsUiState.groups, query, selectedQualities) {
-        streamsUiState.groups.filteredBy(streamQueryRegex(query), selectedQualities)
+    val filter = rememberStreamFilterState(streamsUiState.requestToken)
+    val filteredGroups = remember(streamsUiState.groups, filter.query, filter.qualities) {
+        filter.apply(streamsUiState.groups)
     }
     val hasMatches = filteredGroups.any { it.streams.isNotEmpty() || it.isLoading }
 
     CompositionLocalProvider(LocalStreamSizeLabelFormat provides formatStreamSize) {
         Column(modifier = modifier.fillMaxWidth()) {
-            if (hasVisibleRows) {
-                StreamSearchField(
-                    query = query,
-                    onQueryChange = { query = it },
-                    qualities = qualities,
-                    selectedQualities = selectedQualities,
-                    onQualitiesChanged = { selectedQualities = it },
-                )
-            }
+            StreamFilterBar(state = filter, groups = streamsUiState.groups)
             LazyColumn(
                 modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
                 contentPadding = PaddingValues(top = 8.dp, bottom = safeBottomPadding(16.dp)),
@@ -399,14 +372,7 @@ private fun PlayerStreamGroupsList(
                         item(key = "player_streams_empty") { StreamsEmptyBlock(reason = streamsUiState.emptyStateReason) }
                     }
                     !hasMatches -> {
-                        item(key = "player_streams_no_matches") {
-                            Text(
-                                text = stringResource(Res.string.streams_filter_no_matches),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = StreamsHorizontalPadding, vertical = 16.dp),
-                            )
-                        }
+                        item(key = "player_streams_no_matches") { StreamsNoMatchesBlock() }
                     }
                     else -> streamGroups(
                         groups = filteredGroups,
@@ -427,106 +393,6 @@ private fun PlayerStreamGroupsList(
             }
         }
     }
-}
-
-// A search field with no fill, just the underline, that filters the streams by regular expression.
-@Composable
-private fun StreamSearchField(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    qualities: List<StreamQuality>,
-    selectedQualities: Set<StreamQuality>,
-    onQualitiesChanged: (Set<StreamQuality>) -> Unit,
-) {
-    TextField(
-        value = query,
-        onValueChange = onQueryChange,
-        singleLine = true,
-        placeholder = { Text(stringResource(Res.string.streams_search_placeholder)) },
-        leadingIcon = { Icon(imageVector = Icons.Rounded.Search, contentDescription = null) },
-        trailingIcon = {
-            Row {
-                if (query.isNotEmpty()) {
-                    IconButton(onClick = { onQueryChange("") }) {
-                        Icon(imageVector = Icons.Rounded.Close, contentDescription = stringResource(Res.string.action_clear))
-                    }
-                }
-                if (qualities.size > 1) {
-                    StreamQualityMenuButton(
-                        qualities = qualities,
-                        selected = selectedQualities,
-                        onSelectionChanged = onQualitiesChanged,
-                    )
-                }
-            }
-        },
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = StreamsHorizontalPadding),
-    )
-}
-
-// Picks any number of resolutions: the app's choice sheet on phones, a dropdown menu on large windows.
-@Composable
-private fun StreamQualityMenuButton(
-    qualities: List<StreamQuality>,
-    selected: Set<StreamQuality>,
-    onSelectionChanged: (Set<StreamQuality>) -> Unit,
-) {
-    var open by remember { mutableStateOf(false) }
-    val title = stringResource(Res.string.streams_filter_quality)
-    val allLabel = stringResource(Res.string.streams_filter_all_qualities)
-    val labels = qualities.map { it.label() }
-    Box {
-        IconButton(onClick = { open = true }) {
-            Icon(
-                imageVector = Icons.Rounded.FilterList,
-                contentDescription = title,
-                tint = if (selected.isNotEmpty()) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-            )
-        }
-        if (LocalWindowBreakpoint.current.isTwoPane) {
-            // Stays open while ticking, as a multiple choice needs.
-            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                DropdownMenuItem(
-                    text = { Text(allLabel) },
-                    onClick = { onSelectionChanged(emptySet()) },
-                    leadingIcon = { Checkbox(checked = selected.isEmpty(), onCheckedChange = null) },
-                )
-                qualities.forEachIndexed { index, quality ->
-                    val checked = quality in selected
-                    DropdownMenuItem(
-                        text = { Text(labels[index]) },
-                        onClick = { onSelectionChanged(if (checked) selected - quality else selected + quality) },
-                        leadingIcon = { Checkbox(checked = checked, onCheckedChange = null) },
-                    )
-                }
-            }
-        } else if (open) {
-            MultiChoiceBottomSheet(
-                title = title,
-                options = qualities.mapIndexed { index, quality -> SingleChoiceOption(value = quality, label = labels[index]) },
-                selected = selected,
-                onSelectionChanged = onSelectionChanged,
-                onDismiss = { open = false },
-                allLabel = allLabel,
-            )
-        }
-    }
-}
-
-@Composable
-private fun StreamQuality.label(): String = when (this) {
-    StreamQuality.UHD -> "4K"
-    StreamQuality.FHD -> "1080p"
-    StreamQuality.HD -> "720p"
-    StreamQuality.SD -> "SD"
-    StreamQuality.UNKNOWN -> stringResource(Res.string.streams_filter_unknown_quality)
 }
 
 @Composable

@@ -18,7 +18,6 @@ import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -175,6 +174,8 @@ fun StreamsSheet(
     // something to draw as long as it is still answering.
     val hasVisibleRows = uiState.groups.any { it.streams.isNotEmpty() || it.isLoading }
     val stillLoading = preparing || uiState.isAnyLoading
+    val filter = rememberStreamFilterState(uiState.requestToken)
+    val filteredGroups = remember(uiState.groups, filter.query, filter.qualities) { filter.apply(uiState.groups) }
     val subtitle = if (seasonNumber != null && episodeNumber != null) {
         val code = stringResource(Res.string.streams_episode_badge, seasonNumber, episodeNumber)
         episodeTitle?.takeIf { it.isNotBlank() }?.let { "$code · $it" } ?: code
@@ -233,7 +234,7 @@ fun StreamsSheet(
             }
         }
 
-        HorizontalDivider()
+        StreamFilterBar(state = filter, groups = uiState.groups)
 
         CompositionLocalProvider(LocalStreamSizeLabelFormat provides formatStreamSize) {
             LazyColumn(
@@ -259,9 +260,13 @@ fun StreamsSheet(
                         }
                     }
 
+                    filteredGroups.none { it.streams.isNotEmpty() || it.isLoading } -> {
+                        item(key = "streams_no_matches") { StreamsNoMatchesBlock() }
+                    }
+
                     else -> {
                         streamGroups(
-                            groups = uiState.groups,
+                            groups = filteredGroups,
                             expansion = expansion,
                             debridEnabled = debridSettings.canResolvePlayableLinks,
                             appendInstantServiceToDefaultName = debridSettings.canResolvePlayableLinks &&
