@@ -126,7 +126,7 @@ internal fun rememberSideSheetBackPreview(enabled: Boolean, onBack: () -> Unit):
         try {
             events.collect { event ->
                 preview.fromRightEdge = event.fromRightEdge
-                preview.progress = event.progress
+                preview.progress = M3Motion.PredictiveBack.transform(event.progress)
             }
             currentOnBack()
         } catch (cancelled: CancellationException) {

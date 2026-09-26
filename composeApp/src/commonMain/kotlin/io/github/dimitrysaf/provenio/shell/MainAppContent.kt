@@ -427,7 +427,6 @@ internal fun MainAppContent(
                     .background(MaterialTheme.colorScheme.surface),
             ) {
             val navigationMotion = rememberAppNavigationMotion()
-            val cornersDecorator = remember { predictiveBackCornersDecorator() }
             SharedTransitionLayout {
                 CompositionLocalProvider(
                     LocalPosterClickAnchor provides if (posterNavigationEnabled) posterNavigation::prepare else null,
@@ -441,7 +440,6 @@ internal fun MainAppContent(
                     entryDecorators = listOf(
                         rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
                         routeDisposalDecorator,
-                        cornersDecorator,
                     ),
                     // Sources is a sheet, so its destination draws over the one beneath it
                     // instead of replacing it.

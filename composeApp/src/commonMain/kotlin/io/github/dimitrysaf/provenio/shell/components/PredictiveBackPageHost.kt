@@ -36,9 +36,8 @@ internal fun <T : Any> PredictiveBackPageHost(
     val density = LocalDensity.current
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val slidePx = with(density) { M3Motion.SharedAxisSlide.roundToPx() } * if (rtl) -1 else 1
-    val marginPx = with(density) { M3Motion.PredictiveBackMargin.roundToPx() }
     val transitionState = remember { SeekableTransitionState(page) }
-    var gestureFromRightEdge by remember { mutableStateOf<Boolean?>(null) }
+    var predictive by remember { mutableStateOf(false) }
     val currentBackPage by rememberUpdatedState(backPage)
     val currentOnBack by rememberUpdatedState(onBack)
 
@@ -46,7 +45,7 @@ internal fun <T : Any> PredictiveBackPageHost(
         if (transitionState.currentState != page || transitionState.targetState != page) {
             transitionState.animateTo(page)
         }
-        gestureFromRightEdge = null
+        predictive = false
     }
 
     PlatformPredictiveBackHandler(enabled = backEnabled && backPage != null) { events ->
@@ -55,16 +54,16 @@ internal fun <T : Any> PredictiveBackPageHost(
             events.collect {}
             return@PlatformPredictiveBackHandler
         }
+        predictive = true
         try {
             events.collect { event ->
-                if (gestureFromRightEdge == null) gestureFromRightEdge = event.fromRightEdge
                 transitionState.seekTo(event.progress, target)
             }
             currentOnBack()
         } catch (cancelled: CancellationException) {
             withContext(NonCancellable) {
                 transitionState.animateTo(transitionState.currentState)
-                gestureFromRightEdge = null
+                predictive = false
             }
             throw cancelled
         }
@@ -73,14 +72,10 @@ internal fun <T : Any> PredictiveBackPageHost(
     rememberTransition(transitionState, label = "pageHost").AnimatedContent(
         modifier = modifier,
         transitionSpec = {
-            val edge = gestureFromRightEdge
-            when {
-                edge != null -> M3Motion.predictiveBack(edge, marginPx)
-                else -> M3Motion.sharedAxisX(isForward(initialState, targetState), slidePx)
-            }
+            if (predictive) M3Motion.predictiveBack() else M3Motion.sharedAxisX(isForward(initialState, targetState), slidePx)
         },
     ) { shownPage ->
-        Box(modifier = Modifier.fillMaxSize().then(transition.predictiveBackCorners())) {
+        Box(modifier = Modifier.fillMaxSize()) {
             content(shownPage)
         }
     }

@@ -1,12 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.components
 
 import androidx.compose.animation.ContentTransform
-import androidx.compose.animation.EnterExitState
-import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.Transition
-import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -15,11 +11,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 
 // Material 3 motion tokens and the transition patterns built from them.
@@ -29,8 +20,6 @@ internal object M3Motion {
     val EmphasizedAccelerate = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)
 
     val SharedAxisSlide = 30.dp
-    val PredictiveBackMargin = 8.dp
-    val PredictiveBackCorner = 28.dp
 
     private const val SharedAxisMillis = 400
     private const val SharedAxisFadeOutMillis = 140
@@ -57,25 +46,20 @@ internal object M3Motion {
 
     fun <T> fadeThroughOutSpec() = tween<T>(FadeThroughOutMillis, easing = EmphasizedAccelerate)
 
-    // The back preview: the current screen shrinks toward the swiped edge and reveals the one below.
-    fun predictiveBack(fromRightEdge: Boolean, marginPx: Int): ContentTransform {
-        val direction = if (fromRightEdge) -1 else 1
-        val exit = scaleOut(tween(PredictiveBackMillis, easing = LinearEasing), targetScale = 0.9f) +
-            slideOutHorizontally(tween(PredictiveBackMillis, easing = LinearEasing)) { direction * (it / 20 - marginPx) } +
-            fadeOut(tween(PredictiveBackMillis, easing = EmphasizedAccelerate))
-        return (EnterTransition.None togetherWith exit).apply { targetContentZIndex = -1f }
+    // Android's predictive back curve, applied to the raw gesture progress so the screen answers the finger at once.
+    val PredictiveBack = CubicBezierEasing(0.1f, 0.1f, 0f, 1f)
+
+    // Where the curve reaches 35%, the point at which the exiting screen is gone and the entering one starts to appear.
+    private const val PredictiveBackFadeFraction = 0.094f
+
+    // The full screen back pattern: the old screen scales to 90% and fades out, then the previous one fades in from 110%.
+    fun predictiveBack(): ContentTransform {
+        val fadeMillis = (PredictiveBackMillis * PredictiveBackFadeFraction).toInt()
+        val enter = scaleIn(tween(PredictiveBackMillis, easing = PredictiveBack), initialScale = 1.1f) +
+            fadeIn(tween(PredictiveBackMillis - fadeMillis, delayMillis = fadeMillis, easing = PredictiveBack))
+        val exit = scaleOut(tween(PredictiveBackMillis, easing = PredictiveBack), targetScale = 0.9f) +
+            fadeOut(tween(fadeMillis, easing = LinearEasing))
+        return enter togetherWith exit
     }
 }
 
-// Rounds the corners of a screen as it leaves, which is what makes the back preview read as a card.
-@Composable
-internal fun Transition<EnterExitState>.predictiveBackCorners(): Modifier {
-    val corner by animateDp(
-        transitionSpec = { tween(M3Motion.PredictiveBackMillis, easing = LinearEasing) },
-        label = "predictiveBackCorner",
-    ) { state -> if (state == EnterExitState.PostExit) M3Motion.PredictiveBackCorner else 0.dp }
-    return Modifier.graphicsLayer {
-        clip = corner > 0.dp
-        shape = RoundedCornerShape(corner)
-    }
-}
