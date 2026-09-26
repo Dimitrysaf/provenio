@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
+import androidx.compose.runtime.LaunchedEffect
+import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
+import io.github.dimitrysaf.provenio.core.calendar.UpcomingEpisodesRepository
 import androidx.compose.animation.Crossfade
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.animation.core.tween
@@ -207,6 +210,11 @@ fun LibraryScreen(
 
     LibraryReconnectEffect(networkStatusUiState.condition, isRemoteSource)
 
+    val calendarUiState by UpcomingEpisodesRepository.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(sourceMode, uiState.isLoaded, uiState.items) {
+        if (sourceMode == LibraryViewMode.Calendar) UpcomingEpisodesRepository.refresh()
+    }
+
     ScreenActivityEffect(scrollToTopRequests) { screenActive ->
         if (!screenActive) return@ScreenActivityEffect
         scrollToTopRequests.collect {
@@ -296,7 +304,25 @@ fun LibraryScreen(
                     onConnectCloudClick = onConnectCloudClick,
                 )
             } else {
-                when {
+                item(key = "library-view-switch") {
+                    LibrarySourceSwitch(
+                        selectedMode = sourceMode,
+                        onModeSelected = { mode -> sourceModeName = mode.name },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
+                if (sourceMode == LibraryViewMode.Calendar) {
+                    libraryCalendarContent(
+                        state = calendarUiState,
+                        columns = gridColumns,
+                        todayIsoDate = CurrentDateProvider.todayIsoDate(),
+                        onEpisodeClick = { episode ->
+                            uiState.items
+                                .firstOrNull { it.id == episode.showId && it.type == episode.showType }
+                                ?.let { item -> onPosterClick?.invoke(item) }
+                        },
+                    )
+                } else when {
                     !uiState.isLoaded || (uiState.isLoading && uiState.sections.isEmpty()) -> {
                         if (displaySettings.layoutMode == LibraryLayoutMode.VERTICAL) {
                             libraryVerticalSkeletonItems(gridColumns)
@@ -587,9 +613,9 @@ private fun LibrarySourceSwitch(
             onClick = { onModeSelected(LibraryViewMode.Saved) },
         )
         LibraryChip(
-            label = stringResource(Res.string.library_source_cloud),
-            selected = selectedMode == LibraryViewMode.Cloud,
-            onClick = { onModeSelected(LibraryViewMode.Cloud) },
+            label = stringResource(Res.string.library_source_calendar),
+            selected = selectedMode == LibraryViewMode.Calendar,
+            onClick = { onModeSelected(LibraryViewMode.Calendar) },
         )
     }
 }
@@ -1059,6 +1085,7 @@ private fun CloudLibrarySkeletonRow(
 
 private enum class LibraryViewMode {
     Saved,
+    Calendar,
     Cloud,
 }
 

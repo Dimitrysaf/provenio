@@ -1911,6 +1911,8 @@
     <string name="library_sort_provider_order">Tracker order</string>
     <string name="library_source_cloud">Cloud</string>
     <string name="library_source_saved">Saved</string>
+    <string name="library_source_calendar">Calendar</string>
+    <string name="library_calendar_empty">Nothing from your Library airs in the next two months.</string>
     <string name="library_title">Library</string>
     <string name="library_trakt_empty_message">Connect Trakt and save titles to your watchlist or personal lists.</string>
     <string name="library_trakt_empty_title">Your Trakt library is empty</string>
