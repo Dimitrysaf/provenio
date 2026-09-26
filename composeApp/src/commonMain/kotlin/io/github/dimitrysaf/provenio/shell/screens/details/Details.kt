@@ -9,6 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -802,6 +803,8 @@ private fun MetaDetailsContent(
                 isHeroCollapsed = isHeroCollapsed,
                 backgroundColor = dominantBackdropColor.takeIf { dominantColorEnabled },
                 onBack = onBackFromDetails,
+                // With a side pane, the bar belongs to the main column only.
+                modifier = Modifier.fillMaxWidth(primaryPaneWeight),
             )
 
             selectedEpisodeForActions?.let { selectedEpisode ->
@@ -850,6 +853,7 @@ private fun DetailHeaderOverlay(
     isHeroCollapsed: State<Boolean>,
     backgroundColor: Color?,
     onBack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val headerTarget = if (isHeroCollapsed.value) 1f else 0f
     val headerProgress by animateFloatAsState(
@@ -866,7 +870,7 @@ private fun DetailHeaderOverlay(
         progress = headerProgress,
         backgroundColor = backgroundColor,
         onBack = onBack,
-        modifier = Modifier.zIndex(2f),
+        modifier = modifier.zIndex(2f),
     )
 }
 

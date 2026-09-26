@@ -26,7 +26,7 @@
         <activity
             android:exported="true"
             android:name="io.github.dimitrysaf.provenio.MainActivity"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:supportsPictureInPicture="true"
             android:theme="@style/Theme.Provenio.Splash">
             <intent-filter>
@@ -71,7 +71,7 @@
 
         <activity
             android:name="io.github.dimitrysaf.provenio.launcher.AppIconDefault"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:enabled="true"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
@@ -86,7 +86,7 @@
 
         <activity
             android:name="io.github.dimitrysaf.provenio.launcher.AppIconArcticBlue"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_arctic_blue"
@@ -101,7 +101,7 @@
 
         <activity
             android:name="io.github.dimitrysaf.provenio.launcher.AppIconEmerald"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_emerald"
@@ -116,7 +116,7 @@
 
         <activity
             android:name="io.github.dimitrysaf.provenio.launcher.AppIconRoseGold"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_rose_gold"
@@ -131,7 +131,7 @@
 
         <activity
             android:name="io.github.dimitrysaf.provenio.launcher.AppIconCopper"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_copper"
@@ -146,7 +146,7 @@
 
         <activity
             android:name="io.github.dimitrysaf.provenio.launcher.AppIconGraphite"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_graphite"
