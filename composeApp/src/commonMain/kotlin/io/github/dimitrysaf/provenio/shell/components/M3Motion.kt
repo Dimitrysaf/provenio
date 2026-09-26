@@ -54,12 +54,12 @@ internal object M3Motion {
 
     fun <T> fadeThroughOutSpec() = tween<T>(FadeThroughOutMillis, easing = EmphasizedAccelerate)
 
-    const val PredictiveBackMillis = 500
+    // Short, because the gesture scrubs the preview and only what is left of the timeline plays after release.
+    const val PredictiveBackMillis = 150
     val PredictiveBackCorner = 28.dp
     private val StandardDecelerate = CubicBezierEasing(0f, 0f, 0f, 1f)
-    private val StandardAccelerate = CubicBezierEasing(0.3f, 0f, 1f, 1f)
 
-    // The first part of the timeline is the back preview the gesture scrubs, the rest is the commit.
+    // The first part of the timeline is the back preview the gesture scrubs, the rest is the commit, which leaves at once.
     private const val PreviewFraction = 0.3f
 
     // How far toward the swiped edge the card moves during the preview, as a share of its width, leaving about an 8dp gap.
@@ -72,7 +72,7 @@ internal object M3Motion {
         if (t < PreviewFraction) {
             PreviewShift * StandardDecelerate.transform(t / PreviewFraction)
         } else {
-            PreviewShift + (1f - PreviewShift) * StandardAccelerate.transform((t - PreviewFraction) / (1f - PreviewFraction))
+            PreviewShift + (1f - PreviewShift) * Emphasized.transform((t - PreviewFraction) / (1f - PreviewFraction))
         }
     }
 
