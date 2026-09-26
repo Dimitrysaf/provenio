@@ -87,7 +87,7 @@ fun ScreenHeader(
                 }
                 AnimatedContent(
                     targetState = title,
-                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    transitionSpec = { fadeIn(M3Motion.fadeThroughInSpec()) togetherWith fadeOut(M3Motion.fadeThroughOutSpec()) },
                     label = "screen_header_title",
                 ) { currentTitle ->
                     Text(

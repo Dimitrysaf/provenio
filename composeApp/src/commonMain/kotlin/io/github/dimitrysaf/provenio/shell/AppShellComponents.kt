@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.core.downloads.DownloadItem
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -98,6 +99,7 @@ internal data class AppTabActions(
     val onMetaScreenSettingsClick: () -> Unit = {},
     val onContinueWatchingSettingsClick: () -> Unit = {},
     val onDownloadsSettingsClick: () -> Unit = {},
+    val onOpenDownload: (DownloadItem) -> Unit = {},
     val onAddonsSettingsClick: () -> Unit = {},
     val onPluginsSettingsClick: () -> Unit = {},
     val onSupportersContributorsSettingsClick: () -> Unit = {},
@@ -180,6 +182,7 @@ internal fun AppTabHost(
                     onMetaScreenClick = actions.onMetaScreenSettingsClick,
                     onContinueWatchingClick = actions.onContinueWatchingSettingsClick,
                     onDownloadsClick = actions.onDownloadsSettingsClick,
+                    onOpenDownload = actions.onOpenDownload,
                     onAddonsClick = actions.onAddonsSettingsClick,
                     onPluginsClick = actions.onPluginsSettingsClick,
                     onSupportersContributorsClick = actions.onSupportersContributorsSettingsClick,

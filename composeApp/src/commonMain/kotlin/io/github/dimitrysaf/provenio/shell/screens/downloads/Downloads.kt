@@ -54,6 +54,7 @@ import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.i18n.localizedByteUnit
 import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
+import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
 import io.github.dimitrysaf.provenio.shell.components.ScreenScaffold
 import io.github.dimitrysaf.provenio.shell.components.StatusModal
 import io.github.dimitrysaf.provenio.shell.components.ToastController
@@ -97,6 +98,8 @@ fun DownloadsScreen(
             completedEpisodes.firstOrNull { it.parentMetaId == showId }?.title
         }
     }
+
+    PlatformBackHandler(enabled = selectedShowId != null && onBackFromShow == null) { selectedShowId = null }
 
     ScreenScaffold(
         title = if (selectedShowId == null) {

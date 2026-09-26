@@ -2,11 +2,9 @@ package io.github.dimitrysaf.provenio.shell
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,6 +26,7 @@ import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
 import io.github.dimitrysaf.provenio.shell.components.NativeProfileSwitcherController
 import io.github.dimitrysaf.provenio.shell.components.NativeTabBridge
 import io.github.dimitrysaf.provenio.shell.theme.Tokens
+import io.github.dimitrysaf.provenio.shell.components.M3Motion
 import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
 import io.github.dimitrysaf.provenio.core.profiles.AvatarRepository
 import io.github.dimitrysaf.provenio.core.profiles.Profile
@@ -275,10 +274,7 @@ internal fun AppGate(
         AnimatedContent(
             targetState = gate.screen,
             label = "app_gate",
-            transitionSpec = {
-                (fadeIn(tween(400)) + scaleIn(tween(400), initialScale = 0.94f))
-                    .togetherWith(fadeOut(tween(250)))
-            },
+            transitionSpec = { M3Motion.fadeThrough() },
         ) { currentGate ->
             when (currentGate) {
                 // The system splash stays up while the gate is loading, so this is only its backdrop.
@@ -337,8 +333,8 @@ internal fun AppGate(
 
         androidx.compose.animation.AnimatedVisibility(
             visibleState = launchOverlayState,
-            enter = fadeIn(tween(400)),
-            exit = fadeOut(tween(400)),
+            enter = fadeIn(M3Motion.fadeThroughInSpec()) + scaleIn(M3Motion.fadeThroughInSpec(), initialScale = 0.92f),
+            exit = fadeOut(M3Motion.fadeThroughOutSpec()),
             modifier = Modifier.fillMaxSize(),
         ) {
             AppLaunchOverlay(
@@ -488,9 +484,9 @@ private fun ProfileSelectionOverlay(
         enter = if (gate.skipProfileSelectionEnterAnimation) {
             androidx.compose.animation.EnterTransition.None
         } else {
-            fadeIn(tween(400))
+            fadeIn(M3Motion.fadeThroughInSpec()) + scaleIn(M3Motion.fadeThroughInSpec(), initialScale = 0.92f)
         },
-        exit = fadeOut(tween(400)),
+        exit = fadeOut(M3Motion.fadeThroughOutSpec()),
         modifier = Modifier
             .fillMaxSize()
             .zIndex(Tokens.Z.dialog),

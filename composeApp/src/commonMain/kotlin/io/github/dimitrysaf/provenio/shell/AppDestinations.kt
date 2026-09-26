@@ -164,6 +164,7 @@ internal fun buildAppTabActions(
         onMetaScreenSettingsClick = { navController.navigate(MetaScreenSettingsRoute(titles.metaScreen)) },
         onContinueWatchingSettingsClick = { navController.navigate(ContinueWatchingSettingsRoute(titles.continueWatching)) },
         onDownloadsSettingsClick = { navController.navigate(DownloadsSettingsRoute(titles.downloads)) },
+        onOpenDownload = playback::openDownloadedItem,
         onAddonsSettingsClick = { navController.navigate(AddonsSettingsRoute(titles.addons)) },
         onPluginsSettingsClick = {
             if (AppFeaturePolicy.pluginsEnabled) {

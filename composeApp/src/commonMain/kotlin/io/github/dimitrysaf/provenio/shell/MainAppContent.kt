@@ -77,6 +77,7 @@ import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressRepository
 import io.github.dimitrysaf.provenio.core.watch.progress.continueWatchingItemKey
 import io.github.dimitrysaf.provenio.core.watch.progress.nextUpDismissKey
 import io.github.dimitrysaf.provenio.shell.nav.*
+import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsDownloadsPageName
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -327,10 +328,8 @@ internal fun MainAppContent(
                     DownloadsRepository.playableLocalFileUri(it) != null
                 }
                 if (hasPlayableDownload) {
+                    requestedSettingsPageName = SettingsDownloadsPageName
                     activateTab(AppScreenTab.Settings)
-                    navController.navigate(DownloadsSettingsRoute(titles.downloads)) {
-                        launchSingleTop = true
-                    }
                 }
             }
         }
@@ -344,7 +343,10 @@ internal fun MainAppContent(
         ContinueWatchingPreferencesRepository.uiState
     }.collectAsStateWithLifecycle()
 
-        AppDeepLinkEffect(navController, ownsAppRuntime, ::activateTab)
+        AppDeepLinkEffect(navController, ownsAppRuntime, ::activateTab) {
+            requestedSettingsPageName = SettingsDownloadsPageName
+            activateTab(AppScreenTab.Settings)
+        }
 
         val onCatalogClick: (HomeCatalogSection) -> Unit = { section ->
             val launchId = CatalogLaunchStore.put(
@@ -424,6 +426,8 @@ internal fun MainAppContent(
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface),
             ) {
+            val navigationMotion = rememberAppNavigationMotion()
+            val cornersDecorator = remember { predictiveBackCornersDecorator() }
             SharedTransitionLayout {
                 CompositionLocalProvider(
                     LocalPosterClickAnchor provides if (posterNavigationEnabled) posterNavigation::prepare else null,
@@ -437,11 +441,15 @@ internal fun MainAppContent(
                     entryDecorators = listOf(
                         rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
                         routeDisposalDecorator,
+                        cornersDecorator,
                     ),
                     // Sources is a sheet, so its destination draws over the one beneath it
                     // instead of replacing it.
                     sceneStrategies = remember { listOf(SheetOverlaySceneStrategy()) },
                     sharedTransitionScope = this@SharedTransitionLayout,
+                    transitionSpec = navigationMotion.transitionSpec,
+                    popTransitionSpec = navigationMotion.popTransitionSpec,
+                    predictivePopTransitionSpec = navigationMotion.predictivePopTransitionSpec,
                     entryProvider = appEntryProvider(
                         navController = navController,
                         sharedTransitionScope = this@SharedTransitionLayout,

@@ -215,11 +215,12 @@ internal fun AppDeepLinkEffect(
     navController: Navigator,
     enabled: Boolean,
     onActivateTab: (AppScreenTab) -> Unit,
+    onOpenDownloads: () -> Unit,
 ) {
     val currentOnActivateTab by rememberUpdatedState(onActivateTab)
+    val currentOnOpenDownloads by rememberUpdatedState(onOpenDownloads)
     val detailsFallbackTitle = stringResource(Res.string.meta_section_details_title)
     val addonsSettingsTitle = stringResource(Res.string.compose_settings_page_addons)
-    val downloadsSettingsTitle = stringResource(Res.string.compose_settings_root_downloads_title)
     LaunchedEffect(navController) {
         if (!enabled) return@LaunchedEffect
         AppDeepLinkRepository.pendingDeepLink.collectLatest { deepLink ->
@@ -263,10 +264,7 @@ internal fun AppDeepLinkEffect(
                 }
 
                 AppDeepLink.Downloads -> {
-                    currentOnActivateTab(AppScreenTab.Settings)
-                    navController.navigate(DownloadsSettingsRoute(downloadsSettingsTitle)) {
-                        launchSingleTop = true
-                    }
+                    currentOnOpenDownloads()
                     AppDeepLinkRepository.markConsumed(deepLink)
                 }
 

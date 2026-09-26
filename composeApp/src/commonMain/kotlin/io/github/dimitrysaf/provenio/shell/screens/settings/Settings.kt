@@ -61,6 +61,7 @@ import io.github.dimitrysaf.provenio.shell.components.ScreenActivityEffect
 import io.github.dimitrysaf.provenio.shell.components.LocalBottomNavigationOverlayPadding
 import io.github.dimitrysaf.provenio.shell.components.ScreenScaffold
 import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
+import io.github.dimitrysaf.provenio.shell.components.PredictiveBackPageHost
 import io.github.dimitrysaf.provenio.core.addons.AddonRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsUiState
@@ -68,6 +69,8 @@ import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleRepository
 import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleUiState
 import io.github.dimitrysaf.provenio.core.collection.CollectionRepository
 import io.github.dimitrysaf.provenio.shell.screens.collection.CollectionsInlinePane
+import io.github.dimitrysaf.provenio.shell.screens.downloads.DownloadsScreen
+import io.github.dimitrysaf.provenio.core.downloads.DownloadItem
 import io.github.dimitrysaf.provenio.core.addons.enabledAddons
 import io.github.dimitrysaf.provenio.core.addons.firstEnabledManifestError
 import io.github.dimitrysaf.provenio.core.addons.hasPendingEnabledManifests
@@ -109,9 +112,14 @@ import io.github.dimitrysaf.provenio.core.settings.AppIconSettingsState
 import io.github.dimitrysaf.provenio.core.settings.AppLanguage
 import io.github.dimitrysaf.provenio.core.settings.ThemeSettingsRepository
 
+// Downloads is not a SettingsPage, so a request for it goes by this name.
+internal const val SettingsDownloadsPageName = "Downloads"
+
 private val SettingsSearchRevealThreshold = 28.dp
 private const val SettingsSearchRevealAnimationMillis = 240L
 private const val SettingsSearchRevealHapticDelayMillis = 90L
+
+private fun SettingsPage.depth(): Int = generateSequence(this) { it.previousPage() }.count()
 
 private fun SettingsPage.isEnabledByPolicy(): Boolean =
     when (this) {
@@ -146,6 +154,7 @@ fun SettingsScreen(
     onAddonsClick: () -> Unit = {},
     onPluginsClick: () -> Unit = {},
     onDownloadsClick: () -> Unit = {},
+    onOpenDownload: (DownloadItem) -> Unit = {},
     onSupportersContributorsClick: () -> Unit = {},
     onLicensesAttributionsClick: () -> Unit = {},
     onCheckForUpdatesClick: (() -> Unit)? = null,
@@ -166,6 +175,8 @@ fun SettingsScreen(
                 ?: SettingsPage.Root
         }
         var currentPage by rememberSaveable(initialPageName) { mutableStateOf(initialPage.name) }
+        var downloadsOpen by rememberSaveable { mutableStateOf(false) }
+        val twoPane = maxWidth >= 768.dp
         val scrollToTopRequests = remember { MutableSharedFlow<Unit>(extraBufferCapacity = 1) }
         val pageTitles = if (onNavigatePage != null) settingsPageTitles() else emptyMap()
         val page = remember(currentPage) {
@@ -259,6 +270,11 @@ fun SettingsScreen(
         ScreenActivityEffect(requestedPageName, rootActionsEnabled) { active ->
             if (!active || !rootActionsEnabled) return@ScreenActivityEffect
             val requestedPage = requestedPageName ?: return@ScreenActivityEffect
+            if (requestedPage == SettingsDownloadsPageName) {
+                if (twoPane) downloadsOpen = true else onDownloadsClick()
+                onRequestedPageConsumed()
+                return@ScreenActivityEffect
+            }
             val targetPage = runCatching { SettingsPage.valueOf(requestedPage) }.getOrNull()
             if (targetPage == null || !targetPage.isEnabledByPolicy()) {
                 onRequestedPageConsumed()
@@ -268,23 +284,23 @@ fun SettingsScreen(
             onRequestedPageConsumed()
         }
 
-        PlatformBackHandler(
-            enabled = screenActive && previousPage != null && (rootActionsEnabled || onExternalBack != null),
-            onBack = ::navigateBack,
-        )
+        val backEnabled = screenActive && previousPage != null && (rootActionsEnabled || onExternalBack != null)
 
         if (screenActive || page == SettingsPage.Root) {
             pageStateHolder.SaveableStateProvider("content") {
-                if (maxWidth >= 768.dp) {
+                if (twoPane) {
                     TabletSettingsScreen(
                         page = page,
+                        backEnabled = backEnabled,
                         scrollToTopRequests = scrollToTopRequests,
                         onPageChange = ::openPage,
                         onNavigateBack = ::navigateBack,
                         showInternalHeader = showInternalHeader,
                         data = data,
                         onSwitchProfile = onSwitchProfile,
-                        onDownloadsClick = onDownloadsClick,
+                        downloadsOpen = downloadsOpen,
+                        onDownloadsOpenChange = { downloadsOpen = it },
+                        onOpenDownload = onOpenDownload,
                         onSupportersContributorsClick = openSupportersContributors,
                         onLicensesAttributionsClick = openLicensesAttributions,
                         onCheckForUpdatesClick = onCheckForUpdatesClick,
@@ -293,6 +309,7 @@ fun SettingsScreen(
                 } else {
                     MobileSettingsScreen(
                         page = page,
+                        backEnabled = backEnabled,
                         scrollToTopRequests = scrollToTopRequests,
                         onPageChange = ::openPage,
                         onNavigateBack = ::navigateBack,
@@ -326,6 +343,7 @@ private val SettingsSidebarWidth = 384.dp
 @Composable
 private fun MobileSettingsScreen(
     page: SettingsPage,
+    backEnabled: Boolean,
     scrollToTopRequests: Flow<Unit>,
     onPageChange: (SettingsPage) -> Unit,
     onNavigateBack: () -> Unit,
@@ -346,6 +364,13 @@ private fun MobileSettingsScreen(
 
 ) {
     val saveableStateHolder = rememberSaveableStateHolder()
+    PredictiveBackPageHost(
+        page = page,
+        backPage = page.previousPage(),
+        backEnabled = backEnabled,
+        isForward = { from, to -> to.depth() > from.depth() },
+        onBack = onNavigateBack,
+    ) { page ->
     saveableStateHolder.SaveableStateProvider(page.name) {
         var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
         var rootSearchVisible by rememberSaveable { mutableStateOf(false) }
@@ -477,6 +502,7 @@ private fun MobileSettingsScreen(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -525,13 +551,16 @@ private fun rememberSettingsRootSearchRevealConnection(
 @Composable
 private fun TabletSettingsScreen(
     page: SettingsPage,
+    backEnabled: Boolean,
     scrollToTopRequests: Flow<Unit>,
     onPageChange: (SettingsPage) -> Unit,
     onNavigateBack: () -> Unit,
     showInternalHeader: Boolean,
     data: SettingsData,
     onSwitchProfile: (() -> Unit)? = null,
-    onDownloadsClick: () -> Unit = {},
+    downloadsOpen: Boolean,
+    onDownloadsOpenChange: (Boolean) -> Unit,
+    onOpenDownload: (DownloadItem) -> Unit,
     onSupportersContributorsClick: () -> Unit = {},
     onLicensesAttributionsClick: () -> Unit = {},
     onCheckForUpdatesClick: (() -> Unit)? = null,
@@ -556,6 +585,14 @@ private fun TabletSettingsScreen(
     fun openInlinePage(page: SettingsPage) {
         selectedCategory = page.category.name
         onPageChange(page)
+    }
+
+    // Downloads opens in the content pane too, so the sidebar stays on screen beside it.
+    fun openDownloads() {
+        collectionsOpen = false
+        selectedCategory = SettingsCategory.General.name
+        if (page != SettingsPage.Root) onPageChange(SettingsPage.Root)
+        onDownloadsOpenChange(true)
     }
 
     val saveableStateHolder = rememberSaveableStateHolder()
@@ -605,6 +642,8 @@ private fun TabletSettingsScreen(
                             count = SettingsCategory.entries.size,
                             onClick = {
                                 selectedCategory = category.name
+                                collectionsOpen = false
+                                onDownloadsOpenChange(false)
                                 if (page != SettingsPage.Root) {
                                     onPageChange(SettingsPage.Root)
                                 }
@@ -622,6 +661,25 @@ private fun TabletSettingsScreen(
             return@Row
         }
 
+        if (downloadsOpen) {
+            PlatformBackHandler(enabled = true) { onDownloadsOpenChange(false) }
+            Box(modifier = Modifier.weight(1f).fillMaxSize()) {
+                DownloadsScreen(
+                    onBack = { onDownloadsOpenChange(false) },
+                    onOpenDownload = onOpenDownload,
+                )
+            }
+            return@Row
+        }
+
+        PredictiveBackPageHost(
+            page = page,
+            backPage = page.previousPage(),
+            backEnabled = backEnabled,
+            isForward = { from, to -> to.depth() > from.depth() },
+            onBack = onNavigateBack,
+            modifier = Modifier.weight(1f).fillMaxSize(),
+        ) { page ->
         saveableStateHolder.SaveableStateProvider(page.name) {
             var rootSearchVisible by rememberSaveable { mutableStateOf(false) }
             var rootSearchRevealAnimating by rememberSaveable { mutableStateOf(false) }
@@ -634,7 +692,7 @@ private fun TabletSettingsScreen(
                             openInlinePage(target.page)
                         }
                     }
-                    SettingsSearchTarget.Downloads -> onDownloadsClick()
+                    SettingsSearchTarget.Downloads -> openDownloads()
                     SettingsSearchTarget.Collections -> { collectionsOpen = true }
                     SettingsSearchTarget.SwitchProfile -> onSwitchProfile?.invoke()
                     SettingsSearchTarget.CheckForUpdates -> onCheckForUpdatesClick?.invoke()
@@ -762,7 +820,7 @@ private fun TabletSettingsScreen(
                                 onLicensesAttributionsClick = { openInlinePage(SettingsPage.LicensesAttributions) },
                                 onCheckForUpdatesClick = onCheckForUpdatesClick,
                                 onTestUpdateBannerClick = onTestUpdateBannerClick,
-                                onDownloadsClick = onDownloadsClick,
+                                onDownloadsClick = ::openDownloads,
                                 onSwitchProfileClick = onSwitchProfile,
                                 showAccountSection = activeCategory == SettingsCategory.Profile,
                                 showGeneralSection = activeCategory == SettingsCategory.General,
@@ -776,6 +834,7 @@ private fun TabletSettingsScreen(
                 }
             }
             }
+        }
         }
     }
 }

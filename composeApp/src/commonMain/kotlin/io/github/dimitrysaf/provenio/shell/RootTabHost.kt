@@ -1,10 +1,13 @@
 package io.github.dimitrysaf.provenio.shell
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -24,6 +27,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.compose.rememberLifecycleOwner
 import io.github.dimitrysaf.provenio.shell.components.LocalScreenActive
+import io.github.dimitrysaf.provenio.shell.components.M3Motion
 
 @Composable
 internal fun RootTabHost(
@@ -45,15 +49,30 @@ internal fun RootTabHost(
         val visitedTabs = remember { mutableSetOf<AppScreenTab>() }
         val displayedTabs = remember(selectedTab) { (visitedTabs + selectedTab).toList() }
         SideEffect { visitedTabs += selectedTab }
+        // Tabs switch with the fade through pattern: the old one fades out, then the new one fades and scales in.
+        val firstTab = remember { selectedTab }
+        val visibilities = remember { HashMap<AppScreenTab, Animatable<Float, AnimationVector1D>>() }
 
         Layout(
             modifier = modifier.fillMaxSize(),
             content = {
                 displayedTabs.forEach { tab ->
                     key(tab) {
+                        val selected = tab == selectedTab
+                        val visibility = remember { Animatable(if (tab == firstTab) 1f else 0f) }
+                        visibilities[tab] = visibility
+                        LaunchedEffect(selected) {
+                            if (selected) {
+                                visibility.animateTo(1f, M3Motion.fadeThroughInSpec())
+                            } else {
+                                visibility.animateTo(0f, M3Motion.fadeThroughOutSpec())
+                            }
+                        }
                         RootTabPane(
                             tab = tab,
-                            active = hostActive && tab == selectedTab,
+                            active = hostActive && selected,
+                            selected = selected,
+                            visibility = { visibility.value },
                             stateHolder = tabStateHolder,
                             content = content,
                         )
@@ -61,9 +80,14 @@ internal fun RootTabHost(
                 }
             },
         ) { measurables, constraints ->
-            val placeable = measurables[displayedTabs.indexOf(selectedTab)].measure(constraints)
-            layout(placeable.width, placeable.height) {
-                placeable.placeRelative(0, 0)
+            val shown = displayedTabs.indices.filter { index ->
+                val tab = displayedTabs[index]
+                tab != selectedTab && (visibilities[tab]?.value ?: 0f) > 0f
+            } + displayedTabs.indexOf(selectedTab)
+            val placeables = shown.map { measurables[it].measure(constraints) }
+            val selectedPlaceable = placeables.last()
+            layout(selectedPlaceable.width, selectedPlaceable.height) {
+                placeables.forEach { it.placeRelative(0, 0) }
             }
         }
     }
@@ -73,6 +97,8 @@ internal fun RootTabHost(
 private fun RootTabPane(
     tab: AppScreenTab,
     active: Boolean,
+    selected: Boolean,
+    visibility: () -> Float,
     stateHolder: SaveableStateHolder,
     content: @Composable (AppScreenTab) -> Unit,
 ) {
@@ -86,7 +112,15 @@ private fun RootTabPane(
         stateHolder.SaveableStateProvider(tab.name) {
             Box(
                 Modifier.fillMaxSize()
-                    .graphicsLayer()
+                    .graphicsLayer {
+                        val progress = visibility()
+                        alpha = progress
+                        if (selected) {
+                            val scale = 0.92f + 0.08f * progress
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                    }
                     .focusProperties { canFocus = active }
                     .pointerInput(active) {
                         if (!active) {

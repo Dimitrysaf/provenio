@@ -76,6 +76,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.foundation.layout.fillMaxHeight
 import io.github.dimitrysaf.provenio.shell.components.BackButton
+import io.github.dimitrysaf.provenio.shell.components.M3Motion
+import io.github.dimitrysaf.provenio.shell.components.rememberSideSheetBackPreview
 import io.github.dimitrysaf.provenio.shell.components.WindowBreakpoint
 import io.github.dimitrysaf.provenio.core.membership.CosmeticEntitlement
 import io.github.dimitrysaf.provenio.shell.screens.settings.MemberBrandWordmark
@@ -268,10 +270,14 @@ fun ProfileSelectionScreen(
                         )
                     }
 
+                    val editorBackPreview = rememberSideSheetBackPreview(enabled = editorTarget != null) { editorTarget = null }
+                    LaunchedEffect(editorTarget != null) {
+                        if (editorTarget != null) editorBackPreview.progress = 0f
+                    }
                     AnimatedVisibility(
                         visible = editorTarget != null,
-                        enter = slideInHorizontally { it },
-                        exit = slideOutHorizontally { it },
+                        enter = slideInHorizontally(tween(400, easing = M3Motion.EmphasizedDecelerate)) { it },
+                        exit = slideOutHorizontally(tween(200, easing = M3Motion.EmphasizedAccelerate)) { it },
                         // A detached sheet sits inside the safety region, otherwise its docked
                         // actions run under the system bars.
                         modifier = Modifier
@@ -283,6 +289,7 @@ fun ProfileSelectionScreen(
                             // surface container low rather than sitting on the background.
                             modifier = Modifier
                                 .padding(16.dp)
+                                .then(editorBackPreview.modifier())
                                 .width(SideSheetMaxWidth)
                                 .fillMaxHeight(),
                             shape = ShapeDefaults.ExtraLarge,
