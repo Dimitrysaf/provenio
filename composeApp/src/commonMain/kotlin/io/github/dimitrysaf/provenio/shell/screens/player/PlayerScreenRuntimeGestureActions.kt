@@ -156,6 +156,12 @@ internal fun PlayerScreenRuntime.showVolumeFeedback(level: PlayerAudioLevel) {
 }
 
 internal fun PlayerScreenRuntime.togglePlayback() {
+    togglePlaybackQuietly()
+    controlsVisible = true
+}
+
+// The toggle alone, for shortcuts that should not bring up the controls.
+internal fun PlayerScreenRuntime.togglePlaybackQuietly() {
     // While loading, the request to play is what the button shows, so that is what it toggles.
     if (playbackSnapshot.isPlaying || (playbackSnapshot.isLoading && shouldPlay)) {
         shouldPlay = false
@@ -167,17 +173,21 @@ internal fun PlayerScreenRuntime.togglePlayback() {
         shouldPlay = true
         playerController?.play()
     }
-    controlsVisible = true
 }
 
 internal fun PlayerScreenRuntime.seekBy(offsetMs: Long) {
-    playerController?.seekBy(offsetMs)
-    scheduleProgressSyncAfterSeek()
+    seekByQuietly(offsetMs)
     controlsVisible = true
     when {
         offsetMs > 0L -> showSeekFeedback(PlayerSeekDirection.Forward, offsetMs)
         offsetMs < 0L -> showSeekFeedback(PlayerSeekDirection.Backward, abs(offsetMs))
     }
+}
+
+// The seek alone, for shortcuts that should not bring up the controls or feedback.
+internal fun PlayerScreenRuntime.seekByQuietly(offsetMs: Long) {
+    playerController?.seekBy(offsetMs)
+    scheduleProgressSyncAfterSeek()
 }
 
 internal fun PlayerScreenRuntime.handleDoubleTapSeek(direction: PlayerSeekDirection) {

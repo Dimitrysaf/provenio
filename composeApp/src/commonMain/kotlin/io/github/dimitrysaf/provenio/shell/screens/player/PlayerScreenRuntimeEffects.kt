@@ -369,17 +369,20 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
 private fun PlayerScreenRuntime.BindPlayerUiVisibilityEffects() {
     LaunchedEffect(
         controlsVisible,
+        controlsActivity,
         isScrubbingTimeline,
         playbackSnapshot.isPlaying,
         playbackSnapshot.isLoading,
+        shouldPlay,
         showParentalGuide,
         errorMessage,
     ) {
+        // They stay up only while paused; loading toward playing hides them like playing does.
+        val playingOrHeadingThere = playbackSnapshot.isPlaying || (playbackSnapshot.isLoading && shouldPlay)
         if (
             !controlsVisible ||
             isScrubbingTimeline ||
-            !playbackSnapshot.isPlaying ||
-            playbackSnapshot.isLoading ||
+            !playingOrHeadingThere ||
             showParentalGuide ||
             errorMessage != null
         ) {

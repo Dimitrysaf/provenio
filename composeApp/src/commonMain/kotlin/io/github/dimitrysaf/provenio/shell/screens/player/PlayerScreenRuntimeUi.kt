@@ -7,6 +7,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.background
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingState
@@ -63,11 +71,26 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
     val openingStatusLines = listOfNotNull(openingPhase) + torrentStatusLines
     val gestureCallbacks = rememberSurfaceGestureCallbacks()
     val playbackGesturesEnabled = initialLoadCompleted && errorMessage == null
+    // A stall mid-playback only counts once it lasts, so brief hiccups show nothing.
+    val stalled = initialLoadCompleted && errorMessage == null && playbackSnapshot.isLoading
+    var stallShown by remember { mutableStateOf(false) }
+    LaunchedEffect(stalled) {
+        if (stalled) {
+            delay(PlayerStallRevealDelayMs)
+            stallShown = true
+        } else {
+            stallShown = false
+        }
+    }
+    // The share of the buffer the player waits for before it plays: 2.5s to start, 5s to resume.
+    val bufferTargetMs = if (initialLoadCompleted) 5_000f else 2_500f
+    val bufferFraction = (playbackSnapshot.bufferedPositionMs - playbackSnapshot.positionMs).coerceAtLeast(0L) / bufferTargetMs
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .onSizeChanged { layoutSize = it }
+            .then(playerKeyboardAndMouse())
             .playerSurfaceTapGestures(
                 layoutSize = layoutSize,
                 playbackGesturesEnabled = playbackGesturesEnabled,
@@ -159,6 +182,26 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                 backdropOnly = true,
             )
         }
+        AnimatedVisibility(
+            visible = playerSettingsUiState.showLoadingOverlay && stallShown,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)))
+        }
+        // The logo is its own layer, over the artwork or the stalled video and under the controls.
+        AnimatedVisibility(
+            visible = playerSettingsUiState.showLoadingOverlay && (isStillLoading() || stallShown),
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            PlayerBufferingLogo(
+                logo = logo,
+                title = title,
+                fraction = bufferFraction,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
         RenderPlayerControls(
             displayedPositionMs = displayedPositionMs,
             statusLines = if (isStillLoading()) openingStatusLines else torrentStatusLines,
@@ -178,7 +221,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
     }
 }
 
-// Until the first frame is ready the player shows its artwork and only the controls that need no stream.
+// Until the first frame is ready the player shows its artwork and logo, and only the controls that need no stream work.
 internal fun PlayerScreenRuntime.isStillLoading(): Boolean = !initialLoadCompleted && errorMessage == null
 
 @Composable
@@ -204,7 +247,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
     val isInPip = rememberIsInPictureInPicture()
     val loading = isStillLoading()
     AnimatedVisibility(
-        visible = (controlsVisible || showParentalGuide || loading) && !playerControlsLocked && !isInPip,
+        visible = (controlsVisible || showParentalGuide) && !playerControlsLocked && !isInPip,
         enter = fadeIn(),
         exit = fadeOut(),
     ) {
@@ -217,7 +260,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             displayedPositionMs = displayedPositionMs,
             metrics = metrics,
             resizeMode = resizeMode,
-            showPlaybackControls = controlsVisible || loading,
+            showPlaybackControls = controlsVisible,
             controlsReady = !loading && playerController != null,
             playbackRequested = shouldPlay,
             hideSeekForward = isSeries && showNextEpisodeCard,
@@ -539,3 +582,5 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
         },
     )
 }
+
+private const val PlayerStallRevealDelayMs = 500L

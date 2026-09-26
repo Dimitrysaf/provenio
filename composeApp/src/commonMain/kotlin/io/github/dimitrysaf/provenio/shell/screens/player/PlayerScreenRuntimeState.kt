@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.hapticfeedback.HapticFeedback
@@ -102,6 +103,8 @@ internal class PlayerScreenRuntime(
     var gestureController: PlayerGestureController? = null
 
     var controlsVisible by mutableStateOf(false)
+    // Bumped by pointer movement, so the controls' hide timer starts over while the mouse moves.
+    var controlsActivity by mutableIntStateOf(0)
     var playerControlsLocked by mutableStateOf(false)
     var activeSourceUrl by mutableStateOf(sourceUrl)
     var activeSourceAudioUrl by mutableStateOf(sourceAudioUrl)
