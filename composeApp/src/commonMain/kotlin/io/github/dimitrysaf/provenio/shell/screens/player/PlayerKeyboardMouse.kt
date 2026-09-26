@@ -33,7 +33,7 @@ private class SpaceHoldState {
     var job: Job? = null
 }
 
-// Keyboard shortcuts act silently, and moving the mouse brings up the controls and hides the cursor again with them.
+// Keyboard shortcuts press the same buttons the controls have, and moving the mouse brings up the controls and hides the cursor again with them.
 @Composable
 internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
     val focusRequester = remember { FocusRequester() }
@@ -68,14 +68,15 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
 private fun PlayerScreenRuntime.handlePlayerKey(key: Key): Boolean {
     if (playerControlsLocked) return false
     when (key) {
-        Key.K -> togglePlaybackQuietly()
-        Key.DirectionLeft -> seekByQuietly(-KeyboardSeekMs)
-        Key.DirectionRight -> seekByQuietly(KeyboardSeekMs)
-        Key.DirectionUp -> changeVolumeQuietly(KeyboardVolumeStep)
-        Key.DirectionDown -> changeVolumeQuietly(-KeyboardVolumeStep)
+        Key.K -> togglePlayback()
+        Key.DirectionLeft -> seekBy(-KeyboardSeekMs)
+        Key.DirectionRight -> seekBy(KeyboardSeekMs)
+        Key.DirectionUp -> changeVolumeBy(KeyboardVolumeStep)
+        Key.DirectionDown -> changeVolumeBy(-KeyboardVolumeStep)
         Key.F -> return togglePlayerFullscreen()
         else -> return false
     }
+    controlsActivity++
     return true
 }
 
@@ -102,17 +103,18 @@ private fun PlayerScreenRuntime.handleSpaceKey(type: KeyEventType, scope: Corout
                 hold.boosted = false
                 deactivateHoldToSpeed()
             } else {
-                togglePlaybackQuietly()
+                togglePlayback()
+                controlsActivity++
             }
         }
     }
     return true
 }
 
-private fun PlayerScreenRuntime.changeVolumeQuietly(delta: Float) {
+private fun PlayerScreenRuntime.changeVolumeBy(delta: Float) {
     val controller = gestureController ?: return
     val current = controller.currentVolume()?.fraction ?: return
-    controller.setVolume((current + delta).coerceIn(0f, 1f))
+    controller.setVolume((current + delta).coerceIn(0f, 1f))?.let { showVolumeFeedback(it) }
 }
 
 // Switches the window between full screen and windowed where the platform has one; false where it does not.

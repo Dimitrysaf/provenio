@@ -334,7 +334,6 @@
     <string name="collections_pinned">Закреплено</string>
     <string name="collections_tab_all">Все</string>
     <string name="collections_your_collections">Ваши коллекции</string>
-    <string name="compose_about_made_with">Сделано с ❤️ Tapframe и друзьями</string>
     <string name="compose_about_version_format">Версия %1$s (%2$s)</string>
     <string name="compose_action_off">Выкл.</string>
     <string name="compose_action_on">Вкл.</string>
@@ -568,7 +567,7 @@
     <string name="settings_licenses_attributions_section_app">ЛИЦЕНЗИЯ НА ПРИЛОЖЕНИЕ</string>
     <string name="settings_licenses_attributions_section_data">ДАННЫЕ И УСЛУГИ</string>
     <string name="settings_licenses_attributions_section_playback">ЛИЦЕНЗИЯ НА ВОСПРОИЗВЕДЕНИЕ</string>
-    <string name="settings_licenses_attributions_upstream_title">Nuvio Мобильный</string>
+    <string name="settings_licenses_attributions_upstream_title">Provenio</string>
     <string name="settings_licenses_attributions_upstream_body">Исходный код и условия лицензии доступны в репозитории проекта.</string>
     <string name="settings_licenses_attributions_upstream_license">Лицензия GNU General Public License v3.0.</string>
     <string name="settings_licenses_attributions_tmdb_title">База данных фильмов (TMDB)</string>

@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://nuvio.tv/assets/nuvio-app-logo-wordmark.webp" alt="Provenio" width="320" />
+  <h1>Provenio</h1>
 
   <p>
     A free, open-source media app for your phone, your desktop, and the TV you already own.
@@ -8,21 +8,19 @@
     Bring your own sources. Provenio turns them into a library with artwork, ratings, subtitles, and your place saved on every screen.
   </p>
 
-  [Website](https://nuvio.tv) · [GitHub releases](https://github.com/NuvioMedia/NuvioMobile/releases/latest) · [Support Provenio](https://nuvio.tv/support)
+  [GitHub releases](https://github.com/Dimitrysaf/provenio/releases/latest)
 
 </div>
 
-## Get Provenio Mobile
+## Get Provenio
 
-- [Android on Google Play](https://play.google.com/store/apps/details?id=com.nuvio.app)
-- [Android APK](https://github.com/NuvioMedia/NuvioMobile/releases/latest)
-- iOS via AltStore or SideStore: add [this source URL](https://raw.githubusercontent.com/NuvioMedia/NuvioMobile/cmp-rewrite/store.json) in the app's Sources section, then install Provenio.
+- [Android APK, Windows MSI and Linux Flatpak](https://github.com/Dimitrysaf/provenio/releases/latest)
 
 ## Build from source
 
 ```bash
-git clone https://github.com/NuvioMedia/NuvioMobile.git
-cd NuvioMobile
+git clone --recurse-submodules https://github.com/Dimitrysaf/provenio.git
+cd provenio
 ```
 
 ### Android
@@ -50,6 +48,12 @@ env PROVENIO_IOS_DISTRIBUTION=full xcodebuild \
 
 The shared app is built with Kotlin Multiplatform and Compose Multiplatform.
 
+## Privacy
+
+Provenio has no accounts and no servers of its own. Your library, progress and settings stay on your devices, and Local sync moves them directly between your devices on your network. The app only talks to the services you connect, such as TMDB, Trakt, Simkl, debrid providers and your addons, under their own privacy policies.
+
 ## License
 
 [GNU General Public License v3.0](./LICENSE)
+
+Provenio is based on [Nuvio Mobile](https://github.com/NuvioMedia/NuvioMobile), also licensed under the GPL-3.0.

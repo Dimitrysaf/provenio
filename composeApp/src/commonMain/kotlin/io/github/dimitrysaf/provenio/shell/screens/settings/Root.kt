@@ -27,8 +27,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import io.github.dimitrysaf.provenio.core.build.AppVersionConfig
+import io.github.dimitrysaf.provenio.core.updater.AppUpdaterPlatform
 import provenio.composeapp.generated.resources.Res
-import provenio.composeapp.generated.resources.compose_about_made_with
+import provenio.composeapp.generated.resources.compose_about_channel_beta
+import provenio.composeapp.generated.resources.compose_about_channel_release
 import provenio.composeapp.generated.resources.compose_about_version_format
 import provenio.composeapp.generated.resources.settings_category_profile_tracking
 import provenio.composeapp.generated.resources.compose_settings_page_account
@@ -67,7 +69,7 @@ import provenio.composeapp.generated.resources.about_supporters_contributors_sub
 import provenio.composeapp.generated.resources.about_licenses_attributions_subtitle
 import org.jetbrains.compose.resources.stringResource
 
-private const val PRIVACY_POLICY_URL = "https://nuvio.tv/privacy-policy"
+private const val PRIVACY_POLICY_URL = "https://github.com/Dimitrysaf/provenio#privacy"
 
 internal fun LazyListScope.settingsRootContent(
     isTablet: Boolean,
@@ -246,19 +248,19 @@ internal fun LazyListScope.settingsRootContent(
                     modifier = Modifier.height(if (isTablet) 10.dp else 8.dp),
                 )
             }
-            Text(
-                text = stringResource(Res.string.compose_about_made_with),
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
+            val channel = stringResource(
+                if (AppUpdaterPlatform.isDebugBuild) Res.string.compose_about_channel_beta else Res.string.compose_about_channel_release,
             )
             Text(
-                text = stringResource(
-                    Res.string.compose_about_version_format,
-                    AppVersionConfig.VERSION_NAME,
-                    AppVersionConfig.VERSION_CODE,
-                ),
+                text = listOf(
+                    stringResource(
+                        Res.string.compose_about_version_format,
+                        AppVersionConfig.VERSION_NAME,
+                        AppVersionConfig.VERSION_CODE,
+                    ),
+                    channel,
+                    AppVersionConfig.BUILD_COMMIT,
+                ).filter { it.isNotBlank() }.joinToString(" · "),
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

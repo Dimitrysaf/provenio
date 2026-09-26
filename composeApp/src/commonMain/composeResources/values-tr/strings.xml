@@ -309,7 +309,6 @@
     <string name="collections_pinned">Sabitlendi</string>
     <string name="collections_tab_all">Tümü</string>
     <string name="collections_your_collections">Koleksiyonların</string>
-    <string name="compose_about_made_with">Tapframe ve arkadaşları tarafından ❤️ ile yapıldı</string>
     <string name="compose_about_version_format">Sürüm %1$s (%2$s)</string>
     <string name="compose_action_off">Kapalı</string>
     <string name="compose_action_on">Açık</string>
@@ -493,7 +492,7 @@
     <string name="settings_licenses_attributions_section_app">UYGULAMA LİSANSI</string>
     <string name="settings_licenses_attributions_section_data">VERİ &amp; SERVİSLER</string>
     <string name="settings_licenses_attributions_section_playback">OYNATMA LİSANSI</string>
-    <string name="settings_licenses_attributions_upstream_title">Nuvio Mobil</string>
+    <string name="settings_licenses_attributions_upstream_title">Provenio</string>
     <string name="settings_licenses_attributions_upstream_body">Kaynak kodları ve lisans koşulları proje deposunda bulunabilir.</string>
     <string name="settings_licenses_attributions_upstream_license">GNU Genel Kamu Lisansı v3.0 kapsamında lisanslanmıştır.</string>
     <string name="settings_licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>

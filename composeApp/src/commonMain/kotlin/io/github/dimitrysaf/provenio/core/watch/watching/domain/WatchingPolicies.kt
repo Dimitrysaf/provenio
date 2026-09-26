@@ -13,7 +13,7 @@ private const val UpcomingNextSeasonWindowDays = 7
 /**
  * Streams shorter than this are treated as error/placeholder clips (e.g. debrid
  * cache-sync placeholders, "service unavailable" error videos, RAR-only torrents),
- * not real episodes. Mirrors the internal-player guard in NuvioTV.
+ * not real episodes.
  */
 private const val MinRealContentDurationMs = 121_000L
 

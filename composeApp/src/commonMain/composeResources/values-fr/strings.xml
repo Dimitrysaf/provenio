@@ -300,7 +300,6 @@
     <string name="collections_pinned">Épinglé</string>
     <string name="collections_tab_all">Tout</string>
     <string name="collections_your_collections">Vos collections</string>
-    <string name="compose_about_made_with">Fait avec ❤️ par Tapframe et ses amis</string>
     <string name="compose_about_version_format">Version %1$s (%2$s)</string>
     <string name="compose_action_off">Désactivé</string>
     <string name="compose_action_on">Activé</string>
@@ -478,7 +477,7 @@
     <string name="settings_licenses_attributions_section_app">LICENCE DE L’APP</string>
     <string name="settings_licenses_attributions_section_data">DONNÉES ET SERVICES</string>
     <string name="settings_licenses_attributions_section_playback">LICENCE DE LECTURE</string>
-    <string name="settings_licenses_attributions_upstream_title">Nuvio Mobile</string>
+    <string name="settings_licenses_attributions_upstream_title">Provenio</string>
     <string name="settings_licenses_attributions_upstream_body">Le code source et les termes de la licence sont disponibles dans le dépôt du projet.</string>
     <string name="settings_licenses_attributions_upstream_license">Distribué sous la licence GNU General Public License v3.0.</string>
     <string name="settings_licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>

@@ -115,7 +115,6 @@ import provenio.composeapp.generated.resources.settings_debrid_experimental_noti
 import provenio.composeapp.generated.resources.settings_debrid_formatter_reset_subtitle
 import provenio.composeapp.generated.resources.settings_debrid_formatter_reset_title
 import provenio.composeapp.generated.resources.settings_debrid_key_invalid
-import provenio.composeapp.generated.resources.settings_debrid_learn_more
 import provenio.composeapp.generated.resources.settings_debrid_max_results
 import provenio.composeapp.generated.resources.settings_debrid_max_results_desc
 import provenio.composeapp.generated.resources.settings_debrid_name_template
@@ -208,8 +207,6 @@ import provenio.composeapp.generated.resources.settings_debrid_template_default_
 import provenio.composeapp.generated.resources.settings_debrid_template_original_format
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
-
-private const val CLOUD_SERVICES_FAQ_URL = "https://nuvioapp.space/faq#common-cloud-library-and-cloud-services"
 
 // Upper bound for device-authorization polling when every redeem keeps throwing. Device codes
 // expire server-side within minutes (TorBox/Premiumize), so this is comfortably beyond any code's
@@ -334,7 +331,6 @@ internal fun LazyListScope.debridSettingsContent(
     }
 
     if (!settings.canResolvePlayableLinks) {
-        debridLearnMoreFooterItem(isTablet)
         return
     }
 
@@ -504,34 +500,6 @@ internal fun LazyListScope.debridSettingsContent(
             )
             null -> Unit
         }
-
-    }
-
-    debridLearnMoreFooterItem(isTablet)
-}
-
-private fun LazyListScope.debridLearnMoreFooterItem(isTablet: Boolean) {
-    item {
-        val uriHandler = LocalUriHandler.current
-        DebridLearnMoreFooter(
-            isTablet = isTablet,
-            onClick = { runCatching { uriHandler.openUri(CLOUD_SERVICES_FAQ_URL) } },
-        )
-    }
-}
-
-@Composable
-private fun DebridLearnMoreFooter(
-    isTablet: Boolean,
-    onClick: () -> Unit,
-) {
-    TextButton(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = if (isTablet) 4.dp else 0.dp, bottom = if (isTablet) 10.dp else 6.dp),
-    ) {
-        Text(stringResource(Res.string.settings_debrid_learn_more))
     }
 }
 

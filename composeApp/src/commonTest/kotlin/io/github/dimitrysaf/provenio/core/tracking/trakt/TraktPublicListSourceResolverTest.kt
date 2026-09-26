@@ -11,7 +11,7 @@ class TraktPublicListSourceResolverTest {
     fun parsesNumericTraktListIdsFromInputs() {
         assertEquals(123456L, TraktPublicListSourceResolver.parseTraktListId("123456"))
         assertEquals(123456L, TraktPublicListSourceResolver.parseTraktListId("https://trakt.tv/lists/123456"))
-        assertEquals(123456L, TraktPublicListSourceResolver.parseTraktListId("https://trakt.tv/users/nuvio/lists/123456"))
+        assertEquals(123456L, TraktPublicListSourceResolver.parseTraktListId("https://trakt.tv/users/provenio/lists/123456"))
         assertEquals(123456L, TraktPublicListSourceResolver.parseTraktListId("https://example.com/import?id=123456"))
         assertNull(TraktPublicListSourceResolver.parseTraktListId(""))
     }

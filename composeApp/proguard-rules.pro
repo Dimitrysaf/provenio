@@ -36,12 +36,10 @@
 -keep class io.github.dimitrysaf.provenio.shell.screens.plugins.** { *; }
 -keep class io.github.dimitrysaf.provenio.core.plugins.** { *; }
 
-# P2P runtime and Nuvio Engine JNI bridge. Native libraries are not processed
+# P2P runtime and engine JNI bridge. Native libraries are not processed
 # by R8, but their Kotlin/JNI wrapper classes and method names must stay stable.
 -keep class io.github.dimitrysaf.provenio.shell.screens.p2p.** { *; }
 -keep class io.github.dimitrysaf.provenio.core.p2p.** { *; }
--keep class com.nuvio.engine.** { *; }
--keep interface com.nuvio.engine.** { *; }
 
 -keep class androidx.work.impl.WorkDatabase_Impl { *; }
 
