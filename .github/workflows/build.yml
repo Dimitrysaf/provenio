@@ -29,7 +29,7 @@ concurrency:
 
 jobs:
   engine:
-    name: Engine
+    name: Android engine
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -166,17 +166,86 @@ jobs:
           gradle-args: ${{ inputs.channel != 'stable' && '-Pprovenio.abiSplits=true --no-configuration-cache' || '' }}
           artifact-name: provenio-${{ inputs.channel || 'beta' }}
 
+  # The engine's JNI library for Linux, rebuilt only when the engine source changes.
+  linux-engine:
+    name: Linux engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CMAKE_C_COMPILER_LAUNCHER: ccache
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_NOHASHDIR: 'true'
+      CCACHE_SLOPPINESS: include_file_ctime,include_file_mtime
+      CCACHE_MAXSIZE: 1G
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - id: built
+        uses: actions/cache@v4
+        with:
+          path: build/linux/app-resources/linux-x64/libengine.so
+          key: linux-engine-${{ runner.arch }}-${{ hashFiles('engine/**', 'scripts/build-linux.sh') }}
+
+      - name: Set up environment
+        if: steps.built.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ninja-build ccache > /dev/null
+
+      - uses: actions/setup-java@v5
+        if: steps.built.outputs.cache-hit != 'true'
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: actions/cache@v4
+        if: steps.built.outputs.cache-hit != 'true'
+        with:
+          path: build/linux/deps
+          key: linux-deps-${{ runner.arch }}-${{ hashFiles('engine/scripts/build-linux-openssl.sh') }}
+
+      - uses: actions/cache@v4
+        if: steps.built.outputs.cache-hit != 'true'
+        with:
+          path: ~/.cache/ccache
+          key: ccache-linux-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: ccache-linux-${{ runner.arch }}-
+
+      - name: Building engine
+        if: steps.built.outputs.cache-hit != 'true'
+        run: |
+          ccache --zero-stats
+          scripts/build-linux.sh --engine-only
+          ccache --show-stats
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: linux-engine
+          path: build/linux/app-resources/linux-x64/libengine.so
+          if-no-files-found: error
+          retention-days: 1
+
   flatpak:
     name: Packaging Flatpak
-    needs: engine
+    needs: [engine, linux-engine]
     runs-on: ubuntu-latest
     timeout-minutes: 150
+    env:
+      PROVENIO_ENGINE_LIBRARY: ${{ github.workspace }}/build/linux/prebuilt/libengine.so
 
     steps:
       - name: Check out source
         uses: actions/checkout@v6
         with:
           ref: ${{ needs.engine.outputs.sha }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: linux-engine
+          path: build/linux/prebuilt
 
       - name: Set up environment
         uses: ./.github/actions/setup-environment
@@ -192,7 +261,6 @@ jobs:
   # The engine's JNI library for Windows, cross-built on Linux with the engine's own llvm-mingw toolchain.
   windows-engine:
     name: Windows engine
-    needs: engine
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -201,20 +269,29 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+
+      - id: built
+        uses: actions/cache@v4
         with:
-          ref: ${{ needs.engine.outputs.sha }}
+          path: |
+            build/windows/engine.dll
+            build/windows/provenio.ico
+          key: windows-engine-${{ env.LLVM_MINGW_VERSION }}-${{ hashFiles('engine/**', 'scripts/build-windows-engine.sh', 'packaging/linux/io.github.dimitrysaf.Provenio.png') }}
 
       - uses: actions/setup-java@v5
+        if: steps.built.outputs.cache-hit != 'true'
         with:
           distribution: temurin
           java-version: 17
 
       - uses: actions/cache@v4
+        if: steps.built.outputs.cache-hit != 'true'
         with:
           path: engine/platform/windows/.deps
           key: windows-deps-${{ env.LLVM_MINGW_VERSION }}-${{ hashFiles('engine/scripts/prepare-native-dependencies.sh', 'engine/scripts/build-windows-openssl.sh') }}
 
       - name: Set up environment
+        if: steps.built.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ninja-build imagemagick > /dev/null
@@ -224,6 +301,7 @@ jobs:
           sudo tar -xJf /tmp/llvm-mingw.tar.xz --strip-components=1 -C /opt/llvm-mingw
 
       - name: Building engine
+        if: steps.built.outputs.cache-hit != 'true'
         run: scripts/build-windows-engine.sh
 
       - uses: actions/upload-artifact@v7

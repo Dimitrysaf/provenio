@@ -3,6 +3,9 @@
 #
 #   scripts/build-linux.sh              everything, ending with the Flatpak bundle
 #   scripts/build-linux.sh --no-flatpak the engine library and app JAR only (for `gradlew run`)
+#   scripts/build-linux.sh --engine-only the engine library only
+#
+# PROVENIO_ENGINE_LIBRARY set to an already built libengine.so skips building the engine.
 #
 # Needs: a JDK 17+ (JAVA_HOME), a C/C++ toolchain, perl and make. CMake and Ninja come from PATH
 # or the Android SDK. The Flatpak step needs flatpak-builder, native or as org.flatpak.Builder.
@@ -28,7 +31,9 @@ repository=$(cd "$(dirname "$0")/.." && pwd -P)
 build_root="$repository/build/linux"
 architecture=$(uname -m)
 make_flatpak=true
+engine_only=false
 [[ "${1:-}" == "--no-flatpak" ]] && make_flatpak=false
+[[ "${1:-}" == "--engine-only" ]] && engine_only=true
 
 case "$architecture" in
     x86_64) resource_platform=linux-x64 ;;
@@ -59,40 +64,47 @@ for tool in cmake ninja perl make cc c++; do
     command -v "$tool" >/dev/null || { echo "missing build tool: $tool" >&2; exit 2; }
 done
 
-jni_includes=""
-if [[ -n "${JAVA_HOME:-}" && -f "$JAVA_HOME/include/jni.h" ]]; then
-    jni_includes="$JAVA_HOME/include;$JAVA_HOME/include/linux"
+if [[ -n "${PROVENIO_ENGINE_LIBRARY:-}" ]]; then
+    engine_library=$PROVENIO_ENGINE_LIBRARY
+    [[ -f "$engine_library" ]] || { echo "no engine library at $engine_library" >&2; exit 2; }
+    echo "==> Using the engine library at $engine_library"
 else
-    # The NDK's jni.h is self-contained and uses the standard JNI ABI.
-    ndk_jni=$(ls "$android_sdk"/ndk/*/toolchains/llvm/prebuilt/*/sysroot/usr/include/jni.h 2>/dev/null | sort -V | tail -n 1 || true)
-    [[ -n "$ndk_jni" ]] || { echo "no jni.h: set JAVA_HOME to a full JDK" >&2; exit 2; }
-    # Only the header: the sysroot around it holds Android's C library headers.
-    install -Dm644 "$ndk_jni" "$build_root/jni/jni.h"
-    jni_includes="$build_root/jni"
+    jni_includes=""
+    if [[ -n "${JAVA_HOME:-}" && -f "$JAVA_HOME/include/jni.h" ]]; then
+        jni_includes="$JAVA_HOME/include;$JAVA_HOME/include/linux"
+    else
+        # The NDK's jni.h is self-contained and uses the standard JNI ABI.
+        ndk_jni=$(ls "$android_sdk"/ndk/*/toolchains/llvm/prebuilt/*/sysroot/usr/include/jni.h 2>/dev/null | sort -V | tail -n 1 || true)
+        [[ -n "$ndk_jni" ]] || { echo "no jni.h: set JAVA_HOME to a full JDK" >&2; exit 2; }
+        # Only the header: the sysroot around it holds Android's C library headers.
+        install -Dm644 "$ndk_jni" "$build_root/jni/jni.h"
+        jni_includes="$build_root/jni"
+    fi
+
+    echo "==> OpenSSL"
+    "$repository/engine/scripts/build-linux-openssl.sh" "$build_root/deps" "$architecture"
+    openssl_root="$build_root/deps/openssl/install/$architecture"
+
+    echo "==> Engine JNI library"
+    cmake -S "$repository/engine/platform/jvm" -B "$build_root/engine" -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -DENGINE_JNI_INCLUDE_DIRS="$jni_includes" \
+        -DOPENSSL_ROOT_DIR="$openssl_root" \
+        -DOPENSSL_INCLUDE_DIR="$openssl_root/include" \
+        -DOPENSSL_SSL_LIBRARY="$openssl_root/lib/libssl.a" \
+        -DOPENSSL_CRYPTO_LIBRARY="$openssl_root/lib/libcrypto.a" \
+        -DOPENSSL_USE_STATIC_LIBS=TRUE \
+        -DCMAKE_JOB_POOLS="compile=$BUILD_JOBS;link=1" \
+        -DCMAKE_JOB_POOL_COMPILE=compile \
+        -DCMAKE_JOB_POOL_LINK=link
+    cmake --build "$build_root/engine" --target engine --parallel "$BUILD_JOBS"
+    engine_library=$(find "$build_root/engine" -name 'libengine.so*' -type f | head -n 1)
+    [[ -n "$engine_library" ]] || { echo "libengine.so was not built" >&2; exit 1; }
 fi
-
-echo "==> OpenSSL"
-"$repository/engine/scripts/build-linux-openssl.sh" "$build_root/deps" "$architecture"
-openssl_root="$build_root/deps/openssl/install/$architecture"
-
-echo "==> Engine JNI library"
-cmake -S "$repository/engine/platform/jvm" -B "$build_root/engine" -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-    -DENGINE_JNI_INCLUDE_DIRS="$jni_includes" \
-    -DOPENSSL_ROOT_DIR="$openssl_root" \
-    -DOPENSSL_INCLUDE_DIR="$openssl_root/include" \
-    -DOPENSSL_SSL_LIBRARY="$openssl_root/lib/libssl.a" \
-    -DOPENSSL_CRYPTO_LIBRARY="$openssl_root/lib/libcrypto.a" \
-    -DOPENSSL_USE_STATIC_LIBS=TRUE \
-    -DCMAKE_JOB_POOLS="compile=$BUILD_JOBS;link=1" \
-    -DCMAKE_JOB_POOL_COMPILE=compile \
-    -DCMAKE_JOB_POOL_LINK=link
-cmake --build "$build_root/engine" --target engine --parallel "$BUILD_JOBS"
-engine_library=$(find "$build_root/engine" -name 'libengine.so*' -type f | head -n 1)
-[[ -n "$engine_library" ]] || { echo "libengine.so was not built" >&2; exit 1; }
 # Compose Desktop bundles this directory as the app's resources, so `gradlew run` finds it too.
 install -Dm755 "$engine_library" "$build_root/app-resources/$resource_platform/libengine.so"
+$engine_only && { echo "Engine ready in $build_root/app-resources/$resource_platform"; exit 0; }
 
 echo "==> App JAR"
 # A single-use Gradle with smaller heaps than the Android build's, stopped when done.
