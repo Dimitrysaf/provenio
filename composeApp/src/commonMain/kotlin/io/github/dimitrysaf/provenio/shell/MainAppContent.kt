@@ -447,7 +447,6 @@ internal fun MainAppContent(
                     sharedTransitionScope = this@SharedTransitionLayout,
                     transitionSpec = navigationMotion.transitionSpec,
                     popTransitionSpec = navigationMotion.popTransitionSpec,
-                    predictivePopTransitionSpec = navigationMotion.predictivePopTransitionSpec,
                     entryProvider = appEntryProvider(
                         navController = navController,
                         sharedTransitionScope = this@SharedTransitionLayout,

@@ -77,7 +77,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.foundation.layout.fillMaxHeight
 import io.github.dimitrysaf.provenio.shell.components.BackButton
 import io.github.dimitrysaf.provenio.shell.components.M3Motion
-import io.github.dimitrysaf.provenio.shell.components.rememberSideSheetBackPreview
+import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
 import io.github.dimitrysaf.provenio.shell.components.WindowBreakpoint
 import io.github.dimitrysaf.provenio.core.membership.CosmeticEntitlement
 import io.github.dimitrysaf.provenio.shell.screens.settings.MemberBrandWordmark
@@ -270,10 +270,7 @@ fun ProfileSelectionScreen(
                         )
                     }
 
-                    val editorBackPreview = rememberSideSheetBackPreview(enabled = editorTarget != null) { editorTarget = null }
-                    LaunchedEffect(editorTarget != null) {
-                        if (editorTarget != null) editorBackPreview.progress = 0f
-                    }
+                    PlatformBackHandler(enabled = editorTarget != null) { editorTarget = null }
                     AnimatedVisibility(
                         visible = editorTarget != null,
                         enter = slideInHorizontally(tween(400, easing = M3Motion.EmphasizedDecelerate)) { it },
@@ -289,7 +286,6 @@ fun ProfileSelectionScreen(
                             // surface container low rather than sitting on the background.
                             modifier = Modifier
                                 .padding(16.dp)
-                                .then(editorBackPreview.modifier())
                                 .width(SideSheetMaxWidth)
                                 .fillMaxHeight(),
                             shape = ShapeDefaults.ExtraLarge,

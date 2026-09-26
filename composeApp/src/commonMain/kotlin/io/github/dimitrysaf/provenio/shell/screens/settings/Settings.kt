@@ -61,7 +61,6 @@ import io.github.dimitrysaf.provenio.shell.components.ScreenActivityEffect
 import io.github.dimitrysaf.provenio.shell.components.LocalBottomNavigationOverlayPadding
 import io.github.dimitrysaf.provenio.shell.components.ScreenScaffold
 import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
-import io.github.dimitrysaf.provenio.shell.components.PredictiveBackPageHost
 import io.github.dimitrysaf.provenio.core.addons.AddonRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsUiState
@@ -118,8 +117,6 @@ internal const val SettingsDownloadsPageName = "Downloads"
 private val SettingsSearchRevealThreshold = 28.dp
 private const val SettingsSearchRevealAnimationMillis = 240L
 private const val SettingsSearchRevealHapticDelayMillis = 90L
-
-private fun SettingsPage.depth(): Int = generateSequence(this) { it.previousPage() }.count()
 
 private fun SettingsPage.isEnabledByPolicy(): Boolean =
     when (this) {
@@ -284,14 +281,17 @@ fun SettingsScreen(
             onRequestedPageConsumed()
         }
 
-        val backEnabled = screenActive && previousPage != null && (rootActionsEnabled || onExternalBack != null)
+        // A page that is its own navigation destination leaves back to the navigator, which gives it the predictive back animation.
+        PlatformBackHandler(
+            enabled = screenActive && previousPage != null && rootActionsEnabled && onNavigatePage == null,
+            onBack = ::navigateBack,
+        )
 
         if (screenActive || page == SettingsPage.Root) {
             pageStateHolder.SaveableStateProvider("content") {
                 if (twoPane) {
                     TabletSettingsScreen(
                         page = page,
-                        backEnabled = backEnabled,
                         scrollToTopRequests = scrollToTopRequests,
                         onPageChange = ::openPage,
                         onNavigateBack = ::navigateBack,
@@ -309,7 +309,6 @@ fun SettingsScreen(
                 } else {
                     MobileSettingsScreen(
                         page = page,
-                        backEnabled = backEnabled,
                         scrollToTopRequests = scrollToTopRequests,
                         onPageChange = ::openPage,
                         onNavigateBack = ::navigateBack,
@@ -343,7 +342,6 @@ private val SettingsSidebarWidth = 384.dp
 @Composable
 private fun MobileSettingsScreen(
     page: SettingsPage,
-    backEnabled: Boolean,
     scrollToTopRequests: Flow<Unit>,
     onPageChange: (SettingsPage) -> Unit,
     onNavigateBack: () -> Unit,
@@ -364,13 +362,6 @@ private fun MobileSettingsScreen(
 
 ) {
     val saveableStateHolder = rememberSaveableStateHolder()
-    PredictiveBackPageHost(
-        page = page,
-        backPage = page.previousPage(),
-        backEnabled = backEnabled,
-        isForward = { from, to -> to.depth() > from.depth() },
-        onBack = onNavigateBack,
-    ) { page ->
     saveableStateHolder.SaveableStateProvider(page.name) {
         var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
         var rootSearchVisible by rememberSaveable { mutableStateOf(false) }
@@ -502,7 +493,6 @@ private fun MobileSettingsScreen(
             }
         }
     }
-    }
 }
 
 @Composable
@@ -551,7 +541,6 @@ private fun rememberSettingsRootSearchRevealConnection(
 @Composable
 private fun TabletSettingsScreen(
     page: SettingsPage,
-    backEnabled: Boolean,
     scrollToTopRequests: Flow<Unit>,
     onPageChange: (SettingsPage) -> Unit,
     onNavigateBack: () -> Unit,
@@ -672,14 +661,6 @@ private fun TabletSettingsScreen(
             return@Row
         }
 
-        PredictiveBackPageHost(
-            page = page,
-            backPage = page.previousPage(),
-            backEnabled = backEnabled,
-            isForward = { from, to -> to.depth() > from.depth() },
-            onBack = onNavigateBack,
-            modifier = Modifier.weight(1f).fillMaxSize(),
-        ) { page ->
         saveableStateHolder.SaveableStateProvider(page.name) {
             var rootSearchVisible by rememberSaveable { mutableStateOf(false) }
             var rootSearchRevealAnimating by rememberSaveable { mutableStateOf(false) }
@@ -834,7 +815,6 @@ private fun TabletSettingsScreen(
                 }
             }
             }
-        }
         }
     }
 }

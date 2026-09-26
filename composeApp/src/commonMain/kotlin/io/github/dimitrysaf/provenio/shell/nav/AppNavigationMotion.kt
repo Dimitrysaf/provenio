@@ -18,9 +18,6 @@ internal class AppNavigationMotion(private val slidePx: Int) {
     val popTransitionSpec: AnimatedContentTransitionScope<Scene<NavKey>>.() -> ContentTransform = {
         M3Motion.sharedAxisX(forward = false, slidePx = slidePx)
     }
-    val predictivePopTransitionSpec: AnimatedContentTransitionScope<Scene<NavKey>>.(Int) -> ContentTransform = {
-        M3Motion.predictiveBack()
-    }
 }
 
 @Composable

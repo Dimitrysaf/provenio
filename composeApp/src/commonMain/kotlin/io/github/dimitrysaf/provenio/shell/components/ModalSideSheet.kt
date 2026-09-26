@@ -1,19 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animate
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -54,7 +41,6 @@ internal fun ModalSideSheet(
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         val visibleState = remember { MutableTransitionState(false) }.apply { targetState = true }
-        val backPreview = rememberSideSheetBackPreview(enabled = true, onBack = onDismissRequest)
         Box(modifier = Modifier.fillMaxSize()) {
             // The scrim sits behind the sheet, so only a tap outside the sheet dismisses it.
             Box(
@@ -76,7 +62,6 @@ internal fun ModalSideSheet(
                 Surface(
                     modifier = modifier
                         .padding(16.dp)
-                        .then(backPreview.modifier())
                         .width(SideSheetWidth)
                         .fillMaxHeight(),
                     shape = ShapeDefaults.ExtraLarge,
@@ -95,46 +80,4 @@ internal fun ModalSideSheet(
 
 private val SideSheetWidth = 400.dp
 private const val SideSheetEnterMillis = 400
-private val SideSheetBackShrink = 24.dp
-private val SideSheetBackGrow = 12.dp
-private val SideSheetBackHeightShrink = 48.dp
 
-// Back gesture progress for a side sheet, which previews its dismissal before the gesture commits.
-internal class SideSheetBackPreview {
-    var progress by mutableFloatStateOf(0f)
-    var fromRightEdge by mutableStateOf(true)
-
-    @Composable
-    fun modifier(): Modifier {
-        val ltr = LocalLayoutDirection.current == LayoutDirection.Ltr
-        return Modifier.graphicsLayer {
-            // It shrinks toward its own edge, or grows when swiped from the far one.
-            val towardSheetEdge = fromRightEdge == ltr
-            val widthChange = if (towardSheetEdge) -SideSheetBackShrink.toPx() else SideSheetBackGrow.toPx()
-            scaleX = 1f + widthChange * progress / size.width.coerceAtLeast(1f)
-            scaleY = 1f - SideSheetBackHeightShrink.toPx() * progress / size.height.coerceAtLeast(1f)
-            transformOrigin = TransformOrigin(if (ltr) 1f else 0f, 0.5f)
-        }
-    }
-}
-
-@Composable
-internal fun rememberSideSheetBackPreview(enabled: Boolean, onBack: () -> Unit): SideSheetBackPreview {
-    val preview = remember { SideSheetBackPreview() }
-    val currentOnBack by rememberUpdatedState(onBack)
-    PlatformPredictiveBackHandler(enabled = enabled) { events ->
-        try {
-            events.collect { event ->
-                preview.fromRightEdge = event.fromRightEdge
-                preview.progress = M3Motion.PredictiveBack.transform(event.progress)
-            }
-            currentOnBack()
-        } catch (cancelled: CancellationException) {
-            withContext(NonCancellable) {
-                animate(preview.progress, 0f) { value, _ -> preview.progress = value }
-            }
-            throw cancelled
-        }
-    }
-    return preview
-}

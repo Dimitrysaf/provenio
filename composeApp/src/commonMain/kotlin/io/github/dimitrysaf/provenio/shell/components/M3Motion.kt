@@ -2,12 +2,10 @@ package io.github.dimitrysaf.provenio.shell.components
 
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -25,7 +23,6 @@ internal object M3Motion {
     private const val SharedAxisFadeOutMillis = 140
     private const val FadeThroughOutMillis = 90
     private const val FadeThroughInMillis = 210
-    const val PredictiveBackMillis = 350
 
     // Shared X axis, for moving forward or back between screens of the same hierarchy.
     fun sharedAxisX(forward: Boolean, slidePx: Int): ContentTransform {
@@ -45,21 +42,4 @@ internal object M3Motion {
     fun <T> fadeThroughInSpec() = tween<T>(FadeThroughInMillis, delayMillis = FadeThroughOutMillis, easing = EmphasizedDecelerate)
 
     fun <T> fadeThroughOutSpec() = tween<T>(FadeThroughOutMillis, easing = EmphasizedAccelerate)
-
-    // Android's predictive back curve, applied to the raw gesture progress so the screen answers the finger at once.
-    val PredictiveBack = CubicBezierEasing(0.1f, 0.1f, 0f, 1f)
-
-    // Where the curve reaches 35%, the point at which the exiting screen is gone and the entering one starts to appear.
-    private const val PredictiveBackFadeFraction = 0.094f
-
-    // The full screen back pattern: the old screen scales to 90% and fades out, then the previous one fades in from 110%.
-    fun predictiveBack(): ContentTransform {
-        val fadeMillis = (PredictiveBackMillis * PredictiveBackFadeFraction).toInt()
-        val enter = scaleIn(tween(PredictiveBackMillis, easing = PredictiveBack), initialScale = 1.1f) +
-            fadeIn(tween(PredictiveBackMillis - fadeMillis, delayMillis = fadeMillis, easing = PredictiveBack))
-        val exit = scaleOut(tween(PredictiveBackMillis, easing = PredictiveBack), targetScale = 0.9f) +
-            fadeOut(tween(fadeMillis, easing = LinearEasing))
-        return enter togetherWith exit
-    }
 }
-

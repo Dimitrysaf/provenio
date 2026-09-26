@@ -137,7 +137,7 @@ internal fun buildAppTabActions(
             }
         },
         onConnectCloudClick = {
-            if (useNativeNavigation && !isTabletLayout) {
+            if (!isTabletLayout) {
                 activateTab(AppScreenTab.Settings)
                 navController.navigate(
                     SettingsPageRoute(
@@ -153,7 +153,8 @@ internal fun buildAppTabActions(
         onContinueWatchingClick = { item -> playback.openContinueWatching(item) },
         onContinueWatchingLongPress = onContinueWatchingLongPress,
         onSwitchProfile = onSwitchProfile,
-        onSettingsPageClick = if (useNativeNavigation && !isTabletLayout) {
+        // Phone settings pages are navigation destinations, so the navigator runs their predictive back.
+        onSettingsPageClick = if (!isTabletLayout) {
             { pageName, title ->
                 navController.navigate(SettingsPageRoute(pageName, title))
             }
