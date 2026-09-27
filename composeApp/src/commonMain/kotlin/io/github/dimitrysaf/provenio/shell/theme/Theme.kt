@@ -11,6 +11,9 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -171,18 +174,18 @@ fun Theme(
     content: @Composable () -> Unit,
 ) {
     val dynamicColorScheme = if (useDynamicColor) rememberDynamicColorScheme() else null
-    val palette = remember(dynamicColorScheme, amoled) {
-        dynamicColorScheme?.toDynamicThemeColorPalette(amoled) ?: ThemeColors.White
-    }
     // Material You's own scheme wherever the platform supplies one (Android 12+). Below that,
     // and on iOS, there is no wallpaper to derive a palette from, so fall back to Material's
     // baseline scheme rather than to a brand palette — a brand palette is not Material You.
     val colorScheme = remember(dynamicColorScheme, darkTheme, amoled) {
         val scheme = dynamicColorScheme
             ?: if (darkTheme) darkColorScheme() else lightColorScheme()
-        if (amoled) scheme.copy(background = Color.Black, surface = Color.Black) else scheme
+        if (amoled && scheme.background.luminance() < 0.5f) scheme.toAmoled() else scheme
     }
-    val tokens = defaultThemeTokens(palette, amoled = amoled, colorScheme = colorScheme)
+    val palette = remember(dynamicColorScheme, colorScheme) {
+        dynamicColorScheme?.let { colorScheme.toDynamicThemeColorPalette(amoled = false) } ?: ThemeColors.White
+    }
+    val tokens = defaultThemeTokens(palette, amoled = colorScheme.background == Color.Black, colorScheme = colorScheme)
 
     val density = LocalDensity.current
     CompositionLocalProvider(
@@ -202,3 +205,18 @@ fun Theme(
         }
     }
 }
+
+// Pure black behind everything, with every surface container darkened by the same step so cards, sheets and bars keep their order.
+private fun ColorScheme.toAmoled(): ColorScheme = copy(
+    background = Color.Black,
+    surface = Color.Black,
+    surfaceDim = Color.Black,
+    surfaceContainerLowest = Color.Black,
+    surfaceContainerLow = lerp(surfaceContainerLow, Color.Black, AmoledContainerDarkening),
+    surfaceContainer = lerp(surfaceContainer, Color.Black, AmoledContainerDarkening),
+    surfaceContainerHigh = lerp(surfaceContainerHigh, Color.Black, AmoledContainerDarkening),
+    surfaceContainerHighest = lerp(surfaceContainerHighest, Color.Black, AmoledContainerDarkening),
+    surfaceBright = lerp(surfaceBright, Color.Black, AmoledContainerDarkening),
+)
+
+private const val AmoledContainerDarkening = 0.5f
