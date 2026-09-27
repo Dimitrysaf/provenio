@@ -54,10 +54,13 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.ForwardingRenderer
 import androidx.media3.exoplayer.Renderer
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.text.TextOutput
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
+import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.ts.DefaultTsPayloadReaderFactory
 import androidx.media3.extractor.ts.TsExtractor
@@ -2202,6 +2205,43 @@ private class SubtitleOffsetRenderersFactory(
     private val shouldStripSdhProvider: () -> Boolean,
     private val videoBoundsFractionProvider: () -> RectF?,
 ) : DefaultRenderersFactory(context) {
+    override fun buildVideoRenderers(
+        context: Context,
+        extensionRendererMode: Int,
+        mediaCodecSelector: MediaCodecSelector,
+        enableDecoderFallback: Boolean,
+        eventHandler: android.os.Handler,
+        eventListener: VideoRendererEventListener,
+        allowedVideoJoiningTimeMs: Long,
+        out: ArrayList<Renderer>,
+    ) {
+        val startIndex = out.size
+        super.buildVideoRenderers(
+            context,
+            extensionRendererMode,
+            mediaCodecSelector,
+            enableDecoderFallback,
+            eventHandler,
+            eventListener,
+            allowedVideoJoiningTimeMs,
+            out,
+        )
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) return
+        for (index in startIndex until out.size) {
+            if (out[index].javaClass != MediaCodecVideoRenderer::class.java) continue
+            out[index] = SurfaceReinitializingVideoRenderer(
+                MediaCodecVideoRenderer.Builder(context)
+                    .setCodecAdapterFactory(codecAdapterFactory)
+                    .setMediaCodecSelector(mediaCodecSelector)
+                    .setAllowedJoiningTimeMs(allowedVideoJoiningTimeMs)
+                    .setEnableDecoderFallback(enableDecoderFallback)
+                    .setEventHandler(eventHandler)
+                    .setEventListener(eventListener)
+                    .setMaxDroppedFramesToNotify(MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY),
+            )
+        }
+    }
+
     override fun buildTextRenderers(
         context: Context,
         output: TextOutput,
@@ -2329,6 +2369,13 @@ private class CueNormalizingTextOutput(
     companion object {
         private val RTL_PUNCTUATION = setOf('.', ',', '?', '!', '-', ':', ';', '…', ')', '(')
     }
+}
+
+@androidx.annotation.OptIn(UnstableApi::class)
+private class SurfaceReinitializingVideoRenderer(
+    builder: MediaCodecVideoRenderer.Builder,
+) : MediaCodecVideoRenderer(builder) {
+    override fun codecNeedsSetOutputSurfaceWorkaround(name: String): Boolean = true
 }
 
 @androidx.annotation.OptIn(UnstableApi::class)
