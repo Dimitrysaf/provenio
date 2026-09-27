@@ -95,8 +95,6 @@ data class AddonsSettingsRoute(override val title: String = "") : SettingsDestin
 data class PluginsSettingsRoute(override val title: String = "") : SettingsDestinationRoute
 
 @Serializable
-
-@Serializable
 data class LicensesAttributionsSettingsRoute(override val title: String = "") : SettingsDestinationRoute
 
 @Serializable

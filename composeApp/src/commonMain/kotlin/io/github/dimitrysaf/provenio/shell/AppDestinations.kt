@@ -50,7 +50,6 @@ internal data class AppPageTitles(
     val downloads: String,
     val addons: String,
     val plugins: String,
-    val supporters: String,
     val licenses: String,
     val collections: String,
     val newCollection: String,
