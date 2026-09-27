@@ -48,6 +48,16 @@ env PROVENIO_IOS_DISTRIBUTION=full xcodebuild \
 
 The shared app is built with Kotlin Multiplatform and Compose Multiplatform.
 
+## Made with Claude
+
+Provenio is built with a lot of help from AI. Most of the code, the artwork and the build setup were written by [Claude](https://claude.ai), Anthropic's AI assistant, working through [Claude Code](https://claude.com/claude-code). I decide what the app should do, test every build on real devices and review what goes in, but I did not type most of it myself.
+
+That means you may find mistakes an AI can make: code that looks right but misbehaves in an edge case, or a feature that works differently than it says. If you spot one, please open an issue. Reports like that are exactly what keeps this project honest.
+
+## Contributing
+
+Bug reports, suggestions, questions, translations and pull requests are all welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to send them.
+
 ## Privacy
 
 Provenio has no accounts and no servers of its own. Your library, progress and settings stay on your devices, and Local sync moves them directly between your devices on your network. The app only talks to the services you connect, such as TMDB, Trakt, Simkl, debrid providers and your addons, under their own privacy policies.

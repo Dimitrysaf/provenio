@@ -1,181 +1,71 @@
 # Contributing
 
-Thanks for helping improve Provenio.
+Thanks for wanting to help with Provenio. Every kind of contribution is welcome, big or small, and you do not need to be a developer to help.
 
-## Strict rules - read before opening anything
+## Ways to help
 
-These rules are enforced strictly. Issues and PRs that do not follow them will be closed without review.
+- **Report a bug.** Something crashed, looks wrong or does not do what you expected.
+- **Suggest an idea.** A feature you miss, something that annoys you, or a better way to do something.
+- **Ask a question.** If something is confusing, that is worth knowing too.
+- **Translate.** Help Provenio speak your language.
+- **Improve the docs.** Fix a typo, clarify a step, add something missing.
+- **Send code.** Fixes, features, cleanups, refactors or design changes.
 
----
+All of these go through [GitHub Issues](https://github.com/Dimitrysaf/provenio/issues) or pull requests. If you are not sure which, open an issue and we will figure it out together.
 
-## What PRs are for
+## Reporting a bug
 
-Pull requests are accepted only when they fit one of these categories:
+The more of this you can include, the faster it gets fixed, but a short report is still better than none:
 
-- Reproducible bug fixes for documented issues
-- UI glitch fixes for visible bugs or regressions, with before/after proof
-- Behavior bug fixes that restore expected behavior without changing product direction
-- Small maintenance work that does not change UI, UX, behavior, dependencies, architecture, or public contracts
-- Small documentation fixes that improve accuracy
-- Translation/localization updates
+- What you did, step by step
+- What you expected to happen, and what happened instead
+- The app version (shown at the bottom of Settings) and whether it is a Release or Beta build
+- Your platform and device (for example Android 14 on a Pixel 7, Windows 11, Fedora with Flatpak)
+- Screenshots or a short video, if it is something you can see
+- Whether it happens every time, sometimes or only once
 
-Pull requests are not accepted for:
+For crashes, a log helps a lot:
 
-- New major features
-- Product direction changes
-- UX/UI redesigns
-- Cosmetic-only UI changes
-- "Minor polish" changes to colors, spacing, typography, icons, copy, layout, animations, or visual style
-- Behavior changes that are not tied to a reproducible bug or approved feature request
-- Refactors without a clear maintenance need
-- Dependency additions or architecture changes without prior approval
+- **Android:** `adb logcat -d | tail -n 300`
+- **Desktop:** the terminal output from around the time it happened
 
-Translation PRs are allowed, as long as they stay focused on translation/localization work and do not bundle unrelated feature or UI changes.
+Please leave out anything private from logs and screenshots, such as API keys, debrid tokens or add-on links that contain your account details.
 
----
+## Suggesting an idea
 
-## UI changes
+Describe the problem you want solved and, if you have one, how you imagine the solution. Rough ideas are fine. There is no need for a full design.
 
-Do not open a pull request for a UI change just because it looks better, cleaner, more modern, or more consistent to you.
+## Sending a pull request
 
-UI PRs are accepted only when they fix a specific, documented glitch or bug, such as:
+Pull requests of any size are welcome.
 
-- Broken layout
-- Overlapping or clipped text
-- Unreadable content
-- Incorrect visual state
-- Navigation, gesture, or focus glitches
-- A visible regression from a previous version
-- A crash, blank screen, or unusable screen caused by UI code
+1. Fork the repository and create a branch from `main`.
+2. Make your change. Keep unrelated changes in separate pull requests when you can, since that makes them easier to review.
+3. Describe what you changed and why. For anything visible, screenshots or a video help a lot.
+4. Open the pull request against `main`.
 
-Every UI PR must include:
+If you are planning something large, like a new feature or a redesign, opening an issue first to talk it through can save you work, but it is not required.
 
-- A linked bug issue
-- A short explanation of the exact glitch being fixed
-- Before and after screenshots or a short video
-- The smallest possible change that fixes the glitch
+You do not need every platform's toolchain installed. The project's builds run on GitHub Actions, and your change will be built and tested there before it is merged.
 
-Cosmetic-only UI PRs will be closed, even if the change is small.
+### Code style
 
----
+- Follow the style of the code around your change.
+- Keep comments short and to a single line.
+- Use Material 3 components for UI.
 
-## Behavior changes
+### Using AI tools
 
-Behavior includes, but is not limited to, playback, stream/source selection, resume state, watched state, search, sync, settings defaults, navigation, gestures, error handling, caching, networking, storage, downloads, offline behavior, and account-related flows.
+This project is itself built with a lot of help from Claude, so contributions written with AI assistance are welcome. Please test what you send and make sure you understand it well enough to answer questions about it.
 
-Do not open a PR that changes behavior unless one of these is true:
+## Translations
 
-- It fixes a linked, reproducible bug or regression and restores the intended behavior.
-- It links an approved feature request where a maintainer explicitly approved implementation.
+The app's text lives in `composeApp/src/commonMain/composeResources/values-*/strings.xml`, one folder per language. To add or improve a language, edit or create the matching folder, using `values/strings.xml` (English) as the reference, and open a pull request. Partial translations are welcome; missing strings fall back to English.
 
-Behavior PRs must explain:
+## Be kind
 
-- The old behavior
-- The broken or unwanted behavior
-- The new behavior
-- How the behavior was tested
+Be respectful and patient with everyone, whether they are reporting their first bug or sending their hundredth pull request.
 
-Minor behavior tweaks are still behavior changes. They need the same issue link or approval.
+## License
 
----
-
-## Large PRs and large changes
-
-**Any large PR or change that is not a simple bug fix must be discussed and approved via a feature request issue first.**
-
-1. Open a **Feature Request** issue describing the change.
-2. Wait for explicit maintainer approval on that issue.
-3. Link the approved issue in your PR description.
-
-PRs that introduce large changes without a linked, approved feature request **will not be reviewed at all** and will be closed immediately. No exceptions.
-
-This applies to UI changes, behavior changes, new features, architecture changes, dependency additions, large refactors, migrations, and changes that affect product direction.
-
-Approval means a maintainer has clearly said the implementation is approved. A feature request being open, popular, or labeled `enhancement` is not approval.
-
----
-
-## Where to ask questions
-
-- Use **Issues** for bugs, feature requests, setup help, and general support.
-
----
-
-## Bug reports (rules)
-
-To keep issues fixable, bug reports should include:
-
-- A short, specific issue title that describes the bug
-- App version (release version or commit hash)
-- Platform (Android / iOS / Desktop) + device model + OS version
-- Install method (release build / TestFlight / CI / built from source)
-- Steps to reproduce (exact steps)
-- Expected vs actual behavior
-- Frequency (always/sometimes/once)
-
-Do not leave the title as just `[Bug]:` or another generic placeholder.
-
-Logs are optional for most issues, but they are **required** for crash / force-close reports.
-
-### How to capture logs (optional)
-
-**Android:**
-
-```sh
-adb logcat -d | tail -n 300
-```
-
-**iOS:**
-
-Attach a crash log from Xcode Organizer or Console.app, or reproduce while connected to Xcode and copy the relevant log output.
-
-**Desktop:**
-
-Copy the relevant terminal/console output from around the time the issue occurred.
-
----
-
-## Feature requests (rules)
-
-Please include:
-
-- The problem you are solving (use case)
-- Your proposed solution
-- Alternatives considered (if any)
-
-Opening a feature request does **not** mean a pull request will be accepted for it. If the feature affects product scope, UX direction, or adds a significant new surface area, do not start implementation unless a maintainer explicitly approves it first.
-
-**Large changes require an approved feature request before any PR is submitted.** See the [Large PRs and large changes](#large-prs-and-large-changes) section above.
-
----
-
-## Before opening a PR
-
-Please make sure your PR is all of the following:
-
-- Allowed by this policy
-- Small in scope and focused on one problem
-- Clearly aligned with the current direction of the project
-- Not cosmetic-only
-- Not changing behavior unless it fixes a linked bug or has explicit approval
-- Not changing UI unless it fixes a linked glitch/bug and includes visual proof
-- Not bundling refactors, cleanups, or drive-by changes with a bug fix
-- Tested manually and/or automatically in a way that matches the risk
-- Linked to an approved feature request issue if large, directional, or non-trivial
-
-PRs will be closed without review if they:
-
-- Are cosmetic-only UI changes
-- Change behavior without a linked bug or approved feature request
-- Change UI without screenshots/video
-- Bundle unrelated changes
-- Leave the PR template incomplete
-- Add dependencies, architecture changes, or broad refactors without approval
-
-Review time is reserved for bugs, regressions, stability, translations, documentation accuracy, and approved work.
-
----
-
-## One issue per problem
-
-Please open separate issues for separate bugs/features. It makes tracking, fixing, and closing issues much faster.
+By contributing, you agree that your contribution is licensed under the [GNU General Public License v3.0](./LICENSE), the same license as the rest of the project.
