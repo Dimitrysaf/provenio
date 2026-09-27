@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktConnectionMode
 import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
 
 import androidx.compose.foundation.layout.Arrangement
@@ -118,11 +119,7 @@ private val SettingsSearchRevealThreshold = 28.dp
 private const val SettingsSearchRevealAnimationMillis = 240L
 private const val SettingsSearchRevealHapticDelayMillis = 90L
 
-private fun SettingsPage.isEnabledByPolicy(): Boolean =
-    when (this) {
-        SettingsPage.SupportersContributors -> AppFeaturePolicy.supportersContributorsPageEnabled
-        else -> true
-    }
+private fun SettingsPage.isEnabledByPolicy(): Boolean = true
 
 @Composable
 private fun settingsPageTitles(): Map<SettingsPage, String> {
@@ -152,7 +149,6 @@ fun SettingsScreen(
     onPluginsClick: () -> Unit = {},
     onDownloadsClick: () -> Unit = {},
     onOpenDownload: (DownloadItem) -> Unit = {},
-    onSupportersContributorsClick: () -> Unit = {},
     onLicensesAttributionsClick: () -> Unit = {},
     onCheckForUpdatesClick: (() -> Unit)? = null,
     onTestUpdateBannerClick: (() -> Unit)? = null,
@@ -235,11 +231,6 @@ fun SettingsScreen(
         } else {
             onPluginsClick
         }
-        val openSupportersContributors = if (onNavigatePage != null) {
-            { openPage(SettingsPage.SupportersContributors) }
-        } else {
-            onSupportersContributorsClick
-        }
         val openLicensesAttributions = if (onNavigatePage != null) {
             { openPage(SettingsPage.LicensesAttributions) }
         } else {
@@ -301,7 +292,6 @@ fun SettingsScreen(
                         downloadsOpen = downloadsOpen,
                         onDownloadsOpenChange = { downloadsOpen = it },
                         onOpenDownload = onOpenDownload,
-                        onSupportersContributorsClick = openSupportersContributors,
                         onLicensesAttributionsClick = openLicensesAttributions,
                         onCheckForUpdatesClick = onCheckForUpdatesClick,
                         onTestUpdateBannerClick = onTestUpdateBannerClick,
@@ -321,7 +311,6 @@ fun SettingsScreen(
                         onAddonsClick = openAddons,
                         onPluginsClick = openPlugins,
                         onDownloadsClick = onDownloadsClick,
-                        onSupportersContributorsClick = openSupportersContributors,
                         onLicensesAttributionsClick = openLicensesAttributions,
                         onCheckForUpdatesClick = onCheckForUpdatesClick,
                         onTestUpdateBannerClick = onTestUpdateBannerClick,
@@ -354,7 +343,6 @@ private fun MobileSettingsScreen(
     onAddonsClick: () -> Unit = {},
     onPluginsClick: () -> Unit = {},
     onDownloadsClick: () -> Unit = {},
-    onSupportersContributorsClick: () -> Unit = {},
     onLicensesAttributionsClick: () -> Unit = {},
     onCheckForUpdatesClick: (() -> Unit)? = null,
     onTestUpdateBannerClick: (() -> Unit)? = null,
@@ -388,11 +376,6 @@ private fun MobileSettingsScreen(
         fun openSearchTarget(target: SettingsSearchTarget) {
             when (target) {
                 is SettingsSearchTarget.Page -> when (target.page) {
-                    SettingsPage.SupportersContributors -> {
-                        if (AppFeaturePolicy.supportersContributorsPageEnabled) {
-                            onSupportersContributorsClick()
-                        }
-                    }
                     SettingsPage.LicensesAttributions -> onLicensesAttributionsClick()
                     SettingsPage.ContinueWatching -> onContinueWatchingClick()
                     SettingsPage.Addons -> onAddonsClick()
@@ -434,6 +417,7 @@ private fun MobileSettingsScreen(
             onAddonsClick = onAddonsClick,
             onPluginsClick = onPluginsClick,
             onCollectionsClick = onCollectionsClick,
+            onTestUpdateBannerClick = onTestUpdateBannerClick,
         )
         val previousPage = page.previousPage()
 
@@ -457,7 +441,6 @@ private fun MobileSettingsScreen(
                             settingsSearchEntries(
                                 isTablet = false,
                                 pluginsEnabled = AppFeaturePolicy.pluginsEnabled,
-                                supportersContributorsPageEnabled = AppFeaturePolicy.supportersContributorsPageEnabled,
                                 personalMediaAddonCopyEnabled = AppFeaturePolicy.personalMediaAddonCopyEnabled,
                                 switchProfileAvailable = onSwitchProfile != null,
                                 checkForUpdatesAvailable = onCheckForUpdatesClick != null,
@@ -479,13 +462,10 @@ private fun MobileSettingsScreen(
                             onContentDiscoveryClick = { onPageChange(SettingsPage.ContentDiscovery) },
                             onIntegrationsClick = { onPageChange(SettingsPage.Integrations) },
                             onTrackingClick = { onPageChange(SettingsPage.TraktAuthentication) },
-                            onSupportersContributorsClick = onSupportersContributorsClick,
                             onLicensesAttributionsClick = onLicensesAttributionsClick,
                             onCheckForUpdatesClick = onCheckForUpdatesClick,
-                            onTestUpdateBannerClick = onTestUpdateBannerClick,
                             onDownloadsClick = onDownloadsClick,
                             onSwitchProfileClick = onSwitchProfile,
-                            showSupportersContributorsPage = AppFeaturePolicy.supportersContributorsPageEnabled,
                         )
                     }
                 }
@@ -550,7 +530,6 @@ private fun TabletSettingsScreen(
     downloadsOpen: Boolean,
     onDownloadsOpenChange: (Boolean) -> Unit,
     onOpenDownload: (DownloadItem) -> Unit,
-    onSupportersContributorsClick: () -> Unit = {},
     onLicensesAttributionsClick: () -> Unit = {},
     onCheckForUpdatesClick: (() -> Unit)? = null,
     onTestUpdateBannerClick: (() -> Unit)? = null,
@@ -718,6 +697,7 @@ private fun TabletSettingsScreen(
                 onAddonsClick = { openInlinePage(SettingsPage.Addons) },
                 onPluginsClick = { openInlinePage(SettingsPage.Plugins) },
                 onCollectionsClick = { collectionsOpen = true },
+                onTestUpdateBannerClick = onTestUpdateBannerClick,
             )
             val previousPage = page.previousPage()
             val pageTitle = if (page == SettingsPage.Root) {
@@ -775,7 +755,6 @@ private fun TabletSettingsScreen(
                                 settingsSearchEntries(
                                     isTablet = true,
                                     pluginsEnabled = AppFeaturePolicy.pluginsEnabled,
-                                    supportersContributorsPageEnabled = AppFeaturePolicy.supportersContributorsPageEnabled,
                                         personalMediaAddonCopyEnabled = AppFeaturePolicy.personalMediaAddonCopyEnabled,
                                     switchProfileAvailable = onSwitchProfile != null,
                                     checkForUpdatesAvailable = onCheckForUpdatesClick != null,
@@ -797,17 +776,14 @@ private fun TabletSettingsScreen(
                                 onContentDiscoveryClick = { openInlinePage(SettingsPage.ContentDiscovery) },
                                 onIntegrationsClick = { openInlinePage(SettingsPage.Integrations) },
                                 onTrackingClick = { openInlinePage(SettingsPage.TraktAuthentication) },
-                                onSupportersContributorsClick = { openInlinePage(SettingsPage.SupportersContributors) },
                                 onLicensesAttributionsClick = { openInlinePage(SettingsPage.LicensesAttributions) },
                                 onCheckForUpdatesClick = onCheckForUpdatesClick,
-                                onTestUpdateBannerClick = onTestUpdateBannerClick,
                                 onDownloadsClick = ::openDownloads,
                                 onSwitchProfileClick = onSwitchProfile,
                                 showAccountSection = activeCategory == SettingsCategory.Profile,
                                 showGeneralSection = activeCategory == SettingsCategory.General,
                                 showAboutSection = activeCategory == SettingsCategory.About,
                                 showAdvancedSection = activeCategory == SettingsCategory.Advanced,
-                                showSupportersContributorsPage = AppFeaturePolicy.supportersContributorsPageEnabled,
                             )
                         }
                     }
@@ -968,6 +944,7 @@ internal class SettingsPageLinks(
     val onAddonsClick: () -> Unit,
     val onPluginsClick: () -> Unit,
     val onCollectionsClick: () -> Unit,
+    val onTestUpdateBannerClick: (() -> Unit)?,
 )
 
 // Every settings page except the root, which each layout lays out itself.
@@ -980,11 +957,6 @@ internal fun LazyListScope.settingsPageContent(
     val player = data.playerSettings
     when (page) {
         SettingsPage.Root -> Unit
-        SettingsPage.SupportersContributors -> {
-            if (AppFeaturePolicy.supportersContributorsPageEnabled) {
-                supportersContributorsContent(isTablet = isTablet)
-            }
-        }
         SettingsPage.LicensesAttributions -> licensesAttributionsContent(isTablet = isTablet)
         SettingsPage.Playback -> playbackSettingsContent(
             isTablet = isTablet,
@@ -1028,6 +1000,9 @@ internal fun LazyListScope.settingsPageContent(
         SettingsPage.Advanced -> advancedSettingsContent(
             isTablet = isTablet,
             rememberLastProfileEnabled = data.rememberLastProfileEnabled,
+            traktConnected = data.traktAuth.mode == TraktConnectionMode.CONNECTED,
+            traktEnabled = data.trackingSettings.traktEnabled,
+            onTestUpdateBannerClick = links.onTestUpdateBannerClick,
         )
         SettingsPage.Notifications -> notificationsSettingsContent(
             isTablet = isTablet,

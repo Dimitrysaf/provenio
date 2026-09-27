@@ -4,9 +4,6 @@ package io.github.dimitrysaf.provenio.core.build
 
 actual object AppFeaturePolicy {
     actual val pluginsEnabled: Boolean = false
-    actual val supportersContributorsPageEnabled: Boolean = true
-    actual val donationActionsEnabled: Boolean = false
-    actual val donationProgressEnabled: Boolean = true
     actual val personalMediaAddonCopyEnabled: Boolean = false
     actual val p2pEnabled: Boolean = true
     actual val trailerPlaybackMode: TrailerPlaybackMode = TrailerPlaybackMode.IN_APP

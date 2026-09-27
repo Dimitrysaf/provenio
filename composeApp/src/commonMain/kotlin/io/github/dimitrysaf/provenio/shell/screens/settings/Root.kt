@@ -7,10 +7,8 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Extension
-import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Notifications
@@ -41,7 +39,6 @@ import provenio.composeapp.generated.resources.compose_settings_page_licenses_at
 import provenio.composeapp.generated.resources.compose_settings_page_notifications
 import provenio.composeapp.generated.resources.compose_settings_page_playback
 import provenio.composeapp.generated.resources.compose_settings_page_privacy_policy
-import provenio.composeapp.generated.resources.compose_settings_page_supporters_contributors
 import provenio.composeapp.generated.resources.compose_settings_root_account_description
 import provenio.composeapp.generated.resources.compose_settings_root_appearance_description
 import provenio.composeapp.generated.resources.compose_settings_root_check_updates_description
@@ -63,9 +60,6 @@ import provenio.composeapp.generated.resources.compose_settings_root_advanced_se
 import provenio.composeapp.generated.resources.compose_settings_page_content_discovery
 import provenio.composeapp.generated.resources.compose_settings_page_tracking
 import provenio.composeapp.generated.resources.settings_playback_subtitle
-import provenio.composeapp.generated.resources.updates_debug_test_description
-import provenio.composeapp.generated.resources.updates_debug_test_title
-import provenio.composeapp.generated.resources.about_supporters_contributors_subtitle
 import provenio.composeapp.generated.resources.about_licenses_attributions_subtitle
 import org.jetbrains.compose.resources.stringResource
 
@@ -80,17 +74,14 @@ internal fun LazyListScope.settingsRootContent(
     onContentDiscoveryClick: () -> Unit,
     onIntegrationsClick: () -> Unit,
     onTrackingClick: () -> Unit,
-    onSupportersContributorsClick: () -> Unit,
     onLicensesAttributionsClick: () -> Unit,
     onCheckForUpdatesClick: (() -> Unit)? = null,
-    onTestUpdateBannerClick: (() -> Unit)? = null,
     onDownloadsClick: () -> Unit,
     onSwitchProfileClick: (() -> Unit)? = null,
     showAccountSection: Boolean = true,
     showGeneralSection: Boolean = true,
     showAboutSection: Boolean = true,
     showAdvancedSection: Boolean = true,
-    showSupportersContributorsPage: Boolean = true,
 ) {
     if (showAccountSection) {
         item {
@@ -175,14 +166,6 @@ internal fun LazyListScope.settingsRootContent(
                 showTitle = !isTablet,
             ) {
                 SettingsList {
-                    if (showSupportersContributorsPage) {
-                        navigationRow(
-                            title = stringResource(Res.string.compose_settings_page_supporters_contributors),
-                            description = stringResource(Res.string.about_supporters_contributors_subtitle),
-                            icon = Icons.Rounded.Favorite,
-                            onClick = onSupportersContributorsClick,
-                        )
-                    }
                     navigationRow(
                         title = stringResource(Res.string.compose_settings_page_privacy_policy),
                         description = stringResource(Res.string.compose_settings_root_privacy_policy_description),
@@ -201,14 +184,6 @@ internal fun LazyListScope.settingsRootContent(
                             description = stringResource(Res.string.compose_settings_root_check_updates_description),
                             icon = Icons.Rounded.CloudDownload,
                             onClick = onCheckForUpdatesClick,
-                        )
-                    }
-                    if (onTestUpdateBannerClick != null) {
-                        navigationRow(
-                            title = stringResource(Res.string.updates_debug_test_title),
-                            description = stringResource(Res.string.updates_debug_test_description),
-                            icon = Icons.Rounded.BugReport,
-                            onClick = onTestUpdateBannerClick,
                         )
                     }
                 }

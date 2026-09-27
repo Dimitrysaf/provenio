@@ -35,7 +35,6 @@ import io.github.dimitrysaf.provenio.shell.screens.settings.HomescreenSettingsSc
 import io.github.dimitrysaf.provenio.shell.screens.settings.LicensesAttributionsSettingsScreen
 import io.github.dimitrysaf.provenio.shell.screens.settings.MetaScreenSettingsScreen
 import io.github.dimitrysaf.provenio.shell.screens.settings.PluginsSettingsScreen
-import io.github.dimitrysaf.provenio.shell.screens.settings.SupportersContributorsSettingsScreen
 import io.github.dimitrysaf.provenio.shell.screens.updater.AppUpdaterController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -66,7 +65,6 @@ internal fun appPageTitles(): AppPageTitles = AppPageTitles(
     downloads = stringResource(Res.string.compose_settings_root_downloads_title),
     addons = stringResource(Res.string.compose_settings_page_addons),
     plugins = stringResource(Res.string.compose_settings_page_plugins),
-    supporters = stringResource(Res.string.compose_settings_page_supporters_contributors),
     licenses = stringResource(Res.string.compose_settings_page_licenses_attributions),
     collections = stringResource(Res.string.collections_header),
     newCollection = stringResource(Res.string.collections_new),
@@ -170,11 +168,6 @@ internal fun buildAppTabActions(
         onPluginsSettingsClick = {
             if (AppFeaturePolicy.pluginsEnabled) {
                 navController.navigate(PluginsSettingsRoute(titles.plugins))
-            }
-        },
-        onSupportersContributorsSettingsClick = {
-            if (AppFeaturePolicy.supportersContributorsPageEnabled) {
-                navController.navigate(SupportersContributorsSettingsRoute(titles.supporters))
             }
         },
         onLicensesAttributionsSettingsClick = {
@@ -363,15 +356,6 @@ internal fun appEntryProvider(
         entry<PluginsSettingsRoute> { route ->
             SettingsDestination(route, navController) { onBack ->
                 PluginsSettingsScreen(onBack = onBack)
-            }
-        }
-    }
-    entry<SupportersContributorsSettingsRoute> { route ->
-        SettingsDestination(route, navController) { onBack ->
-            if (AppFeaturePolicy.supportersContributorsPageEnabled) {
-                SupportersContributorsSettingsScreen(onBack = onBack)
-            } else {
-                LaunchedEffect(Unit) { onBack() }
             }
         }
     }

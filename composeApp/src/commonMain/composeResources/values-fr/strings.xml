@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="about_licenses_attributions_subtitle">Sources de données, remerciements et licences de plateforme</string>
-    <string name="about_supporters_contributors_subtitle">Reconnaissance et crédits du projet</string>
     <string name="action_back">Retour</string>
     <string name="action_cancel">Annuler</string>
     <string name="action_close">Fermer</string>
@@ -425,7 +424,6 @@
     <string name="compose_settings_page_root">Paramètres</string>
     <string name="compose_settings_page_streams">Streams</string>
     <string name="settings_appearance_section_streams">STREAMS</string>
-    <string name="compose_settings_page_supporters_contributors">Supporters et contributeurs</string>
     <string name="compose_settings_page_tmdb_enrichment">Enrichissement TMDB</string>
     <string name="compose_settings_page_trakt">Trakt</string>
     <string name="compose_settings_root_about_section">À PROPOS</string>
@@ -502,7 +500,6 @@
     <string name="settings_licenses_attributions_exoplayer_license">Distribué sous la licence Apache, version 2.0.</string>
     <string name="compose_trakt_list_picker_loading">Chargement de vos listes Trakt…</string>
     <string name="compose_trakt_list_picker_subtitle">Choisissez où enregistrer ce titre dans Trakt</string>
-    <string name="action_donate">Faire un don</string>
     <string name="cw_action_go_to_details">Voir les détails</string>
     <string name="cw_action_remove">Supprimer</string>
     <string name="cw_action_start_from_beginning">Recommencer depuis le début</string>
@@ -799,42 +796,6 @@
     <string name="settings_notifications_test_for_title">Envoyer une notification locale de test pour %1$s.</string>
     <string name="settings_notifications_test_requires_saved_show">Enregistrez d’abord une série dans votre bibliothèque pour tester les notifications.</string>
     <string name="settings_notifications_test_title">Notification de test</string>
-    <string name="community_section_title">Communauté</string>
-    <string name="community_section_description">Découvrez les personnes qui construisent et soutiennent Provenio sur Mobile, TV et Web.</string>
-    <string name="community_donation_progress_title">Serveur et maintenance de ce mois-ci</string>
-    <string name="community_donation_progress_complete">Couvert. Le soutien supplémentaire va désormais au développement.</string>
-    <string name="community_donation_progress_remaining">Au-delà de 100 %, le soutien supplémentaire va au développement.</string>
-    <string name="community_loading_donation_progress">Chargement de la progression du financement…</string>
-    <string name="community_supporters_not_configured">L’API des supporters n’est pas configurée. Ajoutez DONATIONS_BASE_URL dans local.properties.</string>
-    <string name="community_tab_contributors">Contributeurs</string>
-    <string name="community_tab_supporters">Supporters</string>
-    <string name="community_open_github">Ouvrir GitHub</string>
-    <string name="community_github_profile_unavailable">Profil GitHub indisponible</string>
-    <string name="community_no_message_attached">Aucun message joint.</string>
-    <string name="community_loading_contributors">Chargement des contributeurs…</string>
-    <string name="community_loading_supporters">Chargement des supporters…</string>
-    <string name="community_load_contributors_failed">Impossible de charger les contributeurs</string>
-    <string name="community_load_supporters_failed">Impossible de charger les supporters</string>
-    <string name="community_empty_contributors">Aucun contributeur trouvé.</string>
-    <string name="community_empty_supporters">Aucun supporter trouvé.</string>
-    <string name="community_error_unable_load_contributors">Impossible de charger les contributeurs.</string>
-    <string name="community_error_unable_load_supporters">Impossible de charger les supporters.</string>
-    <string name="community_error_contributors_request_failed">Impossible de charger les contributeurs pour le moment.</string>
-    <string name="community_error_supporters_request_failed">Impossible de charger les supporters pour le moment.</string>
-    <string name="community_total_commits">%1$d commits au total</string>
-    <string name="community_month_jan">Jan</string>
-    <string name="community_month_feb">Fév</string>
-    <string name="community_month_mar">Mar</string>
-    <string name="community_month_apr">Avr</string>
-    <string name="community_month_may">Mai</string>
-    <string name="community_month_jun">Juin</string>
-    <string name="community_month_jul">Juil.</string>
-    <string name="community_month_aug">Aoû</string>
-    <string name="community_month_sep">Sep</string>
-    <string name="community_month_oct">Oct</string>
-    <string name="community_month_nov">Nov</string>
-    <string name="community_month_dec">Déc</string>
-    <string name="community_date_format">%1$s %2$s %3$s</string>
     <string name="settings_playback_all_addons">Tous les addons</string>
     <string name="settings_playback_all_plugins">Tous les plugins</string>
     <string name="settings_playback_allowed_addons">Addons autorisés</string>

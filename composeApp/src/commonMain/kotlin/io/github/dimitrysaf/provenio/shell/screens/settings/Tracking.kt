@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -81,10 +80,6 @@ import provenio.composeapp.generated.resources.settings_tracking_anime_id_subtit
 import provenio.composeapp.generated.resources.settings_tracking_anime_id_title
 import provenio.composeapp.generated.resources.settings_tracking_anime_section
 import provenio.composeapp.generated.resources.local_sync_title
-import provenio.composeapp.generated.resources.settings_tracking_advanced
-import provenio.composeapp.generated.resources.settings_tracking_show_trakt
-import provenio.composeapp.generated.resources.settings_tracking_show_trakt_connected
-import provenio.composeapp.generated.resources.settings_tracking_show_trakt_description
 import provenio.composeapp.generated.resources.settings_trakt_comments
 import provenio.composeapp.generated.resources.settings_trakt_comments_description
 import provenio.composeapp.generated.resources.tracking_source_simkl
@@ -195,28 +190,6 @@ internal fun LazyListScope.trackingSettingsContent(
                 AnimeIdPreferenceSection(
                     isTablet = isTablet,
                     settingsUiState = settingsUiState,
-                )
-            }
-        }
-    }
-
-    item {
-        SettingsSection(
-            title = stringResource(Res.string.settings_tracking_advanced),
-            isTablet = isTablet,
-        ) {
-            val traktDescription = listOfNotNull(
-                stringResource(Res.string.settings_tracking_show_trakt_description),
-                stringResource(Res.string.settings_tracking_show_trakt_connected).takeIf { traktConnected },
-            ).joinToString("\n")
-            SettingsList {
-                switchRow(
-                    title = stringResource(Res.string.settings_tracking_show_trakt),
-                    description = traktDescription,
-                    icon = Icons.Rounded.Science,
-                    checked = { showTrakt },
-                    enabled = !traktConnected,
-                    onCheckedChange = TrackingSettingsRepository::setTraktEnabled,
                 )
             }
         }

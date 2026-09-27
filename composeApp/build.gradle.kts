@@ -161,22 +161,6 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
                 """.trimMargin()
             )
         }
-
-        outDir.resolve("io/github/dimitrysaf/provenio/core/settings").apply {
-            mkdirs()
-            resolve("CommunityConfig.kt").writeText(
-                """
-                |package io.github.dimitrysaf.provenio.core.settings
-                |
-                |object CommunityConfig {
-                |    const val CONTRIBUTIONS_URL = "${props.getProperty("CONTRIBUTIONS_URL", "")}" 
-                |    const val SUPPORTERS_WALL_URL = "${props.getProperty("SUPPORTERS_WALL_URL", "")}"
-                |    const val DONATIONS_BASE_URL = "${props.getProperty("DONATIONS_BASE_URL", "")}" 
-                |    const val DONATIONS_DONATE_URL = "${props.getProperty("DONATIONS_DONATE_URL", "")}" 
-                |}
-                """.trimMargin()
-            )
-        }
     }
 }
 

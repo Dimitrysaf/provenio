@@ -141,7 +141,6 @@ class StreamBackgroundSettingsTest {
                 entries = settingsSearchEntries(
                     isTablet = isTablet.value,
                     pluginsEnabled = false,
-                    supportersContributorsPageEnabled = false,
                     personalMediaAddonCopyEnabled = false,
                     switchProfileAvailable = false,
                     checkForUpdatesAvailable = false,

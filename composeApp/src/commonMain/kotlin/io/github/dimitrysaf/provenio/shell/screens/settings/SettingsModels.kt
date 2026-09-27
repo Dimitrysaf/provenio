@@ -27,7 +27,6 @@ import provenio.composeapp.generated.resources.compose_settings_page_plugins
 import provenio.composeapp.generated.resources.compose_settings_page_poster_customization
 import provenio.composeapp.generated.resources.compose_settings_page_root
 import provenio.composeapp.generated.resources.compose_settings_page_streams
-import provenio.composeapp.generated.resources.compose_settings_page_supporters_contributors
 import provenio.composeapp.generated.resources.compose_settings_page_tmdb_enrichment
 import provenio.composeapp.generated.resources.compose_settings_page_trakt
 import provenio.composeapp.generated.resources.compose_settings_page_tracking
@@ -53,11 +52,6 @@ internal enum class SettingsPage(
         titleRes = Res.string.compose_settings_page_root,
         category = SettingsCategory.General,
         parentPage = null,
-    ),
-    SupportersContributors(
-        titleRes = Res.string.compose_settings_page_supporters_contributors,
-        category = SettingsCategory.About,
-        parentPage = Root,
     ),
     LicensesAttributions(
         titleRes = Res.string.compose_settings_page_licenses_attributions,
