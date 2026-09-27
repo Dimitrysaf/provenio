@@ -12,6 +12,14 @@
 
 </div>
 
+<p align="center">
+  <img src="docs/screenshots/details.png" alt="Details page" width="30%" />
+  <img src="docs/screenshots/streams.png" alt="Choosing a stream" width="30%" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/player.png" alt="Player" width="62%" />
+</p>
+
 ## Get Provenio
 
 - [Android APK, Windows MSI and Linux Flatpak](https://github.com/Dimitrysaf/provenio/releases/latest)
