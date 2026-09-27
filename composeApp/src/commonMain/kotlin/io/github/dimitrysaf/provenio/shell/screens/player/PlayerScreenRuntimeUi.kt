@@ -324,7 +324,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                     PlayerStreamsRepository.pauseSearchForPlayback()
                     openExternal(
                         ExternalPlayerPlaybackRequest(
-                            sourceUrl = activeSourceUrl,
+                            sourceUrl = externalPlayerSourceUrl(),
                             title = title,
                             streamTitle = activeStreamTitle,
                             sourceHeaders = activeSourceHeaders,

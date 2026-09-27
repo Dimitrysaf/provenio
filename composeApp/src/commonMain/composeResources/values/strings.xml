@@ -1680,6 +1680,12 @@
     <string name="debrid_not_cached">Not cached on Torbox.</string>
     <string name="debrid_stream_stale">This link expired. Refreshing results.</string>
     <string name="debrid_resolve_failed">Could not open this link.</string>
+    <string name="p2p_engine_channel_name">Torrent engine</string>
+    <string name="p2p_engine_notification_title">Torrent engine running</string>
+    <string name="p2p_engine_notification_connecting">Connecting to peers</string>
+    <string name="p2p_engine_notification_streaming">%1$s from %2$d peers</string>
+    <string name="p2p_engine_notification_stop">Stop</string>
+    <string name="external_player_chooser_title">Open with</string>
     <string name="external_player_failed">Couldn&apos;t open external player</string>
     <string name="external_player_not_configured">Choose an external player in settings first</string>
     <string name="external_player_unavailable">No external player is available</string>

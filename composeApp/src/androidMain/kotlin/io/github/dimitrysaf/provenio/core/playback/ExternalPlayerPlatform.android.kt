@@ -8,6 +8,7 @@ import androidx.core.content.FileProvider
 import kotlinx.coroutines.runBlocking
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.external_player_android_system
+import provenio.composeapp.generated.resources.external_player_chooser_title
 import org.jetbrains.compose.resources.getString
 import java.io.File
 import java.net.URI
@@ -38,7 +39,7 @@ internal actual object ExternalPlayerPlatform {
         val context = appContext ?: return ExternalPlayerOpenResult.Failed
         val uri = request.sourceUrl.toExternalPlaybackUri(context)
             ?: return ExternalPlayerOpenResult.Failed
-        val intent = buildExternalPlayerIntent(context, request, uri).apply {
+        val intent = buildExternalPlayerIntent(context, request, uri).withChooser().apply {
             // Required when launching from application context (fire-and-forget path)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
@@ -60,7 +61,7 @@ internal actual object ExternalPlayerPlatform {
         val context = appContext ?: return ExternalPlayerIntentResult.Failed
         val uri = request.sourceUrl.toExternalPlaybackUri(context)
             ?: return ExternalPlayerIntentResult.Failed
-        val intent = buildExternalPlayerIntent(context, request, uri)
+        val intent = buildExternalPlayerIntent(context, request, uri).withChooser()
         return ExternalPlayerIntentResult.Success(intent)
     }
 
@@ -69,7 +70,9 @@ internal actual object ExternalPlayerPlatform {
         request: ExternalPlayerPlaybackRequest,
         uri: Uri,
     ): Intent = Intent(Intent.ACTION_VIEW).apply {
-        setDataAndType(uri, request.sourceUrl.videoMimeType())
+        // A magnet link goes to whatever claims the scheme, such as a torrent app; everything else is a video.
+        if (uri.scheme.equals("magnet", ignoreCase = true)) data = uri
+        else setDataAndType(uri, request.sourceUrl.videoMimeType())
         addCategory(Intent.CATEGORY_DEFAULT)
         if (uri.scheme.equals("content", ignoreCase = true)) {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -144,6 +147,10 @@ internal actual object ExternalPlayerPlatform {
             putExtra("forcedsrt", subtitles.first().url)
         }
     }
+
+    // Always asks which app to open, with the system's own list of players that can take it.
+    private fun Intent.withChooser(): Intent =
+        Intent.createChooser(this, runBlocking { getString(Res.string.external_player_chooser_title) })
 
     private fun String.toExternalPlaybackUri(context: Context): Uri? {
         val trimmed = trim()

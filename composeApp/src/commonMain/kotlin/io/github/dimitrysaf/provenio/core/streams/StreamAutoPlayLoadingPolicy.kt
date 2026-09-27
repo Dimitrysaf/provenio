@@ -2,15 +2,18 @@ package io.github.dimitrysaf.provenio.core.streams
 
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsUiState
 
+// Before the request has decided, it predicts with the same rule the request uses, so the loading artwork never flashes ahead of the sheet.
 internal fun StreamsUiState.shouldShowAutoPlayLoading(
     expectedRequestToken: String,
     settings: PlayerSettingsUiState,
     manualSelection: Boolean,
+    parentMetaId: String?,
+    hasReusableLink: Boolean,
 ): Boolean =
     if (requestToken == expectedRequestToken && autoPlayDecided) {
         showDirectAutoPlayOverlay
     } else {
-        !manualSelection && StreamAutoPlayPolicy.isEffectivelyEnabled(settings)
+        !manualSelection && (hasReusableLink || StreamAutoPlayPolicy.usesDirectAutoPlay(settings, parentMetaId))
     }
 
 internal fun StreamsUiState.shouldUseLandscapeAutoPlayLoading(

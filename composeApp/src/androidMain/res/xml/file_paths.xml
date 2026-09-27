@@ -9,4 +9,10 @@
     <files-path
         name="provenio_downloads"
         path="downloads/" />
+    <external-path
+        name="provenio_movies"
+        path="Movies/Provenio/" />
+    <external-files-path
+        name="provenio_app_movies"
+        path="Movies/Provenio/" />
 </paths>

@@ -174,10 +174,19 @@ internal fun StreamDestination(
         episode = launch.episodeNumber,
         manualSelection = launch.manualSelection,
     )
+    val hasReusableLink = remember(effectiveVideoId, playerSettings.streamReuseLastLinkEnabled, reuseHandled, reuseNavigated) {
+        playerSettings.streamReuseLastLinkEnabled && (!reuseHandled || reuseNavigated) &&
+            StreamLinkCacheRepository.getValid(
+                launch.linkCacheKey(effectiveVideoId),
+                playerSettings.streamReuseLastLinkCacheHours * 60L * 60L * 1000L,
+            ) != null
+    }
     val showLoadingScreen = autoPlayNavigationStarted || resolvingDebridStream || streamsUiState.shouldShowAutoPlayLoading(
         expectedRequestToken = expectedStreamsRequestToken,
         settings = playerSettings,
         manualSelection = launch.manualSelection,
+        parentMetaId = launch.parentMetaId ?: effectiveVideoId,
+        hasReusableLink = hasReusableLink,
     )
     val useLandscapeLoading = autoPlayNavigationStarted || streamsUiState.shouldUseLandscapeAutoPlayLoading(
         expectedRequestToken = expectedStreamsRequestToken,

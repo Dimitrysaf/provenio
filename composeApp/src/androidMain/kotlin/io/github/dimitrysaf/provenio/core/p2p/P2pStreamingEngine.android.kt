@@ -146,6 +146,7 @@ actual object P2pStreamingEngine {
 
     fun initialize(context: Context) {
         appContext = context.applicationContext
+        P2pEngineKeepAlive.start(context)
     }
 
     init {

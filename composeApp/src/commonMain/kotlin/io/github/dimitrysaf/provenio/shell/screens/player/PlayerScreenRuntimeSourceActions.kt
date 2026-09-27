@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.p2p.buildP2pMagnetUri
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.core.debrid.DirectDebridPlayableResult
 import io.github.dimitrysaf.provenio.core.debrid.DirectDebridPlaybackResolver
@@ -51,6 +52,13 @@ internal fun PlayerScreenRuntime.resolveDebridForPlayer(
 
 internal fun PlayerScreenRuntime.p2pSentinelUrl(infoHash: String, fileIdx: Int?): String =
     "torrent://$infoHash${fileIdx?.let { "?index=$it" }.orEmpty()}"
+
+// A torrent plays from the engine's local address, which any player can open; before that is ready, its magnet link.
+internal fun PlayerScreenRuntime.externalPlayerSourceUrl(): String {
+    val infoHash = activeTorrentInfoHash ?: return activeSourceUrl
+    return p2pResolvedSourceUrl
+        ?: runCatching { buildP2pMagnetUri(infoHash, activeTorrentTrackers) }.getOrDefault(activeSourceUrl)
+}
 
 internal fun PlayerScreenRuntime.isP2pStream(stream: StreamItem): Boolean =
     stream.needsLocalDebridResolve && stream.p2pInfoHash != null

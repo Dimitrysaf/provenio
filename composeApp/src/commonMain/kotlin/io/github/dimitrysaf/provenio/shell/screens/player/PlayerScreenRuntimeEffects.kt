@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamRequest
+import io.github.dimitrysaf.provenio.core.p2p.P2pPlaybackOwner
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingState
 import io.github.dimitrysaf.provenio.core.playback.skip.NextEpisodeInfo
@@ -356,11 +357,14 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
     }
 
     DisposableEffect(Unit) {
+        val owner = P2pPlaybackOwner.claim()
         PlayerStreamsRepository.pauseSearchForPlayback()
         onDispose {
             playerController?.clearNowPlayingInfo()
-            P2pStreamingEngine.shutdown()
-            PlayerStreamsRepository.clearAll()
+            if (P2pPlaybackOwner.release(owner)) {
+                P2pStreamingEngine.shutdown()
+                PlayerStreamsRepository.clearAll()
+            }
         }
     }
 }
