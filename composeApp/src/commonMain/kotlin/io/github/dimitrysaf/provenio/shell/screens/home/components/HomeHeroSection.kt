@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -76,6 +77,8 @@ private const val HeroSplitThreshold = 1.4f
 private const val HeroArtworkFadeFraction = 0.35f
 private const val HeroBackdropScrimAlpha = 0.62f
 private val HeroBackdropBlur = 48.dp
+private const val HeroLogoMaxHeightFraction = 0.24f
+private const val HeroSplitLogoWidthFraction = 0.72f
 
 private val HeroIndicatorHeight = 8.dp
 private val HeroIndicatorActiveWidth = 32.dp
@@ -231,6 +234,7 @@ private fun HeroItemContent(
     val scrim = MaterialTheme.colorScheme.scrim
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val artworkWidth = maxHeight * HeroArtworkAspectRatio
+        val logoMaxHeight = maxHeight * HeroLogoMaxHeightFraction
         if (!layout.centerTitle && maxWidth >= artworkWidth * HeroSplitThreshold) {
             AsyncImage(
                 model = artwork,
@@ -287,7 +291,11 @@ private fun HeroItemContent(
                     )
                     .graphicsLayer { alpha = contentAlpha() },
             ) {
-                HeroContentBlock(item = item, layout = layout.copy(logoWidthFraction = 0.9f))
+                HeroContentBlock(
+                    item = item,
+                    layout = layout.copy(logoWidthFraction = HeroSplitLogoWidthFraction),
+                    logoMaxHeight = logoMaxHeight,
+                )
             }
         } else {
             AsyncImage(
@@ -320,7 +328,7 @@ private fun HeroItemContent(
                     )
                     .graphicsLayer { alpha = contentAlpha() },
             ) {
-                HeroContentBlock(item = item, layout = layout)
+                HeroContentBlock(item = item, layout = layout, logoMaxHeight = logoMaxHeight)
             }
         }
     }
@@ -438,6 +446,7 @@ fun HomeHeroReservedSpace(
 private fun HeroContentBlock(
     item: MetaPreview,
     layout: HomeHeroLayout,
+    logoMaxHeight: Dp,
 ) {
     var logoLoadError by remember(item.type, item.id, item.logo) {
         mutableStateOf(false)
@@ -455,6 +464,7 @@ private fun HeroContentBlock(
                 contentDescription = item.name,
                 modifier = Modifier
                     .fillMaxWidth(layout.logoWidthFraction)
+                    .heightIn(max = logoMaxHeight)
                     .aspectRatio(2.6f),
                 alignment = if (layout.centerTitle) Alignment.Center else Alignment.CenterStart,
                 contentScale = ContentScale.Fit,

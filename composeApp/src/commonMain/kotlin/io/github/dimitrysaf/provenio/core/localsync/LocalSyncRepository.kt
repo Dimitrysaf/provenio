@@ -52,7 +52,11 @@ enum class LocalSyncError {
 sealed interface LocalSyncActivity {
     data object Idle : LocalSyncActivity
     data class Paired(val peerName: String) : LocalSyncActivity
-    data class Failed(val error: LocalSyncError, val peerName: String? = null) : LocalSyncActivity
+    data class Failed(
+        val error: LocalSyncError,
+        val peerName: String? = null,
+        val detail: String? = null,
+    ) : LocalSyncActivity
 }
 
 data class LocalSyncUiState(
@@ -143,6 +147,7 @@ object LocalSyncRepository {
             val port = withTimeoutOrNull(PORT_WAIT_MS) { serverPort.filterNotNull().first() }
                 ?: return@launch fail(LocalSyncError.FAILED)
             val secret = LocalSyncPlatform.randomBytes(SECRET_SIZE)
+            log.i { "Pairing offered on $host port $port" }
             pairingSecret = secret
             val code = listOf(CODE_PREFIX, CODE_VERSION, host, port.toString(), encodeSyncBytes(secret))
                 .joinToString(":")
@@ -220,9 +225,11 @@ object LocalSyncRepository {
             return
         }
         serverPort.value = listening.port
+        log.i { "Listening for sync on port ${listening.port}" }
         try {
             while (currentCoroutineContext().isActive) {
                 val connection = listening.accept()
+                log.i { "Incoming sync connection" }
                 scope.launch { serve(connection) }
             }
         } catch (error: CancellationException) {
@@ -364,7 +371,10 @@ object LocalSyncRepository {
         expectedPeerId?.let { markSyncing(it, true) }
         try {
             val (connection, address) = connectAny(candidates) ?: run {
-                if (userInitiated) report(LocalSyncActivity.Failed(LocalSyncError.UNREACHABLE))
+                if (userInitiated) {
+                    val tried = candidates.joinToString(", ") { (host, port) -> "$host:$port" }
+                    report(LocalSyncActivity.Failed(LocalSyncError.UNREACHABLE, detail = tried))
+                }
                 return@withLock null
             }
             try {
@@ -405,11 +415,12 @@ object LocalSyncRepository {
     private suspend fun connectAny(candidates: List<Pair<String, Int>>): Pair<LocalSyncConnection, Pair<String, Int>>? {
         candidates.filter { (host, _) -> host.isNotBlank() }.forEach { address ->
             try {
+                log.i { "Connecting to ${address.first}:${address.second}" }
                 return LocalSyncPlatform.connect(address.first, address.second, CONNECT_TIMEOUT_MS) to address
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Throwable) {
-                log.d { "Could not reach ${address.first}:${address.second}: ${error.message}" }
+                log.w { "Could not reach ${address.first}:${address.second}: ${error::class.simpleName} ${error.message}" }
             }
         }
         return null

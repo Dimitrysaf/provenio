@@ -47,6 +47,9 @@ internal class MpvPlayer private constructor(
     private var frameDirty = false
     private var targetSize = IntSize(1280, 720)
 
+    @Volatile
+    private var videoSize = IntSize.Zero
+
     // JNA must keep the callback reachable for as long as mpv may call it.
     private val updateCallback = LibMpv.UpdateCallback { requestFrame() }
 
@@ -264,10 +267,9 @@ internal class MpvPlayer private constructor(
             }
             if (released.get()) break
             val flags = mpv.mpv_render_context_update(renderContext)
-            val videoWidth = stringProperty("video-params/w")?.toIntOrNull() ?: 0
-            val videoHeight = stringProperty("video-params/h")?.toIntOrNull() ?: 0
-            if (videoWidth <= 0 || videoHeight <= 0) continue
-            val (width, height) = renderWidth(size, videoWidth, videoHeight)
+            val video = videoSize
+            if (video.width <= 0 || video.height <= 0) continue
+            val (width, height) = renderWidth(size, video.width, video.height)
             val resized = bitmap == null || bitmap.width != width || bitmap.height != height
             if (flags and LibMpv.RENDER_UPDATE_FRAME == 0L && !resized) continue
             if (resized) {
@@ -324,6 +326,13 @@ internal class MpvPlayer private constructor(
                     }
                     requestFrame()
                     onFileLoaded()
+                }
+                LibMpv.EVENT_VIDEO_RECONFIG -> {
+                    videoSize = IntSize(
+                        stringProperty("video-params/w")?.toIntOrNull() ?: 0,
+                        stringProperty("video-params/h")?.toIntOrNull() ?: 0,
+                    )
+                    requestFrame()
                 }
                 LibMpv.EVENT_END_FILE -> {
                     val endFile = event.data?.let(::MpvEventEndFile)

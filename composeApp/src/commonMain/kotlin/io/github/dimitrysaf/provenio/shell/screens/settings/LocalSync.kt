@@ -187,7 +187,8 @@ internal fun LocalSyncFeedbackEffect(activity: LocalSyncActivity) {
             is LocalSyncActivity.Failed -> if (activity.error == LocalSyncError.VERSION_MISMATCH) {
                 getString(Res.string.local_sync_error_version, activity.peerName ?: getString(Res.string.local_sync_other_device))
             } else {
-                getString(activity.error.messageRes())
+                val message = getString(activity.error.messageRes())
+                activity.detail?.let { "$message ($it)" } ?: message
             }
             LocalSyncActivity.Idle -> null
         } ?: return@LaunchedEffect

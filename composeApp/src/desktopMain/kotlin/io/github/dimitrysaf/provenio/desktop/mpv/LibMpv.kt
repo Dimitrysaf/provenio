@@ -38,6 +38,7 @@ internal interface LibMpv : Library {
         const val EVENT_SHUTDOWN = 1
         const val EVENT_END_FILE = 7
         const val EVENT_FILE_LOADED = 8
+        const val EVENT_VIDEO_RECONFIG = 17
 
         const val END_FILE_REASON_ERROR = 4
 
