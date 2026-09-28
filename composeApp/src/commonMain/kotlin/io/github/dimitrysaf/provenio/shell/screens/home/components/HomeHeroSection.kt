@@ -39,7 +39,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
@@ -73,6 +76,7 @@ internal val HeroMinSmallItemWidth = 24.dp
 private const val HeroArtworkAspectRatio = 16f / 9f
 private const val HeroSplitThreshold = 1.4f
 private const val HeroArtworkFadeFraction = 0.35f
+private const val HeroArtworkBlurFadeFraction = 0.15f
 private const val HeroBackdropScrimAlpha = 0.62f
 private val HeroBackdropBlur = 48.dp
 private const val HeroLogoMaxHeightFraction = 0.24f
@@ -251,11 +255,23 @@ private fun HeroItemContent(
             )
             AsyncImage(
                 model = artwork,
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(artworkWidth)
+                    .fadeInFromStart(start = 0f, end = HeroArtworkBlurFadeFraction)
+                    .blur(HeroBackdropBlur),
+                contentScale = ContentScale.Crop,
+            )
+            AsyncImage(
+                model = artwork,
                 contentDescription = item.name,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .fillMaxHeight()
-                    .width(artworkWidth),
+                    .width(artworkWidth)
+                    .fadeInFromStart(start = HeroArtworkBlurFadeFraction, end = HeroArtworkFadeFraction),
                 contentScale = ContentScale.Crop,
             )
             Box(
@@ -621,3 +637,16 @@ private fun mobileHeroHeight(
 
     return cappedHeight.coerceIn(minHeight, MOBILE_HERO_MAX_HEIGHT_DP.dp)
 }
+
+private fun Modifier.fadeInFromStart(start: Float, end: Float): Modifier = this
+    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        drawRect(
+            brush = Brush.horizontalGradient(
+                start to Color.Transparent,
+                end to Color.Black,
+            ),
+            blendMode = BlendMode.DstIn,
+        )
+    }

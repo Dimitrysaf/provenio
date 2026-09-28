@@ -5,10 +5,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
@@ -37,19 +41,25 @@ fun AdaptiveWindowRoot(content: @Composable () -> Unit) {
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent(PointerEventPass.Initial)
-                        event.changes
-                            .firstOrNull { it.pressed && !it.previousPressed }
-                            ?.let { LastPressPosition.record(it.position) }
-                    }
-                }
-            },
+            .recordPressPositions(),
     ) {
         CompositionLocalProvider(LocalWindowBreakpoint provides WindowBreakpoint.forWidth(maxWidth)) {
             content()
         }
     }
+}
+
+internal fun Modifier.recordPressPositions(): Modifier = composed {
+    val coordinates = remember { arrayOfNulls<LayoutCoordinates>(1) }
+    onGloballyPositioned { coordinates[0] = it }
+        .pointerInput(Unit) {
+            awaitPointerEventScope {
+                while (true) {
+                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                    val change = event.changes.firstOrNull { it.pressed && !it.previousPressed } ?: continue
+                    val layout = coordinates[0]?.takeIf { it.isAttached }
+                    LastPressPosition.record(layout?.localToWindow(change.position) ?: change.position)
+                }
+            }
+        }
 }

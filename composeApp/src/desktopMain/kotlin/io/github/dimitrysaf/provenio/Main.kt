@@ -69,6 +69,7 @@ import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPrefere
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedStorage
 import io.github.dimitrysaf.provenio.desktop.Context
+import io.github.dimitrysaf.provenio.desktop.DesktopLaunchScreen
 import io.github.dimitrysaf.provenio.desktop.DesktopStatusNotifier
 import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
 import io.github.dimitrysaf.provenio.desktop.MaterialContextMenuRepresentation
@@ -167,7 +168,9 @@ fun main(args: Array<String>) {
                 }
             }
             CompositionLocalProvider(LocalContextMenuRepresentation provides MaterialContextMenuRepresentation) {
-                App()
+                DesktopLaunchScreen {
+                    App()
+                }
             }
         }
     }
