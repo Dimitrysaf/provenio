@@ -629,6 +629,17 @@ private fun PlayerScreenRuntime.BindPlayerMetadataAndSkipEffects() {
             }
         }
     }
+
+    val completionReached = playbackCompletionReached()
+    LaunchedEffect(completionReached, activePlaybackIdentity) {
+        if (completionReached) {
+            WatchProgressRepository.upsertPlaybackProgress(
+                session = playbackSession,
+                snapshot = playbackSnapshot,
+                completionReached = true,
+            )
+        }
+    }
 }
 
 private fun PlayerScreenRuntime.buildNowPlayingInfo(): PlayerNowPlayingInfo {

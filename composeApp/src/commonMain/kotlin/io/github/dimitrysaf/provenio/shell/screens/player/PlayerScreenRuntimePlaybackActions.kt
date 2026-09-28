@@ -20,6 +20,7 @@ import io.github.dimitrysaf.provenio.core.playback.shouldSendStopScrobble
 import io.github.dimitrysaf.provenio.core.playback.shouldUpdateTrackingScrobbleAfterSeek
 import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
 import io.github.dimitrysaf.provenio.core.playback.buildMedia
+import io.github.dimitrysaf.provenio.core.playback.skip.PlayerNextEpisodeRules
 
 internal val PlayerScreenRuntime.activePlaybackIdentity: String
     get() = activeTorrentInfoHash
@@ -175,6 +176,16 @@ private fun PlayerScreenRuntime.emitTrackingScrobbleTerminal(
     scrobbleStartRequestGeneration += 1L
 }
 
+internal fun PlayerScreenRuntime.playbackCompletionReached(): Boolean =
+    playbackSnapshot.isEnded || PlayerNextEpisodeRules.shouldShowNextEpisodeCard(
+        positionMs = playbackSnapshot.positionMs,
+        durationMs = playbackSnapshot.durationMs,
+        skipIntervals = skipIntervals,
+        thresholdMode = playerSettingsUiState.nextEpisodeThresholdMode,
+        thresholdPercent = playerSettingsUiState.nextEpisodeThresholdPercent,
+        thresholdMinutesBeforeEnd = playerSettingsUiState.nextEpisodeThresholdMinutesBeforeEnd,
+    )
+
 internal fun PlayerScreenRuntime.emitStopScrobbleForCurrentProgress() {
     val progressPercent = currentPlaybackProgressPercent()
     if (!shouldSendStopScrobble(hasRequestedScrobbleStartForCurrentItem, progressPercent)) {
@@ -182,6 +193,10 @@ internal fun PlayerScreenRuntime.emitStopScrobbleForCurrentProgress() {
     }
     if (progressPercent < 80f) {
         emitTrackingScrobbleStop(progressPercent)
+        return
+    }
+    if (!playbackCompletionReached()) {
+        emitTrackingScrobblePause(progressPercent)
         return
     }
 
@@ -242,6 +257,7 @@ internal fun PlayerScreenRuntime.flushWatchProgress(
     WatchProgressRepository.flushPlaybackProgress(
         session = playbackSession,
         snapshot = playbackSnapshot,
+        completionReached = playbackCompletionReached(),
     )
 }
 
@@ -253,6 +269,7 @@ internal fun PlayerScreenRuntime.scheduleProgressSyncAfterSeek() {
         WatchProgressRepository.upsertPlaybackProgress(
             session = playbackSession,
             snapshot = playbackSnapshot,
+            completionReached = playbackCompletionReached(),
         )
 
         val progressPercent = currentPlaybackProgressPercent()
@@ -302,5 +319,6 @@ internal fun PlayerScreenRuntime.persistPlaybackProgressTick() {
         session = playbackSession,
         snapshot = playbackSnapshot,
         syncRemote = false,
+        completionReached = playbackCompletionReached(),
     )
 }

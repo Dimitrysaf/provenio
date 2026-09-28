@@ -445,7 +445,7 @@ object WatchProgressRepository {
             lastStreamSubtitle = cached?.lastStreamSubtitle,
             pauseDescription = cached?.pauseDescription,
             lastSourceUrl = cached?.lastSourceUrl,
-            isCompleted = isWatchProgressComplete(position, duration, false),
+            isCompleted = duration > 0L && position >= duration,
             progressKey = resolvedProgressKey(),
         )
 
@@ -644,18 +644,32 @@ object WatchProgressRepository {
         session: WatchProgressPlaybackSession,
         snapshot: PlayerPlaybackSnapshot,
         syncRemote: Boolean = true,
+        completionReached: Boolean? = null,
     ) {
         ensureLoaded()
-        upsert(session = session, snapshot = snapshot, persist = true, syncRemote = syncRemote)
+        upsert(
+            session = session,
+            snapshot = snapshot,
+            persist = true,
+            syncRemote = syncRemote,
+            completionReached = completionReached,
+        )
     }
 
     fun flushPlaybackProgress(
         session: WatchProgressPlaybackSession,
         snapshot: PlayerPlaybackSnapshot,
         syncRemote: Boolean = true,
+        completionReached: Boolean? = null,
     ) {
         ensureLoaded()
-        upsert(session = session, snapshot = snapshot, persist = true, syncRemote = syncRemote)
+        upsert(
+            session = session,
+            snapshot = snapshot,
+            persist = true,
+            syncRemote = syncRemote,
+            completionReached = completionReached,
+        )
     }
 
     fun clearProgress(videoId: String, parentMetaId: String? = null) {
@@ -783,16 +797,22 @@ object WatchProgressRepository {
         snapshot: PlayerPlaybackSnapshot,
         persist: Boolean,
         syncRemote: Boolean,
+        completionReached: Boolean? = null,
     ) {
         if (session.contentType == TrailerContentType) return
         val targetProfileId = session.profileId
         val positionMs = snapshot.positionMs.coerceAtLeast(0L)
         val durationMs = snapshot.durationMs.coerceAtLeast(0L)
-        val isCompleted = isWatchProgressComplete(
-            positionMs = positionMs,
-            durationMs = durationMs,
-            isEnded = snapshot.isEnded,
-        )
+        val isCompleted = if (completionReached == null) {
+            isWatchProgressComplete(
+                positionMs = positionMs,
+                durationMs = durationMs,
+                isEnded = snapshot.isEnded,
+            )
+        } else {
+            (completionReached || snapshot.isEnded) &&
+                isWatchProgressComplete(positionMs = positionMs, durationMs = durationMs, isEnded = true)
+        }
         if (!isCompleted && !shouldStoreWatchProgress(positionMs = positionMs, durationMs = durationMs)) {
             return
         }
