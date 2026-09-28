@@ -148,8 +148,13 @@ flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/fl
     "$build_root/flatpak-build" \
     "$repository/packaging/linux/io.github.dimitrysaf.Provenio.yml"
 mkdir -p "$repository/dist"
+bundle_args=()
+if [[ -n "${PROVENIO_FLATPAK_REPO_URL:-}" && -n "${PROVENIO_FLATPAK_GPG_PUBLIC_KEY:-}" ]]; then
+    bundle_args+=(--repo-url="$PROVENIO_FLATPAK_REPO_URL" --gpg-keys="$PROVENIO_FLATPAK_GPG_PUBLIC_KEY")
+fi
 flatpak build-bundle \
     --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo \
+    "${bundle_args[@]}" \
     "$build_root/flatpak-repo" \
     "$repository/dist/Provenio.flatpak" \
     io.github.dimitrysaf.Provenio

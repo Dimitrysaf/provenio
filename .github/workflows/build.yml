@@ -260,6 +260,8 @@ jobs:
         uses: ./.github/actions/flatpak
         with:
           artifact-name: provenio-${{ inputs.channel || 'beta' }}-linux
+          repo-url: https://dimitrysaf.github.io/provenio/${{ inputs.channel || 'beta' }}
+          gpg-key: ${{ secrets.FLATPAK_GPG_KEY }}
 
   # The engine's JNI library for Windows, cross-built on Linux with the engine's own llvm-mingw toolchain.
   windows-engine:
@@ -455,3 +457,89 @@ jobs:
             --notes-file notes.md \
             "${flag}" \
             "${files[@]}" </dev/null
+
+  # A signed Flatpak repository on GitHub Pages, rebuilt from the beta and stable releases, so
+  # installs update through Flatpak itself.
+  flatpak-repository:
+    name: Flatpak repository
+    needs: publish
+    if: always() && needs.publish.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: flatpak-repository
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GPG_KEY: ${{ secrets.FLATPAK_GPG_KEY }}
+      APP_ID: io.github.dimitrysaf.Provenio
+      SITE_URL: https://dimitrysaf.github.io/provenio
+
+    steps:
+      - name: Set up environment
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq flatpak ostree > /dev/null
+
+      - name: Building repository
+        run: |
+          [[ -n "${GPG_KEY}" ]] || { echo "FLATPAK_GPG_KEY is not set" >&2; exit 1; }
+          export GNUPGHOME="$(mktemp -d)"
+          gpg --batch --import <<< "${GPG_KEY}"
+          key="$(gpg --batch --list-secret-keys --with-colons | awk -F: '/^fpr/ {print $10; exit}')"
+          public_key="$(gpg --batch --export "${key}" | base64 -w 0)"
+
+          mkdir -p site bundles
+          published=0
+          for channel in stable beta; do
+            if ! gh release download "${channel}" --repo "${GITHUB_REPOSITORY}" \
+              --pattern Provenio.flatpak --dir "bundles/${channel}" </dev/null; then
+              echo "::warning::No Flatpak in the ${channel} release"
+              continue
+            fi
+            repo="site/${channel}"
+            ostree init --mode=archive-z2 --repo="${repo}"
+            flatpak build-import-bundle --gpg-sign="${key}" --gpg-homedir="${GNUPGHOME}" \
+              "${repo}" "bundles/${channel}/Provenio.flatpak"
+            flatpak build-update-repo --gpg-sign="${key}" --gpg-homedir="${GNUPGHOME}" \
+              --title="Provenio ${channel^}" --default-branch=master \
+              --generate-static-deltas --prune "${repo}"
+
+            suffix=""
+            [[ "${channel}" == "stable" ]] || suffix="-${channel}"
+            cat > "site/provenio${suffix}.flatpakrepo" <<EOF
+          [Flatpak Repo]
+          Title=Provenio ${channel^}
+          Url=${SITE_URL}/${channel}
+          Homepage=https://github.com/${GITHUB_REPOSITORY}
+          DefaultBranch=master
+          GPGKey=${public_key}
+          EOF
+            cat > "site/provenio${suffix}.flatpakref" <<EOF
+          [Flatpak Ref]
+          Name=${APP_ID}
+          Branch=master
+          Title=Provenio ${channel^}
+          Url=${SITE_URL}/${channel}
+          SuggestRemoteName=provenio${suffix}
+          RuntimeRepo=https://dl.flathub.org/repo/flathub.flatpakrepo
+          IsRuntime=false
+          GPGKey=${public_key}
+          EOF
+            published=$((published + 1))
+          done
+          (( published > 0 )) || { echo "No Flatpak to publish" >&2; exit 1; }
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

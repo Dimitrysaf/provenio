@@ -5,6 +5,14 @@ inputs:
   artifact-name:
     description: Name of the uploaded artifact
     required: true
+  repo-url:
+    description: Flatpak repository the installed bundle updates from
+    required: false
+    default: ''
+  gpg-key:
+    description: Armored private key that signs the Flatpak repository
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -33,7 +41,20 @@ runs:
 
     # The engine library comes prebuilt from the Linux engine job, through PROVENIO_ENGINE_LIBRARY.
     - shell: bash
-      run: scripts/build-linux.sh
+      env:
+        REPO_URL: ${{ inputs.repo-url }}
+        GPG_KEY: ${{ inputs.gpg-key }}
+      run: |
+        if [[ -n "${REPO_URL}" && -n "${GPG_KEY}" ]]; then
+          export GNUPGHOME="$(mktemp -d)"
+          gpg --batch --import <<< "${GPG_KEY}"
+          export PROVENIO_FLATPAK_GPG_PUBLIC_KEY="${RUNNER_TEMP}/provenio-flatpak.gpg"
+          gpg --batch --export > "${PROVENIO_FLATPAK_GPG_PUBLIC_KEY}"
+          export PROVENIO_FLATPAK_REPO_URL="${REPO_URL}"
+        else
+          echo "::warning::FLATPAK_GPG_KEY is not set, so the bundle will not update from the Flatpak repository"
+        fi
+        scripts/build-linux.sh
 
     - uses: actions/upload-artifact@v7
       with:

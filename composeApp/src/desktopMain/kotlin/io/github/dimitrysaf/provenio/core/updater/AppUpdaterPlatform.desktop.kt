@@ -11,23 +11,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private const val IgnoredTagKey = "updater_ignored_tag"
-private const val FlatpakAssetName = "Provenio.flatpak"
 private const val WindowsAssetName = "Provenio.msi"
 
 actual object AppUpdaterPlatform {
     private val osName = System.getProperty("os.name").orEmpty().lowercase()
-    private val isFlatpak = System.getenv("FLATPAK_ID") != null || File("/.flatpak-info").exists()
     private val isWindows = osName.startsWith("windows")
     private val preferences: Preferences = Preferences.userRoot().node("io/github/dimitrysaf/provenio")
 
-    actual val isSupported: Boolean = isFlatpak || isWindows
+    actual val isSupported: Boolean = isWindows
     actual val isDebugBuild: Boolean = AppVersionConfig.RELEASE_CHANNEL != "stable"
 
-    actual fun getSupportedAbis(): List<String> = when {
-        isFlatpak -> listOf(FlatpakAssetName)
-        isWindows -> listOf(WindowsAssetName)
-        else -> emptyList()
-    }
+    actual fun getSupportedAbis(): List<String> = if (isWindows) listOf(WindowsAssetName) else emptyList()
 
     actual fun getIgnoredTag(): String? = preferences.get(IgnoredTagKey, null)
 

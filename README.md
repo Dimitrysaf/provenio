@@ -24,6 +24,14 @@
 
 - [Android APK, Windows MSI and Linux Flatpak](https://github.com/Dimitrysaf/provenio/releases/latest)
 
+On Linux, install from the Flatpak repository to get updates through your software center:
+
+```bash
+flatpak install --user https://dimitrysaf.github.io/provenio/provenio.flatpakref
+```
+
+For the beta channel, use `provenio-beta.flatpakref` instead.
+
 ## Build from source
 
 ```bash
