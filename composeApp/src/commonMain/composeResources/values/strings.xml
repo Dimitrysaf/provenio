@@ -2465,6 +2465,16 @@
     <string name="local_sync_error_failed">The sync did not finish</string>
     <string name="local_sync_error_version">Update Provenio on this device and on %1$s to the same version to sync.</string>
     <string name="local_sync_other_device">the other device</string>
+    <string name="local_sync_firewall_title_blocked">Your firewall is blocking Device sync</string>
+    <string name="local_sync_firewall_title_unknown">Is a firewall blocking Device sync?</string>
+    <string name="local_sync_firewall_blocked">Other devices can't reach this computer until its firewall allows Provenio. Allow it now, or run this command in a terminal:</string>
+    <string name="local_sync_firewall_unknown">The other device hasn't connected yet. If this computer has a firewall, allow Provenio by running the command for your system in a terminal. With no firewall, your router may be keeping Wi-Fi and wired devices apart.</string>
+    <string name="local_sync_firewall_ufw">Ubuntu, Mint and others (ufw)</string>
+    <string name="local_sync_firewall_firewalld">Fedora, openSUSE and others (firewalld)</string>
+    <string name="local_sync_firewall_allow">Allow</string>
+    <string name="local_sync_firewall_allowed">Device sync is now allowed through the firewall</string>
+    <string name="local_sync_firewall_allow_failed">The firewall could not be changed. Run the command instead.</string>
+    <string name="local_sync_firewall_copy">Copy command</string>
     <string name="settings_category_profile_tracking">Profile &amp; tracking</string>
     <string name="torrent_details_starting">Starting download…</string>
     <string name="torrent_details_waiting">Waiting for the torrent to start downloading, it may take a while.</string>

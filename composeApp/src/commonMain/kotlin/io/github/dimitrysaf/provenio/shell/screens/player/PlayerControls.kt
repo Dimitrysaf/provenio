@@ -184,20 +184,48 @@ internal fun PlayerControlsShell(
             modifier = Modifier.fillMaxSize(),
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                CenterControls(
-                    snapshot = playbackSnapshot,
-                    metrics = metrics,
-                    controlsReady = controlsReady,
-                    playbackRequested = playbackRequested,
-                    hideSeekForward = hideSeekForward,
-                    onSeekBack = onSeekBack,
-                    onSeekForward = onSeekForward,
-                    onTogglePlayback = onTogglePlayback,
-                    onNextEpisode = onNextEpisode,
-                    modifier = Modifier.align(Alignment.Center),
-                )
+                if (!metrics.transportAtBottom) {
+                    CenterControls(
+                        snapshot = playbackSnapshot,
+                        metrics = metrics,
+                        controlsReady = controlsReady,
+                        playbackRequested = playbackRequested,
+                        hideSeekForward = hideSeekForward,
+                        onSeekBack = onSeekBack,
+                        onSeekForward = onSeekForward,
+                        onTogglePlayback = onTogglePlayback,
+                        onNextEpisode = onNextEpisode,
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                } else if (playbackSnapshot.isLoading && playbackRequested && !playbackSnapshot.isEnded) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .size(metrics.playIconSize + metrics.playButtonPadding * 2),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = PlayerScrimColor,
+                        strokeWidth = 4.dp,
+                    )
+                }
 
                 BottomControls(
+                    transport = if (metrics.transportAtBottom) {
+                        {
+                            TransportButtonGroup(
+                                snapshot = playbackSnapshot,
+                                controlsReady = controlsReady,
+                                playbackRequested = playbackRequested,
+                                hideSeekForward = hideSeekForward,
+                                onSeekBack = onSeekBack,
+                                onSeekForward = onSeekForward,
+                                onTogglePlayback = onTogglePlayback,
+                                onNextEpisode = onNextEpisode,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                            )
+                        }
+                    } else {
+                        null
+                    },
                     playbackSnapshot = playbackSnapshot,
                     displayedPositionMs = displayedPositionMs,
                     metrics = metrics,
@@ -566,7 +594,148 @@ private fun PrimaryControlButton(
 }
 
 @Composable
+private fun TransportButtonGroup(
+    snapshot: PlayerPlaybackSnapshot,
+    controlsReady: Boolean,
+    playbackRequested: Boolean,
+    hideSeekForward: Boolean,
+    onSeekBack: () -> Unit,
+    onSeekForward: () -> Unit,
+    onTogglePlayback: () -> Unit,
+    onNextEpisode: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    val count = if (hideSeekForward) 2 else 3
+    val primaryIcon: ImageVector
+    val primaryDescription: String
+    val primaryClick: () -> Unit
+    when {
+        snapshot.isEnded && onNextEpisode != null -> {
+            primaryIcon = Icons.Rounded.SkipNext
+            primaryDescription = stringResource(Res.string.player_next_episode)
+            primaryClick = onNextEpisode
+        }
+        snapshot.isEnded -> {
+            primaryIcon = Icons.Rounded.Replay
+            primaryDescription = stringResource(Res.string.player_replay)
+            primaryClick = onTogglePlayback
+        }
+        else -> {
+            val playing = if (snapshot.isLoading) playbackRequested else snapshot.isPlaying
+            primaryIcon = if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow
+            primaryDescription = if (playing) {
+                stringResource(Res.string.compose_action_pause)
+            } else {
+                stringResource(Res.string.detail_btn_play)
+            }
+            primaryClick = onTogglePlayback
+        }
+    }
+    val isRound = !snapshot.isEnded && (snapshot.isLoading || snapshot.isPlaying)
+
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(PlayerGroupGap),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TransportSideButton(
+            icon = Icons.Rounded.Replay10,
+            contentDescription = stringResource(Res.string.compose_player_seek_back_10),
+            shape = playerGroupShape(0, count),
+            onClick = onSeekBack.takeIf { controlsReady },
+        )
+        TransportPrimaryButton(
+            icon = primaryIcon,
+            contentDescription = primaryDescription,
+            isRound = isRound,
+            isLast = count == 2,
+            onClick = primaryClick,
+        )
+        if (!hideSeekForward) {
+            TransportSideButton(
+                icon = Icons.Rounded.Forward10,
+                contentDescription = stringResource(Res.string.compose_player_seek_forward_10),
+                shape = playerGroupShape(2, count),
+                onClick = onSeekForward.takeIf { controlsReady },
+            )
+        }
+    }
+}
+
+@Composable
+private fun TransportSideButton(
+    icon: ImageVector,
+    contentDescription: String,
+    shape: RoundedCornerShape,
+    onClick: (() -> Unit)?,
+) {
+    Box(
+        modifier = Modifier
+            .height(TransportButtonHeight)
+            .widthIn(min = TransportSideButtonWidth)
+            .clip(shape)
+            .background(PlayerScrimColor)
+            .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .semantics { this.contentDescription = contentDescription },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = if (onClick != null) Color.White else Color.White.copy(alpha = 0.38f),
+            modifier = Modifier.size(TransportIconSize),
+        )
+    }
+}
+
+@Composable
+private fun TransportPrimaryButton(
+    icon: ImageVector,
+    contentDescription: String,
+    isRound: Boolean,
+    isLast: Boolean,
+    onClick: () -> Unit,
+) {
+    val round = TransportButtonHeight / 2
+    val startCorner by animateDpAsState(
+        targetValue = if (isRound) round else PlayerGroupInnerCorner,
+        animationSpec = tween(220),
+        label = "transport_primary_start",
+    )
+    val endCorner by animateDpAsState(
+        targetValue = if (isRound || isLast) round else PlayerGroupInnerCorner,
+        animationSpec = tween(220),
+        label = "transport_primary_end",
+    )
+    Box(
+        modifier = Modifier
+            .height(TransportButtonHeight)
+            .widthIn(min = TransportPrimaryButtonWidth)
+            .clip(
+                RoundedCornerShape(
+                    topStart = startCorner,
+                    bottomStart = startCorner,
+                    topEnd = endCorner,
+                    bottomEnd = endCorner,
+                ),
+            )
+            .background(MaterialTheme.colorScheme.primary)
+            .clickable(onClick = onClick)
+            .semantics { this.contentDescription = contentDescription },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.size(TransportIconSize),
+        )
+    }
+}
+
+@Composable
 private fun BottomControls(
+    transport: (@Composable () -> Unit)?,
     playbackSnapshot: PlayerPlaybackSnapshot,
     displayedPositionMs: Long,
     metrics: PlayerLayoutMetrics,
@@ -652,6 +821,7 @@ private fun BottomControls(
     }
 
     Column(modifier = modifier) {
+        transport?.invoke()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -926,6 +1096,10 @@ private val PlayerGroupButtonMinWidth = 40.dp
 private val PlayerGroupIconSize = 18.dp
 private val PlayerGroupOuterCorner = 18.dp
 private val PlayerGroupInnerCorner = 4.dp
+private val TransportButtonHeight = 44.dp
+private val TransportSideButtonWidth = 52.dp
+private val TransportPrimaryButtonWidth = 64.dp
+private val TransportIconSize = 24.dp
 private val SeekThumbSize = 12.dp
 private val TrackCanvasHeight = 12.dp
 private val TrackStrokeWidth = 4.dp

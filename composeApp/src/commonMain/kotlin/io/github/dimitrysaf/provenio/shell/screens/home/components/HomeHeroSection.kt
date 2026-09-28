@@ -12,12 +12,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -78,6 +76,8 @@ private const val HeroArtworkFadeFraction = 0.35f
 private const val HeroBackdropScrimAlpha = 0.62f
 private val HeroBackdropBlur = 48.dp
 private const val HeroLogoMaxHeightFraction = 0.24f
+private const val HeroLogoAspectRatio = 2.6f
+private val HeroLogoMaxWidth = 360.dp
 private const val HeroSplitLogoWidthFraction = 0.72f
 
 private val HeroIndicatorHeight = 8.dp
@@ -459,17 +459,22 @@ private fun HeroContentBlock(
         horizontalAlignment = horizontalAlignment,
     ) {
         if (logoUrl != null && !logoLoadError) {
-            AsyncImage(
-                model = logoUrl,
-                contentDescription = item.name,
-                modifier = Modifier
-                    .fillMaxWidth(layout.logoWidthFraction)
-                    .heightIn(max = logoMaxHeight)
-                    .aspectRatio(2.6f),
-                alignment = if (layout.centerTitle) Alignment.Center else Alignment.CenterStart,
-                contentScale = ContentScale.Fit,
-                onError = { logoLoadError = true },
-            )
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxWidth(layout.logoWidthFraction),
+                contentAlignment = if (layout.centerTitle) Alignment.Center else Alignment.CenterStart,
+            ) {
+                val logoWidth = minOf(maxWidth, HeroLogoMaxWidth, logoMaxHeight * HeroLogoAspectRatio)
+                AsyncImage(
+                    model = logoUrl,
+                    contentDescription = item.name,
+                    modifier = Modifier
+                        .width(logoWidth)
+                        .height(logoWidth / HeroLogoAspectRatio),
+                    alignment = if (layout.centerTitle) Alignment.Center else Alignment.CenterStart,
+                    contentScale = ContentScale.Fit,
+                    onError = { logoLoadError = true },
+                )
+            }
         } else {
             Text(
                 text = item.name,

@@ -34,6 +34,7 @@ internal data class PlayerLayoutMetrics(
     val sideIconSize: Dp,
     val playButtonPadding: Dp,
     val playIconSize: Dp,
+    val transportAtBottom: Boolean = false,
 ) {
     companion object {
         fun fromWidth(width: Dp): PlayerLayoutMetrics =
@@ -55,6 +56,7 @@ internal data class PlayerLayoutMetrics(
                     sideIconSize = 34.dp,
                     playButtonPadding = 18.dp,
                     playIconSize = 44.dp,
+                    transportAtBottom = true,
                 )
                 width >= 1024.dp -> PlayerLayoutMetrics(
                     horizontalPadding = 12.dp,
@@ -73,6 +75,7 @@ internal data class PlayerLayoutMetrics(
                     sideIconSize = 32.dp,
                     playButtonPadding = 16.dp,
                     playIconSize = 42.dp,
+                    transportAtBottom = true,
                 )
                 width >= 768.dp -> PlayerLayoutMetrics(
                     horizontalPadding = 12.dp,

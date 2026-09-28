@@ -6,6 +6,7 @@ if [ -f /app/jre/lib/libjsig.so ]; then
 fi
 exec /app/jre/bin/java \
     -Xmx1g \
+    -Djava.util.prefs.userRoot="${XDG_CONFIG_HOME:-$HOME/.config}/provenio/java-prefs" \
     -Dcompose.application.resources.dir=/app/lib/provenio \
     -Djava.library.path=/app/lib/provenio \
     -Dawt.useSystemAAFontSettings=on \

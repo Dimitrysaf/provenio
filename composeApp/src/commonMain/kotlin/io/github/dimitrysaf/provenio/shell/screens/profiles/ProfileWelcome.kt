@@ -44,6 +44,7 @@ import io.github.dimitrysaf.provenio.shell.components.LocalWindowBreakpoint
 import io.github.dimitrysaf.provenio.shell.screens.settings.AppBrandWordmark
 import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncCodeDialog
 import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncFeedbackEffect
+import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncFirewallDialog
 import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncPairingDialog
 import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncProgress
 import io.github.dimitrysaf.provenio.shell.screens.settings.rememberLocalSyncScanner
@@ -184,6 +185,7 @@ internal fun ProfileWelcome(
             onDismiss = LocalSyncRepository::stopPairing,
         )
     }
+    LocalSyncFirewallDialog(prompt = syncState.firewall)
 
     if (showCodeEntry) {
         LocalSyncCodeDialog(

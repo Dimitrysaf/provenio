@@ -6,11 +6,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
@@ -63,6 +67,7 @@ import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPrefere
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedStorage
 import io.github.dimitrysaf.provenio.desktop.Context
+import io.github.dimitrysaf.provenio.desktop.DesktopStatusNotifier
 import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
 import io.github.dimitrysaf.provenio.desktop.SingleInstance
 import java.awt.SystemTray
@@ -85,7 +90,6 @@ fun main(args: Array<String>) {
     application {
         val windowState = rememberWindowState(size = DpSize(1280.dp, 800.dp))
         val fullscreen by DesktopWindowState.isFullscreen.collectAsState()
-        val trayAvailable = remember { runCatching { SystemTray.isSupported() }.getOrDefault(false) }
         var windowVisible by remember { mutableStateOf(true) }
         val quit = {
             P2pStreamingEngine.shutdown()
@@ -98,14 +102,31 @@ fun main(args: Array<String>) {
             DesktopWindowState.setVisible(windowVisible && !windowState.isMinimized)
         }
         val appIcon = painterResource(Res.drawable.app_icon_original)
-        if (trayAvailable) {
+        val showLabel = stringResource(Res.string.tray_show_app)
+        val quitLabel = stringResource(Res.string.tray_quit)
+        val statusNotifierActive = remember {
+            DesktopStatusNotifier.start(
+                appId = "io.github.dimitrysaf.Provenio",
+                title = "Provenio",
+                icon = runCatching { appIcon.toAwtImage(Density(1f), LayoutDirection.Ltr, Size(64f, 64f)) }.getOrNull(),
+                showLabel = showLabel,
+                quitLabel = quitLabel,
+                onShow = SingleInstance::requestShow,
+                onQuit = quit,
+            )
+        }
+        val awtTrayAvailable = remember {
+            !statusNotifierActive && runCatching { SystemTray.isSupported() }.getOrDefault(false)
+        }
+        val trayAvailable = statusNotifierActive || awtTrayAvailable
+        if (awtTrayAvailable) {
             Tray(
                 icon = appIcon,
                 tooltip = "Provenio",
-                onAction = { windowVisible = true },
+                onAction = SingleInstance::requestShow,
                 menu = {
-                    Item(stringResource(Res.string.tray_show_app), onClick = { windowVisible = true })
-                    Item(stringResource(Res.string.tray_quit), onClick = quit)
+                    Item(showLabel, onClick = SingleInstance::requestShow)
+                    Item(quitLabel, onClick = quit)
                 },
             )
         }

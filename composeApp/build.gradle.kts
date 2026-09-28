@@ -521,6 +521,7 @@ kotlin {
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.jna)
                 implementation("com.squareup.okhttp3:okhttp:4.12.0")
+                runtimeOnly("org.slf4j:slf4j-nop:2.0.17")
             }
         }
     }

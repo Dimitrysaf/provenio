@@ -15,6 +15,17 @@ internal expect object LocalSyncPlatform {
     suspend fun receiveBeacons(port: Int, onBeacon: (payload: ByteArray, host: String) -> Unit)
 }
 
+enum class LocalSyncFirewallState {
+    OPEN,
+    BLOCKED,
+    UNKNOWN,
+}
+
+internal expect object LocalSyncFirewall {
+    suspend fun state(tcpPort: Int, udpPort: Int): LocalSyncFirewallState
+    suspend fun allow(tcpPort: Int, udpPort: Int): Boolean
+}
+
 // Android drops Wi-Fi broadcasts unless the app holds a multicast lock while it listens for them.
 internal expect object LocalSyncWifiLock {
     fun acquire()

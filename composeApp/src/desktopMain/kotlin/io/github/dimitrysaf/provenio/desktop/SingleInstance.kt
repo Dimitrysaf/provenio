@@ -34,6 +34,10 @@ object SingleInstance {
         File(base, "provenio").apply { mkdirs() }
     }
 
+    fun requestShow() {
+        requests.tryEmit(Unit)
+    }
+
     fun claim(args: Array<String>): Boolean {
         val acquired = runCatching {
             val file = RandomAccessFile(File(directory, "instance.lock"), "rw").channel

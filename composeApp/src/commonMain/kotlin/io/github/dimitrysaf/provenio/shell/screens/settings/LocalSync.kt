@@ -4,12 +4,15 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.ContentCopy
@@ -54,6 +57,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncActivity
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncError
+import io.github.dimitrysaf.provenio.core.localsync.LocalSyncFirewallPrompt
+import io.github.dimitrysaf.provenio.core.localsync.LocalSyncFirewallState
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncPeer
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncRepository
 import io.github.dimitrysaf.provenio.core.time.EpisodeReleaseDatePlatform
@@ -155,6 +160,7 @@ internal fun LocalSyncCard(modifier: Modifier = Modifier) {
             onDismiss = LocalSyncRepository::stopPairing,
         )
     }
+    LocalSyncFirewallDialog(prompt = state.firewall)
 
     if (showCodeEntry) {
         LocalSyncCodeDialog(
@@ -184,6 +190,7 @@ internal fun LocalSyncFeedbackEffect(activity: LocalSyncActivity) {
     LaunchedEffect(activity) {
         val message = when (activity) {
             is LocalSyncActivity.Paired -> getString(Res.string.local_sync_paired, activity.peerName)
+            LocalSyncActivity.FirewallAllowed -> getString(Res.string.local_sync_firewall_allowed)
             is LocalSyncActivity.Failed -> if (activity.error == LocalSyncError.VERSION_MISMATCH) {
                 getString(Res.string.local_sync_error_version, activity.peerName ?: getString(Res.string.local_sync_other_device))
             } else {
@@ -342,6 +349,114 @@ private fun LocalSyncQrCode(
                             size = Size(cell, cell),
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun LocalSyncFirewallDialog(prompt: LocalSyncFirewallPrompt?) {
+    prompt ?: return
+    val blocked = prompt.state == LocalSyncFirewallState.BLOCKED
+    val ufw = "sudo ufw allow ${prompt.tcpPort}/tcp && sudo ufw allow ${prompt.udpPort}/udp"
+    val firewalld = "sudo firewall-cmd --permanent --add-port=${prompt.tcpPort}/tcp " +
+        "--add-port=${prompt.udpPort}/udp && sudo firewall-cmd --reload"
+    AlertDialog(
+        onDismissRequest = LocalSyncRepository::dismissFirewallPrompt,
+        title = {
+            Text(
+                stringResource(
+                    if (blocked) Res.string.local_sync_firewall_title_blocked else Res.string.local_sync_firewall_title_unknown,
+                ),
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    stringResource(
+                        if (blocked) Res.string.local_sync_firewall_blocked else Res.string.local_sync_firewall_unknown,
+                    ),
+                )
+                if (!blocked) {
+                    LocalSyncFirewallCommand(label = stringResource(Res.string.local_sync_firewall_ufw), command = ufw)
+                }
+                LocalSyncFirewallCommand(
+                    label = if (blocked) null else stringResource(Res.string.local_sync_firewall_firewalld),
+                    command = firewalld,
+                )
+                if (prompt.allowFailed) {
+                    Text(
+                        text = stringResource(Res.string.local_sync_firewall_allow_failed),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            if (blocked) {
+                TextButton(
+                    onClick = LocalSyncRepository::allowThroughFirewall,
+                    enabled = !prompt.allowing,
+                ) {
+                    if (prompt.allowing) {
+                        LocalSyncProgress()
+                    } else {
+                        Text(stringResource(Res.string.local_sync_firewall_allow))
+                    }
+                }
+            } else {
+                TextButton(onClick = LocalSyncRepository::dismissFirewallPrompt) {
+                    Text(stringResource(Res.string.action_close))
+                }
+            }
+        },
+        dismissButton = if (blocked) {
+            {
+                TextButton(onClick = LocalSyncRepository::dismissFirewallPrompt) {
+                    Text(stringResource(Res.string.action_close))
+                }
+            }
+        } else {
+            null
+        },
+    )
+}
+
+@Composable
+private fun LocalSyncFirewallCommand(label: String?, command: String) {
+    val clipboardManager = LocalClipboardManager.current
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        label?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        ) {
+            Row(
+                modifier = Modifier.padding(start = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = command,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(vertical = 8.dp),
+                )
+                IconButton(onClick = { clipboardManager.setText(AnnotatedString(command)) }) {
+                    Icon(
+                        imageVector = Icons.Rounded.ContentCopy,
+                        contentDescription = stringResource(Res.string.local_sync_firewall_copy),
+                    )
                 }
             }
         }

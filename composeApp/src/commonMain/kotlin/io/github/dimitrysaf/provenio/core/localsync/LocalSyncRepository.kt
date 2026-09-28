@@ -15,6 +15,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -37,6 +38,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlin.concurrent.Volatile
 import kotlin.random.Random
 
 enum class LocalSyncError {
@@ -52,12 +54,21 @@ enum class LocalSyncError {
 sealed interface LocalSyncActivity {
     data object Idle : LocalSyncActivity
     data class Paired(val peerName: String) : LocalSyncActivity
+    data object FirewallAllowed : LocalSyncActivity
     data class Failed(
         val error: LocalSyncError,
         val peerName: String? = null,
         val detail: String? = null,
     ) : LocalSyncActivity
 }
+
+data class LocalSyncFirewallPrompt(
+    val state: LocalSyncFirewallState,
+    val tcpPort: Int,
+    val udpPort: Int,
+    val allowing: Boolean = false,
+    val allowFailed: Boolean = false,
+)
 
 data class LocalSyncUiState(
     val deviceName: String = "",
@@ -67,6 +78,7 @@ data class LocalSyncUiState(
     val syncingPeerIds: Set<String> = emptySet(),
     val joining: Boolean = false,
     val activity: LocalSyncActivity = LocalSyncActivity.Idle,
+    val firewall: LocalSyncFirewallPrompt? = null,
 )
 
 @Serializable
@@ -91,6 +103,7 @@ object LocalSyncRepository {
     private const val RETRY_MIN_MS = 1_000L
     private const val RETRY_MAX_MS = 4_000L
     private const val SECRET_SIZE = 32
+    private const val FIREWALL_HINT_DELAY_MS = 20_000L
     private const val CODE_PREFIX = "provenio-sync"
     private const val CODE_VERSION = "1"
 
@@ -109,6 +122,10 @@ object LocalSyncRepository {
     private val serverPort = MutableStateFlow<Int?>(null)
     private val beaconAddresses = mutableMapOf<String, Pair<String, Int>>()
     private var pairingSecret: ByteArray? = null
+    private var firewallJob: Job? = null
+
+    @Volatile
+    private var incomingConnections = 0
     private var started = false
 
     val isSupported: Boolean get() = LocalSyncPlatform.isSupported
@@ -152,12 +169,48 @@ object LocalSyncRepository {
             val code = listOf(CODE_PREFIX, CODE_VERSION, host, port.toString(), encodeSyncBytes(secret))
                 .joinToString(":")
             _uiState.update { it.copy(pairingCode = code, pairingQr = localSyncQrMatrix(code)) }
+            watchFirewall(port, secret)
         }
     }
 
     fun stopPairing() {
         pairingSecret = null
-        _uiState.update { it.copy(pairingCode = null, pairingQr = null) }
+        firewallJob?.cancel()
+        _uiState.update { it.copy(pairingCode = null, pairingQr = null, firewall = null) }
+    }
+
+    fun dismissFirewallPrompt() {
+        _uiState.update { it.copy(firewall = null) }
+    }
+
+    fun allowThroughFirewall() {
+        val prompt = _uiState.value.firewall ?: return
+        if (prompt.allowing) return
+        scope.launch {
+            _uiState.update { it.copy(firewall = prompt.copy(allowing = true, allowFailed = false)) }
+            val allowed = runCatching { LocalSyncFirewall.allow(prompt.tcpPort, prompt.udpPort) }.getOrDefault(false)
+            if (allowed) {
+                _uiState.update { it.copy(firewall = null, activity = LocalSyncActivity.FirewallAllowed) }
+            } else {
+                _uiState.update { it.copy(firewall = prompt.copy(allowing = false, allowFailed = true)) }
+            }
+        }
+    }
+
+    private fun watchFirewall(port: Int, secret: ByteArray) {
+        firewallJob?.cancel()
+        val incomingBefore = incomingConnections
+        firewallJob = scope.launch {
+            val state = runCatching { LocalSyncFirewall.state(port, BEACON_PORT) }
+                .getOrDefault(LocalSyncFirewallState.UNKNOWN)
+            if (state == LocalSyncFirewallState.OPEN) return@launch
+            if (state == LocalSyncFirewallState.UNKNOWN) {
+                delay(FIREWALL_HINT_DELAY_MS)
+                if (pairingSecret !== secret || incomingConnections != incomingBefore) return@launch
+            }
+            if (pairingSecret !== secret) return@launch
+            _uiState.update { it.copy(firewall = LocalSyncFirewallPrompt(state, port, BEACON_PORT)) }
+        }
     }
 
     // Pairs with the device showing [code] and syncs with it straight away.
@@ -230,6 +283,7 @@ object LocalSyncRepository {
             while (currentCoroutineContext().isActive) {
                 val connection = listening.accept()
                 log.i { "Incoming sync connection" }
+                incomingConnections += 1
                 scope.launch { serve(connection) }
             }
         } catch (error: CancellationException) {

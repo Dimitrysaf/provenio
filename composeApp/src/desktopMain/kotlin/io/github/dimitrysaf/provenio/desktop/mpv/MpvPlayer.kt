@@ -1,7 +1,7 @@
 package io.github.dimitrysaf.provenio.desktop.mpv
 
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.graphics.asComposeImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.sun.jna.Memory
 import com.sun.jna.Native
@@ -15,6 +15,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import javax.swing.SwingUtilities
 import kotlin.concurrent.read
 import kotlin.concurrent.write
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +23,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.ColorAlphaType
-import org.jetbrains.skia.Image
 import org.jetbrains.skia.ImageInfo
 
 /**
@@ -252,7 +252,9 @@ internal class MpvPlayer private constructor(
     }
 
     private fun renderLoop() {
-        var bitmap: Bitmap? = null
+        var previousFrame: Bitmap? = null
+        var lastWidth = 0
+        var lastHeight = 0
         val sizeParam = Memory(8)
         val strideParam = Memory(Native.SIZE_T_SIZE.toLong())
         val formatParam = Memory(5).apply { setString(0, "bgr0", "US-ASCII") }
@@ -267,15 +269,18 @@ internal class MpvPlayer private constructor(
             val video = videoSize
             if (video.width <= 0 || video.height <= 0) continue
             val (width, height) = renderWidth(size, video.width, video.height)
-            val resized = bitmap == null || bitmap.width != width || bitmap.height != height
+            val resized = width != lastWidth || height != lastHeight
             if (flags and LibMpv.RENDER_UPDATE_FRAME == 0L && !resized) continue
-            if (resized) {
-                bitmap?.close()
-                bitmap = Bitmap().apply {
-                    allocPixels(ImageInfo.makeN32(width, height, ColorAlphaType.OPAQUE))
-                }
+            val frame = Bitmap()
+            if (!frame.allocPixels(ImageInfo.makeN32(width, height, ColorAlphaType.OPAQUE))) {
+                frame.close()
+                continue
             }
-            val pixels = bitmap.peekPixels() ?: continue
+            val pixels = frame.peekPixels()
+            if (pixels == null) {
+                frame.close()
+                continue
+            }
             sizeParam.setInt(0, width)
             sizeParam.setInt(4, height)
             if (Native.SIZE_T_SIZE == 8) {
@@ -289,15 +294,28 @@ internal class MpvPlayer private constructor(
                 LibMpv.RENDER_PARAM_SW_STRIDE to strideParam,
                 LibMpv.RENDER_PARAM_SW_POINTER to Pointer(pixels.addr),
             )
-            if (mpv.mpv_render_context_render(renderContext, params) < 0) continue
-            bitmap.notifyPixelsChanged()
-            // makeFromBitmap copies a mutable bitmap, so the published frame never changes
-            // under Compose while the next one renders.
-            mutableFrame.value = Image.makeFromBitmap(bitmap).toComposeImageBitmap()
+            val rendered = mpv.mpv_render_context_render(renderContext, params) >= 0
+            pixels.close()
+            if (!rendered) {
+                frame.close()
+                continue
+            }
+            lastWidth = width
+            lastHeight = height
+            frame.notifyPixelsChanged()
+            frame.setImmutable()
+            mutableFrame.value = frame.asComposeImageBitmap()
+            previousFrame?.let(::closeOnUiThread)
+            previousFrame = frame
         }
-        bitmap?.close()
+        mutableFrame.value = null
+        previousFrame?.let(::closeOnUiThread)
         mpv.mpv_render_context_free(renderContext)
         renderStopped.countDown()
+    }
+
+    private fun closeOnUiThread(frame: Bitmap) {
+        SwingUtilities.invokeLater { frame.close() }
     }
 
     /**

@@ -385,13 +385,21 @@ jobs:
       (needs.app.result == 'success' || needs.flatpak.result == 'success' || needs.windows.result == 'success') &&
       (github.ref == 'refs/heads/main' || inputs.channel == 'stable')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     permissions:
       contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     env:
       GH_TOKEN: ${{ github.token }}
       CHANNEL: ${{ inputs.channel || 'beta' }}
       SHA: ${{ needs.engine.outputs.sha }}
+      GPG_KEY: ${{ secrets.FLATPAK_GPG_KEY }}
+      APP_ID: io.github.dimitrysaf.Provenio
+      SITE_URL: https://dimitrysaf.github.io/provenio
 
     steps:
       - name: Check out source
@@ -458,37 +466,15 @@ jobs:
             "${flag}" \
             "${files[@]}" </dev/null
 
-  # A signed Flatpak repository on GitHub Pages, rebuilt from the beta and stable releases, so
-  # installs update through Flatpak itself.
-  flatpak-repository:
-    name: Flatpak repository
-    needs: publish
-    if: always() && needs.publish.result == 'success'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    concurrency:
-      group: flatpak-repository
-      cancel-in-progress: false
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GPG_KEY: ${{ secrets.FLATPAK_GPG_KEY }}
-      APP_ID: io.github.dimitrysaf.Provenio
-      SITE_URL: https://dimitrysaf.github.io/provenio
-
-    steps:
-      - name: Set up environment
+      # A signed Flatpak repository on GitHub Pages, rebuilt from the beta and stable releases, so
+      # installs update through Flatpak itself.
+      - name: Set up Flatpak
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq flatpak ostree > /dev/null
 
-      - name: Building repository
+      - name: Building Flatpak repository
+        id: repository
         run: |
           [[ -n "${GPG_KEY}" ]] || { echo "FLATPAK_GPG_KEY is not set" >&2; exit 1; }
           export GNUPGHOME="$(mktemp -d)"
@@ -535,11 +521,13 @@ jobs:
           EOF
             published=$((published + 1))
           done
-          (( published > 0 )) || { echo "No Flatpak to publish" >&2; exit 1; }
+          echo "published=${published}" >> "${GITHUB_OUTPUT}"
 
       - uses: actions/upload-pages-artifact@v4
+        if: steps.repository.outputs.published != '0'
         with:
           path: site
 
       - id: deploy
+        if: steps.repository.outputs.published != '0'
         uses: actions/deploy-pages@v4

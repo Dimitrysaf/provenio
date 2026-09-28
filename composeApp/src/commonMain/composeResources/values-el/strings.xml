@@ -2434,6 +2434,16 @@
     <string name="local_sync_error_failed">Ο συγχρονισμός δεν ολοκληρώθηκε</string>
     <string name="local_sync_error_version">Ενημερώστε το Provenio σε αυτή τη συσκευή και στο %1$s στην ίδια έκδοση για να γίνει συγχρονισμός.</string>
     <string name="local_sync_other_device">την άλλη συσκευή</string>
+    <string name="local_sync_firewall_title_blocked">Το τείχος προστασίας μπλοκάρει τον Συγχρονισμό συσκευών</string>
+    <string name="local_sync_firewall_title_unknown">Μήπως ένα τείχος προστασίας μπλοκάρει τον Συγχρονισμό συσκευών;</string>
+    <string name="local_sync_firewall_blocked">Οι άλλες συσκευές δεν μπορούν να συνδεθούν σε αυτόν τον υπολογιστή μέχρι το τείχος προστασίας να επιτρέψει το Provenio. Επιτρέψτε το τώρα ή εκτελέστε αυτή την εντολή σε ένα τερματικό:</string>
+    <string name="local_sync_firewall_unknown">Η άλλη συσκευή δεν έχει συνδεθεί ακόμα. Αν αυτός ο υπολογιστής έχει τείχος προστασίας, επιτρέψτε το Provenio εκτελώντας την εντολή για το σύστημά σας σε ένα τερματικό. Αν δεν υπάρχει τείχος προστασίας, ίσως ο δρομολογητής κρατά χωριστά τις συσκευές Wi-Fi από τις ενσύρματες.</string>
+    <string name="local_sync_firewall_ufw">Ubuntu, Mint και άλλα (ufw)</string>
+    <string name="local_sync_firewall_firewalld">Fedora, openSUSE και άλλα (firewalld)</string>
+    <string name="local_sync_firewall_allow">Επιτρέψτε</string>
+    <string name="local_sync_firewall_allowed">Ο Συγχρονισμός συσκευών επιτρέπεται πλέον από το τείχος προστασίας</string>
+    <string name="local_sync_firewall_allow_failed">Δεν ήταν δυνατή η αλλαγή του τείχους προστασίας. Εκτελέστε την εντολή.</string>
+    <string name="local_sync_firewall_copy">Αντιγραφή εντολής</string>
     <string name="settings_category_profile_tracking">Προφίλ &amp; παρακολούθηση</string>
     <string name="torrent_details_starting">Έναρξη λήψης…</string>
     <string name="torrent_details_waiting">Αναμονή για την έναρξη λήψης του torrent, μπορεί να πάρει λίγο χρόνο.</string>
