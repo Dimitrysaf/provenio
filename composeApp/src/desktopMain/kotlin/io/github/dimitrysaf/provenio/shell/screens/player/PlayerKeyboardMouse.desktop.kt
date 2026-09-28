@@ -24,4 +24,4 @@ internal actual fun togglePlayerFullscreen(): Boolean {
 }
 
 internal actual fun Modifier.playerCursorHidden(hidden: Boolean): Modifier =
-    if (hidden) pointerHoverIcon(BlankCursor) else this
+    if (hidden) pointerHoverIcon(BlankCursor, overrideDescendants = true) else this

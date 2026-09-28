@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.isAltPressed
@@ -29,6 +30,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 private const val KeyboardSeekMs = 10_000L
 private const val KeyboardVolumeStep = 0.05f
 private const val SpaceHoldDelayMs = 400L
+private const val MouseMoveThresholdPx = 1f
 
 // Space tapped toggles playback; held, it speeds playback up like holding the screen does.
 private class SpaceHoldState {
@@ -57,9 +59,14 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
         }
         .pointerInput(Unit) {
             awaitPointerEventScope {
+                var lastMousePosition: Offset? = null
                 while (true) {
                     val event = awaitPointerEvent(PointerEventPass.Initial)
-                    val mouseMoved = event.type == PointerEventType.Move && event.changes.any { it.type == PointerType.Mouse }
+                    if (event.type != PointerEventType.Move) continue
+                    val change = event.changes.firstOrNull { it.type == PointerType.Mouse } ?: continue
+                    val previous = lastMousePosition
+                    lastMousePosition = change.position
+                    val mouseMoved = previous == null || (change.position - previous).getDistance() >= MouseMoveThresholdPx
                     if (mouseMoved && !playerControlsLocked) {
                         controlsVisible = true
                         controlsActivity++
