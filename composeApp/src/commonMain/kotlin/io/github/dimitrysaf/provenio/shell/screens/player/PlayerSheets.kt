@@ -177,7 +177,7 @@ internal fun PlayerStreamsSheet(
     streamsUiState: StreamsUiState,
     isStreamSelected: (StreamItem) -> Boolean,
     onStreamSelected: (StreamItem) -> Unit,
-    onStreamLongPress: (StreamItem) -> Unit,
+    streamActions: @Composable (StreamItem, onDismiss: () -> Unit) -> Unit,
     onReload: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -198,7 +198,7 @@ internal fun PlayerStreamsSheet(
             streamsUiState = streamsUiState,
             isStreamSelected = isStreamSelected,
             onStreamSelected = onStreamSelected,
-            onStreamLongPress = onStreamLongPress,
+            streamActions = streamActions,
             modifier = Modifier.weight(1f, fill = false),
         )
     }
@@ -222,7 +222,7 @@ internal fun PlayerEpisodesSheet(
     episodeStreams: EpisodeStreamsPanelState,
     onEpisodeSelected: (MetaVideo) -> Unit,
     onEpisodeStreamSelected: (StreamItem, MetaVideo) -> Unit,
-    onEpisodeStreamLongPress: (StreamItem, MetaVideo) -> Unit,
+    episodeStreamActions: @Composable (StreamItem, MetaVideo, onDismiss: () -> Unit) -> Unit,
     onBackToEpisodes: () -> Unit,
     onReloadEpisodeStreams: () -> Unit,
     onDismiss: () -> Unit,
@@ -247,7 +247,7 @@ internal fun PlayerEpisodesSheet(
                 streamsUiState = episodeStreams.streamsUiState,
                 isStreamSelected = { stream -> ActiveStreamStore.isActive(selectedEpisode.id, stream) },
                 onStreamSelected = { stream -> onEpisodeStreamSelected(stream, selectedEpisode) },
-                onStreamLongPress = { stream -> onEpisodeStreamLongPress(stream, selectedEpisode) },
+                streamActions = { stream, onDismiss -> episodeStreamActions(stream, selectedEpisode, onDismiss) },
                 modifier = Modifier.weight(1f, fill = false),
             )
         } else {
@@ -372,9 +372,10 @@ private fun PlayerStreamGroupsList(
     streamsUiState: StreamsUiState,
     isStreamSelected: (StreamItem) -> Boolean,
     onStreamSelected: (StreamItem) -> Unit,
-    onStreamLongPress: (StreamItem) -> Unit,
+    streamActions: @Composable (StreamItem, onDismiss: () -> Unit) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var streamActionsTarget by remember(streamsUiState.requestToken) { mutableStateOf<StreamItem?>(null) }
     val debridSettings by remember {
         DebridSettingsRepository.ensureLoaded()
         DebridSettingsRepository.uiState
@@ -422,12 +423,16 @@ private fun PlayerStreamGroupsList(
                         isStreamSelected = isStreamSelected,
                         torrentNotSupportedText = torrentNotSupportedText,
                         onStreamSelected = onStreamSelected,
-                        onStreamLongPress = onStreamLongPress,
+                        onStreamLongPress = { stream -> streamActionsTarget = stream },
                         horizontalPadding = StreamsHorizontalPadding,
                     )
                 }
             }
         }
+    }
+
+    streamActionsTarget?.let { stream ->
+        streamActions(stream) { streamActionsTarget = null }
     }
 }
 

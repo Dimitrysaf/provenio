@@ -69,7 +69,7 @@ internal fun PlayerScreenModalHosts(
     activeTorrentInfoHash: String?,
     activeTorrentFileIdx: Int?,
     onSourceStreamSelected: (StreamItem) -> Unit,
-    onSourceStreamLongPress: (StreamItem) -> Unit,
+    sourceStreamActions: @Composable (StreamItem, onDismiss: () -> Unit) -> Unit,
     onReloadSources: () -> Unit,
     onSourcesPanelDismissed: () -> Unit,
     isSeries: Boolean,
@@ -89,7 +89,7 @@ internal fun PlayerScreenModalHosts(
     onEpisodeSelectedForDownload: (MetaVideo) -> Boolean,
     onEpisodeStreamsRequested: (MetaVideo) -> Unit,
     onEpisodeStreamSelected: (StreamItem, MetaVideo) -> Unit,
-    onEpisodeStreamLongPress: (StreamItem, MetaVideo) -> Unit,
+    episodeStreamActions: @Composable (StreamItem, MetaVideo, onDismiss: () -> Unit) -> Unit,
     onBackToEpisodes: () -> Unit,
     onReloadEpisodeStreams: () -> Unit,
     onEpisodesPanelDismissed: () -> Unit,
@@ -204,7 +204,7 @@ internal fun PlayerScreenModalHosts(
                     stream.isCurrentTorrent(activeTorrentInfoHash, activeTorrentFileIdx)
             },
             onStreamSelected = onSourceStreamSelected,
-            onStreamLongPress = onSourceStreamLongPress,
+            streamActions = sourceStreamActions,
             onReload = onReloadSources,
             onDismiss = onSourcesPanelDismissed,
         )
@@ -230,7 +230,7 @@ internal fun PlayerScreenModalHosts(
                 }
             },
             onEpisodeStreamSelected = onEpisodeStreamSelected,
-            onEpisodeStreamLongPress = onEpisodeStreamLongPress,
+            episodeStreamActions = episodeStreamActions,
             onBackToEpisodes = onBackToEpisodes,
             onReloadEpisodeStreams = onReloadEpisodeStreams,
             onDismiss = onEpisodesPanelDismissed,
