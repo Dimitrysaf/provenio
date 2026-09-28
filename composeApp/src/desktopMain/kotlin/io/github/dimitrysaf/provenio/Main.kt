@@ -61,6 +61,7 @@ import io.github.dimitrysaf.provenio.core.watch.watched.WatchedStorage
 import io.github.dimitrysaf.provenio.desktop.Context
 import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
 import io.github.dimitrysaf.provenio.shell.App
+import io.github.dimitrysaf.provenio.shell.components.AppKeyboardShortcuts
 import org.jetbrains.compose.resources.painterResource
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.app_icon_original
@@ -97,7 +98,7 @@ fun main(args: Array<String>) {
                         DesktopWindowState.setFullscreen(false)
                         true
                     }
-                    else -> false
+                    else -> AppKeyboardShortcuts.handle(event)
                 }
             },
         ) {

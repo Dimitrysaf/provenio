@@ -779,6 +779,10 @@ private fun ExoPlayerSurface(
                     exoPlayer.setPlaybackSpeed(speed)
                 }
 
+                override fun setMuted(muted: Boolean) {
+                    exoPlayer.volume = if (muted) 0f else 1f
+                }
+
                 override fun updateNowPlayingMetadata(info: PlayerNowPlayingInfo) {
                     nowPlayingController.updateMetadata(info)
                 }

@@ -38,6 +38,7 @@ import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsStorage
 import io.github.dimitrysaf.provenio.core.playback.PlayerTrackPreferenceStorage
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlatform
 import io.github.dimitrysaf.provenio.core.playback.SubtitleFileCache
+import io.github.dimitrysaf.provenio.shell.components.AppKeyboardShortcuts
 import io.github.dimitrysaf.provenio.shell.screens.player.PlayerPictureInPictureManager
 import io.github.dimitrysaf.provenio.shell.screens.player.PipRemoteActionReceiver
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsStorage
@@ -156,6 +157,11 @@ open class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIncomingAppIntent(intent)
+    }
+
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        if (AppKeyboardShortcuts.handle(androidx.compose.ui.input.key.KeyEvent(event))) return true
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onUserLeaveHint() {

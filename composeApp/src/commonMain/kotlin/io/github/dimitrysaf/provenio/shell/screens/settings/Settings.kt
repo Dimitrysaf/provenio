@@ -1008,7 +1008,9 @@ internal fun LazyListScope.settingsPageContent(
             traktConnected = data.traktAuth.mode == TraktConnectionMode.CONNECTED,
             traktEnabled = data.trackingSettings.traktEnabled,
             onTestUpdateBannerClick = links.onTestUpdateBannerClick,
+            onKeyboardShortcutsClick = { links.openSubPage(SettingsPage.KeyboardShortcuts) },
         )
+        SettingsPage.KeyboardShortcuts -> keyboardShortcutsContent(isTablet = isTablet)
         SettingsPage.Notifications -> notificationsSettingsContent(
             isTablet = isTablet,
             uiState = data.episodeReleaseNotifications,

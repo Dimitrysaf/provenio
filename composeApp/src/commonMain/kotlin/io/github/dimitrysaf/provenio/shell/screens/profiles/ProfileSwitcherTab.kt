@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
+import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -77,7 +78,11 @@ fun ProfileSwitcherTab(
     }
 
     Box(
-        modifier = modifier.combinedClickable(
+        modifier = modifier
+            .onSecondaryClick {
+                if (profiles.isNotEmpty()) showSheet = true
+            }
+            .combinedClickable(
             interactionSource = remember { MutableInteractionSource() },
             indication = null,
             onClick = onClick,

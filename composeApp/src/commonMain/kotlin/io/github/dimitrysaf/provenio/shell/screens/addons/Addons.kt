@@ -61,6 +61,7 @@ import io.github.dimitrysaf.provenio.shell.components.ScreenScaffold
 import io.github.dimitrysaf.provenio.shell.components.StatusModal
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.components.TextPromptDialog
+import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
 import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
@@ -347,7 +348,7 @@ private fun AddonListRow(
 
     SegmentedListItem(
         modifier = with(dragHandleScope) {
-            Modifier.longPressDraggableHandle(
+            Modifier.onSecondaryClick { menuOpen = true }.longPressDraggableHandle(
                 onDragStarted = {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 },

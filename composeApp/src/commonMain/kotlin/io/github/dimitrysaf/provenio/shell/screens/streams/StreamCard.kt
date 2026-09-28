@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.streams
 
+import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -62,7 +63,7 @@ internal fun StreamRow(
         selected = selected,
         onClick = onClick,
         shapes = shapes,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().onSecondaryClick(onLongClick.takeIf { enabled }),
         enabled = enabled,
         onLongClick = onLongClick,
         colors = ListItemDefaults.segmentedColors(

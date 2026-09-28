@@ -105,6 +105,7 @@ internal fun Modifier.posterCardClickable(
         .then(this)
     if (onClick == null && onLongClick == null) return posterModifier
     return posterModifier
+        .onSecondaryClick(onLongClick)
         .combinedClickable(
             interactionSource = null,
             indication = if (onPosterClickAnchor == null) LocalIndication.current else null,

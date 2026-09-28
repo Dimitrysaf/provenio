@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -104,7 +105,8 @@ fun DetailActionButtons(
                 onClick = { if (!playLongPress.consume()) onPlayClick() },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(buttonHeight),
+                    .height(buttonHeight)
+                    .onSecondaryClick(onPlayLongClick.takeIf { playEnabled }),
                 enabled = playEnabled,
                 contentPadding = ButtonDefaults.contentPaddingFor(buttonHeight, hasStartIcon = true),
                 interactionSource = playInteractionSource,
@@ -118,7 +120,8 @@ fun DetailActionButtons(
                         onClick = { if (!playLongPress.consume()) onPlayClick() },
                         modifier = Modifier
                             .width(maxWidth - buttonHeight - SplitButtonDefaults.Spacing)
-                            .height(buttonHeight),
+                            .height(buttonHeight)
+                            .onSecondaryClick(onPlayLongClick.takeIf { playEnabled }),
                         enabled = playEnabled,
                         shapes = SplitButtonDefaults.leadingButtonShapesFor(buttonHeight),
                         contentPadding = SplitButtonDefaults.leadingButtonContentPaddingFor(buttonHeight),

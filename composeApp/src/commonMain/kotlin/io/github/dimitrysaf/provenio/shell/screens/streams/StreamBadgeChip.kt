@@ -2,12 +2,19 @@ package io.github.dimitrysaf.provenio.shell.screens.streams
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -17,14 +24,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.i18n.localizedByteUnit
 import io.github.dimitrysaf.provenio.shell.theme.Tokens
-import io.github.dimitrysaf.provenio.shell.theme.provenio
 import kotlin.math.round
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.streams_size
@@ -48,10 +54,10 @@ internal fun rememberStreamSizeLabelFormat(): (String) -> String {
 
 internal object StreamBadgeChipDefaults {
     val shape = RoundedCornerShape(Tokens.Radius.sm)
-    val fileSizeHorizontalPadding = Tokens.Space.s6
-    val fileSizeFontSize: TextUnit = Tokens.Type.labelSm
-    val fileSizeLineHeight: TextUnit = Tokens.LineHeight.bodySm
-    val fileSizeLetterSpacing: TextUnit = Tokens.LetterSpacing.none
+    val fileSizeHeight = 24.dp
+    val fileSizeHorizontalPadding = 8.dp
+    val fileSizeIconSize = 16.dp
+    val fileSizeIconSpacing = 4.dp
 }
 
 internal enum class StreamBadgeChipSize(
@@ -136,7 +142,6 @@ internal fun StreamBadgeImage(badge: StreamBadge) {
 
 @Composable
 internal fun StreamFileSizeBadge(stream: StreamItem) {
-    val tokens = MaterialTheme.provenio
     val bytes = stream.behaviorHints.videoSize ?: return
     val gib = bytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
     val sizeLabel = if (gib >= 1.0) {
@@ -147,26 +152,31 @@ internal fun StreamFileSizeBadge(stream: StreamItem) {
         "${round(mib).toInt()} ${localizedByteUnit("MB")}"
     }
 
-    val badgeShape = StreamBadgeChipDefaults.shape
-    Box(
+    val accessibleLabel = LocalStreamSizeLabelFormat.current(sizeLabel)
+    Surface(
         modifier = Modifier
-            .height(StreamBadgeChipSize.STREAM.containerHeight)
-            .clip(badgeShape)
-            .background(tokens.colors.surfacePopover)
-            .border(tokens.borders.thin, tokens.colors.borderSubtle, badgeShape)
-            .padding(horizontal = StreamBadgeChipDefaults.fileSizeHorizontalPadding),
-        contentAlignment = Alignment.Center,
+            .height(StreamBadgeChipDefaults.fileSizeHeight)
+            .clearAndSetSemantics { contentDescription = accessibleLabel },
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
     ) {
-        Text(
-            text = LocalStreamSizeLabelFormat.current(sizeLabel),
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = StreamBadgeChipDefaults.fileSizeFontSize,
-                lineHeight = StreamBadgeChipDefaults.fileSizeLineHeight,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = StreamBadgeChipDefaults.fileSizeLetterSpacing,
-            ),
-            color = tokens.colors.textPrimary,
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = StreamBadgeChipDefaults.fileSizeHorizontalPadding),
+            horizontalArrangement = Arrangement.spacedBy(StreamBadgeChipDefaults.fileSizeIconSpacing),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Storage,
+                contentDescription = null,
+                modifier = Modifier.size(StreamBadgeChipDefaults.fileSizeIconSize),
+            )
+            Text(
+                text = sizeLabel,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+            )
+        }
     }
 }
 

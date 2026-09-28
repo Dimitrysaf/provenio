@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -302,7 +303,7 @@ private fun SeasonRow(
     SegmentedListItem(
         onClick = onClick,
         shapes = shapes,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().onSecondaryClick(onLongClick),
         onLongClick = onLongClick,
         colors = ListItemDefaults.segmentedColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -367,7 +368,7 @@ private fun EpisodeRow(
             selected = selected,
             onClick = onClick,
             shapes = shapes,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().onSecondaryClick(onLongClick),
             onLongClick = onLongClick,
             colors = ListItemDefaults.segmentedColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,

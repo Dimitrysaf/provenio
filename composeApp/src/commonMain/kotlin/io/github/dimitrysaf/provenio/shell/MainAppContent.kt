@@ -78,6 +78,9 @@ import io.github.dimitrysaf.provenio.core.watch.progress.continueWatchingItemKey
 import io.github.dimitrysaf.provenio.core.watch.progress.nextUpDismissKey
 import io.github.dimitrysaf.provenio.shell.nav.*
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsDownloadsPageName
+import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsPage
+import io.github.dimitrysaf.provenio.shell.components.AppKeyboardShortcuts
+import io.github.dimitrysaf.provenio.shell.components.AppShortcutAction
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -346,6 +349,48 @@ internal fun MainAppContent(
         AppDeepLinkEffect(navController, ownsAppRuntime, ::activateTab) {
             requestedSettingsPageName = SettingsDownloadsPageName
             activateTab(AppScreenTab.Settings)
+        }
+
+        LaunchedEffect(navController, ownsAppRuntime) {
+            if (!ownsAppRuntime) return@LaunchedEffect
+            AppKeyboardShortcuts.actions.collect { action ->
+                if (navController.currentRoute is PlayerRoute) return@collect
+                fun returnToTabs() {
+                    while (navController.currentRoute != null && navController.currentRoute !is TabsRoute) {
+                        if (!navController.popBackStack()) break
+                    }
+                }
+                fun openTab(tab: AppScreenTab) {
+                    returnToTabs()
+                    activateTab(tab)
+                }
+                when (action) {
+                    AppShortcutAction.Home -> openTab(AppScreenTab.Home)
+                    AppShortcutAction.Search -> {
+                        openTab(AppScreenTab.Search)
+                        searchFocusRequestCount++
+                    }
+                    AppShortcutAction.Library -> openTab(AppScreenTab.Library)
+                    AppShortcutAction.Settings -> openTab(AppScreenTab.Settings)
+                    AppShortcutAction.Downloads -> {
+                        returnToTabs()
+                        requestedSettingsPageName = SettingsDownloadsPageName
+                        activateTab(AppScreenTab.Settings)
+                    }
+                    AppShortcutAction.KeyboardShortcuts -> {
+                        returnToTabs()
+                        requestedSettingsPageName = SettingsPage.KeyboardShortcuts.name
+                        activateTab(AppScreenTab.Settings)
+                    }
+                    AppShortcutAction.Back -> {
+                        if (navController.currentRoute is TabsRoute) {
+                            if (selectedTab == AppScreenTab.Settings) settingsRootActionRequests.tryEmit(Unit)
+                        } else {
+                            navController.popBackStack()
+                        }
+                    }
+                }
+            }
         }
 
         val onCatalogClick: (HomeCatalogSection) -> Unit = { section ->

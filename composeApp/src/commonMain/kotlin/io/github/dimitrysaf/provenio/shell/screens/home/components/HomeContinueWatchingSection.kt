@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -828,6 +829,7 @@ private fun ContinueWatchingWideCard(
         modifier = Modifier
             .width(layout.wideCardWidth)
             .height(layout.wideCardHeight)
+            .onSecondaryClick(onLongClick)
             .combinedClickable(
                 enabled = onClick != null || onLongClick != null,
                 onClick = { onClick?.invoke() },

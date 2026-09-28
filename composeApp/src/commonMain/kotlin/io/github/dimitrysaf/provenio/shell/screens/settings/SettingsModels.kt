@@ -9,6 +9,7 @@ import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.ui.graphics.vector.ImageVector
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.addons_guide_title
+import provenio.composeapp.generated.resources.keyboard_shortcuts_title
 import provenio.composeapp.generated.resources.compose_settings_category_about
 import provenio.composeapp.generated.resources.compose_settings_category_general
 import provenio.composeapp.generated.resources.compose_settings_page_addons
@@ -78,6 +79,11 @@ internal enum class SettingsPage(
         titleRes = Res.string.compose_settings_page_advanced,
         category = SettingsCategory.Advanced,
         parentPage = Root,
+    ),
+    KeyboardShortcuts(
+        titleRes = Res.string.keyboard_shortcuts_title,
+        category = SettingsCategory.Advanced,
+        parentPage = Advanced,
     ),
     Notifications(
         titleRes = Res.string.compose_settings_page_notifications,
