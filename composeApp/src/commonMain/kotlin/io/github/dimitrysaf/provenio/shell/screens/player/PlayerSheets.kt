@@ -789,6 +789,13 @@ data class EpisodeStreamsPanelState(
     val streamsUiState: StreamsUiState = StreamsUiState(),
 )
 
+internal fun StreamItem.isCurrentTorrent(currentInfoHash: String?, currentFileIdx: Int?): Boolean {
+    val hash = p2pInfoHash ?: infoHash ?: clientResolve?.infoHash ?: return false
+    if (currentInfoHash.isNullOrBlank() || !hash.trim().equals(currentInfoHash.trim(), ignoreCase = true)) return false
+    val file = p2pFileIdx ?: fileIdx
+    return currentFileIdx == null || file == null || file == currentFileIdx
+}
+
 internal fun StreamItem.isCurrentPlayerStream(
     currentUrl: String?,
     currentName: String?,

@@ -66,6 +66,8 @@ internal fun PlayerScreenModalHosts(
     activeEpisodeTitle: String?,
     activeSourceUrl: String,
     activeStreamTitle: String,
+    activeTorrentInfoHash: String?,
+    activeTorrentFileIdx: Int?,
     onSourceStreamSelected: (StreamItem) -> Unit,
     onReloadSources: () -> Unit,
     onSourcesPanelDismissed: () -> Unit,
@@ -196,7 +198,8 @@ internal fun PlayerScreenModalHosts(
             streamsUiState = sourceStreamsState,
             isStreamSelected = { stream ->
                 activeVideoId?.let { ActiveStreamStore.isActive(it, stream) } == true ||
-                    stream.isCurrentPlayerStream(activeSourceUrl, activeStreamTitle)
+                    stream.isCurrentPlayerStream(activeSourceUrl, activeStreamTitle) ||
+                    stream.isCurrentTorrent(activeTorrentInfoHash, activeTorrentFileIdx)
             },
             onStreamSelected = onSourceStreamSelected,
             onReload = onReloadSources,

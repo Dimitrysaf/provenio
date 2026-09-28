@@ -499,6 +499,8 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
         activeEpisodeTitle = activeEpisodeTitle,
         activeSourceUrl = activeSourceUrl,
         activeStreamTitle = activeStreamTitle,
+        activeTorrentInfoHash = activeTorrentInfoHash,
+        activeTorrentFileIdx = activeTorrentFileIdx,
         onSourceStreamSelected = { stream -> switchToSource(stream) },
         onReloadSources = {
             val vid = activeVideoId

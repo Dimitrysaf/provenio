@@ -125,6 +125,14 @@ internal fun PlayerScreenRuntime.switchToP2pSourceStream(stream: StreamItem) {
         pendingP2pSwitch = PendingPlayerP2pSwitch(stream = stream, episode = null, isAutoPlay = false)
         return
     }
+    if (
+        infoHash.equals(activeTorrentInfoHash, ignoreCase = true) &&
+        (stream.p2pFileIdx == null || stream.p2pFileIdx == activeTorrentFileIdx)
+    ) {
+        activeSourceIdentityKey = stream.playerSourceIdentityKey() ?: activeSourceIdentityKey
+        showSourcesPanel = false
+        return
+    }
     val currentPositionMs = positionForReloadMs()
     flushWatchProgress()
     stopActiveP2pStream()
@@ -225,6 +233,7 @@ internal fun PlayerScreenRuntime.switchToSource(stream: StreamItem, recordAsActi
     val sourceIdentityKey = stream.playerSourceIdentityKey()
     if (url == activeSourceUrl) {
         activeSourceIdentityKey = sourceIdentityKey ?: activeSourceIdentityKey
+        showSourcesPanel = false
         return
     }
     val currentPositionMs = positionForReloadMs()
