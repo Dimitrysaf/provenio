@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.github.dimitrysaf.provenio.core.streams.StreamItem
+import io.github.dimitrysaf.provenio.core.streams.StreamLinkCacheStorage
 
 /**
  * What names a stream, whatever it turns into on the way to the player.
@@ -29,10 +30,13 @@ internal fun StreamItem.playbackIdentity(): String? {
  */
 object ActiveStreamStore {
     private var record by mutableStateOf<ActiveStreamRecord?>(null)
+    private val storedIdentities = mutableMapOf<String, String?>()
 
     fun set(videoId: String, stream: StreamItem) {
         val identity = stream.playbackIdentity() ?: return
         record = ActiveStreamRecord(videoId = videoId, identity = identity)
+        storedIdentities[videoId] = identity
+        runCatching { StreamLinkCacheStorage.saveEntry(storageKey(videoId), identity) }
     }
 
     fun clear() {
@@ -41,9 +45,10 @@ object ActiveStreamStore {
 
     /** True when [stream] is the one being played for [videoId]. */
     fun isActive(videoId: String, stream: StreamItem): Boolean {
-        val current = record ?: return false
-        if (current.videoId != videoId) return false
-        return current.identity == stream.playbackIdentity()
+        val identity = stream.playbackIdentity() ?: return false
+        val current = record
+        if (current != null && current.videoId == videoId) return current.identity == identity
+        return storedIdentity(videoId) == identity
     }
 
     /** True when [stream] is the one being played, whatever it was opened from. */
@@ -51,6 +56,13 @@ object ActiveStreamStore {
         val current = record ?: return false
         return current.identity == stream.playbackIdentity()
     }
+
+    private fun storedIdentity(videoId: String): String? =
+        storedIdentities.getOrPut(videoId) {
+            runCatching { StreamLinkCacheStorage.loadEntry(storageKey(videoId)) }.getOrNull()
+        }
+
+    private fun storageKey(videoId: String): String = "active_stream:$videoId"
 }
 
 private data class ActiveStreamRecord(
