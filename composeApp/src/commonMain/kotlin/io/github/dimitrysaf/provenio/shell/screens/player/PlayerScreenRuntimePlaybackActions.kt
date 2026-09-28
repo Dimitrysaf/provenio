@@ -327,3 +327,33 @@ internal fun PlayerScreenRuntime.persistPlaybackProgressTick() {
         completionReached = playbackCompletionReached(),
     )
 }
+
+internal fun PlayerScreenRuntime.moveToOtherWindow() {
+    val move = args.onMoveWindow ?: return
+    val positionMs = positionForReloadMs()
+    shouldPlay = false
+    move(
+        PlayerHandoff(
+            sourceUrl = activeSourceUrl,
+            sourceAudioUrl = activeSourceAudioUrl,
+            sourceHeaders = activeSourceHeaders,
+            sourceResponseHeaders = activeSourceResponseHeaders,
+            streamType = activeStreamType,
+            streamTitle = activeStreamTitle,
+            streamSubtitle = activeStreamSubtitle,
+            providerName = activeProviderName,
+            providerAddonId = activeProviderAddonId,
+            videoId = activeVideoId,
+            seasonNumber = activeSeasonNumber,
+            episodeNumber = activeEpisodeNumber,
+            episodeTitle = activeEpisodeTitle,
+            episodeThumbnail = activeEpisodeThumbnail,
+            pauseDescription = activePauseDescription,
+            torrentInfoHash = activeTorrentInfoHash,
+            torrentFileIdx = activeTorrentFileIdx,
+            torrentFilename = activeTorrentFilename,
+            torrentTrackers = activeTorrentTrackers,
+            positionMs = positionMs,
+        ),
+    )
+}

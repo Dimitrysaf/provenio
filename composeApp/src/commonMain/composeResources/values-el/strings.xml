@@ -1228,8 +1228,6 @@
     <string name="playback_show_loading_status_sub">Εμφάνιση της προόδου βήμα προς βήμα όσο ξεκινά η αναπαραγωγή.</string>
     <string name="playback_show_control_labels">Εμφάνιση ετικετών κουμπιών</string>
     <string name="playback_show_control_labels_sub">Εμφάνιση του ονόματος κάθε κουμπιού στην κάτω σειρά του προγράμματος αναπαραγωγής, όπως Προσαρμογή, Ταχύτητα και Υπότιτλοι.</string>
-    <string name="playback_player_in_separate_window">Αναπαραγωγή σε ξεχωριστό παράθυρο</string>
-    <string name="playback_player_in_separate_window_sub">Άνοιγμα του προγράμματος αναπαραγωγής σε δικό του παράθυρο, ώστε να συνεχίζετε την περιήγηση. Η έναρξη άλλης ροής κλείνει πρώτα το παλιό παράθυρο.</string>
     <string name="player_loading_preparing">Προετοιμασία ροής…</string>
     <string name="player_loading_subtitles">Λήψη υποτίτλων…</string>
     <string name="player_loading_subtitles_from">Λήψη υποτίτλων από %1$d πρόσθετα…</string>
@@ -1857,6 +1855,8 @@
     <string name="person_detail_place_of_birth">Τόπος γέννησης</string>
     <string name="player_action_submit_intro">Υποβολή εισαγωγής</string>
     <string name="player_action_video_settings">Ρυθμίσεις βίντεο</string>
+    <string name="player_open_in_new_window">Άνοιγμα σε νέο παράθυρο</string>
+    <string name="player_move_to_main_window">Επιστροφή στο κύριο παράθυρο</string>
     <string name="player_addon_subtitle_display_format">%1$s (%2$s)</string>
     <string name="player_engine_unavailable_rebuild">Ο μηχανισμός αναπαραγωγής MPV δεν είναι διαθέσιμος. Δημιουργήστε ξανά την εφαρμογή.</string>
     <string name="player_error_failed_start_torrent">Αποτυχία εκκίνησης torrent: %1$s</string>

@@ -30,6 +30,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.PictureInPictureAlt
+import androidx.compose.material.icons.automirrored.rounded.Input
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Cast
@@ -123,6 +125,8 @@ internal fun PlayerControlsShell(
     showControlLabels: Boolean = false,
     onNextEpisode: (() -> Unit)? = null,
     onOpenInExternalPlayer: (() -> Unit)? = null,
+    onMoveWindow: (() -> Unit)? = null,
+    inSeparateWindow: Boolean = false,
     onSubmitIntroClick: (() -> Unit)? = null,
     statusLines: List<String> = emptyList(),
     onStatusClick: (() -> Unit)? = null,
@@ -239,6 +243,8 @@ internal fun PlayerControlsShell(
                     onLockToggle = onLockToggle,
                     onVideoSettingsClick = onVideoSettingsClick,
                     onOpenInExternalPlayer = onOpenInExternalPlayer,
+                    onMoveWindow = onMoveWindow,
+                    inSeparateWindow = inSeparateWindow,
                     onSubmitIntroClick = onSubmitIntroClick,
                     onSourcesClick = onSourcesClick,
                     onEpisodesClick = onEpisodesClick,
@@ -727,6 +733,8 @@ private fun BottomControls(
     onLockToggle: () -> Unit,
     onVideoSettingsClick: (() -> Unit)?,
     onOpenInExternalPlayer: (() -> Unit)?,
+    onMoveWindow: (() -> Unit)?,
+    inSeparateWindow: Boolean,
     onSubmitIntroClick: (() -> Unit)?,
     onSourcesClick: (() -> Unit)?,
     onEpisodesClick: (() -> Unit)?,
@@ -773,6 +781,23 @@ private fun BottomControls(
                     it,
                     icon = Icons.AutoMirrored.Rounded.OpenInNew,
                 ),
+            )
+        }
+        onMoveWindow?.let {
+            add(
+                if (inSeparateWindow) {
+                    PlayerGroupAction(
+                        stringResource(Res.string.player_move_to_main_window),
+                        it,
+                        icon = Icons.AutoMirrored.Rounded.Input,
+                    )
+                } else {
+                    PlayerGroupAction(
+                        stringResource(Res.string.player_open_in_new_window),
+                        it,
+                        icon = Icons.Rounded.PictureInPictureAlt,
+                    )
+                },
             )
         }
         onVideoSettingsClick?.let {

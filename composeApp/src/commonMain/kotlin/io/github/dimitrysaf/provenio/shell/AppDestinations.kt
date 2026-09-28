@@ -293,6 +293,7 @@ internal fun appEntryProvider(
             onExternalPlayerLaunch = playback.recordExternalLaunch,
             launchExternalPlayer = playback.launchExternalPlayer,
             openExternalStreamUrl = playback::openExternalStreamUrl,
+            onMoveWindow = if (playerWindowSupported) DetachedPlayer::popOut else null,
         )
     }
     entry<CatalogRoute> { route ->

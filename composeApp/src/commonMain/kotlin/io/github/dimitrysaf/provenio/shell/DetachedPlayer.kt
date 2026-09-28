@@ -9,7 +9,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
+import io.github.dimitrysaf.provenio.core.p2p.P2pPlaybackOwner
+import io.github.dimitrysaf.provenio.core.playback.PlayerLaunch
+import io.github.dimitrysaf.provenio.core.playback.PlayerLaunchStore
 import io.github.dimitrysaf.provenio.shell.nav.Navigator
 import io.github.dimitrysaf.provenio.shell.nav.PlayerRoute
 import io.github.dimitrysaf.provenio.shell.nav.StreamRoute
@@ -21,15 +23,9 @@ internal object DetachedPlayer {
     private val _route = MutableStateFlow<PlayerRoute?>(null)
     val route: StateFlow<PlayerRoute?> = _route.asStateFlow()
 
-    val isEnabled: Boolean
-        get() {
-            if (!playerWindowSupported) return false
-            PlayerSettingsRepository.ensureLoaded()
-            return PlayerSettingsRepository.uiState.value.playerInSeparateWindow
-        }
-
-    fun open(route: PlayerRoute) {
-        _route.value = route
+    fun popOut(launch: PlayerLaunch) {
+        P2pPlaybackOwner.claim()
+        _route.value = PlayerRoute(launchId = PlayerLaunchStore.put(launch), title = launch.title)
     }
 
     fun close(route: PlayerRoute) {
@@ -42,17 +38,17 @@ internal object DetachedPlayer {
 }
 
 internal fun Navigator.openPlayer(route: PlayerRoute, replaceStreamRoute: Boolean = false) {
-    if (!DetachedPlayer.isEnabled) {
-        DetachedPlayer.closeAny()
-        navigate(route) {
-            if (replaceStreamRoute) {
-                popUpTo<StreamRoute> { inclusive = true }
-            }
+    DetachedPlayer.closeAny()
+    navigate(route) {
+        if (replaceStreamRoute) {
+            popUpTo<StreamRoute> { inclusive = true }
         }
-        return
     }
-    if (replaceStreamRoute && currentRoute is StreamRoute) popBackStack()
-    DetachedPlayer.open(route)
+}
+
+internal fun Navigator.moveDetachedPlayerToMainWindow(launch: PlayerLaunch) {
+    P2pPlaybackOwner.claim()
+    openPlayer(PlayerRoute(launchId = PlayerLaunchStore.put(launch), title = launch.title))
 }
 
 @Composable
@@ -89,6 +85,8 @@ internal fun DetachedPlayerHost(
                 launchExternalPlayer = playback.launchExternalPlayer,
                 openExternalStreamUrl = playback::openExternalStreamUrl,
                 onClose = { DetachedPlayer.close(route) },
+                onMoveWindow = navController::moveDetachedPlayerToMainWindow,
+                inSeparateWindow = true,
             )
         }
     }

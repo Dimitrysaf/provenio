@@ -343,6 +343,8 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                     )
                 }
             },
+            onMoveWindow = args.onMoveWindow?.let { { moveToOtherWindow() } },
+            inSeparateWindow = args.inSeparateWindow,
             onSubmitIntroClick = if (
                 isSeries &&
                 playerSettingsUiState.introSubmitEnabled &&

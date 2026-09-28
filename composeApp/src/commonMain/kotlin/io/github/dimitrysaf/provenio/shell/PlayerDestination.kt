@@ -11,6 +11,7 @@ import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerIntentResult
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlatform
 import io.github.dimitrysaf.provenio.core.playback.PlayerLaunch
 import io.github.dimitrysaf.provenio.core.playback.PlayerLaunchStore
+import io.github.dimitrysaf.provenio.shell.screens.player.PlayerHandoff
 import io.github.dimitrysaf.provenio.shell.screens.player.PlayerScreen
 import io.github.dimitrysaf.provenio.shell.nav.Navigator
 import io.github.dimitrysaf.provenio.shell.nav.PlayerRoute
@@ -26,6 +27,8 @@ internal fun PlayerDestination(
     launchExternalPlayer: (ExternalPlayerIntentResult.Success) -> Boolean,
     openExternalStreamUrl: (String) -> Boolean,
     onClose: (() -> Unit)? = null,
+    onMoveWindow: ((PlayerLaunch) -> Unit)? = null,
+    inSeparateWindow: Boolean = false,
 ) {
     val onBack = onClose ?: rememberGuardedPopBackStack(navController, route)
     val launch = remember(route.launchId) { PlayerLaunchStore.get(route.launchId) }
@@ -118,6 +121,37 @@ internal fun PlayerDestination(
         onOpenExternalUrl = { url ->
             openExternalStreamUrl(url)
         },
+        onMoveWindow = onMoveWindow?.let { move ->
+            { handoff ->
+                move(launch.handedOff(handoff))
+                onBack()
+            }
+        },
+        inSeparateWindow = inSeparateWindow,
         modifier = Modifier.fillMaxSize(),
     )
 }
+
+private fun PlayerLaunch.handedOff(handoff: PlayerHandoff): PlayerLaunch = copy(
+    sourceUrl = handoff.sourceUrl,
+    sourceAudioUrl = handoff.sourceAudioUrl,
+    sourceHeaders = handoff.sourceHeaders,
+    sourceResponseHeaders = handoff.sourceResponseHeaders,
+    streamType = handoff.streamType,
+    streamTitle = handoff.streamTitle,
+    streamSubtitle = handoff.streamSubtitle,
+    providerName = handoff.providerName,
+    providerAddonId = handoff.providerAddonId,
+    videoId = handoff.videoId,
+    seasonNumber = handoff.seasonNumber,
+    episodeNumber = handoff.episodeNumber,
+    episodeTitle = handoff.episodeTitle,
+    episodeThumbnail = handoff.episodeThumbnail,
+    pauseDescription = handoff.pauseDescription,
+    torrentInfoHash = handoff.torrentInfoHash,
+    torrentFileIdx = handoff.torrentFileIdx,
+    torrentFilename = handoff.torrentFilename,
+    torrentTrackers = handoff.torrentTrackers,
+    initialPositionMs = handoff.positionMs,
+    initialProgressFraction = null,
+)
