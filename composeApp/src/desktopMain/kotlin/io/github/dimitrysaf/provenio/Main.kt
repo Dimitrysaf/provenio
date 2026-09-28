@@ -71,6 +71,7 @@ import io.github.dimitrysaf.provenio.desktop.DesktopStatusNotifier
 import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
 import io.github.dimitrysaf.provenio.desktop.SingleInstance
 import java.awt.SystemTray
+import java.io.File
 import kotlin.system.exitProcess
 import io.github.dimitrysaf.provenio.shell.App
 import io.github.dimitrysaf.provenio.shell.components.AppKeyboardShortcuts
@@ -83,6 +84,7 @@ import org.jetbrains.compose.resources.stringResource
 
 fun main(args: Array<String>) {
     if (!SingleInstance.claim(args)) exitProcess(0)
+    runCatching { File("/proc/self/comm").writeText("Provenio") }
     initializePlatform(Context.app)
     // A provenio:// link the desktop entry was opened with.
     args.firstOrNull { it.startsWith("provenio:") || it.startsWith("stremio:") }?.let(::handleAppUrl)

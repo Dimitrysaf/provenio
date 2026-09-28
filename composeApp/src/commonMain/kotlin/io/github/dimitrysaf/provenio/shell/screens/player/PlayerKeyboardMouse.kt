@@ -67,14 +67,17 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
                     val previous = lastMousePosition
                     lastMousePosition = change.position
                     val mouseMoved = previous == null || (change.position - previous).getDistance() >= MouseMoveThresholdPx
-                    if (mouseMoved && !playerControlsLocked) {
+                    if (!mouseMoved) continue
+                    if (playerControlsLocked) {
+                        revealLockedOverlay()
+                    } else {
                         controlsVisible = true
-                        controlsActivity++
                     }
+                    controlsActivity++
                 }
             }
         }
-        .playerCursorHidden(!controlsVisible)
+        .playerCursorHidden(!controlsVisible && !(playerControlsLocked && lockedOverlayVisible))
 }
 
 private class MuteState {

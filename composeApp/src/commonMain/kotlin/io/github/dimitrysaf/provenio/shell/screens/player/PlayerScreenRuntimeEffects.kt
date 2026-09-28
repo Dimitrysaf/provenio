@@ -396,7 +396,7 @@ private fun PlayerScreenRuntime.BindPlayerUiVisibilityEffects() {
         controlsVisible = false
     }
 
-    LaunchedEffect(playerControlsLocked, lockedOverlayVisible) {
+    LaunchedEffect(playerControlsLocked, lockedOverlayVisible, controlsActivity) {
         if (!playerControlsLocked || !lockedOverlayVisible) return@LaunchedEffect
         delay(PlayerLockedOverlayDurationMs)
         lockedOverlayVisible = false
