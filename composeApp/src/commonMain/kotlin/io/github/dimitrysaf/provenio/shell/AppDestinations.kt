@@ -35,6 +35,7 @@ import io.github.dimitrysaf.provenio.shell.screens.settings.HomescreenSettingsSc
 import io.github.dimitrysaf.provenio.shell.screens.settings.LicensesAttributionsSettingsScreen
 import io.github.dimitrysaf.provenio.shell.screens.settings.MetaScreenSettingsScreen
 import io.github.dimitrysaf.provenio.shell.screens.settings.PluginsSettingsScreen
+import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsPage
 import io.github.dimitrysaf.provenio.shell.screens.updater.AppUpdaterController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -347,8 +348,14 @@ internal fun appEntryProvider(
         )
     }
     entry<AddonsSettingsRoute> { route ->
+        val guideTitle = stringResource(Res.string.addons_guide_title)
         SettingsDestination(route, navController) { onBack ->
-            AddonsSettingsScreen(onBack = onBack)
+            AddonsSettingsScreen(
+                onBack = onBack,
+                onGuideClick = {
+                    navController.navigate(SettingsPageRoute(SettingsPage.AddonsGuide.name, guideTitle))
+                },
+            )
         }
     }
     if (AppFeaturePolicy.pluginsEnabled) {

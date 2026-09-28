@@ -5,10 +5,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Modifier
 import io.github.dimitrysaf.provenio.shell.screens.addons.AddonsSettingsPageContent
 
-internal fun LazyListScope.addonsSettingsContent() {
+internal fun LazyListScope.addonsSettingsContent(
+    onGuideClick: (() -> Unit)? = null,
+) {
     item {
         AddonsSettingsPageContent(
             modifier = Modifier.fillMaxWidth(),
+            onGuideClick = onGuideClick,
         )
     }
 }

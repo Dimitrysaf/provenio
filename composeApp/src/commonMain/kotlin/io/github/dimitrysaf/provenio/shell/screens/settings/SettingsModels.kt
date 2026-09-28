@@ -8,6 +8,7 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.ui.graphics.vector.ImageVector
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.addons_guide_title
 import provenio.composeapp.generated.resources.compose_settings_category_about
 import provenio.composeapp.generated.resources.compose_settings_category_general
 import provenio.composeapp.generated.resources.compose_settings_page_addons
@@ -102,6 +103,11 @@ internal enum class SettingsPage(
         titleRes = Res.string.compose_settings_page_addons,
         category = SettingsCategory.General,
         parentPage = ContentDiscovery,
+    ),
+    AddonsGuide(
+        titleRes = Res.string.addons_guide_title,
+        category = SettingsCategory.General,
+        parentPage = Addons,
     ),
     Plugins(
         titleRes = Res.string.compose_settings_page_plugins,

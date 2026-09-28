@@ -68,6 +68,8 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsUiState
 import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleRepository
 import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleUiState
 import io.github.dimitrysaf.provenio.core.collection.CollectionRepository
+import io.github.dimitrysaf.provenio.shell.screens.addons.AddonAddRequests
+import io.github.dimitrysaf.provenio.shell.screens.addons.addonsGuideContent
 import io.github.dimitrysaf.provenio.shell.screens.collection.CollectionsInlinePane
 import io.github.dimitrysaf.provenio.shell.screens.downloads.DownloadsScreen
 import io.github.dimitrysaf.provenio.core.downloads.DownloadItem
@@ -411,6 +413,7 @@ private fun MobileSettingsScreen(
         val links = SettingsPageLinks(
             openPage = onPageChange,
             openSubPage = onPageChange,
+            navigateBack = onNavigateBack,
             onHomescreenClick = onHomescreenClick,
             onMetaScreenClick = onMetaScreenClick,
             onContinueWatchingClick = onContinueWatchingClick,
@@ -691,6 +694,7 @@ private fun TabletSettingsScreen(
             val links = SettingsPageLinks(
                 openPage = ::openInlinePage,
                 openSubPage = onPageChange,
+                navigateBack = onNavigateBack,
                 onHomescreenClick = { openInlinePage(SettingsPage.Homescreen) },
                 onMetaScreenClick = { openInlinePage(SettingsPage.MetaScreen) },
                 onContinueWatchingClick = { openInlinePage(SettingsPage.ContinueWatching) },
@@ -938,6 +942,7 @@ internal fun rememberSettingsData(): SettingsData {
 internal class SettingsPageLinks(
     val openPage: (SettingsPage) -> Unit,
     val openSubPage: (SettingsPage) -> Unit,
+    val navigateBack: () -> Unit,
     val onHomescreenClick: () -> Unit,
     val onMetaScreenClick: () -> Unit,
     val onContinueWatchingClick: () -> Unit,
@@ -1025,8 +1030,21 @@ internal fun LazyListScope.settingsPageContent(
             onAddonsClick = links.onAddonsClick,
             onPluginsClick = links.onPluginsClick,
         )
-        SettingsPage.Addons -> addonsSettingsContent()
-        SettingsPage.Plugins -> if (AppFeaturePolicy.pluginsEnabled) pluginsSettingsContent() else addonsSettingsContent()
+        SettingsPage.Addons -> addonsSettingsContent(
+            onGuideClick = { links.openSubPage(SettingsPage.AddonsGuide) },
+        )
+        SettingsPage.AddonsGuide -> addonsGuideContent(
+            isTablet = isTablet,
+            onAddAddonClick = {
+                AddonAddRequests.request()
+                links.navigateBack()
+            },
+        )
+        SettingsPage.Plugins -> if (AppFeaturePolicy.pluginsEnabled) {
+            pluginsSettingsContent()
+        } else {
+            addonsSettingsContent(onGuideClick = { links.openSubPage(SettingsPage.AddonsGuide) })
+        }
         SettingsPage.Homescreen -> homescreenSettingsContent(
             isTablet = isTablet,
             heroEnabled = data.homescreen.heroEnabled,

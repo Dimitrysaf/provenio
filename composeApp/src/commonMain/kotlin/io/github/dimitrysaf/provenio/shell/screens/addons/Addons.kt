@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Extension
@@ -62,6 +63,7 @@ import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.components.TextPromptDialog
 import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
 import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
+import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
 import io.github.dimitrysaf.provenio.shell.screens.settings.segmentShape
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
@@ -98,12 +100,14 @@ private val AddonListMaxHeight = 640.dp
 @Composable
 internal fun AddonsSettingsPageContent(
     modifier: Modifier = Modifier,
+    onGuideClick: (() -> Unit)? = null,
 ) {
     LaunchedEffect(Unit) {
         AddonRepository.initialize()
     }
 
     val uiState by AddonRepository.uiState.collectAsStateWithLifecycle()
+    val addRequested by AddonAddRequests.requested.collectAsStateWithLifecycle()
     val addons = uiState.addons
     val uriHandler = LocalUriHandler.current
     val clipboardManager = LocalClipboardManager.current
@@ -115,6 +119,13 @@ internal fun AddonsSettingsPageContent(
     var addonPendingDeletionUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var addonPendingConfigureUrl by rememberSaveable { mutableStateOf<String?>(null) }
     val urlCopiedMessage = stringResource(Res.string.addons_url_copied)
+
+    LaunchedEffect(addRequested) {
+        if (addRequested) {
+            showAddDialog = true
+            AddonAddRequests.consume()
+        }
+    }
 
     val lazyListState = rememberLazyListState()
     val reorderableLazyListState = rememberReorderableLazyListState(
@@ -143,6 +154,17 @@ internal fun AddonsSettingsPageContent(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (onGuideClick != null) {
+            SettingsList {
+                navigationRow(
+                    title = stringResource(Res.string.addons_guide_title),
+                    description = stringResource(Res.string.addons_guide_entry_description),
+                    icon = Icons.AutoMirrored.Rounded.MenuBook,
+                    onClick = onGuideClick,
+                )
+            }
+        }
+
         // How many are active is a property of this list, so it rides the heading rather than
         // taking a summary block of its own above it. With nothing installed there is no count
         // worth stating, and the empty state below says it better than "(0/0)" would.
