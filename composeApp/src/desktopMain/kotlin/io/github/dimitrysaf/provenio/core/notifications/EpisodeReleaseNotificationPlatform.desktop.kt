@@ -109,7 +109,7 @@ internal actual object EpisodeReleaseNotificationPlatform {
 
     private fun trayImage(): java.awt.Image {
         val resource = EpisodeReleaseNotificationPlatform::class.java.classLoader
-            ?.getResource("composeResources/provenio.composeapp.generated.resources/drawable/app_icon_original.png")
+            ?.getResource("composeResources/provenio.composeapp.generated.resources/drawable/app_icon_arctic_blue.png")
         return if (resource != null) Toolkit.getDefaultToolkit().getImage(resource) else Toolkit.getDefaultToolkit().createImage(ByteArray(0))
     }
 

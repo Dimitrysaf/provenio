@@ -9,9 +9,10 @@ internal actual object AppIconPlatform {
     actual val requiresCloseConfirmation: Boolean = true
 
     private const val launcherPackage = "io.github.dimitrysaf.provenio.launcher"
-    private val launcherComponents = AppIconOption.entries.map { option ->
-        option.platformName to "$launcherPackage.${option.platformName ?: "AppIconDefault"}"
-    }
+    private val launcherComponents = listOf(null to "$launcherPackage.AppIconDefault") +
+        AppIconOption.entries.mapNotNull { option ->
+            option.platformName?.let { it to "$launcherPackage.$it" }
+        }
 
     private var context: Context? = null
 

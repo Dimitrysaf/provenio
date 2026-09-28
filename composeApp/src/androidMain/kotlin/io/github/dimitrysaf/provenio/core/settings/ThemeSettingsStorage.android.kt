@@ -18,6 +18,7 @@ actual object ThemeSettingsStorage {
     private const val amoledEnabledKey = "amoled_enabled"
     private const val selectedAppLanguageKey = "selected_app_language"
     private const val themeModeKey = "theme_mode"
+    private const val colorPaletteKey = "color_palette"
     private val profileScopedSyncKeys = listOf(
         amoledEnabledKey,
     )
@@ -46,6 +47,12 @@ actual object ThemeSettingsStorage {
 
     actual fun saveThemeMode(code: String) {
         preferences?.edit()?.putString(themeModeKey, code)?.apply()
+    }
+
+    actual fun loadColorPalette(): String? = preferences?.getString(colorPaletteKey, null)
+
+    actual fun saveColorPalette(key: String) {
+        preferences?.edit()?.putString(colorPaletteKey, key)?.apply()
     }
 
     actual fun loadSelectedAppLanguage(): String? {

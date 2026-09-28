@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
+import io.github.dimitrysaf.provenio.core.settings.AppIconOption
 import io.github.dimitrysaf.provenio.shell.components.SkeletonAnimationProvider
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.roboto_bold
@@ -167,23 +168,27 @@ private val TypeTokens: TypeScale
     )
 
 @Composable
-fun Theme(
+internal fun Theme(
     darkTheme: Boolean = systemPrefersDarkTheme(),
     amoled: Boolean = false,
     useDynamicColor: Boolean = false,
+    paletteIcon: AppIconOption? = null,
     content: @Composable () -> Unit,
 ) {
     val dynamicColorScheme = if (useDynamicColor) rememberDynamicColorScheme(darkTheme) else null
-    // Material You's own scheme wherever the platform supplies one (Android 12+). Below that,
-    // and on iOS, there is no wallpaper to derive a palette from, so fall back to Material's
-    // baseline scheme rather than to a brand palette — a brand palette is not Material You.
-    val colorScheme = remember(dynamicColorScheme, darkTheme, amoled) {
-        val scheme = dynamicColorScheme
+    val iconColorScheme = if (dynamicColorScheme == null && paletteIcon != null) {
+        rememberIconColorScheme(paletteIcon, darkTheme)
+    } else {
+        null
+    }
+    val sourceColorScheme = dynamicColorScheme ?: iconColorScheme
+    val colorScheme = remember(sourceColorScheme, darkTheme, amoled) {
+        val scheme = sourceColorScheme
             ?: if (darkTheme) darkColorScheme() else lightColorScheme()
         if (amoled && darkTheme) scheme.toAmoled() else scheme
     }
-    val palette = remember(dynamicColorScheme, colorScheme) {
-        dynamicColorScheme?.let { colorScheme.toDynamicThemeColorPalette(amoled = false) } ?: ThemeColors.White
+    val palette = remember(sourceColorScheme, colorScheme) {
+        sourceColorScheme?.let { colorScheme.toDynamicThemeColorPalette(amoled = false) } ?: ThemeColors.White
     }
     val tokens = defaultThemeTokens(palette, amoled = colorScheme.background == Color.Black, colorScheme = colorScheme)
 

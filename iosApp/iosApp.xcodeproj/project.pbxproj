@@ -388,6 +388,7 @@
 				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = (
 					AppIconArcticBlue,
+					AppIconOriginal,
 					AppIconEmerald,
 					AppIconRoseGold,
 					AppIconCopper,
@@ -430,6 +431,7 @@
 				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = (
 					AppIconArcticBlue,
+					AppIconOriginal,
 					AppIconEmerald,
 					AppIconRoseGold,
 					AppIconCopper,

@@ -28,7 +28,10 @@ import io.github.dimitrysaf.provenio.shell.nav.AppRoute
 import io.github.dimitrysaf.provenio.shell.nav.TabsRoute
 import androidx.compose.runtime.LaunchedEffect
 import io.github.dimitrysaf.provenio.shell.components.NativeTabBridge
-import io.github.dimitrysaf.provenio.shell.theme.ThemeColors
+import io.github.dimitrysaf.provenio.shell.theme.themePalette
+import io.github.dimitrysaf.provenio.core.settings.AppIconOption
+import io.github.dimitrysaf.provenio.core.settings.ColorPalette
+import androidx.compose.material3.MaterialTheme
 
 fun disposeRoute(route: AppRoute) {
     disposeRouteResources(route)
@@ -104,16 +107,18 @@ internal fun AppEnvironment(content: @Composable () -> Unit) {
         ThemeSettingsRepository.amoledEnabled
     }.collectAsStateWithLifecycle()
 
-    // The native iOS tab bar takes its accent from the fallback palette.
-    LaunchedEffect(Unit) {
-        NativeTabBridge.publishAccentColor(ThemeColors.White.nativeAccentHex)
-    }
     val themeMode by remember {
         ThemeSettingsRepository.ensureLoaded()
         ThemeSettingsRepository.themeMode
     }.collectAsStateWithLifecycle()
+    val colorPalette by remember {
+        ThemeSettingsRepository.ensureLoaded()
+        ThemeSettingsRepository.colorPalette
+    }.collectAsStateWithLifecycle()
     val systemDarkTheme = systemPrefersDarkTheme()
-    val useDynamicColor = remember { isDynamicColorAvailable() }
+    val dynamicColorAvailable = remember { isDynamicColorAvailable() }
+    val palette = colorPalette
+    val useDynamicColor = dynamicColorAvailable && palette == ColorPalette.Dynamic
 
     Theme(
         darkTheme = when (themeMode) {
@@ -123,7 +128,12 @@ internal fun AppEnvironment(content: @Composable () -> Unit) {
         },
         amoled = amoledEnabled,
         useDynamicColor = useDynamicColor,
+        paletteIcon = (palette as? ColorPalette.Icon)?.icon ?: AppIconOption.DEFAULT,
     ) {
+        val accentHex = MaterialTheme.themePalette.nativeAccentHex
+        LaunchedEffect(accentHex) {
+            NativeTabBridge.publishAccentColor(accentHex)
+        }
         AdaptiveWindowRoot(content = content)
     }
 }

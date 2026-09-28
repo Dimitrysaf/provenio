@@ -5,14 +5,14 @@ import kotlin.test.assertEquals
 
 class AppIconOptionTest {
     @Test
-    fun primaryIconUsesPlatformDefault() {
-        assertEquals(null, AppIconOption.ORIGINAL.platformName)
-        assertEquals(AppIconOption.ORIGINAL, AppIconOption.fromPlatformName(null))
+    fun platformDefaultIconIsArcticBlue() {
+        assertEquals(AppIconOption.ARCTIC_BLUE, AppIconOption.DEFAULT)
+        assertEquals(AppIconOption.ARCTIC_BLUE, AppIconOption.fromPlatformName(null))
     }
 
     @Test
     fun alternateIconNamesRoundTrip() {
-        AppIconOption.entries.drop(1).forEach { icon ->
+        AppIconOption.entries.forEach { icon ->
             assertEquals(icon, AppIconOption.fromPlatformName(icon.platformName))
         }
     }
@@ -23,7 +23,15 @@ class AppIconOptionTest {
     }
 
     @Test
-    fun unknownIconFallsBackToOriginal() {
-        assertEquals(AppIconOption.ORIGINAL, AppIconOption.fromPlatformName("UnknownIcon"))
+    fun unknownIconFallsBackToDefault() {
+        assertEquals(AppIconOption.DEFAULT, AppIconOption.fromPlatformName("UnknownIcon"))
+    }
+
+    @Test
+    fun keysRoundTrip() {
+        AppIconOption.entries.forEach { icon ->
+            assertEquals(icon, AppIconOption.fromKey(icon.key))
+        }
+        assertEquals(null, AppIconOption.fromKey("dynamic"))
     }
 }

@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 internal data class AppIconSettingsState(
-    val selected: AppIconOption = AppIconOption.ORIGINAL,
+    val selected: AppIconOption = AppIconOption.DEFAULT,
     val pending: AppIconOption? = null,
     val changeFailed: Boolean = false,
 )

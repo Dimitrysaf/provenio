@@ -80,7 +80,7 @@ import io.github.dimitrysaf.provenio.shell.App
 import io.github.dimitrysaf.provenio.shell.components.AppKeyboardShortcuts
 import org.jetbrains.compose.resources.painterResource
 import provenio.composeapp.generated.resources.Res
-import provenio.composeapp.generated.resources.app_icon_original
+import provenio.composeapp.generated.resources.app_icon_arctic_blue
 import provenio.composeapp.generated.resources.tray_quit
 import provenio.composeapp.generated.resources.tray_show_app
 import org.jetbrains.compose.resources.stringResource
@@ -106,7 +106,7 @@ fun main(args: Array<String>) {
         LaunchedEffect(windowState.isMinimized, windowVisible) {
             DesktopWindowState.setVisible(windowVisible && !windowState.isMinimized)
         }
-        val appIcon = painterResource(Res.drawable.app_icon_original)
+        val appIcon = painterResource(Res.drawable.app_icon_arctic_blue)
         val showLabel = stringResource(Res.string.tray_show_app)
         val quitLabel = stringResource(Res.string.tray_quit)
         val statusNotifierActive = remember {

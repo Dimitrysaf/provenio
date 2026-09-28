@@ -113,6 +113,8 @@ import io.github.dimitrysaf.provenio.core.settings.AppIconOption
 import io.github.dimitrysaf.provenio.core.settings.AppIconRepository
 import io.github.dimitrysaf.provenio.core.settings.AppIconSettingsState
 import io.github.dimitrysaf.provenio.core.settings.AppLanguage
+import io.github.dimitrysaf.provenio.core.settings.ColorPalette
+import io.github.dimitrysaf.provenio.shell.theme.isDynamicColorAvailable
 import io.github.dimitrysaf.provenio.core.settings.ThemeSettingsRepository
 
 // Downloads is not a SettingsPage, so a request for it goes by this name.
@@ -808,6 +810,8 @@ internal data class SettingsData(
     val rememberLastProfileEnabled: Boolean,
     val amoledEnabled: Boolean,
     val themeMode: ThemeMode,
+    val colorPalette: ColorPalette,
+    val dynamicColorAvailable: Boolean,
     val appIconState: AppIconSettingsState,
     val onAppIconSelected: (AppIconOption) -> Unit,
     val selectedAppLanguage: AppLanguage,
@@ -839,6 +843,8 @@ internal fun rememberSettingsData(): SettingsData {
     }.collectAsStateWithLifecycle()
     val selectedAppLanguage by remember { ThemeSettingsRepository.selectedAppLanguage }.collectAsStateWithLifecycle()
     val themeMode by remember { ThemeSettingsRepository.themeMode }.collectAsStateWithLifecycle()
+    val colorPalette by remember { ThemeSettingsRepository.colorPalette }.collectAsStateWithLifecycle()
+    val dynamicColorAvailable = remember { isDynamicColorAvailable() }
     val appIconState by remember {
         AppIconRepository.ensureLoaded()
         AppIconRepository.state
@@ -924,6 +930,8 @@ internal fun rememberSettingsData(): SettingsData {
         rememberLastProfileEnabled = profileSettingsState.rememberLastProfileEnabled,
         amoledEnabled = amoledEnabled,
         themeMode = themeMode,
+        colorPalette = colorPalette,
+        dynamicColorAvailable = dynamicColorAvailable,
         appIconState = appIconState,
         onAppIconSelected = { icon -> appIconScope.launch { AppIconRepository.select(icon) } },
         selectedAppLanguage = selectedAppLanguage,
@@ -998,6 +1006,9 @@ internal fun LazyListScope.settingsPageContent(
             onAmoledToggle = ThemeSettingsRepository::setAmoled,
             themeMode = data.themeMode,
             onThemeModeSelected = ThemeSettingsRepository::setThemeMode,
+            colorPalette = data.colorPalette,
+            dynamicColorAvailable = data.dynamicColorAvailable,
+            onColorPaletteSelected = ThemeSettingsRepository::setColorPalette,
             appIconState = data.appIconState,
             onAppIconSelected = data.onAppIconSelected,
             onAppIconFailureDismissed = AppIconRepository::clearFailure,

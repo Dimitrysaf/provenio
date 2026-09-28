@@ -24,6 +24,7 @@ import provenio.composeapp.generated.resources.compose_settings_page_streams
 import provenio.composeapp.generated.resources.settings_appearance_app_language
 import provenio.composeapp.generated.resources.settings_appearance_app_language_sheet_title
 import provenio.composeapp.generated.resources.settings_appearance_app_icon
+import provenio.composeapp.generated.resources.settings_appearance_color_palette
 import provenio.composeapp.generated.resources.settings_appearance_amoled_black
 import provenio.composeapp.generated.resources.settings_appearance_amoled_description
 import provenio.composeapp.generated.resources.settings_appearance_theme
@@ -46,6 +47,7 @@ import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.settings.AppIconOption
 import io.github.dimitrysaf.provenio.core.settings.AppIconSettingsState
 import io.github.dimitrysaf.provenio.core.settings.AppLanguage
+import io.github.dimitrysaf.provenio.core.settings.ColorPalette
 import io.github.dimitrysaf.provenio.core.settings.ThemeMode
 import io.github.dimitrysaf.provenio.core.settings.labelResource
 
@@ -55,6 +57,9 @@ internal fun LazyListScope.appearanceSettingsContent(
     onAmoledToggle: (Boolean) -> Unit,
     themeMode: ThemeMode,
     onThemeModeSelected: (ThemeMode) -> Unit,
+    colorPalette: ColorPalette,
+    dynamicColorAvailable: Boolean,
+    onColorPaletteSelected: (ColorPalette) -> Unit,
     appIconState: AppIconSettingsState,
     onAppIconSelected: (AppIconOption) -> Unit,
     onAppIconFailureDismissed: () -> Unit,
@@ -70,6 +75,8 @@ internal fun LazyListScope.appearanceSettingsContent(
     item {
         var showLanguageSheet by remember { mutableStateOf(false) }
         var showThemeSheet by remember { mutableStateOf(false) }
+        var showColorPaletteSheet by remember { mutableStateOf(false) }
+        val effectiveColorPalette = colorPalette.effective(dynamicColorAvailable)
         var showAppIconPicker by remember { mutableStateOf(false) }
         SettingsSection(
             title = stringResource(Res.string.settings_appearance_section_display),
@@ -87,6 +94,17 @@ internal fun LazyListScope.appearanceSettingsContent(
                     title = stringResource(Res.string.settings_appearance_theme),
                     description = stringResource(themeMode.labelRes),
                     onClick = { showThemeSheet = true },
+                )
+                navigationRow(
+                    title = stringResource(Res.string.settings_appearance_color_palette),
+                    description = effectiveColorPalette.label(),
+                    trailingContent = {
+                        ColorPaletteSwatch(
+                            palette = effectiveColorPalette,
+                            size = if (isTablet) 44.dp else 40.dp,
+                        )
+                    },
+                    onClick = { showColorPaletteSheet = true },
                 )
                 navigationRow(
                     title = stringResource(Res.string.settings_appearance_app_icon),
@@ -129,6 +147,15 @@ internal fun LazyListScope.appearanceSettingsContent(
                 isSelected = { it == themeMode },
                 onSelected = onThemeModeSelected,
                 onDismiss = { showThemeSheet = false },
+            )
+        }
+
+        if (showColorPaletteSheet) {
+            ColorPaletteBottomSheet(
+                selected = effectiveColorPalette,
+                dynamicColorAvailable = dynamicColorAvailable,
+                onSelected = onColorPaletteSelected,
+                onDismiss = { showColorPaletteSheet = false },
             )
         }
 

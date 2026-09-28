@@ -7,12 +7,16 @@
 
     <style name="Theme.Provenio.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/provenio_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo_arctic_blue</item>
         <item name="postSplashScreenTheme">@style/Theme.Provenio</item>
     </style>
 
     <style name="Theme.Provenio.Splash.ArcticBlue" parent="@style/Theme.Provenio.Splash">
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo_arctic_blue</item>
+    </style>
+
+    <style name="Theme.Provenio.Splash.Original" parent="@style/Theme.Provenio.Splash">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
     </style>
 
     <style name="Theme.Provenio.Splash.Emerald" parent="@style/Theme.Provenio.Splash">

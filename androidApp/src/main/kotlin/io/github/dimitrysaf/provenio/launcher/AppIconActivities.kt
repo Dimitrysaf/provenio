@@ -6,6 +6,8 @@ class AppIconDefault : MainActivity()
 
 class AppIconArcticBlue : MainActivity()
 
+class AppIconOriginal : MainActivity()
+
 class AppIconEmerald : MainActivity()
 
 class AppIconRoseGold : MainActivity()
