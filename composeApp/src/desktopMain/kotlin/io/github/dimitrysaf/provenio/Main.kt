@@ -3,12 +3,16 @@ package io.github.dimitrysaf.provenio
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.application
@@ -60,33 +64,59 @@ import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedStorage
 import io.github.dimitrysaf.provenio.desktop.Context
 import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
+import io.github.dimitrysaf.provenio.desktop.SingleInstance
+import java.awt.SystemTray
+import kotlin.system.exitProcess
 import io.github.dimitrysaf.provenio.shell.App
 import io.github.dimitrysaf.provenio.shell.components.AppKeyboardShortcuts
 import org.jetbrains.compose.resources.painterResource
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.app_icon_original
+import provenio.composeapp.generated.resources.tray_quit
+import provenio.composeapp.generated.resources.tray_show_app
+import org.jetbrains.compose.resources.stringResource
 
 fun main(args: Array<String>) {
+    if (!SingleInstance.claim(args)) exitProcess(0)
     initializePlatform(Context.app)
     // A provenio:// link the desktop entry was opened with.
     args.firstOrNull { it.startsWith("provenio:") || it.startsWith("stremio:") }?.let(::handleAppUrl)
+    SingleInstance.listen(::handleAppUrl)
     application {
         val windowState = rememberWindowState(size = DpSize(1280.dp, 800.dp))
         val fullscreen by DesktopWindowState.isFullscreen.collectAsState()
+        val trayAvailable = remember { runCatching { SystemTray.isSupported() }.getOrDefault(false) }
+        var windowVisible by remember { mutableStateOf(true) }
+        val quit = {
+            P2pStreamingEngine.shutdown()
+            exitApplication()
+        }
         LaunchedEffect(fullscreen) {
             windowState.placement = if (fullscreen) WindowPlacement.Fullscreen else WindowPlacement.Floating
         }
-        LaunchedEffect(windowState.isMinimized) {
-            DesktopWindowState.setVisible(!windowState.isMinimized)
+        LaunchedEffect(windowState.isMinimized, windowVisible) {
+            DesktopWindowState.setVisible(windowVisible && !windowState.isMinimized)
+        }
+        val appIcon = painterResource(Res.drawable.app_icon_original)
+        if (trayAvailable) {
+            Tray(
+                icon = appIcon,
+                tooltip = "Provenio",
+                onAction = { windowVisible = true },
+                menu = {
+                    Item(stringResource(Res.string.tray_show_app), onClick = { windowVisible = true })
+                    Item(stringResource(Res.string.tray_quit), onClick = quit)
+                },
+            )
         }
         Window(
             onCloseRequest = {
-                P2pStreamingEngine.shutdown()
-                exitApplication()
+                if (trayAvailable) windowVisible = false else quit()
             },
             state = windowState,
+            visible = windowVisible,
             title = "Provenio",
-            icon = painterResource(Res.drawable.app_icon_original),
+            icon = appIcon,
             onPreviewKeyEvent = { event ->
                 when {
                     event.type != KeyEventType.KeyDown -> false
@@ -102,6 +132,14 @@ fun main(args: Array<String>) {
                 }
             },
         ) {
+            LaunchedEffect(Unit) {
+                SingleInstance.showRequests.collect {
+                    windowVisible = true
+                    windowState.isMinimized = false
+                    window.toFront()
+                    window.requestFocus()
+                }
+            }
             App()
         }
     }

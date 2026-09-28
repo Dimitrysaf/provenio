@@ -1,10 +1,15 @@
 package io.github.dimitrysaf.provenio.core.downloads
 
+import io.github.dimitrysaf.provenio.desktop.DesktopFolderChooser
+import io.github.dimitrysaf.provenio.desktop.FolderChoice
 import io.github.dimitrysaf.provenio.desktop.SharedPreferences
 import java.awt.Desktop
 import java.io.File
 import java.util.concurrent.TimeUnit
-import javax.swing.JFileChooser
+import kotlinx.coroutines.runBlocking
+import org.jetbrains.compose.resources.getString
+import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.downloads_location_title
 
 // Where desktop downloads go: a Provenio folder in the user's Videos by default, or a folder they chose.
 internal object DesktopDownloadsLocation {
@@ -22,12 +27,12 @@ internal object DesktopDownloadsLocation {
 
     // Shows the system folder picker; true when a new folder was chosen.
     fun choose(): Boolean {
-        val chooser = JFileChooser(directory().takeIf { it.isDirectory } ?: directory().parentFile).apply {
-            fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-            isAcceptAllFileFilterUsed = false
-        }
-        if (chooser.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) return false
-        val chosen = chooser.selectedFile ?: return false
+        val initial = directory().takeIf { it.isDirectory } ?: directory().parentFile
+        val choice = DesktopFolderChooser.chooseFolder(
+            title = runBlocking { getString(Res.string.downloads_location_title) },
+            initial = initial,
+        )
+        val chosen = (choice as? FolderChoice.Chosen)?.folder ?: return false
         preferences?.edit()?.putString(DirectoryKey, chosen.absolutePath)?.apply()
         return true
     }

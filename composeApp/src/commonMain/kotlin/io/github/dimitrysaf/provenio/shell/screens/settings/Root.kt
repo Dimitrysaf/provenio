@@ -10,6 +10,7 @@ import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
@@ -61,6 +62,8 @@ import provenio.composeapp.generated.resources.compose_settings_page_content_dis
 import provenio.composeapp.generated.resources.compose_settings_page_tracking
 import provenio.composeapp.generated.resources.settings_playback_subtitle
 import provenio.composeapp.generated.resources.about_licenses_attributions_subtitle
+import provenio.composeapp.generated.resources.keyboard_shortcuts_entry_description
+import provenio.composeapp.generated.resources.keyboard_shortcuts_title
 import org.jetbrains.compose.resources.stringResource
 
 private const val PRIVACY_POLICY_URL = "https://github.com/Dimitrysaf/provenio#privacy"
@@ -70,6 +73,7 @@ internal fun LazyListScope.settingsRootContent(
     onPlaybackClick: () -> Unit,
     onAppearanceClick: () -> Unit,
     onAdvancedClick: () -> Unit,
+    onKeyboardShortcutsClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onContentDiscoveryClick: () -> Unit,
     onIntegrationsClick: () -> Unit,
@@ -203,6 +207,12 @@ internal fun LazyListScope.settingsRootContent(
                         description = stringResource(Res.string.compose_settings_root_advanced_description),
                         icon = Icons.Rounded.Tune,
                         onClick = onAdvancedClick,
+                    )
+                    navigationRow(
+                        title = stringResource(Res.string.keyboard_shortcuts_title),
+                        description = stringResource(Res.string.keyboard_shortcuts_entry_description),
+                        icon = Icons.Rounded.Keyboard,
+                        onClick = onKeyboardShortcutsClick,
                     )
                 }
             }

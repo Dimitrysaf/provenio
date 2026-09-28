@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.core.settings.ThemeMode
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktConnectionMode
 import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
 
@@ -461,6 +462,7 @@ private fun MobileSettingsScreen(
                             onPlaybackClick = { onPageChange(SettingsPage.Playback) },
                             onAppearanceClick = { onPageChange(SettingsPage.Appearance) },
                             onAdvancedClick = { onPageChange(SettingsPage.Advanced) },
+                            onKeyboardShortcutsClick = { onPageChange(SettingsPage.KeyboardShortcuts) },
                             onNotificationsClick = { onPageChange(SettingsPage.Notifications) },
                             onContentDiscoveryClick = { onPageChange(SettingsPage.ContentDiscovery) },
                             onIntegrationsClick = { onPageChange(SettingsPage.Integrations) },
@@ -776,6 +778,7 @@ private fun TabletSettingsScreen(
                                 onPlaybackClick = { openInlinePage(SettingsPage.Playback) },
                                 onAppearanceClick = { openInlinePage(SettingsPage.Appearance) },
                                 onAdvancedClick = { openInlinePage(SettingsPage.Advanced) },
+                                onKeyboardShortcutsClick = { openInlinePage(SettingsPage.KeyboardShortcuts) },
                                 onNotificationsClick = { openInlinePage(SettingsPage.Notifications) },
                                 onContentDiscoveryClick = { openInlinePage(SettingsPage.ContentDiscovery) },
                                 onIntegrationsClick = { openInlinePage(SettingsPage.Integrations) },
@@ -804,6 +807,7 @@ internal data class SettingsData(
     val playerSettings: PlayerSettingsUiState,
     val rememberLastProfileEnabled: Boolean,
     val amoledEnabled: Boolean,
+    val themeMode: ThemeMode,
     val appIconState: AppIconSettingsState,
     val onAppIconSelected: (AppIconOption) -> Unit,
     val selectedAppLanguage: AppLanguage,
@@ -834,6 +838,7 @@ internal fun rememberSettingsData(): SettingsData {
         ThemeSettingsRepository.amoledEnabled
     }.collectAsStateWithLifecycle()
     val selectedAppLanguage by remember { ThemeSettingsRepository.selectedAppLanguage }.collectAsStateWithLifecycle()
+    val themeMode by remember { ThemeSettingsRepository.themeMode }.collectAsStateWithLifecycle()
     val appIconState by remember {
         AppIconRepository.ensureLoaded()
         AppIconRepository.state
@@ -918,6 +923,7 @@ internal fun rememberSettingsData(): SettingsData {
         playerSettings = playerSettingsUiState,
         rememberLastProfileEnabled = profileSettingsState.rememberLastProfileEnabled,
         amoledEnabled = amoledEnabled,
+        themeMode = themeMode,
         appIconState = appIconState,
         onAppIconSelected = { icon -> appIconScope.launch { AppIconRepository.select(icon) } },
         selectedAppLanguage = selectedAppLanguage,
@@ -990,6 +996,8 @@ internal fun LazyListScope.settingsPageContent(
             isTablet = isTablet,
             amoledEnabled = data.amoledEnabled,
             onAmoledToggle = ThemeSettingsRepository::setAmoled,
+            themeMode = data.themeMode,
+            onThemeModeSelected = ThemeSettingsRepository::setThemeMode,
             appIconState = data.appIconState,
             onAppIconSelected = data.onAppIconSelected,
             onAppIconFailureDismissed = AppIconRepository::clearFailure,
@@ -1008,7 +1016,6 @@ internal fun LazyListScope.settingsPageContent(
             traktConnected = data.traktAuth.mode == TraktConnectionMode.CONNECTED,
             traktEnabled = data.trackingSettings.traktEnabled,
             onTestUpdateBannerClick = links.onTestUpdateBannerClick,
-            onKeyboardShortcutsClick = { links.openSubPage(SettingsPage.KeyboardShortcuts) },
         )
         SettingsPage.KeyboardShortcuts -> keyboardShortcutsContent(isTablet = isTablet)
         SettingsPage.Notifications -> notificationsSettingsContent(

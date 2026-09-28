@@ -8,6 +8,7 @@ internal expect object LocalSyncPlatform {
     fun encrypt(key: ByteArray, plaintext: ByteArray): ByteArray
     fun decrypt(key: ByteArray, payload: ByteArray): ByteArray
     fun localIpv4Address(): String?
+    fun localIpv4Addresses(): List<String>
     suspend fun listen(port: Int): LocalSyncServer
     suspend fun connect(host: String, port: Int, timeoutMs: Int): LocalSyncConnection
     suspend fun sendBeacon(payload: ByteArray, port: Int)

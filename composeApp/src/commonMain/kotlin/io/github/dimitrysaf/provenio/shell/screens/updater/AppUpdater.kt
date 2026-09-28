@@ -181,9 +181,10 @@ private object AppUpdaterRepository {
 
     private fun chooseBestApkAsset(assets: List<GitHubAssetDto>): GitHubAssetDto? {
         val byName = assets.associateBy { it.name }
-        return AppUpdaterPlatform.getSupportedAbis()
-            .firstNotNullOfOrNull { abi -> apkNameByAbi[abi]?.let(byName::get) }
-            ?: byName[universalApkName]
+        val preferred = AppUpdaterPlatform.getSupportedAbis()
+        val usesApks = preferred.isEmpty() || preferred.any { it in apkNameByAbi }
+        return preferred.firstNotNullOfOrNull { key -> byName[apkNameByAbi[key] ?: key] }
+            ?: byName[universalApkName].takeIf { usesApks }
     }
 }
 

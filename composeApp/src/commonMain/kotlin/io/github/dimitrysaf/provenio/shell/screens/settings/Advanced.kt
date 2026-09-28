@@ -10,7 +10,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BugReport
-import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,9 +30,6 @@ import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingEnrichm
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressRepository
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.Res
-import provenio.composeapp.generated.resources.keyboard_shortcuts_entry_description
-import provenio.composeapp.generated.resources.keyboard_shortcuts_title
-import provenio.composeapp.generated.resources.settings_advanced_section_keyboard
 import provenio.composeapp.generated.resources.action_cancel
 import provenio.composeapp.generated.resources.settings_advanced_clear_cw_cache
 import provenio.composeapp.generated.resources.settings_advanced_clear_cw_cache_done
@@ -75,23 +71,7 @@ internal fun LazyListScope.advancedSettingsContent(
     traktConnected: Boolean,
     traktEnabled: Boolean,
     onTestUpdateBannerClick: (() -> Unit)?,
-    onKeyboardShortcutsClick: () -> Unit,
 ) {
-    item {
-        SettingsSection(
-            title = stringResource(Res.string.settings_advanced_section_keyboard),
-            isTablet = isTablet,
-        ) {
-            SettingsList {
-                navigationRow(
-                    title = stringResource(Res.string.keyboard_shortcuts_title),
-                    description = stringResource(Res.string.keyboard_shortcuts_entry_description),
-                    icon = Icons.Rounded.Keyboard,
-                    onClick = onKeyboardShortcutsClick,
-                )
-            }
-        }
-    }
     item {
         SettingsSection(
             title = stringResource(Res.string.settings_advanced_section_startup),

@@ -1,6 +1,5 @@
 package io.github.dimitrysaf.provenio.shell.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
@@ -11,7 +10,6 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.platform.LocalDensity
@@ -168,25 +166,26 @@ private val TypeTokens: TypeScale
 
 @Composable
 fun Theme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = systemPrefersDarkTheme(),
     amoled: Boolean = false,
     useDynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val dynamicColorScheme = if (useDynamicColor) rememberDynamicColorScheme() else null
+    val dynamicColorScheme = if (useDynamicColor) rememberDynamicColorScheme(darkTheme) else null
     // Material You's own scheme wherever the platform supplies one (Android 12+). Below that,
     // and on iOS, there is no wallpaper to derive a palette from, so fall back to Material's
     // baseline scheme rather than to a brand palette — a brand palette is not Material You.
     val colorScheme = remember(dynamicColorScheme, darkTheme, amoled) {
         val scheme = dynamicColorScheme
             ?: if (darkTheme) darkColorScheme() else lightColorScheme()
-        if (amoled && scheme.background.luminance() < 0.5f) scheme.toAmoled() else scheme
+        if (amoled && darkTheme) scheme.toAmoled() else scheme
     }
     val palette = remember(dynamicColorScheme, colorScheme) {
         dynamicColorScheme?.let { colorScheme.toDynamicThemeColorPalette(amoled = false) } ?: ThemeColors.White
     }
     val tokens = defaultThemeTokens(palette, amoled = colorScheme.background == Color.Black, colorScheme = colorScheme)
 
+    SystemBarsAppearance(darkTheme)
     val density = LocalDensity.current
     CompositionLocalProvider(
         LocalDensity provides Density(

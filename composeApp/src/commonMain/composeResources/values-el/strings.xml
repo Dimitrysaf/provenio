@@ -62,7 +62,6 @@
     <string name="addons_section_overview">Επισκόπηση</string>
     <string name="addons_summary_id_rules">%1$d κανόνες αναγνωριστικού</string>
     <string name="addons_version_format">Έκδοση %1$s</string>
-    <string name="settings_advanced_section_keyboard">ΠΛΗΚΤΡΟΛΟΓΙΟ</string>
     <string name="keyboard_shortcuts_title">Συντομεύσεις πληκτρολογίου</string>
     <string name="keyboard_shortcuts_entry_description">Όλες οι συντομεύσεις για την εφαρμογή και το πρόγραμμα αναπαραγωγής</string>
     <string name="keyboard_shortcuts_intro">Οι συντομεύσεις λειτουργούν με φυσικό πληκτρολόγιο. Σε Mac, χρησιμοποιήστε το ⌘ αντί για το Ctrl.</string>
@@ -517,6 +516,11 @@
     <string name="settings_advanced_sentry_reports_subtitle">Αποστολή αναφορών σφαλμάτων και ANR με ασφαλές πλαίσιο. Ενεργό από προεπιλογή.</string>
     <string name="settings_appearance_amoled_black">AMOLED Μαύρο</string>
     <string name="settings_appearance_amoled_description">Χρήση καθαρού μαύρου φόντου για οθόνες OLED.</string>
+    <string name="settings_appearance_theme">Θέμα</string>
+    <string name="settings_appearance_theme_system">Αυτόματο</string>
+    <string name="settings_appearance_theme_system_description">Ακολουθεί τη ρύθμιση φωτεινού ή σκοτεινού θέματος της συσκευής σας</string>
+    <string name="settings_appearance_theme_light">Φωτεινό</string>
+    <string name="settings_appearance_theme_dark">Σκοτεινό</string>
     <string name="settings_appearance_app_icon">Εικονίδιο εφαρμογής</string>
     <string name="settings_appearance_app_icon_arctic_blue">Παγωμένο μπλε</string>
     <string name="settings_appearance_app_icon_android_confirmation_message">Η αλλαγή σε %1$s θα κλείσει το Provenio. Πατήστε ΟΚ για να συνεχίσετε.</string>
@@ -2424,7 +2428,7 @@
     <string name="local_sync_forget_title">Διαγραφή του %1$s;</string>
     <string name="local_sync_forget_description">Θα χρειαστεί νέα σύζευξη για να συγχρονίσετε μαζί του.</string>
     <string name="local_sync_error_wifi">Συνδεθείτε σε Wi-Fi για σύζευξη</string>
-    <string name="local_sync_error_unreachable">Δεν ήταν δυνατή η σύνδεση με την άλλη συσκευή. Ανοίξτε σε αυτή τον Συγχρονισμό συσκευών και ελέγξτε ότι και οι δύο είναι στο ίδιο Wi-Fi.</string>
+    <string name="local_sync_error_unreachable">Δεν ήταν δυνατή η σύνδεση με την άλλη συσκευή. Ανοίξτε σε αυτή τον Συγχρονισμό συσκευών και ελέγξτε ότι και οι δύο είναι στο ίδιο Wi-Fi. Σε υπολογιστή, βεβαιωθείτε ότι το τείχος προστασίας επιτρέπει τη θύρα TCP 47631 και τη θύρα UDP 47632.</string>
     <string name="local_sync_error_rejected">Η άλλη συσκευή δεν αποδέχτηκε αυτόν τον κωδικό</string>
     <string name="local_sync_error_code">Αυτός δεν είναι κωδικός σύζευξης</string>
     <string name="local_sync_error_failed">Ο συγχρονισμός δεν ολοκληρώθηκε</string>
@@ -2511,4 +2515,6 @@
     <string name="torrent_details_of">%1$s από %2$s</string>
     <string name="torrent_details_rtt">%1$d ms</string>
     <string name="torrent_details_unknown_client">Άγνωστο πρόγραμμα</string>
+    <string name="tray_show_app">Εμφάνιση εφαρμογής</string>
+    <string name="tray_quit">Έξοδος</string>
 </resources>

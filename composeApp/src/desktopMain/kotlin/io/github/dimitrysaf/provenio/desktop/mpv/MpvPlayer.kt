@@ -12,6 +12,7 @@ import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
 import io.github.dimitrysaf.provenio.core.playback.PlayerResizeMode
 import io.github.dimitrysaf.provenio.core.playback.SubtitleTrack
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
@@ -29,6 +30,8 @@ import org.jetbrains.skia.ImageInfo
  * memory and the newest frame is published for Compose to draw. Keeping the video inside Compose
  * lets the player's controls sit on top of it, as they do on Android.
  */
+private const val TrackRefreshEverySnapshots = 4
+
 internal class MpvPlayer private constructor(
     private val mpv: LibMpv,
     private val handle: Pointer,
@@ -72,7 +75,7 @@ internal class MpvPlayer private constructor(
         headers: Map<String, String>,
         subtitles: List<Pair<String, String?>>,
         startPositionMs: Long?,
-    ) {
+    ) = enqueue {
         command("change-list", "http-header-fields", "clr", "")
         headers.forEach { (key, value) ->
             if (key.equals("User-Agent", ignoreCase = true)) {
@@ -90,21 +93,38 @@ internal class MpvPlayer private constructor(
     }
 
     @Volatile
+    private var cachedAudioTracks: List<AudioTrack> = emptyList()
+
+    @Volatile
+    private var cachedSubtitleTracks: List<SubtitleTrack> = emptyList()
+
+    private var snapshotCount = 0
+
+    private val commandExecutor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "mpv-commands").apply { isDaemon = true }
+    }
+
+    private fun enqueue(block: () -> Unit) {
+        if (released.get()) return
+        runCatching { commandExecutor.execute { runCatching(block) } }
+    }
+
+    @Volatile
     private var pendingSubtitles: List<Pair<String, String?>> = emptyList()
 
-    fun setPaused(paused: Boolean) = setProperty("pause", if (paused) "yes" else "no")
+    fun setPaused(paused: Boolean) = enqueue { setProperty("pause", if (paused) "yes" else "no") }
 
-    fun seekTo(positionMs: Long) = command("seek", (positionMs / 1000.0).toString(), "absolute+exact")
+    fun seekTo(positionMs: Long) = enqueue { command("seek", (positionMs / 1000.0).toString(), "absolute+exact") }
 
-    fun seekBy(offsetMs: Long) = command("seek", (offsetMs / 1000.0).toString(), "relative+exact")
+    fun seekBy(offsetMs: Long) = enqueue { command("seek", (offsetMs / 1000.0).toString(), "relative+exact") }
 
-    fun setSpeed(speed: Float) = setProperty("speed", speed.toString())
+    fun setSpeed(speed: Float) = enqueue { setProperty("speed", speed.toString()) }
 
-    fun setMuted(muted: Boolean) = setProperty("mute", if (muted) "yes" else "no")
+    fun setMuted(muted: Boolean) = enqueue { setProperty("mute", if (muted) "yes" else "no") }
 
-    fun setSubtitleDelayMs(delayMs: Int) = setProperty("sub-delay", (delayMs / 1000.0).toString())
+    fun setSubtitleDelayMs(delayMs: Int) = enqueue { setProperty("sub-delay", (delayMs / 1000.0).toString()) }
 
-    fun setResizeMode(mode: PlayerResizeMode) {
+    fun setResizeMode(mode: PlayerResizeMode) = enqueue {
         when (mode) {
             PlayerResizeMode.Fit -> {
                 setProperty("keepaspect", "yes")
@@ -122,15 +142,24 @@ internal class MpvPlayer private constructor(
         }
     }
 
-    fun setPreferredAudioLanguages(languages: List<String>) {
+    fun setPreferredAudioLanguages(languages: List<String>) = enqueue {
         if (languages.isNotEmpty()) setProperty("alang", languages.joinToString(","))
     }
 
-    fun setPreferredSubtitleLanguages(languages: List<String>) {
+    fun setPreferredSubtitleLanguages(languages: List<String>) = enqueue {
         if (languages.isNotEmpty()) setProperty("slang", languages.joinToString(","))
     }
 
-    fun audioTracks(): List<AudioTrack> = tracks("audio").mapIndexed { index, track ->
+    fun audioTracks(): List<AudioTrack> = cachedAudioTracks
+
+    fun subtitleTracks(): List<SubtitleTrack> = cachedSubtitleTracks
+
+    private fun refreshTrackCache() {
+        cachedAudioTracks = readAudioTracks()
+        cachedSubtitleTracks = readSubtitleTracks()
+    }
+
+    private fun readAudioTracks(): List<AudioTrack> = tracks("audio").mapIndexed { index, track ->
         AudioTrack(
             index = index,
             id = track.id,
@@ -140,7 +169,7 @@ internal class MpvPlayer private constructor(
         )
     }
 
-    fun subtitleTracks(): List<SubtitleTrack> = tracks("sub").mapIndexed { index, track ->
+    private fun readSubtitleTracks(): List<SubtitleTrack> = tracks("sub").mapIndexed { index, track ->
         SubtitleTrack(
             index = index,
             id = track.id,
@@ -151,30 +180,35 @@ internal class MpvPlayer private constructor(
         )
     }
 
-    fun selectAudioTrack(index: Int) {
+    fun selectAudioTrack(index: Int) = enqueue {
         tracks("audio").getOrNull(index)?.let { setProperty("aid", it.id) }
+        refreshTrackCache()
     }
 
-    fun selectSubtitleTrack(index: Int) {
+    fun selectSubtitleTrack(index: Int) = enqueue {
         val track = tracks("sub").getOrNull(index)
         setProperty("sid", track?.id ?: "no")
+        refreshTrackCache()
     }
 
-    fun addSubtitle(url: String, title: String? = null) {
+    fun addSubtitle(url: String, title: String? = null) = enqueue {
         command("sub-add", url, "select", title ?: "", "")
+        refreshTrackCache()
     }
 
-    fun removeExternalSubtitles() {
+    fun removeExternalSubtitles() = enqueue {
         tracks("sub").filter { it.external }.forEach { command("sub-remove", it.id) }
+        refreshTrackCache()
     }
 
-    fun reload() {
+    fun reload() = enqueue {
         val position = doubleProperty("time-pos")
-        val path = stringProperty("path") ?: return
+        val path = stringProperty("path") ?: return@enqueue
         command("loadfile", path, "replace", "-1", position?.let { "start=$it" } ?: "")
     }
 
     fun snapshot(): PlayerPlaybackSnapshot {
+        if (snapshotCount++ % TrackRefreshEverySnapshots == 0) refreshTrackCache()
         val position = doubleProperty("time-pos") ?: 0.0
         val cacheEnd = doubleProperty("demuxer-cache-time") ?: position
         return PlayerPlaybackSnapshot(
@@ -205,6 +239,7 @@ internal class MpvPlayer private constructor(
     /** Stops both threads; the event thread destroys mpv once the render thread has let go. */
     fun release() {
         if (!released.compareAndSet(false, true)) return
+        commandExecutor.shutdownNow()
         synchronized(frameRequested) { frameRequested.notifyAll() }
         handleLock.read { mpv.mpv_wakeup(handle) }
     }
@@ -282,7 +317,11 @@ internal class MpvPlayer private constructor(
             when (event.event_id) {
                 LibMpv.EVENT_SHUTDOWN -> break
                 LibMpv.EVENT_FILE_LOADED -> {
-                    pendingSubtitles.forEach { (url, title) -> command("sub-add", url, "auto", title ?: "", "") }
+                    val subtitles = pendingSubtitles
+                    enqueue {
+                        subtitles.forEach { (url, title) -> command("sub-add", url, "auto", title ?: "", "") }
+                        refreshTrackCache()
+                    }
                     requestFrame()
                     onFileLoaded()
                 }

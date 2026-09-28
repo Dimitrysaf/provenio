@@ -5,6 +5,8 @@ import kotlinx.serialization.json.JsonObject
 internal expect object ThemeSettingsStorage {
     fun loadAmoledEnabled(): Boolean?
     fun saveAmoledEnabled(enabled: Boolean)
+    fun loadThemeMode(): String?
+    fun saveThemeMode(code: String)
     fun loadSelectedAppLanguage(): String?
     fun saveSelectedAppLanguage(languageCode: String)
     fun applySelectedAppLanguage(languageCode: String)

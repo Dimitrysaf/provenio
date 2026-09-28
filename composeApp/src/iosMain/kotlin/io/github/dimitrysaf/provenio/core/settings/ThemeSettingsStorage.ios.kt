@@ -13,6 +13,7 @@ import platform.Foundation.NSUserDefaults
 actual object ThemeSettingsStorage {
     private const val amoledEnabledKey = "amoled_enabled"
     private const val selectedAppLanguageKey = "selected_app_language"
+    private const val themeModeKey = "theme_mode"
     private val profileScopedSyncKeys = listOf(
         amoledEnabledKey,
     )
@@ -29,6 +30,12 @@ actual object ThemeSettingsStorage {
 
     actual fun saveAmoledEnabled(enabled: Boolean) {
         NSUserDefaults.standardUserDefaults.setBool(enabled, forKey = ProfileScopedKey.of(amoledEnabledKey))
+    }
+
+    actual fun loadThemeMode(): String? = NSUserDefaults.standardUserDefaults.stringForKey(themeModeKey)
+
+    actual fun saveThemeMode(code: String) {
+        NSUserDefaults.standardUserDefaults.setObject(code, forKey = themeModeKey)
     }
 
     actual fun loadSelectedAppLanguage(): String? {

@@ -26,6 +26,11 @@ import provenio.composeapp.generated.resources.settings_appearance_app_language_
 import provenio.composeapp.generated.resources.settings_appearance_app_icon
 import provenio.composeapp.generated.resources.settings_appearance_amoled_black
 import provenio.composeapp.generated.resources.settings_appearance_amoled_description
+import provenio.composeapp.generated.resources.settings_appearance_theme
+import provenio.composeapp.generated.resources.settings_appearance_theme_dark
+import provenio.composeapp.generated.resources.settings_appearance_theme_light
+import provenio.composeapp.generated.resources.settings_appearance_theme_system
+import provenio.composeapp.generated.resources.settings_appearance_theme_system_description
 import provenio.composeapp.generated.resources.settings_appearance_continue_watching_description
 import provenio.composeapp.generated.resources.settings_appearance_poster_customization_description
 import provenio.composeapp.generated.resources.settings_appearance_section_detail_page
@@ -36,16 +41,20 @@ import provenio.composeapp.generated.resources.settings_content_discovery_collec
 import provenio.composeapp.generated.resources.settings_content_discovery_homescreen_description
 import provenio.composeapp.generated.resources.settings_content_discovery_meta_screen_description
 import provenio.composeapp.generated.resources.compose_settings_root_streams_description
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.settings.AppIconOption
 import io.github.dimitrysaf.provenio.core.settings.AppIconSettingsState
 import io.github.dimitrysaf.provenio.core.settings.AppLanguage
+import io.github.dimitrysaf.provenio.core.settings.ThemeMode
 import io.github.dimitrysaf.provenio.core.settings.labelResource
 
 internal fun LazyListScope.appearanceSettingsContent(
     isTablet: Boolean,
     amoledEnabled: Boolean,
     onAmoledToggle: (Boolean) -> Unit,
+    themeMode: ThemeMode,
+    onThemeModeSelected: (ThemeMode) -> Unit,
     appIconState: AppIconSettingsState,
     onAppIconSelected: (AppIconOption) -> Unit,
     onAppIconFailureDismissed: () -> Unit,
@@ -60,6 +69,7 @@ internal fun LazyListScope.appearanceSettingsContent(
 ) {
     item {
         var showLanguageSheet by remember { mutableStateOf(false) }
+        var showThemeSheet by remember { mutableStateOf(false) }
         var showAppIconPicker by remember { mutableStateOf(false) }
         SettingsSection(
             title = stringResource(Res.string.settings_appearance_section_display),
@@ -70,7 +80,13 @@ internal fun LazyListScope.appearanceSettingsContent(
                     title = stringResource(Res.string.settings_appearance_amoled_black),
                     description = stringResource(Res.string.settings_appearance_amoled_description),
                     checked = { amoledEnabled },
+                    enabled = themeMode != ThemeMode.LIGHT,
                     onCheckedChange = onAmoledToggle,
+                )
+                navigationRow(
+                    title = stringResource(Res.string.settings_appearance_theme),
+                    description = stringResource(themeMode.labelRes),
+                    onClick = { showThemeSheet = true },
                 )
                 navigationRow(
                     title = stringResource(Res.string.settings_appearance_app_icon),
@@ -94,6 +110,26 @@ internal fun LazyListScope.appearanceSettingsContent(
                     onClick = { showLanguageSheet = true },
                 )
             }
+        }
+
+        if (showThemeSheet) {
+            SingleChoiceBottomSheet(
+                title = stringResource(Res.string.settings_appearance_theme),
+                options = ThemeMode.entries.map { mode ->
+                    SingleChoiceOption(
+                        value = mode,
+                        label = stringResource(mode.labelRes),
+                        supportingText = if (mode == ThemeMode.SYSTEM) {
+                            stringResource(Res.string.settings_appearance_theme_system_description)
+                        } else {
+                            null
+                        },
+                    )
+                },
+                isSelected = { it == themeMode },
+                onSelected = onThemeModeSelected,
+                onDismiss = { showThemeSheet = false },
+            )
         }
 
         if (showLanguageSheet) {
@@ -191,3 +227,10 @@ private fun AppearanceLanguageBottomSheet(
         onDismiss = onDismiss,
     )
 }
+
+private val ThemeMode.labelRes: StringResource
+    get() = when (this) {
+        ThemeMode.SYSTEM -> Res.string.settings_appearance_theme_system
+        ThemeMode.LIGHT -> Res.string.settings_appearance_theme_light
+        ThemeMode.DARK -> Res.string.settings_appearance_theme_dark
+    }

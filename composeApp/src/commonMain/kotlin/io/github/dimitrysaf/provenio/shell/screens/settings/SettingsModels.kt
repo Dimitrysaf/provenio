@@ -83,7 +83,7 @@ internal enum class SettingsPage(
     KeyboardShortcuts(
         titleRes = Res.string.keyboard_shortcuts_title,
         category = SettingsCategory.Advanced,
-        parentPage = Advanced,
+        parentPage = Root,
     ),
     Notifications(
         titleRes = Res.string.compose_settings_page_notifications,

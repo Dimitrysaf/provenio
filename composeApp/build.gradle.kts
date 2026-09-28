@@ -36,6 +36,9 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
     abstract val buildCommit: Property<String>
 
     @get:Input
+    abstract val releaseChannel: Property<String>
+
+    @get:Input
     abstract val sentryDsn: Property<String>
 
     @get:Input
@@ -157,6 +160,7 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
                 |    const val VERSION_NAME = "${appVersionName.get()}"
                 |    const val VERSION_CODE = ${appVersionCode.get()}
                 |    const val BUILD_COMMIT = "${buildCommit.get()}"
+                |    const val RELEASE_CHANNEL = "${releaseChannel.get()}"
                 |}
                 """.trimMargin()
             )
@@ -281,6 +285,7 @@ val generateRuntimeConfigs = tasks.register<GenerateRuntimeConfigsTask>("generat
     appVersionCode.set(releaseAppVersionCode)
     // The short commit a CI build was made from; beta updates compare against it. Empty for local builds.
     buildCommit.set(providers.environmentVariable("GITHUB_SHA").map { it.take(7) }.orElse(""))
+    releaseChannel.set(providers.environmentVariable("PROVENIO_CHANNEL").orElse("beta"))
     sentryDsn.set(runtimeConfigValue("SENTRY_DSN"))
     tmdbApiKey.set(runtimeConfigValue("TMDB_API_KEY"))
     sentryEnvironment.set(

@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.core.settings.ThemeMode
+import io.github.dimitrysaf.provenio.shell.theme.systemPrefersDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -106,9 +108,19 @@ internal fun AppEnvironment(content: @Composable () -> Unit) {
     LaunchedEffect(Unit) {
         NativeTabBridge.publishAccentColor(ThemeColors.White.nativeAccentHex)
     }
+    val themeMode by remember {
+        ThemeSettingsRepository.ensureLoaded()
+        ThemeSettingsRepository.themeMode
+    }.collectAsStateWithLifecycle()
+    val systemDarkTheme = systemPrefersDarkTheme()
     val useDynamicColor = remember { isDynamicColorAvailable() }
 
     Theme(
+        darkTheme = when (themeMode) {
+            ThemeMode.SYSTEM -> systemDarkTheme
+            ThemeMode.LIGHT -> false
+            ThemeMode.DARK -> true
+        },
         amoled = amoledEnabled,
         useDynamicColor = useDynamicColor,
     ) {

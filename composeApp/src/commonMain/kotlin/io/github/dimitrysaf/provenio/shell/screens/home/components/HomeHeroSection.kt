@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,6 +39,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -68,6 +70,12 @@ private const val HERO_ITEM_CONTENT_FADE_START = 0.62f
 
 /** The carousel rejects a maximum sliver width below its minimum, so both come from here. */
 internal val HeroMinSmallItemWidth = 24.dp
+
+private const val HeroArtworkAspectRatio = 16f / 9f
+private const val HeroSplitThreshold = 1.4f
+private const val HeroArtworkFadeFraction = 0.35f
+private const val HeroBackdropScrimAlpha = 0.62f
+private val HeroBackdropBlur = 48.dp
 
 private val HeroIndicatorHeight = 8.dp
 private val HeroIndicatorActiveWidth = 32.dp
@@ -187,40 +195,11 @@ private fun HomeHeroCarousel(
                         }
                     },
             ) {
-                AsyncImage(
-                    model = item.banner ?: item.poster,
-                    contentDescription = item.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
+                HeroItemContent(
+                    item = item,
+                    layout = layout,
+                    contentAlpha = { heroItemContentAlpha(drawInfo) },
                 )
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f),
-                                    MaterialTheme.colorScheme.scrim.copy(alpha = 0.86f),
-                                ),
-                            ),
-                        ),
-                )
-
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .fillMaxWidth(layout.contentWidthFraction)
-                        .widthIn(max = layout.contentMaxWidth)
-                        .padding(
-                            horizontal = layout.contentHorizontalPadding,
-                            vertical = layout.contentVerticalPadding,
-                        )
-                        .graphicsLayer { alpha = heroItemContentAlpha(drawInfo) },
-                ) {
-                    HeroContentBlock(item = item, layout = layout)
-                }
             }
         }
 
@@ -239,6 +218,111 @@ private fun HomeHeroCarousel(
             },
             modifier = Modifier.height(HeroIndicatorRowHeight),
         )
+    }
+}
+
+@Composable
+private fun HeroItemContent(
+    item: MetaPreview,
+    layout: HomeHeroLayout,
+    contentAlpha: () -> Float,
+) {
+    val artwork = item.banner ?: item.poster
+    val scrim = MaterialTheme.colorScheme.scrim
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val artworkWidth = maxHeight * HeroArtworkAspectRatio
+        if (!layout.centerTitle && maxWidth >= artworkWidth * HeroSplitThreshold) {
+            AsyncImage(
+                model = artwork,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .blur(HeroBackdropBlur),
+                contentScale = ContentScale.Crop,
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(scrim.copy(alpha = HeroBackdropScrimAlpha)),
+            )
+            AsyncImage(
+                model = artwork,
+                contentDescription = item.name,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(artworkWidth),
+                contentScale = ContentScale.Crop,
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(artworkWidth)
+                    .background(
+                        Brush.horizontalGradient(
+                            0f to scrim.copy(alpha = HeroBackdropScrimAlpha),
+                            HeroArtworkFadeFraction to Color.Transparent,
+                        ),
+                    ),
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            0.6f to Color.Transparent,
+                            1f to scrim.copy(alpha = 0.45f),
+                        ),
+                    ),
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .width(maxWidth - artworkWidth * (1f - HeroArtworkFadeFraction))
+                    .widthIn(max = layout.contentMaxWidth)
+                    .padding(
+                        horizontal = layout.contentHorizontalPadding * 1.5f,
+                        vertical = layout.contentVerticalPadding,
+                    )
+                    .graphicsLayer { alpha = contentAlpha() },
+            ) {
+                HeroContentBlock(item = item, layout = layout.copy(logoWidthFraction = 0.9f))
+            }
+        } else {
+            AsyncImage(
+                model = artwork,
+                contentDescription = item.name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                scrim.copy(alpha = 0.32f),
+                                scrim.copy(alpha = 0.86f),
+                            ),
+                        ),
+                    ),
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth(layout.contentWidthFraction)
+                    .widthIn(max = layout.contentMaxWidth)
+                    .padding(
+                        horizontal = layout.contentHorizontalPadding,
+                        vertical = layout.contentVerticalPadding,
+                    )
+                    .graphicsLayer { alpha = contentAlpha() },
+            ) {
+                HeroContentBlock(item = item, layout = layout)
+            }
+        }
     }
 }
 

@@ -233,15 +233,15 @@ internal fun defaultThemeTokens(
     amoled: Boolean,
     colorScheme: ColorScheme?,
 ): ThemeTokens {
-    val background = if (amoled) Color.Black else palette.background
-    val textPrimary = Color(0xFFF5F7F8)
-    val textSecondary = Color(0xFFB8BEC5)
-    val textMuted = Color(0xFF969CA3)
-    val surface = palette.backgroundElevated
-    val surfaceCard = palette.backgroundCard
+    val background = if (amoled) Color.Black else colorScheme?.background ?: palette.background
+    val textPrimary = colorScheme?.onSurface ?: Color(0xFFF5F7F8)
+    val textSecondary = colorScheme?.onSurfaceVariant ?: Color(0xFFB8BEC5)
+    val textMuted = colorScheme?.onSurfaceVariant?.copy(alpha = 0.8f) ?: Color(0xFF969CA3)
+    val surface = colorScheme?.surfaceContainerLow ?: palette.backgroundElevated
+    val surfaceCard = colorScheme?.surfaceContainerHigh ?: palette.backgroundCard
     val accent = palette.secondary
-    val borderSubtle = Color(0xFF252A2A).copy(alpha = 0.55f)
-    val borderDefault = Color(0xFF252A2A)
+    val borderSubtle = colorScheme?.outlineVariant?.copy(alpha = 0.55f) ?: Color(0xFF252A2A).copy(alpha = 0.55f)
+    val borderDefault = colorScheme?.outlineVariant ?: Color(0xFF252A2A)
 
     return ThemeTokens(
         colors = ColorTokens(
@@ -264,8 +264,8 @@ internal fun defaultThemeTokens(
             success = Color(0xFF66BB6A),
             warning = Color(0xFFFFC857),
             danger = colorScheme?.error ?: Color(0xFFE36A8A),
-            overlaySelected = Color.White.copy(alpha = Tokens.Opacity.selected),
-            skeleton = Color.White.copy(alpha = 0.06f),
+            overlaySelected = (colorScheme?.onSurface ?: Color.White).copy(alpha = Tokens.Opacity.selected),
+            skeleton = (colorScheme?.onSurface ?: Color.White).copy(alpha = 0.06f),
         ),
         spacing = SpacingTokens(
             listGap = Tokens.Space.s12,

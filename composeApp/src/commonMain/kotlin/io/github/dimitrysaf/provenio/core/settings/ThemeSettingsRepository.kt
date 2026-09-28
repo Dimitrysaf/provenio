@@ -8,6 +8,9 @@ object ThemeSettingsRepository {
     private val _amoledEnabled = MutableStateFlow(false)
     val amoledEnabled: StateFlow<Boolean> = _amoledEnabled.asStateFlow()
 
+    private val _themeMode = MutableStateFlow(ThemeMode.SYSTEM)
+    val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
+
     private val _selectedAppLanguage = MutableStateFlow(AppLanguage.DEVICE)
     val selectedAppLanguage: StateFlow<AppLanguage> = _selectedAppLanguage.asStateFlow()
 
@@ -25,12 +28,14 @@ object ThemeSettingsRepository {
     fun clearLocalState() {
         hasLoaded = false
         _amoledEnabled.value = false
+        _themeMode.value = ThemeMode.SYSTEM
         _selectedAppLanguage.value = AppLanguage.DEVICE
     }
 
     private fun loadFromDisk() {
         hasLoaded = true
         _amoledEnabled.value = ThemeSettingsStorage.loadAmoledEnabled() ?: false
+        _themeMode.value = ThemeMode.fromCode(ThemeSettingsStorage.loadThemeMode())
         val appLanguage = AppLanguage.fromCode(ThemeSettingsStorage.loadSelectedAppLanguage())
         ThemeSettingsStorage.applySelectedAppLanguage(appLanguage.code)
         _selectedAppLanguage.value = appLanguage
@@ -41,6 +46,13 @@ object ThemeSettingsRepository {
         if (_amoledEnabled.value == enabled) return
         _amoledEnabled.value = enabled
         ThemeSettingsStorage.saveAmoledEnabled(enabled)
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        ensureLoaded()
+        if (_themeMode.value == mode) return
+        _themeMode.value = mode
+        ThemeSettingsStorage.saveThemeMode(mode.code)
     }
 
     fun setAppLanguage(language: AppLanguage) {

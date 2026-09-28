@@ -22,6 +22,7 @@ import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
 import io.github.dimitrysaf.provenio.core.playback.PlayerResizeMode
 import io.github.dimitrysaf.provenio.core.playback.SubtitleTrack
 import io.github.dimitrysaf.provenio.core.streams.StreamSubtitle
+import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
 import io.github.dimitrysaf.provenio.desktop.mpv.MpvPlayer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -88,6 +89,8 @@ actual fun PlatformPlayerSurface(
     }
 
     LaunchedEffect(player, playWhenReady) { player.setPaused(!playWhenReady) }
+    val windowVisible by DesktopWindowState.isVisible.collectAsState()
+    LaunchedEffect(player, windowVisible) { if (!windowVisible) player.setPaused(true) }
     LaunchedEffect(player, resizeMode) { player.setResizeMode(resizeMode) }
 
     val frame by player.frame.collectAsState()

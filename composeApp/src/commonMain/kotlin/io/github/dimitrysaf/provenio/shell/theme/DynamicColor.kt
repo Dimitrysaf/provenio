@@ -9,7 +9,7 @@ expect fun isDynamicColorAvailable(): Boolean
 
 /** The wallpaper-derived Material You [ColorScheme], or null where dynamic color isn't available. */
 @Composable
-expect fun rememberDynamicColorScheme(): ColorScheme?
+expect fun rememberDynamicColorScheme(darkTheme: Boolean): ColorScheme?
 
 /** Maps a wallpaper-derived [ColorScheme] onto the app's own [ThemeColorPalette] shape. */
 internal fun ColorScheme.toDynamicThemeColorPalette(amoled: Boolean): ThemeColorPalette = ThemeColorPalette(

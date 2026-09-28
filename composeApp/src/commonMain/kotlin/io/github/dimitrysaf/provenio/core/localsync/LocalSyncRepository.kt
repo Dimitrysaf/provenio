@@ -138,7 +138,7 @@ object LocalSyncRepository {
         if (!isSupported) return
         start()
         scope.launch {
-            val host = LocalSyncPlatform.localIpv4Address()
+            val host = LocalSyncPlatform.localIpv4Addresses().takeIf { it.isNotEmpty() }?.joinToString(",")
                 ?: return@launch fail(LocalSyncError.NOT_ON_WIFI)
             val port = withTimeoutOrNull(PORT_WAIT_MS) { serverPort.filterNotNull().first() }
                 ?: return@launch fail(LocalSyncError.FAILED)
@@ -163,7 +163,7 @@ object LocalSyncRepository {
             _uiState.update { it.copy(joining = true) }
             try {
                 val paired = connectAndSync(
-                    candidates = listOf(pairing.host to pairing.port),
+                    candidates = pairing.hosts.map { host -> host to pairing.port },
                     secret = pairing.secret,
                     expectedPeerId = null,
                     hasSyncedBefore = false,
@@ -538,7 +538,7 @@ object LocalSyncRepository {
         _uiState.update { it.copy(peers = peers) }
     }
 
-    private class PairingCode(val host: String, val port: Int, val secret: ByteArray)
+    private class PairingCode(val hosts: List<String>, val port: Int, val secret: ByteArray)
 
     private fun parsePairingCode(code: String): PairingCode? {
         val parts = code.split(':')
@@ -547,7 +547,9 @@ object LocalSyncRepository {
         val secret = runCatching { decodeSyncBytes(parts[4]) }.getOrNull()
             ?.takeIf { it.size == SECRET_SIZE }
             ?: return null
-        return PairingCode(host = parts[2], port = port, secret = secret)
+        val hosts = parts[2].split(',').map { it.trim() }.filter { it.isNotEmpty() }
+        if (hosts.isEmpty()) return null
+        return PairingCode(hosts = hosts, port = port, secret = secret)
     }
 }
 

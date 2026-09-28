@@ -61,15 +61,22 @@ internal actual object LocalSyncPlatform {
         return cipher.doFinal(payload, IV_SIZE, payload.size - IV_SIZE)
     }
 
-    actual fun localIpv4Address(): String? = runCatching {
+    actual fun localIpv4Address(): String? = localIpv4Addresses().firstOrNull()
+
+    actual fun localIpv4Addresses(): List<String> = runCatching {
+        val defaultRouteInterfaces = defaultRouteInterfaceNames()
         NetworkInterface.getNetworkInterfaces().toList()
             .filter { it.isUp && !it.isLoopback && !it.isVirtual && !it.name.isContainerInterface() }
-            .sortedBy { it.name.interfacePreference() }
+            .sortedWith(
+                compareBy<NetworkInterface> { if (it.name in defaultRouteInterfaces) 0 else 1 }
+                    .thenBy { it.name.interfacePreference() },
+            )
             .flatMap { networkInterface -> networkInterface.inetAddresses.toList() }
             .filterIsInstance<Inet4Address>()
-            .firstOrNull { it.isSiteLocalAddress }
-            ?.hostAddress
-    }.getOrNull()
+            .filter { it.isSiteLocalAddress }
+            .mapNotNull { it.hostAddress }
+            .distinct()
+    }.getOrDefault(emptyList())
 
     actual suspend fun listen(port: Int): LocalSyncServer = withContext(Dispatchers.IO) {
         // The usual port keeps saved addresses valid; any free port will do if it is taken.
@@ -139,8 +146,21 @@ internal actual object LocalSyncPlatform {
     }
 }
 
-private fun String.isContainerInterface(): Boolean =
-    startsWith("docker") || startsWith("br-") || startsWith("veth") || startsWith("virbr") || startsWith("tun")
+private val ContainerInterfacePrefixes = listOf(
+    "docker", "br-", "veth", "virbr", "tun", "tap", "vboxnet", "vmnet", "lxc", "lxd", "incusbr",
+    "podman", "cni", "flannel", "kube", "zt", "tailscale", "wg", "ham", "ppp", "utun",
+)
+
+private fun String.isContainerInterface(): Boolean = ContainerInterfacePrefixes.any { startsWith(it) }
+
+private fun defaultRouteInterfaceNames(): Set<String> = runCatching {
+    java.io.File("/proc/net/route").readLines()
+        .drop(1)
+        .map { line -> line.trim().split(Regex("\\s+")) }
+        .filter { fields -> fields.size > 2 && fields[1] == "00000000" }
+        .map { fields -> fields[0] }
+        .toSet()
+}.getOrDefault(emptySet())
 
 // Wi-Fi and Ethernet first, so a phone's mobile data link is never offered.
 private fun String.interfacePreference(): Int = when {

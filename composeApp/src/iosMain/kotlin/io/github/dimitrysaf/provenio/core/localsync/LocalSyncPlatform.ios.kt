@@ -16,6 +16,8 @@ internal actual object LocalSyncPlatform {
 
     actual fun localIpv4Address(): String? = null
 
+    actual fun localIpv4Addresses(): List<String> = emptyList()
+
     actual suspend fun listen(port: Int): LocalSyncServer = unsupported()
 
     actual suspend fun connect(host: String, port: Int, timeoutMs: Int): LocalSyncConnection = unsupported()

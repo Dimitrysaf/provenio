@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.shell.theme
 
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import android.os.Build
@@ -9,8 +10,8 @@ import android.os.Build
 actual fun isDynamicColorAvailable(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
 @Composable
-actual fun rememberDynamicColorScheme(): ColorScheme? {
+actual fun rememberDynamicColorScheme(darkTheme: Boolean): ColorScheme? {
     if (!isDynamicColorAvailable()) return null
     val context = LocalContext.current
-    return dynamicDarkColorScheme(context)
+    return if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
 }

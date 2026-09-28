@@ -82,7 +82,6 @@
     <string name="addons_section_overview">Overview</string>
     <string name="addons_summary_id_rules">%1$d id rules</string>
     <string name="addons_version_format">Version %1$s</string>
-    <string name="settings_advanced_section_keyboard">KEYBOARD</string>
     <string name="keyboard_shortcuts_title">Keyboard shortcuts</string>
     <string name="keyboard_shortcuts_entry_description">Every shortcut for the app and the player</string>
     <string name="keyboard_shortcuts_intro">Shortcuts work with a physical keyboard. On a Mac, use ⌘ instead of Ctrl.</string>
@@ -796,6 +795,11 @@
     <string name="settings_account_status_signed_in">Signed in</string>
     <string name="settings_appearance_amoled_black">AMOLED Black</string>
     <string name="settings_appearance_amoled_description">Use pure black backgrounds for OLED screens.</string>
+    <string name="settings_appearance_theme">Theme</string>
+    <string name="settings_appearance_theme_system">Automatic</string>
+    <string name="settings_appearance_theme_system_description">Match your device's light or dark setting</string>
+    <string name="settings_appearance_theme_light">Light</string>
+    <string name="settings_appearance_theme_dark">Dark</string>
     <string name="settings_appearance_app_icon">App Icon</string>
     <string name="settings_appearance_app_icon_arctic_blue">Arctic Blue</string>
     <string name="settings_appearance_app_icon_android_confirmation_message">Changing to %1$s will close Provenio. Tap OK to continue.</string>
@@ -2455,7 +2459,7 @@
     <string name="local_sync_forget_title">Forget %1$s?</string>
     <string name="local_sync_forget_description">You will need to pair again to sync with it.</string>
     <string name="local_sync_error_wifi">Connect to Wi-Fi to pair</string>
-    <string name="local_sync_error_unreachable">Could not reach the other device. Open Sync devices on it and check both are on the same Wi-Fi.</string>
+    <string name="local_sync_error_unreachable">Could not reach the other device. Open Sync devices on it and check both are on the same Wi-Fi. On a computer, make sure its firewall allows TCP port 47631 and UDP port 47632.</string>
     <string name="local_sync_error_rejected">The other device did not accept this code</string>
     <string name="local_sync_error_code">That is not a pairing code</string>
     <string name="local_sync_error_failed">The sync did not finish</string>
@@ -2542,4 +2546,6 @@
     <string name="torrent_details_of">%1$s of %2$s</string>
     <string name="torrent_details_rtt">%1$d ms</string>
     <string name="torrent_details_unknown_client">Unknown client</string>
+    <string name="tray_show_app">Show app</string>
+    <string name="tray_quit">Quit</string>
 </resources>

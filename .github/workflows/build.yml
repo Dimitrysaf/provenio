@@ -23,6 +23,9 @@ on:
 permissions:
   contents: read
 
+env:
+  PROVENIO_CHANNEL: ${{ inputs.channel || 'beta' }}
+
 concurrency:
   group: build-${{ github.ref }}-${{ inputs.channel || 'beta' }}
   cancel-in-progress: ${{ inputs.channel != 'stable' }}

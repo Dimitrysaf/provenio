@@ -17,6 +17,7 @@ actual object ThemeSettingsStorage {
     private const val preferencesName = "provenio_theme_settings"
     private const val amoledEnabledKey = "amoled_enabled"
     private const val selectedAppLanguageKey = "selected_app_language"
+    private const val themeModeKey = "theme_mode"
     private val profileScopedSyncKeys = listOf(
         amoledEnabledKey,
     )
@@ -39,6 +40,12 @@ actual object ThemeSettingsStorage {
             ?.edit()
             ?.putBoolean(ProfileScopedKey.of(amoledEnabledKey), enabled)
             ?.apply()
+    }
+
+    actual fun loadThemeMode(): String? = preferences?.getString(themeModeKey, null)
+
+    actual fun saveThemeMode(code: String) {
+        preferences?.edit()?.putString(themeModeKey, code)?.apply()
     }
 
     actual fun loadSelectedAppLanguage(): String? {

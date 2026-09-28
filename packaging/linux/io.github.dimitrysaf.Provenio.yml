@@ -23,6 +23,7 @@ finish-args:
   # Keep the screen awake while a video plays.
   - --talk-name=org.freedesktop.ScreenSaver
   - --talk-name=org.freedesktop.portal.Inhibit
+  - --talk-name=org.freedesktop.Notifications
 
 cleanup:
   - /include
