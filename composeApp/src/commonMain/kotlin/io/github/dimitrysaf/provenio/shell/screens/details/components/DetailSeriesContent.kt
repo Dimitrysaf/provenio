@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -49,6 +50,7 @@ import io.github.dimitrysaf.provenio.core.metadata.SPECIALS_SEASON_NUMBER
 import io.github.dimitrysaf.provenio.core.metadata.isReleasedBy
 import io.github.dimitrysaf.provenio.core.metadata.seasonSortKey
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroOnArtworkColor
+import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
 import io.github.dimitrysaf.provenio.shell.screens.settings.segmentShape
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressEntry
 import io.github.dimitrysaf.provenio.core.watch.progress.buildPlaybackVideoId
@@ -230,7 +232,7 @@ internal fun DetailEpisodeListRow(
     val shape = segmentShape(index = index, count = count)
     val shapes = ListItemDefaults.shapes(
         shape = shape,
-        selectedShape = shape,
+        selectedShape = RoundedCornerShape(OuterCorner),
         pressedShape = shape,
         focusedShape = shape,
         hoveredShape = shape,

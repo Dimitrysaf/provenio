@@ -264,7 +264,6 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             showPlaybackControls = controlsVisible,
             controlsReady = !loading && playerController != null,
             playbackRequested = shouldPlay,
-            hideSeekForward = isSeries && showNextEpisodeCard,
             statusLines = statusLines,
             onStatusClick = if (activeTorrentInfoHash != null) {
                 { showTorrentDetailsSheet = true }

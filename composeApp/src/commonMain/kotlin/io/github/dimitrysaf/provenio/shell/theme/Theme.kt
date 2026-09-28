@@ -1,6 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.theme
 
+import androidx.compose.material3.LocalRippleThemeConfiguration
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RippleDefaults
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -195,6 +197,7 @@ fun Theme(
         LocalThemeTokens provides tokens,
         LocalTypeScale provides TypeTokens,
         LocalThemePalette provides palette,
+        LocalRippleThemeConfiguration provides RippleDefaults.InsetFocusRingRippleThemeConfiguration,
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

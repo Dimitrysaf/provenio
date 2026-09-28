@@ -9,7 +9,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,6 +53,7 @@ import provenio.composeapp.generated.resources.compose_player_episode_code_full
 import provenio.composeapp.generated.resources.player_next_episode_thumbnail
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.playback.skip.NextEpisodeInfo
+import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 
 // The next episode as a large thumbnail on the right; tap plays it, swipe right dismisses it.
 @Composable
@@ -131,7 +131,7 @@ fun NextEpisodeCard(
                 .semantics {
                     if (visible) dismiss { currentOnDismiss(); true }
                 }
-                .clickable(enabled = visible && isPlayable && !isLoading) { onPlayNext() },
+                .shapedClickable(MaterialTheme.shapes.large, enabled = visible && isPlayable && !isLoading) { onPlayNext() },
         ) {
             AsyncImage(
                 model = nextEpisode.thumbnail,

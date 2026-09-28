@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
+import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.shell.theme.provenio
 
 @Composable
@@ -143,7 +144,7 @@ internal fun PlayerDialogButton(
             .alpha(if (enabled) 1f else tokens.opacity.disabled)
             .clip(RoundedCornerShape(12.dp))
             .background(tokens.colors.surfaceCard)
-            .clickable(enabled = enabled, onClick = onClick)
+            .shapedClickable(RoundedCornerShape(12.dp), enabled = enabled, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -201,7 +202,7 @@ internal fun AddonFilterChip(
                 if (hasError) tokens.colors.danger.copy(alpha = 0.7f) else tokens.colors.borderDefault,
                 RoundedCornerShape(20.dp),
             )
-            .clickable(onClick = onClick)
+            .shapedClickable(RoundedCornerShape(20.dp), onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Row(

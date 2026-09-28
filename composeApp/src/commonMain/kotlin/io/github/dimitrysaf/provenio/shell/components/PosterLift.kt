@@ -1,8 +1,9 @@
 package io.github.dimitrysaf.provenio.shell.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.getValue
@@ -108,7 +109,12 @@ internal fun Modifier.posterCardClickable(
         .onSecondaryClick(onLongClick)
         .combinedClickable(
             interactionSource = null,
-            indication = if (onPosterClickAnchor == null) LocalIndication.current else null,
+            indication = ripple(
+                focusRingShape = RoundedCornerShape(zoomCornerRadius),
+                enablePressIndication = onPosterClickAnchor == null,
+                enableHoverIndication = onPosterClickAnchor == null,
+                enableDragIndication = onPosterClickAnchor == null,
+            ),
             onClick = {
                 if (onClick != null) {
                     source.bounds?.let { bounds ->

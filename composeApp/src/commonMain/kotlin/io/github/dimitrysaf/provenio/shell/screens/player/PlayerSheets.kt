@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
@@ -63,6 +64,7 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.rememberEp
 import io.github.dimitrysaf.provenio.shell.screens.details.components.summarizeEpisodeSeasons
 import io.github.dimitrysaf.provenio.core.metadata.groupedEpisodesForDisplay
 import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
+import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
 import io.github.dimitrysaf.provenio.shell.screens.settings.segmentShape
 import io.github.dimitrysaf.provenio.shell.screens.streams.ActiveStreamStore
 import io.github.dimitrysaf.provenio.shell.screens.streams.LocalStreamSizeLabelFormat
@@ -767,7 +769,7 @@ private fun playerSegmentShapes(index: Int, count: Int): ListItemShapes {
     val shape = segmentShape(index = index, count = count)
     return ListItemDefaults.shapes(
         shape = shape,
-        selectedShape = shape,
+        selectedShape = RoundedCornerShape(OuterCorner),
         pressedShape = shape,
         focusedShape = shape,
         hoveredShape = shape,

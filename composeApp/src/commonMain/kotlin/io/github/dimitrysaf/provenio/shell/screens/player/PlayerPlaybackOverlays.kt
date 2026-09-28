@@ -3,7 +3,9 @@ package io.github.dimitrysaf.provenio.shell.screens.player
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -57,35 +59,35 @@ internal fun BoxScope.PlayerPlaybackOverlays(
 
     if (!playerControlsLocked) {
         // Sits just above the progress bar, whether or not the controls are showing.
-        SkipIntroButton(
-            interval = if (!initialLoadCompleted) null else activeSkipInterval,
-            dismissed = skipIntervalDismissed,
-            controlsVisible = controlsVisible,
-            onSkip = {
-                activeSkipInterval?.let(onSkipInterval)
-            },
-            onDismiss = onDismissSkipInterval,
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .playerFrameInsets(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
                 .padding(end = metrics.horizontalPadding)
                 .padding(bottom = metrics.sliderBottomOffset + playerBottomControlsHeight(metrics) + 8.dp),
-        )
-    }
-
-    if (isSeries && !playerControlsLocked) {
-        NextEpisodeCard(
-            nextEpisode = nextEpisodeInfo,
-            visible = showNextEpisodeCard,
-            isLoading = nextEpisodeLoading,
-            blurred = blurUnwatchedEpisodes && nextEpisodeInfo?.isWatched == false,
-            onPlayNext = onPlayNextEpisode,
-            onDismiss = onDismissNextEpisode,
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .playerFrameInsets(WindowInsetsSides.Horizontal)
-                .padding(end = metrics.horizontalPadding),
-        )
+        ) {
+            SkipIntroButton(
+                interval = if (!initialLoadCompleted) null else activeSkipInterval,
+                dismissed = skipIntervalDismissed,
+                controlsVisible = controlsVisible,
+                onSkip = {
+                    activeSkipInterval?.let(onSkipInterval)
+                },
+                onDismiss = onDismissSkipInterval,
+            )
+            if (isSeries) {
+                NextEpisodeCard(
+                    nextEpisode = nextEpisodeInfo,
+                    visible = showNextEpisodeCard,
+                    isLoading = nextEpisodeLoading,
+                    blurred = blurUnwatchedEpisodes && nextEpisodeInfo?.isWatched == false,
+                    onPlayNext = onPlayNextEpisode,
+                    onDismiss = onDismissNextEpisode,
+                )
+            }
+        }
     }
 
     StatusModal(

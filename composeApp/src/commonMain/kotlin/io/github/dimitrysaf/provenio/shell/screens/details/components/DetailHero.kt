@@ -3,7 +3,6 @@ package io.github.dimitrysaf.provenio.shell.screens.details.components
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -54,6 +53,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
+import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.shell.components.skeleton
 import io.github.dimitrysaf.provenio.core.metadata.DetailHeroSlide
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
@@ -203,7 +203,7 @@ private fun DetailHeroPages(
                     modifier = Modifier
                         .fillMaxSize()
                         .maskClip(MaterialTheme.shapes.extraLarge)
-                        .clickable(enabled = !isFocal) {
+                        .shapedClickable(MaterialTheme.shapes.extraLarge, enabled = !isFocal) {
                             coroutineScope.launch { carouselState.animateScrollToItem(index) }
                         },
                 ) {

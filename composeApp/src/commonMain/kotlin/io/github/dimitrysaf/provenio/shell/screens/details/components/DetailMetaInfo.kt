@@ -8,7 +8,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,6 +58,7 @@ import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListMetadataServic
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListMetadataService.PROVIDER_TMDB
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListMetadataService.PROVIDER_TOMATOES
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListMetadataService.PROVIDER_TRAKT
+import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import provenio.composeapp.generated.resources.*
 import provenio.composeapp.generated.resources.rating_audience_score
 import provenio.composeapp.generated.resources.rating_imdb
@@ -111,7 +111,7 @@ fun DetailMetaInfo(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(ShapeDefaults.Small)
-                            .clickable(enabled = infoRows.isNotEmpty()) { infoExpanded = !infoExpanded }
+                            .shapedClickable(ShapeDefaults.Small, enabled = infoRows.isNotEmpty()) { infoExpanded = !infoExpanded }
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp),

@@ -3,7 +3,6 @@ package io.github.dimitrysaf.provenio.shell.screens.profiles
 import androidx.compose.animation.core.animateIntAsState
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -75,6 +74,7 @@ import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
 import io.github.dimitrysaf.provenio.core.membership.CosmeticEntitlement
 import io.github.dimitrysaf.provenio.core.membership.MemberAccessRepository
 import io.github.dimitrysaf.provenio.core.membership.ProfileBackgroundRepository
+import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
@@ -764,7 +764,7 @@ private fun ProfileIdentityPreview(
             modifier = Modifier
                 .weight(1f)
                 .clip(ShapeDefaults.Small)
-                .clickable(onClick = onEditName)
+                .shapedClickable(ShapeDefaults.Small, onClick = onEditName)
                 .padding(horizontal = 8.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,

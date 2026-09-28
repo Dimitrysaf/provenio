@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import androidx.compose.material3.ripple
 import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -830,7 +831,10 @@ private fun ContinueWatchingWideCard(
             .width(layout.wideCardWidth)
             .height(layout.wideCardHeight)
             .onSecondaryClick(onLongClick)
+            .clip(RoundedCornerShape(cornerRadius))
             .combinedClickable(
+                interactionSource = null,
+                indication = ripple(focusRingShape = RoundedCornerShape(cornerRadius)),
                 enabled = onClick != null || onLongClick != null,
                 onClick = { onClick?.invoke() },
                 onLongClick = onLongClick,

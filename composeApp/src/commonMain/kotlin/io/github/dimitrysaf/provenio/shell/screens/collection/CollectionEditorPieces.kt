@@ -64,6 +64,7 @@ import io.github.dimitrysaf.provenio.shell.components.ListSubheader
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import io.github.dimitrysaf.provenio.core.home.PosterShape
+import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -99,7 +100,7 @@ internal fun EditableIdentityHeader(
                 .width(120.dp)
                 .aspectRatio(aspectRatio)
                 .clip(shape)
-                .clickable(onClick = onEditImage),
+                .shapedClickable(shape, onClick = onEditImage),
             shape = shape,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {

@@ -12,7 +12,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -83,6 +82,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.shell.components.BackButton
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
+import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.shell.theme.typeScale
 import kotlinx.coroutines.delay
 import provenio.composeapp.generated.resources.*
@@ -107,7 +107,6 @@ internal fun PlayerControlsShell(
     showPlaybackControls: Boolean = true,
     controlsReady: Boolean = true,
     playbackRequested: Boolean = true,
-    hideSeekForward: Boolean = false,
     onLockToggle: () -> Unit,
     onBack: () -> Unit,
     onTogglePlayback: () -> Unit,
@@ -190,7 +189,6 @@ internal fun PlayerControlsShell(
                         metrics = metrics,
                         controlsReady = controlsReady,
                         playbackRequested = playbackRequested,
-                        hideSeekForward = hideSeekForward,
                         onSeekBack = onSeekBack,
                         onSeekForward = onSeekForward,
                         onTogglePlayback = onTogglePlayback,
@@ -215,7 +213,6 @@ internal fun PlayerControlsShell(
                                 snapshot = playbackSnapshot,
                                 controlsReady = controlsReady,
                                 playbackRequested = playbackRequested,
-                                hideSeekForward = hideSeekForward,
                                 onSeekBack = onSeekBack,
                                 onSeekForward = onSeekForward,
                                 onTogglePlayback = onTogglePlayback,
@@ -359,7 +356,7 @@ internal fun PlayerStatusColumn(
             if (onClick != null) {
                 Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable(onClick = onClick)
+                    .shapedClickable(RoundedCornerShape(8.dp), onClick = onClick)
                     .padding(horizontal = 6.dp, vertical = 4.dp)
             } else {
                 Modifier
@@ -445,7 +442,6 @@ private fun CenterControls(
     metrics: PlayerLayoutMetrics,
     controlsReady: Boolean,
     playbackRequested: Boolean,
-    hideSeekForward: Boolean,
     onSeekBack: () -> Unit,
     onSeekForward: () -> Unit,
     onTogglePlayback: () -> Unit,
@@ -505,15 +501,12 @@ private fun CenterControls(
                 onClick = onTogglePlayback,
             )
         }
-        // An invisible stand-in keeps play centred while the next episode card holds this side.
-        Box(modifier = Modifier.alpha(if (hideSeekForward) 0f else 1f)) {
-            CenterControlButton(
-                icon = Icons.Rounded.Forward10,
-                contentDescription = stringResource(Res.string.compose_player_seek_forward_10),
-                metrics = metrics,
-                onClick = if (controlsReady) { { if (!hideSeekForward) onSeekForward() } } else null,
-            )
-        }
+        CenterControlButton(
+            icon = Icons.Rounded.Forward10,
+            contentDescription = stringResource(Res.string.compose_player_seek_forward_10),
+            metrics = metrics,
+            onClick = onSeekForward.takeIf { controlsReady },
+        )
     }
 }
 
@@ -528,7 +521,7 @@ private fun CenterControlButton(
         modifier = Modifier
             .clip(CircleShape)
             .background(PlayerScrimColor)
-            .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .shapedClickable(CircleShape, enabled = onClick != null) { onClick?.invoke() }
             .padding(metrics.sideButtonPadding),
         contentAlignment = Alignment.Center,
     ) {
@@ -573,7 +566,7 @@ private fun PrimaryControlButton(
                 .size(size)
                 .clip(shape)
                 .background(MaterialTheme.colorScheme.primary)
-                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+                .then(if (onClick != null) Modifier.shapedClickable(shape, onClick = onClick) else Modifier),
             contentAlignment = Alignment.Center,
         ) {
             if (icon == null) {
@@ -598,14 +591,12 @@ private fun TransportButtonGroup(
     snapshot: PlayerPlaybackSnapshot,
     controlsReady: Boolean,
     playbackRequested: Boolean,
-    hideSeekForward: Boolean,
     onSeekBack: () -> Unit,
     onSeekForward: () -> Unit,
     onTogglePlayback: () -> Unit,
     onNextEpisode: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    val count = if (hideSeekForward) 2 else 3
     val primaryIcon: ImageVector
     val primaryDescription: String
     val primaryClick: () -> Unit
@@ -641,24 +632,21 @@ private fun TransportButtonGroup(
         TransportSideButton(
             icon = Icons.Rounded.Replay10,
             contentDescription = stringResource(Res.string.compose_player_seek_back_10),
-            shape = playerGroupShape(0, count),
+            shape = playerGroupShape(0, 3),
             onClick = onSeekBack.takeIf { controlsReady },
         )
         TransportPrimaryButton(
             icon = primaryIcon,
             contentDescription = primaryDescription,
             isRound = isRound,
-            isLast = count == 2,
             onClick = primaryClick,
         )
-        if (!hideSeekForward) {
-            TransportSideButton(
-                icon = Icons.Rounded.Forward10,
-                contentDescription = stringResource(Res.string.compose_player_seek_forward_10),
-                shape = playerGroupShape(2, count),
-                onClick = onSeekForward.takeIf { controlsReady },
-            )
-        }
+        TransportSideButton(
+            icon = Icons.Rounded.Forward10,
+            contentDescription = stringResource(Res.string.compose_player_seek_forward_10),
+            shape = playerGroupShape(2, 3),
+            onClick = onSeekForward.takeIf { controlsReady },
+        )
     }
 }
 
@@ -675,7 +663,7 @@ private fun TransportSideButton(
             .widthIn(min = TransportSideButtonWidth)
             .clip(shape)
             .background(PlayerScrimColor)
-            .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .shapedClickable(shape, enabled = onClick != null) { onClick?.invoke() }
             .semantics { this.contentDescription = contentDescription },
         contentAlignment = Alignment.Center,
     ) {
@@ -693,34 +681,20 @@ private fun TransportPrimaryButton(
     icon: ImageVector,
     contentDescription: String,
     isRound: Boolean,
-    isLast: Boolean,
     onClick: () -> Unit,
 ) {
-    val round = TransportButtonHeight / 2
-    val startCorner by animateDpAsState(
-        targetValue = if (isRound) round else PlayerGroupInnerCorner,
+    val corner by animateDpAsState(
+        targetValue = if (isRound) TransportButtonHeight / 2 else PlayerGroupInnerCorner,
         animationSpec = tween(220),
-        label = "transport_primary_start",
-    )
-    val endCorner by animateDpAsState(
-        targetValue = if (isRound || isLast) round else PlayerGroupInnerCorner,
-        animationSpec = tween(220),
-        label = "transport_primary_end",
+        label = "transport_primary_corner",
     )
     Box(
         modifier = Modifier
             .height(TransportButtonHeight)
             .widthIn(min = TransportPrimaryButtonWidth)
-            .clip(
-                RoundedCornerShape(
-                    topStart = startCorner,
-                    bottomStart = startCorner,
-                    topEnd = endCorner,
-                    bottomEnd = endCorner,
-                ),
-            )
+            .clip(RoundedCornerShape(corner))
             .background(MaterialTheme.colorScheme.primary)
-            .clickable(onClick = onClick)
+            .shapedClickable(RoundedCornerShape(corner), onClick = onClick)
             .semantics { this.contentDescription = contentDescription },
         contentAlignment = Alignment.Center,
     ) {
@@ -893,7 +867,7 @@ private fun PlayerButtonGroup(
                     .widthIn(min = PlayerGroupButtonMinWidth)
                     .clip(playerGroupShape(index, actions.size))
                     .background(PlayerScrimColor)
-                    .clickable(enabled = onClick != null) { onClick?.invoke() }
+                    .shapedClickable(playerGroupShape(index, actions.size), enabled = onClick != null) { onClick?.invoke() }
                     .semantics { contentDescription = action.contentDescription }
                     .padding(horizontal = 10.dp),
                 contentAlignment = Alignment.Center,
@@ -1074,7 +1048,7 @@ internal fun LockedPlayerOverlay(
                 .size(metrics.headerIconSize + 24.dp)
                 .clip(CircleShape)
                 .background(PlayerScrimColor)
-                .clickable(onClick = onUnlock),
+                .shapedClickable(CircleShape, onClick = onUnlock),
             contentAlignment = Alignment.Center,
         ) {
             Icon(

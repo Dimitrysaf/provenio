@@ -9,7 +9,6 @@ import androidx.compose.animation.Crossfade
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -80,6 +79,7 @@ import io.github.dimitrysaf.provenio.core.cloud.CloudLibraryItemType
 import io.github.dimitrysaf.provenio.core.cloud.CloudLibraryRepository
 import io.github.dimitrysaf.provenio.core.cloud.CloudLibraryUiState
 import io.github.dimitrysaf.provenio.core.debrid.DebridSettingsRepository
+import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeEmptyStateCard
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HomePosterCard
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeSkeletonRow
@@ -708,7 +708,7 @@ private fun LibraryChip(
     Surface(
         modifier = Modifier
             .clip(RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick),
+            .shapedClickable(RoundedCornerShape(18.dp), onClick = onClick),
         shape = RoundedCornerShape(18.dp),
         color = if (selected) colorScheme.primaryContainer else colorScheme.surfaceContainerLow,
         border = if (selected) BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.45f)) else null,
@@ -745,10 +745,11 @@ private fun CloudLibraryRow(
 ) {
     val playableCount = item.playableFiles.size
     Surface(
+        onClick = onClick,
+        enabled = playableCount > 0,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-            .clickable(enabled = playableCount > 0, onClick = onClick),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
@@ -894,9 +895,8 @@ private fun CloudLibraryFileRow(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.58f),
     ) {

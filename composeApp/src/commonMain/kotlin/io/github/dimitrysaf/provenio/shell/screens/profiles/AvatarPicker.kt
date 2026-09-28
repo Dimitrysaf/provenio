@@ -2,7 +2,6 @@ package io.github.dimitrysaf.provenio.shell.screens.profiles
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -23,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.profiles.AvatarCatalogItem
 import io.github.dimitrysaf.provenio.core.profiles.avatarImageUrl
+import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 
 @Composable
 internal fun AvatarPicker(
@@ -78,7 +78,7 @@ private fun AvatarChoiceItem(
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                 shape = CircleShape,
             )
-            .clickable(onClick = onClick),
+            .shapedClickable(CircleShape, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         AsyncImage(

@@ -2,7 +2,6 @@ package io.github.dimitrysaf.provenio.shell.screens.home.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -53,6 +52,7 @@ import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.format.formatReleaseDateForDisplay
 import io.github.dimitrysaf.provenio.shell.components.ScreenActivityEffect
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
+import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -188,7 +188,7 @@ private fun HomeHeroCarousel(
                 modifier = Modifier
                     .fillMaxSize()
                     .maskClip(MaterialTheme.shapes.extraLarge)
-                    .clickable {
+                    .shapedClickable(MaterialTheme.shapes.extraLarge) {
                         // A tap on a sliver asks for that title, not for its details: bring it to
                         // the centre first, and open only what is already there.
                         if (heroItemIsFocal(drawInfo)) {
@@ -402,7 +402,7 @@ private fun HeroIndicatorRow(
                         .background(lerp(inactiveColor, activeColor, fraction))
                         .width(HeroIndicatorHeight + ((HeroIndicatorActiveWidth - HeroIndicatorHeight) * fraction))
                         .height(HeroIndicatorHeight)
-                        .clickable { onSelect(index) },
+                        .shapedClickable(CircleShape) { onSelect(index) },
                 )
             }
         }

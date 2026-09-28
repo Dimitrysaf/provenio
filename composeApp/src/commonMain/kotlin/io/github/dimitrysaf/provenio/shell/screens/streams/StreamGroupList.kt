@@ -44,6 +44,7 @@ import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
+import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
 import io.github.dimitrysaf.provenio.shell.screens.settings.segmentShape
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -177,7 +178,7 @@ internal fun LazyListScope.streamGroups(
         val shape = segmentShape(index = index, count = entries.size)
         val shapes = ListItemDefaults.shapes(
             shape = shape,
-            selectedShape = shape,
+            selectedShape = RoundedCornerShape(OuterCorner),
             pressedShape = shape,
             focusedShape = shape,
             hoveredShape = shape,
