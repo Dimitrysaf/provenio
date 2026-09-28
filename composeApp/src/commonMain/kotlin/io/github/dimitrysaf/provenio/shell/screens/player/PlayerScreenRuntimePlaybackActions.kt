@@ -177,7 +177,7 @@ private fun PlayerScreenRuntime.emitTrackingScrobbleTerminal(
 }
 
 internal fun PlayerScreenRuntime.playbackCompletionReached(): Boolean =
-    playbackSnapshot.isEnded || PlayerNextEpisodeRules.shouldShowNextEpisodeCard(
+    PlayerNextEpisodeRules.isWatchedThresholdReached(
         positionMs = playbackSnapshot.positionMs,
         durationMs = playbackSnapshot.durationMs,
         skipIntervals = skipIntervals,
@@ -288,10 +288,15 @@ internal fun PlayerScreenRuntime.scheduleProgressSyncAfterSeek() {
             media = media,
             progressPercent = progressPercent.toDouble(),
         )
+        val seekAction = if (progressPercent >= 80f && !playbackCompletionReached()) {
+            TrackingScrobbleAction.PAUSE
+        } else {
+            TrackingScrobbleAction.STOP
+        }
         scope.launch {
             TrackingScrobbleCoordinator.scrobbleSeek(
                 profileId = profileId,
-                action = TrackingScrobbleAction.STOP,
+                action = seekAction,
                 event = stopEvent,
             )
             if (!shouldRestartScrobbleAfterSeek || !shouldPlay || playbackSnapshot.isEnded) return@launch

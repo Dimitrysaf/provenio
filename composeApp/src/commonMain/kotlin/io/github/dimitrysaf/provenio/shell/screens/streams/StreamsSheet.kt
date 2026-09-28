@@ -398,7 +398,7 @@ internal fun streamCardRenderKey(
     }
 }
 
-private fun copyStreamLink(
+internal fun copyStreamLink(
     stream: StreamItem,
     seasonNumber: Int?,
     episodeNumber: Int?,
@@ -439,7 +439,7 @@ private fun copyStreamLink(
     }
 }
 
-private fun downloadStream(
+internal fun downloadStream(
     stream: StreamItem,
     type: String,
     videoId: String,

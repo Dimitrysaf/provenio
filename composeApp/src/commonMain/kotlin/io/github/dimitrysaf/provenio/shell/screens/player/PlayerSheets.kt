@@ -56,6 +56,8 @@ import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
 import io.github.dimitrysaf.provenio.core.debrid.DebridSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
 import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
+import io.github.dimitrysaf.provenio.shell.screens.details.EpisodeActionsSheet
+import io.github.dimitrysaf.provenio.shell.screens.details.SeasonActionsSheet
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailEpisodeListRow
 import io.github.dimitrysaf.provenio.shell.screens.details.components.EpisodeListEntry
 import io.github.dimitrysaf.provenio.shell.screens.details.components.buildEpisodeListEntries
@@ -175,6 +177,7 @@ internal fun PlayerStreamsSheet(
     streamsUiState: StreamsUiState,
     isStreamSelected: (StreamItem) -> Boolean,
     onStreamSelected: (StreamItem) -> Unit,
+    onStreamLongPress: (StreamItem) -> Unit,
     onReload: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -195,6 +198,7 @@ internal fun PlayerStreamsSheet(
             streamsUiState = streamsUiState,
             isStreamSelected = isStreamSelected,
             onStreamSelected = onStreamSelected,
+            onStreamLongPress = onStreamLongPress,
             modifier = Modifier.weight(1f, fill = false),
         )
     }
@@ -218,6 +222,7 @@ internal fun PlayerEpisodesSheet(
     episodeStreams: EpisodeStreamsPanelState,
     onEpisodeSelected: (MetaVideo) -> Unit,
     onEpisodeStreamSelected: (StreamItem, MetaVideo) -> Unit,
+    onEpisodeStreamLongPress: (StreamItem, MetaVideo) -> Unit,
     onBackToEpisodes: () -> Unit,
     onReloadEpisodeStreams: () -> Unit,
     onDismiss: () -> Unit,
@@ -242,6 +247,7 @@ internal fun PlayerEpisodesSheet(
                 streamsUiState = episodeStreams.streamsUiState,
                 isStreamSelected = { stream -> ActiveStreamStore.isActive(selectedEpisode.id, stream) },
                 onStreamSelected = { stream -> onEpisodeStreamSelected(stream, selectedEpisode) },
+                onStreamLongPress = { stream -> onEpisodeStreamLongPress(stream, selectedEpisode) },
                 modifier = Modifier.weight(1f, fill = false),
             )
         } else {
@@ -294,6 +300,8 @@ private fun PlayerEpisodeList(
         buildEpisodeListEntries(grouped, expandedSeasons, summary.completedSeasons)
     }
 
+    var episodeForActions by remember(meta.id) { mutableStateOf<MetaVideo?>(null) }
+    var seasonForActions by remember(meta.id) { mutableStateOf<Int?>(null) }
     val listState = rememberLazyListState()
     var scrolledToCurrent by remember { mutableStateOf(false) }
     // Opens with the episode playing now at the top, the order unchanged, once the episodes are in.
@@ -321,9 +329,9 @@ private fun PlayerEpisodeList(
                 watchedKeys = watchedKeys,
                 blurUnwatchedEpisodes = blurUnwatchedEpisodes,
                 onSeasonClick = { season -> expansion.toggle(season, defaultSeason) },
-                onSeasonLongPress = null,
+                onSeasonLongPress = { season -> seasonForActions = season },
                 onEpisodeClick = onEpisodeSelected,
-                onEpisodeLongPress = null,
+                onEpisodeLongPress = { episode -> episodeForActions = episode },
                 modifier = Modifier
                     .padding(horizontal = StreamsHorizontalPadding)
                     .padding(bottom = if (index == entries.lastIndex) 0.dp else ListItemBetweenSpace)
@@ -332,6 +340,31 @@ private fun PlayerEpisodeList(
             )
         }
     }
+
+    episodeForActions?.let { episode ->
+        EpisodeActionsSheet(
+            meta = meta,
+            episode = episode,
+            watchedKeys = watchedKeys,
+            progressByVideoId = progressByVideoId,
+            todayIsoDate = todayIsoDate,
+            blurUnwatchedEpisodes = blurUnwatchedEpisodes,
+            showPlayManually = false,
+            onDismiss = { episodeForActions = null },
+            onPlayManually = {},
+        )
+    }
+
+    seasonForActions?.let { season ->
+        SeasonActionsSheet(
+            meta = meta,
+            season = season,
+            watchedKeys = watchedKeys,
+            progressByVideoId = progressByVideoId,
+            todayIsoDate = todayIsoDate,
+            onDismiss = { seasonForActions = null },
+        )
+    }
 }
 
 @Composable
@@ -339,6 +372,7 @@ private fun PlayerStreamGroupsList(
     streamsUiState: StreamsUiState,
     isStreamSelected: (StreamItem) -> Boolean,
     onStreamSelected: (StreamItem) -> Unit,
+    onStreamLongPress: (StreamItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val debridSettings by remember {
@@ -388,7 +422,7 @@ private fun PlayerStreamGroupsList(
                         isStreamSelected = isStreamSelected,
                         torrentNotSupportedText = torrentNotSupportedText,
                         onStreamSelected = onStreamSelected,
-                        onStreamLongPress = {},
+                        onStreamLongPress = onStreamLongPress,
                         horizontalPadding = StreamsHorizontalPadding,
                     )
                 }

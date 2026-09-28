@@ -421,6 +421,7 @@ private fun BoxScope.RenderPlaybackOverlays(
 
 @Composable
 private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
+    var streamActionsTarget by remember { mutableStateOf<PlayerStreamActionsTarget?>(null) }
     PlayerScreenModalHosts(
         pendingP2pSwitch = pendingP2pSwitch,
         onPendingP2pSwitchChanged = { pendingP2pSwitch = it },
@@ -502,6 +503,7 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
         activeTorrentInfoHash = activeTorrentInfoHash,
         activeTorrentFileIdx = activeTorrentFileIdx,
         onSourceStreamSelected = { stream -> switchToSource(stream) },
+        onSourceStreamLongPress = { stream -> streamActionsTarget = PlayerStreamActionsTarget(stream, episode = null) },
         onReloadSources = {
             val vid = activeVideoId
             if (vid != null) {
@@ -550,6 +552,9 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
             episodeStreamsPanelState = EpisodeStreamsPanelState(showStreams = true, selectedEpisode = episode)
         },
         onEpisodeStreamSelected = { stream, episode -> switchToEpisodeStream(stream, episode) },
+        onEpisodeStreamLongPress = { stream, episode ->
+            streamActionsTarget = PlayerStreamActionsTarget(stream, episode)
+        },
         onBackToEpisodes = {
             episodeStreamsPanelState = EpisodeStreamsPanelState()
             PlayerStreamsRepository.clearEpisodeStreams()
@@ -590,6 +595,13 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
             showSubmitIntroModal = false
         },
     )
+
+    streamActionsTarget?.let { target ->
+        PlayerStreamActionsSheet(
+            target = target,
+            onDismiss = { streamActionsTarget = null },
+        )
+    }
 }
 
 private const val PlayerStallRevealDelayMs = 500L

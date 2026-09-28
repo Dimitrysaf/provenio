@@ -32,7 +32,9 @@ object PlayerNextEpisodeRules {
         thresholdPercent: Float,
         thresholdMinutesBeforeEnd: Float,
     ): Boolean {
-        val outroSegments = skipIntervals.filter { it.type in OUTRO_SEGMENT_TYPES }
+        val outroSegments = skipIntervals.filter {
+            it.type in OUTRO_SEGMENT_TYPES && it.startTime > 0.0 && it.endTime > it.startTime
+        }
 
         if (outroSegments.isNotEmpty()) {
             if (durationMs <= 0L) return false
@@ -82,6 +84,25 @@ object PlayerNextEpisodeRules {
                 remainingMs <= (clampedMinutes * 60_000f).toLong()
             }
         }
+    }
+
+    fun isWatchedThresholdReached(
+        positionMs: Long,
+        durationMs: Long,
+        skipIntervals: List<SkipInterval>,
+        thresholdMode: NextEpisodeThresholdMode,
+        thresholdPercent: Float,
+        thresholdMinutesBeforeEnd: Float,
+    ): Boolean {
+        if (durationMs <= 0L || positionMs <= 0L) return false
+        return shouldShowNextEpisodeCard(
+            positionMs = positionMs,
+            durationMs = durationMs,
+            skipIntervals = skipIntervals,
+            thresholdMode = thresholdMode,
+            thresholdPercent = thresholdPercent,
+            thresholdMinutesBeforeEnd = thresholdMinutesBeforeEnd,
+        )
     }
 
     fun hasEpisodeAired(raw: String?): Boolean {

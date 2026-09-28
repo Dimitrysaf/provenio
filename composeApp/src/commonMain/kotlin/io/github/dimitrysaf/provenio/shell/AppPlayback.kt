@@ -29,6 +29,7 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaTrailer
 import io.github.dimitrysaf.provenio.core.metadata.youtubePlaybackUrl
 import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
+import io.github.dimitrysaf.provenio.core.playback.skip.PlayerNextEpisodeRules
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsUiState
 import io.github.dimitrysaf.provenio.core.playback.SubtitleLanguageOption
 import io.github.dimitrysaf.provenio.core.playback.prepareExternalPlayerLaunch
@@ -500,6 +501,15 @@ private suspend fun recordExternalPlaybackResult(result: ExternalPlaybackResult,
     // Guard: debrid cache-sync placeholders and error clips report a short
     // duration reaching completion. Skip scrobble + progress for those.
     if (durationMs != null && isShortPlaceholderDuration(durationMs)) return
+    val playerSettings = PlayerSettingsRepository.uiState.value
+    val completionReached = durationMs != null && PlayerNextEpisodeRules.isWatchedThresholdReached(
+        positionMs = result.positionMs,
+        durationMs = durationMs,
+        skipIntervals = emptyList(),
+        thresholdMode = playerSettings.nextEpisodeThresholdMode,
+        thresholdPercent = playerSettings.nextEpisodeThresholdPercent,
+        thresholdMinutesBeforeEnd = playerSettings.nextEpisodeThresholdMinutesBeforeEnd,
+    )
     val progressPercent = if (durationMs != null && durationMs > 0L) {
         (result.positionMs.toFloat() / durationMs.toFloat() * 100f).coerceIn(0f, 100f)
     } else {
@@ -519,7 +529,11 @@ private suspend fun recordExternalPlaybackResult(result: ExternalPlaybackResult,
             runCatching {
                 TrackingScrobbleCoordinator.scrobble(
                     profileId = playerLaunch.profileId,
-                    action = TrackingScrobbleAction.STOP,
+                    action = if (progressPercent >= 80f && !completionReached) {
+                        TrackingScrobbleAction.PAUSE
+                    } else {
+                        TrackingScrobbleAction.STOP
+                    },
                     event = TrackingScrobbleEvent(
                         media = trackingMedia,
                         progressPercent = progressPercent.toDouble(),
@@ -555,5 +569,9 @@ private suspend fun recordExternalPlaybackResult(result: ExternalPlaybackResult,
         durationMs = durationMs ?: 0L,
         positionMs = result.positionMs,
     )
-    WatchProgressRepository.upsertPlaybackProgress(session = session, snapshot = snapshot)
+    WatchProgressRepository.upsertPlaybackProgress(
+        session = session,
+        snapshot = snapshot,
+        completionReached = completionReached,
+    )
 }
