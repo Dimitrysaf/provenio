@@ -1,6 +1,5 @@
 package io.github.dimitrysaf.provenio.desktop.mpv
 
-import com.sun.jna.Callback
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.NativeLibrary
@@ -24,14 +23,9 @@ internal interface LibMpv : Library {
     fun mpv_wakeup(handle: Pointer)
 
     fun mpv_render_context_create(result: PointerByReference, handle: Pointer, params: Pointer): Int
-    fun mpv_render_context_set_update_callback(context: Pointer, callback: UpdateCallback?, callbackContext: Pointer?)
     fun mpv_render_context_update(context: Pointer): Long
     fun mpv_render_context_render(context: Pointer, params: Pointer): Int
     fun mpv_render_context_free(context: Pointer)
-
-    fun interface UpdateCallback : Callback {
-        fun invoke(context: Pointer?)
-    }
 
     companion object {
         const val EVENT_NONE = 0

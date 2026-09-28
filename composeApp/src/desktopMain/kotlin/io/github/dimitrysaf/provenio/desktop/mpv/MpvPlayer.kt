@@ -31,6 +31,7 @@ import org.jetbrains.skia.ImageInfo
  * lets the player's controls sit on top of it, as they do on Android.
  */
 private const val TrackRefreshEverySnapshots = 4
+private const val RenderPollIntervalMs = 4L
 
 internal class MpvPlayer private constructor(
     private val mpv: LibMpv,
@@ -50,9 +51,6 @@ internal class MpvPlayer private constructor(
     @Volatile
     private var videoSize = IntSize.Zero
 
-    // JNA must keep the callback reachable for as long as mpv may call it.
-    private val updateCallback = LibMpv.UpdateCallback { requestFrame() }
-
     private val mutableFrame = MutableStateFlow<ImageBitmap?>(null)
     val frame: StateFlow<ImageBitmap?> = mutableFrame.asStateFlow()
 
@@ -67,7 +65,6 @@ internal class MpvPlayer private constructor(
         val status = mpv.mpv_render_context_create(result, handle, params)
         check(status >= 0) { "mpv render context: ${mpv.mpv_error_string(status)}" }
         renderContext = result.value
-        mpv.mpv_render_context_set_update_callback(renderContext, updateCallback, null)
         Thread(::eventLoop, "mpv-events").apply { isDaemon = true }.start()
         Thread(::renderLoop, "mpv-render").apply { isDaemon = true }.start()
     }
@@ -261,7 +258,7 @@ internal class MpvPlayer private constructor(
         val formatParam = Memory(5).apply { setString(0, "bgr0", "US-ASCII") }
         while (!released.get()) {
             val size = synchronized(frameRequested) {
-                while (!frameDirty && !released.get()) frameRequested.wait()
+                if (!frameDirty && !released.get()) frameRequested.wait(RenderPollIntervalMs)
                 frameDirty = false
                 targetSize
             }
@@ -299,7 +296,6 @@ internal class MpvPlayer private constructor(
             mutableFrame.value = Image.makeFromBitmap(bitmap).toComposeImageBitmap()
         }
         bitmap?.close()
-        mpv.mpv_render_context_set_update_callback(renderContext, null, null)
         mpv.mpv_render_context_free(renderContext)
         renderStopped.countDown()
     }
