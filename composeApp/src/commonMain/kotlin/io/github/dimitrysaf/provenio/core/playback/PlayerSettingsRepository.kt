@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 data class PlayerSettingsUiState(
     val showLoadingOverlay: Boolean = true,
     val showPlayerLoadingStatus: Boolean = true,
+    val showPlayerControlLabels: Boolean = false,
     val pauseOverlayEnabled: Boolean = true,
     val showParentalGuide: Boolean = true,
     val resizeMode: PlayerResizeMode = PlayerResizeMode.Fit,
@@ -79,6 +80,7 @@ object PlayerSettingsRepository {
     private var hasLoaded = false
     private var showLoadingOverlay = true
     private var showPlayerLoadingStatus = true
+    private var showPlayerControlLabels = false
     private var pauseOverlayEnabled = true
     private var showParentalGuide = true
     private var resizeMode = PlayerResizeMode.Fit
@@ -152,6 +154,7 @@ object PlayerSettingsRepository {
         hasLoaded = false
         showLoadingOverlay = true
         showPlayerLoadingStatus = true
+        showPlayerControlLabels = false
         pauseOverlayEnabled = true
         showParentalGuide = true
         resizeMode = PlayerResizeMode.Fit
@@ -218,6 +221,7 @@ object PlayerSettingsRepository {
         hasLoaded = true
         showLoadingOverlay = PlayerSettingsStorage.loadShowLoadingOverlay() ?: true
         showPlayerLoadingStatus = PlayerSettingsStorage.loadShowPlayerLoadingStatus() ?: true
+        showPlayerControlLabels = PlayerSettingsStorage.loadShowPlayerControlLabels() ?: false
         pauseOverlayEnabled = PlayerSettingsStorage.loadPauseOverlayEnabled() ?: true
         showParentalGuide = PlayerSettingsStorage.loadShowParentalGuide() ?: true
         resizeMode = PlayerSettingsStorage.loadResizeMode()
@@ -365,6 +369,14 @@ object PlayerSettingsRepository {
         showPlayerLoadingStatus = enabled
         publish()
         PlayerSettingsStorage.saveShowPlayerLoadingStatus(enabled)
+    }
+
+    fun setShowPlayerControlLabels(enabled: Boolean) {
+        ensureLoaded()
+        if (showPlayerControlLabels == enabled) return
+        showPlayerControlLabels = enabled
+        publish()
+        PlayerSettingsStorage.saveShowPlayerControlLabels(enabled)
     }
 
     fun setPauseOverlayEnabled(enabled: Boolean) {
@@ -915,6 +927,7 @@ object PlayerSettingsRepository {
         _uiState.value = PlayerSettingsUiState(
             showLoadingOverlay = showLoadingOverlay,
             showPlayerLoadingStatus = showPlayerLoadingStatus,
+            showPlayerControlLabels = showPlayerControlLabels,
             pauseOverlayEnabled = pauseOverlayEnabled,
             showParentalGuide = showParentalGuide,
             resizeMode = resizeMode,

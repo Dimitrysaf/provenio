@@ -222,6 +222,7 @@ object PlayerStreamsRepository {
                 addonId = "embedded",
                 streams = embeddedStreams,
                 isLoading = false,
+                addonLogo = embeddedStreams.first().addonLogo,
             )
             val presentedGroup = StreamBadgePresentation.apply(
                 groups = listOf(group),
@@ -290,6 +291,7 @@ object PlayerStreamsRepository {
                 addonId = addon.addonId,
                 streams = emptyList(),
                 isLoading = true,
+                addonLogo = addon.manifest.logoUrl,
             )
         } + pluginProviderGroups.map { providerGroup ->
             AddonStreamGroup(
@@ -297,6 +299,7 @@ object PlayerStreamsRepository {
                 addonId = providerGroup.addonId,
                 streams = emptyList(),
                 isLoading = true,
+                addonLogo = providerGroup.addonLogo,
             )
         }, installedAddonOrder)
         val isInitiallyLoading = initialGroups.any { it.isLoading }
@@ -405,11 +408,24 @@ object PlayerStreamsRepository {
                         )
                     }.fold(
                         onSuccess = { streams ->
-                            AddonStreamGroup(displayName, addon.addonId, streams, isLoading = false)
+                            AddonStreamGroup(
+                                addonName = displayName,
+                                addonId = addon.addonId,
+                                streams = streams,
+                                isLoading = false,
+                                addonLogo = addon.manifest.logoUrl,
+                            )
                         },
                         onFailure = { err ->
                             log.w(err) { "Failed: ${displayName}" }
-                            AddonStreamGroup(displayName, addon.addonId, emptyList(), isLoading = false, error = err.message)
+                            AddonStreamGroup(
+                                addonName = displayName,
+                                addonId = addon.addonId,
+                                streams = emptyList(),
+                                isLoading = false,
+                                error = err.message,
+                                addonLogo = addon.manifest.logoUrl,
+                            )
                         },
                     )
                     publishCompletion(StreamLoadCompletion.Addon(group))

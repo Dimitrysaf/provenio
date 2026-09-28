@@ -19,6 +19,7 @@ import platform.Foundation.NSUserDefaults
 actual object PlayerSettingsStorage {
     private const val showLoadingOverlayKey = "show_loading_overlay"
     private const val showPlayerLoadingStatusKey = "show_player_loading_status"
+    private const val showPlayerControlLabelsKey = "show_player_control_labels"
     private const val pauseOverlayEnabledKey = "pause_overlay_enabled"
     private const val showParentalGuideKey = "show_parental_guide"
     private const val resizeModeKey = "resize_mode"
@@ -91,6 +92,7 @@ actual object PlayerSettingsStorage {
     private val syncKeys = listOf(
         showLoadingOverlayKey,
         showPlayerLoadingStatusKey,
+        showPlayerControlLabelsKey,
         pauseOverlayEnabledKey,
         showParentalGuideKey,
         resizeModeKey,
@@ -198,6 +200,12 @@ actual object PlayerSettingsStorage {
 
     actual fun saveShowPlayerLoadingStatus(enabled: Boolean) {
         saveBoolean(showPlayerLoadingStatusKey, enabled)
+    }
+
+    actual fun loadShowPlayerControlLabels(): Boolean? = loadBoolean(showPlayerControlLabelsKey)
+
+    actual fun saveShowPlayerControlLabels(enabled: Boolean) {
+        saveBoolean(showPlayerControlLabelsKey, enabled)
     }
 
     actual fun loadPauseOverlayEnabled(): Boolean? {
@@ -932,6 +940,7 @@ actual object PlayerSettingsStorage {
     actual fun exportToSyncPayload(): JsonObject = buildJsonObject {
         loadShowLoadingOverlay()?.let { put(showLoadingOverlayKey, encodeSyncBoolean(it)) }
         loadShowPlayerLoadingStatus()?.let { put(showPlayerLoadingStatusKey, encodeSyncBoolean(it)) }
+        loadShowPlayerControlLabels()?.let { put(showPlayerControlLabelsKey, encodeSyncBoolean(it)) }
         loadPauseOverlayEnabled()?.let { put(pauseOverlayEnabledKey, encodeSyncBoolean(it)) }
         loadShowParentalGuide()?.let { put(showParentalGuideKey, encodeSyncBoolean(it)) }
         loadResizeMode()?.let { put(resizeModeKey, encodeSyncString(it)) }
@@ -1009,6 +1018,7 @@ actual object PlayerSettingsStorage {
 
         payload.decodeSyncBoolean(showLoadingOverlayKey)?.let(::saveShowLoadingOverlay)
         payload.decodeSyncBoolean(showPlayerLoadingStatusKey)?.let(::saveShowPlayerLoadingStatus)
+        payload.decodeSyncBoolean(showPlayerControlLabelsKey)?.let(::saveShowPlayerControlLabels)
         payload.decodeSyncBoolean(pauseOverlayEnabledKey)?.let(::savePauseOverlayEnabled)
         payload.decodeSyncBoolean(showParentalGuideKey)?.let(::saveShowParentalGuide)
         payload.decodeSyncString(resizeModeKey)?.let(::saveResizeMode)

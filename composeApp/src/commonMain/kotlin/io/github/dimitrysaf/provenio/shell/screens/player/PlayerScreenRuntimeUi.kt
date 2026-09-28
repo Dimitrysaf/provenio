@@ -23,6 +23,7 @@ import io.github.dimitrysaf.provenio.core.build.isIos
 import io.github.dimitrysaf.provenio.shell.screens.p2p.TorrentDetailsSheet
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
+import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlatform
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlaybackRequest
 import io.github.dimitrysaf.provenio.core.playback.PlayerStreamsRepository
 import io.github.dimitrysaf.provenio.core.playback.SubtitleInput
@@ -247,6 +248,11 @@ private fun PlayerScreenRuntime.currentInitialPositionRequestKey(): String? {
 private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, statusLines: List<String>) {
     val isInPip = rememberIsInPictureInPicture()
     val loading = isStillLoading()
+    val externalPlayerId = playerSettingsUiState.externalPlayerId
+    val externalPlayerConfigured = remember(externalPlayerId) {
+        !externalPlayerId.isNullOrBlank() &&
+            ExternalPlayerPlatform.availablePlayers().any { it.id == externalPlayerId }
+    }
     AnimatedVisibility(
         visible = (controlsVisible || showParentalGuide) && !playerControlsLocked && !isInPip,
         enter = fadeIn(),
@@ -300,13 +306,14 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             },
             onSourcesClick = if (activeVideoId != null) { { openSourcesPanel() } } else null,
             onEpisodesClick = if (isSeries && playerMetaVideos.isNotEmpty()) { { openEpisodesPanel() } } else null,
+            showControlLabels = playerSettingsUiState.showPlayerControlLabels,
             onNextEpisode = nextEpisodeInfo?.takeIf { it.hasAired }?.let {
                 {
                     nextEpisodeAutoPlayJob?.cancel()
                     playNextEpisode()
                 }
             },
-            onOpenInExternalPlayer = args.onOpenInExternalPlayer?.let { openExternal ->
+            onOpenInExternalPlayer = args.onOpenInExternalPlayer?.takeIf { externalPlayerConfigured }?.let { openExternal ->
                 {
                     val loadedSubtitles = addonSubtitles
                         .takeIf { it.isNotEmpty() }

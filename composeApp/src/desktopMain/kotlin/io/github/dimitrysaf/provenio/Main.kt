@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio
 
+import androidx.compose.foundation.LocalContextMenuRepresentation
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -69,6 +71,7 @@ import io.github.dimitrysaf.provenio.core.watch.watched.WatchedStorage
 import io.github.dimitrysaf.provenio.desktop.Context
 import io.github.dimitrysaf.provenio.desktop.DesktopStatusNotifier
 import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
+import io.github.dimitrysaf.provenio.desktop.MaterialContextMenuRepresentation
 import io.github.dimitrysaf.provenio.desktop.SingleInstance
 import java.awt.SystemTray
 import java.io.File
@@ -163,7 +166,9 @@ fun main(args: Array<String>) {
                     window.requestFocus()
                 }
             }
-            App()
+            CompositionLocalProvider(LocalContextMenuRepresentation provides MaterialContextMenuRepresentation) {
+                App()
+            }
         }
     }
 }

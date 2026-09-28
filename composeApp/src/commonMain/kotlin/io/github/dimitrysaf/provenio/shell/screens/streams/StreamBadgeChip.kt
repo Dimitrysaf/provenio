@@ -2,19 +2,12 @@ package io.github.dimitrysaf.provenio.shell.screens.streams
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Storage
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -55,9 +48,6 @@ internal fun rememberStreamSizeLabelFormat(): (String) -> String {
 internal object StreamBadgeChipDefaults {
     val shape = RoundedCornerShape(Tokens.Radius.sm)
     val fileSizeHeight = 24.dp
-    val fileSizeHorizontalPadding = 8.dp
-    val fileSizeIconSize = 16.dp
-    val fileSizeIconSpacing = 4.dp
 }
 
 internal enum class StreamBadgeChipSize(
@@ -153,30 +143,18 @@ internal fun StreamFileSizeBadge(stream: StreamItem) {
     }
 
     val accessibleLabel = LocalStreamSizeLabelFormat.current(sizeLabel)
-    Surface(
+    Box(
         modifier = Modifier
             .height(StreamBadgeChipDefaults.fileSizeHeight)
             .clearAndSetSemantics { contentDescription = accessibleLabel },
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        contentAlignment = Alignment.Center,
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = StreamBadgeChipDefaults.fileSizeHorizontalPadding),
-            horizontalArrangement = Arrangement.spacedBy(StreamBadgeChipDefaults.fileSizeIconSpacing),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Storage,
-                contentDescription = null,
-                modifier = Modifier.size(StreamBadgeChipDefaults.fileSizeIconSize),
-            )
-            Text(
-                text = sizeLabel,
-                style = MaterialTheme.typography.labelMedium,
-                maxLines = 1,
-            )
-        }
+        Text(
+            text = sizeLabel,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+        )
     }
 }
 

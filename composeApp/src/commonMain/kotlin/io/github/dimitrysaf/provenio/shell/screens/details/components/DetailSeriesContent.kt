@@ -365,7 +365,8 @@ private fun EpisodeRow(
         episodeNumber = episode.episode,
     )
 
-    Box(modifier = modifier.fillMaxWidth().clip(shape)) {
+    val clipShape = if (selected) RoundedCornerShape(OuterCorner) else shape
+    Box(modifier = modifier.fillMaxWidth().clip(clipShape)) {
         SegmentedListItem(
             selected = selected,
             onClick = onClick,

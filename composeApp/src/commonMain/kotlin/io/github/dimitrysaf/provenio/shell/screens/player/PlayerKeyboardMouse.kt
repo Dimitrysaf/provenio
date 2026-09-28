@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -26,6 +27,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalWindowInfo
 
 private const val KeyboardSeekMs = 10_000L
 private const val KeyboardVolumeStep = 0.05f
@@ -46,8 +48,11 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
     val scope = rememberCoroutineScope()
     val spaceHold = remember { SpaceHoldState() }
     val mute = remember { MuteState() }
-    LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
+    val focusState = remember { PlayerFocusState() }
+    val windowFocused = LocalWindowInfo.current.isWindowFocused
+    LaunchedEffect(windowFocused) { focusRequester.claimFocus(focusState) }
     return Modifier
+        .onFocusChanged { focusState.hasFocusWithin = it.hasFocus }
         .focusRequester(focusRequester)
         .focusable()
         .onPreviewKeyEvent { event ->
@@ -62,8 +67,10 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
                 var lastMousePosition: Offset? = null
                 while (true) {
                     val event = awaitPointerEvent(PointerEventPass.Initial)
+                    if (event.type == PointerEventType.Enter) focusRequester.claimFocus(focusState)
                     if (event.type != PointerEventType.Move) continue
                     val change = event.changes.firstOrNull { it.type == PointerType.Mouse } ?: continue
+                    focusRequester.claimFocus(focusState)
                     val previous = lastMousePosition
                     lastMousePosition = change.position
                     val mouseMoved = previous == null || (change.position - previous).getDistance() >= MouseMoveThresholdPx
@@ -78,6 +85,14 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
             }
         }
         .playerCursorHidden(!controlsVisible && !(playerControlsLocked && lockedOverlayVisible))
+}
+
+private class PlayerFocusState {
+    var hasFocusWithin = false
+}
+
+private fun FocusRequester.claimFocus(state: PlayerFocusState) {
+    if (!state.hasFocusWithin) runCatching { requestFocus() }
 }
 
 private class MuteState {

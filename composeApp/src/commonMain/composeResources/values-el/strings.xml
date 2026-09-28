@@ -1223,6 +1223,8 @@
     <string name="streams_finding_source">Εύρεση πηγής…</string>
     <string name="playback_show_loading_status">Εμφάνιση κατάστασης φόρτωσης</string>
     <string name="playback_show_loading_status_sub">Εμφάνιση της προόδου βήμα προς βήμα όσο ξεκινά η αναπαραγωγή.</string>
+    <string name="playback_show_control_labels">Εμφάνιση ετικετών κουμπιών</string>
+    <string name="playback_show_control_labels_sub">Εμφάνιση του ονόματος κάθε κουμπιού στην κάτω σειρά του προγράμματος αναπαραγωγής, όπως Προσαρμογή, Ταχύτητα και Υπότιτλοι.</string>
     <string name="player_loading_preparing">Προετοιμασία ροής…</string>
     <string name="player_loading_subtitles">Λήψη υποτίτλων…</string>
     <string name="player_loading_subtitles_from">Λήψη υποτίτλων από %1$d πρόσθετα…</string>

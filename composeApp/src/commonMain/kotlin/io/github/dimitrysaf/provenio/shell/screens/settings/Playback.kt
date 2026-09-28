@@ -267,6 +267,12 @@ private fun PlayerGroup(
                 onCheckedChange = PlayerSettingsRepository::setShowPlayerLoadingStatus,
             )
             switchRow(
+                title = stringResource(Res.string.playback_show_control_labels),
+                description = stringResource(Res.string.playback_show_control_labels_sub),
+                checked = { settings.showPlayerControlLabels },
+                onCheckedChange = PlayerSettingsRepository::setShowPlayerControlLabels,
+            )
+            switchRow(
                 title = stringResource(Res.string.settings_playback_pause_overlay),
                 description = stringResource(Res.string.settings_playback_pause_overlay_description),
                 checked = { settings.pauseOverlayEnabled },

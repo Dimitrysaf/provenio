@@ -1714,6 +1714,8 @@
     <string name="streams_finding_source">Finding stream source</string>
     <string name="playback_show_loading_status">Show loading status</string>
     <string name="playback_show_loading_status_sub">Display step-by-step progress while the player is initializing.</string>
+    <string name="playback_show_control_labels">Show control labels</string>
+    <string name="playback_show_control_labels_sub">Name each button in the player's bottom row, like Fit, Speed and Subtitles.</string>
     <string name="player_loading_preparing">Preparing stream…</string>
     <string name="player_loading_subtitles">Fetching subtitles…</string>
     <string name="player_loading_subtitles_from">Fetching subtitles from %1$d addons…</string>

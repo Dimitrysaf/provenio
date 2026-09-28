@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -119,6 +120,7 @@ internal fun PlayerControlsShell(
     onVideoSettingsClick: (() -> Unit)? = null,
     onSourcesClick: (() -> Unit)? = null,
     onEpisodesClick: (() -> Unit)? = null,
+    showControlLabels: Boolean = false,
     onNextEpisode: (() -> Unit)? = null,
     onOpenInExternalPlayer: (() -> Unit)? = null,
     onSubmitIntroClick: (() -> Unit)? = null,
@@ -240,6 +242,7 @@ internal fun PlayerControlsShell(
                     onSubmitIntroClick = onSubmitIntroClick,
                     onSourcesClick = onSourcesClick,
                     onEpisodesClick = onEpisodesClick,
+                    showControlLabels = showControlLabels,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
@@ -727,6 +730,7 @@ private fun BottomControls(
     onSubmitIntroClick: (() -> Unit)?,
     onSourcesClick: (() -> Unit)?,
     onEpisodesClick: (() -> Unit)?,
+    showControlLabels: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val speedLabel = formatPlaybackSpeedLabel(playbackSnapshot.playbackSpeed)
@@ -820,9 +824,9 @@ private fun BottomControls(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            PlayerButtonGroup(actions = leftActions)
+            PlayerButtonGroup(actions = leftActions, showLabels = showControlLabels)
             if (rightActions.isNotEmpty()) {
-                PlayerButtonGroup(actions = rightActions)
+                PlayerButtonGroup(actions = rightActions, showLabels = showControlLabels)
             }
         }
     }
@@ -852,6 +856,7 @@ private class PlayerGroupAction(
 @Composable
 private fun PlayerButtonGroup(
     actions: List<PlayerGroupAction>,
+    showLabels: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -874,6 +879,23 @@ private fun PlayerButtonGroup(
             ) {
                 val tint = if (onClick != null) Color.White else Color.White.copy(alpha = 0.38f)
                 when {
+                    action.icon != null && showLabels -> Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = action.icon,
+                            contentDescription = null,
+                            tint = tint,
+                            modifier = Modifier.size(PlayerGroupIconSize),
+                        )
+                        Text(
+                            text = action.contentDescription,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = tint,
+                            maxLines = 1,
+                        )
+                    }
                     action.icon != null -> Icon(
                         imageVector = action.icon,
                         contentDescription = null,
@@ -934,16 +956,7 @@ internal fun PlayerSeekBar(
         onValueChangeFinished = { onScrubFinished(displayedPositionMs.coerceIn(0L, seekDurationMs)) },
         enabled = durationMs > 0L,
         valueRange = 0f..seekDurationMs.toFloat(),
-        // The slider stretches its thumb slot to the bar's height, so the dot keeps its own size in the middle.
-        thumb = {
-            Box(contentAlignment = Alignment.Center) {
-                Box(
-                    modifier = Modifier
-                        .requiredSize(SeekThumbSize)
-                        .background(activeColor, CircleShape),
-                )
-            }
-        },
+        thumb = { Spacer(Modifier.size(SeekThumbSize)) },
         track = { sliderState ->
             WavyProgressTrack(
                 sliderState = sliderState,
@@ -989,9 +1002,9 @@ private fun WavyProgressTrack(
         val bufferedX = size.width * maxOf(bufferedFraction, playedFraction)
         val amplitudePx = amplitude.toPx()
         val wavelengthPx = WaveLength.toPx()
-        // M3 leaves a gap on each side of the thumb; round caps reach half a stroke past each end.
+        // M3 leaves a gap after the thumb; round caps reach half a stroke past each end.
         val gapPx = SeekThumbSize.toPx() / 2f + TrackThumbGap.toPx() + strokeWidth / 2f
-        val playedEndX = playedX - gapPx
+        val playedEndX = playedX
         val restStartX = minOf(playedX + gapPx, size.width)
         val bufferedStartX = maxOf(bufferedX, restStartX)
 
@@ -1029,6 +1042,11 @@ private fun WavyProgressTrack(
                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
         }
+        drawCircle(
+            color = activeColor,
+            radius = SeekThumbSize.toPx() / 2f,
+            center = Offset(playedX, centerY),
+        )
     }
 }
 
