@@ -67,6 +67,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -844,15 +847,54 @@ private fun BottomControls(
             onScrubChange = onScrubChange,
             onScrubFinished = onScrubFinished,
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            PlayerButtonGroup(actions = leftActions, showLabels = showControlLabels)
-            if (rightActions.isNotEmpty()) {
-                PlayerButtonGroup(actions = rightActions, showLabels = showControlLabels)
+        PlayerButtonGroupsRow(
+            leftActions = leftActions,
+            rightActions = rightActions,
+            showLabels = showControlLabels,
+        )
+    }
+}
+
+@Composable
+private fun PlayerButtonGroupsRow(
+    leftActions: List<PlayerGroupAction>,
+    rightActions: List<PlayerGroupAction>,
+    showLabels: Boolean,
+) {
+    SubcomposeLayout(modifier = Modifier.fillMaxWidth()) { constraints ->
+        val loose = constraints.copy(minWidth = 0, maxWidth = Constraints.Infinity, minHeight = 0)
+        val gap = PlayerGroupsMinSpacing.roundToPx()
+        fun measureGroups(labels: Boolean): Pair<Placeable, Placeable?> {
+            val key = if (labels) "labeled" else "plain"
+            val left = subcompose("$key-left") {
+                PlayerButtonGroup(actions = leftActions, showLabels = labels)
+            }.first().measure(loose)
+            val right = if (rightActions.isEmpty()) {
+                null
+            } else {
+                subcompose("$key-right") {
+                    PlayerButtonGroup(actions = rightActions, showLabels = labels)
+                }.first().measure(loose)
             }
+            return left to right
+        }
+        fun fits(groups: Pair<Placeable, Placeable?>): Boolean {
+            if (!constraints.hasBoundedWidth) return true
+            val (left, right) = groups
+            val needed = left.width + (right?.let { it.width + gap } ?: 0)
+            return needed <= constraints.maxWidth
+        }
+        val labeled = if (showLabels) measureGroups(labels = true).takeIf(::fits) else null
+        val (left, right) = labeled ?: measureGroups(labels = false)
+        val width = if (constraints.hasBoundedWidth) {
+            constraints.maxWidth
+        } else {
+            left.width + (right?.let { it.width + gap } ?: 0)
+        }
+        val height = maxOf(left.height, right?.height ?: 0).coerceIn(constraints.minHeight, constraints.maxHeight)
+        layout(width, height) {
+            left.placeRelative(0, (height - left.height) / 2)
+            right?.placeRelative(width - right.width, (height - right.height) / 2)
         }
     }
 }
@@ -1107,6 +1149,7 @@ internal fun LockedPlayerOverlay(
 internal val PlayerScrimColor = Color.Black.copy(alpha = 0.5f)
 
 private val PlayerGroupGap = 2.dp
+private val PlayerGroupsMinSpacing = 16.dp
 private const val PrimarySquareCornerFraction = 0.28f
 private val PlayerGroupButtonHeight = 36.dp
 private val PlayerGroupButtonMinWidth = 40.dp
