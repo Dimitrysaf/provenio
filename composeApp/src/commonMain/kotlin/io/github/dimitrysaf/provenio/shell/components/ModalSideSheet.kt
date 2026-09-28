@@ -41,7 +41,7 @@ internal fun ModalSideSheet(
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         val visibleState = remember { MutableTransitionState(false) }.apply { targetState = true }
-        Box(modifier = Modifier.fillMaxSize().recordPressPositions()) {
+        Box(modifier = Modifier.fillMaxSize().recordPressPositions(LocalWindowToken.current)) {
             // The scrim sits behind the sheet, so only a tap outside the sheet dismisses it.
             Box(
                 modifier = Modifier

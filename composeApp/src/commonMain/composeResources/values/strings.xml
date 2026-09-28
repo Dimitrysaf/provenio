@@ -1719,6 +1719,8 @@
     <string name="playback_show_loading_status_sub">Display step-by-step progress while the player is initializing.</string>
     <string name="playback_show_control_labels">Show control labels</string>
     <string name="playback_show_control_labels_sub">Name each button in the player's bottom row, like Fit, Speed and Subtitles.</string>
+    <string name="playback_player_in_separate_window">Play in a separate window</string>
+    <string name="playback_player_in_separate_window_sub">Open the player in its own window, so you can keep browsing. Starting another stream closes the old window first.</string>
     <string name="player_loading_preparing">Preparing stream…</string>
     <string name="player_loading_subtitles">Fetching subtitles…</string>
     <string name="player_loading_subtitles_from">Fetching subtitles from %1$d addons…</string>

@@ -19,7 +19,7 @@ private val BlankCursor by lazy {
 }
 
 internal actual fun togglePlayerFullscreen(): Boolean {
-    DesktopWindowState.setFullscreen(!DesktopWindowState.isFullscreen.value)
+    DesktopWindowState.togglePlayerFullscreen()
     return true
 }
 

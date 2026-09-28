@@ -42,6 +42,7 @@ import io.github.dimitrysaf.provenio.shell.screens.player.localizedLabel
 import io.github.dimitrysaf.provenio.core.playback.IosTargetPrimaries
 import io.github.dimitrysaf.provenio.core.playback.IosTargetTransfer
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
+import io.github.dimitrysaf.provenio.shell.playerWindowSupported
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsUiState
 import io.github.dimitrysaf.provenio.core.playback.skip.NextEpisodeThresholdMode
 import io.github.dimitrysaf.provenio.core.playback.STREAM_AUTO_PLAY_TIMEOUT_VALUES
@@ -272,6 +273,14 @@ private fun PlayerGroup(
                 checked = { settings.showPlayerControlLabels },
                 onCheckedChange = PlayerSettingsRepository::setShowPlayerControlLabels,
             )
+            if (playerWindowSupported) {
+                switchRow(
+                    title = stringResource(Res.string.playback_player_in_separate_window),
+                    description = stringResource(Res.string.playback_player_in_separate_window_sub),
+                    checked = { settings.playerInSeparateWindow },
+                    onCheckedChange = PlayerSettingsRepository::setPlayerInSeparateWindow,
+                )
+            }
             switchRow(
                 title = stringResource(Res.string.settings_playback_pause_overlay),
                 description = stringResource(Res.string.settings_playback_pause_overlay_description),

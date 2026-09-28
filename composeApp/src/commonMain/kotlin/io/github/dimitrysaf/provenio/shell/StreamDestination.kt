@@ -74,11 +74,10 @@ internal fun StreamDestination(
     // Opens the player, replacing this sheet when the stream was picked for the user.
     fun openPlayer(playerLaunch: PlayerLaunch, replaceStreamRoute: Boolean) {
         val launchId = PlayerLaunchStore.put(playerLaunch)
-        navController.navigate(PlayerRoute(launchId = launchId, title = playerLaunch.title)) {
-            if (replaceStreamRoute) {
-                popUpTo<StreamRoute> { inclusive = true }
-            }
-        }
+        navController.openPlayer(
+            route = PlayerRoute(launchId = launchId, title = playerLaunch.title),
+            replaceStreamRoute = replaceStreamRoute,
+        )
     }
 
     fun openP2pStream(

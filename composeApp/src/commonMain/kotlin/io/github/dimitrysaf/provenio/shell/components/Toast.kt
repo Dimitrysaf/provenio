@@ -43,10 +43,14 @@ object ToastController {
 @Composable
 fun AppSnackbarHost(modifier: Modifier = Modifier) {
     val hostState = remember { SnackbarHostState() }
-    LaunchedEffect(hostState) {
-        // A newer message replaces the one on screen instead of queueing behind it.
-        ToastController.incoming.collectLatest { message ->
-            hostState.showSnackbar(message = message, duration = SnackbarDuration.Short)
+    val windowToken = LocalWindowToken.current
+    LaunchedEffect(hostState, windowToken) {
+        ActiveWindow.token.collectLatest { activeWindow ->
+            if (activeWindow != null && windowToken != null && activeWindow !== windowToken) return@collectLatest
+            // A newer message replaces the one on screen instead of queueing behind it.
+            ToastController.incoming.collectLatest { message ->
+                hostState.showSnackbar(message = message, duration = SnackbarDuration.Short)
+            }
         }
     }
     LaunchedEffect(hostState) {

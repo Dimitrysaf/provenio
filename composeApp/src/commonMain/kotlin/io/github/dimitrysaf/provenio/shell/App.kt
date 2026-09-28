@@ -102,6 +102,11 @@ internal fun AppEnvironment(content: @Composable () -> Unit) {
             .configurePlatformImageLoader()
             .build()
     }
+    AppThemeEnvironment(content = content)
+}
+
+@Composable
+internal fun AppThemeEnvironment(content: @Composable () -> Unit) {
     val amoledEnabled by remember {
         ThemeSettingsRepository.ensureLoaded()
         ThemeSettingsRepository.amoledEnabled

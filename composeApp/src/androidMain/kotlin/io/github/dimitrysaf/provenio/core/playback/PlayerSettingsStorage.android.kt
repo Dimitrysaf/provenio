@@ -22,6 +22,7 @@ actual object PlayerSettingsStorage {
     private const val showLoadingOverlayKey = "show_loading_overlay"
     private const val showPlayerLoadingStatusKey = "show_player_loading_status"
     private const val showPlayerControlLabelsKey = "show_player_control_labels"
+    private const val playerInSeparateWindowKey = "player_in_separate_window"
     private const val pauseOverlayEnabledKey = "pause_overlay_enabled"
     private const val showParentalGuideKey = "show_parental_guide"
     private const val resizeModeKey = "resize_mode"
@@ -95,6 +96,7 @@ actual object PlayerSettingsStorage {
         showLoadingOverlayKey,
         showPlayerLoadingStatusKey,
         showPlayerControlLabelsKey,
+        playerInSeparateWindowKey,
         pauseOverlayEnabledKey,
         showParentalGuideKey,
         resizeModeKey,
@@ -205,6 +207,16 @@ actual object PlayerSettingsStorage {
 
     actual fun saveShowPlayerControlLabels(enabled: Boolean) {
         preferences?.edit()?.putBoolean(ProfileScopedKey.of(showPlayerControlLabelsKey), enabled)?.apply()
+    }
+
+    actual fun loadPlayerInSeparateWindow(): Boolean? =
+        preferences?.let { sharedPreferences ->
+            val key = ProfileScopedKey.of(playerInSeparateWindowKey)
+            if (sharedPreferences.contains(key)) sharedPreferences.getBoolean(key, true) else null
+        }
+
+    actual fun savePlayerInSeparateWindow(enabled: Boolean) {
+        preferences?.edit()?.putBoolean(ProfileScopedKey.of(playerInSeparateWindowKey), enabled)?.apply()
     }
 
     actual fun loadPauseOverlayEnabled(): Boolean? =
@@ -1145,6 +1157,7 @@ actual object PlayerSettingsStorage {
         loadShowLoadingOverlay()?.let { put(showLoadingOverlayKey, encodeSyncBoolean(it)) }
         loadShowPlayerLoadingStatus()?.let { put(showPlayerLoadingStatusKey, encodeSyncBoolean(it)) }
         loadShowPlayerControlLabels()?.let { put(showPlayerControlLabelsKey, encodeSyncBoolean(it)) }
+        loadPlayerInSeparateWindow()?.let { put(playerInSeparateWindowKey, encodeSyncBoolean(it)) }
         loadPauseOverlayEnabled()?.let { put(pauseOverlayEnabledKey, encodeSyncBoolean(it)) }
         loadShowParentalGuide()?.let { put(showParentalGuideKey, encodeSyncBoolean(it)) }
         loadResizeMode()?.let { put(resizeModeKey, encodeSyncString(it)) }
@@ -1224,6 +1237,7 @@ actual object PlayerSettingsStorage {
         payload.decodeSyncBoolean(showLoadingOverlayKey)?.let(::saveShowLoadingOverlay)
         payload.decodeSyncBoolean(showPlayerLoadingStatusKey)?.let(::saveShowPlayerLoadingStatus)
         payload.decodeSyncBoolean(showPlayerControlLabelsKey)?.let(::saveShowPlayerControlLabels)
+        payload.decodeSyncBoolean(playerInSeparateWindowKey)?.let(::savePlayerInSeparateWindow)
         payload.decodeSyncBoolean(pauseOverlayEnabledKey)?.let(::savePauseOverlayEnabled)
         payload.decodeSyncBoolean(showParentalGuideKey)?.let(::saveShowParentalGuide)
         payload.decodeSyncString(resizeModeKey)?.let(::saveResizeMode)

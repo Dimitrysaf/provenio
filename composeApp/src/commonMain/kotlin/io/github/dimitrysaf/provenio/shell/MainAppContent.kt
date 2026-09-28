@@ -341,6 +341,14 @@ internal fun MainAppContent(
     ForegroundSyncEffect(enabled = ownsAppRuntime)
     val activePlaybackProfileId = profileState.activeProfile?.profileIndex ?: ProfileRepository.activeProfileId
     val playback = rememberAppPlayback(navController, activePlaybackProfileId)
+    if (ownsAppRuntime) {
+        DetachedPlayerHost(
+            navController = navController,
+            playback = playback,
+            externalPlayerId = playerSettingsUiState.externalPlayerId,
+            profileId = activePlaybackProfileId,
+        )
+    }
     val continueWatchingPreferencesUiState by remember {
         ContinueWatchingPreferencesRepository.ensureLoaded()
         ContinueWatchingPreferencesRepository.uiState

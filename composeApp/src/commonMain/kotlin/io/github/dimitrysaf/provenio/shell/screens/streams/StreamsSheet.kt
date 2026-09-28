@@ -1,5 +1,10 @@
 package io.github.dimitrysaf.provenio.shell.screens.streams
 
+import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingState
+import io.github.dimitrysaf.provenio.core.watch.watched.WatchedRepository
+import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
+import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
+import androidx.compose.ui.draw.blur
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -151,6 +156,29 @@ fun StreamsSheet(
         startFromBeginning = startFromBeginning,
     )
     val effectiveResumePositionMs = resumeState.positionMs
+    val metaScreenSettings by remember {
+        MetaScreenSettingsRepository.ensureLoaded()
+        MetaScreenSettingsRepository.uiState
+    }.collectAsStateWithLifecycle()
+    val watchedUiState by remember {
+        WatchedRepository.ensureLoaded()
+        WatchedRepository.uiState
+    }.collectAsStateWithLifecycle()
+    val blurEpisodeThumbnail = metaScreenSettings.blurUnwatchedEpisodes &&
+        seasonNumber != null &&
+        episodeNumber != null &&
+        episodeProgress?.isEffectivelyCompleted != true &&
+        !WatchingState.isEpisodeWatched(
+            watchedKeys = watchedUiState.watchedKeys,
+            metaType = parentMetaType,
+            metaId = parentMetaId,
+            episode = MetaVideo(
+                id = videoId,
+                title = episodeTitle.orEmpty(),
+                season = seasonNumber,
+                episode = episodeNumber,
+            ),
+        )
     val effectiveResumeProgressFraction = resumeState.progressFraction
 
     LaunchedEffect(type, videoId, seasonNumber, episodeNumber, manualSelection, preparing) {
@@ -207,6 +235,7 @@ fun StreamsSheet(
                 imageUrl = episodeThumbnail?.takeIf { it.isNotBlank() }
                     ?: background?.takeIf { it.isNotBlank() }
                     ?: poster,
+                blurred = blurEpisodeThumbnail,
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -501,6 +530,7 @@ internal fun downloadStream(
 @Composable
 private fun StreamsSheetThumbnail(
     imageUrl: String?,
+    blurred: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -514,10 +544,12 @@ private fun StreamsSheetThumbnail(
             AsyncImage(
                 model = imageUrl,
                 contentDescription = null,
-                modifier = Modifier.size(
-                    width = StreamsSheetThumbnailWidth,
-                    height = StreamsSheetThumbnailHeight,
-                ),
+                modifier = Modifier
+                    .size(
+                        width = StreamsSheetThumbnailWidth,
+                        height = StreamsSheetThumbnailHeight,
+                    )
+                    .then(if (blurred) Modifier.blur(12.dp) else Modifier),
                 contentScale = ContentScale.Crop,
             )
         }

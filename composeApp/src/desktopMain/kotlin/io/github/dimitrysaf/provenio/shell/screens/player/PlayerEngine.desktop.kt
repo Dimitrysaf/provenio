@@ -89,7 +89,7 @@ actual fun PlatformPlayerSurface(
     }
 
     LaunchedEffect(player, playWhenReady) { player.setPaused(!playWhenReady) }
-    val windowVisible by DesktopWindowState.isVisible.collectAsState()
+    val windowVisible by DesktopWindowState.isPlayerVisible.collectAsState()
     LaunchedEffect(player, windowVisible) { if (!windowVisible) player.setPaused(true) }
     LaunchedEffect(player, resizeMode) { player.setResizeMode(resizeMode) }
 

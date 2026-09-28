@@ -12,6 +12,7 @@ data class PlayerSettingsUiState(
     val showLoadingOverlay: Boolean = true,
     val showPlayerLoadingStatus: Boolean = true,
     val showPlayerControlLabels: Boolean = false,
+    val playerInSeparateWindow: Boolean = true,
     val pauseOverlayEnabled: Boolean = true,
     val showParentalGuide: Boolean = true,
     val resizeMode: PlayerResizeMode = PlayerResizeMode.Fit,
@@ -81,6 +82,7 @@ object PlayerSettingsRepository {
     private var showLoadingOverlay = true
     private var showPlayerLoadingStatus = true
     private var showPlayerControlLabels = false
+    private var playerInSeparateWindow = true
     private var pauseOverlayEnabled = true
     private var showParentalGuide = true
     private var resizeMode = PlayerResizeMode.Fit
@@ -155,6 +157,7 @@ object PlayerSettingsRepository {
         showLoadingOverlay = true
         showPlayerLoadingStatus = true
         showPlayerControlLabels = false
+        playerInSeparateWindow = true
         pauseOverlayEnabled = true
         showParentalGuide = true
         resizeMode = PlayerResizeMode.Fit
@@ -222,6 +225,7 @@ object PlayerSettingsRepository {
         showLoadingOverlay = PlayerSettingsStorage.loadShowLoadingOverlay() ?: true
         showPlayerLoadingStatus = PlayerSettingsStorage.loadShowPlayerLoadingStatus() ?: true
         showPlayerControlLabels = PlayerSettingsStorage.loadShowPlayerControlLabels() ?: false
+        playerInSeparateWindow = PlayerSettingsStorage.loadPlayerInSeparateWindow() ?: true
         pauseOverlayEnabled = PlayerSettingsStorage.loadPauseOverlayEnabled() ?: true
         showParentalGuide = PlayerSettingsStorage.loadShowParentalGuide() ?: true
         resizeMode = PlayerSettingsStorage.loadResizeMode()
@@ -369,6 +373,14 @@ object PlayerSettingsRepository {
         showPlayerLoadingStatus = enabled
         publish()
         PlayerSettingsStorage.saveShowPlayerLoadingStatus(enabled)
+    }
+
+    fun setPlayerInSeparateWindow(enabled: Boolean) {
+        ensureLoaded()
+        if (playerInSeparateWindow == enabled) return
+        playerInSeparateWindow = enabled
+        publish()
+        PlayerSettingsStorage.savePlayerInSeparateWindow(enabled)
     }
 
     fun setShowPlayerControlLabels(enabled: Boolean) {
@@ -928,6 +940,7 @@ object PlayerSettingsRepository {
             showLoadingOverlay = showLoadingOverlay,
             showPlayerLoadingStatus = showPlayerLoadingStatus,
             showPlayerControlLabels = showPlayerControlLabels,
+            playerInSeparateWindow = playerInSeparateWindow,
             pauseOverlayEnabled = pauseOverlayEnabled,
             showParentalGuide = showParentalGuide,
             resizeMode = resizeMode,

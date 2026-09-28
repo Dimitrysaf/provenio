@@ -429,7 +429,7 @@ internal class AppPlayback(
 
     private fun openPlayer(playerLaunch: PlayerLaunch) {
         val launchId = PlayerLaunchStore.put(playerLaunch)
-        navController.navigate(PlayerRoute(launchId = launchId, title = playerLaunch.title))
+        navController.openPlayer(PlayerRoute(launchId = launchId, title = playerLaunch.title))
     }
 
     private fun contentPlayAction(manualSelection: Boolean): ContentPlayAction =
