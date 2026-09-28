@@ -1,6 +1,9 @@
 #!/bin/sh
 # Starts the desktop app on the bundled Java runtime. The engine's JNI library sits in the
 # resources directory the app loads native code from.
+if [ -f /app/jre/lib/libjsig.so ]; then
+    export LD_PRELOAD="/app/jre/lib/libjsig.so${LD_PRELOAD:+:$LD_PRELOAD}"
+fi
 exec /app/jre/bin/java \
     -Xmx1g \
     -Dcompose.application.resources.dir=/app/lib/provenio \
