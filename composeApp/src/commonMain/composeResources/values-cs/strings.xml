@@ -415,11 +415,11 @@
     <string name="compose_settings_page_account">Účet</string>
     <string name="compose_settings_page_addons">Doplňky</string>
     <string name="compose_settings_page_advanced">Pokročilé</string>
-    <string name="compose_settings_page_appearance">Rozvržení</string>
+    <string name="compose_settings_page_appearance">Vzhled</string>
     <string name="compose_settings_page_content_discovery">Obsah &amp; objevování</string>
     <string name="compose_settings_page_continue_watching">Pokračovat ve sledování</string>
     <string name="compose_settings_page_debrid">Připojené služby</string>
-    <string name="compose_settings_page_homescreen">Rozvržení domů</string>
+    <string name="compose_settings_page_homescreen">Domovská obrazovka</string>
     <string name="compose_settings_page_integrations">Integrace</string>
     <string name="compose_settings_page_licenses_attributions">Licence &amp; autorství</string>
     <string name="compose_settings_page_mdblist_ratings">Hodnocení MDBList</string>
@@ -428,7 +428,7 @@
     <string name="compose_settings_page_notifications">Oznámení</string>
     <string name="compose_settings_page_playback">Přehrávání</string>
     <string name="compose_settings_page_plugins">Pluginy</string>
-    <string name="compose_settings_page_poster_customization">Styl karty plakátu</string>
+    <string name="compose_settings_page_poster_customization">Styly karet</string>
     <string name="compose_settings_page_root">Nastavení</string>
     <string name="compose_settings_page_streams">Streamy</string>
     <string name="settings_appearance_section_streams">STREAMY</string>
@@ -452,7 +452,7 @@
     <string name="compose_settings_root_notifications_description">Správa upozornění na vydání epizod a odeslání zkušebního oznámení.</string>
     <string name="compose_settings_root_streams_description">Zobrazení výsledků streamů a pravidla pro URL odznaků.</string>
     <string name="compose_settings_root_switch_profile_description">Změnit na jiný profil.</string>
-    <string name="compose_settings_root_switch_profile_title">Přepnout profil</string>
+    <string name="compose_settings_root_switch_profile_title">Profily</string>
     <string name="compose_settings_root_trakt_description">Otevřít obrazovku připojení Trakt</string>
     <string name="settings_search_empty">Nebylo nalezeno žádné nastavení.</string>
     <string name="settings_search_placeholder">Hledat v nastavení...</string>
@@ -548,8 +548,8 @@
     <string name="settings_appearance_app_language_sheet_title">Vybrat jazyk</string>
     <string name="settings_appearance_continue_watching_description">Nastavení pro sekci Pokračovat ve sledování.</string>
     <string name="settings_appearance_poster_customization_description">Vyladit šířku karty a poloměr rohů.</string>
-    <string name="settings_appearance_section_display">ZOBRAZENÍ</string>
-    <string name="settings_appearance_section_home">DOMŮ</string>
+    <string name="settings_appearance_section_display">Uživatelské rozhraní</string>
+    <string name="settings_appearance_section_home">Sekce</string>
     <string name="settings_appearance_section_theme">MOTIV</string>
     <string name="settings_homescreen_collection_with_addon">Sbírka • %1$s</string>
     <string name="settings_homescreen_display_name">Zobrazovaný název</string>

@@ -411,7 +411,7 @@
     <string name="compose_settings_page_content_discovery">Contenu et découverte</string>
     <string name="compose_settings_page_continue_watching">Continuer à regarder</string>
     <string name="compose_settings_page_debrid">Services connectés</string>
-    <string name="compose_settings_page_homescreen">Écran d’accueil</string>
+    <string name="compose_settings_page_homescreen">Écran d\'accueil</string>
     <string name="compose_settings_page_integrations">Intégrations</string>
     <string name="compose_settings_page_licenses_attributions">Licences et attributions</string>
     <string name="compose_settings_page_mdblist_ratings">Notes MDBList</string>
@@ -420,7 +420,7 @@
     <string name="compose_settings_page_notifications">Notifications</string>
     <string name="compose_settings_page_playback">Lecture</string>
     <string name="compose_settings_page_plugins">Plugins</string>
-    <string name="compose_settings_page_poster_customization">Personnalisation des affiches</string>
+    <string name="compose_settings_page_poster_customization">Styles de cartes</string>
     <string name="compose_settings_page_root">Paramètres</string>
     <string name="compose_settings_page_streams">Streams</string>
     <string name="settings_appearance_section_streams">STREAMS</string>
@@ -444,7 +444,7 @@
     <string name="compose_settings_root_notifications_description">Gérez les alertes de sortie d’épisodes et envoyez une notification de test.</string>
     <string name="compose_settings_root_streams_description">Affichage des résultats de streams et règles d’URL de badges.</string>
     <string name="compose_settings_root_switch_profile_description">Basculer vers un profil différent.</string>
-    <string name="compose_settings_root_switch_profile_title">Changer de profil</string>
+    <string name="compose_settings_root_switch_profile_title">Profils</string>
     <string name="compose_settings_root_trakt_description">Connectez Trakt, synchronisez des listes et enregistrez des titres directement dans Trakt.</string>
     <string name="settings_search_empty">Aucun paramètre trouvé.</string>
     <string name="settings_search_placeholder">Rechercher dans les paramètres…</string>
@@ -558,8 +558,8 @@
     <string name="settings_appearance_app_language_sheet_title">Choisir la langue</string>
     <string name="settings_appearance_continue_watching_description">Afficher, masquer et ajuster le bandeau Continuer à regarder.</string>
     <string name="settings_appearance_poster_customization_description">Ajuste la largeur des cartes et le rayon des coins.</string>
-    <string name="settings_appearance_section_display">AFFICHAGE</string>
-    <string name="settings_appearance_section_home">ACCUEIL</string>
+    <string name="settings_appearance_section_display">Interface utilisateur</string>
+    <string name="settings_appearance_section_home">Sections</string>
     <string name="settings_appearance_section_theme">THÈME</string>
     <string name="settings_homescreen_collection_with_addon">Collection • %1$s</string>
     <string name="settings_homescreen_display_name">Nom affiché</string>

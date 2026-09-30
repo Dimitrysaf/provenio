@@ -56,7 +56,6 @@ import provenio.composeapp.generated.resources.settings_tracking_data_sources
 import provenio.composeapp.generated.resources.settings_tracking_account_library_description
 import provenio.composeapp.generated.resources.settings_tracking_account_progress_description
 import provenio.composeapp.generated.resources.settings_tracking_progress_refresh_failed
-import provenio.composeapp.generated.resources.settings_tracking_services
 import provenio.composeapp.generated.resources.settings_tracking_simkl_library_description
 import provenio.composeapp.generated.resources.settings_tracking_simkl_progress_description
 import provenio.composeapp.generated.resources.settings_tracking_source_fallback
@@ -65,7 +64,6 @@ import provenio.composeapp.generated.resources.settings_tracking_trakt_library_d
 import provenio.composeapp.generated.resources.settings_tracking_trakt_progress_description
 import provenio.composeapp.generated.resources.settings_tracking_trakt_progress_required
 import provenio.composeapp.generated.resources.settings_tracking_trakt_recommendations_description
-import provenio.composeapp.generated.resources.settings_tracking_viewing_discovery
 import provenio.composeapp.generated.resources.settings_tracking_anime_id_dialog_subtitle
 import provenio.composeapp.generated.resources.settings_tracking_anime_id_dialog_title
 import provenio.composeapp.generated.resources.settings_tracking_anime_id_imdb
@@ -78,7 +76,6 @@ import provenio.composeapp.generated.resources.settings_tracking_anime_id_mal
 import provenio.composeapp.generated.resources.settings_tracking_anime_id_mal_description
 import provenio.composeapp.generated.resources.settings_tracking_anime_id_subtitle
 import provenio.composeapp.generated.resources.settings_tracking_anime_id_title
-import provenio.composeapp.generated.resources.settings_tracking_anime_section
 import provenio.composeapp.generated.resources.local_sync_title
 import provenio.composeapp.generated.resources.settings_trakt_comments
 import provenio.composeapp.generated.resources.settings_trakt_comments_description
@@ -126,15 +123,29 @@ internal fun LazyListScope.trackingSettingsContent(
 
     item {
         SettingsSection(
-            title = stringResource(Res.string.settings_tracking_services),
+            title = TrackingBrand.SIMKL.displayName,
             isTablet = isTablet,
         ) {
-            TrackingProviderCards(
-                isTablet = isTablet,
-                traktUiState = traktUiState,
+            SimklTrackerSection(
                 simklUiState = simklUiState,
-                showTrakt = showTrakt,
+                settingsUiState = settingsUiState,
             )
+        }
+    }
+
+    if (showTrakt) {
+        item {
+            SettingsSection(
+                title = TrackingBrand.TRAKT.displayName,
+                isTablet = isTablet,
+            ) {
+                TraktTrackerSection(
+                    traktUiState = traktUiState,
+                    settingsUiState = settingsUiState,
+                    commentsEnabled = commentsEnabled,
+                    onCommentsEnabledChange = onCommentsEnabledChange,
+                )
+            }
         }
     }
 
@@ -161,37 +172,6 @@ internal fun LazyListScope.trackingSettingsContent(
                 simklConnected = simklUiState.mode == SimklConnectionMode.CONNECTED,
                 showTrakt = showTrakt,
             )
-        }
-    }
-
-    if (traktConnected) {
-        item {
-            SettingsSection(
-                title = stringResource(Res.string.settings_tracking_viewing_discovery),
-                isTablet = isTablet,
-            ) {
-                TrackingViewingAndDiscovery(
-                    isTablet = isTablet,
-                    settingsUiState = settingsUiState,
-                    traktConnected = true,
-                    commentsEnabled = commentsEnabled,
-                    onCommentsEnabledChange = onCommentsEnabledChange,
-                )
-            }
-        }
-    }
-
-    if (simklUiState.mode == SimklConnectionMode.CONNECTED) {
-        item {
-            SettingsSection(
-                title = stringResource(Res.string.settings_tracking_anime_section),
-                isTablet = isTablet,
-            ) {
-                AnimeIdPreferenceSection(
-                    isTablet = isTablet,
-                    settingsUiState = settingsUiState,
-                )
-            }
         }
     }
 }
@@ -307,13 +287,13 @@ private enum class TrackingViewingPicker {
 }
 
 @Composable
-private fun TrackingViewingAndDiscovery(
-    isTablet: Boolean,
+private fun TraktTrackerSection(
+    traktUiState: TraktAuthUiState,
     settingsUiState: TrackingSettingsUiState,
-    traktConnected: Boolean,
     commentsEnabled: Boolean,
     onCommentsEnabledChange: (Boolean) -> Unit,
 ) {
+    val traktConnected = traktUiState.mode == TraktConnectionMode.CONNECTED
     var activePickerName by rememberSaveable { mutableStateOf<String?>(null) }
     val activePicker = activePickerName?.let(TrackingViewingPicker::valueOf)
     val traktProgressActive = traktConnected && settingsUiState.watchProgressSource == WatchProgressSource.TRAKT
@@ -330,40 +310,43 @@ private fun TrackingViewingAndDiscovery(
     } else {
         null
     }
-    val connectTraktFirst = stringResource(
-        Res.string.settings_tracking_connect_first,
-        TrackingBrand.TRAKT.displayName,
+    val continueWatchingTitle = stringResource(Res.string.trakt_continue_watching_window)
+    val continueWatchingDescription = stringResource(
+        if (traktProgressActive) Res.string.trakt_continue_watching_subtitle
+        else Res.string.settings_tracking_trakt_progress_required,
     )
+    val continueWatchingValue = continueWatchingDaysCapLabel(settingsUiState.continueWatchingDaysCap)
+    val commentsTitle = stringResource(Res.string.settings_trakt_comments)
+    val commentsDescription = stringResource(Res.string.settings_trakt_comments_description)
+    val recommendationsTitle = stringResource(Res.string.trakt_more_like_this_source_title)
+    val recommendationsDescription = stringResource(Res.string.trakt_more_like_this_source_subtitle)
+    val recommendationsValue = moreLikeThisSourceLabel(effectiveRecommendationsSource)
 
-    SettingsList {
-        TrackingPreferenceActionRow(
-            title = stringResource(Res.string.trakt_continue_watching_window),
-            description = stringResource(
-                if (traktProgressActive) Res.string.trakt_continue_watching_subtitle
-                else Res.string.settings_tracking_trakt_progress_required,
-            ),
-            value = continueWatchingDaysCapLabel(settingsUiState.continueWatchingDaysCap),
-            enabled = traktProgressActive,
-            onClick = { activePickerName = TrackingViewingPicker.CONTINUE_WATCHING.name },
-        )
-        switchRow(
-            title = stringResource(Res.string.settings_trakt_comments),
-            description = listOfNotNull(
-                stringResource(Res.string.settings_trakt_comments_description),
-                connectTraktFirst.takeUnless { traktConnected },
-            ).joinToString("\n"),
-            checked = { commentsEnabled },
-            enabled = traktConnected,
-            onCheckedChange = onCommentsEnabledChange,
-        )
-        TrackingPreferenceActionRow(
-            title = stringResource(Res.string.trakt_more_like_this_source_title),
-            description = stringResource(Res.string.trakt_more_like_this_source_subtitle),
-            value = moreLikeThisSourceLabel(effectiveRecommendationsSource),
-            supportingMessage = recommendationsFallback,
-            onClick = { activePickerName = TrackingViewingPicker.MORE_LIKE_THIS.name },
-        )
-    }
+    TraktTrackerCard(
+        uiState = traktUiState,
+        connectedRows = {
+            TrackingPreferenceActionRow(
+                title = continueWatchingTitle,
+                description = continueWatchingDescription,
+                value = continueWatchingValue,
+                enabled = traktProgressActive,
+                onClick = { activePickerName = TrackingViewingPicker.CONTINUE_WATCHING.name },
+            )
+            switchRow(
+                title = commentsTitle,
+                description = commentsDescription,
+                checked = { commentsEnabled },
+                onCheckedChange = onCommentsEnabledChange,
+            )
+            TrackingPreferenceActionRow(
+                title = recommendationsTitle,
+                description = recommendationsDescription,
+                value = recommendationsValue,
+                supportingMessage = recommendationsFallback,
+                onClick = { activePickerName = TrackingViewingPicker.MORE_LIKE_THIS.name },
+            )
+        },
+    )
 
     when (activePicker) {
         TrackingViewingPicker.CONTINUE_WATCHING -> TrackingAdaptivePicker(
@@ -386,9 +369,6 @@ private fun TrackingViewingAndDiscovery(
     }
 }
 
-// Declares rows, so it must not be skippable: see SettingsListScope.
-@Composable
-@NonRestartableComposable
 private fun SettingsListScope.TrackingPreferenceActionRow(
     title: String,
     description: String,
@@ -604,20 +584,26 @@ private fun continueWatchingDaysCapLabel(daysCap: Int): String {
 }
 
 @Composable
-private fun AnimeIdPreferenceSection(
-    isTablet: Boolean,
+private fun SimklTrackerSection(
+    simklUiState: SimklAuthUiState,
     settingsUiState: TrackingSettingsUiState,
 ) {
     var showPicker by rememberSaveable { mutableStateOf(false) }
+    val animeIdTitle = stringResource(Res.string.settings_tracking_anime_id_title)
+    val animeIdDescription = stringResource(Res.string.settings_tracking_anime_id_subtitle)
+    val animeIdValue = animeIdPreferenceLabel(settingsUiState.simklAnimeIdPreference)
 
-    SettingsList {
-        TrackingPreferenceActionRow(
-            title = stringResource(Res.string.settings_tracking_anime_id_title),
-            description = stringResource(Res.string.settings_tracking_anime_id_subtitle),
-            value = animeIdPreferenceLabel(settingsUiState.simklAnimeIdPreference),
-            onClick = { showPicker = true },
-        )
-    }
+    SimklTrackerCard(
+        uiState = simklUiState,
+        connectedRows = {
+            TrackingPreferenceActionRow(
+                title = animeIdTitle,
+                description = animeIdDescription,
+                value = animeIdValue,
+                onClick = { showPicker = true },
+            )
+        },
+    )
 
     if (showPicker) {
         TrackingAdaptivePicker(

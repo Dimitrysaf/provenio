@@ -493,11 +493,11 @@
     <string name="compose_settings_page_account">Tài khoản</string>
     <string name="compose_settings_page_addons">Tiện ích</string>
     <string name="compose_settings_page_advanced">Nâng cao</string>
-    <string name="compose_settings_page_appearance">Bố cục</string>
+    <string name="compose_settings_page_appearance">Giao diện</string>
     <string name="compose_settings_page_content_discovery">Nội dung &amp; Khám phá</string>
     <string name="compose_settings_page_continue_watching">Tiếp tục xem</string>
     <string name="compose_settings_page_debrid">Dịch vụ liên kết</string>
-    <string name="compose_settings_page_homescreen">Bố cục Trang chủ</string>
+    <string name="compose_settings_page_homescreen">Màn hình chính</string>
     <string name="compose_settings_page_integrations">Tích hợp</string>
     <string name="compose_settings_page_licenses_attributions">Giấy phép &amp; Ghi công</string>
     <string name="compose_settings_page_mdblist_ratings">Điểm đánh giá MDBList</string>
@@ -506,7 +506,7 @@
     <string name="compose_settings_page_notifications">Thông báo</string>
     <string name="compose_settings_page_playback">Phát lại</string>
     <string name="compose_settings_page_plugins">Trình mở rộng</string>
-    <string name="compose_settings_page_poster_customization">Kiểu Thẻ Poster</string>
+    <string name="compose_settings_page_poster_customization">Kiểu thẻ</string>
     <string name="compose_settings_page_privacy_policy">Chính sách quyền riêng tư</string>
     <string name="compose_settings_page_root">Cài đặt</string>
     <string name="compose_settings_page_streams">Luồng</string>
@@ -533,7 +533,7 @@
     <string name="compose_settings_root_privacy_policy_description">Tìm hiểu cách Provenio xử lý dữ liệu của bạn</string>
     <string name="compose_settings_root_streams_description">Hiển thị kết quả luồng và các quy tắc URL của nhãn</string>
     <string name="compose_settings_root_switch_profile_description">Chuyển sang hồ sơ khác</string>
-    <string name="compose_settings_root_switch_profile_title">Chuyển hồ sơ</string>
+    <string name="compose_settings_root_switch_profile_title">Hồ sơ</string>
     <string name="compose_settings_root_trakt_description">Mở màn hình kết nối Trakt</string>
     <string name="compose_settings_root_tracking_description">Kết nối các dịch vụ theo dõi và chọn dịch vụ nào được dùng cho Thư viện và Tiếp tục xem.</string>
     <string name="settings_search_empty">Không tìm thấy cài đặt nào.</string>
@@ -664,8 +664,8 @@
     <string name="settings_appearance_app_language_sheet_title">Chọn ngôn ngữ</string>
     <string name="settings_appearance_continue_watching_description">Cài đặt cho mục Tiếp tục Xem</string>
     <string name="settings_appearance_poster_customization_description">Điều chỉnh độ rộng và bo tròn góc của thẻ.</string>
-    <string name="settings_appearance_section_display">HIỂN THỊ</string>
-    <string name="settings_appearance_section_home">TRANG CHỦ</string>
+    <string name="settings_appearance_section_display">Giao diện người dùng</string>
+    <string name="settings_appearance_section_home">Mục</string>
     <string name="settings_appearance_section_theme">CHỦ ĐỀ</string>
     <string name="settings_homescreen_collection_with_addon">Bộ sưu tập • %1$s</string>
     <string name="settings_homescreen_display_name">Tên hiển thị</string>

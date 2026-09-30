@@ -493,7 +493,7 @@
     <string name="compose_settings_page_account">Акаунт</string>
     <string name="compose_settings_page_addons">Добавки</string>
     <string name="compose_settings_page_advanced">Разширени</string>
-    <string name="compose_settings_page_appearance">Оформление</string>
+    <string name="compose_settings_page_appearance">Външен вид</string>
     <string name="compose_settings_page_content_discovery">Съдържание и откриване</string>
     <string name="compose_settings_page_continue_watching">Продължи гледането</string>
     <string name="compose_settings_page_debrid">Свързани услуги</string>
@@ -506,7 +506,7 @@
     <string name="compose_settings_page_notifications">Известия</string>
     <string name="compose_settings_page_playback">Възпроизвеждане</string>
     <string name="compose_settings_page_plugins">Плъгини</string>
-    <string name="compose_settings_page_poster_customization">Стил на картичката с постер</string>
+    <string name="compose_settings_page_poster_customization">Стилове на картите</string>
     <string name="compose_settings_page_privacy_policy">Настройки на поверителността</string>
     <string name="compose_settings_page_root">Настройки</string>
     <string name="compose_settings_page_streams">Източници</string>
@@ -533,7 +533,7 @@
     <string name="compose_settings_root_privacy_policy_description">Научете как Provenio използва вашите данни</string>
     <string name="compose_settings_root_streams_description">Показване на резултатите от източници и правила за URL на значки.</string>
     <string name="compose_settings_root_switch_profile_description">Избери профил за гледане.</string>
-    <string name="compose_settings_root_switch_profile_title">Смени профила</string>
+    <string name="compose_settings_root_switch_profile_title">Профили</string>
     <string name="compose_settings_root_trakt_description">Отвори екрана за връзка с Trakt</string>
     <string name="compose_settings_root_tracking_description">Свържете услуги за проследяване и изберете коя да осигури данни за секции Библиотека и Продължи гледането</string>
     <string name="settings_search_empty">Не са намерени настройки.</string>
@@ -664,8 +664,8 @@
     <string name="settings_appearance_app_language_sheet_title">Избери език</string>
     <string name="settings_appearance_continue_watching_description">Настройки за раздела „Продължи гледането".</string>
     <string name="settings_appearance_poster_customization_description">Настрой ширината на картичката и радиуса на ъглите.</string>
-    <string name="settings_appearance_section_display">ДИСПЛЕЙ</string>
-    <string name="settings_appearance_section_home">НАЧАЛО</string>
+    <string name="settings_appearance_section_display">Потребителски интерфейс</string>
+    <string name="settings_appearance_section_home">Раздели</string>
     <string name="settings_appearance_section_theme">ТЕМА</string>
     <string name="settings_homescreen_collection_with_addon">Колекция • %1$s</string>
     <string name="settings_homescreen_display_name">Показвано име</string>

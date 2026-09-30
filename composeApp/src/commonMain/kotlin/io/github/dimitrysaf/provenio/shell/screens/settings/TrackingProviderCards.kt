@@ -5,7 +5,6 @@ import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -127,11 +126,9 @@ import io.github.dimitrysaf.provenio.core.settings.TrackingConnectionCardMode
 import io.github.dimitrysaf.provenio.core.settings.toTrackingConnectionCardMode
 
 @Composable
-internal fun TrackingProviderCards(
-    isTablet: Boolean,
-    traktUiState: TraktAuthUiState,
-    simklUiState: SimklAuthUiState,
-    showTrakt: Boolean,
+internal fun SimklTrackerCard(
+    uiState: SimklAuthUiState,
+    connectedRows: (SettingsListScope.() -> Unit)? = null,
 ) {
     val syncState by remember {
         SimklSyncRepository.ensureLoaded()
@@ -139,60 +136,26 @@ internal fun TrackingProviderCards(
     }.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var showSyncInfo by rememberSaveable { mutableStateOf(false) }
-    val onSimklSyncRequested: () -> Unit = {
-        scope.launch {
-            WatchProgressSourceCoordinator.refreshProviderAndActiveSource(
-                profileId = ProfileRepository.activeProfileId,
-                providerId = TrackingProviderId.SIMKL,
-                refreshProvider = {
-                    SimklSyncRepository.refresh(TrackingRefreshIntent.USER_INITIATED)
-                },
-            )
-        }
-    }
 
-    // Simkl is the tracker the app is built around, so it always leads; Trakt joins only when asked for.
-    val simklCard: @Composable (Modifier) -> Unit = { cardModifier ->
-        SimklProviderCard(
-            uiState = simklUiState,
-            isSyncing = syncState.isLoading,
-            syncErrorMessage = syncState.errorMessage,
-            onSyncRequested = onSimklSyncRequested,
-            onInfoRequested = { showSyncInfo = true },
-            modifier = cardModifier,
-        )
-    }
-
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val useTwoColumns = showTrakt && maxWidth >= 600.dp
-        if (useTwoColumns) {
-            // Each list is as tall as its own rows, so neither is stretched to match the other.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.Top,
-            ) {
-                simklCard(Modifier.weight(1f))
-                TraktProviderCard(
-                    uiState = traktUiState,
-                    modifier = Modifier.weight(1f),
+    SimklProviderCard(
+        uiState = uiState,
+        isSyncing = syncState.isLoading,
+        syncErrorMessage = syncState.errorMessage,
+        onSyncRequested = {
+            scope.launch {
+                WatchProgressSourceCoordinator.refreshProviderAndActiveSource(
+                    profileId = ProfileRepository.activeProfileId,
+                    providerId = TrackingProviderId.SIMKL,
+                    refreshProvider = {
+                        SimklSyncRepository.refresh(TrackingRefreshIntent.USER_INITIATED)
+                    },
                 )
             }
-        } else {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(if (isTablet) 16.dp else 12.dp),
-            ) {
-                simklCard(Modifier.fillMaxWidth())
-                if (showTrakt) {
-                    TraktProviderCard(
-                        uiState = traktUiState,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-        }
-    }
+        },
+        onInfoRequested = { showSyncInfo = true },
+        connectedRows = connectedRows,
+        modifier = Modifier.fillMaxWidth(),
+    )
 
     if (showSyncInfo) {
         SimklSyncInfoDialog(onDismiss = { showSyncInfo = false })
@@ -200,8 +163,21 @@ internal fun TrackingProviderCards(
 }
 
 @Composable
+internal fun TraktTrackerCard(
+    uiState: TraktAuthUiState,
+    connectedRows: (SettingsListScope.() -> Unit)? = null,
+) {
+    TraktProviderCard(
+        uiState = uiState,
+        connectedRows = connectedRows,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
 private fun TraktProviderCard(
     uiState: TraktAuthUiState,
+    connectedRows: (SettingsListScope.() -> Unit)?,
     modifier: Modifier,
 ) {
     TrackingProviderCard(
@@ -233,6 +209,7 @@ private fun TraktProviderCard(
         },
         onCancelAuthorization = TraktAuthRepository::onCancelAuthorization,
         onDisconnect = TraktAuthRepository::onDisconnectRequested,
+        connectedRows = connectedRows,
         modifier = modifier,
     )
 }
@@ -244,6 +221,7 @@ private fun SimklProviderCard(
     syncErrorMessage: String?,
     onSyncRequested: () -> Unit,
     onInfoRequested: () -> Unit,
+    connectedRows: (SettingsListScope.() -> Unit)?,
     modifier: Modifier,
 ) {
     TrackingProviderCard(
@@ -279,6 +257,7 @@ private fun SimklProviderCard(
         onSyncRequested = onSyncRequested,
         onInfoRequested = onInfoRequested,
         onDisconnect = SimklAuthRepository::onDisconnectRequested,
+        connectedRows = connectedRows,
         modifier = modifier,
     )
 }
@@ -320,6 +299,7 @@ private fun TrackingProviderCard(
     onSyncRequested: (() -> Unit)? = null,
     onInfoRequested: (() -> Unit)? = null,
     onDisconnect: () -> Unit,
+    connectedRows: (SettingsListScope.() -> Unit)? = null,
 ) {
     val uriHandler = LocalUriHandler.current
     val failedOpenBrowserMessage = stringResource(Res.string.settings_trakt_failed_open_browser)
@@ -382,6 +362,7 @@ private fun TrackingProviderCard(
                         onClick = onInfoRequested,
                     )
                 }
+                connectedRows?.invoke(this)
             }
 
             TrackingConnectionCardMode.AWAITING_APPROVAL -> {

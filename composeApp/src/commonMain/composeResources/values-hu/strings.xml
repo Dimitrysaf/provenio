@@ -375,11 +375,11 @@
     <string name="compose_settings_category_general">Általános</string>
     <string name="compose_settings_page_account">Fiók</string>
     <string name="compose_settings_page_addons">Kiegészítők</string>
-    <string name="compose_settings_page_appearance">Elrendezés</string>
+    <string name="compose_settings_page_appearance">Megjelenés</string>
     <string name="compose_settings_page_content_discovery">Tartalom és felfedezés</string>
     <string name="compose_settings_page_continue_watching">Nézés folytatása</string>
     <string name="compose_settings_page_debrid">Debrid</string>
-    <string name="compose_settings_page_homescreen">Kezdőlap elrendezése</string>
+    <string name="compose_settings_page_homescreen">Kezdőképernyő</string>
     <string name="compose_settings_page_integrations">Integrációk</string>
     <string name="compose_settings_page_licenses_attributions">Licencek és köszönetnyilvánítások</string>
     <string name="compose_settings_page_mdblist_ratings">MDBList értékelések</string>
@@ -388,7 +388,7 @@
     <string name="compose_settings_page_notifications">Értesítések</string>
     <string name="compose_settings_page_playback">Lejátszás</string>
     <string name="compose_settings_page_plugins">Beépülő modulok</string>
-    <string name="compose_settings_page_poster_customization">Poszterkártya stílusa</string>
+    <string name="compose_settings_page_poster_customization">Kártyastílusok</string>
     <string name="compose_settings_page_root">Beállítások</string>
     <string name="compose_settings_page_tmdb_enrichment">TMDB adatbővítés</string>
     <string name="compose_settings_page_trakt">Trakt</string>
@@ -407,7 +407,7 @@
     <string name="compose_settings_root_integrations_description">Elérhető integrációk kezelése</string>
     <string name="compose_settings_root_notifications_description">Epizódok megjelenési értesítéseinek kezelése és teszt értesítés küldése</string>
     <string name="compose_settings_root_switch_profile_description">Váltás egy másik profilra</string>
-    <string name="compose_settings_root_switch_profile_title">Profilváltás</string>
+    <string name="compose_settings_root_switch_profile_title">Profilok</string>
     <string name="compose_settings_root_trakt_description">A Trakt kapcsolat ablak megnyitása</string>
     <string name="settings_search_empty">Nem találhatók beállítások.</string>
     <string name="settings_search_placeholder">Beállítások keresése...</string>
@@ -491,8 +491,8 @@
     <string name="settings_appearance_app_language_sheet_title">Nyelv választása</string>
     <string name="settings_appearance_continue_watching_description">A Nézés folytatása sor beállításai.</string>
     <string name="settings_appearance_poster_customization_description">Kártyaszélesség és sarokkerekítés finomhangolása.</string>
-    <string name="settings_appearance_section_display">MEGJELENÍTÉS</string>
-    <string name="settings_appearance_section_home">KEZDŐLAP</string>
+    <string name="settings_appearance_section_display">Felhasználói felület</string>
+    <string name="settings_appearance_section_home">Szakaszok</string>
     <string name="settings_appearance_section_theme">TÉMA</string>
     <string name="settings_homescreen_collection_with_addon">Gyűjtemény • %1$s</string>
     <string name="settings_homescreen_display_name">Megjelenítendő név</string>

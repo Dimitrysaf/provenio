@@ -192,6 +192,7 @@ internal fun LazyListScope.streamGroups(
             is StreamListEntry.Addon -> StreamGroupRow(
                 group = entry.group,
                 expanded = entry.expanded,
+                showAddonLogo = showAddonLogo,
                 shapes = shapes,
                 onClick = { expansion.toggle(entry.group.addonId) },
                 modifier = rowModifier,
@@ -209,7 +210,6 @@ internal fun LazyListScope.streamGroups(
                     enabled = isSelectable || isUnsupportedTorrentStream,
                     appendInstantServiceToDefaultName = appendInstantServiceToDefaultName,
                     showFileSizeBadges = showFileSizeBadges,
-                    showAddonLogo = showAddonLogo,
                     badgePlacement = badgePlacement,
                     selected = isStreamSelected(stream),
                     sourceName = entry.sourceName,
@@ -246,6 +246,7 @@ internal fun LazyListScope.streamGroups(
 private fun StreamGroupRow(
     group: AddonStreamGroup,
     expanded: Boolean,
+    showAddonLogo: Boolean,
     shapes: ListItemShapes,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -263,7 +264,11 @@ private fun StreamGroupRow(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ),
-        leadingContent = { StreamAddonIcon(logo = group.addonLogo, addonName = group.addonName) },
+        leadingContent = if (showAddonLogo) {
+            { StreamAddonIcon(logo = group.addonLogo, addonName = group.addonName) }
+        } else {
+            null
+        },
         trailingContent = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

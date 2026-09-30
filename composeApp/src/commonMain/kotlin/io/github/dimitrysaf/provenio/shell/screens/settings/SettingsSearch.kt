@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.core.settings.TrackingBrand
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktConnectionMode
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktAuthRepository
@@ -834,7 +835,7 @@ internal fun settingsSearchEntries(
         title = stringResource(Res.string.trakt_library_source_trakt),
         description = stringResource(Res.string.settings_trakt_intro_description),
         pageLabel = trackingPage,
-        section = stringResource(Res.string.settings_tracking_services),
+        section = TrackingBrand.TRAKT.displayName,
         category = accountCategory,
         icon = Icons.Rounded.Link,
     )
@@ -844,7 +845,7 @@ internal fun settingsSearchEntries(
         title = stringResource(Res.string.tracking_source_simkl),
         description = stringResource(Res.string.settings_simkl_sign_in_description),
         pageLabel = trackingPage,
-        section = stringResource(Res.string.settings_tracking_services),
+        section = TrackingBrand.SIMKL.displayName,
         category = accountCategory,
         icon = Icons.Rounded.Link,
     )
@@ -861,7 +862,7 @@ internal fun settingsSearchEntries(
             title = row.title,
             description = row.description,
             pageLabel = trackingPage,
-            section = stringResource(Res.string.settings_tracking_features),
+            section = TrackingBrand.TRAKT.displayName,
             category = accountCategory,
             icon = Icons.Rounded.Link,
         )

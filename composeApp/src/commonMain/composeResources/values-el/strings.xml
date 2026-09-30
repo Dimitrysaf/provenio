@@ -411,7 +411,7 @@
     <string name="compose_settings_page_notifications">Ειδοποιήσεις</string>
     <string name="compose_settings_page_playback">Αναπαραγωγή</string>
     <string name="compose_settings_page_plugins">Αποθετήρια πρόσθετων</string>
-    <string name="compose_settings_page_poster_customization">Προσαρμογή αφίσας</string>
+    <string name="compose_settings_page_poster_customization">Στυλ καρτών</string>
     <string name="compose_settings_page_privacy_policy">Πολιτική απορρήτου</string>
     <string name="compose_settings_page_root">Ρυθμίσεις</string>
     <string name="compose_settings_page_tmdb_enrichment">Εμπλουτισμός TMDB</string>
@@ -433,7 +433,7 @@
     <string name="compose_settings_root_notifications_description">Διαχείριση ειδοποιήσεων κυκλοφορίας επεισοδίων και αποστολή δοκιμαστικής ειδοποίησης.</string>
     <string name="compose_settings_root_privacy_policy_description">Μάθετε πώς διαχειρίζεται το Provenio τα δεδομένα σας</string>
     <string name="compose_settings_root_switch_profile_description">Μετάβαση σε διαφορετικό προφίλ.</string>
-    <string name="compose_settings_root_switch_profile_title">Εναλλαγή προφίλ</string>
+    <string name="compose_settings_root_switch_profile_title">Προφίλ</string>
     <string name="compose_settings_root_trakt_description">Άνοιγμα οθόνης σύνδεσης Trakt</string>
     <string name="compose_settings_root_tracking_description">Συνδέστε παρόχους παρακολούθησης και επιλέξτε ποιος τροφοδοτεί τη Βιβλιοθήκη και τη Συνέχεια παρακολούθησης.</string>
     <string name="compose_trakt_list_picker_loading">Φόρτωση λιστών Trakt…</string>
@@ -542,8 +542,8 @@
     <string name="settings_appearance_app_language_sheet_title">Επιλογή γλώσσας</string>
     <string name="settings_appearance_continue_watching_description">Εμφάνιση, απόκρυψη και στυλ της ενότητας Συνέχεια παρακολούθησης.</string>
     <string name="settings_appearance_poster_customization_description">Ρύθμιση κοινού πλάτους κάρτας αφίσας και προεπιλογών ακτίνας γωνίας.</string>
-    <string name="settings_appearance_section_display">ΟΘΟΝΗ</string>
-    <string name="settings_appearance_section_home">ΑΡΧΙΚΗ</string>
+    <string name="settings_appearance_section_display">Περιβάλλον χρήστη</string>
+    <string name="settings_appearance_section_home">Ενότητες</string>
     <string name="settings_appearance_section_theme">ΘΕΜΑ</string>
     <string name="settings_homescreen_collection_with_addon">Συλλογή • %1$s</string>
     <string name="settings_homescreen_display_name">Εμφανιζόμενο όνομα</string>
@@ -2278,8 +2278,8 @@
     <string name="settings_search_placeholder">Αναζήτηση ρυθμίσεων...</string>
     <string name="settings_search_results_section">ΑΠΟΤΕΛΕΣΜΑΤΑ</string>
     <string name="settings_show_secret">Εμφάνιση τιμής</string>
-    <string name="settings_stream_addon_logo_description">Εμφάνιση λογότυπου και ονόματος πρόσθετου δίπλα στις πηγές ροής.</string>
-    <string name="settings_stream_addon_logo_title">Λογότυπο πρόσθετου</string>
+    <string name="settings_stream_addon_logo_description">Εμφάνιση λογότυπου πρόσθετου</string>
+    <string name="settings_stream_addon_logo_title">Εμφάνιση λογότυπου πρόσθετου</string>
     <string name="settings_stream_badge_enter_url">Εισαγάγετε ένα URL σημάτων (JSON).</string>
     <string name="settings_stream_badge_import_failed">Η εισαγωγή σημάτων απέτυχε.</string>
     <string name="settings_stream_badge_import_limit">Μπορείτε να εισαγάγετε έως %1$d URL σημάτων.</string>
@@ -2297,8 +2297,8 @@
     <string name="settings_stream_display_section">ΟΘΟΝΗ</string>
     <string name="settings_stream_background_title">Φόντο</string>
     <string name="settings_stream_background_description">Επιλέξτε το φόντο της οθόνης ροών.</string>
-    <string name="settings_stream_size_badges_description">Εμφάνιση σημάτων μεγέθους αρχείου στα αποτελέσματα ροής και στα πλαίσια πηγών του προγράμματος αναπαραγωγής.</string>
-    <string name="settings_stream_size_badges_title">Σήματα μεγέθους</string>
+    <string name="settings_stream_size_badges_description">Εμφάνιση σημάτων μεγέθους αρχείου στα αποτελέσματα ροών</string>
+    <string name="settings_stream_size_badges_title">Εμφάνιση σημάτων μεγέθους</string>
     <string name="streams_loading_skip_segments">Φόρτωση τμημάτων παράλειψης…</string>
     <string name="streams_loading_subtitles">Φόρτωση υποτίτλων από πρόσθετα…</string>
     <string name="streams_open_external_player">Άνοιγμα σε εξωτερικό πρόγραμμα αναπαραγωγής</string>

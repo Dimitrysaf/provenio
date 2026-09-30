@@ -49,7 +49,6 @@ fun ProfileSwitcherTab(
     modifier: Modifier = Modifier,
 ) {
     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
     val activeProfile = profileState.activeProfile
     val profiles = profileState.profiles
     val avatars by AvatarRepository.avatars.collectAsStateWithLifecycle()
@@ -60,22 +59,6 @@ fun ProfileSwitcherTab(
     }
 
     var showSheet by remember { mutableStateOf(false) }
-    var pinProfile by remember { mutableStateOf<Profile?>(null) }
-
-    fun chooseProfile(profile: Profile) {
-        routeProfileSelection(
-            profile = profile,
-            isEditMode = false,
-            activeProfileIndex = ProfileRepository.state.value.activeProfile?.profileIndex,
-            onEditProfile = {},
-            onActiveProfileSelected = {
-                scope.launch { showAlreadyActiveProfileToast(it) }
-            },
-            // The sheet closes itself on a pick, so the PIN is asked for after it has gone.
-            onPinRequired = { pinProfile = it },
-            onProfileSelected = onProfileSelected,
-        )
-    }
 
     Box(
         modifier = modifier
@@ -102,14 +85,53 @@ fun ProfileSwitcherTab(
         )
     }
 
-    if (showSheet) {
+    ProfileSwitcherHost(
+        visible = showSheet,
+        onDismiss = { showSheet = false },
+        onProfileSelected = onProfileSelected,
+        onAddProfileRequested = onAddProfileRequested,
+    )
+}
+
+@Composable
+internal fun ProfileSwitcherHost(
+    visible: Boolean,
+    onDismiss: () -> Unit,
+    onProfileSelected: (Profile) -> Unit,
+    onAddProfileRequested: () -> Unit,
+) {
+    val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
+    val avatars by AvatarRepository.avatars.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    var pinProfile by remember { mutableStateOf<Profile?>(null) }
+
+    LaunchedEffect(visible) {
+        if (visible) AvatarRepository.refreshAvatars()
+    }
+
+    fun chooseProfile(profile: Profile) {
+        routeProfileSelection(
+            profile = profile,
+            isEditMode = false,
+            activeProfileIndex = ProfileRepository.state.value.activeProfile?.profileIndex,
+            onEditProfile = {},
+            onActiveProfileSelected = {
+                scope.launch { showAlreadyActiveProfileToast(it) }
+            },
+            // The sheet closes itself on a pick, so the PIN is asked for after it has gone.
+            onPinRequired = { pinProfile = it },
+            onProfileSelected = onProfileSelected,
+        )
+    }
+
+    if (visible && profileState.profiles.isNotEmpty()) {
         ProfileSwitcherSheet(
-            profiles = profiles,
+            profiles = profileState.profiles,
             avatars = avatars,
-            activeProfileIndex = activeProfile?.profileIndex,
+            activeProfileIndex = profileState.activeProfile?.profileIndex,
             onProfileChosen = ::chooseProfile,
             onAddProfileRequested = onAddProfileRequested,
-            onDismiss = { showSheet = false },
+            onDismiss = onDismiss,
         )
     }
 

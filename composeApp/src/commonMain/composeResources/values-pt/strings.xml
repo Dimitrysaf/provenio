@@ -410,11 +410,11 @@
     <string name="compose_settings_page_account">Conta</string>
     <string name="compose_settings_page_addons">Addons</string>
     <string name="compose_settings_page_advanced">Avançadas</string>
-    <string name="compose_settings_page_appearance">Esquema</string>
+    <string name="compose_settings_page_appearance">Aparência</string>
     <string name="compose_settings_page_content_discovery">Conteúdo e descoberta</string>
     <string name="compose_settings_page_continue_watching">Continuar a ver</string>
     <string name="compose_settings_page_debrid">Serviços ligados</string>
-    <string name="compose_settings_page_homescreen">Esquema da página inicial</string>
+    <string name="compose_settings_page_homescreen">Ecrã inicial</string>
     <string name="compose_settings_page_integrations">Integrações</string>
     <string name="compose_settings_page_licenses_attributions">Licenças e atribuição</string>
     <string name="compose_settings_page_mdblist_ratings">Classificações MDBList</string>
@@ -423,7 +423,7 @@
     <string name="compose_settings_page_notifications">Notificações</string>
     <string name="compose_settings_page_playback">Reprodução</string>
     <string name="compose_settings_page_plugins">Plugins</string>
-    <string name="compose_settings_page_poster_customization">Estilo dos cartões com cartaz</string>
+    <string name="compose_settings_page_poster_customization">Estilos de cartão</string>
     <string name="compose_settings_page_root">Definições</string>
     <string name="compose_settings_page_streams">Streams</string>
     <string name="settings_appearance_section_streams">STREAMS</string>
@@ -447,7 +447,7 @@
     <string name="compose_settings_root_notifications_description">Gere alertas de novos episódios e envia uma notificação de teste.</string>
     <string name="compose_settings_root_streams_description">Apresentação dos resultados de streams e regras dos URLs de emblemas.</string>
     <string name="compose_settings_root_switch_profile_description">Muda para um perfil diferente.</string>
-    <string name="compose_settings_root_switch_profile_title">Mudar de perfil</string>
+    <string name="compose_settings_root_switch_profile_title">Perfis</string>
     <string name="compose_settings_root_trakt_description">Abrir página de ligação ao Trakt</string>
     <string name="settings_search_empty">Nenhuma definição encontrada.</string>
     <string name="settings_search_placeholder">Pesquisar definições...</string>
@@ -542,8 +542,8 @@
     <string name="settings_appearance_app_language_sheet_title">Escolher idioma</string>
     <string name="settings_appearance_continue_watching_description">Definições para a secção Continuar a Ver.</string>
     <string name="settings_appearance_poster_customization_description">Ajusta a largura dos cartões e o raio dos cantos.</string>
-    <string name="settings_appearance_section_display">APRESENTAÇÃO</string>
-    <string name="settings_appearance_section_home">PÁGINA INICIAL</string>
+    <string name="settings_appearance_section_display">Interface do utilizador</string>
+    <string name="settings_appearance_section_home">Secções</string>
     <string name="settings_appearance_section_theme">TEMA</string>
     <string name="settings_homescreen_collection_with_addon">Coleção • %1$s</string>
     <string name="settings_homescreen_display_name">Nome a apresentar</string>

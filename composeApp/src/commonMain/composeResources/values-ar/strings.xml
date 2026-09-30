@@ -431,11 +431,11 @@
     <string name="compose_settings_page_account">الحساب</string>
     <string name="compose_settings_page_addons">الإضافات</string>
     <string name="compose_settings_page_advanced">متقدم</string>
-    <string name="compose_settings_page_appearance">التخطيط</string>
+    <string name="compose_settings_page_appearance">المظهر</string>
     <string name="compose_settings_page_content_discovery">المحتوى والاستكشاف</string>
     <string name="compose_settings_page_continue_watching">متابعة المشاهدة</string>
     <string name="compose_settings_page_debrid">الحسابات المرتبطة</string>
-    <string name="compose_settings_page_homescreen">تنسيق الواجهة الرئيسية</string>
+    <string name="compose_settings_page_homescreen">الشاشة الرئيسية</string>
     <string name="compose_settings_page_integrations">التكاملات</string>
     <string name="compose_settings_page_licenses_attributions">التراخيص والإسناد</string>
     <string name="compose_settings_page_mdblist_ratings">تقييمات MDBList</string>
@@ -444,7 +444,7 @@
     <string name="compose_settings_page_notifications">الإشعارات</string>
     <string name="compose_settings_page_playback">التشغيل</string>
     <string name="compose_settings_page_plugins">الملحقات</string>
-    <string name="compose_settings_page_poster_customization">نمط بطاقات الملصقات</string>
+    <string name="compose_settings_page_poster_customization">أنماط البطاقات</string>
     <string name="compose_settings_page_privacy_policy">سياسة الخصوصية</string>
     <string name="compose_settings_page_root">الإعدادات</string>
     <string name="compose_settings_page_streams">مصادر البث</string>
@@ -471,7 +471,7 @@
     <string name="compose_settings_root_privacy_policy_description">تعرّف على كيفية تعامل Provenio مع بياناتك</string>
     <string name="compose_settings_root_streams_description">طريقة عرض نتائج البث وقواعد روابط الشارات.</string>
     <string name="compose_settings_root_switch_profile_description">التبديل إلى ملف شخصي مختلف.</string>
-    <string name="compose_settings_root_switch_profile_title">تبديل الملف الشخصي</string>
+    <string name="compose_settings_root_switch_profile_title">الملفات الشخصية</string>
     <string name="compose_settings_root_trakt_description">الانتقال إلى صفحة ربط Trakt</string>
     <string name="compose_settings_root_tracking_description">اربط خدمات التتبع واختر الخدمة التي تعتمد عليها المكتبة وقسم متابعة المشاهدة.</string>
     <string name="settings_search_empty">لم يتم العثور على إعدادات.</string>
@@ -601,8 +601,8 @@
     <string name="settings_appearance_app_language_sheet_title">اختيار اللغة</string>
     <string name="settings_appearance_continue_watching_description">إعدادات قسم متابعة المشاهدة.</string>
     <string name="settings_appearance_poster_customization_description">ضبط عرض البطاقة وزوايا الانحناء.</string>
-    <string name="settings_appearance_section_display">العرض</string>
-    <string name="settings_appearance_section_home">الرئيسية</string>
+    <string name="settings_appearance_section_display">واجهة المستخدم</string>
+    <string name="settings_appearance_section_home">الأقسام</string>
     <string name="settings_appearance_section_theme">السمة</string>
     <string name="settings_homescreen_collection_with_addon">مجموعة • %1$s</string>
     <string name="settings_homescreen_display_name">اسم العرض</string>

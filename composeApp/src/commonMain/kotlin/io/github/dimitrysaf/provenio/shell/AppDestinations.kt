@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.core.profiles.Profile
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
@@ -84,6 +85,7 @@ internal fun buildAppTabActions(
     openPosterActions: (PosterActionTarget) -> Unit,
     onContinueWatchingLongPress: (ContinueWatchingItem) -> Unit,
     onSwitchProfile: () -> Unit,
+    onProfileSelected: (Profile) -> Unit,
     activateTab: (AppScreenTab) -> Unit,
     onRequestSettingsPage: (String?) -> Unit,
     onInitialHomeContentRendered: () -> Unit,
@@ -151,6 +153,7 @@ internal fun buildAppTabActions(
         onContinueWatchingClick = { item -> playback.openContinueWatching(item) },
         onContinueWatchingLongPress = onContinueWatchingLongPress,
         onSwitchProfile = onSwitchProfile,
+        onProfileSelected = onProfileSelected,
         // Phone settings pages are navigation destinations, so the navigator runs their predictive back.
         onSettingsPageClick = if (!isTabletLayout) {
             { pageName, title ->

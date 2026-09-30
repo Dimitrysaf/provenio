@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ListItemShapes
@@ -18,11 +16,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.debrid.DebridProviders
 import io.github.dimitrysaf.provenio.core.streams.StreamBadge
 import io.github.dimitrysaf.provenio.core.streams.StreamBadgePlacement
@@ -45,7 +40,6 @@ internal fun StreamRow(
     enabled: Boolean,
     appendInstantServiceToDefaultName: Boolean,
     showFileSizeBadges: Boolean,
-    showAddonLogo: Boolean,
     badgePlacement: StreamBadgePlacement,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -100,20 +94,6 @@ internal fun StreamRow(
         } else {
             null
         },
-        leadingContent = if (showAddonLogo && !stream.addonLogo.isNullOrBlank()) {
-            {
-                AsyncImage(
-                    model = stream.addonLogo,
-                    contentDescription = stream.addonName,
-                    modifier = Modifier
-                        .size(AddonLogoSize)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Fit,
-                )
-            }
-        } else {
-            null
-        },
     ) {
         Text(
             text = instantLabel?.let { "${stream.streamLabel} $it" } ?: stream.streamLabel,
@@ -143,8 +123,6 @@ private fun StreamRowBadges(
         }
     }
 }
-
-private val AddonLogoSize = 28.dp
 
 private fun StreamItem.instantServiceLabel(): String? {
     val status = debridCacheStatus ?: return null

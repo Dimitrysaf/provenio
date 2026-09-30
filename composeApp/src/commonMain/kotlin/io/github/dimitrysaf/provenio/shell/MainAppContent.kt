@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.core.profiles.Profile
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.background
@@ -275,6 +276,13 @@ internal fun MainAppContent(
     }
 
     var profileSwitchLoading by remember { mutableStateOf(false) }
+    fun switchToProfile(profile: Profile) {
+        if (profile.profileIndex != ProfileRepository.state.value.activeProfile?.profileIndex) {
+            profileSwitchLoading = true
+            activateTab(AppScreenTab.Home)
+            ProfileRepository.selectProfile(profile.profileIndex)
+        }
+    }
 
     val rootContentReady = !ownsAppRuntime || (initialHomeReady && !profileSwitchLoading)
 
@@ -575,6 +583,7 @@ internal fun MainAppContent(
                                 openPosterActions = openPosterActions,
                                 onContinueWatchingLongPress = onContinueWatchingLongPress,
                                 onSwitchProfile = onSwitchProfile,
+                                onProfileSelected = ::switchToProfile,
                                 activateTab = ::activateTab,
                                 onRequestSettingsPage = { pageName -> requestedSettingsPageName = pageName },
                                 onInitialHomeContentRendered = { initialHomeReady = true },
@@ -588,13 +597,7 @@ internal fun MainAppContent(
                             }
                         },
                         onTabSelected = ::handleRootTabClick,
-                        onProfileSelected = { profile ->
-                            if (profile.profileIndex != ProfileRepository.state.value.activeProfile?.profileIndex) {
-                                profileSwitchLoading = true
-                                activateTab(AppScreenTab.Home)
-                                ProfileRepository.selectProfile(profile.profileIndex)
-                            }
-                        },
+                        onProfileSelected = ::switchToProfile,
                         onAddProfileRequested = onSwitchProfile,
                     )
                     }.let { provider ->

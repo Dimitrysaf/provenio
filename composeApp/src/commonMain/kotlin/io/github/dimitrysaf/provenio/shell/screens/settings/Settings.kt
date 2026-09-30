@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.screens.profiles.ProfileSwitcherHost
+import io.github.dimitrysaf.provenio.core.profiles.Profile
 import io.github.dimitrysaf.provenio.core.settings.ThemeMode
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktConnectionMode
 import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
@@ -159,7 +161,20 @@ fun SettingsScreen(
     onCheckForUpdatesClick: (() -> Unit)? = null,
     onTestUpdateBannerClick: (() -> Unit)? = null,
     onCollectionsClick: () -> Unit = {},
+    onProfileSelected: ((Profile) -> Unit)? = null,
 ) {
+    var showProfileSwitcher by remember { mutableStateOf(false) }
+    val openProfiles: (() -> Unit)? = onSwitchProfile?.let { { showProfileSwitcher = true } }
+    if (onSwitchProfile != null) {
+        ProfileSwitcherHost(
+            visible = showProfileSwitcher,
+            onDismiss = { showProfileSwitcher = false },
+            onProfileSelected = { profile ->
+                onProfileSelected?.invoke(profile) ?: ProfileRepository.selectProfile(profile.profileIndex)
+            },
+            onAddProfileRequested = onSwitchProfile,
+        )
+    }
     BoxWithConstraints(
         modifier = modifier.fillMaxSize(),
     ) {
@@ -294,7 +309,7 @@ fun SettingsScreen(
                         onNavigateBack = ::navigateBack,
                         showInternalHeader = showInternalHeader,
                         data = data,
-                        onSwitchProfile = onSwitchProfile,
+                        onSwitchProfile = openProfiles,
                         downloadsOpen = downloadsOpen,
                         onDownloadsOpenChange = { downloadsOpen = it },
                         onOpenDownload = onOpenDownload,
@@ -310,7 +325,7 @@ fun SettingsScreen(
                         onNavigateBack = ::navigateBack,
                         showInternalHeader = showInternalHeader,
                         data = data,
-                        onSwitchProfile = onSwitchProfile,
+                        onSwitchProfile = openProfiles,
                         onHomescreenClick = openHomescreen,
                         onMetaScreenClick = openMetaScreen,
                         onContinueWatchingClick = openContinueWatching,
@@ -1022,7 +1037,6 @@ internal fun LazyListScope.settingsPageContent(
             onAppLanguageSelected = ThemeSettingsRepository::setAppLanguage,
             onHomescreenClick = links.onHomescreenClick,
             onMetaScreenClick = links.onMetaScreenClick,
-            onStreamsClick = { links.openPage(SettingsPage.Streams) },
             onCollectionsClick = links.onCollectionsClick,
             onContinueWatchingClick = links.onContinueWatchingClick,
             onPosterCustomizationClick = { links.openPage(SettingsPage.PosterCustomization) },

@@ -241,7 +241,7 @@
     <string name="compose_settings_page_account">חשבון</string>
     <string name="compose_settings_page_addons">תוספים</string>
     <string name="compose_settings_page_advanced">מתקדם</string>
-    <string name="compose_settings_page_appearance">פריסה</string>
+    <string name="compose_settings_page_appearance">מראה</string>
     <string name="compose_settings_page_content_discovery">תוכן וגילוי</string>
     <string name="compose_settings_page_continue_watching">המשך צפייה</string>
     <string name="compose_settings_page_debrid">שירותים מחוברים</string>
@@ -253,7 +253,7 @@
     <string name="compose_settings_page_notifications">התראות</string>
     <string name="compose_settings_page_playback">הפעלה</string>
     <string name="compose_settings_page_plugins">פלאגינים</string>
-    <string name="compose_settings_page_poster_customization">סגנון כרטיס פוסטר</string>
+    <string name="compose_settings_page_poster_customization">סגנונות כרטיסים</string>
     <string name="compose_settings_page_root">הגדרות</string>
     <string name="compose_settings_root_about_section">אודות</string>
     <string name="compose_settings_root_account_description">חשבון וסטטוס סנכרון</string>
@@ -311,8 +311,8 @@
     <string name="settings_appearance_app_language">שפת האפליקציה</string>
     <string name="settings_appearance_app_language_device">שפת המכשיר</string>
     <string name="settings_appearance_app_language_sheet_title">בחר שפה</string>
-    <string name="settings_appearance_section_display">תצוגה</string>
-    <string name="settings_appearance_section_home">בית</string>
+    <string name="settings_appearance_section_display">ממשק משתמש</string>
+    <string name="settings_appearance_section_home">מדורים</string>
     <string name="settings_appearance_section_theme">ערכת נושא</string>
     <string name="settings_homescreen_collection_with_addon">אוסף • %1$s</string>
     <string name="settings_homescreen_display_name">שם תצוגה</string>

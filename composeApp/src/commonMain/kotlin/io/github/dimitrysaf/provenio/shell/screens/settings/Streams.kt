@@ -61,6 +61,7 @@ import io.github.dimitrysaf.provenio.core.streams.StreamBadgeSettingsRepository
 import io.github.dimitrysaf.provenio.core.streams.StreamBackgroundMode
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.compose_settings_page_streams
 import provenio.composeapp.generated.resources.action_cancel
 import provenio.composeapp.generated.resources.action_close
 import provenio.composeapp.generated.resources.action_delete
@@ -587,4 +588,76 @@ private fun badgePreviewSections(import: StreamBadgeImport): List<BadgePreviewSe
         )
     }
     return sections
+}
+
+internal fun LazyListScope.streamsAppearanceSection(isTablet: Boolean) {
+    item {
+        val currentSettings by remember {
+            StreamBadgeSettingsRepository.ensureLoaded()
+            StreamBadgeSettingsRepository.uiState
+        }.collectAsStateWithLifecycle()
+        var showBadgeImportDialog by rememberSaveable { mutableStateOf(false) }
+        var showBadgePositionDialog by rememberSaveable { mutableStateOf(false) }
+        var showBackgroundDialog by rememberSaveable { mutableStateOf(false) }
+
+        SettingsSection(
+            title = stringResource(Res.string.compose_settings_page_streams),
+            isTablet = isTablet,
+        ) {
+            SettingsList {
+                switchRow(
+                    title = stringResource(Res.string.settings_stream_size_badges_title),
+                    description = stringResource(Res.string.settings_stream_size_badges_description),
+                    checked = { currentSettings.showFileSizeBadges },
+                    onCheckedChange = StreamBadgeSettingsRepository::setShowFileSizeBadges,
+                )
+                navigationRow(
+                    title = stringResource(Res.string.settings_stream_badge_position_title),
+                    description = streamBadgePlacementLabel(currentSettings.badgePlacement),
+                    onClick = { showBadgePositionDialog = true },
+                )
+                navigationRow(
+                    title = stringResource(Res.string.settings_stream_badge_urls_title),
+                    description = badgeRulesPreview(currentSettings.rules),
+                    onClick = { showBadgeImportDialog = true },
+                )
+                switchRow(
+                    title = stringResource(Res.string.settings_stream_addon_logo_title),
+                    description = stringResource(Res.string.settings_stream_addon_logo_description),
+                    checked = { currentSettings.showAddonLogo },
+                    onCheckedChange = StreamBadgeSettingsRepository::setShowAddonLogo,
+                )
+                if (!isTablet) {
+                    navigationRow(
+                        title = stringResource(Res.string.settings_stream_background_title),
+                        description = streamBackgroundModeLabel(currentSettings.backgroundMode),
+                        onClick = { showBackgroundDialog = true },
+                    )
+                }
+            }
+        }
+
+        if (showBackgroundDialog && !isTablet) {
+            StreamBackgroundModeDialog(
+                selectedMode = currentSettings.backgroundMode,
+                onModeSelected = StreamBadgeSettingsRepository::setBackgroundMode,
+                onDismiss = { showBackgroundDialog = false },
+            )
+        }
+
+        if (showBadgeImportDialog) {
+            BadgeUrlManagerDialog(
+                currentRules = currentSettings.rules,
+                onDismiss = { showBadgeImportDialog = false },
+            )
+        }
+
+        if (showBadgePositionDialog) {
+            StreamBadgePositionDialog(
+                selectedPlacement = currentSettings.badgePlacement,
+                onPlacementSelected = StreamBadgeSettingsRepository::setBadgePlacement,
+                onDismiss = { showBadgePositionDialog = false },
+            )
+        }
+    }
 }

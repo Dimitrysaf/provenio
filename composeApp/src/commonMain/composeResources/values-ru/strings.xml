@@ -493,11 +493,11 @@
     <string name="compose_settings_page_account">Аккаунт</string>
     <string name="compose_settings_page_addons">Аддоны</string>
     <string name="compose_settings_page_advanced">Дополнительно</string>
-    <string name="compose_settings_page_appearance">Макет</string>
+    <string name="compose_settings_page_appearance">Внешний вид</string>
     <string name="compose_settings_page_content_discovery">Контент и открытие</string>
     <string name="compose_settings_page_continue_watching">Продолжить просмотр</string>
     <string name="compose_settings_page_debrid">Подключенные услуги</string>
-    <string name="compose_settings_page_homescreen">Планировка дома</string>
+    <string name="compose_settings_page_homescreen">Главный экран</string>
     <string name="compose_settings_page_integrations">Интеграции</string>
     <string name="compose_settings_page_licenses_attributions">Лицензии и атрибуция</string>
     <string name="compose_settings_page_mdblist_ratings">Рейтинги MDBList</string>
@@ -506,7 +506,7 @@
     <string name="compose_settings_page_notifications">Уведомления</string>
     <string name="compose_settings_page_playback">Воспроизведение</string>
     <string name="compose_settings_page_plugins">Плагины</string>
-    <string name="compose_settings_page_poster_customization">Стиль карточки постера</string>
+    <string name="compose_settings_page_poster_customization">Стили карточек</string>
     <string name="compose_settings_page_privacy_policy">Политика конфиденциальности</string>
     <string name="compose_settings_page_root">Настройки</string>
     <string name="compose_settings_page_streams">Потоки</string>
@@ -533,7 +533,7 @@
     <string name="compose_settings_root_privacy_policy_description">Узнайте, как Provenio обрабатывает ваши данные</string>
     <string name="compose_settings_root_streams_description">Отображение потоков и правила URL значков.</string>
     <string name="compose_settings_root_switch_profile_description">Перейдите на другой профиль.</string>
-    <string name="compose_settings_root_switch_profile_title">Переключить профиль</string>
+    <string name="compose_settings_root_switch_profile_title">Профили</string>
     <string name="compose_settings_root_trakt_description">Откройте экран подключения Trakt.</string>
     <string name="compose_settings_root_tracking_description">Подключите поставщиков отслеживания и выберите, какой из них будет поддерживать вашу библиотеку, и продолжайте просмотр.</string>
     <string name="settings_search_empty">Настройки не найдены.</string>
@@ -664,8 +664,8 @@
     <string name="settings_appearance_app_language_sheet_title">Выберите язык</string>
     <string name="settings_appearance_continue_watching_description">Настройки раздела «Продолжить просмотр».</string>
     <string name="settings_appearance_poster_customization_description">Настройте ширину карты и радиус угла.</string>
-    <string name="settings_appearance_section_display">ДИСПЛЕЙ</string>
-    <string name="settings_appearance_section_home">ГЛАВНАЯ</string>
+    <string name="settings_appearance_section_display">Интерфейс</string>
+    <string name="settings_appearance_section_home">Разделы</string>
     <string name="settings_appearance_section_theme">ТЕМА</string>
     <string name="settings_homescreen_collection_with_addon">Коллекция • %1$s</string>
     <string name="settings_homescreen_display_name">Отображаемое имя</string>

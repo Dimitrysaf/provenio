@@ -493,11 +493,11 @@
     <string name="compose_settings_page_account">Account</string>
     <string name="compose_settings_page_addons">Add-ons</string>
     <string name="compose_settings_page_advanced">Geavanceerd</string>
-    <string name="compose_settings_page_appearance">Indeling</string>
+    <string name="compose_settings_page_appearance">Weergave</string>
     <string name="compose_settings_page_content_discovery">Inhoud en ontdekking</string>
     <string name="compose_settings_page_continue_watching">Verder kijken</string>
     <string name="compose_settings_page_debrid">Verbonden services</string>
-    <string name="compose_settings_page_homescreen">Startschermindeling</string>
+    <string name="compose_settings_page_homescreen">Startscherm</string>
     <string name="compose_settings_page_integrations">Integraties</string>
     <string name="compose_settings_page_licenses_attributions">Licenties en attributie</string>
     <string name="compose_settings_page_mdblist_ratings">MDBList-beoordelingen</string>
@@ -506,7 +506,7 @@
     <string name="compose_settings_page_notifications">Meldingen</string>
     <string name="compose_settings_page_playback">Afspelen</string>
     <string name="compose_settings_page_plugins">Plug-ins</string>
-    <string name="compose_settings_page_poster_customization">Posterkaartstijl</string>
+    <string name="compose_settings_page_poster_customization">Kaartstijlen</string>
     <string name="compose_settings_page_privacy_policy">Privacybeleid</string>
     <string name="compose_settings_page_root">Instellingen</string>
     <string name="compose_settings_page_streams">Streams</string>
@@ -533,7 +533,7 @@
     <string name="compose_settings_root_privacy_policy_description">Lees hoe Provenio met je gegevens omgaat</string>
     <string name="compose_settings_root_streams_description">Weergave van streamresultaten en badge-URL-regels.</string>
     <string name="compose_settings_root_switch_profile_description">Wissel naar een ander profiel.</string>
-    <string name="compose_settings_root_switch_profile_title">Profiel wisselen</string>
+    <string name="compose_settings_root_switch_profile_title">Profielen</string>
     <string name="compose_settings_root_trakt_description">Open het Trakt-verbindingsscherm</string>
     <string name="compose_settings_root_tracking_description">Verbind trackingproviders en kies welke je bibliotheek en Verder kijken aanstuurt.</string>
     <string name="settings_search_empty">Geen instellingen gevonden.</string>
@@ -664,8 +664,8 @@
     <string name="settings_appearance_app_language_sheet_title">Kies taal</string>
     <string name="settings_appearance_continue_watching_description">Instellingen voor de sectie Verder kijken.</string>
     <string name="settings_appearance_poster_customization_description">Pas kaartbreedte en hoekradius aan.</string>
-    <string name="settings_appearance_section_display">WEERGAVE</string>
-    <string name="settings_appearance_section_home">HOME</string>
+    <string name="settings_appearance_section_display">Gebruikersinterface</string>
+    <string name="settings_appearance_section_home">Secties</string>
     <string name="settings_appearance_section_theme">THEMA</string>
     <string name="settings_homescreen_collection_with_addon">Collectie • %1$s</string>
     <string name="settings_homescreen_display_name">Weergavenaam</string>

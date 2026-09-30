@@ -230,7 +230,7 @@
   <string name="compose_settings_page_appearance">Aspetto</string>
   <string name="compose_settings_page_content_discovery">Contenuti e Scoperta</string>
   <string name="compose_settings_page_continue_watching">Continua a guardare</string>
-  <string name="compose_settings_page_homescreen">Home</string>
+  <string name="compose_settings_page_homescreen">Schermata Home</string>
   <string name="compose_settings_page_integrations">Integrazioni</string>
   <string name="compose_settings_page_mdblist_ratings">Valutazioni MDBList</string>
   <string name="compose_settings_page_meta_screen">Schermata Meta</string>
@@ -238,7 +238,7 @@
   <string name="compose_settings_page_notifications">Notifiche</string>
   <string name="compose_settings_page_playback">Riproduzione</string>
   <string name="compose_settings_page_plugins">Plugin</string>
-  <string name="compose_settings_page_poster_customization">Personalizzazione Poster</string>
+  <string name="compose_settings_page_poster_customization">Stili delle schede</string>
   <string name="compose_settings_page_root">Impostazioni</string>
   <string name="compose_settings_page_tmdb_enrichment">Arricchimento TMDB</string>
   <string name="compose_settings_page_trakt">Trakt</string>
@@ -259,7 +259,7 @@
   <string name="compose_settings_root_notifications_description">Gestisci gli avvisi per l'uscita di nuovi episodi e invia una notifica di test.</string>
   <string name="compose_settings_root_streams_description">Gestisci risultati streaming e badge URL.</string>
   <string name="compose_settings_root_switch_profile_description">Passa a un profilo diverso.</string>
-  <string name="compose_settings_root_switch_profile_title">Cambia profilo</string>
+  <string name="compose_settings_root_switch_profile_title">Profili</string>
   <string name="compose_settings_root_trakt_description">Collega Trakt, sincronizza la lista dei desideri e salva i titoli direttamente su Trakt.</string>
   <string name="compose_trakt_list_picker_loading">Caricamento liste Trakt…</string>
   <string name="compose_trakt_list_picker_subtitle">Scegli dove salvare questo titolo su Trakt</string>
@@ -318,8 +318,8 @@
   <string name="settings_appearance_app_language_sheet_title">Scegli lingua</string>
   <string name="settings_appearance_continue_watching_description">Mostra, nascondi e personalizza lo stile della riga "Continua a guardare".</string>
   <string name="settings_appearance_poster_customization_description">Regola la larghezza delle locandine e i preset del raggio degli angoli.</string>
-  <string name="settings_appearance_section_display">DISPLAY</string>
-  <string name="settings_appearance_section_home">HOME</string>
+  <string name="settings_appearance_section_display">Interfaccia utente</string>
+  <string name="settings_appearance_section_home">Sezioni</string>
   <string name="settings_appearance_section_theme">TEMA</string>
   <string name="settings_homescreen_collection_with_addon">Collezione • %1$s</string>
   <string name="settings_homescreen_display_name">Nome visualizzato</string>

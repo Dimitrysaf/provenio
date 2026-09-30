@@ -385,7 +385,7 @@
     <string name="compose_settings_page_content_discovery">Innhold &amp; oppdagelse</string>
     <string name="compose_settings_page_continue_watching">Fortsett å se</string>
     <string name="compose_settings_page_debrid">Tilkoblede tjenester</string>
-    <string name="compose_settings_page_homescreen">Hjemmeoppsett</string>
+    <string name="compose_settings_page_homescreen">Startskjerm</string>
     <string name="compose_settings_page_integrations">Integrasjoner</string>
     <string name="compose_settings_page_licenses_attributions">Lisenser &amp; attribusjon</string>
     <string name="compose_settings_page_mdblist_ratings">MDBList-vurderinger</string>
@@ -394,7 +394,7 @@
     <string name="compose_settings_page_notifications">Varsler</string>
     <string name="compose_settings_page_playback">Avspilling</string>
     <string name="compose_settings_page_plugins">Plugins</string>
-    <string name="compose_settings_page_poster_customization">Plakatstil</string>
+    <string name="compose_settings_page_poster_customization">Kortstiler</string>
     <string name="compose_settings_page_root">Innstillinger</string>
     <string name="compose_settings_page_tmdb_enrichment">TMDB-berikelse</string>
     <string name="compose_settings_page_trakt">Trakt</string>
@@ -413,7 +413,7 @@
     <string name="compose_settings_root_integrations_description">Administrer tilgjengelige integrasjoner</string>
     <string name="compose_settings_root_notifications_description">Administrer episodevarsler og send testvarsel.</string>
     <string name="compose_settings_root_switch_profile_description">Bytt til en annen profil.</string>
-    <string name="compose_settings_root_switch_profile_title">Bytt profil</string>
+    <string name="compose_settings_root_switch_profile_title">Profiler</string>
     <string name="compose_settings_root_trakt_description">Åpne Trakt-tilkoblingsskjerm</string>
     <string name="settings_search_empty">Ingen innstillinger funnet.</string>
     <string name="settings_search_placeholder">Søk i innstillinger…</string>
@@ -497,8 +497,8 @@
     <string name="settings_appearance_app_language_sheet_title">Velg språk</string>
     <string name="settings_appearance_continue_watching_description">Innstillinger for Fortsett å se-seksjonen.</string>
     <string name="settings_appearance_poster_customization_description">Juster kortbredde og hjørneradius.</string>
-    <string name="settings_appearance_section_display">VISNING</string>
-    <string name="settings_appearance_section_home">HJEM</string>
+    <string name="settings_appearance_section_display">Brukergrensesnitt</string>
+    <string name="settings_appearance_section_home">Seksjoner</string>
     <string name="settings_appearance_section_theme">TEMA</string>
     <string name="settings_homescreen_collection_with_addon">Samling • %1$s</string>
     <string name="settings_homescreen_display_name">Visningsnavn</string>

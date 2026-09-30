@@ -382,11 +382,11 @@
     <string name="compose_settings_category_general">Geral</string>
     <string name="compose_settings_page_account">Conta</string>
     <string name="compose_settings_page_addons">Addons</string>
-    <string name="compose_settings_page_appearance">Layout</string>
+    <string name="compose_settings_page_appearance">Aparência</string>
     <string name="compose_settings_page_content_discovery">Conteúdo &amp; Descoberta</string>
     <string name="compose_settings_page_continue_watching">Continuar Assistindo</string>
     <string name="compose_settings_page_debrid">Debrid</string>
-    <string name="compose_settings_page_homescreen">Layout da Página Inicial</string>
+    <string name="compose_settings_page_homescreen">Tela inicial</string>
     <string name="compose_settings_page_integrations">Integrações</string>
     <string name="compose_settings_page_licenses_attributions">Licenças &amp; Atribuições</string>
     <string name="compose_settings_page_mdblist_ratings">Classificações do MDBList</string>
@@ -395,7 +395,7 @@
     <string name="compose_settings_page_notifications">Notificações</string>
     <string name="compose_settings_page_playback">Reprodução</string>
     <string name="compose_settings_page_plugins">Plugins</string>
-    <string name="compose_settings_page_poster_customization">Estilo do Card de Pôster</string>
+    <string name="compose_settings_page_poster_customization">Estilos de cartão</string>
     <string name="compose_settings_page_root">Configurações</string>
     <string name="compose_settings_page_tmdb_enrichment">Enriquecimento do TMDB</string>
     <string name="compose_settings_page_trakt">Trakt</string>
@@ -414,7 +414,7 @@
     <string name="compose_settings_root_integrations_description">Gerenciar integrações disponíveis</string>
     <string name="compose_settings_root_notifications_description">Gerencie alertas de lançamento de episódios e envie uma notificação de teste.</string>
     <string name="compose_settings_root_switch_profile_description">Mude para um perfil diferente.</string>
-    <string name="compose_settings_root_switch_profile_title">Alternar Perfil</string>
+    <string name="compose_settings_root_switch_profile_title">Perfis</string>
     <string name="compose_settings_root_trakt_description">Abrir tela de conexão do Trakt</string>
     <string name="settings_search_empty">Nenhuma configuração encontrada.</string>
     <string name="settings_search_placeholder">Buscar configurações...</string>
@@ -498,8 +498,8 @@
     <string name="settings_appearance_app_language_sheet_title">Escolher Idioma</string>
     <string name="settings_appearance_continue_watching_description">Configurações para a seção Continuar Assistindo.</string>
     <string name="settings_appearance_poster_customization_description">Ajuste largura do card e raio dos cantos.</string>
-    <string name="settings_appearance_section_display">EXIBIÇÃO</string>
-    <string name="settings_appearance_section_home">PÁGINA INICIAL</string>
+    <string name="settings_appearance_section_display">Interface do usuário</string>
+    <string name="settings_appearance_section_home">Seções</string>
     <string name="settings_appearance_section_theme">TEMA</string>
     <string name="settings_homescreen_collection_with_addon">Coleção • %1$s</string>
     <string name="settings_homescreen_display_name">Nome de Exibição</string>

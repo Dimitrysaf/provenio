@@ -628,11 +628,11 @@
     <string name="compose_settings_page_account">Account</string>
     <string name="compose_settings_page_addons">Addons</string>
     <string name="compose_settings_page_advanced">Advanced</string>
-    <string name="compose_settings_page_appearance">Layout</string>
+    <string name="compose_settings_page_appearance">Appearance</string>
     <string name="compose_settings_page_content_discovery">Content &amp; Discovery</string>
     <string name="compose_settings_page_continue_watching">Continue Watching</string>
     <string name="compose_settings_page_debrid">Connected Services</string>
-    <string name="compose_settings_page_homescreen">Home Layout</string>
+    <string name="compose_settings_page_homescreen">Home Screen</string>
     <string name="compose_settings_page_integrations">Integrations</string>
     <string name="compose_settings_page_licenses_attributions">Licenses &amp; Attribution</string>
     <string name="compose_settings_page_mdblist_ratings">MDBList Ratings</string>
@@ -641,7 +641,7 @@
     <string name="compose_settings_page_notifications">Notifications</string>
     <string name="compose_settings_page_playback">Playback</string>
     <string name="compose_settings_page_plugins">Plugins</string>
-    <string name="compose_settings_page_poster_customization">Poster Card Style</string>
+    <string name="compose_settings_page_poster_customization">Card Styles</string>
     <string name="compose_settings_page_privacy_policy">Privacy Policy</string>
     <string name="compose_settings_page_root">Settings</string>
     <string name="compose_settings_page_streams">Streams</string>
@@ -668,7 +668,7 @@
     <string name="compose_settings_root_privacy_policy_description">Learn how Provenio handles your data</string>
     <string name="compose_settings_root_streams_description">Stream result display and badge URL rules.</string>
     <string name="compose_settings_root_switch_profile_description">Change to a different profile.</string>
-    <string name="compose_settings_root_switch_profile_title">Switch Profile</string>
+    <string name="compose_settings_root_switch_profile_title">Profiles</string>
     <string name="compose_settings_root_trakt_description">Open Trakt connection screen</string>
     <string name="compose_settings_root_tracking_description">Connect tracking providers and choose which one powers your Library and Continue Watching.</string>
     <string name="settings_search_empty">No settings found.</string>
@@ -822,8 +822,8 @@
     <string name="settings_appearance_app_language_sheet_title">Choose Language</string>
     <string name="settings_appearance_continue_watching_description">Settings for the Continue Watching section.</string>
     <string name="settings_appearance_poster_customization_description">Tune card width and corner radius.</string>
-    <string name="settings_appearance_section_display">DISPLAY</string>
-    <string name="settings_appearance_section_home">HOME</string>
+    <string name="settings_appearance_section_display">User interface</string>
+    <string name="settings_appearance_section_home">Sections</string>
     <string name="settings_appearance_section_theme">THEME</string>
     <string name="settings_homescreen_collection_with_addon">Collection • %1$s</string>
     <string name="settings_homescreen_display_name">Display Name</string>
@@ -1000,10 +1000,10 @@
     <string name="settings_debrid_formatter_reset_title">Reset formatting</string>
     <string name="settings_debrid_formatter_reset_subtitle">Restore default result formatting.</string>
     <string name="settings_stream_badges_section">FUSION STYLE</string>
-    <string name="settings_stream_size_badges_title">Size badges</string>
-    <string name="settings_stream_size_badges_description">Show file size badges in stream results and player source panels.</string>
-    <string name="settings_stream_addon_logo_title">Addon logo</string>
-    <string name="settings_stream_addon_logo_description">Show addon logo and name next to stream sources.</string>
+    <string name="settings_stream_size_badges_title">Show size badges</string>
+    <string name="settings_stream_size_badges_description">Show file size badges in stream results</string>
+    <string name="settings_stream_addon_logo_title">Show addon logo</string>
+    <string name="settings_stream_addon_logo_description">Show addon logo</string>
     <string name="settings_stream_display_section">DISPLAY</string>
     <string name="settings_stream_background_title">Background</string>
     <string name="settings_stream_background_description">Choose the background for the streams screen.</string>

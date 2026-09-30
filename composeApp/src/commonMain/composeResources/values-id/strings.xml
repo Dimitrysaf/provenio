@@ -393,11 +393,11 @@
     <string name="compose_settings_category_general">Umum</string>
     <string name="compose_settings_page_account">Akun</string>
     <string name="compose_settings_page_addons">Addon</string>
-    <string name="compose_settings_page_appearance">Tata Letak</string>
+    <string name="compose_settings_page_appearance">Tampilan</string>
     <string name="compose_settings_page_content_discovery">Konten &amp; Penemuan</string>
     <string name="compose_settings_page_continue_watching">Lanjutkan Menonton</string>
     <string name="compose_settings_page_debrid">Layanan Debrid</string>
-    <string name="compose_settings_page_homescreen">Tata Letak Beranda</string>
+    <string name="compose_settings_page_homescreen">Layar beranda</string>
     <string name="compose_settings_page_integrations">Integrasi</string>
     <string name="compose_settings_page_licenses_attributions">Lisensi &amp; Atribusi</string>
     <string name="compose_settings_page_mdblist_ratings">Rating MDBList</string>
@@ -406,7 +406,7 @@
     <string name="compose_settings_page_notifications">Notifikasi</string>
     <string name="compose_settings_page_playback">Pemutaran</string>
     <string name="compose_settings_page_plugins">Plugin</string>
-    <string name="compose_settings_page_poster_customization">Gaya Kartu Poster</string>
+    <string name="compose_settings_page_poster_customization">Gaya kartu</string>
     <string name="compose_settings_page_root">Pengaturan</string>
     <string name="compose_settings_page_tmdb_enrichment">Pengayaan TMDB</string>
     <string name="compose_settings_page_trakt">Trakt</string>
@@ -425,7 +425,7 @@
     <string name="compose_settings_root_integrations_description">Kelola integrasi yang tersedia</string>
     <string name="compose_settings_root_notifications_description">Kelola peringatan rilis episode dan kirim notifikasi uji coba.</string>
     <string name="compose_settings_root_switch_profile_description">Beralih ke profil yang berbeda.</string>
-    <string name="compose_settings_root_switch_profile_title">Ganti Profil</string>
+    <string name="compose_settings_root_switch_profile_title">Profil</string>
     <string name="compose_settings_root_trakt_description">Buka layar koneksi Trakt</string>
     <string name="settings_search_empty">Tidak ada pengaturan ditemukan.</string>
     <string name="settings_search_placeholder">Cari pengaturan...</string>
@@ -513,8 +513,8 @@
     <string name="settings_appearance_app_language_sheet_title">Pilih Bahasa</string>
     <string name="settings_appearance_continue_watching_description">Pengaturan untuk bagian Lanjutkan Menonton.</string>
     <string name="settings_appearance_poster_customization_description">Sesuaikan lebar kartu dan radius sudut.</string>
-    <string name="settings_appearance_section_display">TAMPILAN</string>
-    <string name="settings_appearance_section_home">BERANDA</string>
+    <string name="settings_appearance_section_display">Antarmuka pengguna</string>
+    <string name="settings_appearance_section_home">Bagian</string>
     <string name="settings_appearance_section_theme">TEMA</string>
     <string name="settings_homescreen_collection_with_addon">Koleksi • %1$s</string>
     <string name="settings_homescreen_display_name">Nama Tampilan</string>

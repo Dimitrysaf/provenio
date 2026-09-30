@@ -406,7 +406,7 @@
     <string name="compose_settings_page_notifications">Powiadomienia</string>
     <string name="compose_settings_page_playback">Odtwarzanie</string>
     <string name="compose_settings_page_plugins">Wtyczki</string>
-    <string name="compose_settings_page_poster_customization">Personalizacja plakatów</string>
+    <string name="compose_settings_page_poster_customization">Style kart</string>
     <string name="compose_settings_page_root">Ustawienia</string>
     <string name="compose_settings_page_tmdb_enrichment">Wzbogacanie TMDB</string>
     <string name="compose_settings_page_trakt">Trakt</string>
@@ -425,7 +425,7 @@
     <string name="compose_settings_root_integrations_description">Połącz usługi TMDB i MDBList.</string>
     <string name="compose_settings_root_notifications_description">Zarządzaj alertami o premierach odcinków i wyślij powiadomienie testowe.</string>
     <string name="compose_settings_root_switch_profile_description">Przełącz na inny profil.</string>
-    <string name="compose_settings_root_switch_profile_title">Przełącz profil</string>
+    <string name="compose_settings_root_switch_profile_title">Profile</string>
     <string name="compose_settings_root_trakt_description">Połącz Trakt, synchronizuj listy obserwowanych i zapisuj tytuły bezpośrednio w Trakt.</string>
     <string name="settings_search_empty">Nie znaleziono ustawień.</string>
     <string name="settings_search_placeholder">Szukaj ustawień...</string>
@@ -513,8 +513,8 @@
     <string name="settings_appearance_app_language_sheet_title">Wybierz język</string>
     <string name="settings_appearance_continue_watching_description">Pokaż, ukryj i stylizuj półkę Kontynuuj oglądanie.</string>
     <string name="settings_appearance_poster_customization_description">Dostosuj szerokość i zaokrąglenie rogów kart plakatów.</string>
-    <string name="settings_appearance_section_display">WYŚWIETLANIE</string>
-    <string name="settings_appearance_section_home">EKRAN GŁÓWNY</string>
+    <string name="settings_appearance_section_display">Interfejs użytkownika</string>
+    <string name="settings_appearance_section_home">Sekcje</string>
     <string name="settings_appearance_section_theme">MOTYW</string>
     <string name="settings_homescreen_collection_with_addon">Kolekcja • %1$s</string>
     <string name="settings_homescreen_display_name">Wyświetlana nazwa</string>

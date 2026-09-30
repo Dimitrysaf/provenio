@@ -431,7 +431,7 @@
     <string name="compose_settings_page_notifications">Bildirimler</string>
     <string name="compose_settings_page_playback">Oynatma</string>
     <string name="compose_settings_page_plugins">Pluginler</string>
-    <string name="compose_settings_page_poster_customization">Poster özelleştirme</string>
+    <string name="compose_settings_page_poster_customization">Kart stilleri</string>
     <string name="compose_settings_page_privacy_policy">Gizlilik Politikası</string>
     <string name="compose_settings_page_root">Ayarlar</string>
     <string name="compose_settings_page_streams">Yayınlar</string>
@@ -458,7 +458,7 @@
     <string name="compose_settings_root_privacy_policy_description">Provenio'nun verilerinizi nasıl işlediğini öğrenin</string>
     <string name="compose_settings_root_streams_description">Yayın sonucu ekranı ve rozet URL kuralları.</string>
     <string name="compose_settings_root_switch_profile_description">Farklı bir profile geç.</string>
-    <string name="compose_settings_root_switch_profile_title">Profil değiştir</string>
+    <string name="compose_settings_root_switch_profile_title">Profiller</string>
     <string name="compose_settings_root_trakt_description">Trakt'ı bağla, izleme listelerini eşitle ve içerikleri doğrudan Trakt'a kaydet.</string>
     <string name="compose_settings_root_tracking_description">Takip sağlayıcılarını bağlayın ve Kitaplığınızı ve İzlemeye Devam Et bölümünü hangisinin besleyeceğini seçin.</string>
     <string name="settings_search_empty">Ayar bulunamadı.</string>
@@ -588,8 +588,8 @@
     <string name="settings_appearance_app_language_sheet_title">Dil seç</string>
     <string name="settings_appearance_continue_watching_description">İzlemeye Devam Et rafını göster, gizle ve stilini ayarla.</string>
     <string name="settings_appearance_poster_customization_description">Uygulama genelindeki poster kartlarının ortak genişliğini ve köşe yuvarlaklığını ayarla.</string>
-    <string name="settings_appearance_section_display">EKRAN</string>
-    <string name="settings_appearance_section_home">ANA SAYFA</string>
+    <string name="settings_appearance_section_display">Kullanıcı arayüzü</string>
+    <string name="settings_appearance_section_home">Bölümler</string>
     <string name="settings_appearance_section_theme">TEMA</string>
     <string name="settings_homescreen_collection_with_addon">Koleksiyon • %1$s</string>
     <string name="settings_homescreen_display_name">Görünen ad</string>

@@ -415,11 +415,11 @@
     <string name="compose_settings_page_account">Cont</string>
     <string name="compose_settings_page_addons">Extensii</string>
     <string name="compose_settings_page_advanced">Avansat</string>
-    <string name="compose_settings_page_appearance">Aspect ecran</string>
+    <string name="compose_settings_page_appearance">Aspect</string>
     <string name="compose_settings_page_content_discovery">Conținut și descoperire</string>
     <string name="compose_settings_page_continue_watching">Continuă vizionarea</string>
     <string name="compose_settings_page_debrid">Servicii conectate</string>
-    <string name="compose_settings_page_homescreen">Aspect ecran principal</string>
+    <string name="compose_settings_page_homescreen">Ecran principal</string>
     <string name="compose_settings_page_integrations">Integrări</string>
     <string name="compose_settings_page_licenses_attributions">Licențe și atribuiri</string>
     <string name="compose_settings_page_mdblist_ratings">Evaluări MDBList</string>
@@ -428,7 +428,7 @@
     <string name="compose_settings_page_notifications">Notificări</string>
     <string name="compose_settings_page_playback">Redare</string>
     <string name="compose_settings_page_plugins">Module (Plugins)</string>
-    <string name="compose_settings_page_poster_customization">Stil card poster</string>
+    <string name="compose_settings_page_poster_customization">Stiluri de card</string>
     <string name="compose_settings_page_root">Setări</string>
     <string name="compose_settings_page_streams">Fluxuri</string>
     <string name="settings_appearance_section_streams">FLUXURI</string>
@@ -452,7 +452,7 @@
     <string name="compose_settings_root_notifications_description">Gestionează alertele de lansare a episoadelor și trimite o notificare de test.</string>
     <string name="compose_settings_root_streams_description">Afișarea rezultatelor fluxurilor și reguli pentru URL insignă.</string>
     <string name="compose_settings_root_switch_profile_description">Comută la un alt profil.</string>
-    <string name="compose_settings_root_switch_profile_title">Schimbă profilul</string>
+    <string name="compose_settings_root_switch_profile_title">Profiluri</string>
     <string name="compose_settings_root_trakt_description">Deschide ecranul de conectare Trakt</string>
     <string name="settings_search_empty">Nu s-au găsit setări.</string>
     <string name="settings_search_placeholder">Caută în setări...</string>
@@ -566,8 +566,8 @@
     <string name="settings_appearance_app_language_sheet_title">Alege limba</string>
     <string name="settings_appearance_continue_watching_description">Setări pentru secțiunea Continuă vizionarea.</string>
     <string name="settings_appearance_poster_customization_description">Ajustează lățimea cardului și raza colțurilor.</string>
-    <string name="settings_appearance_section_display">AFIȘARE</string>
-    <string name="settings_appearance_section_home">ECRAN PRINCIPAL</string>
+    <string name="settings_appearance_section_display">Interfață utilizator</string>
+    <string name="settings_appearance_section_home">Secțiuni</string>
     <string name="settings_appearance_section_theme">TEMĂ</string>
     <string name="settings_homescreen_collection_with_addon">Colecție • %1$s</string>
     <string name="settings_homescreen_display_name">Nume afișat</string>

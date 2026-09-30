@@ -15,12 +15,13 @@ import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.settings_content_discovery_meta_screen_description
+import provenio.composeapp.generated.resources.settings_content_discovery_collections_description
+import provenio.composeapp.generated.resources.compose_settings_page_meta_screen
 import provenio.composeapp.generated.resources.collections_header
 import provenio.composeapp.generated.resources.compose_settings_page_continue_watching
 import provenio.composeapp.generated.resources.compose_settings_page_homescreen
-import provenio.composeapp.generated.resources.compose_settings_page_meta_screen
 import provenio.composeapp.generated.resources.compose_settings_page_poster_customization
-import provenio.composeapp.generated.resources.compose_settings_page_streams
 import provenio.composeapp.generated.resources.settings_appearance_app_language
 import provenio.composeapp.generated.resources.settings_appearance_app_language_sheet_title
 import provenio.composeapp.generated.resources.settings_appearance_app_icon
@@ -37,14 +38,9 @@ import provenio.composeapp.generated.resources.settings_appearance_theme_system
 import provenio.composeapp.generated.resources.settings_appearance_theme_system_description
 import provenio.composeapp.generated.resources.settings_appearance_continue_watching_description
 import provenio.composeapp.generated.resources.settings_appearance_poster_customization_description
-import provenio.composeapp.generated.resources.settings_appearance_section_detail_page
 import provenio.composeapp.generated.resources.settings_appearance_section_display
 import provenio.composeapp.generated.resources.settings_appearance_section_home
-import provenio.composeapp.generated.resources.settings_appearance_section_streams
-import provenio.composeapp.generated.resources.settings_content_discovery_collections_description
 import provenio.composeapp.generated.resources.settings_content_discovery_homescreen_description
-import provenio.composeapp.generated.resources.settings_content_discovery_meta_screen_description
-import provenio.composeapp.generated.resources.compose_settings_root_streams_description
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.settings.AppIconOption
@@ -74,7 +70,6 @@ internal fun LazyListScope.appearanceSettingsContent(
     onAppLanguageSelected: (AppLanguage) -> Unit,
     onHomescreenClick: () -> Unit,
     onMetaScreenClick: () -> Unit,
-    onStreamsClick: () -> Unit,
     onCollectionsClick: () -> Unit,
     onContinueWatchingClick: () -> Unit,
     onPosterCustomizationClick: () -> Unit,
@@ -91,17 +86,17 @@ internal fun LazyListScope.appearanceSettingsContent(
             isTablet = isTablet,
         ) {
             SettingsList {
+                navigationRow(
+                    title = stringResource(Res.string.settings_appearance_theme),
+                    description = stringResource(themeMode.labelRes),
+                    onClick = { showThemeSheet = true },
+                )
                 switchRow(
                     title = stringResource(Res.string.settings_appearance_amoled_black),
                     description = stringResource(Res.string.settings_appearance_amoled_description),
                     checked = { amoledEnabled },
                     enabled = themeMode != ThemeMode.LIGHT,
                     onCheckedChange = onAmoledToggle,
-                )
-                navigationRow(
-                    title = stringResource(Res.string.settings_appearance_theme),
-                    description = stringResource(themeMode.labelRes),
-                    onClick = { showThemeSheet = true },
                 )
                 navigationRow(
                     title = stringResource(Res.string.settings_appearance_color_palette),
@@ -114,13 +109,6 @@ internal fun LazyListScope.appearanceSettingsContent(
                     },
                     onClick = { showColorPaletteSheet = true },
                 )
-                if (displayScaleSettingSupported) {
-                    navigationRow(
-                        title = stringResource(Res.string.settings_appearance_display_scale),
-                        description = displayScale.label(),
-                        onClick = { showDisplayScaleSheet = true },
-                    )
-                }
                 navigationRow(
                     title = stringResource(Res.string.settings_appearance_app_icon),
                     description = stringResource(appIconState.selected.labelResource),
@@ -137,6 +125,13 @@ internal fun LazyListScope.appearanceSettingsContent(
                         showAppIconPicker = true
                     },
                 )
+                if (displayScaleSettingSupported) {
+                    navigationRow(
+                        title = stringResource(Res.string.settings_appearance_display_scale),
+                        description = displayScale.label(),
+                        onClick = { showDisplayScaleSheet = true },
+                    )
+                }
                 navigationRow(
                     title = stringResource(Res.string.settings_appearance_app_language),
                     description = stringResource(selectedAppLanguage.labelRes),
@@ -226,11 +221,6 @@ internal fun LazyListScope.appearanceSettingsContent(
                     onClick = onHomescreenClick,
                 )
                 navigationRow(
-                    title = stringResource(Res.string.collections_header),
-                    description = stringResource(Res.string.settings_content_discovery_collections_description),
-                    onClick = onCollectionsClick,
-                )
-                navigationRow(
                     title = stringResource(Res.string.compose_settings_page_continue_watching),
                     description = stringResource(Res.string.settings_appearance_continue_watching_description),
                     onClick = onContinueWatchingClick,
@@ -240,29 +230,11 @@ internal fun LazyListScope.appearanceSettingsContent(
                     description = stringResource(Res.string.settings_appearance_poster_customization_description),
                     onClick = onPosterCustomizationClick,
                 )
-            }
-        }
-    }
-    item {
-        SettingsSection(
-            title = stringResource(Res.string.settings_appearance_section_streams),
-            isTablet = isTablet,
-        ) {
-            SettingsList {
                 navigationRow(
-                    title = stringResource(Res.string.compose_settings_page_streams),
-                    description = stringResource(Res.string.compose_settings_root_streams_description),
-                    onClick = onStreamsClick,
+                    title = stringResource(Res.string.collections_header),
+                    description = stringResource(Res.string.settings_content_discovery_collections_description),
+                    onClick = onCollectionsClick,
                 )
-            }
-        }
-    }
-    item {
-        SettingsSection(
-            title = stringResource(Res.string.settings_appearance_section_detail_page),
-            isTablet = isTablet,
-        ) {
-            SettingsList {
                 navigationRow(
                     title = stringResource(Res.string.compose_settings_page_meta_screen),
                     description = stringResource(Res.string.settings_content_discovery_meta_screen_description),
@@ -271,6 +243,7 @@ internal fun LazyListScope.appearanceSettingsContent(
             }
         }
     }
+    streamsAppearanceSection(isTablet = isTablet)
 }
 
 @Composable

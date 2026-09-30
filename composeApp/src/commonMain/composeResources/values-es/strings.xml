@@ -506,7 +506,7 @@
     <string name="compose_settings_page_notifications">Notificaciones</string>
     <string name="compose_settings_page_playback">Reproducción</string>
     <string name="compose_settings_page_plugins">Plugins</string>
-    <string name="compose_settings_page_poster_customization">Personalización de póster</string>
+    <string name="compose_settings_page_poster_customization">Estilos de tarjeta</string>
     <string name="compose_settings_page_privacy_policy">Política de privacidad</string>
     <string name="compose_settings_page_root">Configuración</string>
     <string name="compose_settings_page_streams">Corrientes</string>
@@ -533,7 +533,7 @@
     <string name="compose_settings_root_privacy_policy_description">Descubre cómo gestiona Provenio tus datos</string>
     <string name="compose_settings_root_streams_description">Transmitir reglas de URL de insignia y visualización de resultados.</string>
     <string name="compose_settings_root_switch_profile_description">Cambiar a un perfil diferente.</string>
-    <string name="compose_settings_root_switch_profile_title">Cambiar perfil</string>
+    <string name="compose_settings_root_switch_profile_title">Perfiles</string>
     <string name="compose_settings_root_trakt_description">Conecta Trakt, sincroniza listas y guarda títulos directamente en Trakt.</string>
     <string name="compose_settings_root_tracking_description">Conecta proveedores de seguimiento y elige cuál gestiona tu Biblioteca y Seguir viendo.</string>
     <string name="settings_search_empty">No se encontraron configuraciones.</string>
@@ -664,8 +664,8 @@
     <string name="settings_appearance_app_language_sheet_title">Elegir idioma</string>
     <string name="settings_appearance_continue_watching_description">Muestra, oculta y ajusta el estante de Seguir viendo.</string>
     <string name="settings_appearance_poster_customization_description">Ajusta el ancho compartido de las tarjetas de póster y los radios de esquina.</string>
-    <string name="settings_appearance_section_display">PANTALLA</string>
-    <string name="settings_appearance_section_home">INICIO</string>
+    <string name="settings_appearance_section_display">Interfaz de usuario</string>
+    <string name="settings_appearance_section_home">Secciones</string>
     <string name="settings_appearance_section_theme">TEMA</string>
     <string name="settings_homescreen_collection_with_addon">Colección • %1$s</string>
     <string name="settings_homescreen_display_name">Nombre visible</string>

@@ -366,7 +366,7 @@
     <string name="compose_settings_category_general">Allgemein</string>
     <string name="compose_settings_page_account">Konto</string>
     <string name="compose_settings_page_addons">Addons</string>
-    <string name="compose_settings_page_appearance">Erscheinungsbild</string>
+    <string name="compose_settings_page_appearance">Darstellung</string>
     <string name="compose_settings_page_content_discovery">Inhalte &amp; Entdeckung</string>
     <string name="compose_settings_page_continue_watching">Weiterschauen</string>
     <string name="compose_settings_page_homescreen">Startbildschirm</string>
@@ -377,7 +377,7 @@
     <string name="compose_settings_page_notifications">Benachrichtigungen</string>
     <string name="compose_settings_page_playback">Wiedergabe</string>
     <string name="compose_settings_page_plugins">Plugins</string>
-    <string name="compose_settings_page_poster_customization">Poster-Anpassung</string>
+    <string name="compose_settings_page_poster_customization">Kartenstile</string>
     <string name="compose_settings_page_root">Einstellungen</string>
     <string name="compose_settings_page_tmdb_enrichment">TMDB-Anreicherung</string>
     <string name="compose_settings_page_trakt">Trakt</string>
@@ -396,7 +396,7 @@
     <string name="compose_settings_root_integrations_description">TMDB- und MDBList-Dienste verbinden.</string>
     <string name="compose_settings_root_notifications_description">Verwalte Episode-Release-Benachrichtigungen und sende eine Test-Benachrichtigung.</string>
     <string name="compose_settings_root_switch_profile_description">Zu einem anderen Profil wechseln.</string>
-    <string name="compose_settings_root_switch_profile_title">Profil wechseln</string>
+    <string name="compose_settings_root_switch_profile_title">Profile</string>
     <string name="compose_settings_root_trakt_description">Trakt verbinden, Watchlist-Listen synchronisieren und Titel direkt in Trakt speichern.</string>
     <string name="compose_trakt_list_picker_loading">Deine Trakt-Listen werden geladen…</string>
     <string name="compose_trakt_list_picker_subtitle">Wähle, wo dieser Titel auf Trakt gespeichert werden soll</string>
@@ -455,8 +455,8 @@
     <string name="settings_appearance_app_language_sheet_title">Sprache wählen</string>
     <string name="settings_appearance_continue_watching_description">Anzeigen, ausblenden und gestalten der Weiterschauen-Reihe.</string>
     <string name="settings_appearance_poster_customization_description">Voreinstellungen für gemeinsame Posterkartenbreite und Eckenradius anpassen.</string>
-    <string name="settings_appearance_section_display">ANZEIGE</string>
-    <string name="settings_appearance_section_home">START</string>
+    <string name="settings_appearance_section_display">Benutzeroberfläche</string>
+    <string name="settings_appearance_section_home">Bereiche</string>
     <string name="settings_appearance_section_theme">DESIGN</string>
     <string name="settings_homescreen_collection_with_addon">Sammlung • %1$s</string>
     <string name="settings_homescreen_display_name">Anzeigename</string>
