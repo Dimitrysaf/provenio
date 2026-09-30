@@ -21,7 +21,9 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
+import io.github.dimitrysaf.provenio.desktop.DesktopDisplayScale
 import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
+import io.github.dimitrysaf.provenio.desktop.ProvideDesktopDisplayScale
 import io.github.dimitrysaf.provenio.shell.components.AppSnackbarHost
 import io.github.dimitrysaf.provenio.desktop.MaterialContextMenuRepresentation
 import org.jetbrains.compose.resources.painterResource
@@ -31,7 +33,7 @@ import provenio.composeapp.generated.resources.app_icon_arctic_blue
 internal actual val playerWindowSupported: Boolean = true
 
 private object PlayerWindowGeometry {
-    var size: DpSize = DpSize(1280.dp, 720.dp)
+    var size: DpSize = DesktopDisplayScale.initialWindowSize(DpSize(1280.dp, 720.dp))
     var position: WindowPosition = WindowPosition.PlatformDefault
 }
 
@@ -85,11 +87,13 @@ internal actual fun DetachedPlayerWindow(
             }
         },
     ) {
-        CompositionLocalProvider(LocalContextMenuRepresentation provides MaterialContextMenuRepresentation) {
-            AppThemeEnvironment {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    content()
-                    AppSnackbarHost(modifier = Modifier.align(Alignment.BottomCenter))
+        ProvideDesktopDisplayScale {
+            CompositionLocalProvider(LocalContextMenuRepresentation provides MaterialContextMenuRepresentation) {
+                AppThemeEnvironment {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        content()
+                        AppSnackbarHost(modifier = Modifier.align(Alignment.BottomCenter))
+                    }
                 }
             }
         }

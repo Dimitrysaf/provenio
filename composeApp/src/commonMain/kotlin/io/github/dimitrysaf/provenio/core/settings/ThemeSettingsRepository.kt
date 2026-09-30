@@ -14,6 +14,9 @@ object ThemeSettingsRepository {
     private val _colorPalette = MutableStateFlow<ColorPalette>(ColorPalette.Dynamic)
     internal val colorPalette: StateFlow<ColorPalette> = _colorPalette.asStateFlow()
 
+    private val _displayScale = MutableStateFlow(DisplayScaleOption.AUTOMATIC)
+    internal val displayScale: StateFlow<DisplayScaleOption> = _displayScale.asStateFlow()
+
     private val _selectedAppLanguage = MutableStateFlow(AppLanguage.DEVICE)
     val selectedAppLanguage: StateFlow<AppLanguage> = _selectedAppLanguage.asStateFlow()
 
@@ -33,6 +36,7 @@ object ThemeSettingsRepository {
         _amoledEnabled.value = false
         _themeMode.value = ThemeMode.SYSTEM
         _colorPalette.value = ColorPalette.Dynamic
+        _displayScale.value = DisplayScaleOption.AUTOMATIC
         _selectedAppLanguage.value = AppLanguage.DEVICE
     }
 
@@ -41,6 +45,7 @@ object ThemeSettingsRepository {
         _amoledEnabled.value = ThemeSettingsStorage.loadAmoledEnabled() ?: false
         _themeMode.value = ThemeMode.fromCode(ThemeSettingsStorage.loadThemeMode())
         _colorPalette.value = ColorPalette.fromKey(ThemeSettingsStorage.loadColorPalette())
+        _displayScale.value = DisplayScaleOption.fromKey(ThemeSettingsStorage.loadDisplayScale())
         val appLanguage = AppLanguage.fromCode(ThemeSettingsStorage.loadSelectedAppLanguage())
         ThemeSettingsStorage.applySelectedAppLanguage(appLanguage.code)
         _selectedAppLanguage.value = appLanguage
@@ -65,6 +70,13 @@ object ThemeSettingsRepository {
         if (_colorPalette.value == palette) return
         _colorPalette.value = palette
         ThemeSettingsStorage.saveColorPalette(palette.key)
+    }
+
+    internal fun setDisplayScale(option: DisplayScaleOption) {
+        ensureLoaded()
+        if (_displayScale.value == option) return
+        _displayScale.value = option
+        ThemeSettingsStorage.saveDisplayScale(option.key)
     }
 
     fun setAppLanguage(language: AppLanguage) {

@@ -25,6 +25,9 @@ import provenio.composeapp.generated.resources.settings_appearance_app_language
 import provenio.composeapp.generated.resources.settings_appearance_app_language_sheet_title
 import provenio.composeapp.generated.resources.settings_appearance_app_icon
 import provenio.composeapp.generated.resources.settings_appearance_color_palette
+import provenio.composeapp.generated.resources.settings_appearance_display_scale
+import provenio.composeapp.generated.resources.settings_appearance_display_scale_automatic
+import provenio.composeapp.generated.resources.settings_appearance_display_scale_automatic_description
 import provenio.composeapp.generated.resources.settings_appearance_amoled_black
 import provenio.composeapp.generated.resources.settings_appearance_amoled_description
 import provenio.composeapp.generated.resources.settings_appearance_theme
@@ -48,6 +51,8 @@ import io.github.dimitrysaf.provenio.core.settings.AppIconOption
 import io.github.dimitrysaf.provenio.core.settings.AppIconSettingsState
 import io.github.dimitrysaf.provenio.core.settings.AppLanguage
 import io.github.dimitrysaf.provenio.core.settings.ColorPalette
+import io.github.dimitrysaf.provenio.core.settings.DisplayScaleOption
+import io.github.dimitrysaf.provenio.core.settings.displayScaleSettingSupported
 import io.github.dimitrysaf.provenio.core.settings.ThemeMode
 import io.github.dimitrysaf.provenio.core.settings.labelResource
 
@@ -60,6 +65,8 @@ internal fun LazyListScope.appearanceSettingsContent(
     colorPalette: ColorPalette,
     dynamicColorAvailable: Boolean,
     onColorPaletteSelected: (ColorPalette) -> Unit,
+    displayScale: DisplayScaleOption,
+    onDisplayScaleSelected: (DisplayScaleOption) -> Unit,
     appIconState: AppIconSettingsState,
     onAppIconSelected: (AppIconOption) -> Unit,
     onAppIconFailureDismissed: () -> Unit,
@@ -76,6 +83,7 @@ internal fun LazyListScope.appearanceSettingsContent(
         var showLanguageSheet by remember { mutableStateOf(false) }
         var showThemeSheet by remember { mutableStateOf(false) }
         var showColorPaletteSheet by remember { mutableStateOf(false) }
+        var showDisplayScaleSheet by remember { mutableStateOf(false) }
         val effectiveColorPalette = colorPalette.effective(dynamicColorAvailable)
         var showAppIconPicker by remember { mutableStateOf(false) }
         SettingsSection(
@@ -106,6 +114,13 @@ internal fun LazyListScope.appearanceSettingsContent(
                     },
                     onClick = { showColorPaletteSheet = true },
                 )
+                if (displayScaleSettingSupported) {
+                    navigationRow(
+                        title = stringResource(Res.string.settings_appearance_display_scale),
+                        description = displayScale.label(),
+                        onClick = { showDisplayScaleSheet = true },
+                    )
+                }
                 navigationRow(
                     title = stringResource(Res.string.settings_appearance_app_icon),
                     description = stringResource(appIconState.selected.labelResource),
@@ -156,6 +171,26 @@ internal fun LazyListScope.appearanceSettingsContent(
                 dynamicColorAvailable = dynamicColorAvailable,
                 onSelected = onColorPaletteSelected,
                 onDismiss = { showColorPaletteSheet = false },
+            )
+        }
+
+        if (showDisplayScaleSheet) {
+            SingleChoiceBottomSheet(
+                title = stringResource(Res.string.settings_appearance_display_scale),
+                options = DisplayScaleOption.entries.map { option ->
+                    SingleChoiceOption(
+                        value = option,
+                        label = option.label(),
+                        supportingText = if (option == DisplayScaleOption.AUTOMATIC) {
+                            stringResource(Res.string.settings_appearance_display_scale_automatic_description)
+                        } else {
+                            null
+                        },
+                    )
+                },
+                isSelected = { it == displayScale },
+                onSelected = onDisplayScaleSelected,
+                onDismiss = { showDisplayScaleSheet = false },
             )
         }
 
@@ -261,3 +296,9 @@ private val ThemeMode.labelRes: StringResource
         ThemeMode.LIGHT -> Res.string.settings_appearance_theme_light
         ThemeMode.DARK -> Res.string.settings_appearance_theme_dark
     }
+
+@Composable
+private fun DisplayScaleOption.label(): String = when (val value = scale) {
+    null -> stringResource(Res.string.settings_appearance_display_scale_automatic)
+    else -> "${(value * 100).toInt()}%"
+}

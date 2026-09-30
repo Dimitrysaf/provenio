@@ -9,6 +9,8 @@ internal expect object ThemeSettingsStorage {
     fun saveThemeMode(code: String)
     fun loadColorPalette(): String?
     fun saveColorPalette(key: String)
+    fun loadDisplayScale(): String?
+    fun saveDisplayScale(key: String)
     fun loadSelectedAppLanguage(): String?
     fun saveSelectedAppLanguage(languageCode: String)
     fun applySelectedAppLanguage(languageCode: String)

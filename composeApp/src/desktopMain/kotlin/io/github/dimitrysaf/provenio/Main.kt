@@ -69,7 +69,9 @@ import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPrefere
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedStorage
 import io.github.dimitrysaf.provenio.desktop.Context
+import io.github.dimitrysaf.provenio.desktop.DesktopDisplayScale
 import io.github.dimitrysaf.provenio.desktop.DesktopLaunchScreen
+import io.github.dimitrysaf.provenio.desktop.ProvideDesktopDisplayScale
 import io.github.dimitrysaf.provenio.desktop.DesktopStatusNotifier
 import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
 import io.github.dimitrysaf.provenio.desktop.MaterialContextMenuRepresentation
@@ -90,11 +92,12 @@ fun main(args: Array<String>) {
     if (!SingleInstance.claim(args)) exitProcess(0)
     runCatching { File("/proc/self/comm").writeText("Provenio") }
     initializePlatform(Context.app)
+    DesktopDisplayScale.start()
     // A provenio:// link the desktop entry was opened with.
     args.firstOrNull { it.startsWith("provenio:") || it.startsWith("stremio:") }?.let(::handleAppUrl)
     SingleInstance.listen(::handleAppUrl)
     application {
-        val windowState = rememberWindowState(size = DpSize(1280.dp, 800.dp))
+        val windowState = rememberWindowState(size = DesktopDisplayScale.initialWindowSize(DpSize(1280.dp, 800.dp)))
         val fullscreen by DesktopWindowState.isFullscreen.collectAsState()
         var windowVisible by remember { mutableStateOf(true) }
         val quit = {
@@ -167,9 +170,11 @@ fun main(args: Array<String>) {
                     window.requestFocus()
                 }
             }
-            CompositionLocalProvider(LocalContextMenuRepresentation provides MaterialContextMenuRepresentation) {
-                DesktopLaunchScreen {
-                    App()
+            ProvideDesktopDisplayScale {
+                CompositionLocalProvider(LocalContextMenuRepresentation provides MaterialContextMenuRepresentation) {
+                    DesktopLaunchScreen {
+                        App()
+                    }
                 }
             }
         }

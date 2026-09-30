@@ -525,6 +525,9 @@
     <string name="settings_appearance_color_palette">Χρωματική παλέτα</string>
     <string name="settings_appearance_color_palette_wallpaper">Χρώματα ταπετσαρίας</string>
     <string name="settings_appearance_color_palette_wallpaper_description">Χρώματα Material You από την ταπετσαρία σας</string>
+    <string name="settings_appearance_display_scale">Κλίμακα οθόνης</string>
+    <string name="settings_appearance_display_scale_automatic">Αυτόματη</string>
+    <string name="settings_appearance_display_scale_automatic_description">Ακολουθεί την κλίμακα οθόνης του συστήματος</string>
     <string name="settings_appearance_app_icon_arctic_blue">Παγωμένο μπλε</string>
     <string name="settings_appearance_app_icon_android_confirmation_message">Η αλλαγή σε %1$s θα κλείσει το Provenio. Πατήστε ΟΚ για να συνεχίσετε.</string>
     <string name="settings_appearance_app_icon_android_confirmation_title">Αλλαγή εικονιδίου εφαρμογής;</string>

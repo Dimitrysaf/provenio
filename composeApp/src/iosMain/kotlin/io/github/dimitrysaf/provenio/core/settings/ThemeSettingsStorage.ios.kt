@@ -15,6 +15,7 @@ actual object ThemeSettingsStorage {
     private const val selectedAppLanguageKey = "selected_app_language"
     private const val themeModeKey = "theme_mode"
     private const val colorPaletteKey = "color_palette"
+    private const val displayScaleKey = "display_scale"
     private val profileScopedSyncKeys = listOf(
         amoledEnabledKey,
     )
@@ -43,6 +44,12 @@ actual object ThemeSettingsStorage {
 
     actual fun saveColorPalette(key: String) {
         NSUserDefaults.standardUserDefaults.setObject(key, forKey = colorPaletteKey)
+    }
+
+    actual fun loadDisplayScale(): String? = NSUserDefaults.standardUserDefaults.stringForKey(displayScaleKey)
+
+    actual fun saveDisplayScale(key: String) {
+        NSUserDefaults.standardUserDefaults.setObject(key, forKey = displayScaleKey)
     }
 
     actual fun loadSelectedAppLanguage(): String? {

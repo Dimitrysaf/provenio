@@ -114,6 +114,7 @@ import io.github.dimitrysaf.provenio.core.settings.AppIconRepository
 import io.github.dimitrysaf.provenio.core.settings.AppIconSettingsState
 import io.github.dimitrysaf.provenio.core.settings.AppLanguage
 import io.github.dimitrysaf.provenio.core.settings.ColorPalette
+import io.github.dimitrysaf.provenio.core.settings.DisplayScaleOption
 import io.github.dimitrysaf.provenio.shell.theme.isDynamicColorAvailable
 import io.github.dimitrysaf.provenio.core.settings.ThemeSettingsRepository
 
@@ -812,6 +813,7 @@ internal data class SettingsData(
     val themeMode: ThemeMode,
     val colorPalette: ColorPalette,
     val dynamicColorAvailable: Boolean,
+    val displayScale: DisplayScaleOption,
     val appIconState: AppIconSettingsState,
     val onAppIconSelected: (AppIconOption) -> Unit,
     val selectedAppLanguage: AppLanguage,
@@ -844,6 +846,7 @@ internal fun rememberSettingsData(): SettingsData {
     val selectedAppLanguage by remember { ThemeSettingsRepository.selectedAppLanguage }.collectAsStateWithLifecycle()
     val themeMode by remember { ThemeSettingsRepository.themeMode }.collectAsStateWithLifecycle()
     val colorPalette by remember { ThemeSettingsRepository.colorPalette }.collectAsStateWithLifecycle()
+    val displayScale by remember { ThemeSettingsRepository.displayScale }.collectAsStateWithLifecycle()
     val dynamicColorAvailable = remember { isDynamicColorAvailable() }
     val appIconState by remember {
         AppIconRepository.ensureLoaded()
@@ -932,6 +935,7 @@ internal fun rememberSettingsData(): SettingsData {
         themeMode = themeMode,
         colorPalette = colorPalette,
         dynamicColorAvailable = dynamicColorAvailable,
+        displayScale = displayScale,
         appIconState = appIconState,
         onAppIconSelected = { icon -> appIconScope.launch { AppIconRepository.select(icon) } },
         selectedAppLanguage = selectedAppLanguage,
@@ -1009,6 +1013,8 @@ internal fun LazyListScope.settingsPageContent(
             colorPalette = data.colorPalette,
             dynamicColorAvailable = data.dynamicColorAvailable,
             onColorPaletteSelected = ThemeSettingsRepository::setColorPalette,
+            displayScale = data.displayScale,
+            onDisplayScaleSelected = ThemeSettingsRepository::setDisplayScale,
             appIconState = data.appIconState,
             onAppIconSelected = data.onAppIconSelected,
             onAppIconFailureDismissed = AppIconRepository::clearFailure,

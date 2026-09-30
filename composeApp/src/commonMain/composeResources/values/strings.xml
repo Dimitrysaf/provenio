@@ -804,6 +804,9 @@
     <string name="settings_appearance_color_palette">Color Palette</string>
     <string name="settings_appearance_color_palette_wallpaper">Wallpaper colors</string>
     <string name="settings_appearance_color_palette_wallpaper_description">Material You colors from your wallpaper</string>
+    <string name="settings_appearance_display_scale">Display Scale</string>
+    <string name="settings_appearance_display_scale_automatic">Automatic</string>
+    <string name="settings_appearance_display_scale_automatic_description">Follow the system display scaling</string>
     <string name="settings_appearance_app_icon_arctic_blue">Arctic Blue</string>
     <string name="settings_appearance_app_icon_android_confirmation_message">Changing to %1$s will close Provenio. Tap OK to continue.</string>
     <string name="settings_appearance_app_icon_android_confirmation_title">Change App Icon?</string>
