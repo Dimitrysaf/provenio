@@ -2042,6 +2042,8 @@ Bu özelliği tamamen kendi sorumluluğunuzda kullanırsınız. P2P istediğiniz
     <string name="settings_p2p_subtitle">Eşten eşe (torrent) yayınlara izin ver</string>
     <string name="settings_p2p_hide_stats_title">Torrent istatistiklerini gizle</string>
     <string name="settings_p2p_hide_stats_subtitle">Yükleme ve oynatma sırasında arabellek, seed, eşler ve indirme hızını gizle</string>
+    <string name="settings_p2p_prefetch_title">Torrent bilgisini önceden getir</string>
+    <string name="settings_p2p_prefetch_subtitle">Kaynaklara göz atarken en iyi torrent sonuçlarının dosya listesini alır, böylece daha hızlı başlarlar. Az miktarda veri kullanır.</string>
     <string name="settings_p2p_profile_title">Torrent profili</string>
     <string name="settings_p2p_profile_soft">Hafif</string>
     <string name="settings_p2p_profile_balanced">Dengeli</string>

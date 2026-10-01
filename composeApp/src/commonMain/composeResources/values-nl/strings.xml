@@ -2138,6 +2138,8 @@
     <string name="settings_p2p_subtitle">Peer-to-peerstreams (torrents) toestaan</string>
     <string name="settings_p2p_hide_stats_title">Torrentstatistieken verbergen</string>
     <string name="settings_p2p_hide_stats_subtitle">Verberg buffer, seeds, peers en downloadsnelheid tijdens laden en afspelen</string>
+    <string name="settings_p2p_prefetch_title">Torrentinfo vooraf ophalen</string>
+    <string name="settings_p2p_prefetch_subtitle">Haalt de bestandslijst van de beste torrentresultaten op terwijl je bronnen bekijkt, zodat ze sneller starten. Gebruikt een beetje data.</string>
     <string name="settings_p2p_profile_title">Torrentprofiel</string>
     <string name="settings_p2p_profile_soft">Zacht</string>
     <string name="settings_p2p_profile_balanced">Gebalanceerd</string>

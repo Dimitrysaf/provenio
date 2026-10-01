@@ -317,6 +317,10 @@ actual object P2pStreamingEngine {
             }
         }
 
+    actual fun warmUp() = Unit
+
+    actual fun prefetchTorrents(requests: List<P2pStreamRequest>) = Unit
+
     actual fun stopDownloadStream(downloadId: String) {
         scope.launch {
             val session = downloadSessions.remove(downloadId) ?: return@launch

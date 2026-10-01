@@ -172,6 +172,22 @@ StreamDemandPlan build_stream_demand_plan(
         }
     }
 
+    if (window.tail_bytes > 0 && focused.file_size > 0 && focused.piece_size > 0 &&
+        focused.file_offset <= std::numeric_limits<std::uint64_t>::max() -
+            (focused.file_size - 1)) {
+        const auto tail_bytes = std::min(window.tail_bytes, focused.file_size);
+        const auto first_tail_piece =
+            (focused.file_offset + focused.file_size - tail_bytes) / focused.piece_size;
+        const auto last_file_piece =
+            (focused.file_offset + focused.file_size - 1) / focused.piece_size;
+        for (auto candidate = first_tail_piece;
+             candidate <= last_file_piece &&
+                 candidate <= std::numeric_limits<std::uint32_t>::max();
+             ++candidate) {
+            combined.emplace(static_cast<std::uint32_t>(candidate), PriorityClass::metadata_tail);
+        }
+    }
+
     result.pieces.reserve(combined.size());
     for (const auto& [piece, priority] : combined) {
         result.pieces.push_back({piece, priority});

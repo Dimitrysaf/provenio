@@ -2096,6 +2096,8 @@ Utilizas esta función bajo tu propia responsabilidad. P2P se puede desactivar e
     <string name="settings_p2p_subtitle">Permitir transmisiones de igual a igual (torrent)</string>
     <string name="settings_p2p_hide_stats_title">Ocultar estadísticas de torrents</string>
     <string name="settings_p2p_hide_stats_subtitle">Ocultar buffer, semillas, pares y velocidad de descarga durante la carga y reproducción</string>
+    <string name="settings_p2p_prefetch_title">Precargar información del torrent</string>
+    <string name="settings_p2p_prefetch_subtitle">Obtiene la lista de archivos de los mejores resultados de torrent mientras exploras las fuentes, para que empiecen antes. Usa pocos datos.</string>
     <string name="settings_p2p_profile_title">Perfil de torrent</string>
     <string name="settings_p2p_profile_soft">Ligero</string>
     <string name="settings_p2p_profile_balanced">Equilibrado</string>

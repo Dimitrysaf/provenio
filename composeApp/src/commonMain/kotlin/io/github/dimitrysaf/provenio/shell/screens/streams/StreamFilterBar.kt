@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.Search
@@ -17,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -31,11 +33,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.streams.AddonStreamGroup
 import io.github.dimitrysaf.provenio.core.streams.StreamQuality
+import io.github.dimitrysaf.provenio.core.streams.StreamSizeOrder
 import io.github.dimitrysaf.provenio.core.streams.filteredBy
 import io.github.dimitrysaf.provenio.core.streams.quality
+import io.github.dimitrysaf.provenio.core.streams.sizeBytes
+import io.github.dimitrysaf.provenio.core.streams.sortedBySize
 import io.github.dimitrysaf.provenio.core.streams.streamQueryRegex
 import io.github.dimitrysaf.provenio.shell.components.LocalWindowBreakpoint
 import io.github.dimitrysaf.provenio.shell.components.MultiChoiceBottomSheet
+import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
@@ -45,9 +51,10 @@ import provenio.composeapp.generated.resources.*
 internal class StreamFilterState {
     var query by mutableStateOf("")
     var qualities by mutableStateOf(emptySet<StreamQuality>())
+    var sizeOrder by mutableStateOf(StreamSizeOrder.DEFAULT)
 
     fun apply(groups: List<AddonStreamGroup>): List<AddonStreamGroup> =
-        groups.filteredBy(streamQueryRegex(query), qualities)
+        groups.filteredBy(streamQueryRegex(query), qualities).sortedBySize(sizeOrder)
 }
 
 @Composable
@@ -59,6 +66,7 @@ internal fun StreamFilterBar(state: StreamFilterState, groups: List<AddonStreamG
     val qualities = remember(groups) {
         groups.flatMap { it.streams }.map { it.quality() }.toSet().sorted()
     }
+    val hasSizes = remember(groups) { groups.any { group -> group.streams.any { it.sizeBytes() != null } } }
     Column(modifier = Modifier.fillMaxWidth()) {
         TextField(
             value = state.query,
@@ -72,6 +80,12 @@ internal fun StreamFilterBar(state: StreamFilterState, groups: List<AddonStreamG
                         IconButton(onClick = { state.query = "" }) {
                             Icon(imageVector = Icons.Rounded.Close, contentDescription = stringResource(Res.string.action_clear))
                         }
+                    }
+                    if (hasSizes) {
+                        StreamSizeOrderMenuButton(
+                            selected = state.sizeOrder,
+                            onSelected = { state.sizeOrder = it },
+                        )
                     }
                     if (qualities.size > 1) {
                         StreamQualityMenuButton(
@@ -154,6 +168,60 @@ private fun StreamQualityMenuButton(
             )
         }
     }
+}
+
+// Orders the streams by file size: a menu on large windows, the app's single-choice sheet on phones.
+@Composable
+private fun StreamSizeOrderMenuButton(
+    selected: StreamSizeOrder,
+    onSelected: (StreamSizeOrder) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    val title = stringResource(Res.string.streams_sort_title)
+    val orders = StreamSizeOrder.entries
+    val labels = orders.map { it.label() }
+    Box {
+        IconButton(onClick = { open = true }) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.Sort,
+                contentDescription = title,
+                tint = if (selected != StreamSizeOrder.DEFAULT) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    LocalContentColor.current
+                },
+            )
+        }
+        if (LocalWindowBreakpoint.current.isTwoPane) {
+            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                orders.forEachIndexed { index, order ->
+                    DropdownMenuItem(
+                        text = { Text(labels[index]) },
+                        onClick = {
+                            onSelected(order)
+                            open = false
+                        },
+                        leadingIcon = { RadioButton(selected = order == selected, onClick = null) },
+                    )
+                }
+            }
+        } else if (open) {
+            SingleChoiceBottomSheet(
+                title = title,
+                options = orders.mapIndexed { index, order -> SingleChoiceOption(value = order, label = labels[index]) },
+                isSelected = { it == selected },
+                onSelected = onSelected,
+                onDismiss = { open = false },
+            )
+        }
+    }
+}
+
+@Composable
+private fun StreamSizeOrder.label(): String = when (this) {
+    StreamSizeOrder.DEFAULT -> stringResource(Res.string.streams_sort_default)
+    StreamSizeOrder.LARGEST_FIRST -> stringResource(Res.string.streams_sort_size_desc)
+    StreamSizeOrder.SMALLEST_FIRST -> stringResource(Res.string.streams_sort_size_asc)
 }
 
 @Composable

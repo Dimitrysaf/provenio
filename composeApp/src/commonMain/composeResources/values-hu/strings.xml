@@ -1840,6 +1840,8 @@
     <string name="settings_p2p_subtitle">Peer-to-peer (torrent) streamek engedélyezése</string>
     <string name="settings_p2p_hide_stats_title">Torrent statisztikák elrejtése</string>
     <string name="settings_p2p_hide_stats_subtitle">Pufferelés, seederek, peerek és letöltési sebesség elrejtése a betöltés és lejátszás alatt</string>
+    <string name="settings_p2p_prefetch_title">Torrent információ előtöltése</string>
+    <string name="settings_p2p_prefetch_subtitle">Lekéri a legjobb torrent találatok fájllistáját, amíg a forrásokat böngészed, így gyorsabban indulnak. Kevés adatot használ.</string>
     <string name="player_torrent_peer_info">%1$d seeder · %2$d peer</string>
     <string name="player_torrent_buffered_status">%1$s pufferelve · %2$s · %3$s</string>
     <string name="player_torrent_status">%1$s · %2$s</string>

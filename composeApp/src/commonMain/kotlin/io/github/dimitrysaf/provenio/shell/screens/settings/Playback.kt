@@ -746,6 +746,12 @@ private fun P2pGroup(
                 checked = { p2pSettings.hideTorrentStats },
                 onCheckedChange = P2pSettingsRepository::setHideTorrentStats,
             )
+            switchRow(
+                title = stringResource(Res.string.settings_p2p_prefetch_title),
+                description = stringResource(Res.string.settings_p2p_prefetch_subtitle),
+                checked = { p2pSettings.prefetchTorrentInfo },
+                onCheckedChange = P2pSettingsRepository::setPrefetchTorrentInfo,
+            )
             navigationRow(
                 title = stringResource(Res.string.settings_p2p_profile_title),
                 description = p2pProfileLabel(p2pSettings.torrentProfile),

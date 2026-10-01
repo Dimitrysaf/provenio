@@ -23,6 +23,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
@@ -39,10 +40,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 private const val TAG = "P2pStreamingEngine"
 private const val DIAGNOSTIC_TAG = "ProvenioP2PDiag"
 private const val DIAGNOSTIC_SAMPLE_INTERVAL_MS = 1_000L
+private const val IDLE_SHUTDOWN_MS = 3 * 60_000L
+private const val PREFETCH_LIMIT = 2
+private const val PREFETCH_TIMEOUT_MS = 30_000L
 
 internal fun buildEngineConfig(
     stateDirectory: File,
@@ -135,6 +140,7 @@ actual object P2pStreamingEngine {
     private val torrentMutexes = mutableMapOf<String, Mutex>()
     private val downloadSessions = mutableMapOf<String, DownloadSession>()
     private var shutdownRequested = false
+    private var idleShutdownJob: Job? = null
     private var statsJob: Job? = null
     private var cleanupJob: Job? = null
     private var engineEventsJob: Job? = null
@@ -492,6 +498,69 @@ actual object P2pStreamingEngine {
                 throw error
             }
         }
+
+    actual fun warmUp() {
+        scheduleIdleShutdown()
+        scope.launch {
+            try {
+                ensureEngine { true }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                Log.w(TAG, "Could not start the engine ahead of playback", error)
+            }
+        }
+    }
+
+    actual fun prefetchTorrents(requests: List<P2pStreamRequest>) {
+        P2pSettingsRepository.ensureLoaded()
+        if (!P2pSettingsRepository.uiState.value.prefetchTorrentInfo || requests.isEmpty()) return
+        scheduleIdleShutdown()
+        val candidates = requests.take(PREFETCH_LIMIT)
+        scope.launch {
+            val activeEngine = try {
+                ensureEngine { true }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                Log.w(TAG, "Could not start the engine to prefetch torrents", error)
+                return@launch
+            }
+            for (request in candidates) {
+                if (synchronized(lifecycleLock) { isPlaybackActive() }) return@launch
+                val infoHash = runCatching { canonicalP2pInfoHash(request.infoHash) }.getOrNull() ?: continue
+                try {
+                    torrentMutex(infoHash).withLock {
+                        if (synchronized(lifecycleLock) { infoHash in knownTorrentIds }) return@withLock
+                        val magnetUri = buildP2pMagnetUri(
+                            infoHash,
+                            (DEFAULT_TRACKERS + request.trackers).distinct(),
+                        )
+                        withTimeoutOrNull(PREFETCH_TIMEOUT_MS) { activeEngine.addMagnet(magnetUri) }
+                            ?.let { rememberTorrent(activeEngine, it) }
+                    }
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (error: Exception) {
+                    Log.w(TAG, "Could not prefetch torrent info", error)
+                }
+            }
+        }
+    }
+
+    private fun scheduleIdleShutdown() {
+        val previous = idleShutdownJob
+        idleShutdownJob = scope.launch {
+            previous?.cancelAndJoin()
+            delay(IDLE_SHUTDOWN_MS)
+            val idle = synchronized(lifecycleLock) {
+                (downloadSessions.isEmpty() && !isPlaybackActive()).also { idle ->
+                    if (idle) shutdownRequested = true
+                }
+            }
+            if (idle) closeEngineIfUnused()
+        }
+    }
 
     actual fun stopDownloadStream(downloadId: String) {
         val session = synchronized(lifecycleLock) {

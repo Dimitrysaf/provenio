@@ -3,6 +3,10 @@
 #include "cache/disk_cache_manager.hpp"
 #include "storage/atomic_file.hpp"
 
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#endif
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -47,10 +51,21 @@ namespace {
 constexpr std::size_t maximum_session_state_size = 4 * 1024 * 1024;
 constexpr std::size_t maximum_resume_state_size = 16 * 1024 * 1024;
 constexpr std::size_t maximum_pending_disk_reclaims = 256;
-constexpr int peer_connect_timeout_seconds = 3;
+constexpr int peer_connect_timeout_seconds = 7;
 constexpr int peer_handshake_timeout_seconds = 20;
 constexpr int peer_reconnect_floor_seconds = 4;
-constexpr int piece_request_timeout_seconds = 4;
+constexpr int piece_request_timeout_seconds = 8;
+constexpr std::string_view dht_bootstrap_nodes =
+    "dht.libtorrent.org:25401,router.bittorrent.com:6881,router.utorrent.com:6881,"
+    "dht.transmissionbt.com:6881,dht.aelitis.com:6881";
+
+#if defined(__ANDROID__) || (defined(__APPLE__) && TARGET_OS_IPHONE)
+constexpr bool constrained_device = true;
+#else
+constexpr bool constrained_device = false;
+#endif
+
+constexpr int queued_disk_bytes = (constrained_device ? 8 : 16) * 1024 * 1024;
 
 struct TorrentProfileSettings {
     int connection_limit;
@@ -61,15 +76,26 @@ struct TorrentProfileSettings {
 TorrentProfileSettings torrent_profile_settings(
     const engine_torrent_profile profile
 ) {
+    if constexpr (constrained_device) {
+        switch (profile) {
+        case ENGINE_TORRENT_PROFILE_SOFT:
+            return {35, 35, 35};
+        case ENGINE_TORRENT_PROFILE_BALANCED:
+            return {55, 55, 55};
+        case ENGINE_TORRENT_PROFILE_FAST:
+            return {120, 120, 120};
+        }
+        return {55, 55, 55};
+    }
     switch (profile) {
     case ENGINE_TORRENT_PROFILE_SOFT:
-        return {35, 35, 35};
+        return {60, 50, 50};
     case ENGINE_TORRENT_PROFILE_BALANCED:
-        return {55, 55, 55};
+        return {120, 80, 80};
     case ENGINE_TORRENT_PROFILE_FAST:
-        return {120, 120, 120};
+        return {250, 150, 150};
     }
-    return {55, 55, 55};
+    return {120, 80, 80};
 }
 
 enum class MetadataSource {
@@ -186,6 +212,8 @@ lt::settings_pack make_settings(const ProtocolBackendConfig& config) {
     settings.set_str(lt::settings_pack::user_agent, "Engine/0.1.1");
     settings.set_str(lt::settings_pack::listen_interfaces, "0.0.0.0:0,[::]:0");
     settings.set_bool(lt::settings_pack::enable_dht, true);
+    settings.set_str(lt::settings_pack::dht_bootstrap_nodes, std::string(dht_bootstrap_nodes));
+    settings.set_int(lt::settings_pack::max_queued_disk_bytes, queued_disk_bytes);
     settings.set_bool(lt::settings_pack::enable_lsd, true);
     settings.set_bool(lt::settings_pack::enable_upnp, true);
     settings.set_bool(lt::settings_pack::enable_natpmp, true);
@@ -211,14 +239,11 @@ lt::settings_pack make_settings(const ProtocolBackendConfig& config) {
     settings.set_int(
         lt::settings_pack::alert_mask,
         lt::alert_category::error |
-            lt::alert_category::peer |
             lt::alert_category::storage |
             lt::alert_category::tracker |
             lt::alert_category::connect |
             lt::alert_category::status |
             lt::alert_category::performance_warning |
-            lt::alert_category::dht |
-            lt::alert_category::file_progress |
             lt::alert_category::upload
     );
     apply_upload_mode(settings, config.upload_mode, config.upload_limit_bytes_per_second);

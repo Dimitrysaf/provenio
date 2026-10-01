@@ -57,6 +57,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.debrid.DebridSettingsRepository
 import io.github.dimitrysaf.provenio.core.debrid.DirectDebridPlayableResult
 import io.github.dimitrysaf.provenio.core.debrid.DirectDebridPlaybackResolver
+import kotlinx.coroutines.delay
+import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
+import io.github.dimitrysaf.provenio.core.p2p.P2pStreamRequest
+import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
 import io.github.dimitrysaf.provenio.core.debrid.toastMessage
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressRepository
@@ -203,7 +207,19 @@ fun StreamsSheet(
     val hasVisibleRows = uiState.groups.any { it.streams.isNotEmpty() || it.isLoading }
     val stillLoading = preparing || uiState.isAnyLoading
     val filter = rememberStreamFilterState(uiState.requestToken)
-    val filteredGroups = remember(uiState.groups, filter.query, filter.qualities) { filter.apply(uiState.groups) }
+    val filteredGroups = remember(uiState.groups, filter.query, filter.qualities, filter.sizeOrder) { filter.apply(uiState.groups) }
+    val p2pSettings by remember {
+        P2pSettingsRepository.ensureLoaded()
+        P2pSettingsRepository.uiState
+    }.collectAsStateWithLifecycle()
+    val p2pAvailable = P2pSettingsRepository.isVisible && p2pSettings.p2pEnabled
+    val torrentCandidates = remember(filteredGroups) { localTorrentCandidates(filteredGroups) }
+    LaunchedEffect(torrentCandidates, p2pAvailable) {
+        if (!p2pAvailable || torrentCandidates.isEmpty()) return@LaunchedEffect
+        P2pStreamingEngine.warmUp()
+        delay(TorrentPrefetchSettleMs)
+        P2pStreamingEngine.prefetchTorrents(torrentCandidates)
+    }
     val subtitle = if (seasonNumber != null && episodeNumber != null) {
         val code = stringResource(Res.string.streams_episode_badge, seasonNumber, episodeNumber)
         episodeTitle?.takeIf { it.isNotBlank() }?.let { "$code · $it" } ?: code
@@ -563,3 +579,22 @@ private val StreamsSheetThumbnailHeight = 54.dp
 
 /** The sheet's gutter, matching the rest of the app's lists. */
 internal val StreamsHorizontalPadding = 16.dp
+
+private fun localTorrentCandidates(groups: List<AddonStreamGroup>): List<P2pStreamRequest> =
+    groups.asSequence()
+        .flatMap { it.streams.asSequence() }
+        .filter { stream ->
+            stream.needsLocalDebridResolve && stream.p2pInfoHash != null &&
+                !DirectDebridPlaybackResolver.shouldResolveToPlayableStream(stream)
+        }
+        .mapNotNull { stream ->
+            stream.p2pInfoHash?.let { infoHash ->
+                P2pStreamRequest(infoHash = infoHash, fileIdx = stream.p2pFileIdx, trackers = stream.p2pTrackers)
+            }
+        }
+        .distinctBy { it.infoHash.lowercase() }
+        .take(TorrentPrefetchCount)
+        .toList()
+
+private const val TorrentPrefetchSettleMs = 1_500L
+private const val TorrentPrefetchCount = 2

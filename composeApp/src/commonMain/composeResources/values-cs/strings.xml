@@ -1860,6 +1860,8 @@
     <string name="settings_p2p_subtitle">Povolit peer-to-peer (torrent) streamy</string>
     <string name="settings_p2p_hide_stats_title">Skrýt statistiky torrentu</string>
     <string name="settings_p2p_hide_stats_subtitle">Skrýt načítání (buffer), seedery, peery a rychlost stahování během načítání a přehrávání</string>
+    <string name="settings_p2p_prefetch_title">Předem načíst informace o torrentu</string>
+    <string name="settings_p2p_prefetch_subtitle">Načte seznam souborů nejlepších torrentových výsledků, zatímco procházíte zdroje, aby se spustily rychleji. Spotřebuje trochu dat.</string>
     <string name="player_torrent_peer_info">%1$d seederů · %2$d peerů</string>
     <string name="player_torrent_buffered_status">%1$s uloženo do paměti (buffer) · %2$s · %3$s</string>
     <string name="player_torrent_status">%1$s · %2$s</string>

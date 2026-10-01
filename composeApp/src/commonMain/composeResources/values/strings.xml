@@ -1746,6 +1746,10 @@
     <string name="streams_filter_unknown_quality">Unknown</string>
     <string name="streams_filter_quality">Quality</string>
     <string name="streams_filter_all_qualities">All qualities</string>
+    <string name="streams_sort_title">Sort</string>
+    <string name="streams_sort_default">Default order</string>
+    <string name="streams_sort_size_desc">Size: largest first</string>
+    <string name="streams_sort_size_asc">Size: smallest first</string>
     <string name="streams_torrent_not_supported">This stream type is not supported</string>
     <string name="debrid_missing_api_key">Connect an account in Settings.</string>
     <string name="debrid_not_cached">Not cached on Torbox.</string>
@@ -2388,6 +2392,8 @@
     <string name="settings_p2p_seeding_subtitle">Seeding is prohibited and more serious than streaming. Enable at your own risk.</string>
     <string name="settings_p2p_hide_stats_title">Hide torrent stats</string>
     <string name="settings_p2p_hide_stats_subtitle">Hide buffer, seeds, peers and download speed during loading and playback</string>
+    <string name="settings_p2p_prefetch_title">Prefetch torrent info</string>
+    <string name="settings_p2p_prefetch_subtitle">Fetch the file list of the top torrent results while you browse sources, so they start faster. Uses a little data.</string>
     <string name="settings_p2p_profile_title">Torrent profile</string>
     <string name="settings_p2p_profile_soft">Soft</string>
     <string name="settings_p2p_profile_balanced">Balanced</string>

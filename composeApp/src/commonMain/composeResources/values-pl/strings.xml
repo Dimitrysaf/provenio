@@ -1714,6 +1714,8 @@
     <string name="settings_meta_hero_trailer_playback">Odtwarzanie zwiastuna w tle</string>
     <string name="settings_meta_hero_trailer_playback_description">Odtwarzaj podgląd zwiastuna w tle szczegółów gdy dostępny.</string>
     <string name="settings_p2p_hide_stats_subtitle">Ukryj bufor, seedy, peery i prędkość pobierania podczas ładowania i odtwarzania</string>
+    <string name="settings_p2p_prefetch_title">Wstępnie pobieraj informacje o torrencie</string>
+    <string name="settings_p2p_prefetch_subtitle">Pobiera listę plików najlepszych wyników torrent podczas przeglądania źródeł, aby szybciej startowały. Zużywa trochę danych.</string>
     <string name="settings_p2p_hide_stats_title">Ukryj statystyki torrenta</string>
     <string name="settings_p2p_subtitle">Zezwalaj na strumienie peer-to-peer (torrent)</string>
     <string name="settings_p2p_title">Strumieniowanie P2P</string>

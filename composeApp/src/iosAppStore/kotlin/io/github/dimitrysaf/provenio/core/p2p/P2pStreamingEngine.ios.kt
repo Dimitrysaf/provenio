@@ -38,5 +38,9 @@ actual object P2pStreamingEngine {
     actual suspend fun startDownloadStream(downloadId: String, request: P2pStreamRequest): String =
         throw P2pStreamingException("P2P streaming is not available on this platform")
 
+    actual fun warmUp() = Unit
+
+    actual fun prefetchTorrents(requests: List<P2pStreamRequest>) = Unit
+
     actual fun stopDownloadStream(downloadId: String) = Unit
 }

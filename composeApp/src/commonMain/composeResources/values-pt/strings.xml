@@ -1791,6 +1791,8 @@
     <string name="settings_p2p_subtitle">Permitir streams ponto a ponto (torrent)</string>
     <string name="settings_p2p_hide_stats_title">Ocultar estatísticas de torrent</string>
     <string name="settings_p2p_hide_stats_subtitle">Oculta buffer, seeds, peers e velocidade de transferência durante o carregamento e a reprodução</string>
+    <string name="settings_p2p_prefetch_title">Pré-carregar informações do torrent</string>
+    <string name="settings_p2p_prefetch_subtitle">Obtém a lista de ficheiros dos melhores resultados de torrent enquanto vê as fontes, para começarem mais depressa. Usa poucos dados.</string>
     <string name="player_torrent_peer_info">%1$d seeds · %2$d peers</string>
     <string name="player_torrent_buffered_status">%1$s em buffer · %2$s · %3$s</string>
     <string name="player_torrent_status">%1$s · %2$s</string>

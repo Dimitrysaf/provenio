@@ -43,7 +43,13 @@ constexpr std::chrono::seconds piece_wait_timeout{60};
 constexpr std::uint64_t mebibyte = 1024 * 1024;
 constexpr std::uint64_t critical_front_limit = mebibyte;
 // Window used until the player reports the video's duration.
-constexpr scheduler::StreamWindow default_stream_window{64 * mebibyte, 15 * mebibyte, 32 * mebibyte};
+constexpr std::uint64_t tail_prefetch_bytes = 8 * mebibyte;
+constexpr scheduler::StreamWindow default_stream_window{
+    64 * mebibyte,
+    15 * mebibyte,
+    32 * mebibyte,
+    tail_prefetch_bytes,
+};
 constexpr std::uint64_t window_seconds_ahead = 150;
 constexpr std::uint64_t window_seconds_near = 30;
 constexpr std::uint64_t window_seconds_behind = 150;
@@ -751,6 +757,7 @@ struct LibtorrentStreamBridge::Impl {
             forward,
             std::min(bytes_for(window_seconds_near), forward),
             bytes_for(window_seconds_behind),
+            tail_prefetch_bytes,
         };
     }
 

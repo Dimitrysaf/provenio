@@ -2123,6 +2123,8 @@
     <string name="settings_p2p_subtitle">Разрешить одноранговые (торрент) потоки</string>
     <string name="settings_p2p_hide_stats_title">Скрыть статистику торрентов</string>
     <string name="settings_p2p_hide_stats_subtitle">Скрывать буфер, сиды, пиры и скорость загрузки во время загрузки и воспроизведения</string>
+    <string name="settings_p2p_prefetch_title">Предзагрузка данных торрента</string>
+    <string name="settings_p2p_prefetch_subtitle">Загружает список файлов лучших торрент-результатов, пока вы просматриваете источники, чтобы они запускались быстрее. Расходует немного трафика.</string>
     <string name="settings_p2p_profile_title">Профиль торрента</string>
     <string name="settings_p2p_profile_soft">Мягкий</string>
     <string name="settings_p2p_profile_balanced">Сбалансированный</string>

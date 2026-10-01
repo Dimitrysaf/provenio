@@ -22,6 +22,7 @@ struct StreamWindow {
     std::uint64_t forward_bytes = 0;
     std::uint64_t near_bytes = 0;
     std::uint64_t backward_bytes = 0;
+    std::uint64_t tail_bytes = 0;
 };
 
 struct StreamDemandPlan {

@@ -2119,6 +2119,8 @@
     <string name="settings_p2p_subtitle">Разрешете peer-to-peer (торент) източници</string>
     <string name="settings_p2p_hide_stats_title">Скрий статистиките на торента</string>
     <string name="settings_p2p_hide_stats_subtitle">Скрий буфера, сийдовете, пиъровете и скоростта на изтегляне по време на зареждане и възпроизвеждане</string>
+    <string name="settings_p2p_prefetch_title">Предварително зареждане на торент информация</string>
+    <string name="settings_p2p_prefetch_subtitle">Зарежда списъка с файлове на най-добрите торент резултати, докато разглеждаш източниците, за да стартират по-бързо. Използва малко данни.</string>
     <string name="settings_p2p_profile_title">Торент профил</string>
     <string name="settings_p2p_profile_soft">Слаб</string>
     <string name="settings_p2p_profile_balanced">Балансиран</string>

@@ -1855,6 +1855,8 @@
     <string name="settings_p2p_subtitle">Permite fluxurile de tip peer-to-peer (torrent)</string>
     <string name="settings_p2p_hide_stats_title">Ascunde statisticile torrentului</string>
     <string name="settings_p2p_hide_stats_subtitle">Ascunde datele despre buffer, seeders, peers și viteza de descărcare în timpul încărcării și redării</string>
+    <string name="settings_p2p_prefetch_title">Preîncarcă informațiile torrentului</string>
+    <string name="settings_p2p_prefetch_subtitle">Obține lista de fișiere a celor mai bune rezultate torrent cât timp răsfoiești sursele, ca să pornească mai repede. Folosește puține date.</string>
     <string name="player_torrent_peer_info">%1$d seeds · %2$d peers</string>
     <string name="player_torrent_buffered_status">%1$s stocați în buffer · %2$s · %3$s</string>
     <string name="player_torrent_status">%1$s · %2$s</string>

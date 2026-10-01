@@ -9,6 +9,7 @@ internal actual object P2pSettingsStorage {
     // never chose is not carried over.
     private const val enableUploadKey = "seeding_enabled"
     private const val hideTorrentStatsKey = "hide_torrent_stats"
+    private const val prefetchTorrentInfoKey = "prefetch_torrent_info"
     private const val torrentProfileKey = "torrent_profile"
     private const val cacheSizeKey = "cache_size"
 
@@ -31,6 +32,13 @@ internal actual object P2pSettingsStorage {
 
     actual fun saveHideTorrentStats(enabled: Boolean) {
         saveBoolean(hideTorrentStatsKey, enabled)
+    }
+
+    actual fun loadPrefetchTorrentInfo(): Boolean? =
+        loadBoolean(prefetchTorrentInfoKey)
+
+    actual fun savePrefetchTorrentInfo(enabled: Boolean) {
+        saveBoolean(prefetchTorrentInfoKey, enabled)
     }
 
     actual fun loadTorrentProfile(): String? = loadString(torrentProfileKey)

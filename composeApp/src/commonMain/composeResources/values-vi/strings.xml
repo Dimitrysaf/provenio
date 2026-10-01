@@ -2141,6 +2141,8 @@
     <string name="settings_p2p_subtitle">Cho phép phát trực tuyến ngang hàng (torrent)</string>
     <string name="settings_p2p_hide_stats_title">Ẩn thống kê torrent</string>
     <string name="settings_p2p_hide_stats_subtitle">Ẩn bộ đệm, số lượng seed, peer và tốc độ tải xuống trong khi tải và phát lại</string>
+    <string name="settings_p2p_prefetch_title">Tải trước thông tin torrent</string>
+    <string name="settings_p2p_prefetch_subtitle">Lấy danh sách tệp của các kết quả torrent hàng đầu khi bạn duyệt nguồn để chúng bắt đầu nhanh hơn. Dùng một ít dữ liệu.</string>
     <string name="settings_p2p_profile_title">Cấu hình Torrent</string>
     <string name="settings_p2p_profile_soft">Nhẹ</string>
     <string name="settings_p2p_profile_balanced">Cân bằng</string>

@@ -389,7 +389,7 @@ private fun PlayerStreamGroupsList(
     val torrentNotSupportedText = stringResource(Res.string.streams_torrent_not_supported)
     val hasVisibleRows = streamsUiState.groups.any { it.streams.isNotEmpty() || it.isLoading }
     val filter = rememberStreamFilterState(streamsUiState.requestToken)
-    val filteredGroups = remember(streamsUiState.groups, filter.query, filter.qualities) {
+    val filteredGroups = remember(streamsUiState.groups, filter.query, filter.qualities, filter.sizeOrder) {
         filter.apply(streamsUiState.groups)
     }
     val hasMatches = filteredGroups.any { it.streams.isNotEmpty() || it.isLoading }

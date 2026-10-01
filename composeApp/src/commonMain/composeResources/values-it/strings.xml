@@ -1473,6 +1473,8 @@
   <string name="settings_p2p_subtitle">Consenti lo streaming peer-to-peer (torrent)</string>
   <string name="settings_p2p_hide_stats_title">Nascondi le statistiche torrent</string>
   <string name="settings_p2p_hide_stats_subtitle">Nascondi buffer, seeds, peers e velocità download durante il caricamento e la riproduzione</string>
+  <string name="settings_p2p_prefetch_title">Precarica informazioni torrent</string>
+  <string name="settings_p2p_prefetch_subtitle">Recupera l\'elenco dei file dei migliori risultati torrent mentre sfogli le fonti, così partono più velocemente. Usa pochi dati.</string>
   <string name="compose_settings_root_advanced_description">Avvio e comportamento profili.</string>
   <string name="supporters_contributors_donation_progress_title">Costi di manutenzione e server</string>
   <string name="supporters_contributors_donation_progress_complete">Coperto. Qualsiasi supporto ulteriore andrà allo sviluppo.</string>

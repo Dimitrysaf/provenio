@@ -2016,6 +2016,8 @@
     <string name="settings_p2p_subtitle">السماح بمصادر البث عبر الند للند (تورنت)</string>
     <string name="settings_p2p_hide_stats_title">إخفاء إحصائيات التورنت</string>
     <string name="settings_p2p_hide_stats_subtitle">إخفاء حجم التخزين المؤقت وSeeders وPeers وسرعة التنزيل أثناء التحميل والتشغيل</string>
+    <string name="settings_p2p_prefetch_title">الجلب المسبق لمعلومات التورنت</string>
+    <string name="settings_p2p_prefetch_subtitle">جلب قائمة ملفات أفضل نتائج التورنت أثناء تصفح المصادر لتبدأ أسرع. يستهلك قليلاً من البيانات.</string>
     <string name="settings_p2p_profile_title">إعداد التورنت</string>
     <string name="settings_p2p_profile_soft">خفيف</string>
     <string name="settings_p2p_profile_balanced">متوازن</string>

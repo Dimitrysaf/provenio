@@ -1855,6 +1855,8 @@
     <string name="settings_p2p_subtitle">ピアツーピア（トレント）ストリームを許可する</string>
     <string name="settings_p2p_hide_stats_title">トレント統計を非表示</string>
     <string name="settings_p2p_hide_stats_subtitle">読み込み中および再生中のバッファ・シード数・ピア数・ダウンロード速度を非表示にする</string>
+    <string name="settings_p2p_prefetch_title">トレント情報を先読み</string>
+    <string name="settings_p2p_prefetch_subtitle">ソースを見ている間に上位のトレント結果のファイル一覧を取得し、再生開始を速めます。少量のデータを使用します。</string>
     <string name="player_torrent_peer_info">%1$d シード · %2$d ピア</string>
     <string name="player_torrent_buffered_status">%1$s バッファ済み · %2$s · %3$s</string>
     <string name="player_torrent_status">%1$s · %2$s</string>

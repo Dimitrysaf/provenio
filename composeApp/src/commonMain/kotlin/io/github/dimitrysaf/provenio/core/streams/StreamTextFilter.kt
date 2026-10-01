@@ -33,3 +33,42 @@ fun List<AddonStreamGroup>.filteredBy(query: Regex?, qualities: Set<StreamQualit
         group.copy(streams = streams).takeIf { streams.isNotEmpty() || group.isLoading }
     }
 }
+
+enum class StreamSizeOrder {
+    DEFAULT,
+    LARGEST_FIRST,
+    SMALLEST_FIRST,
+}
+
+private val StreamSizePattern = Regex(
+    "(\\d+(?:[.,]\\d+)?)\\s*(TB|TiB|GB|GiB|MB|MiB|KB|KiB)\\b",
+    RegexOption.IGNORE_CASE,
+)
+
+// The file's size in bytes: the add-on's hint, or else the size written in its name or description.
+fun StreamItem.sizeBytes(): Long? {
+    behaviorHints.videoSize?.takeIf { it > 0L }?.let { return it }
+    val match = StreamSizePattern.find(searchableText()) ?: return null
+    val value = match.groupValues[1].replace(',', '.').toDoubleOrNull() ?: return null
+    val unit = when (match.groupValues[2].uppercase().first()) {
+        'T' -> 1024.0 * 1024.0 * 1024.0 * 1024.0
+        'G' -> 1024.0 * 1024.0 * 1024.0
+        'M' -> 1024.0 * 1024.0
+        else -> 1024.0
+    }
+    return (value * unit).toLong().takeIf { it > 0L }
+}
+
+// Orders each group's streams by size, keeping the groups in place; streams without a size go last.
+fun List<AddonStreamGroup>.sortedBySize(order: StreamSizeOrder): List<AddonStreamGroup> {
+    if (order == StreamSizeOrder.DEFAULT) return this
+    return map { group ->
+        val sized = group.streams.map { it to it.sizeBytes() }
+        val known = sized.filter { it.second != null }
+        val ordered = when (order) {
+            StreamSizeOrder.LARGEST_FIRST -> known.sortedByDescending { it.second }
+            else -> known.sortedBy { it.second }
+        }
+        group.copy(streams = ordered.map { it.first } + sized.filter { it.second == null }.map { it.first })
+    }
+}

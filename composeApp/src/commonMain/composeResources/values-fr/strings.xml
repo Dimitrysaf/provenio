@@ -1889,6 +1889,8 @@
     <string name="settings_p2p_subtitle">Autoriser les flux pair-à-pair (torrent)</string>
     <string name="settings_p2p_hide_stats_title">Masquer les statistiques torrent</string>
     <string name="settings_p2p_hide_stats_subtitle">Masquer la mémoire tampon, les seeders, les pairs et la vitesse de téléchargement pendant le chargement et la lecture</string>
+    <string name="settings_p2p_prefetch_title">Précharger les infos du torrent</string>
+    <string name="settings_p2p_prefetch_subtitle">Récupère la liste des fichiers des meilleurs résultats torrent pendant que vous parcourez les sources, pour un démarrage plus rapide. Utilise peu de données.</string>
     <string name="player_torrent_peer_info">%1$d sources · %2$d pairs</string>
     <string name="player_torrent_buffered_status">%1$s en mémoire tampon · %2$s · %3$s</string>
     <string name="player_torrent_status">%1$s · %2$s</string>

@@ -1253,6 +1253,10 @@
     <string name="streams_filter_unknown_quality">Άγνωστη</string>
     <string name="streams_filter_quality">Ποιότητα</string>
     <string name="streams_filter_all_qualities">Όλες οι ποιότητες</string>
+    <string name="streams_sort_title">Ταξινόμηση</string>
+    <string name="streams_sort_default">Προεπιλεγμένη σειρά</string>
+    <string name="streams_sort_size_desc">Μέγεθος: μεγαλύτερο πρώτα</string>
+    <string name="streams_sort_size_asc">Μέγεθος: μικρότερο πρώτα</string>
     <string name="trakt_lists_load_failed">Αποτυχία φόρτωσης λιστών Trakt</string>
     <string name="trakt_lists_update_failed">Αποτυχία ενημέρωσης λιστών Trakt</string>
     <string name="tracking_lists_update_failed">Αποτυχία ενημέρωσης λιστών παρακολούθησης</string>
@@ -2171,6 +2175,8 @@
     <string name="settings_meta_hero_trailer_playback">Αναπαραγωγή τρέιλερ Hero</string>
     <string name="settings_meta_hero_trailer_playback_description">Αναπαραγωγή προεπισκοπήσεων τρέιλερ στο κύριο πλαίσιο μεταδεδομένων όταν υπάρχει διαθέσιμο τρέιλερ.</string>
     <string name="settings_p2p_hide_stats_subtitle">Απόκρυψη προσωρινής μνήμης, διαμοιραστών, ομότιμων και ταχύτητας λήψης κατά τη φόρτωση και την αναπαραγωγή</string>
+    <string name="settings_p2p_prefetch_title">Προφόρτωση πληροφοριών torrent</string>
+    <string name="settings_p2p_prefetch_subtitle">Λήψη της λίστας αρχείων των κορυφαίων αποτελεσμάτων torrent ενώ περιηγείστε στις πηγές, ώστε να ξεκινούν πιο γρήγορα. Χρησιμοποιεί λίγα δεδομένα.</string>
     <string name="settings_p2p_profile_title">Προφίλ torrent</string>
     <string name="settings_p2p_profile_soft">Ήπιο</string>
     <string name="settings_p2p_profile_soft_description">Χρησιμοποιεί λιγότερες συνδέσεις ομότιμων για μείωση φόρτου μπαταρίας και δικτύου</string>

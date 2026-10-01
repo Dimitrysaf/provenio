@@ -10,6 +10,7 @@ data class P2pSettingsUiState(
     /** Seeding: off unless the user turns it on in settings. */
     val enableUpload: Boolean = false,
     val hideTorrentStats: Boolean = false,
+    val prefetchTorrentInfo: Boolean = true,
     val torrentProfile: P2pTorrentProfile = P2pTorrentProfile.BALANCED,
     val cacheSize: P2pCacheSize = P2pCacheSize.GB_2,
 )
@@ -51,6 +52,7 @@ object P2pSettingsRepository {
     private var p2pEnabled = false
     private var enableUpload = false
     private var hideTorrentStats = false
+    private var prefetchTorrentInfo = true
     private var torrentProfile = P2pTorrentProfile.BALANCED
     private var cacheSize = P2pCacheSize.GB_2
 
@@ -68,6 +70,7 @@ object P2pSettingsRepository {
         p2pEnabled = false
         enableUpload = false
         hideTorrentStats = false
+        prefetchTorrentInfo = true
         torrentProfile = P2pTorrentProfile.BALANCED
         cacheSize = P2pCacheSize.GB_2
         publish()
@@ -97,6 +100,14 @@ object P2pSettingsRepository {
         publish()
     }
 
+    fun setPrefetchTorrentInfo(enabled: Boolean) {
+        ensureLoaded()
+        if (prefetchTorrentInfo == enabled) return
+        prefetchTorrentInfo = enabled
+        P2pSettingsStorage.savePrefetchTorrentInfo(enabled)
+        publish()
+    }
+
     fun setTorrentProfile(profile: P2pTorrentProfile) {
         ensureLoaded()
         if (torrentProfile == profile) return
@@ -118,6 +129,7 @@ object P2pSettingsRepository {
         p2pEnabled = P2pSettingsStorage.loadP2pEnabled() ?: false
         enableUpload = P2pSettingsStorage.loadEnableUpload() ?: false
         hideTorrentStats = P2pSettingsStorage.loadHideTorrentStats() ?: false
+        prefetchTorrentInfo = P2pSettingsStorage.loadPrefetchTorrentInfo() ?: true
         torrentProfile = P2pSettingsStorage.loadTorrentProfile()
             ?.let { stored -> P2pTorrentProfile.entries.firstOrNull { it.name == stored } }
             ?: P2pTorrentProfile.BALANCED
@@ -132,6 +144,7 @@ object P2pSettingsRepository {
             p2pEnabled = p2pEnabled,
             enableUpload = enableUpload,
             hideTorrentStats = hideTorrentStats,
+            prefetchTorrentInfo = prefetchTorrentInfo,
             torrentProfile = torrentProfile,
             cacheSize = cacheSize,
         )
@@ -145,6 +158,8 @@ internal expect object P2pSettingsStorage {
     fun saveEnableUpload(enabled: Boolean)
     fun loadHideTorrentStats(): Boolean?
     fun saveHideTorrentStats(enabled: Boolean)
+    fun loadPrefetchTorrentInfo(): Boolean?
+    fun savePrefetchTorrentInfo(enabled: Boolean)
     fun loadTorrentProfile(): String?
     fun saveTorrentProfile(profile: String)
     fun loadCacheSize(): String?
@@ -243,6 +258,10 @@ expect object P2pStreamingEngine {
     fun shutdown()
     suspend fun startDownloadStream(downloadId: String, request: P2pStreamRequest): String
     fun stopDownloadStream(downloadId: String)
+    /** Starts the engine ahead of playback; it shuts down again if nothing uses it for a while. */
+    fun warmUp()
+    /** Fetches only the file lists of torrents the user is likely to play, so they start at once. */
+    fun prefetchTorrents(requests: List<P2pStreamRequest>)
 }
 
 internal fun formatP2pSpeed(bytesPerSec: Long): String {

@@ -229,3 +229,27 @@ TEST("backfill never downgrades another demand's blocking piece") {
     EXPECT_EQ(priority_for(plan, 9), std::optional(PriorityClass::backfill));
     EXPECT_EQ(priority_for(plan, 6), std::optional(PriorityClass::backfill));
 }
+
+TEST("a stream window fetches the end of the file alongside the demand") {
+    const auto plan = build_stream_demand_plan(
+        {demand(1, 0)},
+        scheduler::StreamWindow{4 * mebibyte, 4 * mebibyte, 0, 3 * mebibyte},
+        critical_front_bytes
+    );
+
+    EXPECT_EQ(priority_for(plan, 0), std::optional(PriorityClass::blocking));
+    EXPECT_EQ(priority_for(plan, 61), std::optional(PriorityClass::metadata_tail));
+    EXPECT_EQ(priority_for(plan, 63), std::optional(PriorityClass::metadata_tail));
+    EXPECT_TRUE(!priority_for(plan, 60).has_value());
+}
+
+TEST("the end of the file never downgrades a demand on it") {
+    const auto plan = build_stream_demand_plan(
+        {demand(1, 63)},
+        scheduler::StreamWindow{4 * mebibyte, 4 * mebibyte, 0, 3 * mebibyte},
+        critical_front_bytes
+    );
+
+    EXPECT_EQ(priority_for(plan, 63), std::optional(PriorityClass::blocking));
+    EXPECT_EQ(priority_for(plan, 62), std::optional(PriorityClass::metadata_tail));
+}
