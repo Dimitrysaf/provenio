@@ -153,6 +153,8 @@ actual object P2pStreamingEngine {
     private var torrentDetailsJob: Job? = null
     @Volatile
     private var currentStream: Stream? = null
+    @Volatile
+    private var streamDurationMs: Long? = null
     private val speedHistory = ArrayDeque<P2pSpeedSample>()
 
     fun initialize(context: Context) {
@@ -410,6 +412,7 @@ actual object P2pStreamingEngine {
         val activeEngine = engine ?: return
         val streamId = currentStreamId ?: return
         if (durationMs <= 0L) return
+        streamDurationMs = durationMs
         try {
             activeEngine.setStreamDuration(streamId, durationMs)
         } catch (error: Exception) {
@@ -1037,6 +1040,7 @@ actual object P2pStreamingEngine {
         },
         pieces = pieceMap(file, route),
         speedHistory = history,
+        streamDurationMs = streamDurationMs,
     )
 
     /** The slice of the piece map covering [file], or the whole torrent when no file is known. */
@@ -1124,6 +1128,7 @@ actual object P2pStreamingEngine {
     private fun beginStreamGeneration(): Long = synchronized(lifecycleLock) {
         synchronized(speedHistory) { speedHistory.clear() }
         shutdownRequested = false
+        streamDurationMs = null
         streamGeneration += 1
         _state.value = P2pStreamingState.Connecting()
         streamGeneration

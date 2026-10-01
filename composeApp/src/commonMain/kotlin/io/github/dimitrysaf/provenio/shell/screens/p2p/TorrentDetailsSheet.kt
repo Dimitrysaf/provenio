@@ -21,16 +21,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.DataUsage
+import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.HourglassTop
 import androidx.compose.material.icons.rounded.Hub
+import androidx.compose.material.icons.rounded.NetworkCheck
+import androidx.compose.material.icons.rounded.PersonOff
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.Sync
+import androidx.compose.material.icons.rounded.SyncProblem
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -75,6 +82,10 @@ import io.github.dimitrysaf.provenio.core.p2p.P2pSpeedSample
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingState
 import io.github.dimitrysaf.provenio.core.p2p.P2pTorrentDetails
+import io.github.dimitrysaf.provenio.core.p2p.P2pTorrentHealthIssue
+import io.github.dimitrysaf.provenio.core.p2p.P2pTorrentHealthLevel
+import io.github.dimitrysaf.provenio.core.p2p.P2pTorrentHealthMonitor
+import io.github.dimitrysaf.provenio.core.p2p.P2pTorrentHealthReport
 import io.github.dimitrysaf.provenio.core.p2p.P2pTorrentState
 import io.github.dimitrysaf.provenio.core.p2p.P2pTrackerDetails
 import io.github.dimitrysaf.provenio.core.p2p.P2pTrackerStatus
@@ -85,7 +96,9 @@ import io.github.dimitrysaf.provenio.shell.components.ListSubheader
 import io.github.dimitrysaf.provenio.shell.components.ModalSheet
 import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
+import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsListScope
+import io.github.dimitrysaf.provenio.shell.theme.provenio
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.TimeSource
@@ -119,6 +132,11 @@ fun TorrentDetailsSheet(
         P2pSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
     val shown = details?.takeIf { infoHash == null || it.infoHash.equals(infoHash, ignoreCase = true) }
+    val healthMonitor = remember { P2pTorrentHealthMonitor() }
+    val healthClock = remember { TimeSource.Monotonic.markNow() }
+    val health = remember(shown) {
+        shown?.let { healthMonitor.update(it, healthClock.elapsedNow().inWholeMilliseconds) }
+    }
 
     ModalSheet(
         onDismissRequest = { scope.launch { dismissBottomSheet(sheetState, onDismiss) } },
@@ -162,17 +180,25 @@ fun TorrentDetailsSheet(
             return@ModalSheet
         }
 
-        TorrentDetailsContent(shown, seedingEnabled = settings.enableUpload)
+        TorrentDetailsContent(shown, health, seedingEnabled = settings.enableUpload)
     }
 }
 
 @Composable
-private fun TorrentDetailsContent(details: P2pTorrentDetails, seedingEnabled: Boolean) {
+private fun TorrentDetailsContent(
+    details: P2pTorrentDetails,
+    health: P2pTorrentHealthReport?,
+    seedingEnabled: Boolean,
+) {
     val unknown = stringResource(Res.string.torrent_details_unknown)
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        health?.let { report ->
+            item(key = "health") { TorrentHealthNotice(report) }
+        }
+
         item {
             Section {
                 shapedRow { shape -> SpeedCard(details, seedingEnabled, shape) }
@@ -362,6 +388,97 @@ private fun TorrentDetailsContent(details: P2pTorrentDetails, seedingEnabled: Bo
         }
 
         item { Spacer(Modifier.height(BottomSheetBodyMargin)) }
+    }
+}
+
+@Composable
+private fun TorrentHealthNotice(report: P2pTorrentHealthReport) {
+    val tint = when (report.issue.level) {
+        P2pTorrentHealthLevel.ERROR -> MaterialTheme.provenio.colors.danger
+        P2pTorrentHealthLevel.WARNING -> MaterialTheme.provenio.colors.warning
+        P2pTorrentHealthLevel.INFO -> MaterialTheme.colorScheme.primary
+    }
+    val (titleRes, messageRes, icon) = when (report.issue) {
+        P2pTorrentHealthIssue.GETTING_INFO -> Triple(
+            Res.string.torrent_health_getting_info_title,
+            Res.string.torrent_health_getting_info_message,
+            Icons.Rounded.HourglassTop,
+        )
+        P2pTorrentHealthIssue.NO_PEERS -> Triple(
+            Res.string.torrent_health_no_peers_title,
+            Res.string.torrent_health_no_peers_message,
+            Icons.Rounded.PersonOff,
+        )
+        P2pTorrentHealthIssue.UNAVAILABLE_PIECES -> Triple(
+            Res.string.torrent_health_unavailable_title,
+            Res.string.torrent_health_unavailable_message,
+            Icons.Rounded.ErrorOutline,
+        )
+        P2pTorrentHealthIssue.TOO_SLOW -> Triple(
+            Res.string.torrent_health_too_slow_title,
+            if (report.requiredSpeed != null) {
+                Res.string.torrent_health_too_slow_rate_message
+            } else {
+                Res.string.torrent_health_too_slow_message
+            },
+            Icons.Rounded.Speed,
+        )
+        P2pTorrentHealthIssue.THROTTLED -> Triple(
+            Res.string.torrent_health_throttled_title,
+            Res.string.torrent_health_throttled_message,
+            Icons.Rounded.NetworkCheck,
+        )
+        P2pTorrentHealthIssue.UNSTABLE -> Triple(
+            Res.string.torrent_health_unstable_title,
+            Res.string.torrent_health_unstable_message,
+            Icons.Rounded.SyncProblem,
+        )
+        P2pTorrentHealthIssue.FEW_SEEDERS -> Triple(
+            Res.string.torrent_health_few_seeders_title,
+            Res.string.torrent_health_few_seeders_message,
+            Icons.Rounded.Groups,
+        )
+        P2pTorrentHealthIssue.CORRUPT_DATA -> Triple(
+            Res.string.torrent_health_corrupt_title,
+            Res.string.torrent_health_corrupt_message,
+            Icons.Rounded.BrokenImage,
+        )
+        P2pTorrentHealthIssue.TRACKERS_DOWN -> Triple(
+            Res.string.torrent_health_trackers_down_title,
+            Res.string.torrent_health_trackers_down_message,
+            Icons.Rounded.Dns,
+        )
+    }
+    val message = when (report.issue) {
+        P2pTorrentHealthIssue.FEW_SEEDERS -> stringResource(messageRes, report.seeders)
+        P2pTorrentHealthIssue.TOO_SLOW -> report.requiredSpeed?.let { required ->
+            stringResource(messageRes, formatP2pSpeed(report.downloadSpeed), formatP2pSpeed(required))
+        } ?: stringResource(messageRes)
+        else -> stringResource(messageRes)
+    }
+    Row(
+        modifier = Modifier
+            .padding(horizontal = BottomSheetBodyMargin)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(OuterCorner))
+            .background(tint.copy(alpha = 0.12f))
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(imageVector = icon, contentDescription = null, tint = tint)
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = stringResource(titleRes),
+                style = MaterialTheme.typography.titleSmall,
+                color = tint,
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
 

@@ -153,6 +153,8 @@ data class P2pTorrentDetails(
     val trackers: List<P2pTrackerDetails>,
     val pieces: P2pPieceMap?,
     val speedHistory: List<P2pSpeedSample>,
+    /** Length of the streamed video, once the player knows it. */
+    val streamDurationMs: Long? = null,
 ) {
     val shareRatio: Float?
         get() = if (allTimeDownloaded > 0L) allTimeUploaded.toFloat() / allTimeDownloaded else null
