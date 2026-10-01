@@ -75,7 +75,7 @@ actual object AppUpdaterPlatform {
         val file = File(path)
         check(file.exists()) { "The downloaded update is missing" }
         if (isWindows) {
-            ProcessBuilder("msiexec", "/i", file.absolutePath).start()
+            ProcessBuilder("msiexec", "/i", file.absolutePath, "/passive", "/norestart").start()
             exitProcess(0)
         }
         Desktop.getDesktop().open(file)

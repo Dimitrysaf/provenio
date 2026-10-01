@@ -233,6 +233,11 @@ val localProps = Properties().apply {
 val appVersionConfigFile = rootProject.file("iosApp/Configuration/Version.xcconfig")
 val releaseAppVersionName = readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION")
     ?: error("MARKETING_VERSION is missing from ${appVersionConfigFile.path}")
+val windowsInstallerVersion = run {
+    val parts = releaseAppVersionName.split('.')
+    val build = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.takeIf { it in 1..65535 }
+    if (build != null && parts.size >= 2) "${parts[0]}.${parts[1]}.$build" else releaseAppVersionName
+}
 val releaseAppVersionCode = readXcconfigValue(appVersionConfigFile, "CURRENT_PROJECT_VERSION")
     ?.toIntOrNull()
     ?: error("CURRENT_PROJECT_VERSION is missing or invalid in ${appVersionConfigFile.path}")
@@ -559,6 +564,7 @@ compose.desktop {
             windows {
                 // Fixed for good: Windows matches installs by this ID to upgrade them in place.
                 upgradeUuid = "6f3c2b1e-8d4a-4e7b-9c15-2a7d0e5b9f43"
+                msiPackageVersion = windowsInstallerVersion
                 perUserInstall = true
                 menu = true
                 shortcut = true
