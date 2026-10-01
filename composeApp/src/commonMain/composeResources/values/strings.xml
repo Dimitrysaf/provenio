@@ -2511,6 +2511,9 @@
     <string name="torrent_health_corrupt_message">Some peers are sending broken data. It\'s being downloaded again.</string>
     <string name="torrent_health_trackers_down_title">Trackers not responding</string>
     <string name="torrent_health_trackers_down_message">Peers are being found through the DHT only.</string>
+    <string name="torrent_health_stable_title">Connection stable</string>
+    <string name="torrent_health_stable_message">Downloading steadily at %1$s.</string>
+    <string name="torrent_health_stable_rate_message">Downloading at %1$s, more than the %2$s this video needs.</string>
     <string name="torrent_details_waiting">Waiting for the torrent to start downloading, it may take a while.</string>
     <string name="torrent_details_not_active">This torrent isn't active right now. Its details show while it plays or downloads.</string>
     <string name="torrent_details_section_speed">Speed</string>

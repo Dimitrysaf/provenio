@@ -2480,6 +2480,9 @@
     <string name="torrent_health_corrupt_message">Κάποιοι χρήστες στέλνουν κατεστραμμένα δεδομένα. Γίνεται ξανά λήψη τους.</string>
     <string name="torrent_health_trackers_down_title">Οι trackers δεν αποκρίνονται</string>
     <string name="torrent_health_trackers_down_message">Οι χρήστες βρίσκονται μόνο μέσω DHT.</string>
+    <string name="torrent_health_stable_title">Σταθερή σύνδεση</string>
+    <string name="torrent_health_stable_message">Σταθερή λήψη με %1$s.</string>
+    <string name="torrent_health_stable_rate_message">Λήψη με %1$s, περισσότερο από τα %2$s που χρειάζεται αυτό το βίντεο.</string>
     <string name="torrent_details_waiting">Αναμονή για την έναρξη λήψης του torrent, μπορεί να πάρει λίγο χρόνο.</string>
     <string name="torrent_details_not_active">Αυτό το torrent δεν είναι ενεργό αυτή τη στιγμή. Οι λεπτομέρειές του εμφανίζονται όσο αναπαράγεται ή κατεβαίνει.</string>
     <string name="torrent_details_section_speed">Ταχύτητα</string>

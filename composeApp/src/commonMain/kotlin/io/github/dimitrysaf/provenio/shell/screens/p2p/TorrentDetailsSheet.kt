@@ -397,6 +397,7 @@ private fun TorrentHealthNotice(report: P2pTorrentHealthReport) {
         P2pTorrentHealthLevel.ERROR -> MaterialTheme.provenio.colors.danger
         P2pTorrentHealthLevel.WARNING -> MaterialTheme.provenio.colors.warning
         P2pTorrentHealthLevel.INFO -> MaterialTheme.colorScheme.primary
+        P2pTorrentHealthLevel.SUCCESS -> MaterialTheme.provenio.colors.success
     }
     val (titleRes, messageRes, icon) = when (report.issue) {
         P2pTorrentHealthIssue.GETTING_INFO -> Triple(
@@ -448,9 +449,21 @@ private fun TorrentHealthNotice(report: P2pTorrentHealthReport) {
             Res.string.torrent_health_trackers_down_message,
             Icons.Rounded.Dns,
         )
+        P2pTorrentHealthIssue.STABLE -> Triple(
+            Res.string.torrent_health_stable_title,
+            if (report.requiredSpeed != null) {
+                Res.string.torrent_health_stable_rate_message
+            } else {
+                Res.string.torrent_health_stable_message
+            },
+            Icons.Rounded.CheckCircle,
+        )
     }
     val message = when (report.issue) {
         P2pTorrentHealthIssue.FEW_SEEDERS -> stringResource(messageRes, report.seeders)
+        P2pTorrentHealthIssue.STABLE -> report.requiredSpeed?.let { required ->
+            stringResource(messageRes, formatP2pSpeed(report.downloadSpeed), formatP2pSpeed(required))
+        } ?: stringResource(messageRes, formatP2pSpeed(report.downloadSpeed))
         P2pTorrentHealthIssue.TOO_SLOW -> report.requiredSpeed?.let { required ->
             stringResource(messageRes, formatP2pSpeed(report.downloadSpeed), formatP2pSpeed(required))
         } ?: stringResource(messageRes)

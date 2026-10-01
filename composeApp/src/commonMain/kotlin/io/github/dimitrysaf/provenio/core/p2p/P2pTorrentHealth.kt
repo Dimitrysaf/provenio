@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.core.p2p
 
 enum class P2pTorrentHealthLevel {
+    SUCCESS,
     INFO,
     WARNING,
     ERROR,
@@ -16,6 +17,7 @@ enum class P2pTorrentHealthIssue(val level: P2pTorrentHealthLevel, internal val 
     CORRUPT_DATA(P2pTorrentHealthLevel.WARNING, 0L),
     TRACKERS_DOWN(P2pTorrentHealthLevel.INFO, 10_000L),
     GETTING_INFO(P2pTorrentHealthLevel.INFO, 0L),
+    STABLE(P2pTorrentHealthLevel.SUCCESS, 5_000L),
 }
 
 data class P2pTorrentHealthReport(
@@ -26,12 +28,12 @@ data class P2pTorrentHealthReport(
 )
 
 /**
- * Turns the torrent details sampled about once a second into the one problem worth telling the
- * user about, or null when there is none.
+ * Turns the torrent details sampled about once a second into the one status worth telling the
+ * user about while the engine is using the torrent, or null while it is not.
  *
- * Speed is only judged while the engine is fetching pieces of the streamed file. Once enough is
- * buffered ahead of the playhead, or playback is paused, the engine stops asking for data and the
- * speed falls to nothing on purpose; those moments are neither slow nor unstable.
+ * The torrent is in use while the engine fetches its info or pieces of the streamed file. Once
+ * enough is buffered ahead of the playhead, playback is paused or the engine is idle, it stops
+ * asking for data on purpose, and nothing is reported.
  */
 class P2pTorrentHealthMonitor {
     private class Sample(val atMs: Long, val speed: Long, val fetching: Boolean)
@@ -95,7 +97,10 @@ class P2pTorrentHealthMonitor {
 
     private fun detect(details: P2pTorrentDetails, nowMs: Long): List<P2pTorrentHealthReport> = buildList {
         val seeders = maxOf(details.connectedSeeds, details.swarmSeeds ?: 0)
-        if (!details.hasMetadata || details.state == P2pTorrentState.DOWNLOADING_METADATA) {
+        val gettingInfo = !details.hasMetadata || details.state == P2pTorrentState.DOWNLOADING_METADATA
+        val inUse = gettingInfo || samples.any { it.fetching && nowMs - it.atMs <= InUseWindowMs }
+        if (!inUse) return@buildList
+        if (gettingInfo) {
             add(P2pTorrentHealthReport(P2pTorrentHealthIssue.GETTING_INFO))
         }
         if (details.connectedPeers == 0) {
@@ -158,6 +163,17 @@ class P2pTorrentHealthMonitor {
         if (details.trackers.isNotEmpty() && details.trackers.all { it.status == P2pTrackerStatus.ERROR }) {
             add(P2pTorrentHealthReport(P2pTorrentHealthIssue.TRACKERS_DOWN))
         }
+
+        val keepsUp = requiredSpeed == null || averageSpeed * 10 >= requiredSpeed * 12
+        if (!waiting && recentFetching.size >= MinSpeedSamples && averageSpeed > 0L && keepsUp) {
+            add(
+                P2pTorrentHealthReport(
+                    P2pTorrentHealthIssue.STABLE,
+                    downloadSpeed = averageSpeed,
+                    requiredSpeed = requiredSpeed,
+                ),
+            )
+        }
     }
 
     private fun P2pTorrentDetails.isComplete(): Boolean =
@@ -176,6 +192,7 @@ class P2pTorrentHealthMonitor {
     private companion object {
         const val HistoryWindowMs = 30_000L
         const val SpeedWindowMs = 10_000L
+        const val InUseWindowMs = 5_000L
         const val CorruptWindowMs = 30_000L
         const val SwitchDelayMs = 3_000L
         const val MinSpeedSamples = 3
