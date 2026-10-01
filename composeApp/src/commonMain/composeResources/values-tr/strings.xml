@@ -2058,7 +2058,7 @@ Bu özelliği tamamen kendi sorumluluğunuzda kullanırsınız. P2P istediğiniz
     <string name="settings_p2p_clear_cache_usage">Şu anda %1$s kullanılıyor</string>
     <string name="settings_p2p_clear_cache_usage_pending">Kullanım P2P başladıktan sonra ölçülür; önbelleğe alınan torrent verilerini temizlemek için dokunun</string>
     <string name="settings_p2p_clear_cache_clearing">Etkin olmayan torrent verileri temizleniyor…</string>
-    <string name="settings_p2p_clear_cache_playback_active">Önbelleği temizlemeden önce P2P oynatımını durdurun</string>
+    <string name="settings_p2p_clear_cache_playback_active">Önbelleği temizlemeden önce P2P oynatımını ve torrent indirmelerini durdurun</string>
     <string name="settings_p2p_clear_cache_done">%1$s miktarında etkin olmayan torrent verisi temizlendi</string>
     <string name="settings_p2p_clear_cache_failed">Torrent önbelleği temizlenemedi</string>
     <string name="player_torrent_peer_info">%1$d seed · %2$d eş</string>

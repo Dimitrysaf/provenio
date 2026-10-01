@@ -101,7 +101,7 @@ fun main(args: Array<String>) {
         val fullscreen by DesktopWindowState.isFullscreen.collectAsState()
         var windowVisible by remember { mutableStateOf(true) }
         val quit = {
-            P2pStreamingEngine.shutdown()
+            P2pStreamingEngine.shutdownAll()
             exitApplication()
         }
         LaunchedEffect(fullscreen) {

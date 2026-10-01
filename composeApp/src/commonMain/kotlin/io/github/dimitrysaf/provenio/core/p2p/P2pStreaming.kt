@@ -232,6 +232,7 @@ expect object P2pStreamingEngine {
     val cacheState: StateFlow<P2pCacheUiState>
     /** Filled only while something holds [acquireTorrentDetails]; null when nothing is loaded. */
     val torrentDetails: StateFlow<P2pTorrentDetails?>
+    val downloadStreamCount: StateFlow<Int>
     fun acquireTorrentDetails()
     fun releaseTorrentDetails()
     suspend fun startStream(request: P2pStreamRequest): String
@@ -240,6 +241,8 @@ expect object P2pStreamingEngine {
     /** Lets the engine size its download window in minutes of the current stream's video. */
     fun setStreamDuration(durationMs: Long)
     fun shutdown()
+    suspend fun startDownloadStream(downloadId: String, request: P2pStreamRequest): String
+    fun stopDownloadStream(downloadId: String)
 }
 
 internal fun formatP2pSpeed(bytesPerSec: Long): String {

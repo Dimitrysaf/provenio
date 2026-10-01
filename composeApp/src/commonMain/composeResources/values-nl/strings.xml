@@ -2154,7 +2154,7 @@
     <string name="settings_p2p_clear_cache_usage">Momenteel %1$s in gebruik</string>
     <string name="settings_p2p_clear_cache_usage_pending">Gebruik wordt gemeten nadat P2P is gestart; tik om gecachte torrentgegevens te wissen</string>
     <string name="settings_p2p_clear_cache_clearing">Inactieve torrentgegevens wissen...</string>
-    <string name="settings_p2p_clear_cache_playback_active">Stop P2P-afspelen voordat je de cache wist</string>
+    <string name="settings_p2p_clear_cache_playback_active">Stop P2P-afspelen en torrentdownloads voordat je de cache wist</string>
     <string name="settings_p2p_clear_cache_done">%1$s aan inactieve torrentgegevens gewist</string>
     <string name="settings_p2p_clear_cache_failed">Torrentcache kon niet worden gewist</string>
     <string name="player_torrent_peer_info">%1$d seeds · %2$d peers</string>

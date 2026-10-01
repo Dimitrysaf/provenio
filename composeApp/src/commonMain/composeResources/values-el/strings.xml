@@ -1407,7 +1407,6 @@
     <string name="details_episode_badge_file">ΑΡΧΕΙΟ</string>
     <string name="downloads_enqueue_missing_url">Δεν υπάρχει διαθέσιμος άμεσος σύνδεσμος ροής</string>
     <string name="downloads_enqueue_p2p_disabled">Ενεργοποιήστε τη ροή P2P για λήψη torrent</string>
-    <string name="downloads_enqueue_torrent_busy">Γίνεται ήδη λήψη άλλου torrent</string>
     <string name="downloads_enqueue_replaced">Αντικαταστάθηκε προηγούμενη λήψη</string>
     <string name="downloads_enqueue_started">Η λήψη ξεκίνησε</string>
     <string name="downloads_enqueue_unsupported_format">Μη υποστηριζόμενη μορφή ροής για λήψεις</string>
@@ -2188,7 +2187,7 @@
     <string name="settings_p2p_clear_cache_usage">Χρησιμοποιούνται %1$s αυτή τη στιγμή</string>
     <string name="settings_p2p_clear_cache_usage_pending">Η χρήση μετράται μετά την εκκίνηση του P2P· πατήστε για εκκαθάριση αποθηκευμένων δεδομένων torrent</string>
     <string name="settings_p2p_clear_cache_clearing">Εκκαθάριση ανενεργών δεδομένων torrent…</string>
-    <string name="settings_p2p_clear_cache_playback_active">Διακόψτε την αναπαραγωγή P2P πριν εκκαθαρίσετε την προσωρινή μνήμη</string>
+    <string name="settings_p2p_clear_cache_playback_active">Διακόψτε την αναπαραγωγή P2P και τις λήψεις torrent πριν εκκαθαρίσετε την προσωρινή μνήμη</string>
     <string name="settings_p2p_clear_cache_done">Εκκαθαρίστηκαν %1$s ανενεργών δεδομένων torrent</string>
     <string name="settings_p2p_clear_cache_failed">Δεν ήταν δυνατή η εκκαθάριση της προσωρινής μνήμης torrent</string>
     <string name="settings_p2p_hide_stats_title">Απόκρυψη στατιστικών torrent</string>

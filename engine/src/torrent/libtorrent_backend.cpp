@@ -562,6 +562,11 @@ public:
                 static_cast<std::size_t>(metadata->num_files()),
                 lt::dont_download
             );
+            for (const auto streamed : stream_bridge_->streamed_files(id)) {
+                if (streamed < priorities.size()) {
+                    priorities[streamed] = lt::default_priority;
+                }
+            }
             priorities[static_cast<std::size_t>(file_index)] = lt::default_priority;
             torrent->second.prioritize_files(priorities);
         } catch (...) {
@@ -634,15 +639,7 @@ public:
     ) override {
         auto torrent_id = stream_bridge_->stop_stream(stream_id);
         if (!torrent_id.empty()) {
-            mark_warm(torrent_id);
-            const auto torrent = handles_.find(torrent_id);
-            if (torrent != handles_.end() && torrent->second.is_valid() &&
-                !stream_bridge_->has_stream_for_torrent(torrent_id)) {
-                try {
-                    torrent->second.set_flags(lt::torrent_flags::upload_mode);
-                } catch (...) {
-                }
-            }
+            release_stream_files(torrent_id);
         }
         BackendEvent event{
             BackendEventType::stream_stopped,
@@ -695,15 +692,7 @@ public:
     std::vector<BackendEvent> pop_events() override {
         stream_bridge_->poll();
         for (auto& expired : stream_bridge_->pop_expired_streams()) {
-            mark_warm(expired.torrent_id);
-            const auto torrent = handles_.find(expired.torrent_id);
-            if (torrent != handles_.end() && torrent->second.is_valid() &&
-                !stream_bridge_->has_stream_for_torrent(expired.torrent_id)) {
-                try {
-                    torrent->second.set_flags(lt::torrent_flags::upload_mode);
-                } catch (...) {
-                }
-            }
+            release_stream_files(expired.torrent_id);
             BackendEvent event{
                 BackendEventType::stream_stopped,
                 0,
@@ -1212,8 +1201,7 @@ private:
 
     void focus_torrent(const std::string& requested_id) {
         for (const auto& [id, handle] : handles_) {
-            if (id == requested_id || !handle.is_valid() ||
-                stream_bridge_->has_stream_for_torrent(id)) {
+            if (id == requested_id || !handle.is_valid() || is_in_use(id, handle)) {
                 continue;
             }
             try {
@@ -1438,6 +1426,49 @@ private:
             }
         }
         last_telemetry_request_ = now;
+    }
+
+    void release_stream_files(const std::string& id) {
+        const auto torrent = handles_.find(id);
+        if (!stream_bridge_->has_stream_for_torrent(id)) {
+            mark_warm(id);
+            if (torrent != handles_.end() && torrent->second.is_valid()) {
+                try {
+                    torrent->second.set_flags(lt::torrent_flags::upload_mode);
+                } catch (...) {
+                }
+            }
+            return;
+        }
+        if (torrent == handles_.end() || !torrent->second.is_valid() ||
+            pending_prepares_.contains(id)) {
+            return;
+        }
+        try {
+            const auto metadata = torrent->second.torrent_file();
+            if (!metadata) {
+                return;
+            }
+            std::vector<lt::download_priority_t> priorities(
+                static_cast<std::size_t>(metadata->num_files()),
+                lt::dont_download
+            );
+            for (const auto streamed : stream_bridge_->streamed_files(id)) {
+                if (streamed < priorities.size()) {
+                    priorities[streamed] = lt::default_priority;
+                }
+            }
+            torrent->second.prioritize_files(priorities);
+        } catch (...) {
+        }
+    }
+
+    bool is_in_use(const std::string& id, const lt::torrent_handle& handle) {
+        if (stream_bridge_->has_stream_for_torrent(id) || pending_prepares_.contains(id)) {
+            return true;
+        }
+        const auto* context = handle.userdata().get<RequestContext>();
+        return context != nullptr && !context->metadata_emitted && !context->explicitly_removed;
     }
 
     void mark_warm(const std::string& id) {

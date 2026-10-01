@@ -2139,7 +2139,7 @@
     <string name="settings_p2p_clear_cache_usage">%1$s используется в настоящее время</string>
     <string name="settings_p2p_clear_cache_usage_pending">Использование измеряется после запуска P2P; нажмите, чтобы очистить кэшированные данные торрента</string>
     <string name="settings_p2p_clear_cache_clearing">Удаление неактивных данных торрента…</string>
-    <string name="settings_p2p_clear_cache_playback_active">Остановите воспроизведение P2P перед очисткой кеша.</string>
+    <string name="settings_p2p_clear_cache_playback_active">Остановите воспроизведение P2P и загрузку торрентов перед очисткой кеша.</string>
     <string name="settings_p2p_clear_cache_done">Очищен %1$s от неактивных данных торрента.</string>
     <string name="settings_p2p_clear_cache_failed">Не удалось очистить торрент-кэш</string>
     <string name="player_torrent_peer_info">%1$d сидов · %2$d пиров</string>

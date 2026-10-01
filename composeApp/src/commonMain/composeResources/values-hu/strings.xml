@@ -2058,7 +2058,7 @@
     <string name="settings_p2p_clear_cache_usage">Jelenleg használt: %1$s</string>
     <string name="settings_p2p_clear_cache_usage_pending">A használat mérése a P2P indítása után történik; koppints a gyorsítótárazott torrentadatok törléséhez</string>
     <string name="settings_p2p_clear_cache_clearing">Inaktív torrentadatok törlése...</string>
-    <string name="settings_p2p_clear_cache_playback_active">A gyorsítótár törlése előtt állítsd le a P2P lejátszást</string>
+    <string name="settings_p2p_clear_cache_playback_active">A gyorsítótár törlése előtt állítsd le a P2P lejátszást és a torrentletöltéseket</string>
     <string name="settings_p2p_clear_cache_done">%1$s inaktív torrentadat törölve</string>
     <string name="settings_p2p_clear_cache_failed">Nem sikerült törölni a torrent gyorsítótárat</string>
     <string name="player_torrent_fetching_metadata">Torrent metaadatok lekérése...</string>

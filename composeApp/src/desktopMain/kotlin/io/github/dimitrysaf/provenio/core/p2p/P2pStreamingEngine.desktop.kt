@@ -114,16 +114,27 @@ actual object P2pStreamingEngine {
         val streamId: String?,
     )
 
+    private class DownloadSession {
+        var engine: Engine? = null
+        var stream: Stream? = null
+    }
+
     private val _state = MutableStateFlow<P2pStreamingState>(P2pStreamingState.Idle)
     actual val state: StateFlow<P2pStreamingState> = _state.asStateFlow()
     private val _cacheState = MutableStateFlow(P2pCacheUiState())
     actual val cacheState: StateFlow<P2pCacheUiState> = _cacheState.asStateFlow()
     private val _torrentDetails = MutableStateFlow<P2pTorrentDetails?>(null)
     actual val torrentDetails: StateFlow<P2pTorrentDetails?> = _torrentDetails.asStateFlow()
+    private val _downloadStreamCount = MutableStateFlow(0)
+    actual val downloadStreamCount: StateFlow<Int> = _downloadStreamCount.asStateFlow()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val lifecycleLock = Any()
     private val startMutex = Mutex()
+    private val engineMutex = Mutex()
+    private val torrentMutexes = mutableMapOf<String, Mutex>()
+    private val downloadSessions = mutableMapOf<String, DownloadSession>()
+    private var shutdownRequested = false
     private var statsJob: Job? = null
     private var cleanupJob: Job? = null
     private var engineEventsJob: Job? = null
@@ -187,36 +198,39 @@ actual object P2pStreamingEngine {
     }
 
     actual suspend fun clearCache(): P2pCacheClearResult = withContext(Dispatchers.IO) {
-        startMutex.withLock {
-            check(_state.value !is P2pStreamingState.Streaming &&
-                _state.value !is P2pStreamingState.Connecting) {
-                "Torrent cache cannot be cleared during active playback"
-            }
-            _cacheState.value = _cacheState.value.copy(isClearing = true)
-            try {
-                val activeEngine = ensureEngine()
-                if (!_cacheState.value.hasMeasurement) {
-                    delay(DIAGNOSTIC_SAMPLE_INTERVAL_MS + 100L)
-                    val initial = activeEngine.stats.value
-                    updateCacheState(
-                        initial.diskCacheUsedBytes,
-                        initial.diskCacheProtectedBytes,
-                    )
-                }
-                val before = activeEngine.stats.value
-                activeEngine.reclaimDiskCache(0L)
+        startMutex.withLock { engineMutex.withLock { clearCacheLocked() } }
+    }
+
+    private suspend fun clearCacheLocked(): P2pCacheClearResult {
+        check(_state.value !is P2pStreamingState.Streaming &&
+            _state.value !is P2pStreamingState.Connecting &&
+            synchronized(lifecycleLock) { downloadSessions.isEmpty() }) {
+            "Torrent cache cannot be cleared while torrents are active"
+        }
+        _cacheState.value = _cacheState.value.copy(isClearing = true)
+        return try {
+            val activeEngine = ensureEngineLocked(keepRunning = false)
+            if (!_cacheState.value.hasMeasurement) {
                 delay(DIAGNOSTIC_SAMPLE_INTERVAL_MS + 100L)
-                val after = activeEngine.stats.value
-                updateCacheState(after.diskCacheUsedBytes, after.diskCacheProtectedBytes)
-                P2pCacheClearResult(
-                    reclaimedBytes = (before.diskCacheUsedBytes - after.diskCacheUsedBytes)
-                        .coerceAtLeast(0L),
-                    remainingBytes = after.diskCacheUsedBytes,
-                    protectedBytes = after.diskCacheProtectedBytes,
+                val initial = activeEngine.stats.value
+                updateCacheState(
+                    initial.diskCacheUsedBytes,
+                    initial.diskCacheProtectedBytes,
                 )
-            } finally {
-                _cacheState.value = _cacheState.value.copy(isClearing = false)
             }
+            val before = activeEngine.stats.value
+            activeEngine.reclaimDiskCache(0L)
+            delay(DIAGNOSTIC_SAMPLE_INTERVAL_MS + 100L)
+            val after = activeEngine.stats.value
+            updateCacheState(after.diskCacheUsedBytes, after.diskCacheProtectedBytes)
+            P2pCacheClearResult(
+                reclaimedBytes = (before.diskCacheUsedBytes - after.diskCacheUsedBytes)
+                    .coerceAtLeast(0L),
+                remainingBytes = after.diskCacheUsedBytes,
+                protectedBytes = after.diskCacheProtectedBytes,
+            )
+        } finally {
+            _cacheState.value = _cacheState.value.copy(isClearing = false)
         }
     }
 
@@ -248,7 +262,9 @@ actual object P2pStreamingEngine {
             logPhase(requestSequence, startedAtMs, phase.get())
 
             phase.set("ensure_engine")
-            val resolvedEngine = ensureEngine()
+            val resolvedEngine = ensureEngine {
+                synchronized(lifecycleLock) { downloadSessions.isNotEmpty() }
+            }
             activeEngine = resolvedEngine
             payloadDownloadBaseline = resolvedEngine.stats.value.totalPayloadDownloadBytes
             ensureCurrentGeneration(generation)
@@ -263,36 +279,37 @@ actual object P2pStreamingEngine {
 
             phase.set("add_magnet")
             val canonicalHash = canonicalP2pInfoHash(request.infoHash)
-            val reusedTorrent = canonicalHash in knownTorrentIds
-            Log.i(
-                DIAGNOSTIC_TAG,
-                "start request=$requestSequence phase=${phase.get()} begin elapsedMs=${elapsedSince(startedAtMs)} " +
-                    "cached=$reusedTorrent hash=${diagnosticId(canonicalHash)}",
-            )
-            val torrentId = if (reusedTorrent) {
-                canonicalHash
-            } else {
-                resolvedEngine.addMagnet(magnetUri).also { knownTorrentIds += it }
-            }
-            ensureCurrentGeneration(generation)
-            Log.i(
-                DIAGNOSTIC_TAG,
-                "start request=$requestSequence phase=${phase.get()} complete elapsedMs=${elapsedSince(startedAtMs)} " +
-                    "torrent=${diagnosticId(torrentId)} cached=$reusedTorrent",
-            )
+            val stream = torrentMutex(canonicalHash).withLock {
+                val reusedTorrent = synchronized(lifecycleLock) { canonicalHash in knownTorrentIds }
+                Log.i(
+                    DIAGNOSTIC_TAG,
+                    "start request=$requestSequence phase=${phase.get()} begin elapsedMs=${elapsedSince(startedAtMs)} " +
+                        "cached=$reusedTorrent hash=${diagnosticId(canonicalHash)}",
+                )
+                val torrentId = if (reusedTorrent) {
+                    canonicalHash
+                } else {
+                    resolvedEngine.addMagnet(magnetUri).also { rememberTorrent(resolvedEngine, it) }
+                }
+                ensureCurrentGeneration(generation)
+                Log.i(
+                    DIAGNOSTIC_TAG,
+                    "start request=$requestSequence phase=${phase.get()} complete elapsedMs=${elapsedSince(startedAtMs)} " +
+                        "torrent=${diagnosticId(torrentId)} cached=$reusedTorrent",
+                )
 
-            phase.set("prepare_stream")
-            Log.i(
-                DIAGNOSTIC_TAG,
-                "start request=$requestSequence phase=${phase.get()} begin elapsedMs=${elapsedSince(startedAtMs)} " +
-                    "fileIndex=${request.fileIdx ?: -1}",
-            )
-            val stream = resolvedEngine.prepareStream(
-                torrentId = torrentId,
-                fileIndex = request.fileIdx,
-                filenameHint = request.filename,
-            )
-            preparedStream = stream
+                phase.set("prepare_stream")
+                Log.i(
+                    DIAGNOSTIC_TAG,
+                    "start request=$requestSequence phase=${phase.get()} begin elapsedMs=${elapsedSince(startedAtMs)} " +
+                        "fileIndex=${request.fileIdx ?: -1}",
+                )
+                resolvedEngine.prepareStream(
+                    torrentId = torrentId,
+                    fileIndex = request.fileIdx,
+                    filenameHint = request.filename,
+                ).also { preparedStream = it }
+            }
             Log.i(
                 DIAGNOSTIC_TAG,
                 "start request=$requestSequence phase=${phase.get()} complete elapsedMs=${elapsedSince(startedAtMs)} " +
@@ -301,7 +318,7 @@ actual object P2pStreamingEngine {
             )
             currentCoroutineContext().ensureActive()
             phase.set("attach_route")
-            if (!attachStreamIfCurrent(generation, torrentId, stream.id)) {
+            if (!attachStreamIfCurrent(generation, stream.torrentId, stream.id)) {
                 withContext(NonCancellable) {
                     stopPreparedStream(resolvedEngine, stream.id)
                 }
@@ -403,6 +420,126 @@ actual object P2pStreamingEngine {
         scheduleStop(shutdownEngine = true)
     }
 
+    actual suspend fun startDownloadStream(downloadId: String, request: P2pStreamRequest): String =
+        withContext(Dispatchers.IO) {
+            val session = DownloadSession()
+            val replaced = synchronized(lifecycleLock) {
+                downloadSessions.put(downloadId, session).also {
+                    _downloadStreamCount.value = downloadSessions.size
+                }
+            }
+            replaced?.let(::stopDownloadSession)
+            var sessionEngine: Engine? = null
+            var preparedStream: Stream? = null
+            try {
+                val magnetUri = buildP2pMagnetUri(
+                    request.infoHash,
+                    (DEFAULT_TRACKERS + request.trackers).distinct(),
+                )
+                val activeEngine = ensureEngine {
+                    synchronized(lifecycleLock) {
+                        downloadSessions.values.any { it !== session } || isPlaybackActive()
+                    }
+                }.also { sessionEngine = it }
+                val canonicalHash = canonicalP2pInfoHash(request.infoHash)
+                val stream = torrentMutex(canonicalHash).withLock {
+                    val torrentId = if (synchronized(lifecycleLock) { canonicalHash in knownTorrentIds }) {
+                        canonicalHash
+                    } else {
+                        activeEngine.addMagnet(magnetUri).also { rememberTorrent(activeEngine, it) }
+                    }
+                    currentCoroutineContext().ensureActive()
+                    activeEngine.prepareStream(
+                        torrentId = torrentId,
+                        fileIndex = request.fileIdx,
+                        filenameHint = request.filename,
+                    ).also { preparedStream = it }
+                }
+                val attached = synchronized(lifecycleLock) {
+                    if (downloadSessions[downloadId] === session) {
+                        session.engine = activeEngine
+                        session.stream = stream
+                        true
+                    } else {
+                        false
+                    }
+                }
+                if (!attached) throw CancellationException("P2P download stream was cancelled")
+                Log.i(
+                    DIAGNOSTIC_TAG,
+                    "download stream ready torrent=${diagnosticId(stream.torrentId)} stream=${diagnosticId(stream.id)} " +
+                        "selectedFile=${stream.fileIndex} fileBytes=${stream.fileSize}",
+                )
+                stream.url
+            } catch (error: Throwable) {
+                val owned = synchronized(lifecycleLock) {
+                    (downloadSessions[downloadId] === session).also { owned ->
+                        if (owned) {
+                            downloadSessions.remove(downloadId)
+                            _downloadStreamCount.value = downloadSessions.size
+                        }
+                    }
+                }
+                withContext(NonCancellable) {
+                    if (session.stream == null) {
+                        preparedStream?.let { stream -> stopPreparedStream(sessionEngine, stream.id) }
+                    }
+                    if (owned) closeEngineIfUnused()
+                }
+                throw error
+            }
+        }
+
+    actual fun stopDownloadStream(downloadId: String) {
+        val session = synchronized(lifecycleLock) {
+            downloadSessions.remove(downloadId)?.also {
+                _downloadStreamCount.value = downloadSessions.size
+            }
+        } ?: return
+        stopDownloadSession(session)
+    }
+
+    fun shutdownAll() {
+        val sessions = synchronized(lifecycleLock) {
+            downloadSessions.values.toList().also {
+                downloadSessions.clear()
+                _downloadStreamCount.value = 0
+            }
+        }
+        sessions.forEach(::stopDownloadSession)
+        scheduleStop(shutdownEngine = true)
+    }
+
+    private fun stopDownloadSession(session: DownloadSession) {
+        val (sessionEngine, stream) = synchronized(lifecycleLock) { session.engine to session.stream }
+        scope.launch {
+            stream?.let { stopPreparedStream(sessionEngine, it.id) }
+            closeEngineIfUnused()
+        }
+    }
+
+    private suspend fun closeEngineIfUnused() {
+        engineMutex.withLock {
+            val close = synchronized(lifecycleLock) {
+                (shutdownRequested && downloadSessions.isEmpty() && !isPlaybackActive()).also { close ->
+                    if (close) shutdownRequested = false
+                }
+            }
+            if (close) closeEngine(engine)
+        }
+    }
+
+    private fun isPlaybackActive(): Boolean =
+        currentStreamId != null || _state.value is P2pStreamingState.Connecting
+
+    private fun torrentMutex(infoHash: String): Mutex = synchronized(lifecycleLock) {
+        torrentMutexes.getOrPut(infoHash) { Mutex() }
+    }
+
+    private fun rememberTorrent(activeEngine: Engine, torrentId: String) = synchronized(lifecycleLock) {
+        if (engine === activeEngine) knownTorrentIds += torrentId
+    }
+
     private fun scheduleStop(shutdownEngine: Boolean) {
         val startedAtMs = SystemClock.elapsedRealtime()
         val detached = detachActiveStream()
@@ -473,7 +610,8 @@ actual object P2pStreamingEngine {
             stopPreparedStream(detached.engine, streamId)
         }
         if (shutdownEngine) {
-            closeEngine(detached.engine)
+            synchronized(lifecycleLock) { shutdownRequested = true }
+            closeEngineIfUnused()
         }
     }
 
@@ -504,7 +642,10 @@ actual object P2pStreamingEngine {
         }
     }
 
-    private suspend fun ensureEngine(): Engine {
+    private suspend fun ensureEngine(keepRunning: () -> Boolean): Engine =
+        engineMutex.withLock { ensureEngineLocked(keepRunning()) }
+
+    private suspend fun ensureEngineLocked(keepRunning: Boolean): Engine {
         val startedAtMs = SystemClock.elapsedRealtime()
         P2pSettingsRepository.ensureLoaded()
         val settings = P2pSettingsRepository.uiState.value
@@ -512,7 +653,7 @@ actual object P2pStreamingEngine {
             torrentProfile = settings.torrentProfile,
             diskCacheCapacityBytes = settings.cacheSize.bytes,
         )
-        engine?.takeIf { engineConfigurationKey == configurationKey }?.let {
+        engine?.takeIf { engineConfigurationKey == configurationKey || keepRunning }?.let {
             Log.i(
                 DIAGNOSTIC_TAG,
                 "engine reuse configuration=$configurationKey elapsedMs=${elapsedSince(startedAtMs)}",
@@ -570,7 +711,7 @@ actual object P2pStreamingEngine {
             engineEventsJob = null
             engine = null
             engineConfigurationKey = null
-            knownTorrentIds.clear()
+            synchronized(lifecycleLock) { knownTorrentIds.clear() }
         }
         withContext(NonCancellable) {
             try {
@@ -992,6 +1133,7 @@ actual object P2pStreamingEngine {
 
     private fun beginStreamGeneration(): Long = synchronized(lifecycleLock) {
         synchronized(speedHistory) { speedHistory.clear() }
+        shutdownRequested = false
         streamGeneration += 1
         _state.value = P2pStreamingState.Connecting()
         streamGeneration

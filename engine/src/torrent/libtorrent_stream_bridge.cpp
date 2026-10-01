@@ -1054,6 +1054,18 @@ struct LibtorrentStreamBridge::Impl {
         });
     }
 
+    std::vector<std::uint32_t> streamed_files(const std::string& id) {
+        std::lock_guard lock(routes_mutex);
+        std::vector<std::uint32_t> files;
+        for (const auto& [target, route] : routes) {
+            static_cast<void>(target);
+            if (route.torrent_id == id) {
+                files.push_back(route.file_index);
+            }
+        }
+        return files;
+    }
+
     std::vector<std::uint32_t> blocking_pieces(const std::string& id) const {
         const auto schedule = current_schedules.find(id);
         if (schedule == current_schedules.end()) {
@@ -1349,6 +1361,12 @@ void LibtorrentStreamBridge::set_stream_duration(
 
 bool LibtorrentStreamBridge::has_stream_for_torrent(const std::string& torrent_id) {
     return impl_->has_stream_for_torrent(torrent_id);
+}
+
+std::vector<std::uint32_t> LibtorrentStreamBridge::streamed_files(
+    const std::string& torrent_id
+) {
+    return impl_->streamed_files(torrent_id);
 }
 
 std::vector<std::uint32_t> LibtorrentStreamBridge::blocking_pieces(

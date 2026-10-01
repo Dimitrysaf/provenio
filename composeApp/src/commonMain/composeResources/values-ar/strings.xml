@@ -2032,7 +2032,7 @@
     <string name="settings_p2p_clear_cache_usage">المستخدم حاليًا %1$s</string>
     <string name="settings_p2p_clear_cache_usage_pending">يتم قياس الاستخدام بعد بدء P2P؛ اضغط لمسح بيانات التورنت المخزنة مؤقتًا</string>
     <string name="settings_p2p_clear_cache_clearing">جارٍ مسح بيانات التورنت غير النشطة…</string>
-    <string name="settings_p2p_clear_cache_playback_active">أوقف تشغيل P2P قبل مسح ذاكرة التخزين المؤقت</string>
+    <string name="settings_p2p_clear_cache_playback_active">أوقف تشغيل P2P وتنزيلات التورنت قبل مسح ذاكرة التخزين المؤقت</string>
     <string name="settings_p2p_clear_cache_done">تم مسح %1$s من بيانات التورنت غير النشطة</string>
     <string name="settings_p2p_clear_cache_failed">تعذر مسح ذاكرة التورنت المؤقتة</string>
     <string name="player_torrent_peer_info">%1$d Seeders · %2$d Peers</string>

@@ -34,8 +34,6 @@ object DownloadsRepository {
     // does its own work off it.
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    /** The engine serves one torrent at a time, so only one download may hold it. */
-    private var activeTorrentDownloadId: String? = null
     private var hasLoaded = false
     private var nextDownloadOrdinal = 0L
 
@@ -51,7 +49,7 @@ object DownloadsRepository {
     fun clearLocalState() {
         activeHandles.values.forEach(DownloadsTaskHandle::cancel)
         activeHandles.clear()
-        activeTorrentDownloadId?.let(::releaseTorrentEngine)
+        _uiState.value.items.filter { it.isTorrentDownload }.map { it.id }.forEach(::releaseTorrentEngine)
         hasLoaded = false
         _uiState.value = DownloadsUiState()
         notifyLiveStatusPlatform()
@@ -353,30 +351,14 @@ object DownloadsRepository {
 
     /**
      * Asks the P2P engine to serve this torrent, then downloads from the address it gives back.
-     *
-     * The engine serves one torrent at a time and playback shares it, so only one torrent
-     * download runs at once, and starting playback of another torrent will end this one.
      */
     private fun startTorrentDownload(item: DownloadItem) {
         val infoHash = item.torrentInfoHash ?: return
-        val busyWith = activeTorrentDownloadId
-        if (busyWith != null && busyWith != item.id) {
-            mutateItem(item.id) { current ->
-                if (current.status != DownloadStatus.Downloading) return@mutateItem current
-                current.copy(
-                    status = DownloadStatus.Paused,
-                    errorMessage = runBlocking { getString(Res.string.downloads_enqueue_torrent_busy) },
-                    updatedAtEpochMs = DownloadsClock.nowEpochMs(),
-                )
-            }
-            return
-        }
-
-        activeTorrentDownloadId = item.id
         val job = repositoryScope.launch {
             val localUrl = try {
-                P2pStreamingEngine.startStream(
-                    P2pStreamRequest(
+                P2pStreamingEngine.startDownloadStream(
+                    downloadId = item.id,
+                    request = P2pStreamRequest(
                         infoHash = infoHash,
                         fileIdx = item.torrentFileIdx,
                         trackers = item.torrentTrackers,
@@ -405,11 +387,8 @@ object DownloadsRepository {
         activeHandles[item.id] = TorrentPreparationHandle(item.id, job)
     }
 
-    /** Lets go of the engine once this download is no longer the one using it. */
     private fun releaseTorrentEngine(downloadId: String) {
-        if (activeTorrentDownloadId != downloadId) return
-        activeTorrentDownloadId = null
-        P2pStreamingEngine.stopStream()
+        P2pStreamingEngine.stopDownloadStream(downloadId)
     }
 
     private fun startTransfer(item: DownloadItem, resolvedSourceUrl: String?) {

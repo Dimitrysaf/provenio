@@ -2179,7 +2179,7 @@
     <string name="settings_p2p_clear_cache_usage">Obecnie zajęte: %1$s</string>
     <string name="settings_p2p_clear_cache_usage_pending">Rozmiar jest mierzony po uruchomieniu P2P; dotknij, aby wyczyścić</string>
     <string name="settings_p2p_clear_cache_clearing">Czyszczenie nieaktywnych danych torrentów…</string>
-    <string name="settings_p2p_clear_cache_playback_active">Zatrzymaj odtwarzanie P2P przed czyszczeniem cache</string>
+    <string name="settings_p2p_clear_cache_playback_active">Zatrzymaj odtwarzanie P2P i pobieranie torrentów przed czyszczeniem cache</string>
     <string name="settings_p2p_clear_cache_done">Wyczyszczono %1$s nieaktywnych danych torrentów</string>
     <string name="settings_p2p_clear_cache_failed">Nie udało się wyczyścić cache torrentów</string>
     <string name="player_torrent_fetching_metadata">Pobieranie metadanych torrenta…</string>

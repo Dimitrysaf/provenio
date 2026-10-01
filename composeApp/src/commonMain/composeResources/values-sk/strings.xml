@@ -1972,7 +1972,7 @@
     <string name="settings_p2p_clear_cache_usage">Aktuálne využité: %1$s</string>
     <string name="settings_p2p_clear_cache_usage_pending">Využitie sa meria po spustení P2P; klepnutím vymažete vyrovnávaciu pamäť torrentov</string>
     <string name="settings_p2p_clear_cache_clearing">Mažú sa neaktívne dáta torrentov…</string>
-    <string name="settings_p2p_clear_cache_playback_active">Pred vymazaním vyrovnávacej pamäte zastavte prehrávanie P2P</string>
+    <string name="settings_p2p_clear_cache_playback_active">Pred vymazaním vyrovnávacej pamäte zastavte prehrávanie P2P a sťahovanie torrentov</string>
     <string name="settings_p2p_clear_cache_done">Vymazaných %1$s neaktívnych dát torrentov</string>
     <string name="settings_p2p_clear_cache_failed">Nepodarilo sa vymazať vyrovnávaciu pamäť torrentov</string>
     <string name="player_torrent_fetching_metadata">Získavajú sa metadáta torrentu…</string>

@@ -715,6 +715,7 @@ private fun P2pGroup(
     }.collectAsStateWithLifecycle()
     val p2pCacheState by P2pStreamingEngine.cacheState.collectAsStateWithLifecycle()
     val p2pStreamingState by P2pStreamingEngine.state.collectAsStateWithLifecycle()
+    val p2pDownloadStreams by P2pStreamingEngine.downloadStreamCount.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     SettingsSection(
         title = stringResource(Res.string.settings_playback_section_p2p),
@@ -757,6 +758,7 @@ private fun P2pGroup(
             )
             val cacheClearAvailable = p2pStreamingState !is P2pStreamingState.Connecting &&
                 p2pStreamingState !is P2pStreamingState.Streaming &&
+                p2pDownloadStreams == 0 &&
                 !p2pCacheState.isClearing
             navigationRow(
                 title = stringResource(Res.string.settings_p2p_clear_cache_title),

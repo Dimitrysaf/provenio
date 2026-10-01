@@ -56,7 +56,11 @@ internal class MpvPlayer private constructor(
 
     /** Called on mpv's event thread. */
     var onFileLoaded: () -> Unit = {}
-    var onEndFileError: (String) -> Unit = {}
+    var onEndFileError: (code: Int, message: String) -> Unit = { _, _ -> }
+
+    private var loadedUrl: String? = null
+    private var loadedOptions: List<String> = emptyList()
+    private var loadedStartSeconds: Double? = null
 
     init {
         val apiType = Memory(3).apply { setString(0, "sw", "US-ASCII") }
@@ -75,6 +79,7 @@ internal class MpvPlayer private constructor(
         headers: Map<String, String>,
         subtitles: List<Pair<String, String?>>,
         startPositionMs: Long?,
+        format: String?,
     ) = enqueue {
         command("change-list", "http-header-fields", "clr", "")
         headers.forEach { (key, value) ->
@@ -85,11 +90,25 @@ internal class MpvPlayer private constructor(
             }
         }
         pendingSubtitles = subtitles
-        val options = buildList {
-            startPositionMs?.takeIf { it > 0 }?.let { add("start=${it / 1000.0}") }
+        loadedUrl = url
+        loadedOptions = buildList {
             audioUrl?.takeIf { it.isNotBlank() }?.let { add("audio-files-append=${lengthQuoted(it)}") }
+            format?.let { add("demuxer-lavf-format=$it") }
         }
-        command("loadfile", url, "replace", "-1", options.joinToString(","))
+        loadedStartSeconds = startPositionMs?.takeIf { it > 0 }?.let { it / 1000.0 }
+        loadFile(url, loadedOptions, loadedStartSeconds)
+    }
+
+    fun reloadAs(format: String?) = enqueue {
+        val url = loadedUrl ?: return@enqueue
+        loadedOptions = loadedOptions.filterNot { it.startsWith("demuxer-lavf-format=") } +
+            listOfNotNull(format?.let { "demuxer-lavf-format=$it" })
+        loadFile(url, loadedOptions, loadedStartSeconds)
+    }
+
+    private fun loadFile(url: String, options: List<String>, startSeconds: Double?) {
+        val fileOptions = listOfNotNull(startSeconds?.let { "start=$it" }) + options
+        command("loadfile", url, "replace", "-1", fileOptions.joinToString(","))
     }
 
     @Volatile
@@ -203,8 +222,8 @@ internal class MpvPlayer private constructor(
 
     fun reload() = enqueue {
         val position = doubleProperty("time-pos")
-        val path = stringProperty("path") ?: return@enqueue
-        command("loadfile", path, "replace", "-1", position?.let { "start=$it" } ?: "")
+        val url = loadedUrl ?: stringProperty("path") ?: return@enqueue
+        loadFile(url, loadedOptions, position ?: loadedStartSeconds)
     }
 
     fun snapshot(): PlayerPlaybackSnapshot {
@@ -351,7 +370,7 @@ internal class MpvPlayer private constructor(
                 LibMpv.EVENT_END_FILE -> {
                     val endFile = event.data?.let(::MpvEventEndFile)
                     if (endFile?.reason == LibMpv.END_FILE_REASON_ERROR) {
-                        onEndFileError(mpv.mpv_error_string(endFile.error))
+                        onEndFileError(endFile.error, mpv.mpv_error_string(endFile.error))
                     }
                 }
             }
@@ -453,6 +472,7 @@ internal class MpvPlayer private constructor(
                 "terminal" to "no",
                 "input-default-bindings" to "no",
                 "ytdl" to "no",
+                "demuxer-lavf-o" to "extension_picky=0",
                 "sub-auto" to "no",
                 "audio-client-name" to "Provenio",
             )

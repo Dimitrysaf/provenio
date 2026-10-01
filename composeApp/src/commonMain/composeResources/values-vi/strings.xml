@@ -2157,7 +2157,7 @@
     <string name="settings_p2p_clear_cache_usage">%1$s đang được dùng </string>
     <string name="settings_p2p_clear_cache_usage_pending">Mức sử dụng sẽ được đo sau khi P2P khởi động; chạm để xóa dữ liệu torrent đã lưu trong bộ nhớ đệm</string>
     <string name="settings_p2p_clear_cache_clearing">Đang xóa dữ liệu torrent không còn hoạt động…</string>
-    <string name="settings_p2p_clear_cache_playback_active">Dừng phát P2P trước khi xóa bộ nhớ đệm</string>
+    <string name="settings_p2p_clear_cache_playback_active">Dừng phát P2P và tải torrent trước khi xóa bộ nhớ đệm</string>
     <string name="settings_p2p_clear_cache_done">Đã xóa %1$s dữ liệu torrent không hoạt động</string>
     <string name="settings_p2p_clear_cache_failed">Không thể xóa bộ nhớ đệm torrent</string>
     <string name="player_torrent_peer_info">%1$d seed · %2$d peer</string>

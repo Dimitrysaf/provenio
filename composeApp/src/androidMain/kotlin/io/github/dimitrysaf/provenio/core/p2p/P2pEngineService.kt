@@ -17,8 +17,8 @@ import io.github.dimitrysaf.provenio.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.getString
@@ -31,7 +31,7 @@ private const val EngineNotificationId = 0x5032
 private const val ActionStart = "io.github.dimitrysaf.provenio.engine.START"
 private const val Tag = "P2pEngineService"
 
-// Keeps the process in the foreground while a torrent streams, so Android neither freezes the engine nor cuts its network in the background.
+// Keeps the process in the foreground while a torrent streams or downloads, so Android neither freezes the engine nor cuts its network in the background.
 class P2pEngineService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -44,7 +44,11 @@ class P2pEngineService : Service() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK else 0,
             )
         }.onFailure { Log.w(Tag, "Could not keep the engine in the foreground", it) }.isSuccess
-        if (!started || !P2pEngineKeepAlive.isActive(P2pStreamingEngine.state.value)) stopSelf()
+        val active = P2pEngineKeepAlive.isActive(
+            P2pStreamingEngine.state.value,
+            P2pStreamingEngine.downloadStreamCount.value,
+        )
+        if (!started || !active) stopSelf()
         return START_NOT_STICKY
     }
 
@@ -54,7 +58,7 @@ class P2pEngineService : Service() {
     }
 }
 
-// Starts the service while the engine connects or streams and stops it when the engine goes idle.
+// Starts the service while the engine connects, streams or serves a download and stops it when the engine goes idle.
 internal object P2pEngineKeepAlive {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var started = false
@@ -65,8 +69,7 @@ internal object P2pEngineKeepAlive {
         val appContext = context.applicationContext
         ensureChannel(appContext)
         scope.launch {
-            P2pStreamingEngine.state
-                .map { isActive(it) }
+            combine(P2pStreamingEngine.state, P2pStreamingEngine.downloadStreamCount, ::isActive)
                 .distinctUntilChanged()
                 .collect { active ->
                     val intent = Intent(appContext, P2pEngineService::class.java).setAction(ActionStart)
@@ -80,8 +83,8 @@ internal object P2pEngineKeepAlive {
         }
     }
 
-    fun isActive(state: P2pStreamingState): Boolean =
-        state is P2pStreamingState.Connecting || state is P2pStreamingState.Streaming
+    fun isActive(state: P2pStreamingState, downloadStreams: Int): Boolean =
+        downloadStreams > 0 || state is P2pStreamingState.Connecting || state is P2pStreamingState.Streaming
 
     fun buildNotification(context: Context): Notification =
         NotificationCompat.Builder(context, EngineChannelId)

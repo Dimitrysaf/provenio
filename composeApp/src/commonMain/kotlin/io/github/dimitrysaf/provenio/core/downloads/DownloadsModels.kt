@@ -7,7 +7,6 @@ import kotlinx.coroutines.runBlocking
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.downloads_enqueue_missing_url
 import provenio.composeapp.generated.resources.downloads_enqueue_p2p_disabled
-import provenio.composeapp.generated.resources.downloads_enqueue_torrent_busy
 import provenio.composeapp.generated.resources.downloads_enqueue_replaced
 import provenio.composeapp.generated.resources.downloads_enqueue_started
 import provenio.composeapp.generated.resources.downloads_enqueue_unsupported_format
@@ -102,8 +101,7 @@ enum class DownloadEnqueueResult {
     Replaced,
     MissingUrl,
     UnsupportedFormat,
-    P2pDisabled,
-    TorrentBusy;
+    P2pDisabled;
 
     fun toastMessage(): String = runBlocking {
         when (this@DownloadEnqueueResult) {
@@ -112,7 +110,6 @@ enum class DownloadEnqueueResult {
             MissingUrl -> getString(Res.string.downloads_enqueue_missing_url)
             UnsupportedFormat -> getString(Res.string.downloads_enqueue_unsupported_format)
             P2pDisabled -> getString(Res.string.downloads_enqueue_p2p_disabled)
-            TorrentBusy -> getString(Res.string.downloads_enqueue_torrent_busy)
         }
     }
 }

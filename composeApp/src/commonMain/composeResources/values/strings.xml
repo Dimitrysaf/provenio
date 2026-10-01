@@ -1961,7 +1961,6 @@
     <string name="details_episode_badge_file">FILE</string>
     <string name="downloads_enqueue_missing_url">No direct stream link available</string>
     <string name="downloads_enqueue_p2p_disabled">Turn on P2P streaming to download torrents</string>
-    <string name="downloads_enqueue_torrent_busy">Another torrent is already downloading</string>
     <string name="downloads_enqueue_replaced">Replaced previous download</string>
     <string name="downloads_enqueue_started">Download started</string>
     <string name="downloads_enqueue_unsupported_format">Unsupported stream format for downloads</string>
@@ -2405,7 +2404,7 @@
     <string name="settings_p2p_clear_cache_usage">%1$s currently used</string>
     <string name="settings_p2p_clear_cache_usage_pending">Usage is measured after P2P starts; tap to clear cached torrent data</string>
     <string name="settings_p2p_clear_cache_clearing">Clearing inactive torrent data…</string>
-    <string name="settings_p2p_clear_cache_playback_active">Stop P2P playback before clearing the cache</string>
+    <string name="settings_p2p_clear_cache_playback_active">Stop P2P playback and torrent downloads before clearing the cache</string>
     <string name="settings_p2p_clear_cache_done">Cleared %1$s of inactive torrent data</string>
     <string name="settings_p2p_clear_cache_failed">Could not clear the torrent cache</string>
     <string name="player_torrent_peer_info">%1$d seeds · %2$d peers</string>

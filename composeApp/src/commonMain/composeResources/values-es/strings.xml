@@ -2112,7 +2112,7 @@ Utilizas esta función bajo tu propia responsabilidad. P2P se puede desactivar e
     <string name="settings_p2p_clear_cache_usage">%1$s en uso actualmente</string>
     <string name="settings_p2p_clear_cache_usage_pending">El uso se calcula tras iniciar P2P; pulsa para borrar los datos de torrents en caché</string>
     <string name="settings_p2p_clear_cache_clearing">Borrando datos inactivos de torrents…</string>
-    <string name="settings_p2p_clear_cache_playback_active">Detén la reproducción P2P antes de borrar la caché</string>
+    <string name="settings_p2p_clear_cache_playback_active">Detén la reproducción P2P y las descargas de torrents antes de borrar la caché</string>
     <string name="settings_p2p_clear_cache_done">Se han borrado %1$s de datos inactivos de torrents</string>
     <string name="settings_p2p_clear_cache_failed">No se pudo borrar la caché de torrents</string>
     <string name="player_torrent_peer_info">%1$d semillas · %2$d pares</string>

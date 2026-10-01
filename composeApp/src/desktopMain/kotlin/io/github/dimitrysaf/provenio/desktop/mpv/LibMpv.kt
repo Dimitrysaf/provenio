@@ -36,6 +36,9 @@ internal interface LibMpv : Library {
 
         const val END_FILE_REASON_ERROR = 4
 
+        const val ERROR_LOADING_FAILED = -13
+        const val ERROR_UNKNOWN_FORMAT = -17
+
         const val RENDER_PARAM_INVALID = 0
         const val RENDER_PARAM_API_TYPE = 1
         const val RENDER_PARAM_SW_SIZE = 17

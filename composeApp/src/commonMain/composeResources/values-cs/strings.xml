@@ -2165,7 +2165,7 @@
     <string name="settings_p2p_clear_cache_usage">Aktuálně využito %1$s</string>
     <string name="settings_p2p_clear_cache_usage_pending">Využití se změří po spuštění P2P; klepnutím vymažete uložená data torrentů</string>
     <string name="settings_p2p_clear_cache_clearing">Mazání neaktivních dat torrentů…</string>
-    <string name="settings_p2p_clear_cache_playback_active">Před vymazáním mezipaměti zastavte přehrávání P2P</string>
+    <string name="settings_p2p_clear_cache_playback_active">Před vymazáním mezipaměti zastavte přehrávání P2P a stahování torrentů</string>
     <string name="settings_p2p_clear_cache_done">Vymazáno %1$s neaktivních dat torrentů</string>
     <string name="settings_p2p_clear_cache_failed">Mezipaměť torrentů se nepodařilo vymazat</string>
     <string name="player_torrent_fetching_metadata">Načítání metadat torrentu…</string>

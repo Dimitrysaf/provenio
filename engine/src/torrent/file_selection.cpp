@@ -7,10 +7,12 @@
 namespace torrent {
 namespace {
 
-constexpr std::array<std::string_view, 19> playable_extensions{
-    ".aac", ".avi", ".flac", ".flv", ".m3u8", ".m4v", ".mkv",
-    ".mov", ".mp3", ".mp4", ".mpeg", ".mpg", ".ogg", ".ts",
-    ".vp8", ".wav", ".webm", ".wmv", ".wma",
+constexpr std::array<std::string_view, 33> playable_extensions{
+    ".3gp", ".aac", ".asf", ".avi", ".divx", ".f4v", ".flac", ".flv",
+    ".m2t", ".m2ts", ".m3u8", ".m4a", ".m4v", ".mka", ".mkv", ".mov",
+    ".mp3", ".mp4", ".mpeg", ".mpg", ".mts", ".ogg", ".ogv", ".opus",
+    ".rm", ".rmvb", ".ts", ".vob", ".vp8", ".wav", ".webm", ".wmv",
+    ".wma",
 };
 
 std::string lowercase(std::string_view value) {

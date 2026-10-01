@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,10 +24,13 @@ import io.github.dimitrysaf.provenio.core.playback.PlayerResizeMode
 import io.github.dimitrysaf.provenio.core.playback.SubtitleTrack
 import io.github.dimitrysaf.provenio.core.streams.StreamSubtitle
 import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
+import io.github.dimitrysaf.provenio.desktop.mpv.LibMpv
 import io.github.dimitrysaf.provenio.desktop.mpv.MpvPlayer
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Playback through libmpv; see [MpvPlayer]. */
@@ -61,8 +65,35 @@ actual fun PlatformPlayerSurface(
         return
     }
 
+    val playbackHeaders = remember(sourceHeaders) { sanitizePlaybackHeaders(sourceHeaders) }
+    val declaredFormat = remember(sourceUrl, streamType, sourceResponseHeaders) {
+        declaredStreamFormat(sourceUrl, streamType, sanitizePlaybackResponseHeaders(sourceResponseHeaders))
+    }
+    val currentSourceUrl by rememberUpdatedState(sourceUrl)
+    val currentPlaybackHeaders by rememberUpdatedState(playbackHeaders)
+    val currentDeclaredFormat by rememberUpdatedState(declaredFormat)
+    val formatProbed = remember { AtomicBoolean(false) }
+    val coroutineScope = rememberCoroutineScope()
+
     DisposableEffect(player) {
-        player.onEndFileError = { message -> currentOnError(message) }
+        player.onEndFileError = { code, message ->
+            val unrecognized = code == LibMpv.ERROR_UNKNOWN_FORMAT || code == LibMpv.ERROR_LOADING_FAILED
+            if (unrecognized && formatProbed.compareAndSet(false, true)) {
+                val url = currentSourceUrl
+                val headers = currentPlaybackHeaders
+                val triedFormat = currentDeclaredFormat
+                coroutineScope.launch(Dispatchers.IO) {
+                    val sniffedFormat = sniffStreamFormat(url, headers)
+                    when {
+                        url != currentSourceUrl -> Unit
+                        sniffedFormat != triedFormat -> player.reloadAs(sniffedFormat)
+                        else -> currentOnError(message)
+                    }
+                }
+            } else {
+                currentOnError(message)
+            }
+        }
         onDispose { player.release() }
     }
 
@@ -74,16 +105,18 @@ actual fun PlatformPlayerSurface(
         }
     }
 
-    LaunchedEffect(player, sourceUrl, sourceAudioUrl, sourceHeaders, externalSubtitles) {
+    LaunchedEffect(player, sourceUrl, sourceAudioUrl, playbackHeaders, declaredFormat, externalSubtitles) {
         val requestKey = initialPositionRequestKey
         player.onFileLoaded = { requestKey?.let { currentOnInitialPositionHandled(it, true) } }
+        formatProbed.set(false)
         withContext(Dispatchers.IO) {
             player.load(
                 url = sourceUrl,
                 audioUrl = sourceAudioUrl,
-                headers = sanitizePlaybackHeaders(sourceHeaders),
+                headers = playbackHeaders,
                 subtitles = externalSubtitles.map { it.url to (it.name ?: it.language) },
                 startPositionMs = initialPositionMs,
+                format = declaredFormat.takeIf { sourceAudioUrl.isNullOrBlank() },
             )
         }
     }
