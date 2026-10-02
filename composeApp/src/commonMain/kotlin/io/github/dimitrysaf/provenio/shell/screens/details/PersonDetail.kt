@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import io.github.dimitrysaf.provenio.shell.components.DeceasedPhotoFilter
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -513,6 +514,7 @@ private fun PersonIdentitySidebar(
                         contentDescription = person.name,
                         modifier = Modifier.matchParentSize(),
                         contentScale = ContentScale.Crop,
+                        colorFilter = if (!person.deathday.isNullOrBlank()) DeceasedPhotoFilter else null,
                     )
                 } else {
                     Text(
@@ -672,6 +674,7 @@ private fun HeroSection(
                     contentDescription = person.name,
                     modifier = Modifier.matchParentSize(),
                     contentScale = ContentScale.Crop,
+                    colorFilter = if (!person.deathday.isNullOrBlank()) DeceasedPhotoFilter else null,
                 )
             } else {
                 Text(

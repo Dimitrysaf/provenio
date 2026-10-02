@@ -72,6 +72,8 @@ data class MetaPerson(
     val role: String? = null,
     val photo: String? = null,
     val tmdbId: Int? = null,
+    val imdbId: String? = null,
+    val deceased: Boolean = false,
 )
 
 data class MetaCompany(

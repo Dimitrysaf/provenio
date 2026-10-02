@@ -157,7 +157,11 @@ internal object MetaDetailsParser {
                 link.category.equals("actor", ignoreCase = true) ||
                 link.category.equals("actors", ignoreCase = true)
         }.map { link ->
-            MetaPerson(name = link.name)
+            MetaPerson(
+                name = link.name,
+                tmdbId = TmdbPersonUrl.find(link.url)?.groupValues?.get(1)?.toIntOrNull()?.takeIf { it > 0 },
+                imdbId = ImdbPersonUrl.find(link.url)?.groupValues?.get(1),
+            )
         }
 
         return mergePeople(appExtraCast, topLevelCast, linkedCast)
@@ -195,6 +199,8 @@ internal object MetaDetailsParser {
                             name = personName,
                             role = element.string("character")?.trim()?.takeIf(String::isNotBlank),
                             photo = element.string("photo")?.trim()?.takeIf(String::isNotBlank),
+                            tmdbId = element.personTmdbId(),
+                            imdbId = element.personImdbId(),
                         )
                     }
                     is JsonPrimitive -> element.contentOrNull
@@ -214,6 +220,20 @@ internal object MetaDetailsParser {
         }
     }
 
+    private fun JsonObject.primitiveText(name: String): String? =
+        (this[name] as? JsonPrimitive)?.contentOrNull?.trim()?.takeIf(String::isNotBlank)
+
+    private fun JsonObject.personTmdbId(): Int? {
+        val explicit = listOf("tmdb_id", "tmdbId", "tmdb")
+            .firstNotNullOfOrNull { key -> primitiveText(key)?.removePrefix("tmdb:")?.toIntOrNull() }
+        val prefixed = primitiveText("id")?.takeIf { it.startsWith("tmdb:") }?.removePrefix("tmdb:")?.toIntOrNull()
+        return (explicit ?: prefixed)?.takeIf { it > 0 }
+    }
+
+    private fun JsonObject.personImdbId(): String? =
+        listOf("imdb_id", "imdbId", "imdb", "id")
+            .firstNotNullOfOrNull { key -> primitiveText(key)?.takeIf { ImdbPersonId.matches(it) } }
+
     private fun mergePeople(vararg groups: List<MetaPerson>): List<MetaPerson> {
         val merged = linkedMapOf<String, MetaPerson>()
         groups.forEach { group ->
@@ -228,6 +248,8 @@ internal object MetaDetailsParser {
                     existing.copy(
                         role = existing.role ?: person.role,
                         photo = existing.photo ?: person.photo,
+                        tmdbId = existing.tmdbId ?: person.tmdbId,
+                        imdbId = existing.imdbId ?: person.imdbId,
                     )
                 }
             }
@@ -374,3 +396,7 @@ internal object MetaDetailsParser {
 }
 
 private fun JsonElement?.asJsonObjectOrNull(): JsonObject? = this as? JsonObject
+
+private val TmdbPersonUrl = Regex("themoviedb\\.org/person/(\\d+)")
+private val ImdbPersonUrl = Regex("imdb\\.com/name/(nm\\d+)")
+private val ImdbPersonId = Regex("nm\\d+")

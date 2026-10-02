@@ -497,6 +497,8 @@ internal fun ConfiguredMetaSections(
                     onCastClick = onCastClick,
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
+                    metaId = meta.id,
+                    metaType = meta.type,
                 )
             }
             MetaScreenSectionKey.COMMENTS -> {

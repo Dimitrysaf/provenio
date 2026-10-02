@@ -19,6 +19,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,7 +37,9 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import io.github.dimitrysaf.provenio.shell.components.horizontalScrollBleed
+import io.github.dimitrysaf.provenio.core.metadata.CastResolver
 import io.github.dimitrysaf.provenio.core.metadata.MetaPerson
+import io.github.dimitrysaf.provenio.shell.components.DeceasedPhotoFilter
 import io.github.dimitrysaf.provenio.core.metadata.castAvatarSharedTransitionKey
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -50,8 +54,13 @@ fun DetailCastSection(
     onCastClick: ((MetaPerson, String?) -> Unit)? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    metaId: String? = null,
+    metaType: String? = null,
 ) {
     if (cast.isEmpty()) return
+    val resolvedCast by produceState(initialValue = cast, cast, metaId, metaType) {
+        value = CastResolver.resolve(cast, metaId, metaType)
+    }
 
     DetailSection(
         title = stringResource(Res.string.settings_meta_cast),
@@ -69,7 +78,7 @@ fun DetailCastSection(
                 horizontalArrangement = Arrangement.spacedBy(sizing.avatarGap),
             ) {
                 itemsIndexed(
-                    items = cast,
+                    items = resolvedCast,
                     key = { index, person -> "${person.name}-${person.role.orEmpty()}-${person.photo.orEmpty()}-$index" },
                 ) { index, person ->
                     val sharedTransitionKey = person.tmdbId
@@ -159,6 +168,7 @@ private fun CastItem(
                     contentDescription = person.name,
                     modifier = Modifier.matchParentSize(),
                     contentScale = ContentScale.Crop,
+                    colorFilter = if (person.deceased) DeceasedPhotoFilter else null,
                 )
             } else {
                 Text(
