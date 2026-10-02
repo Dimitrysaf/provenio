@@ -11,6 +11,8 @@ import io.github.dimitrysaf.provenio.core.streams.StreamAutoPlayMode
 import io.github.dimitrysaf.provenio.core.streams.StreamAutoPlaySelector
 import io.github.dimitrysaf.provenio.core.streams.StreamAutoPlaySource
 import io.github.dimitrysaf.provenio.core.streams.StreamItem
+import io.github.dimitrysaf.provenio.core.streams.embeddedAutoPlayStreams
+import io.github.dimitrysaf.provenio.core.streams.withoutEmbeddedSources
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -107,6 +109,7 @@ internal fun CoroutineScope.launchPlayerNextEpisodeAutoPlay(
             videoId = nextVideo.id,
             season = nextVideo.season,
             episode = nextVideo.episode,
+            parentMetaId = parentMetaId,
         )
 
         val installedAddonNames = AddonRepository.uiState.value.addons
@@ -176,7 +179,13 @@ internal fun CoroutineScope.launchPlayerNextEpisodeAutoPlay(
             PlayerStreamsRepository.episodeStreamsState.collectLatest { state ->
                 if (state.groups.isEmpty() && state.isAnyLoading) return@collectLatest
 
-                val allStreams = state.groups.flatMap { it.streams }
+                val embeddedStreams = state.groups.embeddedAutoPlayStreams(nextVideo.season)
+                if (!autoSelectTriggered && embeddedStreams.isNotEmpty()) {
+                    selectStream(embeddedStreams.first())
+                    return@collectLatest
+                }
+
+                val allStreams = state.groups.withoutEmbeddedSources().flatMap { it.streams }
 
                 if (autoSelectTriggered) {
                     // Already resolved.
@@ -218,7 +227,7 @@ internal fun CoroutineScope.launchPlayerNextEpisodeAutoPlay(
             delay(timeoutMs)
             timeoutElapsed = true
             if (!autoSelectTriggered) {
-                val allStreams = PlayerStreamsRepository.episodeStreamsState.value.groups.flatMap { it.streams }
+                val allStreams = PlayerStreamsRepository.episodeStreamsState.value.groups.withoutEmbeddedSources().flatMap { it.streams }
                 if (allStreams.isNotEmpty()) {
                     val candidate = trySelectStream(allStreams)
                     if (candidate != null) {
@@ -233,7 +242,7 @@ internal fun CoroutineScope.launchPlayerNextEpisodeAutoPlay(
                 val completed = withTimeoutOrNull(NEXT_EPISODE_HARD_TIMEOUT_MS) { autoSelectSettled.await() }
                 innerJob.cancel()
                 if (completed == null && !autoSelectTriggered) {
-                    val allStreams = PlayerStreamsRepository.episodeStreamsState.value.groups.flatMap { it.streams }
+                    val allStreams = PlayerStreamsRepository.episodeStreamsState.value.groups.withoutEmbeddedSources().flatMap { it.streams }
                     if (allStreams.isNotEmpty()) {
                         selectedStream = trySelectStream(allStreams)
                     }
@@ -243,7 +252,7 @@ internal fun CoroutineScope.launchPlayerNextEpisodeAutoPlay(
         } else {
             timeoutElapsed = true
             if (!autoSelectTriggered) {
-                val allStreams = PlayerStreamsRepository.episodeStreamsState.value.groups.flatMap { it.streams }
+                val allStreams = PlayerStreamsRepository.episodeStreamsState.value.groups.withoutEmbeddedSources().flatMap { it.streams }
                 if (allStreams.isNotEmpty()) {
                     trySelectStream(allStreams)?.let(::selectStream)
                 }
@@ -251,7 +260,7 @@ internal fun CoroutineScope.launchPlayerNextEpisodeAutoPlay(
             val completed = withTimeoutOrNull(NEXT_EPISODE_HARD_TIMEOUT_MS) { autoSelectSettled.await() }
             innerJob.cancel()
             if (completed == null && !autoSelectTriggered) {
-                val allStreams = PlayerStreamsRepository.episodeStreamsState.value.groups.flatMap { it.streams }
+                val allStreams = PlayerStreamsRepository.episodeStreamsState.value.groups.withoutEmbeddedSources().flatMap { it.streams }
                 if (allStreams.isNotEmpty()) {
                     selectedStream = trySelectStream(allStreams)
                 }

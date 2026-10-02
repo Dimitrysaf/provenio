@@ -513,6 +513,7 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
                     season = activeSeasonNumber,
                     episode = activeEpisodeNumber,
                     forceRefresh = true,
+                    parentMetaId = parentMetaId,
                 )
             }
         },
@@ -548,6 +549,7 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
                 videoId = episode.id,
                 season = episode.season,
                 episode = episode.episode,
+                parentMetaId = parentMetaId,
             )
             episodeStreamsPanelState = EpisodeStreamsPanelState(showStreams = true, selectedEpisode = episode)
         },
@@ -568,6 +570,7 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
                     season = episode.season,
                     episode = episode.episode,
                     forceRefresh = true,
+                    parentMetaId = parentMetaId,
                 )
             }
         },

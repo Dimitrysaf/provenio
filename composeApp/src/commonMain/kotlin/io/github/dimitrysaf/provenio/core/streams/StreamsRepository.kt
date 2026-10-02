@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.update
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import io.ktor.util.date.GMTDate
 
 object StreamsRepository {
@@ -154,29 +155,16 @@ object StreamsRepository {
             )
         }
 
-        val embeddedStreams = MetaDetailsRepository.findEmbeddedStreams(videoId)
-        if (embeddedStreams.isNotEmpty()) {
-            log.d { "Using ${embeddedStreams.size} embedded streams for type=$type id=$videoId" }
-            val group = AddonStreamGroup(
-                addonName = embeddedStreams.first().addonName,
-                addonId = "embedded",
-                streams = embeddedStreams,
-                isLoading = false,
-                addonLogo = embeddedStreams.first().addonLogo,
-            )
-            val presentedGroup = StreamBadgePresentation.apply(
-                groups = listOf(group),
-                rules = streamBadgeRules,
-            ).firstOrNull() ?: group
-            _uiState.value = StreamsUiState(
-                requestToken = requestToken,
-                groups = listOf(presentedGroup),
-                autoPlayDecided = true,
-                activeAddonIds = setOf("embedded"),
-                isAnyLoading = false,
-            )
-            return
+        val embeddedGroups = StreamBadgePresentation.apply(
+            groups = embeddedStreamGroups(
+                MetaDetailsRepository.findEmbeddedStreams(videoId = videoId, type = type, parentMetaId = parentMetaId),
+            ),
+            rules = streamBadgeRules,
+        )
+        val embeddedLookupMetaId = parentMetaId?.takeIf {
+            embeddedGroups.isEmpty() && !MetaDetailsRepository.isMetaKnown(type, it)
         }
+        val hasEmbeddedSource = embeddedGroups.isNotEmpty() || embeddedLookupMetaId != null
 
         val installedAddons = AddonRepository.uiState.value.addons.enabledAddons()
         val pluginScrapers = if (AppFeaturePolicy.pluginsEnabled) {
@@ -189,7 +177,7 @@ object StreamsRepository {
             groupByRepository = pluginUiState.groupStreamsByRepository,
         )
 
-        if (installedAddons.isEmpty() && pluginProviderGroups.isEmpty()) {
+        if (installedAddons.isEmpty() && pluginProviderGroups.isEmpty() && !hasEmbeddedSource) {
             _uiState.value = StreamsUiState(
                 requestToken = requestToken,
                 isAnyLoading = false,
@@ -213,7 +201,7 @@ object StreamsRepository {
 
         log.d { "Found ${streamAddons.size} addons for stream type=$type id=$videoId" }
 
-        if (streamAddons.isEmpty() && pluginProviderGroups.isEmpty()) {
+        if (streamAddons.isEmpty() && pluginProviderGroups.isEmpty() && !hasEmbeddedSource) {
             _uiState.value = StreamsUiState(
                 requestToken = requestToken,
                 isAnyLoading = false,
@@ -224,8 +212,19 @@ object StreamsRepository {
         }
 
         // Initialise loading placeholders
+        val noSourceEmptyReason = if (installedAddons.isEmpty() && pluginProviderGroups.isEmpty()) {
+            StreamsEmptyStateReason.NoAddonsInstalled
+        } else {
+            StreamsEmptyStateReason.NoCompatibleAddons
+        }
+        val hasOtherSources = streamAddons.isNotEmpty() || pluginProviderGroups.isNotEmpty()
+        val initialEmbeddedGroups = if (embeddedLookupMetaId != null) {
+            listOf(embeddedLookupGroup(runBlocking { getString(Res.string.source_embedded) }))
+        } else {
+            embeddedGroups
+        }
         val installedAddonOrder = streamAddons.map { it.addonName }
-        val initialGroups = StreamAutoPlaySelector.orderAddonStreams(streamAddons.map { addon ->
+        val initialGroups = StreamAutoPlaySelector.orderAddonStreams(initialEmbeddedGroups + streamAddons.map { addon ->
             AddonStreamGroup(
                 addonName = addon.addonName,
                 addonId = addon.addonId,
@@ -270,7 +269,7 @@ object StreamsRepository {
             var timeoutElapsed = false
             fun evaluateAutoPlay(bingeGroupOnly: Boolean = false): StreamAutoPlayEvaluation =
                 StreamAutoPlaySelector.evaluateAutoPlayStream(
-                    streams = _uiState.value.groups.flatMap { it.streams },
+                    streams = _uiState.value.groups.withoutEmbeddedSources().flatMap { it.streams },
                     mode = autoPlayMode,
                     regexPattern = playerSettings.streamAutoPlayRegex,
                     source = playerSettings.streamAutoPlaySource,
@@ -304,8 +303,22 @@ object StreamsRepository {
                 }
             }
 
+            fun embeddedAutoPlayEvaluation(): StreamAutoPlayEvaluation? {
+                val embeddedStreams = _uiState.value.groups.embeddedAutoPlayStreams(season)
+                if (embeddedStreams.isEmpty()) return null
+                return StreamAutoPlayEvaluation(
+                    stream = embeddedStreams.first(),
+                    readyStreams = embeddedStreams,
+                )
+            }
+
             fun updateAutoPlayAfterStreamsChanged() {
                 if (!isDirectAutoPlayFlow || autoSelectTriggered) return
+
+                embeddedAutoPlayEvaluation()?.let { evaluation ->
+                    settleAutoPlay(evaluation)
+                    return
+                }
 
                 val earlyEvaluation = when {
                     timeoutElapsed -> evaluateAutoPlay()
@@ -318,7 +331,8 @@ object StreamsRepository {
                 }
 
                 if (
-                    _uiState.value.groups.areAutoPlaySourcesLoaded(
+                    _uiState.value.groups.none { it.isEmbeddedSource && it.isLoading } &&
+                    _uiState.value.groups.withoutEmbeddedSources().areAutoPlaySourcesLoaded(
                         source = playerSettings.streamAutoPlaySource,
                         installedAddonIds = installedAddonIds,
                     )
@@ -393,6 +407,38 @@ object StreamsRepository {
                 debridAvailabilityJobs += availabilityJob
             }
 
+            fun publishEmbeddedGroups(groups: List<AddonStreamGroup>) {
+                _uiState.update { current ->
+                    val updated = current.groups.withEmbeddedGroups(groups)
+                    val anyLoading = updated.any { it.isLoading }
+                    current.copy(
+                        groups = updated,
+                        activeAddonIds = updated.map { it.addonId }.toSet(),
+                        isAnyLoading = anyLoading,
+                        emptyStateReason = if (!hasOtherSources && !anyLoading && updated.none { it.streams.isNotEmpty() }) {
+                            noSourceEmptyReason
+                        } else {
+                            updated.toEmptyStateReason(anyLoading)
+                        },
+                    )
+                }
+                updateAutoPlayAfterStreamsChanged()
+            }
+
+            val embeddedLookupJob = embeddedLookupMetaId?.let { metaId ->
+                launch {
+                    val streams = runCatchingUnlessCancelled {
+                        MetaDetailsRepository.fetchEmbeddedStreams(type = type, videoId = videoId, parentMetaId = metaId)
+                    }.getOrElse { error ->
+                        log.w(error) { "Failed to look up embedded streams for $metaId" }
+                        emptyList()
+                    }
+                    publishEmbeddedGroups(
+                        StreamBadgePresentation.apply(groups = embeddedStreamGroups(streams), rules = streamBadgeRules),
+                    )
+                }
+            }
+
             updateAutoPlayAfterStreamsChanged()
 
             val timeoutJob = if (isDirectAutoPlayFlow) {
@@ -422,7 +468,7 @@ object StreamsRepository {
                         delay(timeoutSeconds * 1_000L)
                         timeoutElapsed = true
                         if (!autoSelectTriggered) {
-                            val allStreams = _uiState.value.groups.flatMap { it.streams }
+                            val allStreams = _uiState.value.groups.withoutEmbeddedSources().flatMap { it.streams }
                             if (allStreams.isNotEmpty()) {
                                 val evaluation = evaluateAutoPlay()
                                 if (evaluation.stream != null || !evaluation.hasPendingDebridCandidate) {
@@ -583,6 +629,7 @@ object StreamsRepository {
             for (availabilityJob in debridAvailabilityJobs) {
                 availabilityJob.join()
             }
+            embeddedLookupJob?.join()
 
             cacheGroups(cacheKey, _uiState.value.groups)
 
@@ -611,7 +658,7 @@ object StreamsRepository {
             }
 
             if (isDirectAutoPlayFlow && !autoSelectTriggered) {
-                settleAutoPlay(evaluateAutoPlay())
+                settleAutoPlay(embeddedAutoPlayEvaluation() ?: evaluateAutoPlay())
             }
             timeoutJob?.cancel()
         }

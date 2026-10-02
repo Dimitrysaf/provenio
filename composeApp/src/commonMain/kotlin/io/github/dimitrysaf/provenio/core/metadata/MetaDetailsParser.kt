@@ -4,6 +4,7 @@ import io.github.dimitrysaf.provenio.core.trailer.youTubeWatchUrl
 import io.github.dimitrysaf.provenio.core.streams.StreamBehaviorHints
 import io.github.dimitrysaf.provenio.core.streams.StreamItem
 import io.github.dimitrysaf.provenio.core.streams.StreamProxyHeaders
+import io.github.dimitrysaf.provenio.core.streams.embeddedSourceName
 import io.github.dimitrysaf.provenio.core.streams.normalizeStreamType
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -321,8 +322,9 @@ internal object MetaDetailsParser {
                 ?.objectValue("proxyHeaders")
                 ?.toProxyHeaders()
             val streamData = obj["streamData"] as? JsonObject
-            val addonName = streamData?.string("addon")
-                ?: obj.string("name")
+            val addonName = streamData?.string("addon")?.takeIf(String::isNotBlank)
+                ?: embeddedSourceName(url)
+                ?: embeddedSourceName(externalUrl)
                 ?: runBlocking { getString(Res.string.source_embedded) }
             StreamItem(
                 name = obj.string("name"),

@@ -698,6 +698,7 @@ internal fun PlayerScreenRuntime.tryRefreshCredentialedSourceAfterError(message:
                 season = season,
                 episode = episode,
                 forceRefresh = true,
+                parentMetaId = parentMetaId,
             )
 
             var refreshedStream: StreamItem? = null

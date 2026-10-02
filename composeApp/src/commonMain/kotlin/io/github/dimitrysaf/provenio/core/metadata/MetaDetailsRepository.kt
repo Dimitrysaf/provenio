@@ -522,9 +522,29 @@ object MetaDetailsRepository {
     }
 
    
-    fun findEmbeddedStreams(videoId: String): List<io.github.dimitrysaf.provenio.core.streams.StreamItem> {
-        val meta = _uiState.value.meta ?: return emptyList()
-        val videosWithStreams = meta.videos.filter { it.streams.isNotEmpty() }
+    fun findEmbeddedStreams(
+        videoId: String,
+        type: String? = null,
+        parentMetaId: String? = null,
+    ): List<io.github.dimitrysaf.provenio.core.streams.StreamItem> {
+        val currentMeta = _uiState.value.meta?.takeIf { parentMetaId == null || it.id == parentMetaId }
+        val parentMeta = if (type != null && parentMetaId != null) peek(type, parentMetaId) else null
+        return listOfNotNull(currentMeta, parentMeta)
+            .firstNotNullOfOrNull { meta -> meta.embeddedStreamsFor(videoId).takeIf { it.isNotEmpty() } }
+            .orEmpty()
+    }
+
+    fun isMetaKnown(type: String, id: String): Boolean = peek(type, id) != null
+
+    suspend fun fetchEmbeddedStreams(
+        type: String,
+        videoId: String,
+        parentMetaId: String,
+    ): List<io.github.dimitrysaf.provenio.core.streams.StreamItem> =
+        fetch(type, parentMetaId)?.embeddedStreamsFor(videoId).orEmpty()
+
+    private fun MetaDetails.embeddedStreamsFor(videoId: String): List<io.github.dimitrysaf.provenio.core.streams.StreamItem> {
+        val videosWithStreams = videos.filter { it.streams.isNotEmpty() }
         if (videosWithStreams.isEmpty()) return emptyList()
 
         val directMatch = videosWithStreams.firstOrNull { it.id == videoId }
@@ -543,11 +563,11 @@ object MetaDetailsRepository {
         val prefixMatch = videosWithStreams.firstOrNull { it.id.startsWith("$videoId:") }
         if (prefixMatch != null) return prefixMatch.streams
 
-        if (videoId == meta.id && videosWithStreams.size == 1) {
+        if (videoId == id && videosWithStreams.size == 1) {
             return videosWithStreams.first().streams
         }
 
-        if (videoId == meta.id && videosWithStreams.isNotEmpty()) {
+        if (videoId == id && videosWithStreams.isNotEmpty()) {
             return videosWithStreams.flatMap { it.streams }
         }
 

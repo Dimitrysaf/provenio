@@ -9,6 +9,10 @@ object StreamAutoPlaySelector {
         installedOrder: List<String>,
     ): List<AddonStreamGroup> {
         if (groups.isEmpty()) return groups
+        val (embeddedEntries, otherEntries) = groups.partition { it.isEmbeddedSource }
+        if (embeddedEntries.isNotEmpty()) {
+            return embeddedEntries + orderAddonStreams(otherEntries, installedOrder)
+        }
 
         val addonRankByName = HashMap<String, Int>(installedOrder.size)
         installedOrder.forEachIndexed { index, addonName ->

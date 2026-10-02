@@ -24,6 +24,11 @@ import io.github.dimitrysaf.provenio.core.streams.StreamLoadCompletion
 import io.github.dimitrysaf.provenio.core.streams.StreamParser
 import io.github.dimitrysaf.provenio.core.streams.StreamsRepository
 import io.github.dimitrysaf.provenio.core.streams.StreamsUiState
+import io.github.dimitrysaf.provenio.core.streams.StreamsEmptyStateReason
+import io.github.dimitrysaf.provenio.core.streams.embeddedLookupGroup
+import io.github.dimitrysaf.provenio.core.streams.embeddedStreamGroups
+import io.github.dimitrysaf.provenio.core.streams.withEmbeddedGroups
+import kotlinx.coroutines.runBlocking
 import io.github.dimitrysaf.provenio.core.streams.runCatchingUnlessCancelled
 import io.github.dimitrysaf.provenio.core.streams.sortedForGroupedDisplay
 import io.github.dimitrysaf.provenio.core.streams.streamAddonInstanceId
@@ -69,10 +74,12 @@ object PlayerStreamsRepository {
         season: Int? = null,
         episode: Int? = null,
         forceRefresh: Boolean = false,
+        parentMetaId: String? = null,
     ) {
         fetchStreams(
             type = type,
             videoId = videoId,
+            parentMetaId = parentMetaId,
             season = season,
             episode = episode,
             forceRefresh = forceRefresh,
@@ -90,10 +97,12 @@ object PlayerStreamsRepository {
         season: Int? = null,
         episode: Int? = null,
         forceRefresh: Boolean = false,
+        parentMetaId: String? = null,
     ) {
         fetchStreams(
             type = type,
             videoId = videoId,
+            parentMetaId = parentMetaId,
             season = season,
             episode = episode,
             forceRefresh = forceRefresh,
@@ -172,6 +181,7 @@ object PlayerStreamsRepository {
     private fun fetchStreams(
         type: String,
         videoId: String,
+        parentMetaId: String?,
         season: Int?,
         episode: Int?,
         forceRefresh: Boolean,
@@ -214,27 +224,16 @@ object PlayerStreamsRepository {
         stateFlow.value = StreamsUiState()
 
         val streamBadgeRules = StreamBadgeSettingsRepository.snapshot()
-        val embeddedStreams = MetaDetailsRepository.findEmbeddedStreams(videoId)
-        if (embeddedStreams.isNotEmpty()) {
-            log.d { "Using ${embeddedStreams.size} embedded streams for type=$type id=$videoId" }
-            val group = AddonStreamGroup(
-                addonName = embeddedStreams.first().addonName,
-                addonId = "embedded",
-                streams = embeddedStreams,
-                isLoading = false,
-                addonLogo = embeddedStreams.first().addonLogo,
-            )
-            val presentedGroup = StreamBadgePresentation.apply(
-                groups = listOf(group),
-                rules = streamBadgeRules,
-            ).firstOrNull() ?: group
-            stateFlow.value = StreamsUiState(
-                groups = listOf(presentedGroup),
-                activeAddonIds = setOf("embedded"),
-                isAnyLoading = false,
-            )
-            return
+        val embeddedGroups = StreamBadgePresentation.apply(
+            groups = embeddedStreamGroups(
+                MetaDetailsRepository.findEmbeddedStreams(videoId = videoId, type = type, parentMetaId = parentMetaId),
+            ),
+            rules = streamBadgeRules,
+        )
+        val embeddedLookupMetaId = parentMetaId?.takeIf {
+            embeddedGroups.isEmpty() && !MetaDetailsRepository.isMetaKnown(type, it)
         }
+        val hasEmbeddedSource = embeddedGroups.isNotEmpty() || embeddedLookupMetaId != null
 
         val installedAddons = AddonRepository.uiState.value.addons.enabledAddons()
         PlayerSettingsRepository.ensureLoaded()
@@ -250,7 +249,7 @@ object PlayerStreamsRepository {
             groupByRepository = pluginUiState.groupStreamsByRepository,
         )
 
-        if (installedAddons.isEmpty() && pluginProviderGroups.isEmpty()) {
+        if (installedAddons.isEmpty() && pluginProviderGroups.isEmpty() && !hasEmbeddedSource) {
             stateFlow.value = StreamsUiState(
                 isAnyLoading = false,
                 emptyStateReason = io.github.dimitrysaf.provenio.core.streams.StreamsEmptyStateReason.NoAddonsInstalled,
@@ -276,7 +275,7 @@ object PlayerStreamsRepository {
                 )
             }
 
-        if (streamAddons.isEmpty() && pluginProviderGroups.isEmpty()) {
+        if (streamAddons.isEmpty() && pluginProviderGroups.isEmpty() && !hasEmbeddedSource) {
             stateFlow.value = StreamsUiState(
                 isAnyLoading = false,
                 emptyStateReason = io.github.dimitrysaf.provenio.core.streams.StreamsEmptyStateReason.NoCompatibleAddons,
@@ -284,8 +283,19 @@ object PlayerStreamsRepository {
             return
         }
 
+        val noSourceEmptyReason = if (installedAddons.isEmpty() && pluginProviderGroups.isEmpty()) {
+            StreamsEmptyStateReason.NoAddonsInstalled
+        } else {
+            StreamsEmptyStateReason.NoCompatibleAddons
+        }
+        val hasOtherSources = streamAddons.isNotEmpty() || pluginProviderGroups.isNotEmpty()
+        val initialEmbeddedGroups = if (embeddedLookupMetaId != null) {
+            listOf(embeddedLookupGroup(runBlocking { getString(Res.string.source_embedded) }))
+        } else {
+            embeddedGroups
+        }
         val installedAddonOrder = streamAddons.map { it.addonName }
-        val initialGroups = StreamAutoPlaySelector.orderAddonStreams(streamAddons.map { addon ->
+        val initialGroups = StreamAutoPlaySelector.orderAddonStreams(initialEmbeddedGroups + streamAddons.map { addon ->
             AddonStreamGroup(
                 addonName = addon.addonName,
                 addonId = addon.addonId,
@@ -383,6 +393,32 @@ object PlayerStreamsRepository {
                     publishStreamGroup(presentStreamGroup(availabilityGroup))
                 }
                 debridAvailabilityJobs += availabilityJob
+            }
+
+            val embeddedLookupJob = embeddedLookupMetaId?.let { metaId ->
+                launch {
+                    val streams = runCatchingUnlessCancelled {
+                        MetaDetailsRepository.fetchEmbeddedStreams(type = type, videoId = videoId, parentMetaId = metaId)
+                    }.getOrElse { error ->
+                        log.w(error) { "Failed to look up embedded streams for $metaId" }
+                        emptyList()
+                    }
+                    val groups = StreamBadgePresentation.apply(groups = embeddedStreamGroups(streams), rules = streamBadgeRules)
+                    stateFlow.update { current ->
+                        val updated = current.groups.withEmbeddedGroups(groups)
+                        val anyLoading = updated.any { it.isLoading }
+                        current.copy(
+                            groups = updated,
+                            activeAddonIds = updated.map { it.addonId }.toSet(),
+                            isAnyLoading = anyLoading,
+                            emptyStateReason = if (!hasOtherSources && !anyLoading && updated.none { it.streams.isNotEmpty() }) {
+                                noSourceEmptyReason
+                            } else {
+                                updated.toEmptyStateReason(anyLoading)
+                            },
+                        )
+                    }
+                }
             }
 
             streamAddons.forEach { addon ->
@@ -528,6 +564,7 @@ object PlayerStreamsRepository {
             for (availabilityJob in debridAvailabilityJobs) {
                 availabilityJob.join()
             }
+            embeddedLookupJob?.join()
             StreamsRepository.cacheGroups(requestKey, stateFlow.value.groups)
             launch {
                 DirectDebridStreamPreparer.prepare(
