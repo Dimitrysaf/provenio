@@ -126,6 +126,9 @@ internal fun playerHorizontalSafePadding(): Dp {
     return if (left > right) left else right
 }
 
+// Shown in place of the length until the player has settled on one.
+internal const val UnknownPlaybackTime = "??:??"
+
 internal fun formatPlaybackTime(positionMs: Long): String {
     val totalSeconds = (positionMs / 1000L).coerceAtLeast(0L)
     val seconds = totalSeconds % 60

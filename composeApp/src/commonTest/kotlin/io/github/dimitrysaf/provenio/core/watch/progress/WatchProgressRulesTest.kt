@@ -59,6 +59,13 @@ class WatchProgressRulesTest {
     }
 
     @Test
+    fun `a partial duration while loading is neither complete nor stored`() {
+        assertFalse(isWatchProgressComplete(positionMs = 2_480_000L, durationMs = 300_000L, isEnded = false))
+        assertFalse(shouldStoreWatchProgress(positionMs = 2_480_000L, durationMs = 300_000L))
+        assertTrue(shouldStoreWatchProgress(positionMs = 302_000L, durationMs = 300_000L))
+    }
+
+    @Test
     fun `resume entry for series picks most recent episode`() {
         val older = entry(videoId = "show:1:1", parentMetaId = "show", seasonNumber = 1, episodeNumber = 1, lastUpdatedEpochMs = 10L)
         val newer = entry(videoId = "show:1:2", parentMetaId = "show", seasonNumber = 1, episodeNumber = 2, lastUpdatedEpochMs = 20L)

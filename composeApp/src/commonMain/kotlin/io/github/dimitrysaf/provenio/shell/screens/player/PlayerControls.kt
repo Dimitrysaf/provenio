@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.watch.watching.domain.isSettledPlaybackDuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -826,6 +827,8 @@ private fun BottomControls(
         }
     }
 
+    val durationSettled = isSettledPlaybackDuration(playbackSnapshot.positionMs, playbackSnapshot.durationMs)
+    val shownDurationMs = if (durationSettled) playbackSnapshot.durationMs else 0L
     Column(modifier = modifier) {
         transport?.invoke()
         Row(
@@ -836,10 +839,13 @@ private fun BottomControls(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PlayerTimeLabel(text = formatPlaybackTime(displayedPositionMs), metrics = metrics)
-            PlayerTimeLabel(text = formatPlaybackTime(playbackSnapshot.durationMs), metrics = metrics)
+            PlayerTimeLabel(
+                text = if (durationSettled) formatPlaybackTime(shownDurationMs) else UnknownPlaybackTime,
+                metrics = metrics,
+            )
         }
         PlayerSeekBar(
-            durationMs = playbackSnapshot.durationMs,
+            durationMs = shownDurationMs,
             displayedPositionMs = displayedPositionMs,
             bufferedPositionMs = playbackSnapshot.bufferedPositionMs,
             isPlaying = playbackSnapshot.isPlaying,
@@ -1009,16 +1015,21 @@ internal fun PlayerSeekBar(
     onScrubFinished: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val durationKnown = durationMs > 0L
     val seekDurationMs = durationMs.coerceAtLeast(1L)
     val seekDescription = stringResource(Res.string.player_seek_position)
-    val bufferedFraction = (bufferedPositionMs.toFloat() / seekDurationMs).coerceIn(0f, 1f)
+    val bufferedFraction = if (durationKnown) {
+        (bufferedPositionMs.toFloat() / seekDurationMs).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
     val activeColor = MaterialTheme.colorScheme.primary
     Slider(
         modifier = modifier
             .fillMaxWidth()
             .height(metrics.sliderTouchHeight)
             .semantics { contentDescription = seekDescription },
-        value = displayedPositionMs.coerceIn(0L, seekDurationMs).toFloat(),
+        value = if (durationKnown) displayedPositionMs.coerceIn(0L, seekDurationMs).toFloat() else 0f,
         onValueChange = { value -> onScrubChange(value.toLong()) },
         onValueChangeFinished = { onScrubFinished(displayedPositionMs.coerceIn(0L, seekDurationMs)) },
         enabled = durationMs > 0L,

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.watch.watching.domain.isSettledPlaybackDuration
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbService
 import io.github.dimitrysaf.provenio.core.tracking.TrackingMediaReference
 import io.github.dimitrysaf.provenio.core.tracking.TrackingScrobbleAction
@@ -92,7 +93,9 @@ internal fun PlayerScreenRuntime.resetIdentityStateIfNeeded() {
 internal fun PlayerScreenRuntime.currentPlaybackProgressPercent(
     snapshot: PlayerPlaybackSnapshot = playbackSnapshot,
 ): Float {
-    val duration = snapshot.durationMs.takeIf { it > 0L } ?: return 0f
+    val duration = snapshot.durationMs
+        .takeIf { isSettledPlaybackDuration(snapshot.positionMs, it) }
+        ?: return 0f
     return ((snapshot.positionMs.toFloat() / duration.toFloat()) * 100f)
         .coerceIn(0f, 100f)
 }

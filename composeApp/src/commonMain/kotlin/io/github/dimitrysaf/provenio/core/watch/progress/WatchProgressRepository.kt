@@ -20,6 +20,7 @@ import io.github.dimitrysaf.provenio.core.tracking.effectiveWatchProgressSource
 import io.github.dimitrysaf.provenio.core.tracking.providerId
 import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingActions
 import io.github.dimitrysaf.provenio.core.watch.watching.domain.isShortPlaceholderDuration
+import io.github.dimitrysaf.provenio.core.watch.watching.domain.isSettledPlaybackDuration
 import io.github.dimitrysaf.provenio.core.watch.watching.sync.ProgressDeltaEvent
 import io.github.dimitrysaf.provenio.core.watch.watching.sync.ProgressSyncRecord
 import kotlinx.coroutines.CancellationException
@@ -811,7 +812,8 @@ object WatchProgressRepository {
                 isEnded = snapshot.isEnded,
             )
         } else {
-            completionReached && durationMs > 0L && !isShortPlaceholderDuration(durationMs)
+            completionReached && isSettledPlaybackDuration(positionMs, durationMs) &&
+                !isShortPlaceholderDuration(durationMs)
         }
         if (!isCompleted && !shouldStoreWatchProgress(positionMs = positionMs, durationMs = durationMs)) {
             return

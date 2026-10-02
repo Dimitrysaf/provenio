@@ -44,4 +44,9 @@ class WatchedThresholdTest {
         val outro = SkipInterval(startTime = 0.0, endTime = 2_400.0, type = "outro", provider = "test")
         assertFalse(reached(positionMs = 1_000L, durationMs = 2_400_000L, skipIntervals = listOf(outro)))
     }
+
+    @Test
+    fun notReachedWhileTheDurationIsBehindTheResumePoint() {
+        assertFalse(reached(positionMs = 2_352_000L, durationMs = 300_000L))
+    }
 }

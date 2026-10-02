@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.core.playback.skip
 
 import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
+import io.github.dimitrysaf.provenio.core.watch.watching.domain.isSettledPlaybackDuration
 
 object PlayerNextEpisodeRules {
 
@@ -94,7 +95,7 @@ object PlayerNextEpisodeRules {
         thresholdPercent: Float,
         thresholdMinutesBeforeEnd: Float,
     ): Boolean {
-        if (durationMs <= 0L || positionMs <= 0L) return false
+        if (positionMs <= 0L || !isSettledPlaybackDuration(positionMs, durationMs)) return false
         return shouldShowNextEpisodeCard(
             positionMs = positionMs,
             durationMs = durationMs,

@@ -9,6 +9,7 @@ import io.github.dimitrysaf.provenio.core.time.parseEpisodeReleaseLocalDate
 private const val CompletionThresholdFraction = 0.90
 private const val ProgressStoreThresholdMs = 1_000L
 private const val UpcomingNextSeasonWindowDays = 7
+private const val DurationOverrunToleranceMs = 5_000L
 
 /**
  * Streams shorter than this are treated as error/placeholder clips (e.g. debrid
@@ -26,7 +27,16 @@ fun watchedKey(
 fun shouldStoreProgress(
     positionMs: Long,
     durationMs: Long,
-): Boolean = positionMs >= ProgressStoreThresholdMs
+): Boolean = positionMs >= ProgressStoreThresholdMs &&
+    (durationMs <= 0L || isSettledPlaybackDuration(positionMs, durationMs))
+
+/**
+ * Whether the player's duration can be trusted: it is known and not behind the position. While a
+ * stream loads, players can report a partial length while the position already sits at the resume
+ * point, which would read as far past the end.
+ */
+fun isSettledPlaybackDuration(positionMs: Long, durationMs: Long): Boolean =
+    durationMs > 0L && positionMs <= durationMs + DurationOverrunToleranceMs
 
 fun isProgressComplete(
     positionMs: Long,
@@ -35,7 +45,7 @@ fun isProgressComplete(
 ): Boolean {
     if (isEnded && isShortPlaceholderDuration(durationMs)) return false
     if (isEnded) return true
-    if (durationMs <= 0L) return false
+    if (!isSettledPlaybackDuration(positionMs, durationMs)) return false
 
     val watchedFraction = positionMs.toDouble() / durationMs.toDouble()
     return watchedFraction >= CompletionThresholdFraction
