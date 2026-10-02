@@ -90,6 +90,7 @@ fun MediaActionsSheet(
             .invokeOnCompletion { then?.invoke() }
     }
 
+    val showNavigation = sheetNavigationVisible()
     val thumbnailWidth = if (landscapeThumbnail) LandscapeThumbnailWidth else ThumbnailWidth
     val thumbnailHeight = if (landscapeThumbnail) LandscapeThumbnailHeight else ThumbnailHeight
 
@@ -102,8 +103,8 @@ fun MediaActionsSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
-                        start = if (navigation == SheetNavigation.Back) 4.dp else BottomSheetBodyMargin,
-                        end = 4.dp,
+                        start = if (showNavigation && navigation == SheetNavigation.Back) 4.dp else BottomSheetBodyMargin,
+                        end = if (showNavigation && navigation == SheetNavigation.Close) 4.dp else BottomSheetBodyMargin,
                     )
                     .padding(bottom = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),

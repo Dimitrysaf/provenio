@@ -30,11 +30,16 @@ enum class SheetNavigation {
 }
 
 @Composable
+internal fun sheetNavigationVisible(): Boolean =
+    !usesNativeBottomSheet && LocalWindowBreakpoint.current.isTwoPane
+
+@Composable
 fun SheetNavigationButton(
     navigation: SheetNavigation,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (!sheetNavigationVisible()) return
     IconButton(onClick = onClick, modifier = modifier) {
         when (navigation) {
             SheetNavigation.Close -> Icon(
@@ -59,12 +64,13 @@ fun SheetHeader(
     horizontalPadding: Dp = BottomSheetBodyMargin,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
+    val showNavigation = sheetNavigationVisible()
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(
-                start = if (navigation == SheetNavigation.Back) SheetIconEdge else horizontalPadding,
-                end = SheetIconEdge,
+                start = if (showNavigation && navigation == SheetNavigation.Back) SheetIconEdge else horizontalPadding,
+                end = if (showNavigation && navigation == SheetNavigation.Close) SheetIconEdge else horizontalPadding,
             )
             .padding(bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
