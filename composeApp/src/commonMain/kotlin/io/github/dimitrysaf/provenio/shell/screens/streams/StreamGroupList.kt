@@ -14,8 +14,15 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.LiveTv
+import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.SmartDisplay
+import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -34,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,6 +57,9 @@ import io.github.dimitrysaf.provenio.shell.screens.settings.segmentShape
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.streams.AddonStreamGroup
+import io.github.dimitrysaf.provenio.core.streams.EmbeddedSourceAddonId
+import io.github.dimitrysaf.provenio.core.streams.ExternalLookupGroupId
+import io.github.dimitrysaf.provenio.core.streams.isEmbeddedSource
 import io.github.dimitrysaf.provenio.core.streams.StreamBadgePlacement
 import io.github.dimitrysaf.provenio.core.streams.StreamItem
 import io.github.dimitrysaf.provenio.core.streams.StreamsEmptyStateReason
@@ -265,7 +276,7 @@ private fun StreamGroupRow(
             disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ),
         leadingContent = if (showAddonLogo) {
-            { StreamAddonIcon(logo = group.addonLogo, addonName = group.addonName) }
+            { StreamAddonIcon(logo = group.addonLogo, addonName = group.addonName, fallbackIcon = group.sourceIcon()) }
         } else {
             null
         },
@@ -309,6 +320,7 @@ private fun StreamGroupRow(
 private fun StreamAddonIcon(
     logo: String?,
     addonName: String,
+    fallbackIcon: ImageVector,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -327,11 +339,30 @@ private fun StreamAddonIcon(
             )
         } else {
             Icon(
-                imageVector = Icons.Rounded.Extension,
+                imageVector = fallbackIcon,
                 contentDescription = null,
                 modifier = Modifier.size(AddonIconFallbackSize),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+    }
+}
+
+private fun AddonStreamGroup.sourceIcon(): ImageVector {
+    if (!isEmbeddedSource) return Icons.Rounded.Extension
+    return when {
+        addonId == EmbeddedSourceAddonId -> Icons.Rounded.Link
+        addonId == ExternalLookupGroupId -> Icons.Rounded.Tv
+        else -> when (addonName.lowercase()) {
+            "youtube" -> Icons.Rounded.SmartDisplay
+            "vimeo", "dailymotion" -> Icons.Rounded.PlayCircle
+            "twitch" -> Icons.Rounded.LiveTv
+            "internet archive" -> Icons.Rounded.AccountBalance
+            else -> if (streams.isNotEmpty() && streams.all { it.shouldOpenExternally }) {
+                Icons.Rounded.Tv
+            } else {
+                Icons.Rounded.Language
+            }
         }
     }
 }
