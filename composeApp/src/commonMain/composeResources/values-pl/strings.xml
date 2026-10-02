@@ -1918,6 +1918,9 @@
     <string name="person_detail_died">Śmierć</string>
     <string name="person_detail_active_since">Aktywny od</string>
     <string name="person_detail_date_with_age">%1$s (wiek %2$d)</string>
+    <string name="image_viewer_download">Pobierz</string>
+    <string name="image_viewer_save_title">Zapisz obraz</string>
+    <string name="image_viewer_view_image">Wyświetl obraz</string>
     <string name="entity_browse_country">Kraj</string>
     <string name="entity_browse_type">Typ</string>
     <string name="entity_browse_catalogue">Katalog</string>

@@ -71,13 +71,21 @@ object TmdbMetadataService {
             }
         }
 
+    fun peekPersonDetail(
+        personId: Int,
+        preferCrewCredits: Boolean? = null,
+    ): PersonDetail? {
+        val language = normalizeTmdbLanguage(TmdbSettingsRepository.snapshot().language)
+        return personCache[personCacheKey(personId, preferCrewCredits, language)]
+    }
+
     suspend fun fetchPersonDetail(
         personId: Int,
         preferCrewCredits: Boolean? = null,
     ): PersonDetail? = withContext(Dispatchers.Default) {
         val settings = TmdbSettingsRepository.snapshot()
         val language = normalizeTmdbLanguage(settings.language)
-        val cacheKey = "$personId:${preferCrewCredits?.toString() ?: "auto"}:$language"
+        val cacheKey = personCacheKey(personId, preferCrewCredits, language)
         personCache[cacheKey]?.let { return@withContext it }
 
         try {
@@ -235,6 +243,9 @@ object TmdbMetadataService {
             null
         }
     }
+
+    private fun personCacheKey(personId: Int, preferCrewCredits: Boolean?, language: String): String =
+        "$personId:${preferCrewCredits?.toString() ?: "auto"}:$language"
 
     private fun shouldPreferCrewCredits(knownForDepartment: String?): Boolean {
         val department = knownForDepartment?.trim()?.lowercase() ?: return false

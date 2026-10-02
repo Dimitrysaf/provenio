@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.shell.screens.details.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.DoneAll
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.PlaylistAddCheckCircle
 import androidx.compose.runtime.Composable
@@ -35,6 +36,7 @@ fun EpisodeWatchedActionSheet(
     blurThumbnail: Boolean = false,
     showPlayManually: Boolean = false,
     onPlayManually: (() -> Unit)? = null,
+    onViewImage: (() -> Unit)? = null,
 ) {
     val actions = buildList {
         add(
@@ -78,6 +80,15 @@ fun EpisodeWatchedActionSheet(
                     icon = Icons.Rounded.PlayArrow,
                     label = stringResource(Res.string.play_manually),
                     onSelected = onPlayManually,
+                ),
+            )
+        }
+        if (onViewImage != null) {
+            add(
+                MediaSheetAction(
+                    icon = Icons.Rounded.Image,
+                    label = stringResource(Res.string.image_viewer_view_image),
+                    onSelected = onViewImage,
                 ),
             )
         }

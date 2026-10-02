@@ -53,7 +53,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,7 +60,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.build.isIos
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.i18n.localizedShortMonthName
@@ -73,6 +71,8 @@ import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedRepository
 import io.github.dimitrysaf.provenio.shell.components.BackButton
 import io.github.dimitrysaf.provenio.shell.components.DeceasedPhotoFilter
+import io.github.dimitrysaf.provenio.shell.components.ImageViewer
+import io.github.dimitrysaf.provenio.shell.components.viewerImageOf
 import io.github.dimitrysaf.provenio.shell.components.SkeletonPosterRow
 import io.github.dimitrysaf.provenio.shell.components.landscapePosterHeightForWidth
 import io.github.dimitrysaf.provenio.shell.components.landscapePosterWidth
@@ -86,7 +86,7 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailInfo
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPosterRailSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.ExpandableDescription
-import io.github.dimitrysaf.provenio.shell.screens.details.components.loadedBackdropImageBitmap
+import io.github.dimitrysaf.provenio.shell.screens.details.components.HeroArtworkImage
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroMinSmallItemWidth
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroOnArtworkColor
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroOnArtworkVariantColor
@@ -115,7 +115,13 @@ fun PersonDetailScreen(
     onOpenMeta: (MetaPreview) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var uiState by remember(personId) { mutableStateOf<PersonDetailUiState>(PersonDetailUiState.Loading) }
+    var uiState by remember(personId) {
+        mutableStateOf(
+            TmdbMetadataService.peekPersonDetail(personId = personId, preferCrewCredits = preferCrew)
+                ?.let { PersonDetailUiState.Success(it) }
+                ?: PersonDetailUiState.Loading,
+        )
+    }
     var loadAttempt by remember(personId) { mutableIntStateOf(0) }
     val watchedUiState by remember {
         WatchedRepository.ensureLoaded()
@@ -124,15 +130,17 @@ fun PersonDetailScreen(
     val fullyWatchedSeriesKeys by WatchedRepository.fullyWatchedSeriesKeys.collectAsStateWithLifecycle()
 
     LaunchedEffect(personId, loadAttempt) {
-        uiState = PersonDetailUiState.Loading
+        if (uiState !is PersonDetailUiState.Success) {
+            uiState = PersonDetailUiState.Loading
+        }
         val detail = TmdbMetadataService.fetchPersonDetail(
             personId = personId,
             preferCrewCredits = preferCrew,
         )
-        uiState = if (detail != null) {
-            PersonDetailUiState.Success(detail)
-        } else {
-            PersonDetailUiState.Error(getString(Res.string.person_load_failed, personName))
+        uiState = when {
+            detail != null -> PersonDetailUiState.Success(detail)
+            uiState is PersonDetailUiState.Success -> uiState
+            else -> PersonDetailUiState.Error(getString(Res.string.person_load_failed, personName))
         }
     }
 
@@ -186,6 +194,7 @@ private fun PersonPage(
         MetaScreenSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
     val scroll = rememberDetailScrollState(pageKey)
+    var viewerIndex by remember(pageKey) { mutableStateOf<Int?>(null) }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val isTwoPane = maxWidth >= DetailTwoPaneMinWidth
@@ -240,6 +249,7 @@ private fun PersonPage(
                             images = images,
                             deceased = deceased,
                             viewportHeight = viewportHeight,
+                            onOpenImage = { viewerIndex = it },
                             onHeightChanged = { scroll.heroHeightPx.intValue = it },
                             onBackdropLoaded = { painter, imageBitmap ->
                                 dominantBackdropPainter = painter
@@ -297,6 +307,18 @@ private fun PersonPage(
             )
         }
     }
+
+    viewerIndex?.let { index ->
+        ImageViewer(
+            images = remember(images) {
+                images.map(::viewerImageOf)
+            },
+            initialIndex = index,
+            title = name,
+            colorFilter = if (deceased) DeceasedPhotoFilter else null,
+            onDismiss = { viewerIndex = null },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -307,6 +329,7 @@ private fun PersonHero(
     images: List<String>,
     deceased: Boolean,
     viewportHeight: Dp,
+    onOpenImage: (Int) -> Unit,
     onHeightChanged: (Int) -> Unit,
     onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
 ) {
@@ -336,7 +359,10 @@ private fun PersonHero(
                         .fillMaxWidth()
                         .padding(horizontal = layout.contentHorizontalPadding)
                         .height(layout.heroHeight)
-                        .clip(MaterialTheme.shapes.extraLarge),
+                        .clip(MaterialTheme.shapes.extraLarge)
+                        .shapedClickable(MaterialTheme.shapes.extraLarge, enabled = pages[0].isNotBlank()) {
+                            onOpenImage(0)
+                        },
                 ) {
                     PersonHeroPage(
                         url = pages[0],
@@ -366,8 +392,12 @@ private fun PersonHero(
                         modifier = Modifier
                             .fillMaxSize()
                             .maskClip(MaterialTheme.shapes.extraLarge)
-                            .shapedClickable(MaterialTheme.shapes.extraLarge, enabled = !isFocal) {
-                                coroutineScope.launch { carouselState.animateScrollToItem(index) }
+                            .shapedClickable(MaterialTheme.shapes.extraLarge) {
+                                if (isFocal) {
+                                    onOpenImage(index)
+                                } else {
+                                    coroutineScope.launch { carouselState.animateScrollToItem(index) }
+                                }
                             },
                     ) {
                         PersonHeroPage(
@@ -400,12 +430,6 @@ private fun PersonHeroPage(
     contentAlpha: () -> Float,
     onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
 ) {
-    var artworkSettled by remember(url) { mutableStateOf(false) }
-    val skeletonAlpha by animateFloatAsState(
-        targetValue = if (artworkSettled) 0f else 1f,
-        animationSpec = tween(durationMillis = 260),
-        label = "person_hero_artwork_skeleton",
-    )
     val centerTitle = layout.centerTitle
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -416,29 +440,17 @@ private fun PersonHeroPage(
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             )
         } else {
-            AsyncImage(
-                model = url,
+            HeroArtworkImage(
+                url = url,
                 contentDescription = name,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
                 alignment = Alignment.TopCenter,
                 colorFilter = if (deceased) DeceasedPhotoFilter else null,
-                onSuccess = { state ->
-                    artworkSettled = true
+                onLoaded = { painter, imageBitmap ->
                     if (reportLoaded) {
-                        onBackdropLoaded(state.painter, loadedBackdropImageBitmap(state.result))
+                        onBackdropLoaded(painter, imageBitmap)
                     }
                 },
-                onError = { artworkSettled = true },
             )
-            if (skeletonAlpha > 0.01f) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer { alpha = skeletonAlpha }
-                        .skeleton(RectangleShape),
-                )
-            }
         }
 
         Box(

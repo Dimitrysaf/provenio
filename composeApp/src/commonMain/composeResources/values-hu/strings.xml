@@ -1858,6 +1858,9 @@
     <string name="person_detail_died">Elhunyt</string>
     <string name="person_detail_active_since">Pályafutás kezdete</string>
     <string name="person_detail_date_with_age">%1$s (%2$d évesen)</string>
+    <string name="image_viewer_download">Letöltés</string>
+    <string name="image_viewer_save_title">Kép mentése</string>
+    <string name="image_viewer_view_image">Kép megtekintése</string>
     <string name="entity_browse_country">Ország</string>
     <string name="entity_browse_type">Típus</string>
     <string name="entity_browse_catalogue">Katalógus</string>

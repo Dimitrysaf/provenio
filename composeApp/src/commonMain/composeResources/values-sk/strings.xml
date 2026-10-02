@@ -1987,6 +1987,9 @@
     <string name="person_detail_died">Úmrtie</string>
     <string name="person_detail_active_since">Aktívny od</string>
     <string name="person_detail_date_with_age">%1$s (vek %2$d)</string>
+    <string name="image_viewer_download">Stiahnuť</string>
+    <string name="image_viewer_save_title">Uložiť obrázok</string>
+    <string name="image_viewer_view_image">Zobraziť obrázok</string>
     <string name="entity_browse_country">Krajina</string>
     <string name="entity_browse_type">Typ</string>
     <string name="entity_browse_catalogue">Katalóg</string>

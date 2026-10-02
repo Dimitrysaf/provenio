@@ -3,10 +3,10 @@ package io.github.dimitrysaf.provenio.shell.screens.details.components
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,9 +25,9 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * A description that opens, with a button that says so.
  *
- * The whole block used to be the target, which a paragraph of text does not look like. The text
- * button is the component for an action of this weight, and it is the only thing that moves the
- * state, so nothing is clickable that does not look it.
+ * The whole block used to be the target, which a paragraph of text does not look like. A
+ * full-width tonal button under the text is the only thing that moves the state, so nothing is
+ * clickable that does not look it.
  *
  * m3.material.io/components/buttons/specs
  */
@@ -60,12 +60,11 @@ internal fun ExpandableDescription(
             },
         )
         if (canExpand) {
-            TextButton(
+            FilledTonalButton(
                 onClick = { expanded = !expanded },
-                // A text button pads itself out to its own touch target. Shifting it back by
-                // that padding keeps the label aligned with the paragraph above it; an offset
-                // rather than padding, which cannot be negative.
-                modifier = Modifier.offset(x = -TextButtonStartPadding),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
             ) {
                 Text(
                     text = if (expanded) {
@@ -78,6 +77,3 @@ internal fun ExpandableDescription(
         }
     }
 }
-
-/** `ButtonDefaults.TextButtonContentPadding` on the start edge. */
-private val TextButtonStartPadding = 12.dp

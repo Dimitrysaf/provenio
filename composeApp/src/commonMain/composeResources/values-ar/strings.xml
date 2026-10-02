@@ -2055,6 +2055,9 @@
     <string name="person_detail_died">الوفاة</string>
     <string name="person_detail_active_since">نشط منذ</string>
     <string name="person_detail_date_with_age">%1$s (العمر %2$d)</string>
+    <string name="image_viewer_download">تنزيل</string>
+    <string name="image_viewer_save_title">حفظ الصورة</string>
+    <string name="image_viewer_view_image">عرض الصورة</string>
     <string name="entity_browse_country">البلد</string>
     <string name="entity_browse_type">النوع</string>
     <string name="entity_browse_catalogue">القائمة</string>

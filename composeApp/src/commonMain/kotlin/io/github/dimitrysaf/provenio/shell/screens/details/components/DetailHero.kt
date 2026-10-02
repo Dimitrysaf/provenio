@@ -42,7 +42,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
@@ -54,7 +53,6 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.shapedClickable
-import io.github.dimitrysaf.provenio.shell.components.skeleton
 import io.github.dimitrysaf.provenio.core.metadata.DetailHeroSlide
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
 import io.github.dimitrysaf.provenio.core.metadata.MetaTrailer
@@ -91,6 +89,7 @@ fun DetailHero(
     trailerMuted: Boolean = true,
     onTrailerMuteToggle: () -> Unit = {},
     onBackdropLoaded: (Painter, ImageBitmap?) -> Unit = { _, _ -> },
+    onOpenArtwork: ((String) -> Unit)? = null,
 ) {
     // A title with no artwork at all still gets its page, over the plain surface.
     val pages = slides.ifEmpty { listOf(DetailHeroSlide.Artwork("")) }
@@ -115,6 +114,7 @@ fun DetailHero(
             trailerMuted = trailerMuted,
             onTrailerMuteToggle = onTrailerMuteToggle,
             onBackdropLoaded = onBackdropLoaded,
+            onOpenArtwork = onOpenArtwork,
         )
     }
 }
@@ -131,8 +131,12 @@ private fun DetailHeroPages(
     trailerMuted: Boolean,
     onTrailerMuteToggle: () -> Unit,
     onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
+    onOpenArtwork: ((String) -> Unit)?,
 ) {
     val carouselState = rememberCarouselState(itemCount = { pages.size })
+    val openableArtworkUrl: (Int) -> String? = { index ->
+        (pages.getOrNull(index) as? DetailHeroSlide.Artwork)?.url?.takeIf { onOpenArtwork != null && it.isNotBlank() }
+    }
     val coroutineScope = rememberCoroutineScope()
     val focalPage = carouselState.currentItem
     val focalTrailer = (pages.getOrNull(focalPage) as? DetailHeroSlide.Trailer)?.trailer
@@ -168,7 +172,10 @@ private fun DetailHeroPages(
                     .fillMaxWidth()
                     .padding(horizontal = layout.contentHorizontalPadding)
                     .height(layout.heroHeight)
-                    .clip(MaterialTheme.shapes.extraLarge),
+                    .clip(MaterialTheme.shapes.extraLarge)
+                    .shapedClickable(MaterialTheme.shapes.extraLarge, enabled = openableArtworkUrl(0) != null) {
+                        openableArtworkUrl(0)?.let { onOpenArtwork?.invoke(it) }
+                    },
             ) {
                 DetailHeroPage(
                     page = pages[0],
@@ -203,8 +210,15 @@ private fun DetailHeroPages(
                     modifier = Modifier
                         .fillMaxSize()
                         .maskClip(MaterialTheme.shapes.extraLarge)
-                        .shapedClickable(MaterialTheme.shapes.extraLarge, enabled = !isFocal) {
-                            coroutineScope.launch { carouselState.animateScrollToItem(index) }
+                        .shapedClickable(
+                            MaterialTheme.shapes.extraLarge,
+                            enabled = !isFocal || openableArtworkUrl(index) != null,
+                        ) {
+                            if (isFocal) {
+                                openableArtworkUrl(index)?.let { onOpenArtwork?.invoke(it) }
+                            } else {
+                                coroutineScope.launch { carouselState.animateScrollToItem(index) }
+                            }
                         },
                 ) {
                     DetailHeroPage(
@@ -284,13 +298,6 @@ private fun HeroArtworkPage(
     contentAlpha: () -> Float,
     onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
 ) {
-    var artworkSettled by remember(url) { mutableStateOf(false) }
-    val skeletonAlpha by animateFloatAsState(
-        targetValue = if (artworkSettled) 0f else 1f,
-        animationSpec = tween(durationMillis = 260),
-        label = "detail_hero_artwork_skeleton",
-    )
-
     Box(modifier = Modifier.fillMaxSize()) {
         if (url.isBlank()) {
             Box(
@@ -299,27 +306,16 @@ private fun HeroArtworkPage(
                     .background(MaterialTheme.colorScheme.surface),
             )
         } else {
-            AsyncImage(
-                model = url,
+            HeroArtworkImage(
+                url = url,
                 contentDescription = meta.name,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-                onSuccess = { state ->
-                    artworkSettled = true
+                portraitFallbackUrl = meta.poster.takeIf { reportLoaded },
+                onLoaded = { painter, imageBitmap ->
                     if (reportLoaded) {
-                        onBackdropLoaded(state.painter, loadedBackdropImageBitmap(state.result))
+                        onBackdropLoaded(painter, imageBitmap)
                     }
                 },
-                onError = { artworkSettled = true },
             )
-            if (skeletonAlpha > 0.01f) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer { alpha = skeletonAlpha }
-                        .skeleton(RectangleShape),
-                )
-            }
         }
 
         HeroPageScrim()

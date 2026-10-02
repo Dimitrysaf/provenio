@@ -2082,6 +2082,9 @@ Bu özelliği tamamen kendi sorumluluğunuzda kullanırsınız. P2P istediğiniz
     <string name="person_detail_died">Ölüm</string>
     <string name="person_detail_active_since">Kariyer başlangıcı</string>
     <string name="person_detail_date_with_age">%1$s (%2$d yaşında)</string>
+    <string name="image_viewer_download">İndir</string>
+    <string name="image_viewer_save_title">Görseli kaydet</string>
+    <string name="image_viewer_view_image">Görseli görüntüle</string>
     <string name="entity_browse_country">Ülke</string>
     <string name="entity_browse_type">Tür</string>
     <string name="entity_browse_catalogue">Katalog</string>

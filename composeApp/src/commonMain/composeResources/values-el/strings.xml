@@ -1869,6 +1869,9 @@
     <string name="person_detail_died">Θάνατος</string>
     <string name="person_detail_active_since">Ενεργός από</string>
     <string name="person_detail_date_with_age">%1$s (ηλικία %2$d)</string>
+    <string name="image_viewer_download">Λήψη</string>
+    <string name="image_viewer_save_title">Αποθήκευση εικόνας</string>
+    <string name="image_viewer_view_image">Προβολή εικόνας</string>
     <string name="person_detail_born">Γέννηση</string>
     <string name="person_detail_credits">Έργα</string>
     <string name="person_detail_place_of_birth">Τόπος γέννησης</string>

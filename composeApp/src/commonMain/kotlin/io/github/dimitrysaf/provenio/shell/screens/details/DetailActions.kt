@@ -135,6 +135,7 @@ internal fun EpisodeActionsSheet(
     showPlayManually: Boolean,
     onDismiss: () -> Unit,
     onPlayManually: () -> Unit,
+    onViewImage: ((String) -> Unit)? = null,
 ) {
     val isEpisodeWatched = remember(meta, episode, watchedKeys, progressByVideoId) {
         isEpisodeWatchedForActions(meta, episode, watchedKeys, progressByVideoId)
@@ -186,6 +187,9 @@ internal fun EpisodeActionsSheet(
         },
         showPlayManually = showPlayManually,
         onPlayManually = onPlayManually,
+        onViewImage = episode.thumbnail
+            ?.takeIf(String::isNotBlank)
+            ?.let { thumbnail -> onViewImage?.let { view -> { view(thumbnail) } } },
     )
 }
 

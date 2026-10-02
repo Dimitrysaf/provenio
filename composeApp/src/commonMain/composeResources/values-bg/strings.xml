@@ -2159,6 +2159,9 @@
     <string name="person_detail_died">Почина</string>
     <string name="person_detail_active_since">Активен от</string>
     <string name="person_detail_date_with_age">%1$s (на %2$d г.)</string>
+    <string name="image_viewer_download">Изтегляне</string>
+    <string name="image_viewer_save_title">Запазване на изображението</string>
+    <string name="image_viewer_view_image">Преглед на изображението</string>
     <string name="entity_browse_country">Държава</string>
     <string name="entity_browse_type">Тип</string>
     <string name="entity_browse_catalogue">Каталог</string>

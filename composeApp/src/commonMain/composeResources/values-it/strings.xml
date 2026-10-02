@@ -1888,6 +1888,9 @@
   <string name="person_detail_died">Morte</string>
   <string name="person_detail_active_since">Attivo dal</string>
   <string name="person_detail_date_with_age">%1$s (%2$d anni)</string>
+  <string name="image_viewer_download">Scarica</string>
+  <string name="image_viewer_save_title">Salva immagine</string>
+  <string name="image_viewer_view_image">Visualizza immagine</string>
   <string name="entity_browse_country">Paese</string>
   <string name="entity_browse_type">Tipo</string>
   <string name="entity_browse_catalogue">Catalogo</string>

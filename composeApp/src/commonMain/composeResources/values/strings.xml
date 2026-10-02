@@ -2481,6 +2481,9 @@
     <string name="person_detail_died">Died</string>
     <string name="person_detail_active_since">Active since</string>
     <string name="person_detail_date_with_age">%1$s (age %2$d)</string>
+    <string name="image_viewer_download">Download</string>
+    <string name="image_viewer_save_title">Save image</string>
+    <string name="image_viewer_view_image">View image</string>
     <string name="entity_browse_country">Country</string>
     <string name="entity_browse_type">Type</string>
     <string name="entity_browse_catalogue">Catalogue</string>

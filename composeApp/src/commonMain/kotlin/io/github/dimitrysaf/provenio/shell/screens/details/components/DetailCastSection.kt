@@ -4,7 +4,8 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -40,6 +41,10 @@ import io.github.dimitrysaf.provenio.shell.components.horizontalScrollBleed
 import io.github.dimitrysaf.provenio.core.metadata.CastResolver
 import io.github.dimitrysaf.provenio.core.metadata.MetaPerson
 import io.github.dimitrysaf.provenio.shell.components.DeceasedPhotoFilter
+import io.github.dimitrysaf.provenio.shell.components.ImageViewerRequest
+import io.github.dimitrysaf.provenio.shell.components.LocalImageViewerLauncher
+import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
+import io.github.dimitrysaf.provenio.shell.components.viewerImageOf
 import io.github.dimitrysaf.provenio.core.metadata.castAvatarSharedTransitionKey
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -61,6 +66,7 @@ fun DetailCastSection(
     val resolvedCast by produceState(initialValue = cast, cast, metaId, metaType) {
         value = CastResolver.resolve(cast, metaId, metaType)
     }
+    val launchImageViewer = LocalImageViewerLauncher.current
 
     DetailSection(
         title = stringResource(Res.string.settings_meta_cast),
@@ -95,6 +101,21 @@ fun DetailCastSection(
                         } else {
                             null
                         },
+                        onLongClick = person.photo
+                            ?.takeIf(String::isNotBlank)
+                            ?.let { photo ->
+                                launchImageViewer?.let { openViewer ->
+                                    {
+                                        openViewer(
+                                            ImageViewerRequest(
+                                                images = listOf(viewerImageOf(photo)),
+                                                title = person.name,
+                                                colorFilter = if (person.deceased) DeceasedPhotoFilter else null,
+                                            ),
+                                        )
+                                    }
+                                }
+                            },
                     )
                 }
             }
@@ -103,7 +124,7 @@ fun DetailCastSection(
 }
 
 @Composable
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
 private fun CastItem(
     person: MetaPerson,
     modifier: Modifier = Modifier,
@@ -112,6 +133,7 @@ private fun CastItem(
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val avatarCacheKey = sharedTransitionKey
     val platformContext = LocalPlatformContext.current
@@ -148,7 +170,18 @@ private fun CastItem(
     Column(
         modifier = modifier
             .width(sizing.itemWidth)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+            .then(
+                if (onClick != null || onLongClick != null) {
+                    Modifier
+                        .onSecondaryClick(onLongClick)
+                        .combinedClickable(
+                            onClick = { onClick?.invoke() },
+                            onLongClick = onLongClick,
+                        )
+                } else {
+                    Modifier
+                },
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {

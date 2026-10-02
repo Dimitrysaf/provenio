@@ -2181,6 +2181,9 @@
     <string name="person_detail_died">Mất</string>
     <string name="person_detail_active_since">Hoạt động từ</string>
     <string name="person_detail_date_with_age">%1$s (%2$d tuổi)</string>
+    <string name="image_viewer_download">Tải xuống</string>
+    <string name="image_viewer_save_title">Lưu hình ảnh</string>
+    <string name="image_viewer_view_image">Xem hình ảnh</string>
     <string name="entity_browse_country">Quốc gia</string>
     <string name="entity_browse_type">Loại</string>
     <string name="entity_browse_catalogue">Danh mục</string>

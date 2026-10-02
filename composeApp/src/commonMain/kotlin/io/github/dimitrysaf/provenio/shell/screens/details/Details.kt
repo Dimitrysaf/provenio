@@ -64,6 +64,12 @@ import io.github.dimitrysaf.provenio.core.network.NetworkCondition
 import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
 import io.github.dimitrysaf.provenio.shell.components.BackButton
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
+import androidx.compose.runtime.CompositionLocalProvider
+import io.github.dimitrysaf.provenio.shell.components.ImageViewerHost
+import io.github.dimitrysaf.provenio.shell.components.ImageViewerRequest
+import io.github.dimitrysaf.provenio.shell.components.LocalImageViewerLauncher
+import io.github.dimitrysaf.provenio.shell.components.viewerImageOf
+import io.github.dimitrysaf.provenio.core.metadata.DetailHeroSlide
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailFloatingHeader
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailHero
 import io.github.dimitrysaf.provenio.core.home.HomeRepository
@@ -128,6 +134,7 @@ fun MetaDetailsScreen(
     val homeSections = HomeRepository.uiState.collectAsStateWithLifecycle().value.sections
     val displayedMeta = uiState.meta?.takeIf { it.type == type && it.id == id }
         ?: MetaDetailsRepository.peek(type, id)
+    var imageViewerRequest by remember(type, id) { mutableStateOf<ImageViewerRequest?>(null) }
     val metaScreenSettingsUiState by remember {
         MetaScreenSettingsRepository.ensureLoaded()
         MetaScreenSettingsRepository.uiState
@@ -234,31 +241,38 @@ fun MetaDetailsScreen(
             }
 
             displayedMeta != null -> {
-                MetaDetailsContent(
-                    meta = displayedMeta,
-                    watchedUiState = watchedUiState,
-                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                    watchProgressUiState = watchProgressUiState,
-                    progressByVideoId = progressByVideoId,
-                    libraryUiState = libraryUiState,
-                    metaScreenSettingsUiState = metaScreenSettingsUiState,
-                    homeSections = homeSections,
-                    playerSettingsUiState = playerSettingsUiState,
-                    comments = comments,
-                    shouldShowComments = shouldShowComments,
-                    deferredMetaWorkAllowed = deferredMetaWorkAllowed,
-                    onBack = onBack,
-                    onPlay = onPlay,
-                    onPlayManually = onPlayManually,
-                    onPlayTrailer = onPlayTrailer,
-                    onOpenMeta = onOpenMeta,
-                    onCastClick = onCastClick,
-                    onCompanyClick = onCompanyClick,
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = animatedVisibilityScope,
-                )
+                CompositionLocalProvider(LocalImageViewerLauncher provides { imageViewerRequest = it }) {
+                    MetaDetailsContent(
+                        meta = displayedMeta,
+                        watchedUiState = watchedUiState,
+                        fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                        watchProgressUiState = watchProgressUiState,
+                        progressByVideoId = progressByVideoId,
+                        libraryUiState = libraryUiState,
+                        metaScreenSettingsUiState = metaScreenSettingsUiState,
+                        homeSections = homeSections,
+                        playerSettingsUiState = playerSettingsUiState,
+                        comments = comments,
+                        shouldShowComments = shouldShowComments,
+                        deferredMetaWorkAllowed = deferredMetaWorkAllowed,
+                        onBack = onBack,
+                        onPlay = onPlay,
+                        onPlayManually = onPlayManually,
+                        onPlayTrailer = onPlayTrailer,
+                        onOpenMeta = onOpenMeta,
+                        onCastClick = onCastClick,
+                        onCompanyClick = onCompanyClick,
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                    )
+                }
             }
         }
+
+        ImageViewerHost(
+            request = imageViewerRequest,
+            onDismiss = { imageViewerRequest = null },
+        )
 
         if (displayedMeta == null) {
             BackButton(
@@ -549,6 +563,23 @@ private fun MetaDetailsContent(
         buildDetailHeroSlides(meta, includeTrailers = heroTrailerPlaybackEnabled)
     }
     val heroTrailerMuted by HeroTrailerAudioState.muted.collectAsStateWithLifecycle()
+    val launchImageViewer = LocalImageViewerLauncher.current
+    val artworkImages = remember(heroSlides, meta.poster) {
+        (heroSlides.mapNotNull { (it as? DetailHeroSlide.Artwork)?.url } + listOfNotNull(meta.poster))
+            .filter(String::isNotBlank)
+            .distinct()
+    }
+    val openArtwork: ((String) -> Unit)? = launchImageViewer?.let { openViewer ->
+        { url ->
+            openViewer(
+                ImageViewerRequest(
+                    images = artworkImages.map(::viewerImageOf),
+                    title = meta.name,
+                    initialIndex = artworkImages.indexOf(url).coerceAtLeast(0),
+                ),
+            )
+        }
+    }
     val onBackFromDetails: () -> Unit = {
         isLeavingDetails = true
         onBack()
@@ -764,6 +795,7 @@ private fun MetaDetailsContent(
                                     dominantBackdropPainter = painter
                                     dominantBackdropImageBitmap = imageBitmap
                                 },
+                                onOpenArtwork = openArtwork,
                             )
                         }
 
@@ -827,6 +859,16 @@ private fun MetaDetailsContent(
                     showPlayManually = showManualPlayOption && playbackAvailability.canStream(meta.type, selectedEpisode.id),
                     onDismiss = { selectedEpisodeForActions = null },
                     onPlayManually = { onEpisodeManualPlayClick(selectedEpisode) },
+                    onViewImage = launchImageViewer?.let { openViewer ->
+                        { url ->
+                            openViewer(
+                                ImageViewerRequest(
+                                    images = listOf(viewerImageOf(url)),
+                                    title = selectedEpisode.title,
+                                ),
+                            )
+                        }
+                    },
                 )
             }
 

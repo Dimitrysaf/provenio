@@ -2178,6 +2178,9 @@
     <string name="person_detail_died">Overleden</string>
     <string name="person_detail_active_since">Actief sinds</string>
     <string name="person_detail_date_with_age">%1$s (leeftijd %2$d)</string>
+    <string name="image_viewer_download">Downloaden</string>
+    <string name="image_viewer_save_title">Afbeelding opslaan</string>
+    <string name="image_viewer_view_image">Afbeelding bekijken</string>
     <string name="entity_browse_country">Land</string>
     <string name="entity_browse_type">Type</string>
     <string name="entity_browse_catalogue">Catalogus</string>

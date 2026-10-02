@@ -1873,6 +1873,9 @@
     <string name="person_detail_died">Deces</string>
     <string name="person_detail_active_since">Activ din</string>
     <string name="person_detail_date_with_age">%1$s (vârsta %2$d)</string>
+    <string name="image_viewer_download">Descarcă</string>
+    <string name="image_viewer_save_title">Salvează imaginea</string>
+    <string name="image_viewer_view_image">Vezi imaginea</string>
     <string name="entity_browse_country">Țară</string>
     <string name="entity_browse_type">Tip</string>
     <string name="entity_browse_catalogue">Catalog</string>
