@@ -1,9 +1,35 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
+import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbApiKey
+import provenio.composeapp.generated.resources.action_cancel
+import provenio.composeapp.generated.resources.action_save
+import provenio.composeapp.generated.resources.settings_debrid_not_set
+import provenio.composeapp.generated.resources.settings_tmdb_api_key_built_in
+import provenio.composeapp.generated.resources.settings_tmdb_api_key_description
+import provenio.composeapp.generated.resources.settings_tmdb_api_key_label
+import provenio.composeapp.generated.resources.settings_tmdb_api_key_required
+import provenio.composeapp.generated.resources.settings_tmdb_api_key_saved
+import provenio.composeapp.generated.resources.settings_tmdb_api_key_title
+import provenio.composeapp.generated.resources.settings_tmdb_get_api_key
+import provenio.composeapp.generated.resources.settings_tmdb_get_api_key_description
+import provenio.composeapp.generated.resources.settings_tmdb_section_api_key
 import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +74,59 @@ import provenio.composeapp.generated.resources.settings_tmdb_section_modules
 import provenio.composeapp.generated.resources.settings_tmdb_section_title
 import org.jetbrains.compose.resources.stringResource
 
+private const val TmdbApiKeyUrl = "https://www.themoviedb.org/settings/api"
+
+@Composable
+private fun TmdbApiKeyDialog(
+    currentValue: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var draft by remember { mutableStateOf(currentValue) }
+    val uriHandler = LocalUriHandler.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.settings_tmdb_api_key_title)) },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                SettingsSecretTextField(
+                    value = draft,
+                    onValueChange = { draft = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = stringResource(Res.string.settings_tmdb_api_key_label),
+                )
+                TextButton(
+                    onClick = { uriHandler.openUri(TmdbApiKeyUrl) },
+                    modifier = Modifier.padding(top = 4.dp),
+                ) {
+                    Text(TmdbApiKeyUrl.removePrefix("https://www."))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .size(18.dp),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(draft) },
+                enabled = draft.trim() != currentValue,
+            ) {
+                Text(stringResource(Res.string.action_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(Res.string.action_cancel))
+            }
+        },
+    )
+}
+
 internal fun LazyListScope.tmdbSettingsContent(
     isTablet: Boolean,
     settings: TmdbSettings,
@@ -67,6 +146,68 @@ internal fun LazyListScope.tmdbSettingsContent(
                     onCheckedChange = TmdbSettingsRepository::setEnabled,
                 )
             }
+        }
+    }
+
+    item {
+        var showApiKeyDialog by rememberSaveable { mutableStateOf(false) }
+        val uriHandler = LocalUriHandler.current
+        val hasUserKey = settings.apiKey.isNotBlank()
+
+        SettingsSection(
+            title = stringResource(Res.string.settings_tmdb_section_api_key),
+            isTablet = isTablet,
+        ) {
+            if (!hasUserKey && !TmdbApiKey.hasBuiltInKey) {
+                Text(
+                    text = stringResource(Res.string.settings_tmdb_api_key_required),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            SettingsList {
+                navigationRow(
+                    title = stringResource(Res.string.settings_tmdb_api_key_title),
+                    description = stringResource(Res.string.settings_tmdb_api_key_description),
+                    trailingContent = {
+                        Text(
+                            text = when {
+                                hasUserKey -> stringResource(Res.string.settings_tmdb_api_key_saved)
+                                TmdbApiKey.hasBuiltInKey -> stringResource(Res.string.settings_tmdb_api_key_built_in)
+                                else -> stringResource(Res.string.settings_debrid_not_set)
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    },
+                    onClick = { showApiKeyDialog = true },
+                )
+                navigationRow(
+                    title = stringResource(Res.string.settings_tmdb_get_api_key),
+                    description = stringResource(Res.string.settings_tmdb_get_api_key_description),
+                    trailingContent = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = { uriHandler.openUri(TmdbApiKeyUrl) },
+                )
+            }
+        }
+
+        if (showApiKeyDialog) {
+            TmdbApiKeyDialog(
+                currentValue = settings.apiKey,
+                onConfirm = { entered ->
+                    TmdbSettingsRepository.setApiKey(entered)
+                    showApiKeyDialog = false
+                },
+                onDismiss = { showApiKeyDialog = false },
+            )
         }
     }
 

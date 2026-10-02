@@ -4,7 +4,7 @@ import co.touchlab.kermit.Logger
 import com.dokar.quickjs.QuickJs
 import com.dokar.quickjs.binding.define
 import com.dokar.quickjs.binding.function
-import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbConfig
+import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbApiKey
 
 internal class HostFunctions(
     private val scraperId: String,
@@ -40,7 +40,7 @@ internal class HostFunctions(
 
         runtime.function("__get_scraper_id") { scraperId }
         runtime.function("__get_scraper_settings") { scraperSettingsJson }
-        runtime.function("__get_tmdb_api_key") { TmdbConfig.API_KEY }
+        runtime.function("__get_tmdb_api_key") { TmdbApiKey.current() }
         runtime.function("__get_call_args") { callArgsJson }
         runtime.function("__capture_result") { args ->
             onResult(args.getOrNull(0)?.toString() ?: "[]")

@@ -1863,6 +1863,15 @@
     <string name="source_offer_season">Season %1$d</string>
     <string name="source_offer_attribution">via JustWatch</string>
     <string name="source_offer_addon">Add-on</string>
+    <string name="settings_tmdb_section_api_key">API KEY</string>
+    <string name="settings_tmdb_api_key_title">API Key</string>
+    <string name="settings_tmdb_api_key_description">Your own TMDB API key, used instead of the built-in one</string>
+    <string name="settings_tmdb_api_key_label">API Key</string>
+    <string name="settings_tmdb_api_key_required">TMDB needs an API key. Add your own free key below to use TMDB features.</string>
+    <string name="settings_tmdb_api_key_saved">Saved</string>
+    <string name="settings_tmdb_api_key_built_in">Built-in</string>
+    <string name="settings_tmdb_get_api_key">Get a free API key</string>
+    <string name="settings_tmdb_get_api_key_description">Open TMDB&apos;s API settings to create one</string>
     <string name="source_offer_streaming_availability">via Streaming Availability</string>
     <string name="compose_settings_page_streaming_availability">Streaming Availability</string>
     <string name="settings_integrations_streaming_availability_description">Direct links to movies and episodes on streaming services</string>

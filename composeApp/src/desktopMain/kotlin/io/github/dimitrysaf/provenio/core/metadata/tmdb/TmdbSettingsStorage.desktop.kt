@@ -15,6 +15,7 @@ actual object TmdbSettingsStorage {
     private const val preferencesName = "provenio_tmdb_settings"
     private const val enabledKey = "tmdb_enabled"
     private const val languageKey = "tmdb_language"
+    private const val apiKeyKey = "tmdb_api_key"
     private const val useTrailersKey = "tmdb_use_trailers"
     private const val useArtworkKey = "tmdb_use_artwork"
     private const val useBasicInfoKey = "tmdb_use_basic_info"
@@ -30,6 +31,7 @@ actual object TmdbSettingsStorage {
     private val syncKeys = listOf(
         enabledKey,
         languageKey,
+        apiKeyKey,
         useTrailersKey,
         useArtworkKey,
         useBasicInfoKey,
@@ -54,6 +56,16 @@ actual object TmdbSettingsStorage {
 
     actual fun saveEnabled(enabled: Boolean) {
         saveBoolean(enabledKey, enabled)
+    }
+
+    actual fun loadApiKey(): String? =
+        preferences?.getString(ProfileScopedKey.of(apiKeyKey), null)
+
+    actual fun saveApiKey(apiKey: String) {
+        preferences
+            ?.edit()
+            ?.putString(ProfileScopedKey.of(apiKeyKey), apiKey)
+            ?.apply()
     }
 
     actual fun loadLanguage(): String? =
@@ -158,6 +170,7 @@ actual object TmdbSettingsStorage {
     actual fun exportToSyncPayload(): JsonObject = buildJsonObject {
         loadEnabled()?.let { put(enabledKey, encodeSyncBoolean(it)) }
         loadLanguage()?.let { put(languageKey, encodeSyncString(it)) }
+        loadApiKey()?.let { put(apiKeyKey, encodeSyncString(it)) }
         loadUseTrailers()?.let { put(useTrailersKey, encodeSyncBoolean(it)) }
         loadUseArtwork()?.let { put(useArtworkKey, encodeSyncBoolean(it)) }
         loadUseBasicInfo()?.let { put(useBasicInfoKey, encodeSyncBoolean(it)) }
@@ -179,6 +192,7 @@ actual object TmdbSettingsStorage {
 
         payload.decodeSyncBoolean(enabledKey)?.let(::saveEnabled)
         payload.decodeSyncString(languageKey)?.let(::saveLanguage)
+        payload.decodeSyncString(apiKeyKey)?.let(::saveApiKey)
         payload.decodeSyncBoolean(useTrailersKey)?.let(::saveUseTrailers)
         payload.decodeSyncBoolean(useArtworkKey)?.let(::saveUseArtwork)
         payload.decodeSyncBoolean(useBasicInfoKey)?.let(::saveUseBasicInfo)

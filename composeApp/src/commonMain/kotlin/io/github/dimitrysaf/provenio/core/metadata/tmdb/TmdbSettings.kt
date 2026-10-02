@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.core.metadata.tmdb
 data class TmdbSettings(
     val enabled: Boolean = false,
     val language: String = "en",
+    val apiKey: String = "",
     val useTrailers: Boolean = true,
     val useArtwork: Boolean = true,
     val useBasicInfo: Boolean = true,

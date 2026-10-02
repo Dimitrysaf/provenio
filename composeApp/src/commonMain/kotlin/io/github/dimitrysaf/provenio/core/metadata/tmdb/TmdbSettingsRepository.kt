@@ -15,6 +15,7 @@ object TmdbSettingsRepository {
 
     private var enabled = false
     private var language = "en"
+    private var apiKey = ""
     private var useTrailers = true
     private var useArtwork = true
     private var useBasicInfo = true
@@ -57,6 +58,16 @@ object TmdbSettingsRepository {
         language = normalized
         publish()
         TmdbSettingsStorage.saveLanguage(normalized)
+    }
+
+    fun setApiKey(value: String) {
+        ensureLoaded()
+        val normalized = value.trim()
+        if (apiKey == normalized) return
+        apiKey = normalized
+        publish()
+        TmdbSettingsStorage.saveApiKey(normalized)
+        MetaDetailsRepository.clear()
     }
 
     fun setUseTrailers(value: Boolean) = setBoolean(
@@ -165,6 +176,7 @@ object TmdbSettingsRepository {
         enabled = TmdbSettingsStorage.loadEnabled() ?: false
         val storedLanguage = TmdbSettingsStorage.loadLanguage()
         language = if (storedLanguage == null) "en" else normalizeLanguage(storedLanguage)
+        apiKey = TmdbSettingsStorage.loadApiKey().orEmpty().trim()
         useTrailers = TmdbSettingsStorage.loadUseTrailers() ?: true
         useArtwork = TmdbSettingsStorage.loadUseArtwork() ?: true
         useBasicInfo = TmdbSettingsStorage.loadUseBasicInfo() ?: true
@@ -187,6 +199,7 @@ object TmdbSettingsRepository {
         _uiState.value = TmdbSettings(
             enabled = enabled,
             language = language,
+            apiKey = apiKey,
             useTrailers = useTrailers,
             useArtwork = useArtwork,
             useBasicInfo = useBasicInfo,

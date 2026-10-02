@@ -5,7 +5,7 @@ import io.github.dimitrysaf.provenio.core.addons.httpGetText
 import io.github.dimitrysaf.provenio.core.catalog.CatalogPage
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.home.PosterShape
-import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbConfig
+import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbApiKey
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.buildTmdbUrl
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.normalizeTmdbLanguage
@@ -35,7 +35,7 @@ object TmdbCollectionSourceResolver {
 
     suspend fun resolve(source: CollectionSource, page: Int = 1): CatalogPage = withContext(Dispatchers.Default) {
         val settings = TmdbSettingsRepository.snapshot()
-        val apiKey = TmdbConfig.API_KEY
+        val apiKey = TmdbApiKey.current()
         val language = normalizeTmdbLanguage(settings.language)
         val sourceType = source.tmdbType()
 
@@ -53,7 +53,7 @@ object TmdbCollectionSourceResolver {
     suspend fun importMetadata(sourceType: TmdbCollectionSourceType, id: Int): TmdbSourceImportMetadata =
         withContext(Dispatchers.Default) {
             val settings = TmdbSettingsRepository.snapshot()
-            val apiKey = TmdbConfig.API_KEY
+            val apiKey = TmdbApiKey.current()
             val language = normalizeTmdbLanguage(settings.language)
             when (sourceType) {
                 TmdbCollectionSourceType.LIST -> {
@@ -119,7 +119,7 @@ object TmdbCollectionSourceResolver {
     suspend fun searchCompanies(query: String): List<TmdbCompanySearchResult> = withContext(Dispatchers.Default) {
         val trimmed = query.trim()
         if (trimmed.isBlank()) return@withContext emptyList()
-        val apiKey = TmdbConfig.API_KEY
+        val apiKey = TmdbApiKey.current()
         fetch<TmdbCompanySearchResponse>(
             endpoint = "search/company",
             apiKey = apiKey,
@@ -131,7 +131,7 @@ object TmdbCollectionSourceResolver {
         val trimmed = query.trim()
         if (trimmed.isBlank()) return@withContext emptyList()
         val settings = TmdbSettingsRepository.snapshot()
-        val apiKey = TmdbConfig.API_KEY
+        val apiKey = TmdbApiKey.current()
         val language = normalizeTmdbLanguage(settings.language)
         fetch<TmdbCollectionSearchResponse>(
             endpoint = "search/collection",
@@ -143,7 +143,7 @@ object TmdbCollectionSourceResolver {
     suspend fun searchKeywords(query: String): Map<Int, String> = withContext(Dispatchers.Default) {
         val trimmed = query.trim()
         if (trimmed.isBlank()) return@withContext emptyMap()
-        val apiKey = TmdbConfig.API_KEY
+        val apiKey = TmdbApiKey.current()
         fetch<TmdbKeywordSearchResponse>(
             endpoint = "search/keyword",
             apiKey = apiKey,
@@ -158,7 +158,7 @@ object TmdbCollectionSourceResolver {
 
     suspend fun genres(mediaType: TmdbCollectionMediaType): Map<Int, String> = withContext(Dispatchers.Default) {
         val settings = TmdbSettingsRepository.snapshot()
-        val apiKey = TmdbConfig.API_KEY
+        val apiKey = TmdbApiKey.current()
         val language = normalizeTmdbLanguage(settings.language)
         val endpoint = when (mediaType) {
             TmdbCollectionMediaType.MOVIE -> "genre/movie/list"

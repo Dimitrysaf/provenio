@@ -5,7 +5,7 @@ import io.github.dimitrysaf.provenio.core.addons.httpGetText
 import io.github.dimitrysaf.provenio.core.debrid.encodePathSegment
 import io.github.dimitrysaf.provenio.core.debrid.queryString
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
-import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbConfig
+import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbApiKey
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbService
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.buildTmdbUrl
 import io.github.dimitrysaf.provenio.core.settings.ThemeMode
@@ -292,13 +292,13 @@ internal object ExternalSourceFinder {
     }
 
     private suspend fun tmdbId(request: ExternalSourceRequest): String? {
-        if (TmdbConfig.API_KEY.isBlank()) return null
+        if (TmdbApiKey.current().isBlank()) return null
         return TmdbService.ensureTmdbId(request.metaId, if (request.isMovie) "movie" else "tv")
     }
 
     private suspend fun tmdbJson(endpoint: String, query: Map<String, String> = emptyMap()): JsonElement? =
         runCatchingUnlessCancelled {
-            json.parseToJsonElement(httpGetText(buildTmdbUrl(endpoint = endpoint, apiKey = TmdbConfig.API_KEY, query = query)))
+            json.parseToJsonElement(httpGetText(buildTmdbUrl(endpoint = endpoint, apiKey = TmdbApiKey.current(), query = query)))
         }.onFailure { log.w { "TMDB request failed for $endpoint: ${it.message}" } }.getOrNull()
 
     private fun watchRegion(): String =
