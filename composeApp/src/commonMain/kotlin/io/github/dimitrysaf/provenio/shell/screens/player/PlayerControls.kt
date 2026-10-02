@@ -2,7 +2,6 @@ package io.github.dimitrysaf.provenio.shell.screens.player
 
 import io.github.dimitrysaf.provenio.core.watch.watching.domain.isSettledPlaybackDuration
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
@@ -36,25 +35,19 @@ import androidx.compose.material.icons.automirrored.rounded.Input
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Cast
-import androidx.compose.material.icons.rounded.Explicit
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Layers
-import androidx.compose.material.icons.rounded.LocalBar
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
-import androidx.compose.material.icons.rounded.MoodBad
-import androidx.compose.material.icons.rounded.NoAdultContent
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.Replay10
 import androidx.compose.material.icons.rounded.SkipNext
-import androidx.compose.material.icons.rounded.SportsMma
 import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.VideoLibrary
-import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -62,10 +55,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Constraints
@@ -91,12 +81,10 @@ import io.github.dimitrysaf.provenio.shell.components.BackButton
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.shell.theme.typeScale
-import kotlinx.coroutines.delay
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.PI
 import kotlin.math.sin
-import io.github.dimitrysaf.provenio.core.playback.ParentalWarning
 import io.github.dimitrysaf.provenio.core.playback.PlayerResizeMode
 import io.github.dimitrysaf.provenio.core.playback.labelRes
 import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
@@ -134,9 +122,6 @@ internal fun PlayerControlsShell(
     onSubmitIntroClick: (() -> Unit)? = null,
     statusLines: List<String> = emptyList(),
     onStatusClick: (() -> Unit)? = null,
-    parentalWarnings: List<ParentalWarning> = emptyList(),
-    showParentalGuide: Boolean = false,
-    onParentalGuideAnimationComplete: () -> Unit = {},
     onScrubChange: (Long) -> Unit,
     onScrubFinished: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -174,9 +159,6 @@ internal fun PlayerControlsShell(
             metrics = metrics,
             statusLines = if (showPlaybackControls) statusLines else emptyList(),
             onStatusClick = onStatusClick,
-            parentalWarnings = parentalWarnings,
-            showParentalGuide = showParentalGuide,
-            onParentalGuideAnimationComplete = onParentalGuideAnimationComplete,
             onBack = onBack,
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -274,9 +256,6 @@ private fun PlayerHeader(
     metrics: PlayerLayoutMetrics,
     statusLines: List<String>,
     onStatusClick: (() -> Unit)?,
-    parentalWarnings: List<ParentalWarning>,
-    showParentalGuide: Boolean,
-    onParentalGuideAnimationComplete: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -327,12 +306,6 @@ private fun PlayerHeader(
                     )
                 }
             }
-            ParentalGuideIcons(
-                warnings = parentalWarnings,
-                isVisible = showParentalGuide,
-                onAnimationComplete = onParentalGuideAnimationComplete,
-                modifier = Modifier.padding(top = 6.dp),
-            )
         }
 
         PlayerStatusColumn(lines = statusLines, onClick = onStatusClick)
@@ -387,66 +360,6 @@ internal fun PlayerStatusColumn(
             )
         }
     }
-}
-
-// Warnings as icons under the title: each fades in, they hold, then each fades out.
-@Composable
-private fun ParentalGuideIcons(
-    warnings: List<ParentalWarning>,
-    isVisible: Boolean,
-    onAnimationComplete: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    if (warnings.isEmpty()) return
-    val alphas = remember(warnings) { warnings.map { Animatable(0f) } }
-    val onComplete by rememberUpdatedState(onAnimationComplete)
-
-    LaunchedEffect(isVisible, warnings) {
-        if (!isVisible) {
-            alphas.forEach { it.snapTo(0f) }
-            return@LaunchedEffect
-        }
-        alphas.forEach { alpha ->
-            alpha.animateTo(1f, tween(ParentalIconFadeMs))
-        }
-        delay(ParentalIconHoldMs)
-        alphas.forEach { alpha ->
-            alpha.animateTo(0f, tween(ParentalIconFadeMs))
-        }
-        onComplete()
-    }
-
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        warnings.forEachIndexed { index, warning ->
-            Box(
-                modifier = Modifier
-                    .alpha(alphas[index].value)
-                    .size(28.dp)
-                    .background(PlayerScrimColor, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = warning.icon(),
-                    contentDescription = "${warning.label}, ${warning.severity}",
-                    tint = Color.White,
-                    modifier = Modifier.size(16.dp),
-                )
-            }
-        }
-    }
-}
-
-private fun ParentalWarning.icon(): ImageVector = when (category) {
-    "nudity" -> Icons.Rounded.NoAdultContent
-    "violence" -> Icons.Rounded.SportsMma
-    "profanity" -> Icons.Rounded.Explicit
-    "alcohol" -> Icons.Rounded.LocalBar
-    "frightening" -> Icons.Rounded.MoodBad
-    else -> Icons.Rounded.Warning
 }
 
 @Composable
@@ -1178,8 +1091,6 @@ private val TrackThumbGap = 4.dp
 private val WaveAmplitude = 1.5.dp
 private val WaveLength = 40.dp
 private const val WavePeriodMs = 2400
-private const val ParentalIconFadeMs = 250
-private const val ParentalIconHoldMs = 5000L
 
 // Height of the time row, seek bar and button row, for overlays that sit just above them.
 internal fun playerBottomControlsHeight(metrics: PlayerLayoutMetrics): Dp =

@@ -376,8 +376,6 @@
     <string name="settings_playback_section_subtitle_rendering">עיבוד כתוביות</string>
     <string name="settings_playback_show_loading_overlay">שכבת טעינה</string>
     <string name="settings_playback_show_loading_overlay_description">הצג מסך טעינה עד להופעת הפריים הראשון.</string>
-    <string name="settings_playback_parental_guide">אזהרות תוכן</string>
-    <string name="settings_playback_parental_guide_description">הצג שכבת הדרכת הורים בתחילת ההפעלה.</string>
     <string name="settings_playback_subtitle_background_color">צבע רקע</string>
     <string name="settings_playback_subtitle_bold_description">השתמש במשקל גופן כתוביות כבד יותר.</string>
     <string name="settings_playback_subtitle_color_transparent">שקוף</string>

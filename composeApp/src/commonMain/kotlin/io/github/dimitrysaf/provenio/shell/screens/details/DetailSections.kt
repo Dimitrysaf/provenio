@@ -42,6 +42,7 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailAddi
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailCastSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailCommentsSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailMetaInfo
+import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailParentsGuideSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPosterGridSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPosterRailSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailProductionSection
@@ -51,6 +52,7 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.EpisodeLis
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailTrailersSection
 import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
+import io.github.dimitrysaf.provenio.core.playback.ParentalWarning
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktCommentReview
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressEntry
 import provenio.composeapp.generated.resources.*
@@ -89,6 +91,7 @@ internal fun LazyListScope.configuredMetaSectionItems(
     hasAdditionalInfoSection: Boolean,
     hasCollectionSection: Boolean,
     moreLikeThisItems: List<MetaPreview>,
+    parentalWarnings: List<ParentalWarning>,
     shouldShowComments: Boolean,
     comments: List<TraktCommentReview>,
     isCommentsLoading: Boolean,
@@ -127,6 +130,7 @@ internal fun LazyListScope.configuredMetaSectionItems(
             hasAdditionalInfoSection = hasAdditionalInfoSection,
             hasCollectionSection = hasCollectionSection,
             moreLikeThisItems = moreLikeThisItems,
+            parentalWarnings = parentalWarnings,
             shouldShowComments = shouldShowComments,
             comments = comments,
             isCommentsLoading = isCommentsLoading,
@@ -167,6 +171,7 @@ internal fun LazyListScope.configuredMetaSectionItems(
                     hasAdditionalInfoSection = hasAdditionalInfoSection,
                     hasCollectionSection = hasCollectionSection,
                     moreLikeThisItems = moreLikeThisItems,
+                    parentalWarnings = parentalWarnings,
                     shouldShowComments = shouldShowComments,
                     comments = comments,
                     isCommentsLoading = isCommentsLoading,
@@ -339,6 +344,7 @@ internal fun metaSectionHasContent(
     hasAdditionalInfoSection: Boolean,
     hasCollectionSection: Boolean,
     moreLikeThisItems: List<MetaPreview>,
+    parentalWarnings: List<ParentalWarning>,
     shouldShowComments: Boolean,
     comments: List<TraktCommentReview>,
     isCommentsLoading: Boolean,
@@ -347,6 +353,7 @@ internal fun metaSectionHasContent(
     when (key) {
         MetaScreenSectionKey.ACTIONS -> true
         MetaScreenSectionKey.OVERVIEW -> true
+        MetaScreenSectionKey.PARENTS_GUIDE -> parentalWarnings.isNotEmpty()
         MetaScreenSectionKey.PRODUCTION -> hasProductionSection
         MetaScreenSectionKey.CAST -> meta.cast.isNotEmpty()
         MetaScreenSectionKey.COMMENTS -> shouldShowComments && (isCommentsLoading || comments.isNotEmpty() || !commentsError.isNullOrBlank())
@@ -380,6 +387,7 @@ internal fun ConfiguredMetaSections(
     hasAdditionalInfoSection: Boolean,
     hasCollectionSection: Boolean,
     moreLikeThisItems: List<MetaPreview>,
+    parentalWarnings: List<ParentalWarning>,
     shouldShowComments: Boolean,
     comments: List<TraktCommentReview>,
     isCommentsLoading: Boolean,
@@ -406,6 +414,7 @@ internal fun ConfiguredMetaSections(
         when (key) {
             MetaScreenSectionKey.ACTIONS -> true
             MetaScreenSectionKey.OVERVIEW -> true
+            MetaScreenSectionKey.PARENTS_GUIDE -> parentalWarnings.isNotEmpty()
             MetaScreenSectionKey.PRODUCTION -> hasProductionSection
             MetaScreenSectionKey.CAST -> meta.cast.isNotEmpty()
             MetaScreenSectionKey.COMMENTS -> shouldShowComments && (isCommentsLoading || comments.isNotEmpty() || !commentsError.isNullOrBlank())
@@ -471,6 +480,9 @@ internal fun ConfiguredMetaSections(
                     meta = meta,
                     horizontalScrollPadding = horizontalScrollPadding,
                 )
+            }
+            MetaScreenSectionKey.PARENTS_GUIDE -> {
+                DetailParentsGuideSection(warnings = parentalWarnings, showHeader = showHeader)
             }
             MetaScreenSectionKey.PRODUCTION -> {
                 if (hasProductionSection) {

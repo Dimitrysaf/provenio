@@ -254,7 +254,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             ExternalPlayerPlatform.availablePlayers().any { it.id == externalPlayerId }
     }
     AnimatedVisibility(
-        visible = (controlsVisible || showParentalGuide) && !playerControlsLocked && !isInPip,
+        visible = controlsVisible && !playerControlsLocked && !isInPip,
         enter = fadeIn(),
         exit = fadeOut(),
     ) {
@@ -354,9 +354,6 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             } else {
                 null
             },
-            parentalWarnings = parentalWarnings,
-            showParentalGuide = showParentalGuide,
-            onParentalGuideAnimationComplete = { showParentalGuide = false },
             onScrubChange = { positionMs ->
                 isScrubbingTimeline = true
                 scrubbingPositionMs = positionMs

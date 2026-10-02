@@ -11,8 +11,6 @@ internal expect object PlayerSettingsStorage {
     fun saveShowPlayerControlLabels(enabled: Boolean)
     fun loadPauseOverlayEnabled(): Boolean?
     fun savePauseOverlayEnabled(enabled: Boolean)
-    fun loadShowParentalGuide(): Boolean?
-    fun saveShowParentalGuide(enabled: Boolean)
     fun loadResizeMode(): String?
     fun saveResizeMode(mode: String)
     fun loadHoldToSpeedEnabled(): Boolean?

@@ -1903,8 +1903,6 @@
     <string name="settings_playback_libmpv_hardware_decoding_description">Używaj dekodowania sprzętowego mpv, gdy jest dostępne.</string>
     <string name="settings_playback_libmpv_yuv420p">Kompatybilność YUV420P libmpv</string>
     <string name="settings_playback_libmpv_yuv420p_description">Wymuś wyjście YUV420P dla urządzeń z problemami renderera lub kolorów.</string>
-    <string name="settings_playback_parental_guide">Ostrzeżenia dotyczące treści</string>
-    <string name="settings_playback_parental_guide_description">Pokaż nakładkę z informacjami o treści przy rozpoczęciu odtwarzania.</string>
     <string name="streams_loading_skip_segments">Ładowanie segmentów do pominięcia…</string>
     <string name="updates_debug_test_complete">Test banera zakończony</string>
     <string name="updates_debug_test_description">Podgląd banera i symulowanego postępu pobierania.</string>

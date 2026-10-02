@@ -6,6 +6,14 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import io.github.dimitrysaf.provenio.core.playback.buildParentalWarnings
+import io.github.dimitrysaf.provenio.core.playback.ParentalWarning
+import io.github.dimitrysaf.provenio.core.playback.ParentalGuideResult
+import io.github.dimitrysaf.provenio.core.playback.ParentalGuideRepository
+import io.github.dimitrysaf.provenio.core.playback.ParentalGuideLabels
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
@@ -42,6 +50,14 @@ import io.github.dimitrysaf.provenio.shell.screens.library.showTrackingMembershi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.parental_violence
+import provenio.composeapp.generated.resources.parental_severity_severe
+import provenio.composeapp.generated.resources.parental_severity_moderate
+import provenio.composeapp.generated.resources.parental_severity_mild
+import provenio.composeapp.generated.resources.parental_profanity
+import provenio.composeapp.generated.resources.parental_nudity
+import provenio.composeapp.generated.resources.parental_frightening
+import provenio.composeapp.generated.resources.parental_alcohol
 import provenio.composeapp.generated.resources.tracking_lists_update_failed
 import org.jetbrains.compose.resources.stringResource
 
@@ -137,6 +153,27 @@ internal fun rememberDetailEpisodeList(
         entries = entries,
         onSeasonToggle = { season -> seasonExpansion.toggle(season, seasonSummary.defaultSeason) },
     )
+}
+
+@Composable
+internal fun rememberDetailParentalWarnings(meta: MetaDetails, enabled: Boolean): List<ParentalWarning> {
+    var guide by remember(meta.id) { mutableStateOf<ParentalGuideResult?>(null) }
+    LaunchedEffect(meta.id, meta.type, enabled) {
+        if (!enabled || guide != null) return@LaunchedEffect
+        val imdbId = ParentalGuideRepository.resolveImdbId(listOf(meta.id), meta.type) ?: return@LaunchedEffect
+        guide = ParentalGuideRepository.getParentalGuide(imdbId)
+    }
+    val labels = ParentalGuideLabels(
+        nudity = stringResource(Res.string.parental_nudity),
+        violence = stringResource(Res.string.parental_violence),
+        profanity = stringResource(Res.string.parental_profanity),
+        alcohol = stringResource(Res.string.parental_alcohol),
+        frightening = stringResource(Res.string.parental_frightening),
+        severe = stringResource(Res.string.parental_severity_severe),
+        moderate = stringResource(Res.string.parental_severity_moderate),
+        mild = stringResource(Res.string.parental_severity_mild),
+    )
+    return remember(guide, labels) { guide?.let { buildParentalWarnings(it, labels) }.orEmpty() }
 }
 
 // Which optional sections this title has anything to show in.

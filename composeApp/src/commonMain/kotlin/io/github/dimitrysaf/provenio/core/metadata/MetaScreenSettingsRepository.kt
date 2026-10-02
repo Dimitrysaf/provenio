@@ -16,6 +16,7 @@ import org.jetbrains.compose.resources.getString
 enum class MetaScreenSectionKey {
     ACTIONS,
     OVERVIEW,
+    PARENTS_GUIDE,
     PRODUCTION,
     CAST,
     COMMENTS,
@@ -149,6 +150,11 @@ object MetaScreenSettingsRepository {
             key = MetaScreenSectionKey.OVERVIEW,
             titleRes = Res.string.meta_section_overview_title,
             descriptionRes = Res.string.meta_section_overview_description,
+        ),
+        MetaScreenSectionDefinition(
+            key = MetaScreenSectionKey.PARENTS_GUIDE,
+            titleRes = Res.string.meta_section_parents_guide_title,
+            descriptionRes = Res.string.meta_section_parents_guide_description,
         ),
         MetaScreenSectionDefinition(
             key = MetaScreenSectionKey.PRODUCTION,
@@ -399,7 +405,7 @@ object MetaScreenSettingsRepository {
 
     private fun normalizePreferences() {
         val normalized = mutableMapOf<MetaScreenSectionKey, StoredMetaScreenSectionPreference>()
-        definitions.sortedBy { definition -> preferences[definition.key]?.order ?: Int.MAX_VALUE }
+        definitions.sortedBy { definition -> storedSortOrder(definition.key) }
             .forEachIndexed { index, definition ->
                 val stored = preferences[definition.key]
                 normalized[definition.key] = StoredMetaScreenSectionPreference(
@@ -410,6 +416,14 @@ object MetaScreenSettingsRepository {
                 )
             }
         preferences = normalized
+    }
+
+    private fun storedSortOrder(key: MetaScreenSectionKey): Double {
+        preferences[key]?.let { return it.order.toDouble() }
+        if (preferences.isEmpty()) return Double.MAX_VALUE
+        val index = definitions.indexOfFirst { it.key == key }
+        val previous = definitions.take(index).lastOrNull { it.key in preferences } ?: return -1.0
+        return preferences.getValue(previous.key).order + 0.5
     }
 
     private fun publish() {

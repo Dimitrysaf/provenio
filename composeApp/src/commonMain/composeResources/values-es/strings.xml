@@ -1061,8 +1061,6 @@
     <string name="settings_playback_selected_count">%1$d seleccionados</string>
     <string name="settings_playback_show_loading_overlay">Mostrar superposición de carga</string>
     <string name="settings_playback_show_loading_overlay_description">Mostrar la superposición de carga inicial mientras empieza a reproducirse un stream.</string>
-    <string name="settings_playback_parental_guide">Avisos de contenido</string>
-    <string name="settings_playback_parental_guide_description">Mostrar aviso de clasificación por edades al iniciar la reproducción.</string>
     <string name="settings_playback_subtitle_background_color">Color de fondo</string>
     <string name="settings_playback_subtitle_bold">Atrevido</string>
     <string name="settings_playback_subtitle_bold_description">Usa una fuente de subtítulos más gruesa (negrita).</string>

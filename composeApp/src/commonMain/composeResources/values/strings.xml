@@ -1072,6 +1072,8 @@
     <string name="settings_meta_comments_description">Reviews from Trakt</string>
     <string name="settings_meta_details">Details</string>
     <string name="settings_meta_details_description">Runtime, status, release, language, and related info.</string>
+    <string name="settings_meta_parents_guide">Parents guide</string>
+    <string name="settings_meta_parents_guide_description">How much violence, nudity, profanity and other sensitive content the title has.</string>
     <string name="settings_meta_hero_trailer_playback">Hero Trailer Playback</string>
     <string name="settings_meta_hero_trailer_playback_description">Play trailer previews in the metadata hero when a trailer is available.</string>
     <string name="settings_meta_episode_cards">Episode Cards</string>
@@ -1235,8 +1237,6 @@
     <string name="settings_playback_show_loading_overlay_description">Show the artwork and a logo that fills as the stream buffers, while it starts and whenever playback stalls.</string>
     <string name="settings_playback_pause_overlay">Pause Overlay</string>
     <string name="settings_playback_pause_overlay_description">Show details overlay after 5 seconds while paused.</string>
-    <string name="settings_playback_parental_guide">Content Warnings</string>
-    <string name="settings_playback_parental_guide_description">Show parental guidance overlay when playback starts.</string>
     <string name="settings_playback_subtitle_background_color">Background Color</string>
     <string name="settings_playback_subtitle_bold">Bold</string>
     <string name="settings_playback_subtitle_bold_description">Use a heavier subtitle font weight.</string>
@@ -1632,6 +1632,8 @@
     <string name="meta_section_comments_description">Trakt comments section.</string>
     <string name="meta_section_details_description">Runtime, status, release, language, and related info.</string>
     <string name="meta_section_details_title">Details</string>
+    <string name="meta_section_parents_guide_description">How much violence, nudity, profanity and other sensitive content the title has.</string>
+    <string name="meta_section_parents_guide_title">Parents guide</string>
     <string name="meta_section_episodes_description">Seasons and episode list for series.</string>
     <string name="meta_section_more_like_this_description">Recommendation rail.</string>
     <string name="meta_section_more_like_this_title">More Like This</string>

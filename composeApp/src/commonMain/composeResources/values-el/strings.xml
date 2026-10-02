@@ -678,6 +678,8 @@
     <string name="settings_meta_comments_description">Ενότητα σχολίων Trakt.</string>
     <string name="settings_meta_details">Λεπτομέρειες</string>
     <string name="settings_meta_details_description">Διάρκεια, κατάσταση, κυκλοφορία, γλώσσα και σχετικές πληροφορίες.</string>
+    <string name="settings_meta_parents_guide">Οδηγός γονέων</string>
+    <string name="settings_meta_parents_guide_description">Πόση βία, γυμνό, χυδαία γλώσσα και άλλο ευαίσθητο περιεχόμενο έχει ο τίτλος.</string>
     <string name="settings_meta_episode_cards">Κάρτες επεισοδίων</string>
     <string name="settings_meta_episode_cards_description">Επιλέξτε πώς αποδίδονται τα επεισόδια στην οθόνη μεταδεδομένων.</string>
     <string name="settings_meta_episode_style_horizontal">Οριζόντιο</string>
@@ -1146,6 +1148,8 @@
     <string name="meta_section_comments_description">Ενότητα σχολίων Trakt.</string>
     <string name="meta_section_details_description">Διάρκεια, κατάσταση, κυκλοφορία, γλώσσα και σχετικές πληροφορίες.</string>
     <string name="meta_section_details_title">Λεπτομέρειες</string>
+    <string name="meta_section_parents_guide_description">Πόση βία, γυμνό, χυδαία γλώσσα και άλλο ευαίσθητο περιεχόμενο έχει ο τίτλος.</string>
+    <string name="meta_section_parents_guide_title">Οδηγός γονέων</string>
     <string name="meta_section_episodes_description">Σεζόν και λίστα επεισοδίων για σειρές.</string>
     <string name="meta_section_more_like_this_description">Ράγα προτάσεων.</string>
     <string name="meta_section_more_like_this_title">Περισσότερα σαν αυτό</string>
@@ -2264,8 +2268,6 @@
     <string name="settings_playback_player_preference_internal">Εσωτερικός</string>
     <string name="settings_playback_reuse_binge_group">Επαναχρησιμοποίηση ομάδας binge</string>
     <string name="settings_playback_reuse_binge_group_description">Απομνημόνευση και επαναχρησιμοποίηση της τελευταίας ομάδας binge μεταξύ συνεδριών (Συνέχεια παρακολούθησης, Λεπτομέρειες κ.λπ.).</string>
-    <string name="settings_playback_parental_guide">Προειδοποιήσεις περιεχομένου</string>
-    <string name="settings_playback_parental_guide_description">Εμφάνιση επικάλυψης γονικής καθοδήγησης κατά την έναρξη της αναπαραγωγής.</string>
     <string name="settings_playback_subtitle_background_color">Χρώμα φόντου</string>
     <string name="settings_playback_subtitle_bold">Έντονα</string>
     <string name="settings_playback_subtitle_bold_description">Χρήση πιο έντονου βάρους γραμματοσειράς υποτίτλων.</string>

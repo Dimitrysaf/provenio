@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.core.playback
 
 import co.touchlab.kermit.Logger
 import io.github.dimitrysaf.provenio.core.addons.httpRequestRaw
+import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbService
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
@@ -23,6 +24,7 @@ data class ParentalWarning(
     val label: String,
     val severity: String,
     val category: String = "",
+    val level: String = "",
 )
 
 internal data class ParentalGuideLabels(
@@ -72,6 +74,12 @@ internal object ParentalGuideRepository {
             cache[normalizedImdbId] = result
         }
         return result
+    }
+
+    suspend fun resolveImdbId(ids: List<String?>, type: String?): String? {
+        ids.firstNotNullOfOrNull(::extractParentalGuideImdbId)?.let { return it }
+        val tmdbId = ids.firstNotNullOfOrNull(::extractParentalGuideTmdbId) ?: return null
+        return TmdbService.tmdbToImdb(tmdbId = tmdbId, mediaType = type.orEmpty())
     }
 }
 
@@ -123,6 +131,7 @@ internal fun buildParentalWarnings(
         .map { (category, severity) ->
             ParentalWarning(
                 category = category,
+                level = severity.lowercase(),
                 label = when (category) {
                     "nudity" -> labels.nudity
                     "violence" -> labels.violence

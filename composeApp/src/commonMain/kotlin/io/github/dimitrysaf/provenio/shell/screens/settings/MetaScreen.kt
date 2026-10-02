@@ -459,6 +459,7 @@ private val MetaScreenSectionKey.titleRes: StringResource
     get() = when (this) {
         MetaScreenSectionKey.ACTIONS -> Res.string.settings_meta_actions
         MetaScreenSectionKey.OVERVIEW -> Res.string.settings_meta_overview
+        MetaScreenSectionKey.PARENTS_GUIDE -> Res.string.settings_meta_parents_guide
         MetaScreenSectionKey.PRODUCTION -> Res.string.settings_meta_production
         MetaScreenSectionKey.CAST -> Res.string.settings_meta_cast
         MetaScreenSectionKey.COMMENTS -> Res.string.settings_meta_comments
@@ -473,6 +474,7 @@ private val MetaScreenSectionKey.descriptionRes: StringResource
     get() = when (this) {
         MetaScreenSectionKey.ACTIONS -> Res.string.settings_meta_actions_description
         MetaScreenSectionKey.OVERVIEW -> Res.string.settings_meta_overview_description
+        MetaScreenSectionKey.PARENTS_GUIDE -> Res.string.settings_meta_parents_guide_description
         MetaScreenSectionKey.PRODUCTION -> Res.string.settings_meta_production_description
         MetaScreenSectionKey.CAST -> Res.string.settings_meta_cast_description
         MetaScreenSectionKey.COMMENTS -> Res.string.settings_meta_comments_description

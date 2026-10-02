@@ -1913,8 +1913,6 @@
     <string name="settings_card_depth_surface_episodes">Epizódkártyák</string>
     <string name="settings_card_depth_surface_cast">Szereplők</string>
     <string name="settings_card_depth_surface_trailers">Előzetesek</string>
-    <string name="settings_playback_parental_guide">Tartalmi figyelmeztetések</string>
-    <string name="settings_playback_parental_guide_description">Szülői felügyeleti figyelmeztetés megjelenítése a lejátszás indításakor.</string>
     <string name="action_remove_anyway">Eltávolítás mindenképp</string>
     <string name="collections_editor_tmdb_without_genres">Kizárt műfaj azonosítók (ID)</string>
     <string name="collections_editor_tmdb_without_genres_helper">Az ezeknek a TMDB műfajszámoknak megfelelő címek kizárása.</string>

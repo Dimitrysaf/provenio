@@ -21,7 +21,6 @@ actual object PlayerSettingsStorage {
     private const val showPlayerLoadingStatusKey = "show_player_loading_status"
     private const val showPlayerControlLabelsKey = "show_player_control_labels"
     private const val pauseOverlayEnabledKey = "pause_overlay_enabled"
-    private const val showParentalGuideKey = "show_parental_guide"
     private const val resizeModeKey = "resize_mode"
     private const val holdToSpeedEnabledKey = "hold_to_speed_enabled"
     private const val holdToSpeedValueKey = "hold_to_speed_value"
@@ -94,7 +93,6 @@ actual object PlayerSettingsStorage {
         showPlayerLoadingStatusKey,
         showPlayerControlLabelsKey,
         pauseOverlayEnabledKey,
-        showParentalGuideKey,
         resizeModeKey,
         holdToSpeedEnabledKey,
         holdToSpeedValueKey,
@@ -220,20 +218,6 @@ actual object PlayerSettingsStorage {
 
     actual fun savePauseOverlayEnabled(enabled: Boolean) {
         NSUserDefaults.standardUserDefaults.setBool(enabled, forKey = ProfileScopedKey.of(pauseOverlayEnabledKey))
-    }
-
-    actual fun loadShowParentalGuide(): Boolean? {
-        val defaults = NSUserDefaults.standardUserDefaults
-        val key = ProfileScopedKey.of(showParentalGuideKey)
-        return if (defaults.objectForKey(key) != null) {
-            defaults.boolForKey(key)
-        } else {
-            null
-        }
-    }
-
-    actual fun saveShowParentalGuide(enabled: Boolean) {
-        NSUserDefaults.standardUserDefaults.setBool(enabled, forKey = ProfileScopedKey.of(showParentalGuideKey))
     }
 
     actual fun loadResizeMode(): String? {
@@ -942,7 +926,6 @@ actual object PlayerSettingsStorage {
         loadShowPlayerLoadingStatus()?.let { put(showPlayerLoadingStatusKey, encodeSyncBoolean(it)) }
         loadShowPlayerControlLabels()?.let { put(showPlayerControlLabelsKey, encodeSyncBoolean(it)) }
         loadPauseOverlayEnabled()?.let { put(pauseOverlayEnabledKey, encodeSyncBoolean(it)) }
-        loadShowParentalGuide()?.let { put(showParentalGuideKey, encodeSyncBoolean(it)) }
         loadResizeMode()?.let { put(resizeModeKey, encodeSyncString(it)) }
         loadHoldToSpeedEnabled()?.let { put(holdToSpeedEnabledKey, encodeSyncBoolean(it)) }
         loadHoldToSpeedValue()?.let { put(holdToSpeedValueKey, encodeSyncFloat(it)) }
@@ -1020,7 +1003,6 @@ actual object PlayerSettingsStorage {
         payload.decodeSyncBoolean(showPlayerLoadingStatusKey)?.let(::saveShowPlayerLoadingStatus)
         payload.decodeSyncBoolean(showPlayerControlLabelsKey)?.let(::saveShowPlayerControlLabels)
         payload.decodeSyncBoolean(pauseOverlayEnabledKey)?.let(::savePauseOverlayEnabled)
-        payload.decodeSyncBoolean(showParentalGuideKey)?.let(::saveShowParentalGuide)
         payload.decodeSyncString(resizeModeKey)?.let(::saveResizeMode)
         payload.decodeSyncBoolean(holdToSpeedEnabledKey)?.let(::saveHoldToSpeedEnabled)
         payload.decodeSyncFloat(holdToSpeedValueKey)?.let(::saveHoldToSpeedValue)

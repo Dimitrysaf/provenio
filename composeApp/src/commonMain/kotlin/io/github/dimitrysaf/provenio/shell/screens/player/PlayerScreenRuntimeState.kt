@@ -23,8 +23,6 @@ import io.github.dimitrysaf.provenio.core.watch.watched.WatchedUiState
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import io.github.dimitrysaf.provenio.core.playback.ParentalGuideLabels
-import io.github.dimitrysaf.provenio.core.playback.ParentalWarning
 import io.github.dimitrysaf.provenio.core.playback.AddonSubtitle
 import io.github.dimitrysaf.provenio.core.playback.AudioTrack
 import io.github.dimitrysaf.provenio.core.playback.PlayerResizeMode
@@ -98,7 +96,6 @@ internal class PlayerScreenRuntime(
     var airsPrefix: String = ""
     var tbaLabel: String = ""
     var genericUnknownLabel: String = ""
-    var parentalGuideLabels: ParentalGuideLabels = ParentalGuideLabels("", "", "", "", "", "", "", "")
 
     var gestureController: PlayerGestureController? = null
 
@@ -178,10 +175,6 @@ internal class PlayerScreenRuntime(
     var skipIntervals by mutableStateOf<List<SkipInterval>>(emptyList())
     var activeSkipInterval by mutableStateOf<SkipInterval?>(null)
     var skipIntervalDismissed by mutableStateOf(false)
-    var parentalWarnings by mutableStateOf<List<ParentalWarning>>(emptyList())
-    var showParentalGuide by mutableStateOf(false)
-    var parentalGuideHasShown by mutableStateOf(false)
-    var playbackStartedForParentalGuide by mutableStateOf(false)
     var nextEpisodeInfo by mutableStateOf<NextEpisodeInfo?>(null)
     var showNextEpisodeCard by mutableStateOf(false)
     var nextEpisodeCardDismissed by mutableStateOf(false)

@@ -13,7 +13,6 @@ data class PlayerSettingsUiState(
     val showPlayerLoadingStatus: Boolean = true,
     val showPlayerControlLabels: Boolean = false,
     val pauseOverlayEnabled: Boolean = true,
-    val showParentalGuide: Boolean = true,
     val resizeMode: PlayerResizeMode = PlayerResizeMode.Fit,
     val holdToSpeedEnabled: Boolean = true,
     val holdToSpeedValue: Float = 2f,
@@ -82,7 +81,6 @@ object PlayerSettingsRepository {
     private var showPlayerLoadingStatus = true
     private var showPlayerControlLabels = false
     private var pauseOverlayEnabled = true
-    private var showParentalGuide = true
     private var resizeMode = PlayerResizeMode.Fit
     private var holdToSpeedEnabled = true
     private var holdToSpeedValue = 2f
@@ -156,7 +154,6 @@ object PlayerSettingsRepository {
         showPlayerLoadingStatus = true
         showPlayerControlLabels = false
         pauseOverlayEnabled = true
-        showParentalGuide = true
         resizeMode = PlayerResizeMode.Fit
         holdToSpeedEnabled = true
         holdToSpeedValue = 2f
@@ -223,7 +220,6 @@ object PlayerSettingsRepository {
         showPlayerLoadingStatus = PlayerSettingsStorage.loadShowPlayerLoadingStatus() ?: true
         showPlayerControlLabels = PlayerSettingsStorage.loadShowPlayerControlLabels() ?: false
         pauseOverlayEnabled = PlayerSettingsStorage.loadPauseOverlayEnabled() ?: true
-        showParentalGuide = PlayerSettingsStorage.loadShowParentalGuide() ?: true
         resizeMode = PlayerSettingsStorage.loadResizeMode()
             ?.let { runCatching { PlayerResizeMode.valueOf(it) }.getOrNull() }
             ?: PlayerResizeMode.Fit
@@ -385,14 +381,6 @@ object PlayerSettingsRepository {
         pauseOverlayEnabled = enabled
         publish()
         PlayerSettingsStorage.savePauseOverlayEnabled(enabled)
-    }
-
-    fun setShowParentalGuide(enabled: Boolean) {
-        ensureLoaded()
-        if (showParentalGuide == enabled) return
-        showParentalGuide = enabled
-        publish()
-        PlayerSettingsStorage.saveShowParentalGuide(enabled)
     }
 
     fun setResizeMode(mode: PlayerResizeMode) {
@@ -929,7 +917,6 @@ object PlayerSettingsRepository {
             showPlayerLoadingStatus = showPlayerLoadingStatus,
             showPlayerControlLabels = showPlayerControlLabels,
             pauseOverlayEnabled = pauseOverlayEnabled,
-            showParentalGuide = showParentalGuide,
             resizeMode = resizeMode,
             holdToSpeedEnabled = holdToSpeedEnabled,
             holdToSpeedValue = holdToSpeedValue,

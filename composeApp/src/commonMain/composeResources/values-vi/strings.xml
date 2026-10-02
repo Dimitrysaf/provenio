@@ -1063,8 +1063,6 @@
     <string name="settings_playback_selected_count">Đã chọn %1$d</string>
     <string name="settings_playback_show_loading_overlay">Lớp phủ Đang tải</string>
     <string name="settings_playback_show_loading_overlay_description">Hiển thị màn hình tải đến khi khung hình video đầu tiên xuất hiện.</string>
-    <string name="settings_playback_parental_guide">Cảnh báo nội dung</string>
-    <string name="settings_playback_parental_guide_description">Hiển thị lớp phủ khuyến cáo phụ huynh khi phát lại bắt đầu.</string>
     <string name="settings_playback_subtitle_background_color">Màu nền</string>
     <string name="settings_playback_subtitle_bold">In đậm</string>
     <string name="settings_playback_subtitle_bold_description">Dùng phông chữ phụ đề đậm hơn.</string>

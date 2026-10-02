@@ -1,7 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
 import io.github.dimitrysaf.provenio.core.watch.watching.domain.isSettledPlaybackDuration
-import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbService
 import io.github.dimitrysaf.provenio.core.tracking.TrackingMediaReference
 import io.github.dimitrysaf.provenio.core.tracking.TrackingScrobbleAction
 import io.github.dimitrysaf.provenio.core.tracking.TrackingScrobbleCoordinator
@@ -14,8 +13,6 @@ import io.github.dimitrysaf.provenio.core.watch.progress.buildPlaybackVideoId
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import io.github.dimitrysaf.provenio.core.playback.extractParentalGuideImdbId
-import io.github.dimitrysaf.provenio.core.playback.extractParentalGuideTmdbId
 import io.github.dimitrysaf.provenio.core.playback.TrackingScrobbleItemInputs
 import io.github.dimitrysaf.provenio.core.playback.shouldSendStopScrobble
 import io.github.dimitrysaf.provenio.core.playback.shouldUpdateTrackingScrobbleAfterSeek
@@ -224,25 +221,6 @@ internal fun PlayerScreenRuntime.emitTrackingSeekScrobbleStart() {
             ),
         )
     }
-}
-
-internal fun PlayerScreenRuntime.tryShowParentalGuide() {
-    if (!playerSettingsUiState.showParentalGuide) return
-    if (!parentalGuideHasShown && parentalWarnings.isNotEmpty() && !playbackStartedForParentalGuide) {
-        playbackStartedForParentalGuide = true
-        showParentalGuide = true
-        parentalGuideHasShown = true
-    }
-}
-
-internal suspend fun PlayerScreenRuntime.resolveParentalGuideImdbId(): String? {
-    val candidates = listOf(parentMetaId, activeVideoId)
-    candidates.firstNotNullOfOrNull(::extractParentalGuideImdbId)?.let { return it }
-    val tmdbId = candidates.firstNotNullOfOrNull(::extractParentalGuideTmdbId) ?: return null
-    return TmdbService.tmdbToImdb(
-        tmdbId = tmdbId,
-        mediaType = contentType ?: parentMetaType,
-    )
 }
 
 // Where a reloaded stream should start: a stream still loading reports 0, so until it plays it keeps the resume point it was opened with.

@@ -1061,8 +1061,6 @@
     <string name="settings_playback_selected_count">%1$d избрани</string>
     <string name="settings_playback_show_loading_overlay">Наслагване при зареждане</string>
     <string name="settings_playback_show_loading_overlay_description">Показвай екран за зареждане до появата на първия видео кадър.</string>
-    <string name="settings_playback_parental_guide">Предупреждения за съдържанието</string>
-    <string name="settings_playback_parental_guide_description">Да се показват надписи за родителски контрол при стартиране на възпроизвеждането</string>
     <string name="settings_playback_subtitle_background_color">Цвят на фона</string>
     <string name="settings_playback_subtitle_bold">Удебелени</string>
     <string name="settings_playback_subtitle_bold_description">Използвай по-видима дебелина на шрифта за субтитри.</string>

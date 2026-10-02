@@ -27,17 +27,8 @@ import provenio.composeapp.generated.resources.compose_player_resize_fill
 import provenio.composeapp.generated.resources.compose_player_resize_fit
 import provenio.composeapp.generated.resources.compose_player_resize_zoom
 import provenio.composeapp.generated.resources.generic_unknown
-import provenio.composeapp.generated.resources.parental_alcohol
-import provenio.composeapp.generated.resources.parental_frightening
-import provenio.composeapp.generated.resources.parental_nudity
-import provenio.composeapp.generated.resources.parental_profanity
-import provenio.composeapp.generated.resources.parental_severity_mild
-import provenio.composeapp.generated.resources.parental_severity_moderate
-import provenio.composeapp.generated.resources.parental_severity_severe
-import provenio.composeapp.generated.resources.parental_violence
 import provenio.composeapp.generated.resources.compose_player_tba
 import org.jetbrains.compose.resources.stringResource
-import io.github.dimitrysaf.provenio.core.playback.ParentalGuideLabels
 import io.github.dimitrysaf.provenio.core.playback.PlayerStreamsRepository
 import io.github.dimitrysaf.provenio.core.playback.mergeStreamAndAddonSubtitles
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
@@ -114,16 +105,6 @@ internal fun PlayerScreenContent(args: PlayerScreenArgs) {
         runtime.airsPrefix = stringResource(Res.string.compose_player_airs_prefix)
         runtime.tbaLabel = stringResource(Res.string.compose_player_tba)
         runtime.genericUnknownLabel = stringResource(Res.string.generic_unknown)
-        runtime.parentalGuideLabels = ParentalGuideLabels(
-            nudity = stringResource(Res.string.parental_nudity),
-            violence = stringResource(Res.string.parental_violence),
-            profanity = stringResource(Res.string.parental_profanity),
-            alcohol = stringResource(Res.string.parental_alcohol),
-            frightening = stringResource(Res.string.parental_frightening),
-            severe = stringResource(Res.string.parental_severity_severe),
-            moderate = stringResource(Res.string.parental_severity_moderate),
-            mild = stringResource(Res.string.parental_severity_mild),
-        )
         if (runtime.playerMetaVideos.isEmpty()) {
             runtime.playerMetaVideos = MetaDetailsRepository.peek(
                 args.parentMetaType,

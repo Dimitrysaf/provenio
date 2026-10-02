@@ -29,9 +29,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
-import io.github.dimitrysaf.provenio.core.playback.ParentalGuideRepository
 import io.github.dimitrysaf.provenio.core.playback.PlayerStreamsRepository
-import io.github.dimitrysaf.provenio.core.playback.buildParentalWarnings
 import io.github.dimitrysaf.provenio.core.playback.PlayerTrackPreferenceStorage
 import io.github.dimitrysaf.provenio.core.playback.PlayerNowPlayingInfo
 import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
@@ -378,7 +376,6 @@ private fun PlayerScreenRuntime.BindPlayerUiVisibilityEffects() {
         playbackSnapshot.isPlaying,
         playbackSnapshot.isLoading,
         shouldPlay,
-        showParentalGuide,
         errorMessage,
     ) {
         // They stay up only while paused; loading toward playing hides them like playing does.
@@ -387,7 +384,6 @@ private fun PlayerScreenRuntime.BindPlayerUiVisibilityEffects() {
             !controlsVisible ||
             isScrubbingTimeline ||
             !playingOrHeadingThere ||
-            showParentalGuide ||
             errorMessage != null
         ) {
             return@LaunchedEffect
@@ -458,27 +454,6 @@ private fun PlayerScreenRuntime.BindPlayerUiVisibilityEffects() {
 
 @Composable
 private fun PlayerScreenRuntime.BindPlayerMetadataAndSkipEffects() {
-    LaunchedEffect(activeVideoId, activeSeasonNumber, activeEpisodeNumber, parentMetaId, parentMetaType) {
-        parentalWarnings = emptyList()
-        showParentalGuide = false
-        parentalGuideHasShown = false
-        playbackStartedForParentalGuide = false
-
-        val imdbId = resolveParentalGuideImdbId() ?: return@LaunchedEffect
-        val guide = ParentalGuideRepository.getParentalGuide(imdbId) ?: return@LaunchedEffect
-        parentalWarnings = buildParentalWarnings(guide, parentalGuideLabels)
-
-        if (playbackSnapshot.isPlaying) {
-            tryShowParentalGuide()
-        }
-    }
-
-    LaunchedEffect(playbackSnapshot.isPlaying, parentalWarnings) {
-        if (playbackSnapshot.isPlaying) {
-            tryShowParentalGuide()
-        }
-    }
-
     LaunchedEffect(activeVideoId, activeSeasonNumber, activeEpisodeNumber) {
         skipIntervals = emptyList()
         activeSkipInterval = null

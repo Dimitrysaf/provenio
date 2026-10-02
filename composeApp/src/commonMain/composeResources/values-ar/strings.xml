@@ -995,8 +995,6 @@
     <string name="settings_playback_selected_count">تم تحديد %1$d</string>
     <string name="settings_playback_show_loading_overlay">واجهة التحميل</string>
     <string name="settings_playback_show_loading_overlay_description">إظهار شاشة التحميل حتى يظهر أول إطار للفيديو.</string>
-    <string name="settings_playback_parental_guide">تحذيرات المحتوى</string>
-    <string name="settings_playback_parental_guide_description">عرض تصنيف المحتوى عند بدء التشغيل.</string>
     <string name="settings_playback_subtitle_background_color">لون الخلفية</string>
     <string name="settings_playback_subtitle_bold">عريض</string>
     <string name="settings_playback_subtitle_bold_description">استخدام وزن خط أثقل للترجمة.</string>

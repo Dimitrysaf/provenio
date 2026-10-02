@@ -278,12 +278,6 @@ private fun PlayerGroup(
                 checked = { settings.pauseOverlayEnabled },
                 onCheckedChange = PlayerSettingsRepository::setPauseOverlayEnabled,
             )
-            switchRow(
-                title = stringResource(Res.string.settings_playback_parental_guide),
-                description = stringResource(Res.string.settings_playback_parental_guide_description),
-                checked = { settings.showParentalGuide },
-                onCheckedChange = PlayerSettingsRepository::setShowParentalGuide,
-            )
             // Player preference picker: Internal / External
             navigationRow(
                 title = stringResource(Res.string.settings_playback_player_preference),

@@ -94,6 +94,7 @@ import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.metadata.HeroTrailerAudioState
 import io.github.dimitrysaf.provenio.core.metadata.MetaCompany
+import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSectionKey
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
 import io.github.dimitrysaf.provenio.core.metadata.MetaPerson
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenBackgroundMode
@@ -533,6 +534,12 @@ private fun MetaDetailsContent(
     val hasCollectionSection = sectionContent.hasCollection
     val hasTrailersSection = sectionContent.hasTrailers
     val moreLikeThisItems = sectionContent.moreLikeThisItems
+    val parentalWarnings = rememberDetailParentalWarnings(
+        meta = meta,
+        enabled = deferredMetaWorkAllowed && metaScreenSettingsUiState.items.any {
+            it.key == MetaScreenSectionKey.PARENTS_GUIDE && it.enabled
+        },
+    )
     val inAppTrailerPlaybackEnabled = AppFeaturePolicy.trailerPlaybackMode == TrailerPlaybackMode.IN_APP
     var isLeavingDetails by remember(meta.id) { mutableStateOf(false) }
     val heroTrailerPlaybackEnabled = AppFeaturePolicy.heroTrailerPlaybackSupported &&
@@ -617,6 +624,7 @@ private fun MetaDetailsContent(
                             hasAdditionalInfoSection = hasAdditionalInfoSection,
                             hasCollectionSection = hasCollectionSection,
                             moreLikeThisItems = moreLikeThisItems,
+                            parentalWarnings = parentalWarnings,
                             shouldShowComments = shouldShowComments,
                             comments = comments.items,
                             isCommentsLoading = comments.isLoading,
@@ -669,6 +677,7 @@ private fun MetaDetailsContent(
                     hasAdditionalInfoSection = hasAdditionalInfoSection,
                     hasCollectionSection = hasCollectionSection,
                     moreLikeThisItems = moreLikeThisItems,
+                    parentalWarnings = parentalWarnings,
                     shouldShowComments = shouldShowComments,
                     comments = comments.items,
                     isCommentsLoading = comments.isLoading,

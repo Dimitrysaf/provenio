@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import io.github.dimitrysaf.provenio.core.playback.ParentalWarning
 import io.github.dimitrysaf.provenio.core.playback.shouldSendStopScrobble
 import io.github.dimitrysaf.provenio.core.playback.shouldUpdateTrackingScrobbleAfterSeek
 
@@ -17,17 +16,6 @@ class PlayerScreenRuntimeStateTest {
     @Test
     fun controlsStartHidden() {
         assertFalse(PlayerScreenRuntime(testPlayerScreenArgs()).controlsVisible)
-    }
-
-    @Test
-    fun parentalGuideDoesNotRevealPlaybackControls() {
-        val runtime = PlayerScreenRuntime(testPlayerScreenArgs())
-        runtime.parentalWarnings = listOf(ParentalWarning(label = "Violence", severity = "Mild"))
-
-        runtime.tryShowParentalGuide()
-
-        assertTrue(runtime.showParentalGuide)
-        assertFalse(runtime.controlsVisible)
     }
 
     @Test
