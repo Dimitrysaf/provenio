@@ -25,6 +25,8 @@ import io.github.dimitrysaf.provenio.core.collection.CollectionStorage
 import io.github.dimitrysaf.provenio.core.debrid.DebridSettingsStorage
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsLiveStatusPlatform
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsPlatformDownloader
+import io.github.dimitrysaf.provenio.core.diagnostics.AppLogs
+import io.github.dimitrysaf.provenio.core.downloads.DownloadsArchive
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsStorage
 import io.github.dimitrysaf.provenio.core.library.LibraryDisplaySettingsStorage
 import io.github.dimitrysaf.provenio.core.membership.MemberAssetStorage
@@ -139,7 +141,9 @@ open class MainActivity : AppCompatActivity() {
         PluginStorage.initialize(applicationContext)
         CollectionMobileSettingsStorage.initialize(applicationContext)
         CollectionStorage.initialize(applicationContext)
+        AppLogs.initialize(applicationContext)
         DownloadsStorage.initialize(applicationContext)
+        DownloadsArchive.initialize(applicationContext)
         DownloadsPlatformDownloader.initialize(applicationContext)
         DownloadsLiveStatusPlatform.initialize(applicationContext)
         AndroidAppUpdaterPlatform.initialize(applicationContext)

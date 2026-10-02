@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import io.github.dimitrysaf.provenio.core.build.AppVersionConfig
+import io.github.dimitrysaf.provenio.core.diagnostics.AppLogs
 import io.github.dimitrysaf.provenio.core.updater.AppUpdaterPlatform
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.compose_about_channel_beta
@@ -196,6 +197,7 @@ internal fun LazyListScope.settingsRootContent(
     }
     if (showAdvancedSection) {
         item {
+            val saveLogs = if (AppLogs.isSupported) rememberSaveLogsRow() else null
             SettingsSection(
                 title = stringResource(Res.string.compose_settings_root_advanced_section),
                 isTablet = isTablet,
@@ -214,6 +216,7 @@ internal fun LazyListScope.settingsRootContent(
                         icon = Icons.Rounded.Keyboard,
                         onClick = onKeyboardShortcutsClick,
                     )
+                    saveLogs?.let { saveLogsRow(it) }
                 }
             }
         }

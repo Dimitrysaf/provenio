@@ -26,6 +26,7 @@ class DownloadsNotificationActionReceiver : BroadcastReceiver() {
         }
 
         DownloadsStorage.initialize(context.applicationContext)
+        DownloadsArchive.initialize(context.applicationContext)
         DownloadsPlatformDownloader.initialize(context.applicationContext)
         DownloadsLiveStatusPlatform.initialize(context.applicationContext)
         DownloadsRepository.ensureLoaded()

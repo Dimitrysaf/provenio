@@ -22,7 +22,9 @@ internal object DesktopFolderChooser {
 
     fun chooseFolder(title: String, initial: File?): FolderChoice {
         if (osName.contains("linux")) {
-            runCatching { PortalFolderChooser.choose(title) }.getOrNull()?.let { return it }
+            runCatching { FileChooserPortal.request("OpenFile", title, "'directory': <true>") }
+                .getOrNull()
+                ?.let { return it }
         }
         return if (osName.contains("mac")) chooseWithMacDialog(title, initial) else chooseWithSystemLookAndFeel(title, initial)
     }
@@ -58,12 +60,14 @@ internal object DesktopFolderChooser {
     }
 }
 
-private object PortalFolderChooser {
+// The XDG desktop portal's file chooser, which shows the desktop's own dialog, sandboxed or not.
+internal object FileChooserPortal {
     private val glib: GLib get() = DesktopDbus.glib
     private val gio: Gio get() = DesktopDbus.gio
     private val gobject: GObject get() = DesktopDbus.gobject
 
-    fun choose(title: String): FolderChoice? {
+    // What the user chose, or null when the portal is unavailable.
+    fun request(method: String, title: String, options: String): FolderChoice? {
         val connection = gio.g_bus_get_sync(GBusTypeSession, null, null) ?: return null
         val context = glib.g_main_context_new()
         glib.g_main_context_push_thread_default(context)
@@ -100,7 +104,7 @@ private object PortalFolderChooser {
             try {
                 val parameters = glib.g_variant_parse(
                     null,
-                    "('', ${title.toGVariantString()}, {'handle_token': <${token.toGVariantString()}>, 'directory': <true>, 'modal': <true>})",
+                    "('', ${title.toGVariantString()}, {'handle_token': <${token.toGVariantString()}>, $options, 'modal': <true>})",
                     null,
                     null,
                     null,
@@ -110,7 +114,7 @@ private object PortalFolderChooser {
                     PortalBusName,
                     PortalObjectPath,
                     "org.freedesktop.portal.FileChooser",
-                    "OpenFile",
+                    method,
                     parameters,
                     null,
                     0,

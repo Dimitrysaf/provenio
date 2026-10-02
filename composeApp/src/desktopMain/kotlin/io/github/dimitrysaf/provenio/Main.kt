@@ -68,6 +68,7 @@ import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingEnrichm
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPreferencesStorage
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedStorage
+import io.github.dimitrysaf.provenio.core.diagnostics.AppLogs
 import io.github.dimitrysaf.provenio.desktop.Context
 import io.github.dimitrysaf.provenio.desktop.DesktopDisplayScale
 import io.github.dimitrysaf.provenio.desktop.DesktopLaunchScreen
@@ -90,6 +91,7 @@ import org.jetbrains.compose.resources.stringResource
 
 fun main(args: Array<String>) {
     if (!SingleInstance.claim(args)) exitProcess(0)
+    AppLogs.install(Context.app)
     runCatching { File("/proc/self/comm").writeText("Provenio") }
     initializePlatform(Context.app)
     DesktopDisplayScale.start()

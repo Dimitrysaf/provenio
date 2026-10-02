@@ -84,6 +84,11 @@
     <string name="addons_version_format">Version %1$s</string>
     <string name="keyboard_shortcuts_title">Keyboard shortcuts</string>
     <string name="keyboard_shortcuts_entry_description">Every shortcut for the app and the player</string>
+    <string name="settings_save_logs_title">Save logs</string>
+    <string name="settings_save_logs_description">Save the app's logs to a file to share when reporting a problem</string>
+    <string name="settings_save_logs_collecting">Gathering logs…</string>
+    <string name="settings_save_logs_saved">Logs saved</string>
+    <string name="settings_save_logs_failed">Couldn't save the logs</string>
     <string name="keyboard_shortcuts_intro">Shortcuts work with a physical keyboard. On a Mac, use ⌘ instead of Ctrl.</string>
     <string name="keyboard_section_general">GENERAL</string>
     <string name="keyboard_section_navigation">MOVING AROUND</string>

@@ -7,6 +7,7 @@ import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamRequest
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
 import io.github.dimitrysaf.provenio.core.p2p.buildP2pMagnetUri
+import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -180,6 +181,7 @@ object DownloadsRepository {
             releaseTorrentEngine(existing.id)
             DownloadsPlatformDownloader.removeFile(playableLocalFileUri(existing) ?: existing.localFileUri)
             DownloadsPlatformDownloader.removePartialFile(existing.fileName)
+            DownloadsArchive.remove(existing.fileName)
             currentItems.removeAll { it.id == existing.id }
         }
 
@@ -306,6 +308,7 @@ object DownloadsRepository {
         releaseTorrentEngine(downloadId)
         DownloadsPlatformDownloader.removeFile(playableLocalFileUri(item) ?: item.localFileUri)
         DownloadsPlatformDownloader.removePartialFile(item.fileName)
+        DownloadsArchive.remove(item.fileName)
 
         publish(_uiState.value.items.filterNot { it.id == downloadId })
         persist()
@@ -314,11 +317,6 @@ object DownloadsRepository {
     private fun loadFromDisk() {
         hasLoaded = true
         val payload = DownloadsStorage.loadPayload().orEmpty().trim()
-        if (payload.isEmpty()) {
-            _uiState.value = DownloadsUiState()
-            notifyLiveStatusPlatform()
-            return
-        }
 
         var shouldPersistNormalized = false
         val normalized = DownloadsCodec.decodeItems(payload)
@@ -332,13 +330,76 @@ object DownloadsRepository {
                 localUriNormalized
             }
 
-        _uiState.value = DownloadsUiState(normalized)
+        val records = DownloadsArchive.records().mapNotNull(DownloadsCodec::decodeArchived)
+        val recovered = recoverDownloads(normalized, records)
+        val items = if (recovered.isEmpty()) {
+            normalized
+        } else {
+            shouldPersistNormalized = true
+            (normalized + recovered).sortedByDescending { it.createdAtEpochMs }
+        }
+
+        _uiState.value = DownloadsUiState(items)
         notifyLiveStatusPlatform()
         if (shouldPersistNormalized) {
             persist()
         }
-        normalized.filter { it.status == DownloadStatus.Downloading && it.id !in activeHandles }
+        val archived = records.mapTo(mutableSetOf()) { it.item.fileName }
+        items.filter { it.status == DownloadStatus.Completed && it.fileName !in archived }.forEach(::archive)
+        items.filter { it.status == DownloadStatus.Downloading && it.id !in activeHandles }
             .forEach(::startDownload)
+    }
+
+    private fun archive(item: DownloadItem) {
+        if (item.status != DownloadStatus.Completed) return
+        val record = ArchivedDownload(profileId = ProfileRepository.activeProfileId, item = item)
+        DownloadsArchive.save(item.fileName, DownloadsCodec.encodeArchived(record))
+    }
+
+    /**
+     * Finished downloads whose files are still there but which this profile no longer lists, as
+     * after the app's data was cleared: first from the records kept beside the files, then, for
+     * files without one, from what the file name says.
+     */
+    private fun recoverDownloads(current: List<DownloadItem>, records: List<ArchivedDownload>): List<DownloadItem> {
+        val activeProfile = ProfileRepository.activeProfileId
+        val knownProfiles = ProfileRepository.state.value.profiles.mapTo(mutableSetOf()) { it.profileIndex }
+        val profiles = knownProfiles + activeProfile
+        val otherProfileItems = profiles.filter { it != activeProfile }
+            .flatMap { profile -> DownloadsCodec.decodeItems(DownloadsStorage.loadPayload(profile).orEmpty()) }
+        val claimedFiles = (current + otherProfileItems).flatMapTo(mutableSetOf()) { it.fileNames() }
+        val knownIds = current.mapTo(mutableSetOf()) { it.id }
+        val recovered = mutableListOf<DownloadItem>()
+
+        for (record in records) {
+            val item = record.item
+            // A record whose profile is gone, as after clearing the app's data, joins the profile in use.
+            val belongsHere = record.profileId == activeProfile ||
+                (knownProfiles.isNotEmpty() && record.profileId !in profiles)
+            if (!belongsHere || item.id in knownIds || item.fileNames().any { it in claimedFiles }) continue
+            val localFileUri = DownloadsPlatformDownloader.resolveLocalFileUri(item.localFileUri, item.fileName)
+                ?: continue
+            val restored = item.copy(
+                status = DownloadStatus.Completed,
+                localFileUri = localFileUri,
+                errorMessage = null,
+            )
+            recovered += restored
+            knownIds += restored.id
+            claimedFiles += restored.fileNames()
+        }
+        records.forEach { claimedFiles += it.item.fileNames() }
+
+        for (localFileUri in DownloadsArchive.mediaFileUris()) {
+            val fileName = localFileUri.fileNameFromUri() ?: continue
+            if (fileName in claimedFiles) continue
+            val item = downloadFromFileName(fileName, localFileUri) ?: continue
+            if (item.id in knownIds) continue
+            recovered += item
+            knownIds += item.id
+            claimedFiles += fileName
+        }
+        return recovered
     }
 
     private fun startDownload(item: DownloadItem) {
@@ -431,6 +492,7 @@ object DownloadsRepository {
                         updatedAtEpochMs = DownloadsClock.nowEpochMs(),
                     )
                 }
+                _uiState.value.items.firstOrNull { it.id == item.id }?.let(::archive)
             },
             onFailure = { message ->
                 activeHandles.remove(item.id)
@@ -545,6 +607,12 @@ object DownloadsRepository {
 }
 
 @Serializable
+internal data class ArchivedDownload(
+    val profileId: Int,
+    val item: DownloadItem,
+)
+
+@Serializable
 private data class StoredDownloadsPayload(
     val items: List<DownloadItem> = emptyList(),
 )
@@ -559,6 +627,11 @@ private object DownloadsCodec {
         runCatching {
             json.decodeFromString<StoredDownloadsPayload>(payload).items
         }.getOrDefault(emptyList())
+
+    fun decodeArchived(record: String): ArchivedDownload? =
+        runCatching { json.decodeFromString<ArchivedDownload>(record) }.getOrNull()
+
+    fun encodeArchived(record: ArchivedDownload): String = json.encodeToString(record)
 
     fun encodeItems(items: Collection<DownloadItem>): String =
         json.encodeToString(
@@ -644,6 +717,73 @@ private fun buildFileName(
         append('.')
         append(extension)
     }
+}
+
+private fun DownloadItem.fileNames(): Set<String> =
+    setOfNotNull(fileName.takeIf { it.isNotBlank() }, localFileUri?.fileNameFromUri())
+
+// The last path segment of a file URI, with its percent escapes decoded.
+private fun String.fileNameFromUri(): String? {
+    val segment = substringBefore('?').substringAfterLast('/').takeIf { it.isNotBlank() } ?: return null
+    val bytes = ArrayList<Byte>(segment.length)
+    var index = 0
+    while (index < segment.length) {
+        val char = segment[index]
+        val escaped = if (char == '%' && index + 2 < segment.length) {
+            segment.substring(index + 1, index + 3).toIntOrNull(16)
+        } else {
+            null
+        }
+        if (escaped != null) {
+            bytes += escaped.toByte()
+            index += 3
+        } else {
+            char.toString().encodeToByteArray().forEach { bytes += it }
+            index++
+        }
+    }
+    return bytes.toByteArray().decodeToString()
+}
+
+private val RecoveredFileNamePattern = Regex("""^(.*)_([0-9a-z]+_[0-9a-z]+)$""")
+private val RecoveredEpisodePattern = Regex("""^(.*?) S(\d{1,3})E(\d{1,4})(?: (.*))?$""")
+
+// A download rebuilt from a file named the way this app names them: the title, the season and
+// episode for a series, then the download's id. Whatever the name does not carry stays empty.
+private fun downloadFromFileName(fileName: String, localFileUri: String): DownloadItem? {
+    val baseName = fileName.substringBeforeLast('.', missingDelimiterValue = fileName)
+    val named = RecoveredFileNamePattern.matchEntire(baseName)
+    val downloadId = named?.groupValues?.get(2)
+    val label = (named?.groupValues?.get(1) ?: baseName).trim().ifBlank { return null }
+    val episode = RecoveredEpisodePattern.matchEntire(label)
+    val title = (episode?.groupValues?.get(1) ?: label).trim().ifBlank { label }
+    val seasonNumber = episode?.groupValues?.get(2)?.toIntOrNull()
+    val episodeNumber = episode?.groupValues?.get(3)?.toIntOrNull()
+    val episodeTitle = episode?.groupValues?.get(4)?.trim()?.takeIf { it.isNotBlank() }
+    val type = if (seasonNumber != null && episodeNumber != null) "series" else "movie"
+    val showId = "local:${title.lowercase()}"
+    val id = downloadId ?: "local-${fileName.hashCode().toUInt()}"
+    val now = DownloadsClock.nowEpochMs()
+    val createdAt = downloadId?.substringBefore('_')?.toLongOrNull(36)?.takeIf { it in 1..now } ?: now
+    return DownloadItem(
+        id = id,
+        contentType = type,
+        parentMetaId = showId,
+        parentMetaType = type,
+        videoId = if (type == "series") "$showId:$seasonNumber:$episodeNumber" else showId,
+        title = title,
+        seasonNumber = seasonNumber,
+        episodeNumber = episodeNumber,
+        episodeTitle = episodeTitle,
+        streamTitle = fileName,
+        providerName = "",
+        sourceUrl = localFileUri,
+        localFileUri = localFileUri,
+        fileName = fileName,
+        status = DownloadStatus.Completed,
+        createdAtEpochMs = createdAt,
+        updatedAtEpochMs = now,
+    )
 }
 
 private fun String.sanitizeFileName(): String =

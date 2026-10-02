@@ -64,6 +64,11 @@
     <string name="addons_version_format">Έκδοση %1$s</string>
     <string name="keyboard_shortcuts_title">Συντομεύσεις πληκτρολογίου</string>
     <string name="keyboard_shortcuts_entry_description">Όλες οι συντομεύσεις για την εφαρμογή και το πρόγραμμα αναπαραγωγής</string>
+    <string name="settings_save_logs_title">Αποθήκευση αρχείων καταγραφής</string>
+    <string name="settings_save_logs_description">Αποθηκεύστε τα αρχεία καταγραφής της εφαρμογής σε αρχείο για να τα στείλετε όταν αναφέρετε ένα πρόβλημα</string>
+    <string name="settings_save_logs_collecting">Συλλογή αρχείων καταγραφής…</string>
+    <string name="settings_save_logs_saved">Τα αρχεία καταγραφής αποθηκεύτηκαν</string>
+    <string name="settings_save_logs_failed">Δεν ήταν δυνατή η αποθήκευση των αρχείων καταγραφής</string>
     <string name="keyboard_shortcuts_intro">Οι συντομεύσεις λειτουργούν με φυσικό πληκτρολόγιο. Σε Mac, χρησιμοποιήστε το ⌘ αντί για το Ctrl.</string>
     <string name="keyboard_section_general">ΓΕΝΙΚΑ</string>
     <string name="keyboard_section_navigation">ΠΛΟΗΓΗΣΗ</string>
