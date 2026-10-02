@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import io.ktor.util.date.GMTDate
@@ -155,16 +156,16 @@ object StreamsRepository {
             )
         }
 
-        val embeddedGroups = StreamBadgePresentation.apply(
-            groups = embeddedStreamGroups(
-                MetaDetailsRepository.findEmbeddedStreams(videoId = videoId, type = type, parentMetaId = parentMetaId),
-            ),
-            rules = streamBadgeRules,
+        val metadataEmbeddedStreams = MetaDetailsRepository.findEmbeddedStreams(
+            videoId = videoId,
+            type = type,
+            parentMetaId = parentMetaId,
         )
         val embeddedLookupMetaId = parentMetaId?.takeIf {
-            embeddedGroups.isEmpty() && !MetaDetailsRepository.isMetaKnown(type, it)
+            metadataEmbeddedStreams.isEmpty() && !MetaDetailsRepository.isMetaKnown(type, it)
         }
-        val hasEmbeddedSource = embeddedGroups.isNotEmpty() || embeddedLookupMetaId != null
+        val specialLookup = if (season == 0 && parentMetaId != null && episode != null) parentMetaId to episode else null
+        val hasEmbeddedSource = metadataEmbeddedStreams.isNotEmpty() || embeddedLookupMetaId != null || specialLookup != null
 
         val installedAddons = AddonRepository.uiState.value.addons.enabledAddons()
         val pluginScrapers = if (AppFeaturePolicy.pluginsEnabled) {
@@ -218,11 +219,18 @@ object StreamsRepository {
             StreamsEmptyStateReason.NoCompatibleAddons
         }
         val hasOtherSources = streamAddons.isNotEmpty() || pluginProviderGroups.isNotEmpty()
-        val initialEmbeddedGroups = if (embeddedLookupMetaId != null) {
-            listOf(embeddedLookupGroup(runBlocking { getString(Res.string.source_embedded) }))
-        } else {
-            embeddedGroups
-        }
+        val embeddedSources = EmbeddedSourceState(
+            metadataStreams = metadataEmbeddedStreams,
+            metadataPending = embeddedLookupMetaId != null,
+            specialPending = specialLookup != null,
+            pendingLabel = if (embeddedLookupMetaId != null || specialLookup != null) {
+                runBlocking { getString(Res.string.source_embedded) }
+            } else {
+                ""
+            },
+            present = { groups -> StreamBadgePresentation.apply(groups = groups, rules = streamBadgeRules) },
+        )
+        val initialEmbeddedGroups = embeddedSources.initialGroups()
         val installedAddonOrder = streamAddons.map { it.addonName }
         val initialGroups = StreamAutoPlaySelector.orderAddonStreams(initialEmbeddedGroups + streamAddons.map { addon ->
             AddonStreamGroup(
@@ -433,9 +441,33 @@ object StreamsRepository {
                         log.w(error) { "Failed to look up embedded streams for $metaId" }
                         emptyList()
                     }
-                    publishEmbeddedGroups(
-                        StreamBadgePresentation.apply(groups = embeddedStreamGroups(streams), rules = streamBadgeRules),
-                    )
+                    publishEmbeddedGroups(embeddedSources.metadataLoaded(streams))
+                }
+            }
+
+            val specialContext = specialLookup?.let { (metaId, specialEpisode) ->
+                async {
+                    runCatchingUnlessCancelled {
+                        SpecialSourceFinder.context(type = type, parentMetaId = metaId, episode = specialEpisode)
+                    }.getOrElse { error ->
+                        log.w(error) { "Failed to look up special $metaId:0:$specialEpisode" }
+                        null
+                    }
+                }
+            }
+            val specialImdbId = specialContext?.let { context ->
+                async {
+                    context.await()?.let { found ->
+                        runCatchingUnlessCancelled { SpecialSourceFinder.imdbId(found) }.getOrNull()
+                    }
+                }
+            }
+            val specialSourcesJob = specialContext?.let { context ->
+                launch {
+                    val streams = context.await()?.let { found ->
+                        runCatchingUnlessCancelled { SpecialSourceFinder.streams(found) }.getOrNull()
+                    }.orEmpty()
+                    publishEmbeddedGroups(embeddedSources.specialsLoaded(streams))
                 }
             }
 
@@ -527,7 +559,10 @@ object StreamsRepository {
                             )
                         },
                     )
-                    publishCompletion(StreamLoadCompletion.Addon(group))
+                    val completedGroup = group.withSpecialStreams(
+                        addon.fetchSpecialStreams(specialImdbId = specialImdbId?.await(), forceRefresh = forceRefresh),
+                    )
+                    publishCompletion(StreamLoadCompletion.Addon(completedGroup))
                 }
             }
 
@@ -630,6 +665,7 @@ object StreamsRepository {
                 availabilityJob.join()
             }
             embeddedLookupJob?.join()
+            specialSourcesJob?.join()
 
             cacheGroups(cacheKey, _uiState.value.groups)
 

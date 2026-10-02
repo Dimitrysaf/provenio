@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.core.streams
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
 internal const val EmbeddedSourceAddonId = "embedded"
 
 private val KnownEmbeddedSources = listOf(
@@ -69,7 +72,7 @@ internal fun List<AddonStreamGroup>.withoutEmbeddedSources(): List<AddonStreamGr
 internal fun List<AddonStreamGroup>.embeddedPlayableStreams(): List<StreamItem> =
     filter { it.isEmbeddedSource }
         .flatMap { it.streams }
-        .filter { it.playableDirectUrl != null }
+        .filter { it.playableDirectUrl != null && !it.discovered }
 
 internal fun List<AddonStreamGroup>.embeddedAutoPlayStreams(season: Int?): List<StreamItem> {
     val embedded = embeddedPlayableStreams()
@@ -78,4 +81,34 @@ internal fun List<AddonStreamGroup>.embeddedAutoPlayStreams(season: Int?): List<
     val others = withoutEmbeddedSources()
     val othersSettled = others.none { it.isLoading }
     return if (othersSettled && others.none { it.streams.isNotEmpty() }) embedded else emptyList()
+}
+
+internal class EmbeddedSourceState(
+    private var metadataStreams: List<StreamItem>,
+    private var metadataPending: Boolean,
+    private var specialPending: Boolean,
+    private val pendingLabel: String,
+    private val present: (List<AddonStreamGroup>) -> List<AddonStreamGroup>,
+) {
+    private var specialStreams: List<StreamItem> = emptyList()
+    private val mutex = Mutex()
+
+    fun initialGroups(): List<AddonStreamGroup> = groups()
+
+    suspend fun metadataLoaded(streams: List<StreamItem>): List<AddonStreamGroup> = mutex.withLock {
+        metadataStreams = streams
+        metadataPending = false
+        groups()
+    }
+
+    suspend fun specialsLoaded(streams: List<StreamItem>): List<AddonStreamGroup> = mutex.withLock {
+        specialStreams = streams
+        specialPending = false
+        groups()
+    }
+
+    private fun groups(): List<AddonStreamGroup> {
+        val found = present(embeddedStreamGroups((metadataStreams + specialStreams).distinctSources()))
+        return if (metadataPending || specialPending) found + embeddedLookupGroup(pendingLabel) else found
+    }
 }
