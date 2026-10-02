@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,8 +26,9 @@ import org.jetbrains.compose.resources.stringResource
  * A description that opens, with a button that says so.
  *
  * The whole block used to be the target, which a paragraph of text does not look like. A
- * full-width tonal button under the text is the only thing that moves the state, so nothing is
- * clickable that does not look it.
+ * full-width text button under the text is the only thing that moves the state, so nothing is
+ * clickable that does not look it; with no container of its own, it sits on whatever backdrop
+ * the page has.
  *
  * m3.material.io/components/buttons/specs
  */
@@ -60,7 +61,7 @@ internal fun ExpandableDescription(
             },
         )
         if (canExpand) {
-            FilledTonalButton(
+            TextButton(
                 onClick = { expanded = !expanded },
                 modifier = Modifier
                     .fillMaxWidth()

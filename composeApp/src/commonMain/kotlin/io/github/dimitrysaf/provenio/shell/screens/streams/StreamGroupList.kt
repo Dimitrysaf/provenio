@@ -68,24 +68,39 @@ import io.github.dimitrysaf.provenio.core.streams.isSelectableForPlayback
 /**
  * Which add-ons are open.
  *
- * Every add-on starts open, so the page reads as one list until someone folds a section away;
- * the set therefore holds what is closed rather than what is shown.
+ * Add-ons start open, so the page reads as one list until someone folds a section away. Groups
+ * that only link out to a streaming service, like a store or a subscription, start folded: they
+ * are a list of where else to watch rather than something to play here. Groups arrive as they
+ * load, so the set holds the groups someone has flipped from that default rather than a fixed
+ * list of what is open.
  */
-internal class StreamGroupExpansion(initiallyCollapsed: Set<String>) {
-    var collapsed by mutableStateOf(initiallyCollapsed)
-        private set
+internal class StreamGroupExpansion {
+    private var flipped by mutableStateOf(emptySet<String>())
 
-    fun isExpanded(addonId: String): Boolean = addonId !in collapsed
+    fun isExpanded(group: AddonStreamGroup): Boolean =
+        group.expandedByDefault != (group.addonId in flipped)
 
     fun toggle(addonId: String) {
-        collapsed = if (addonId in collapsed) collapsed - addonId else collapsed + addonId
+        flipped = if (addonId in flipped) flipped - addonId else flipped + addonId
     }
 }
+
+/**
+ * The groups without their links out to streaming services, and without any group that held
+ * nothing else. A group still answering keeps its row, since more may yet arrive.
+ */
+internal fun List<AddonStreamGroup>.withoutExternalServiceLinks(): List<AddonStreamGroup> =
+    map { group -> group.copy(streams = group.streams.filterNot { it.shouldOpenExternally }) }
+        .filter { it.streams.isNotEmpty() || it.isLoading }
+
+/** A group of links to streaming services stays folded until opened; anything else is open. */
+private val AddonStreamGroup.expandedByDefault: Boolean
+    get() = streams.isEmpty() || !streams.all { it.shouldOpenExternally }
 
 /** Folding is per visit to a title, so a new set of streams opens fully again. */
 @Composable
 internal fun rememberStreamGroupExpansion(key: Any?): StreamGroupExpansion =
-    remember(key) { StreamGroupExpansion(emptySet()) }
+    remember(key) { StreamGroupExpansion() }
 
 /**
  * One row of the sheet, before it knows what shape it will be drawn with.
@@ -119,7 +134,7 @@ internal fun buildStreamListEntries(
         if (group.streams.isEmpty() && !group.isLoading) return@forEachIndexed
 
         val sectionKey = streamSectionRenderKey(groupIndex = groupIndex, group = group)
-        val expanded = expansion.isExpanded(group.addonId)
+        val expanded = expansion.isExpanded(group)
         add(
             StreamListEntry.Addon(
                 key = "stream_group_$sectionKey",

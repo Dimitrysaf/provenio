@@ -1172,7 +1172,7 @@
     <string name="details_series_unpublished">Episoadele nu au fost încă publicate de această extensie.</string>
     <string name="details_servers_unreachable">Dispozitivul tău este online, dar Provenio nu a putut accesa serverele necesare.</string>
     <string name="details_show_less">Arată mai puțin</string>
-    <string name="details_show_more">Arată mai mult ▾</string>
+    <string name="details_show_more">Arată mai mult</string>
     <string name="details_writer">Scenarist</string>
     <string name="discover_all_genres">Toate genurile</string>
     <string name="discover_catalog">Catalog</string>

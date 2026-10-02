@@ -978,7 +978,7 @@
     <string name="details_series_unpublished">A kiegészítő még nem tette közzé ezeket az epizódokat.</string>
     <string name="details_servers_unreachable">Az eszközöd online, de a Provenio nem érte el a szükséges szervereket.</string>
     <string name="details_show_less">Kevesebb</string>
-    <string name="details_show_more">Több ▾</string>
+    <string name="details_show_more">Több</string>
     <string name="details_writer">Író</string>
     <string name="discover_all_genres">Minden műfaj</string>
     <string name="discover_catalog">Katalógus</string>

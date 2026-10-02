@@ -1303,7 +1303,7 @@
     <string name="details_series_unpublished">لم تنشر هذه الإضافة الحلقات بعد.</string>
     <string name="details_servers_unreachable">جهازك متصل بالإنترنت، لكن تعذر على Provenio الوصول إلى الخوادم المطلوبة.</string>
     <string name="details_show_less">عرض أقل</string>
-    <string name="details_show_more">عرض المزيد ▾</string>
+    <string name="details_show_more">عرض المزيد</string>
     <string name="details_writer">الكاتب</string>
     <string name="discover_all_genres">جميع التصنيفات</string>
     <string name="discover_catalog">الكتالوج</string>

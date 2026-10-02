@@ -1144,7 +1144,7 @@
     <string name="details_series_unpublished">このアドオンはまだエピソードを公開していません。</string>
     <string name="details_servers_unreachable">デバイスはオンラインですが、Provenioは必要なサーバーに到達できませんでした。</string>
     <string name="details_show_less">折りたたむ</string>
-    <string name="details_show_more">もっと見る ▾</string>
+    <string name="details_show_more">もっと見る</string>
     <string name="details_writer">脚本</string>
     <string name="discover_all_genres">すべてのジャンル</string>
     <string name="discover_catalog">カタログ</string>

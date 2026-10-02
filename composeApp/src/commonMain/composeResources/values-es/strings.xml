@@ -1372,7 +1372,7 @@
     <string name="details_series_unpublished">Este addon aún no ha publicado episodios.</string>
     <string name="details_servers_unreachable">Tu dispositivo está en línea, pero Provenio no pudo conectarse a los servidores necesarios.</string>
     <string name="details_show_less">Mostrar menos</string>
-    <string name="details_show_more">Mostrar más ▾</string>
+    <string name="details_show_more">Mostrar más</string>
     <string name="details_writer">Guionista</string>
     <string name="discover_all_genres">Todos los géneros</string>
     <string name="discover_catalog">Catálogo</string>

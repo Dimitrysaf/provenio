@@ -43,6 +43,7 @@ internal fun LazyListScope.integrationsContent(
                 navigationRow(
                     title = stringResource(Res.string.compose_settings_page_streaming_availability),
                     description = stringResource(Res.string.settings_integrations_streaming_availability_description),
+                    opensPage = true,
                     onClick = onStreamingAvailabilityClick,
                 )
                 navigationRow(

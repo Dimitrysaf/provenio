@@ -11,10 +11,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import io.github.dimitrysaf.provenio.core.metadata.MetaScreenBackgroundMode
 
 /**
- * The page's backdrop: the title's artwork across the whole screen, blurred into frosted glass
- * behind everything else.
+ * The page's backdrop. [MetaScreenBackgroundMode.Normal] leaves the plain page colour;
+ * [MetaScreenBackgroundMode.Cinematic] lays the artwork across the whole screen, blurred into
+ * frosted glass behind everything else.
  *
  * The page colour is laid over it as a gradient rather than a flat sheet. Near the top, around
  * the hero, it is thin enough for the artwork's colour and light to come through; further down,
@@ -23,10 +25,11 @@ import coil3.compose.AsyncImage
  */
 @Composable
 internal fun DetailBackdrop(
+    mode: MetaScreenBackgroundMode,
     backdropUrl: String?,
     visible: Boolean,
 ) {
-    if (!visible || backdropUrl.isNullOrBlank()) return
+    if (mode != MetaScreenBackgroundMode.Cinematic || !visible || backdropUrl.isNullOrBlank()) return
     val background = MaterialTheme.colorScheme.background
     AsyncImage(
         model = backdropUrl,

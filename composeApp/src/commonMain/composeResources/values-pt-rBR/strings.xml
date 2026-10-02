@@ -997,7 +997,7 @@
     <string name="details_series_unpublished">Episódios ainda não foram publicados por este addon.</string>
     <string name="details_servers_unreachable">Seu dispositivo está online, mas o Provenio não pôde alcançar os servidores necessários.</string>
     <string name="details_show_less">Mostrar Menos</string>
-    <string name="details_show_more">Mostrar Mais ▾</string>
+    <string name="details_show_more">Mostrar Mais</string>
     <string name="details_writer">Roteirista</string>
     <string name="discover_all_genres">Todos os Gêneros</string>
     <string name="discover_catalog">Catálogo</string>

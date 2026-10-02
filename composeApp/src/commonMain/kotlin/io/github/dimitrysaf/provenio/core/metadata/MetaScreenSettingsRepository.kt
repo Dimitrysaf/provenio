@@ -37,10 +37,34 @@ data class MetaScreenSectionItem(
 
 data class MetaScreenSettingsUiState(
     val items: List<MetaScreenSectionItem> = emptyList(),
+    val backgroundMode: MetaScreenBackgroundMode = MetaScreenBackgroundMode.Normal,
     val heroTrailerPlayback: Boolean = false,
     val blurUnwatchedEpisodes: Boolean = false,
     val posterTransitionEnabled: Boolean = false,
 )
+
+/** What sits behind the Detail and person pages. */
+enum class MetaScreenBackgroundMode {
+    Normal,
+    /** The title's artwork, blurred across the whole page. */
+    Cinematic,
+    ;
+
+    companion object {
+        fun parse(raw: String?): MetaScreenBackgroundMode? = when (raw?.lowercase()) {
+            "normal" -> Normal
+            "cinematic" -> Cinematic
+            // The removed dominant colour mode also drew from the artwork, so it carries on as Cinematic.
+            "dominant_color" -> Cinematic
+            else -> null
+        }
+
+        fun persist(mode: MetaScreenBackgroundMode): String = when (mode) {
+            Normal -> "normal"
+            Cinematic -> "cinematic"
+        }
+    }
+}
 
 @Serializable
 private data class StoredMetaScreenSectionPreference(
@@ -52,6 +76,10 @@ private data class StoredMetaScreenSectionPreference(
 @Serializable
 private data class StoredMetaScreenSettingsPayload(
     val items: List<StoredMetaScreenSectionPreference> = emptyList(),
+    @SerialName("background_mode")
+    val backgroundMode: String? = null,
+    /** Older payloads stored the background as this flag before there was a choice of modes. */
+    val cinematicBackground: Boolean = false,
     @SerialName("hero_trailer_playback")
     val heroTrailerPlayback: Boolean = false,
     @SerialName("blur_unwatched_episodes")
@@ -135,6 +163,7 @@ object MetaScreenSettingsRepository {
 
     private var hasLoaded = false
     private var preferences: MutableMap<MetaScreenSectionKey, StoredMetaScreenSectionPreference> = mutableMapOf()
+    private var backgroundMode: MetaScreenBackgroundMode = MetaScreenBackgroundMode.Normal
     private var heroTrailerPlayback: Boolean = false
     private var blurUnwatchedEpisodes: Boolean = false
     private var posterTransitionEnabled: Boolean = false
@@ -150,6 +179,8 @@ object MetaScreenSettingsRepository {
                 json.decodeFromString<StoredMetaScreenSettingsPayload>(payload)
             }.getOrNull()
             if (parsed != null) {
+                backgroundMode = MetaScreenBackgroundMode.parse(parsed.backgroundMode)
+                    ?: if (parsed.cinematicBackground) MetaScreenBackgroundMode.Cinematic else MetaScreenBackgroundMode.Normal
                 heroTrailerPlayback = parsed.heroTrailerPlayback
                 blurUnwatchedEpisodes = parsed.blurUnwatchedEpisodes
                 posterTransitionEnabled = parsed.posterTransitionEnabled
@@ -168,11 +199,19 @@ object MetaScreenSettingsRepository {
     fun onProfileChanged() {
         hasLoaded = false
         preferences.clear()
+        backgroundMode = MetaScreenBackgroundMode.Normal
         heroTrailerPlayback = false
         blurUnwatchedEpisodes = false
         posterTransitionEnabled = false
         _uiState.value = MetaScreenSettingsUiState()
         ensureLoaded()
+    }
+
+    fun setBackgroundMode(mode: MetaScreenBackgroundMode) {
+        ensureLoaded()
+        backgroundMode = mode
+        publish()
+        persist()
     }
 
     fun setHeroTrailerPlayback(enabled: Boolean) {
@@ -199,6 +238,7 @@ object MetaScreenSettingsRepository {
     fun clearLocalState() {
         hasLoaded = false
         preferences.clear()
+        backgroundMode = MetaScreenBackgroundMode.Normal
         heroTrailerPlayback = false
         blurUnwatchedEpisodes = false
         posterTransitionEnabled = false
@@ -289,6 +329,7 @@ object MetaScreenSettingsRepository {
                         order = preference?.order ?: 0,
                     )
                 },
+            backgroundMode = backgroundMode,
             heroTrailerPlayback = heroTrailerPlayback,
             blurUnwatchedEpisodes = blurUnwatchedEpisodes,
             posterTransitionEnabled = posterTransitionEnabled,
@@ -300,6 +341,8 @@ object MetaScreenSettingsRepository {
             json.encodeToString(
                 StoredMetaScreenSettingsPayload(
                     items = preferences.values.sortedBy { it.order },
+                    backgroundMode = MetaScreenBackgroundMode.persist(backgroundMode),
+                    cinematicBackground = backgroundMode == MetaScreenBackgroundMode.Cinematic,
                     heroTrailerPlayback = heroTrailerPlayback,
                     blurUnwatchedEpisodes = blurUnwatchedEpisodes,
                     posterTransitionEnabled = posterTransitionEnabled,

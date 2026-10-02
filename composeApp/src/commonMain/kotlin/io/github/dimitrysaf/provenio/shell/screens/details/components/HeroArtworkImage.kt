@@ -16,10 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.shell.components.skeleton
@@ -34,7 +32,6 @@ internal fun HeroArtworkImage(
     portraitFallbackUrl: String? = null,
     alignment: Alignment = Alignment.Center,
     colorFilter: ColorFilter? = null,
-    onLoaded: (Painter, ImageBitmap?) -> Unit = { _, _ -> },
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val containerRatio = if (maxHeight.value > 0f) maxWidth.value / maxHeight.value else 1f
@@ -73,7 +70,6 @@ internal fun HeroArtworkImage(
                 } else {
                     imageRatio = ratio
                     settled = true
-                    onLoaded(state.painter, loadedBackdropImageBitmap(state.result))
                 }
             },
             onError = {

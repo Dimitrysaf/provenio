@@ -6,6 +6,11 @@ data class TmdbSettings(
     val apiKey: String = "",
     val useTrailers: Boolean = true,
     val useArtwork: Boolean = true,
+    /**
+     * An addon's own poster and main artwork stay first; TMDB's artwork is added after them rather
+     * than replacing them.
+     */
+    val preferAddonArtwork: Boolean = false,
     val useBasicInfo: Boolean = true,
     val useDetails: Boolean = true,
     val useReleaseDates: Boolean = false,

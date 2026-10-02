@@ -818,12 +818,23 @@ object TmdbMetadataService {
         var updated = meta
 
         if (enrichment != null && settings.useArtwork) {
-            updated = updated.copy(
-                background = enrichment.backdrop ?: updated.background,
-                extraArtwork = enrichment.extraBackdrops.ifEmpty { updated.extraArtwork },
-                poster = enrichment.poster ?: updated.poster,
-                logo = enrichment.logo ?: updated.logo,
-            )
+            updated = if (settings.preferAddonArtwork) {
+                // The addon's poster and main artwork lead; TMDB's follow them instead of replacing
+                // them, and fill in only what the addon left out.
+                updated.copy(
+                    background = updated.background ?: enrichment.backdrop,
+                    extraArtwork = listOfNotNull(enrichment.backdrop) + enrichment.extraBackdrops + updated.extraArtwork,
+                    poster = updated.poster ?: enrichment.poster,
+                    logo = enrichment.logo ?: updated.logo,
+                )
+            } else {
+                updated.copy(
+                    background = enrichment.backdrop ?: updated.background,
+                    extraArtwork = enrichment.extraBackdrops.ifEmpty { updated.extraArtwork },
+                    poster = enrichment.poster ?: updated.poster,
+                    logo = enrichment.logo ?: updated.logo,
+                )
+            }
         }
 
         if (enrichment != null && settings.useBasicInfo) {

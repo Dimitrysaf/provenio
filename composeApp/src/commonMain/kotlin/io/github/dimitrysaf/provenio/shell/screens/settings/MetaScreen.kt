@@ -25,6 +25,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import provenio.composeapp.generated.resources.settings_meta_background_mode_cinematic_description
+import provenio.composeapp.generated.resources.settings_meta_background_mode_cinematic
+import provenio.composeapp.generated.resources.settings_meta_background_mode_normal_description
+import provenio.composeapp.generated.resources.settings_meta_background_mode_normal
+import provenio.composeapp.generated.resources.settings_meta_background_mode_description
+import provenio.composeapp.generated.resources.settings_meta_background_mode
+import io.github.dimitrysaf.provenio.core.metadata.MetaScreenBackgroundMode
+import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
+import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -85,11 +97,17 @@ internal fun LazyListScope.metaScreenSettingsContent(
     val showHeroTrailerPlaybackSetting = AppFeaturePolicy.heroTrailerPlaybackSupported &&
         AppFeaturePolicy.trailerPlaybackMode == TrailerPlaybackMode.IN_APP
     item {
+        var showBackgroundSheet by rememberSaveable { mutableStateOf(false) }
         SettingsSection(
             title = stringResource(Res.string.settings_meta_section_appearance),
             isTablet = isTablet,
         ) {
             SettingsList {
+                navigationRow(
+                    title = stringResource(Res.string.settings_meta_background_mode),
+                    description = stringResource(uiState.backgroundMode.labelRes),
+                    onClick = { showBackgroundSheet = true },
+                )
                 if (supportsPosterNavigationMotion) {
                     switchRow(
                         title = stringResource(Res.string.settings_meta_poster_transition),
@@ -113,6 +131,22 @@ internal fun LazyListScope.metaScreenSettingsContent(
                     onCheckedChange = { MetaScreenSettingsRepository.setBlurUnwatchedEpisodes(it) },
                 )
             }
+        }
+        if (showBackgroundSheet) {
+            SingleChoiceBottomSheet(
+                title = stringResource(Res.string.settings_meta_background_mode),
+                description = stringResource(Res.string.settings_meta_background_mode_description),
+                options = MetaScreenBackgroundMode.entries.map { mode ->
+                    SingleChoiceOption(
+                        value = mode,
+                        label = stringResource(mode.labelRes),
+                        supportingText = stringResource(mode.descriptionRes),
+                    )
+                },
+                isSelected = { it == uiState.backgroundMode },
+                onSelected = MetaScreenSettingsRepository::setBackgroundMode,
+                onDismiss = { showBackgroundSheet = false },
+            )
         }
     }
     item {
@@ -257,6 +291,18 @@ private fun MetaSectionRow(
         Text(stringResource(item.key.titleRes))
     }
 }
+
+private val MetaScreenBackgroundMode.labelRes: StringResource
+    get() = when (this) {
+        MetaScreenBackgroundMode.Normal -> Res.string.settings_meta_background_mode_normal
+        MetaScreenBackgroundMode.Cinematic -> Res.string.settings_meta_background_mode_cinematic
+    }
+
+private val MetaScreenBackgroundMode.descriptionRes: StringResource
+    get() = when (this) {
+        MetaScreenBackgroundMode.Normal -> Res.string.settings_meta_background_mode_normal_description
+        MetaScreenBackgroundMode.Cinematic -> Res.string.settings_meta_background_mode_cinematic_description
+    }
 
 private val MetaScreenSectionKey.titleRes: StringResource
     get() = when (this) {

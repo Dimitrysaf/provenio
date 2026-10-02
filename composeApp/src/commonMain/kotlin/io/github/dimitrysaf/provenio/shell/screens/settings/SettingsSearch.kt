@@ -475,6 +475,15 @@ internal fun settingsSearchEntries(
     )
     addRow(
         page = SettingsPage.Streams,
+        key = "stream-hide-external-links",
+        title = stringResource(Res.string.settings_stream_hide_external_links_title),
+        description = stringResource(Res.string.settings_stream_hide_external_links_description),
+        pageLabel = streamsPage,
+        section = stringResource(Res.string.settings_stream_display_section),
+        icon = Icons.Rounded.Style,
+    )
+    addRow(
+        page = SettingsPage.Streams,
         key = "stream-size-badges",
         title = stringResource(Res.string.settings_stream_size_badges_title),
         description = stringResource(Res.string.settings_stream_size_badges_description),
@@ -744,6 +753,7 @@ internal fun settingsSearchEntries(
         )
     }
     listOf(
+        PlaybackSearchRow("meta-background-mode", stringResource(Res.string.settings_meta_background_mode), stringResource(Res.string.settings_meta_background_mode_description)),
         PlaybackSearchRow("meta-blur-episodes", stringResource(Res.string.settings_meta_blur_unwatched_episodes), stringResource(Res.string.settings_meta_blur_unwatched_episodes_description)),
     ).forEach { row ->
         addRow(
@@ -821,6 +831,7 @@ internal fun settingsSearchEntries(
         PlaybackSearchRow("tmdb-language", stringResource(Res.string.settings_tmdb_preferred_language), stringResource(Res.string.settings_tmdb_preferred_language_description), stringResource(Res.string.settings_tmdb_section_localization)),
         PlaybackSearchRow("tmdb-trailers", stringResource(Res.string.settings_tmdb_module_trailers), stringResource(Res.string.settings_tmdb_module_trailers_description), tmdbModulesSection),
         PlaybackSearchRow("tmdb-artwork", stringResource(Res.string.settings_tmdb_module_artwork), stringResource(Res.string.settings_tmdb_module_artwork_description), tmdbModulesSection),
+        PlaybackSearchRow("tmdb-prefer-addon-artwork", stringResource(Res.string.settings_tmdb_prefer_addon_artwork), stringResource(Res.string.settings_tmdb_prefer_addon_artwork_description), tmdbModulesSection),
         PlaybackSearchRow("tmdb-basic-info", stringResource(Res.string.settings_tmdb_module_basic_info), stringResource(Res.string.settings_tmdb_module_basic_info_description), tmdbModulesSection),
         PlaybackSearchRow("tmdb-details", stringResource(Res.string.settings_tmdb_module_details), stringResource(Res.string.settings_tmdb_module_details_description), tmdbModulesSection),
         PlaybackSearchRow("tmdb-credits", stringResource(Res.string.settings_tmdb_module_credits), stringResource(Res.string.settings_tmdb_module_credits_description), tmdbModulesSection),

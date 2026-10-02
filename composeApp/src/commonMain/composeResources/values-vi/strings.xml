@@ -1392,7 +1392,7 @@
     <string name="details_series_unpublished">Các tập phim vẫn chưa được cập nhật bởi tiện ích này.</string>
     <string name="details_servers_unreachable">Thiết bị của bạn đang trực tuyến, nhưng Provenio không thể kết nối tới các máy chủ cần thiết.</string>
     <string name="details_show_less">Thu gọn</string>
-    <string name="details_show_more">Xem thêm ▾</string>
+    <string name="details_show_more">Xem thêm</string>
     <string name="details_writer">Biên kịch</string>
     <string name="discover_all_genres">Tất cả thể loại</string>
     <string name="discover_catalog">Danh mục</string>

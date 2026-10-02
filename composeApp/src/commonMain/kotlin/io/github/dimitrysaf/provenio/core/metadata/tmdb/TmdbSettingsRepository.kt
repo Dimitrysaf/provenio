@@ -18,6 +18,7 @@ object TmdbSettingsRepository {
     private var apiKey = ""
     private var useTrailers = true
     private var useArtwork = true
+    private var preferAddonArtwork = false
     private var useBasicInfo = true
     private var useDetails = true
     private var useReleaseDates = false
@@ -83,6 +84,16 @@ object TmdbSettingsRepository {
         update = { useArtwork = it },
         persist = TmdbSettingsStorage::saveUseArtwork,
     )
+
+    fun setPreferAddonArtwork(value: Boolean) {
+        ensureLoaded()
+        if (preferAddonArtwork == value) return
+        preferAddonArtwork = value
+        publish()
+        TmdbSettingsStorage.savePreferAddonArtwork(value)
+        // Titles already loaded carry the artwork order they were enriched with.
+        invalidateReleaseDateMetadata()
+    }
 
     fun setUseBasicInfo(value: Boolean) = setBoolean(
         current = useBasicInfo,
@@ -179,6 +190,7 @@ object TmdbSettingsRepository {
         apiKey = TmdbSettingsStorage.loadApiKey().orEmpty().trim()
         useTrailers = TmdbSettingsStorage.loadUseTrailers() ?: true
         useArtwork = TmdbSettingsStorage.loadUseArtwork() ?: true
+        preferAddonArtwork = TmdbSettingsStorage.loadPreferAddonArtwork() ?: false
         useBasicInfo = TmdbSettingsStorage.loadUseBasicInfo() ?: true
         useDetails = TmdbSettingsStorage.loadUseDetails() ?: true
         useReleaseDates = TmdbSettingsStorage.loadUseReleaseDates() ?: false
@@ -202,6 +214,7 @@ object TmdbSettingsRepository {
             apiKey = apiKey,
             useTrailers = useTrailers,
             useArtwork = useArtwork,
+            preferAddonArtwork = preferAddonArtwork,
             useBasicInfo = useBasicInfo,
             useDetails = useDetails,
             useReleaseDates = useReleaseDates,
@@ -215,6 +228,7 @@ object TmdbSettingsRepository {
         )
     }
 
+    // Drops loaded titles so they are enriched again under the current settings.
     private fun invalidateReleaseDateMetadata() {
         MetaDetailsRepository.clear()
         ContinueWatchingEnrichmentCache.clearAll(ProfileRepository.activeProfileId)

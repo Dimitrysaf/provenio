@@ -15,6 +15,9 @@ import io.github.dimitrysaf.provenio.core.streams.StreamLinkCacheStorage
  * list used to highlight nothing.
  */
 internal fun StreamItem.playbackIdentity(): String? {
+    // A link out to a streaming service is never what plays here, and every service a title
+    // lists can share the same link, so it names nothing.
+    if (shouldOpenExternally) return null
     val infoHash = p2pInfoHash ?: infoHash ?: clientResolve?.infoHash
     val canonicalHash = infoHash?.trim()?.lowercase()?.takeIf { it.isNotEmpty() }
     if (canonicalHash != null) {

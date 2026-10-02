@@ -41,10 +41,11 @@ import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.normalizeLanguage
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.settings_tmdb_enable_enrichment
-import provenio.composeapp.generated.resources.settings_tmdb_enable_enrichment_description
 import provenio.composeapp.generated.resources.settings_tmdb_language_code_label
 import provenio.composeapp.generated.resources.settings_tmdb_module_artwork
 import provenio.composeapp.generated.resources.settings_tmdb_module_artwork_description
+import provenio.composeapp.generated.resources.settings_tmdb_prefer_addon_artwork
+import provenio.composeapp.generated.resources.settings_tmdb_prefer_addon_artwork_description
 import provenio.composeapp.generated.resources.settings_tmdb_module_basic_info
 import provenio.composeapp.generated.resources.settings_tmdb_module_basic_info_description
 import provenio.composeapp.generated.resources.settings_tmdb_module_collections
@@ -71,7 +72,6 @@ import provenio.composeapp.generated.resources.settings_tmdb_preferred_language
 import provenio.composeapp.generated.resources.settings_tmdb_preferred_language_description
 import provenio.composeapp.generated.resources.settings_tmdb_section_localization
 import provenio.composeapp.generated.resources.settings_tmdb_section_modules
-import provenio.composeapp.generated.resources.settings_tmdb_section_title
 import org.jetbrains.compose.resources.stringResource
 
 private const val TmdbApiKeyUrl = "https://www.themoviedb.org/settings/api"
@@ -134,19 +134,11 @@ internal fun LazyListScope.tmdbSettingsContent(
     val enrichmentControlsEnabled = settings.enabled
 
     item {
-        SettingsSection(
-            title = stringResource(Res.string.settings_tmdb_section_title),
-            isTablet = isTablet,
-        ) {
-            SettingsList {
-                switchRow(
-                    title = stringResource(Res.string.settings_tmdb_enable_enrichment),
-                    description = stringResource(Res.string.settings_tmdb_enable_enrichment_description),
-                    checked = { settings.enabled },
-                    onCheckedChange = TmdbSettingsRepository::setEnabled,
-                )
-            }
-        }
+        SettingsMainSwitch(
+            title = stringResource(Res.string.settings_tmdb_enable_enrichment),
+            checked = settings.enabled,
+            onCheckedChange = TmdbSettingsRepository::setEnabled,
+        )
     }
 
     item {
@@ -211,6 +203,8 @@ internal fun LazyListScope.tmdbSettingsContent(
         }
     }
 
+    // The key stays reachable while enrichment is off; everything below shapes enrichment itself.
+    if (!settings.enabled) return
     item {
         var showLanguageDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -268,6 +262,16 @@ internal fun LazyListScope.tmdbSettingsContent(
                     enabled = enrichmentControlsEnabled,
                     onCheckedChange = TmdbSettingsRepository::setUseArtwork,
                 )
+                // Ordering TMDB's artwork against an addon's only matters while TMDB supplies some.
+                expandableRows(expanded = settings.useArtwork) {
+                    TmdbToggleRow(
+                        title = stringResource(Res.string.settings_tmdb_prefer_addon_artwork),
+                        description = stringResource(Res.string.settings_tmdb_prefer_addon_artwork_description),
+                        checked = { settings.preferAddonArtwork },
+                        enabled = enrichmentControlsEnabled,
+                        onCheckedChange = TmdbSettingsRepository::setPreferAddonArtwork,
+                    )
+                }
                 TmdbToggleRow(
                     title = stringResource(Res.string.settings_tmdb_module_basic_info),
                     description = stringResource(Res.string.settings_tmdb_module_basic_info_description),

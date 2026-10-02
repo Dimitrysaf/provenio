@@ -31,11 +31,10 @@ import provenio.composeapp.generated.resources.settings_sa_api_key_label
 import provenio.composeapp.generated.resources.settings_sa_api_key_saved
 import provenio.composeapp.generated.resources.settings_sa_api_key_title
 import provenio.composeapp.generated.resources.settings_sa_enable
-import provenio.composeapp.generated.resources.settings_sa_enable_description
 import provenio.composeapp.generated.resources.settings_sa_get_api_key
 import provenio.composeapp.generated.resources.settings_sa_get_api_key_description
 import provenio.composeapp.generated.resources.settings_sa_section_api_key
-import provenio.composeapp.generated.resources.settings_sa_section_title
+import androidx.compose.foundation.layout.Column
 import org.jetbrains.compose.resources.stringResource
 
 private const val StreamingAvailabilitySignUpUrl = "https://www.movieofthenight.com/about/api"
@@ -45,22 +44,17 @@ internal fun LazyListScope.streamingAvailabilitySettingsContent(
     settings: StreamingAvailabilitySettings,
 ) {
     item {
-        SettingsSection(
-            title = stringResource(Res.string.settings_sa_section_title),
-            isTablet = isTablet,
-        ) {
+        Column {
             if (!settings.hasApiKey) {
                 StreamingAvailabilityInfoRow(text = stringResource(Res.string.settings_sa_add_api_key_first))
             }
-            SettingsList {
-                switchRow(
-                    title = stringResource(Res.string.settings_sa_enable),
-                    description = stringResource(Res.string.settings_sa_enable_description),
-                    checked = { settings.enabled },
-                    enabled = settings.hasApiKey,
-                    onCheckedChange = StreamingAvailabilitySettingsRepository::setEnabled,
-                )
-            }
+            SettingsMainSwitch(
+                title = stringResource(Res.string.settings_sa_enable),
+                checked = settings.enabled,
+                // Availability needs a key, so the switch waits for one.
+                enabled = settings.hasApiKey,
+                onCheckedChange = StreamingAvailabilitySettingsRepository::setEnabled,
+            )
         }
     }
 

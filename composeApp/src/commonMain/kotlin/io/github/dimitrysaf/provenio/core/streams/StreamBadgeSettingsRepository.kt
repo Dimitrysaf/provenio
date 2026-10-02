@@ -21,6 +21,8 @@ data class StreamBadgeSettingsUiState(
     /** Size and fusion badges alike. Stored under its original size-badge key, so the choice carries over. */
     val showBadges: Boolean = true,
     val showAddonLogo: Boolean = true,
+    /** Leaves links out to streaming services, like a store or a subscription, off the Streams sheet. */
+    val hideExternalServiceLinks: Boolean = false,
     val badgePlacement: StreamBadgePlacement = StreamBadgePlacement.BOTTOM,
 )
 
@@ -43,6 +45,7 @@ object StreamBadgeSettingsRepository {
     private var streamBadgeRules = StreamBadgeRules()
     private var showBadges = true
     private var showAddonLogo = true
+    private var hideExternalServiceLinks = false
     private var badgePlacement = StreamBadgePlacement.BOTTOM
 
     fun ensureLoaded() {
@@ -59,6 +62,7 @@ object StreamBadgeSettingsRepository {
         streamBadgeRules = StreamBadgeRules()
         showBadges = true
         showAddonLogo = true
+        hideExternalServiceLinks = false
         badgePlacement = StreamBadgePlacement.BOTTOM
         _uiState.value = StreamBadgeSettingsUiState()
     }
@@ -136,6 +140,14 @@ object StreamBadgeSettingsRepository {
         StreamBadgeSettingsStorage.saveShowFileSizeBadges(enabled)
     }
 
+    fun setHideExternalServiceLinks(enabled: Boolean) {
+        ensureLoaded()
+        if (hideExternalServiceLinks == enabled) return
+        hideExternalServiceLinks = enabled
+        publish()
+        StreamBadgeSettingsStorage.saveHideExternalServiceLinks(enabled)
+    }
+
     fun setShowAddonLogo(enabled: Boolean) {
         ensureLoaded()
         if (showAddonLogo == enabled) return
@@ -163,6 +175,7 @@ object StreamBadgeSettingsRepository {
         streamBadgeRules = storedRules ?: legacyRules ?: StreamBadgeRules()
         showBadges = StreamBadgeSettingsStorage.loadShowFileSizeBadges() ?: true
         showAddonLogo = StreamBadgeSettingsStorage.loadShowAddonLogo() ?: true
+        hideExternalServiceLinks = StreamBadgeSettingsStorage.loadHideExternalServiceLinks() ?: false
         badgePlacement = StreamBadgeSettingsStorage.loadStreamBadgePlacement()
             ?.let { storedPlacement ->
                 StreamBadgePlacement.entries.firstOrNull { placement ->
@@ -182,6 +195,7 @@ object StreamBadgeSettingsRepository {
             rules = streamBadgeRules,
             showBadges = showBadges,
             showAddonLogo = showAddonLogo,
+            hideExternalServiceLinks = hideExternalServiceLinks,
             badgePlacement = badgePlacement,
         )
     }

@@ -17,6 +17,7 @@ actual object StreamBadgeSettingsStorage {
     private const val streamBadgeRulesKey = "stream_badge_rules"
     private const val showFileSizeBadgesKey = "show_file_size_badges"
     private const val showAddonLogoKey = "show_addon_logo"
+    private const val hideExternalServiceLinksKey = "hide_external_service_links"
     private const val streamBadgePlacementKey = "stream_badge_placement"
     private const val legacyDebridStreamBadgeRulesKey = "debrid_stream_badge_rules"
 
@@ -46,6 +47,12 @@ actual object StreamBadgeSettingsStorage {
 
     actual fun saveShowAddonLogo(enabled: Boolean) {
         saveBoolean(showAddonLogoKey, enabled)
+    }
+
+    actual fun loadHideExternalServiceLinks(): Boolean? = loadBoolean(hideExternalServiceLinksKey)
+
+    actual fun saveHideExternalServiceLinks(enabled: Boolean) {
+        saveBoolean(hideExternalServiceLinksKey, enabled)
     }
 
     actual fun loadStreamBadgePlacement(): String? = loadString(streamBadgePlacementKey)

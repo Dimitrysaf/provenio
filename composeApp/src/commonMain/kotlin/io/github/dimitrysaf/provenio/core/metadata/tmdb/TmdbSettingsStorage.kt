@@ -13,6 +13,8 @@ internal expect object TmdbSettingsStorage {
     fun saveUseTrailers(enabled: Boolean)
     fun loadUseArtwork(): Boolean?
     fun saveUseArtwork(enabled: Boolean)
+    fun loadPreferAddonArtwork(): Boolean?
+    fun savePreferAddonArtwork(enabled: Boolean)
     fun loadUseBasicInfo(): Boolean?
     fun saveUseBasicInfo(enabled: Boolean)
     fun loadUseDetails(): Boolean?

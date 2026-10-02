@@ -48,11 +48,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,7 +61,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.build.isIos
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.i18n.localizedShortMonthName
-import io.github.dimitrysaf.provenio.core.metadata.MetaScreenBackgroundMode
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.PersonDetail
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbMetadataService
@@ -215,21 +212,12 @@ private fun PersonPage(
         val primaryPaneWeight = if (isTwoPane) DetailPrimaryPaneWeight else 1f
         val backdropUrl = images.firstOrNull()
         val backgroundMode = metaScreenSettingsUiState.backgroundMode
-        val dominantColorEnabled = backgroundMode == MetaScreenBackgroundMode.DominantColor && backdropUrl != null
-        var dominantBackdropPainter by remember(pageKey, backdropUrl) { mutableStateOf<Painter?>(null) }
-        var dominantBackdropImageBitmap by remember(pageKey, backdropUrl) { mutableStateOf<ImageBitmap?>(null) }
-        val dominantBackdropColor = rememberDominantBackdropColor(
-            enabled = dominantColorEnabled,
-            imageBitmap = dominantBackdropImageBitmap,
-            painter = dominantBackdropPainter,
-        )
 
         Box(modifier = Modifier.fillMaxSize()) {
             DetailBackdrop(
                 mode = backgroundMode,
                 backdropUrl = backdropUrl,
                 visible = true,
-                dominantColor = dominantBackdropColor,
             )
             Row(
                 modifier = Modifier
@@ -251,10 +239,6 @@ private fun PersonPage(
                             viewportHeight = viewportHeight,
                             onOpenImage = { viewerIndex = it },
                             onHeightChanged = { scroll.heroHeightPx.intValue = it },
-                            onBackdropLoaded = { painter, imageBitmap ->
-                                dominantBackdropPainter = painter
-                                dominantBackdropImageBitmap = imageBitmap
-                            },
                         )
                     }
 
@@ -289,19 +273,9 @@ private fun PersonPage(
                 }
             }
 
-            if (backgroundMode.usesBackdropBackground && scroll.heroHeightPx.intValue > 0) {
-                DetailHeroFade(
-                    color = dominantBackdropColor.takeIf { dominantColorEnabled } ?: MaterialTheme.colorScheme.background,
-                    widthFraction = primaryPaneWeight,
-                    heroHeightPx = scroll.heroHeightPx,
-                    scrollOffsetPx = scroll.scrollOffsetPx,
-                )
-            }
-
             PersonHeaderOverlay(
                 title = name,
                 isHeroCollapsed = scroll.isHeroCollapsed,
-                backgroundColor = dominantBackdropColor.takeIf { dominantColorEnabled },
                 onBack = onBack,
                 modifier = Modifier.fillMaxWidth(primaryPaneWeight),
             )
@@ -331,7 +305,6 @@ private fun PersonHero(
     viewportHeight: Dp,
     onOpenImage: (Int) -> Unit,
     onHeightChanged: (Int) -> Unit,
-    onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
 ) {
     val pages = images.ifEmpty { listOf("") }
 
@@ -370,9 +343,7 @@ private fun PersonHero(
                         subtitle = subtitle,
                         deceased = deceased,
                         layout = layout,
-                        reportLoaded = true,
                         contentAlpha = { 1f },
-                        onBackdropLoaded = onBackdropLoaded,
                     )
                 }
             } else {
@@ -406,9 +377,7 @@ private fun PersonHero(
                             subtitle = subtitle,
                             deceased = deceased,
                             layout = layout,
-                            reportLoaded = index == 0,
                             contentAlpha = { heroItemContentAlpha(drawInfo) },
-                            onBackdropLoaded = onBackdropLoaded,
                         )
                     }
                 }
@@ -426,9 +395,7 @@ private fun PersonHeroPage(
     subtitle: String?,
     deceased: Boolean,
     layout: HomeHeroLayout,
-    reportLoaded: Boolean,
     contentAlpha: () -> Float,
-    onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
 ) {
     val centerTitle = layout.centerTitle
 
@@ -445,11 +412,6 @@ private fun PersonHeroPage(
                 contentDescription = name,
                 alignment = Alignment.TopCenter,
                 colorFilter = if (deceased) DeceasedPhotoFilter else null,
-                onLoaded = { painter, imageBitmap ->
-                    if (reportLoaded) {
-                        onBackdropLoaded(painter, imageBitmap)
-                    }
-                },
             )
         }
 
@@ -508,7 +470,6 @@ private fun PersonHeroPage(
 private fun PersonHeaderOverlay(
     title: String,
     isHeroCollapsed: State<Boolean>,
-    backgroundColor: Color?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -528,7 +489,7 @@ private fun PersonHeaderOverlay(
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     }
     val headerTopPadding = (safeAreaTop - 6.dp).coerceAtLeast(safeAreaTop * 0.8f)
-    val surfaceColor = backgroundColor ?: if (isIos) {
+    val surfaceColor = if (isIos) {
         MaterialTheme.colorScheme.surface
     } else {
         MaterialTheme.colorScheme.background
@@ -874,7 +835,6 @@ private fun PersonDetailError(
         PersonHeaderOverlay(
             title = "",
             isHeroCollapsed = collapsed,
-            backgroundColor = null,
             onBack = onBack,
             modifier = Modifier.fillMaxWidth(),
         )

@@ -29,10 +29,8 @@ import provenio.composeapp.generated.resources.settings_mdb_api_key_label
 import provenio.composeapp.generated.resources.settings_mdb_api_key_saved
 import provenio.composeapp.generated.resources.settings_mdb_api_key_title
 import provenio.composeapp.generated.resources.settings_mdb_enable_ratings
-import provenio.composeapp.generated.resources.settings_mdb_enable_ratings_description
 import provenio.composeapp.generated.resources.settings_mdb_section_api_key
 import provenio.composeapp.generated.resources.settings_mdb_section_rating_providers
-import provenio.composeapp.generated.resources.settings_mdb_section_title
 import provenio.composeapp.generated.resources.source_audience_score
 import provenio.composeapp.generated.resources.source_imdb
 import provenio.composeapp.generated.resources.source_letterboxd
@@ -41,7 +39,17 @@ import provenio.composeapp.generated.resources.source_metacritic
 import provenio.composeapp.generated.resources.source_rotten_tomatoes
 import provenio.composeapp.generated.resources.source_tmdb
 import provenio.composeapp.generated.resources.source_trakt
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material3.Icon
+import androidx.compose.ui.platform.LocalUriHandler
+import provenio.composeapp.generated.resources.settings_mdb_get_api_key
+import provenio.composeapp.generated.resources.settings_mdb_get_api_key_description
 import org.jetbrains.compose.resources.stringResource
+
+/** Where MDBList hands out API keys, under the account's preferences. */
+private const val MdbListApiKeyUrl = "https://mdblist.com/preferences/"
 
 internal fun LazyListScope.mdbListSettingsContent(
     isTablet: Boolean,
@@ -50,27 +58,23 @@ internal fun LazyListScope.mdbListSettingsContent(
     val providerControlsEnabled = settings.enabled && settings.hasApiKey
 
     item {
-        SettingsSection(
-            title = stringResource(Res.string.settings_mdb_section_title),
-            isTablet = isTablet,
-        ) {
+        Column {
             if (!settings.hasApiKey) {
                 MdbListInfoRow(text = stringResource(Res.string.settings_mdb_add_api_key_first))
             }
-            SettingsList {
-                switchRow(
-                    title = stringResource(Res.string.settings_mdb_enable_ratings),
-                    description = stringResource(Res.string.settings_mdb_enable_ratings_description),
-                    checked = { settings.enabled },
-                    enabled = settings.hasApiKey,
-                    onCheckedChange = MdbListSettingsRepository::setEnabled,
-                )
-            }
+            SettingsMainSwitch(
+                title = stringResource(Res.string.settings_mdb_enable_ratings),
+                checked = settings.enabled,
+                // Ratings need a key, so the switch waits for one.
+                enabled = settings.hasApiKey,
+                onCheckedChange = MdbListSettingsRepository::setEnabled,
+            )
         }
     }
 
     item {
         var showApiKeyDialog by rememberSaveable { mutableStateOf(false) }
+        val uriHandler = LocalUriHandler.current
 
         SettingsSection(
             title = stringResource(Res.string.settings_mdb_section_api_key),
@@ -93,6 +97,17 @@ internal fun LazyListScope.mdbListSettingsContent(
                     },
                     onClick = { showApiKeyDialog = true },
                 )
+                navigationRow(
+                    title = stringResource(Res.string.settings_mdb_get_api_key),
+                    description = stringResource(Res.string.settings_mdb_get_api_key_description),
+                    trailingContent = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = { uriHandler.openUri(MdbListApiKeyUrl) },
+                )
             }
         }
 
@@ -108,6 +123,8 @@ internal fun LazyListScope.mdbListSettingsContent(
         }
     }
 
+    // The key stays reachable while ratings are off; the providers only matter while they are on.
+    if (!settings.enabled) return
     item {
         SettingsSection(
             title = stringResource(Res.string.settings_mdb_section_rating_providers),

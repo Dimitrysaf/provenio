@@ -1146,7 +1146,7 @@
     <string name="details_series_unpublished">Epizody zatím nebyly tímto doplňkem publikovány.</string>
     <string name="details_servers_unreachable">Vaše zařízení je online, ale Provenio se nemohlo spojit s požadovanými servery.</string>
     <string name="details_show_less">Zobrazit méně</string>
-    <string name="details_show_more">Zobrazit více ▾</string>
+    <string name="details_show_more">Zobrazit více</string>
     <string name="details_writer">Scénárista</string>
     <string name="discover_all_genres">Všechny žánry</string>
     <string name="discover_catalog">Katalog</string>

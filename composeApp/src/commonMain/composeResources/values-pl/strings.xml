@@ -1056,7 +1056,7 @@
     <string name="details_series_unpublished">Odcinki nie zostały jeszcze opublikowane przez ten dodatek.</string>
     <string name="details_servers_unreachable">Twoje urządzenie jest online, ale Provenio nie mogło połączyć się z wymaganymi serwerami.</string>
     <string name="details_show_less">Pokaż mniej</string>
-    <string name="details_show_more">Pokaż więcej ▾</string>
+    <string name="details_show_more">Pokaż więcej</string>
     <string name="details_writer">Scenarzysta</string>
     <string name="discover_all_genres">Wszystkie gatunki</string>
     <string name="discover_catalog">Katalog</string>

@@ -1389,7 +1389,7 @@
     <string name="details_series_unpublished">Afleveringen zijn nog niet gepubliceerd door deze add-on.</string>
     <string name="details_servers_unreachable">Je apparaat is online, maar Provenio kon de vereiste servers niet bereiken.</string>
     <string name="details_show_less">Minder tonen</string>
-    <string name="details_show_more">Meer tonen ▾</string>
+    <string name="details_show_more">Meer tonen</string>
     <string name="details_writer">Schrijver</string>
     <string name="discover_all_genres">Alle genres</string>
     <string name="discover_catalog">Catalogus</string>

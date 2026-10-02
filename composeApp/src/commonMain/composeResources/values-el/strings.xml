@@ -1109,7 +1109,7 @@
     <string name="details_series_unpublished">Τα επεισόδια δεν έχουν δημοσιευτεί ακόμα από αυτό το πρόσθετο.</string>
     <string name="details_servers_unreachable">Η συσκευή σας είναι συνδεδεμένη στο διαδίκτυο, αλλά το Provenio δεν μπόρεσε να φτάσει τους απαιτούμενους διακομιστές.</string>
     <string name="details_show_less">Εμφάνιση λιγότερων</string>
-    <string name="details_show_more">Εμφάνιση περισσότερων ▾</string>
+    <string name="details_show_more">Εμφάνιση περισσότερων</string>
     <string name="details_writer">Σεναριογράφος</string>
     <string name="discover_all_genres">Όλα τα είδη</string>
     <string name="discover_filters">Φίλτρα</string>

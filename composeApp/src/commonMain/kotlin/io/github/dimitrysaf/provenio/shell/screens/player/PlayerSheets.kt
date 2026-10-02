@@ -78,6 +78,7 @@ import io.github.dimitrysaf.provenio.shell.screens.streams.StreamFilterBar
 import io.github.dimitrysaf.provenio.shell.screens.streams.StreamsEmptyBlock
 import io.github.dimitrysaf.provenio.shell.screens.streams.StreamsNoMatchesBlock
 import io.github.dimitrysaf.provenio.shell.screens.streams.rememberStreamFilterState
+import io.github.dimitrysaf.provenio.shell.screens.streams.withoutExternalServiceLinks
 import io.github.dimitrysaf.provenio.shell.screens.streams.StreamsHorizontalPadding
 import io.github.dimitrysaf.provenio.shell.screens.streams.StreamsPreparingBlock
 import io.github.dimitrysaf.provenio.core.streams.StreamsUiState
@@ -395,16 +396,19 @@ private fun PlayerStreamGroupsList(
     val expansion = rememberStreamGroupExpansion(streamsUiState.requestToken)
     val formatStreamSize = rememberStreamSizeLabelFormat()
     val torrentNotSupportedText = stringResource(Res.string.streams_torrent_not_supported)
-    val hasVisibleRows = streamsUiState.groups.any { it.streams.isNotEmpty() || it.isLoading }
+    val shownGroups = remember(streamsUiState.groups, badgeSettings.hideExternalServiceLinks) {
+        if (badgeSettings.hideExternalServiceLinks) streamsUiState.groups.withoutExternalServiceLinks() else streamsUiState.groups
+    }
+    val hasVisibleRows = shownGroups.any { it.streams.isNotEmpty() || it.isLoading }
     val filter = rememberStreamFilterState(streamsUiState.requestToken)
-    val filteredGroups = remember(streamsUiState.groups, filter.query, filter.qualities, filter.sizeOrder) {
-        filter.apply(streamsUiState.groups)
+    val filteredGroups = remember(shownGroups, filter.query, filter.qualities, filter.sizeOrder) {
+        filter.apply(shownGroups)
     }
     val hasMatches = filteredGroups.any { it.streams.isNotEmpty() || it.isLoading }
 
     CompositionLocalProvider(LocalStreamSizeLabelFormat provides formatStreamSize) {
         Column(modifier = modifier.fillMaxWidth()) {
-            StreamFilterBar(state = filter, groups = streamsUiState.groups)
+            StreamFilterBar(state = filter, groups = shownGroups)
             LazyColumn(
                 modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
                 contentPadding = PaddingValues(top = 8.dp, bottom = safeBottomPadding(16.dp)),

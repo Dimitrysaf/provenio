@@ -407,7 +407,7 @@ internal fun ConfiguredMetaSections(
                 )
             }
             MetaScreenSectionKey.PARENTS_GUIDE -> {
-                DetailParentsGuideSection(warnings = parentalWarnings, showHeader = showHeader)
+                DetailParentsGuideSection(warnings = parentalWarnings)
             }
             MetaScreenSectionKey.PRODUCTION -> {
                 if (hasProductionSection) {

@@ -92,6 +92,8 @@ import provenio.composeapp.generated.resources.settings_stream_size_badges_title
 import provenio.composeapp.generated.resources.settings_stream_addon_logo_title
 import provenio.composeapp.generated.resources.settings_stream_addon_logo_description
 import provenio.composeapp.generated.resources.settings_stream_display_section
+import provenio.composeapp.generated.resources.settings_stream_hide_external_links_title
+import provenio.composeapp.generated.resources.settings_stream_hide_external_links_description
 import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.streamsSettingsContent(isTablet: Boolean) {
@@ -151,6 +153,12 @@ internal fun LazyListScope.streamsSettingsContent(isTablet: Boolean) {
                     description = stringResource(Res.string.settings_stream_addon_logo_description),
                     checked = { currentSettings.showAddonLogo },
                     onCheckedChange = StreamBadgeSettingsRepository::setShowAddonLogo,
+                )
+                switchRow(
+                    title = stringResource(Res.string.settings_stream_hide_external_links_title),
+                    description = stringResource(Res.string.settings_stream_hide_external_links_description),
+                    checked = { currentSettings.hideExternalServiceLinks },
+                    onCheckedChange = StreamBadgeSettingsRepository::setHideExternalServiceLinks,
                 )
             }
         }
@@ -589,6 +597,12 @@ internal fun LazyListScope.streamsAppearanceSection(isTablet: Boolean) {
                     description = stringResource(Res.string.settings_stream_addon_logo_description),
                     checked = { currentSettings.showAddonLogo },
                     onCheckedChange = StreamBadgeSettingsRepository::setShowAddonLogo,
+                )
+                switchRow(
+                    title = stringResource(Res.string.settings_stream_hide_external_links_title),
+                    description = stringResource(Res.string.settings_stream_hide_external_links_description),
+                    checked = { currentSettings.hideExternalServiceLinks },
+                    onCheckedChange = StreamBadgeSettingsRepository::setHideExternalServiceLinks,
                 )
             }
         }

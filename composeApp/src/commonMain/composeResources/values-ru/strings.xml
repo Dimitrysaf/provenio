@@ -1372,7 +1372,7 @@
     <string name="details_series_unpublished">Эпизоды этим аддоном еще не опубликованы.</string>
     <string name="details_servers_unreachable">Ваше устройство подключено к сети, но Provenio не удалось связаться с необходимыми серверами.</string>
     <string name="details_show_less">Показать меньше</string>
-    <string name="details_show_more">Показать больше ▾</string>
+    <string name="details_show_more">Показать больше</string>
     <string name="details_writer">Сценарист</string>
     <string name="discover_all_genres">Все жанры</string>
     <string name="discover_catalog">Каталог</string>

@@ -16,6 +16,7 @@ actual object TmdbSettingsStorage {
     private const val apiKeyKey = "tmdb_api_key"
     private const val useTrailersKey = "tmdb_use_trailers"
     private const val useArtworkKey = "tmdb_use_artwork"
+    private const val preferAddonArtworkKey = "tmdb_prefer_addon_artwork"
     private const val useBasicInfoKey = "tmdb_use_basic_info"
     private const val useDetailsKey = "tmdb_use_details"
     private const val useReleaseDatesKey = "tmdb_use_release_dates"
@@ -32,6 +33,7 @@ actual object TmdbSettingsStorage {
         apiKeyKey,
         useTrailersKey,
         useArtworkKey,
+        preferAddonArtworkKey,
         useBasicInfoKey,
         useDetailsKey,
         useReleaseDatesKey,
@@ -74,6 +76,12 @@ actual object TmdbSettingsStorage {
 
     actual fun saveUseArtwork(enabled: Boolean) {
         saveBoolean(useArtworkKey, enabled)
+    }
+
+    actual fun loadPreferAddonArtwork(): Boolean? = loadBoolean(preferAddonArtworkKey)
+
+    actual fun savePreferAddonArtwork(enabled: Boolean) {
+        saveBoolean(preferAddonArtworkKey, enabled)
     }
 
     actual fun loadUseBasicInfo(): Boolean? = loadBoolean(useBasicInfoKey)
@@ -156,6 +164,7 @@ actual object TmdbSettingsStorage {
         loadApiKey()?.let { put(apiKeyKey, encodeSyncString(it)) }
         loadUseTrailers()?.let { put(useTrailersKey, encodeSyncBoolean(it)) }
         loadUseArtwork()?.let { put(useArtworkKey, encodeSyncBoolean(it)) }
+        loadPreferAddonArtwork()?.let { put(preferAddonArtworkKey, encodeSyncBoolean(it)) }
         loadUseBasicInfo()?.let { put(useBasicInfoKey, encodeSyncBoolean(it)) }
         loadUseDetails()?.let { put(useDetailsKey, encodeSyncBoolean(it)) }
         loadUseReleaseDates()?.let { put(useReleaseDatesKey, encodeSyncBoolean(it)) }
@@ -178,6 +187,7 @@ actual object TmdbSettingsStorage {
         payload.decodeSyncString(apiKeyKey)?.let(::saveApiKey)
         payload.decodeSyncBoolean(useTrailersKey)?.let(::saveUseTrailers)
         payload.decodeSyncBoolean(useArtworkKey)?.let(::saveUseArtwork)
+        payload.decodeSyncBoolean(preferAddonArtworkKey)?.let(::savePreferAddonArtwork)
         payload.decodeSyncBoolean(useBasicInfoKey)?.let(::saveUseBasicInfo)
         payload.decodeSyncBoolean(useDetailsKey)?.let(::saveUseDetails)
         payload.decodeSyncBoolean(useReleaseDatesKey)?.let(::saveUseReleaseDates)
