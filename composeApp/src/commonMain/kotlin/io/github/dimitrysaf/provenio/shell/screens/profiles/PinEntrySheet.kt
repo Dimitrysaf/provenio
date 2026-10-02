@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigationButton
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -67,11 +70,22 @@ fun PinEntrySheet(
                 .padding(bottom = BottomSheetBodyMargin),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Icon(
-                imageVector = Icons.Rounded.Lock,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Rounded.Lock,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                SheetNavigationButton(
+                    navigation = SheetNavigation.Close,
+                    onClick = {
+                        scope.launch {
+                            dismissBottomSheet(sheetState = sheetState, onDismiss = onDismiss)
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 

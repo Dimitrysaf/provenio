@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.p2p
 
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
+import io.github.dimitrysaf.provenio.shell.components.SheetHeader
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -143,15 +145,11 @@ fun TorrentDetailsSheet(
         sheetState = sheetState,
         fullHeight = true,
     ) {
-        Text(
-            text = shown?.name?.takeIf(String::isNotBlank)
+        SheetHeader(
+            title = shown?.name?.takeIf(String::isNotBlank)
                 ?: stringResource(Res.string.torrent_details_title),
-            style = MaterialTheme.typography.titleLarge,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .padding(horizontal = BottomSheetBodyMargin)
-                .padding(bottom = 8.dp),
+            navigation = SheetNavigation.Close,
+            onNavigate = { scope.launch { dismissBottomSheet(sheetState, onDismiss) } },
         )
 
         if (shown == null) {

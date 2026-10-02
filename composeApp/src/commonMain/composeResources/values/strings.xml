@@ -1756,6 +1756,7 @@
     <string name="streams_filter_no_matches">No streams match.</string>
     <string name="streams_filter_unknown_quality">Unknown</string>
     <string name="streams_filter_quality">Quality</string>
+    <string name="streams_filter_title">Filter and sort</string>
     <string name="streams_filter_all_qualities">All qualities</string>
     <string name="streams_sort_title">Sort</string>
     <string name="streams_sort_default">Default order</string>

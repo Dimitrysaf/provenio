@@ -1,5 +1,9 @@
 package io.github.dimitrysaf.provenio.shell.screens.collection
 
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigationButton
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Row
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -118,11 +122,15 @@ internal fun CatalogPickerSheet(
                     modifier = Modifier.padding(bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Text(
-                        text = stringResource(Res.string.collections_editor_select_catalogs),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = stringResource(Res.string.collections_editor_select_catalogs),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f),
+                        )
+                        SheetNavigationButton(navigation = SheetNavigation.Close, onClick = onDismiss)
+                    }
                     Text(
                         text = stringResource(Res.string.collections_editor_select_catalogs_description),
                         style = MaterialTheme.typography.bodyMedium,

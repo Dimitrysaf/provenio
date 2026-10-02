@@ -1,6 +1,5 @@
 package io.github.dimitrysaf.provenio.shell.components
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -54,6 +53,7 @@ fun <T> SingleChoiceBottomSheet(
     onDismiss: () -> Unit,
     description: String? = null,
     footnote: String? = null,
+    navigation: SheetNavigation = SheetNavigation.Close,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -66,6 +66,15 @@ fun <T> SingleChoiceBottomSheet(
         },
         sheetState = sheetState,
     ) {
+        SheetHeader(
+            title = title,
+            navigation = navigation,
+            onNavigate = {
+                scope.launch {
+                    dismissBottomSheet(sheetState = sheetState, onDismiss = onDismiss)
+                }
+            },
+        )
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -74,21 +83,14 @@ fun <T> SingleChoiceBottomSheet(
                 .padding(horizontal = BottomSheetBodyMargin)
                 .padding(bottom = BottomSheetBodyMargin),
         ) {
-            item {
-                Column(modifier = Modifier.padding(bottom = BottomSheetBodyMargin)) {
+            if (description != null) {
+                item {
                     Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(top = BottomSheetBodyMargin),
+                        text = description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = BottomSheetBodyMargin),
                     )
-                    if (description != null) {
-                        Text(
-                            text = description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
-                    }
                 }
             }
 

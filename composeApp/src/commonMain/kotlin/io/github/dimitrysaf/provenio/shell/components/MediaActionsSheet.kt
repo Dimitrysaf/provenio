@@ -70,6 +70,7 @@ fun MediaActionsSheet(
     onDismiss: () -> Unit,
     landscapeThumbnail: Boolean = false,
     blurThumbnail: Boolean = false,
+    navigation: SheetNavigation = SheetNavigation.Close,
 ) {
     // On a large window the actions open as a menu where the press was, rather than as a sheet.
     if (!usesNativeBottomSheet && LocalWindowBreakpoint.current.isTwoPane) {
@@ -100,11 +101,17 @@ fun MediaActionsSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = BottomSheetBodyMargin)
+                    .padding(
+                        start = if (navigation == SheetNavigation.Back) 4.dp else BottomSheetBodyMargin,
+                        end = 4.dp,
+                    )
                     .padding(bottom = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (navigation == SheetNavigation.Back) {
+                    SheetNavigationButton(navigation = navigation, onClick = { close() })
+                }
                 Box(
                     modifier = Modifier
                         .width(thumbnailWidth)
@@ -123,7 +130,10 @@ fun MediaActionsSheet(
                         )
                     }
                 }
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleMedium,
@@ -140,6 +150,9 @@ fun MediaActionsSheet(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
+                }
+                if (navigation == SheetNavigation.Close) {
+                    SheetNavigationButton(navigation = navigation, onClick = { close() })
                 }
             }
 

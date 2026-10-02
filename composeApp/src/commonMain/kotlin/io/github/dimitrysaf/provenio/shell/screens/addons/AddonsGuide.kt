@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.addons
 
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigationButton
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -829,11 +831,22 @@ private fun GuideTermSheet(
                 .padding(top = BottomSheetBodyMargin, bottom = BottomSheetBodyMargin * 2),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = stringResource(term.titleRes),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(term.titleRes),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                SheetNavigationButton(
+                    navigation = SheetNavigation.Close,
+                    onClick = {
+                        scope.launch {
+                            dismissBottomSheet(sheetState = sheetState, onDismiss = onDismiss)
+                        }
+                    },
+                )
+            }
             Text(
                 text = stringResource(term.bodyRes),
                 style = MaterialTheme.typography.bodyLarge,

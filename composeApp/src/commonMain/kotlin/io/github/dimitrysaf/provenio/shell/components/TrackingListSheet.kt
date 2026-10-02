@@ -54,6 +54,15 @@ fun TrackingListPickerSheet(
         },
         sheetState = sheetState,
     ) {
+        SheetHeader(
+            title = title,
+            navigation = SheetNavigation.Close,
+            onNavigate = {
+                scope.launch {
+                    dismissBottomSheet(sheetState = sheetState, onDismiss = onDismiss)
+                }
+            },
+        )
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -63,15 +72,9 @@ fun TrackingListPickerSheet(
             item {
                 Column(modifier = Modifier.padding(bottom = BottomSheetBodyMargin)) {
                     Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(top = BottomSheetBodyMargin),
-                    )
-                    Text(
                         text = stringResource(Res.string.compose_tracking_list_picker_subtitle),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp),
                     )
                     if (!errorMessage.isNullOrBlank()) {
                         Text(

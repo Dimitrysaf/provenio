@@ -47,6 +47,8 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.shell.components.MediaActionsSheet
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigationButton
 import io.github.dimitrysaf.provenio.shell.components.MediaSheetAction
 import io.github.dimitrysaf.provenio.shell.components.ModalSheet
 import io.github.dimitrysaf.provenio.shell.components.ToastController
@@ -240,7 +242,7 @@ fun StreamsSheet(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = StreamsHorizontalPadding, end = 8.dp)
+                .padding(start = StreamsHorizontalPadding, end = 4.dp)
                 .padding(bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -271,10 +273,20 @@ fun StreamsSheet(
                     )
                 }
             }
-            IconButton(onClick = { reloadStreams(type, videoId, parentMetaId, seasonNumber, episodeNumber, manualSelection) }, enabled = !uiState.isAnyLoading) {
-                Icon(
-                    imageVector = Icons.Rounded.Refresh,
-                    contentDescription = stringResource(Res.string.streams_refresh),
+            Row {
+                IconButton(onClick = { reloadStreams(type, videoId, parentMetaId, seasonNumber, episodeNumber, manualSelection) }, enabled = !uiState.isAnyLoading) {
+                    Icon(
+                        imageVector = Icons.Rounded.Refresh,
+                        contentDescription = stringResource(Res.string.streams_refresh),
+                    )
+                }
+                SheetNavigationButton(
+                    navigation = SheetNavigation.Close,
+                    onClick = {
+                        dismissScope.launch {
+                            dismissBottomSheet(sheetState = sheetState, onDismiss = onBack)
+                        }
+                    },
                 )
             }
         }
@@ -340,6 +352,7 @@ fun StreamsSheet(
             subtitle = stream.streamSubtitle?.takeIf { it.isNotBlank() } ?: stream.addonName,
             landscapeThumbnail = true,
             onDismiss = { streamActionsTarget = null },
+            navigation = SheetNavigation.Back,
             actions = listOf(
                 MediaSheetAction(
                     icon = Icons.Rounded.ContentCopy,

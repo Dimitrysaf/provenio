@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigationButton
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -127,6 +129,8 @@ fun CommentDetailSheet(
                             contentDescription = stringResource(Res.string.action_next),
                         )
                     }
+
+                    SheetNavigationButton(navigation = SheetNavigation.Close, onClick = onDismiss)
                 }
             }
 

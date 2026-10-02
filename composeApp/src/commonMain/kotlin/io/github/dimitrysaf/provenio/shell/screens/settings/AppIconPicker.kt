@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigationButton
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
 import androidx.compose.foundation.Image
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.border
@@ -152,6 +154,7 @@ private fun AppIconPickerBottomSheet(
         AppIconPickerContent(
             state = state,
             onSelected = onSelected,
+            onClose = ::dismiss,
             modifier = Modifier.navigationBarsPadding(),
         )
     }
@@ -161,6 +164,7 @@ private fun AppIconPickerBottomSheet(
 private fun AppIconPickerContent(
     state: AppIconSettingsState,
     onSelected: (AppIconOption) -> Unit,
+    onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
@@ -176,11 +180,17 @@ private fun AppIconPickerContent(
                 .padding(horizontal = BottomSheetBodyMargin)
                 .padding(bottom = BottomSheetBodyMargin),
         ) {
-            Text(
-                text = stringResource(Res.string.settings_appearance_app_icon_sheet_title),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(vertical = BottomSheetBodyMargin),
-            )
+            Row(
+                modifier = Modifier.padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(Res.string.settings_appearance_app_icon_sheet_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                SheetNavigationButton(navigation = SheetNavigation.Close, onClick = onClose)
+            }
 
             if (state.changeFailed) {
                 Surface(

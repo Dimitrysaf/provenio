@@ -25,8 +25,9 @@ internal object DesktopDbus {
         timeoutMilliseconds: Int = 2_000,
         busType: Int = GBusTypeSession,
         flags: Int = 0,
+        sharedConnection: Pointer? = null,
     ): String? = runCatching {
-        val connection = gio.g_bus_get_sync(busType, null, null) ?: return null
+        val connection = sharedConnection ?: gio.g_bus_get_sync(busType, null, null) ?: return null
         try {
             val parameters = glib.g_variant_parse(null, arguments, null, null, null) ?: return null
             val reply = gio.g_dbus_connection_call_sync(
@@ -48,7 +49,7 @@ internal object DesktopDbus {
                 glib.g_variant_unref(reply)
             }
         } finally {
-            gobject.g_object_unref(connection)
+            if (sharedConnection == null) gobject.g_object_unref(connection)
         }
     }.getOrNull()
 

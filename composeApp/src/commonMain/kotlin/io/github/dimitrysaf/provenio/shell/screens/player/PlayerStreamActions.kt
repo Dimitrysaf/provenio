@@ -18,6 +18,7 @@ import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlaybackRequest
 import io.github.dimitrysaf.provenio.core.playback.PlayerStreamsRepository
 import io.github.dimitrysaf.provenio.core.streams.StreamItem
 import io.github.dimitrysaf.provenio.shell.components.MediaActionsSheet
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
 import io.github.dimitrysaf.provenio.shell.components.MediaSheetAction
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.screens.streams.copyStreamLink
@@ -61,6 +62,7 @@ internal fun PlayerScreenRuntime.PlayerStreamActionsSheet(
         subtitle = stream.streamSubtitle?.takeIf { it.isNotBlank() } ?: stream.addonName,
         landscapeThumbnail = true,
         onDismiss = onDismiss,
+        navigation = SheetNavigation.Back,
         actions = listOfNotNull(
             MediaSheetAction(
                 icon = Icons.Rounded.ContentCopy,

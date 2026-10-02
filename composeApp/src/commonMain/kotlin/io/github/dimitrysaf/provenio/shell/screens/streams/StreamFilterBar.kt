@@ -5,12 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -22,11 +24,13 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,10 +43,15 @@ import io.github.dimitrysaf.provenio.core.streams.quality
 import io.github.dimitrysaf.provenio.core.streams.sizeBytes
 import io.github.dimitrysaf.provenio.core.streams.sortedBySize
 import io.github.dimitrysaf.provenio.core.streams.streamQueryRegex
+import io.github.dimitrysaf.provenio.shell.components.BottomSheetBodyMargin
+import io.github.dimitrysaf.provenio.shell.components.ListSubheader
 import io.github.dimitrysaf.provenio.shell.components.LocalWindowBreakpoint
-import io.github.dimitrysaf.provenio.shell.components.MultiChoiceBottomSheet
-import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
-import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
+import io.github.dimitrysaf.provenio.shell.components.ModalSheet
+import io.github.dimitrysaf.provenio.shell.components.SelectableListRow
+import io.github.dimitrysaf.provenio.shell.components.SheetHeader
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
+import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
@@ -81,17 +90,11 @@ internal fun StreamFilterBar(state: StreamFilterState, groups: List<AddonStreamG
                             Icon(imageVector = Icons.Rounded.Close, contentDescription = stringResource(Res.string.action_clear))
                         }
                     }
-                    if (hasSizes) {
-                        StreamSizeOrderMenuButton(
-                            selected = state.sizeOrder,
-                            onSelected = { state.sizeOrder = it },
-                        )
-                    }
-                    if (qualities.size > 1) {
-                        StreamQualityMenuButton(
-                            qualities = qualities,
-                            selected = state.qualities,
-                            onSelectionChanged = { state.qualities = it },
+                    if (hasSizes || qualities.size > 1) {
+                        StreamFilterMenuButton(
+                            state = state,
+                            qualities = qualities.takeIf { it.size > 1 }.orEmpty(),
+                            showSizeOrder = hasSizes,
                         )
                     }
                 }
@@ -121,98 +124,159 @@ internal fun StreamsNoMatchesBlock() {
     )
 }
 
-// Picks any number of resolutions: the app's multiple-choice sheet on phones, a checkbox menu on large windows.
 @Composable
-private fun StreamQualityMenuButton(
+private fun StreamFilterMenuButton(
+    state: StreamFilterState,
     qualities: List<StreamQuality>,
-    selected: Set<StreamQuality>,
-    onSelectionChanged: (Set<StreamQuality>) -> Unit,
+    showSizeOrder: Boolean,
 ) {
     var open by remember { mutableStateOf(false) }
-    val title = stringResource(Res.string.streams_filter_quality)
-    val allLabel = stringResource(Res.string.streams_filter_all_qualities)
-    val labels = qualities.map { it.label() }
+    val title = stringResource(Res.string.streams_filter_title)
+    val active = state.qualities.isNotEmpty() || state.sizeOrder != StreamSizeOrder.DEFAULT
     Box {
         IconButton(onClick = { open = true }) {
             Icon(
                 imageVector = Icons.Rounded.FilterList,
                 contentDescription = title,
-                tint = if (selected.isNotEmpty()) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                tint = if (active) MaterialTheme.colorScheme.primary else LocalContentColor.current,
             )
         }
         if (LocalWindowBreakpoint.current.isTwoPane) {
-            // Stays open while ticking, as a multiple choice needs.
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                DropdownMenuItem(
-                    text = { Text(allLabel) },
-                    onClick = { onSelectionChanged(emptySet()) },
-                    leadingIcon = { Checkbox(checked = selected.isEmpty(), onCheckedChange = null) },
-                )
-                qualities.forEachIndexed { index, quality ->
-                    val checked = quality in selected
+                if (showSizeOrder) {
+                    StreamFilterMenuLabel(stringResource(Res.string.streams_sort_title))
+                    StreamSizeOrder.entries.forEach { order ->
+                        DropdownMenuItem(
+                            text = { Text(order.label()) },
+                            onClick = { state.sizeOrder = order },
+                            leadingIcon = { RadioButton(selected = order == state.sizeOrder, onClick = null) },
+                        )
+                    }
+                }
+                if (showSizeOrder && qualities.isNotEmpty()) {
+                    HorizontalDivider()
+                }
+                if (qualities.isNotEmpty()) {
+                    StreamFilterMenuLabel(stringResource(Res.string.streams_filter_quality))
                     DropdownMenuItem(
-                        text = { Text(labels[index]) },
-                        onClick = { onSelectionChanged(if (checked) selected - quality else selected + quality) },
-                        leadingIcon = { Checkbox(checked = checked, onCheckedChange = null) },
+                        text = { Text(stringResource(Res.string.streams_filter_all_qualities)) },
+                        onClick = { state.qualities = emptySet() },
+                        leadingIcon = { Checkbox(checked = state.qualities.isEmpty(), onCheckedChange = null) },
                     )
+                    qualities.forEach { quality ->
+                        val checked = quality in state.qualities
+                        DropdownMenuItem(
+                            text = { Text(quality.label()) },
+                            onClick = {
+                                state.qualities = if (checked) state.qualities - quality else state.qualities + quality
+                            },
+                            leadingIcon = { Checkbox(checked = checked, onCheckedChange = null) },
+                        )
+                    }
                 }
             }
         } else if (open) {
-            MultiChoiceBottomSheet(
+            StreamFilterSheet(
                 title = title,
-                options = qualities.mapIndexed { index, quality -> SingleChoiceOption(value = quality, label = labels[index]) },
-                selected = selected,
-                onSelectionChanged = onSelectionChanged,
+                state = state,
+                qualities = qualities,
+                showSizeOrder = showSizeOrder,
                 onDismiss = { open = false },
-                allLabel = allLabel,
             )
         }
     }
 }
 
-// Orders the streams by file size: a menu on large windows, the app's single-choice sheet on phones.
 @Composable
-private fun StreamSizeOrderMenuButton(
-    selected: StreamSizeOrder,
-    onSelected: (StreamSizeOrder) -> Unit,
+private fun StreamFilterMenuLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StreamFilterSheet(
+    title: String,
+    state: StreamFilterState,
+    qualities: List<StreamQuality>,
+    showSizeOrder: Boolean,
+    onDismiss: () -> Unit,
 ) {
-    var open by remember { mutableStateOf(false) }
-    val title = stringResource(Res.string.streams_sort_title)
-    val orders = StreamSizeOrder.entries
-    val labels = orders.map { it.label() }
-    Box {
-        IconButton(onClick = { open = true }) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.Sort,
-                contentDescription = title,
-                tint = if (selected != StreamSizeOrder.DEFAULT) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    LocalContentColor.current
-                },
-            )
-        }
-        if (LocalWindowBreakpoint.current.isTwoPane) {
-            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                orders.forEachIndexed { index, order ->
-                    DropdownMenuItem(
-                        text = { Text(labels[index]) },
-                        onClick = {
-                            onSelected(order)
-                            open = false
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val dismiss: () -> Unit = {
+        scope.launch { dismissBottomSheet(sheetState = sheetState, onDismiss = onDismiss) }
+    }
+    ModalSheet(
+        onDismissRequest = dismiss,
+        sheetState = sheetState,
+    ) {
+        SheetHeader(
+            title = title,
+            navigation = SheetNavigation.Back,
+            onNavigate = dismiss,
+        )
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = BottomSheetBodyMargin)
+                .padding(bottom = BottomSheetBodyMargin),
+        ) {
+            if (showSizeOrder) {
+                item {
+                    ListSubheader(
+                        text = stringResource(Res.string.streams_sort_title),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
+                items(StreamSizeOrder.entries) { order ->
+                    val selected = order == state.sizeOrder
+                    SelectableListRow(
+                        selected = selected,
+                        onClick = { state.sizeOrder = order },
+                        headline = order.label(),
+                        trailingContent = {
+                            RadioButton(selected = selected, onClick = null)
                         },
-                        leadingIcon = { RadioButton(selected = order == selected, onClick = null) },
                     )
                 }
             }
-        } else if (open) {
-            SingleChoiceBottomSheet(
-                title = title,
-                options = orders.mapIndexed { index, order -> SingleChoiceOption(value = order, label = labels[index]) },
-                isSelected = { it == selected },
-                onSelected = onSelected,
-                onDismiss = { open = false },
-            )
+            if (qualities.isNotEmpty()) {
+                item {
+                    ListSubheader(
+                        text = stringResource(Res.string.streams_filter_quality),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
+                item {
+                    val allSelected = state.qualities.isEmpty()
+                    SelectableListRow(
+                        selected = allSelected,
+                        onClick = { state.qualities = emptySet() },
+                        headline = stringResource(Res.string.streams_filter_all_qualities),
+                        trailingContent = {
+                            Checkbox(checked = allSelected, onCheckedChange = null)
+                        },
+                    )
+                }
+                items(qualities) { quality ->
+                    val checked = quality in state.qualities
+                    SelectableListRow(
+                        selected = checked,
+                        onClick = {
+                            state.qualities = if (checked) state.qualities - quality else state.qualities + quality
+                        },
+                        headline = quality.label(),
+                        trailingContent = {
+                            Checkbox(checked = checked, onCheckedChange = null)
+                        },
+                    )
+                }
+            }
         }
     }
 }

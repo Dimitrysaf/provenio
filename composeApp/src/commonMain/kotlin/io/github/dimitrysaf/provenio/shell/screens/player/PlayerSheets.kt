@@ -49,6 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.ModalSheet
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigationButton
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
@@ -193,6 +195,7 @@ internal fun PlayerStreamsSheet(
             subtitle = subtitle,
             onReload = onReload,
             reloadEnabled = !streamsUiState.isAnyLoading,
+            onClose = { scope.launch { dismissBottomSheet(sheetState = sheetState, onDismiss = onDismiss) } },
         )
         PlayerStreamGroupsList(
             streamsUiState = streamsUiState,
@@ -242,6 +245,7 @@ internal fun PlayerEpisodesSheet(
                 onBack = onBackToEpisodes,
                 onReload = onReloadEpisodeStreams,
                 reloadEnabled = !episodeStreams.streamsUiState.isAnyLoading,
+                onClose = { scope.launch { dismissBottomSheet(sheetState = sheetState, onDismiss = onDismiss) } },
             )
             PlayerStreamGroupsList(
                 streamsUiState = episodeStreams.streamsUiState,
@@ -251,7 +255,11 @@ internal fun PlayerEpisodesSheet(
                 modifier = Modifier.weight(1f, fill = false),
             )
         } else {
-            PlayerSheetHeader(title = stringResource(Res.string.compose_player_episodes), subtitle = title)
+            PlayerSheetHeader(
+                title = stringResource(Res.string.compose_player_episodes),
+                subtitle = title,
+                onClose = { scope.launch { dismissBottomSheet(sheetState = sheetState, onDismiss = onDismiss) } },
+            )
             HorizontalDivider()
             PlayerEpisodeList(
                 meta = MetaDetails(
@@ -445,11 +453,12 @@ private fun PlayerSheetHeader(
     reloadEnabled: Boolean = true,
     onFetch: (() -> Unit)? = null,
     fetching: Boolean = false,
+    onClose: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = if (onBack == null) StreamsHorizontalPadding else 4.dp, end = 8.dp)
+            .padding(start = if (onBack == null) StreamsHorizontalPadding else 4.dp, end = 4.dp)
             .padding(bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -504,6 +513,9 @@ private fun PlayerSheetHeader(
                     }
                 }
             }
+        }
+        if (onClose != null) {
+            SheetNavigationButton(navigation = SheetNavigation.Close, onClick = onClose)
         }
     }
 }
@@ -580,6 +592,7 @@ internal fun PlayerSubtitlesSheet(
             subtitle = null,
             onFetch = onFetchAddonSubtitles,
             fetching = isLoadingAddonSubtitles,
+            onClose = { scope.launch { dismissBottomSheet(sheetState = sheetState, onDismiss = onDismiss) } },
         )
         LazyColumn(
             modifier = Modifier
