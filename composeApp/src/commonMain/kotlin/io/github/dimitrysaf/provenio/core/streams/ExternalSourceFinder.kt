@@ -1,6 +1,5 @@
 package io.github.dimitrysaf.provenio.core.streams
 
-import androidx.compose.ui.text.intl.Locale
 import co.touchlab.kermit.Logger
 import io.github.dimitrysaf.provenio.core.addons.httpGetText
 import io.github.dimitrysaf.provenio.core.debrid.encodePathSegment
@@ -303,7 +302,7 @@ internal object ExternalSourceFinder {
         }.onFailure { log.w { "TMDB request failed for $endpoint: ${it.message}" } }.getOrNull()
 
     private fun watchRegion(): String =
-        runCatching { Locale.current.region }
+        runCatching { deviceRegion() }
             .getOrNull()
             ?.uppercase()
             ?.takeIf { it.length == 2 }
