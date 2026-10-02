@@ -58,6 +58,7 @@ import provenio.composeapp.generated.resources.action_install
 import provenio.composeapp.generated.resources.action_later
 import provenio.composeapp.generated.resources.action_retry
 import provenio.composeapp.generated.resources.action_update
+import provenio.composeapp.generated.resources.updates_action_background
 import provenio.composeapp.generated.resources.updates_debug_test_complete
 import provenio.composeapp.generated.resources.updates_downloading_progress
 import provenio.composeapp.generated.resources.updates_message_allow_installs
@@ -97,6 +98,7 @@ fun AppUpdaterHost(
             onDownload = controller::downloadUpdate,
             onInstall = controller::installDownloadedUpdate,
             onDismiss = controller::dismissDialog,
+            onContinueInBackground = controller::continueInBackground,
         )
     }
 
@@ -122,6 +124,7 @@ private fun AppUpdateDialog(
     onDownload: () -> Unit,
     onInstall: () -> Unit,
     onDismiss: () -> Unit,
+    onContinueInBackground: () -> Unit,
 ) {
     val progress by animateFloatAsState(
         targetValue = (state.downloadProgress ?: 0f).coerceIn(0f, 1f),
@@ -136,8 +139,7 @@ private fun AppUpdateDialog(
     ).joinToString(separator = " • ")
 
     AlertDialog(
-        // A download in progress has no sensible cancel, so the dialog holds until it finishes.
-        onDismissRequest = { if (!state.isDownloading) onDismiss() },
+        onDismissRequest = { if (state.isDownloading) onContinueInBackground() else onDismiss() },
         icon = {
             Icon(
                 imageVector = if (debugTestComplete || isReady) {
@@ -230,7 +232,11 @@ private fun AppUpdateDialog(
             }
         },
         dismissButton = {
-            if (!state.isDownloading) {
+            if (state.isDownloading) {
+                TextButton(onClick = onContinueInBackground) {
+                    Text(stringResource(Res.string.updates_action_background))
+                }
+            } else {
                 TextButton(onClick = onDismiss) {
                     Text(stringResource(Res.string.action_later))
                 }

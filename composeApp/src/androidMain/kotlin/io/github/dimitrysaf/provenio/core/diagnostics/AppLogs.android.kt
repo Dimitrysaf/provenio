@@ -59,7 +59,7 @@ actual object AppLogs {
     private fun deviceSummary(context: Context): String {
         val packageInfo = runCatching { context.packageManager.getPackageInfo(context.packageName, 0) }.getOrNull()
         return listOf(
-            "Provenio ${AppVersionConfig.VERSION_NAME} (${AppVersionConfig.BUILD_COMMIT})",
+            "Provenio ${AppVersionConfig.VERSION_NAME}",
             "Package ${context.packageName} ${packageInfo?.versionName.orEmpty()}",
             "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
             "Device ${Build.MANUFACTURER} ${Build.MODEL}",

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,10 +22,14 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -162,6 +167,7 @@ internal class SettingsListScope internal constructor() {
         enabled: Boolean = true,
         leadingContent: (@Composable () -> Unit)? = null,
         trailingContent: (@Composable () -> Unit)? = null,
+        progress: Float? = null,
         onClick: () -> Unit,
     ) {
         rows += SettingsListRow.Navigation(
@@ -172,6 +178,7 @@ internal class SettingsListScope internal constructor() {
             enabled = enabled,
             leadingContent = leadingContent,
             trailingContent = trailingContent,
+            progress = progress,
             onClick = onClick,
         )
     }
@@ -252,16 +259,40 @@ internal sealed interface SettingsListRow {
         /** Anything the icon slots cannot express, a remote image for one. Wins over both. */
         private val leadingContent: (@Composable () -> Unit)?,
         private val trailingContent: (@Composable () -> Unit)?,
+        private val progress: Float? = null,
         private val onClick: () -> Unit,
     ) : SettingsListRow {
         @OptIn(ExperimentalMaterial3ExpressiveApi::class)
         @Composable
         override fun Render(shape: RoundedCornerShape, shapes: ListItemShapes) {
+            val fill by animateFloatAsState(
+                targetValue = (progress ?: 0f).coerceIn(0f, 1f),
+                label = "settings_row_progress",
+            )
+            val containerColor = MaterialTheme.colorScheme.surfaceContainer
+            val fillColor = MaterialTheme.colorScheme.primaryContainer
             SegmentedListItem(
                 onClick = onClick,
                 shapes = shapes,
                 enabled = enabled,
-                colors = settingsListItemColors,
+                modifier = if (progress != null) {
+                    Modifier
+                        .clip(shape)
+                        .drawBehind {
+                            drawRect(containerColor)
+                            drawRect(fillColor, size = Size(size.width * fill, size.height))
+                        }
+                } else {
+                    Modifier
+                },
+                colors = if (progress != null) {
+                    ListItemDefaults.segmentedColors(
+                        containerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                    )
+                } else {
+                    settingsListItemColors
+                },
                 leadingContent = leadingContent ?: leadingIcon(icon, iconPainter),
                 supportingContent = description?.takeIf { it.isNotBlank() }?.let { { Text(it) } },
                 trailingContent = trailingContent,

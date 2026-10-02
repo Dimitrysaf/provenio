@@ -1804,6 +1804,8 @@
     <string name="updates_title_allow_installs">Allow installs to continue</string>
     <string name="updates_title_available">Update available</string>
     <string name="updates_title_status">Update status</string>
+    <string name="updates_action_background">Continue in background</string>
+    <string name="updates_ready_in_background">Update downloaded. Open Check for updates in Settings to install it.</string>
     <string name="addon_already_installed">That addon is already installed.</string>
     <string name="addon_invalid_url">Enter a valid addon URL</string>
     <string name="addon_load_manifest_failed">Unable to load manifest</string>

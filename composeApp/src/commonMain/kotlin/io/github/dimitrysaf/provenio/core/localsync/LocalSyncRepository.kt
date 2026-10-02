@@ -618,8 +618,4 @@ object LocalSyncRepository {
     }
 }
 
-// How this build names itself to the other device: the version, and the commit for beta builds that share one.
-private fun localSyncAppVersion(): String {
-    val commit = AppVersionConfig.BUILD_COMMIT.take(7)
-    return if (commit.isBlank()) AppVersionConfig.VERSION_NAME else "${AppVersionConfig.VERSION_NAME} ($commit)"
-}
+private fun localSyncAppVersion(): String = AppVersionConfig.VERSION_NAME

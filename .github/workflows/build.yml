@@ -433,8 +433,8 @@ jobs:
             echo "::warning::Windows installer is missing"
           fi
 
+          version="$(scripts/app-version.sh)"
           if [[ "${CHANNEL}" == "stable" ]]; then
-            version="$(sed -n 's/^MARKETING_VERSION=//p' iosApp/Configuration/Version.xcconfig)"
             title="Provenio Stable channel ${version}"
             flag="--latest"
             previous="$(git rev-list -n 1 stable 2>/dev/null || true)"
@@ -445,7 +445,7 @@ jobs:
             fi
             [[ -s notes.md ]] || echo "- No changes since the last stable release." > notes.md
           else
-            title="Provenio Beta channel ${SHA::7}"
+            title="Provenio Beta channel ${version}"
             flag="--prerelease"
             git log -1 --format=%B "${GITHUB_SHA}" > notes.md
           fi

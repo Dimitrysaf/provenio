@@ -33,10 +33,6 @@ private const val gitHubApiBase = "https://api.github.com"
 private val channelTag: String
     get() = if (AppUpdaterPlatform.isDebugBuild) "beta" else "stable"
 
-// The release title ends with what identifies the build: a short commit for beta, a version for stable.
-private val channelBuildId: String
-    get() = if (AppUpdaterPlatform.isDebugBuild) AppVersionConfig.BUILD_COMMIT else AppVersionConfig.VERSION_NAME
-
 // The APK each ABI installs; the universal one is the fallback.
 private val apkNameByAbi = mapOf(
     "arm64-v8a" to "Provenio-arm64v8.apk",
@@ -98,13 +94,8 @@ private class NoChannelReleaseException : IllegalStateException(
     runBlocking { getString(Res.string.updates_no_channel_release) },
 )
 
-// Beta has no order between commits, so any other commit is newer; a local build without one never updates.
-private fun isChannelBuildNewer(remoteBuildId: String): Boolean =
-    if (AppUpdaterPlatform.isDebugBuild) {
-        channelBuildId.isNotBlank() && !remoteBuildId.equals(channelBuildId, ignoreCase = true)
-    } else {
-        VersionUtils.isRemoteNewer(remoteBuildId, channelBuildId)
-    }
+private fun isChannelBuildNewer(remoteVersion: String): Boolean =
+    AppVersionConfig.BUILD_NUMBER > 0 && VersionUtils.isRemoteNewer(remoteVersion, AppVersionConfig.VERSION_NAME)
 
 private object VersionUtils {
     fun normalize(raw: String?): String {
@@ -188,10 +179,15 @@ private object AppUpdaterRepository {
     }
 }
 
+object AppUpdaterStatus {
+    internal val state = MutableStateFlow(AppUpdaterUiState())
+    val uiState: StateFlow<AppUpdaterUiState> = state.asStateFlow()
+}
+
 class AppUpdaterController internal constructor(
     private val scope: CoroutineScope,
 ) {
-    private val _uiState = MutableStateFlow(AppUpdaterUiState())
+    private val _uiState = AppUpdaterStatus.state
     val uiState: StateFlow<AppUpdaterUiState> = _uiState.asStateFlow()
 
     private var autoCheckStarted = false
@@ -214,6 +210,12 @@ class AppUpdaterController internal constructor(
             return
         }
 
+        val current = _uiState.value
+        if (current.update != null && (current.isDownloading || current.downloadedApkPath != null)) {
+            _uiState.update { state -> state.copy(showDialog = true) }
+            return
+        }
+
         scope.launch {
             _uiState.update { state ->
                 state.copy(
@@ -230,7 +232,14 @@ class AppUpdaterController internal constructor(
             result.onSuccess { update ->
                 val remoteNewer = isChannelBuildNewer(update.tag)
                 val ignored = ignoredTag != null && ignoredTag == update.tag
-                val shouldShowDialog = force || (remoteNewer && !ignored)
+                val fileName = update.downloadFileName()
+                val completedPath = if (remoteNewer) AppUpdaterPlatform.completedUpdatePath(fileName) else null
+                val resumePartial = remoteNewer &&
+                    completedPath == null &&
+                    !ignored &&
+                    AppUpdaterPlatform.hasPartialUpdate(fileName)
+                if (!remoteNewer) AppUpdaterPlatform.clearUpdateFiles(null)
+                val shouldShowDialog = force || (remoteNewer && !ignored && !resumePartial)
 
                 _uiState.update { state ->
                     state.copy(
@@ -239,12 +248,14 @@ class AppUpdaterController internal constructor(
                         isUpdateAvailable = remoteNewer,
                         isDownloading = false,
                         downloadProgress = null,
-                        downloadedApkPath = state.downloadedApkPath.takeIf { remoteNewer },
+                        downloadedApkPath = completedPath,
                         showDialog = shouldShowDialog,
                         showUnknownSourcesDialog = false,
                         errorMessage = null,
                     )
                 }
+
+                if (resumePartial) downloadUpdate()
 
                 if (showNoUpdateFeedback && !remoteNewer) {
                     ToastController.show(getString(Res.string.updates_latest_version))
@@ -285,6 +296,15 @@ class AppUpdaterController internal constructor(
         }
     }
 
+    fun continueInBackground() {
+        _uiState.update { state ->
+            state.copy(
+                showDialog = false,
+                showUnknownSourcesDialog = false,
+            )
+        }
+    }
+
     fun ignoreThisVersion() {
         val tag = _uiState.value.update?.tag ?: return
         AppUpdaterPlatform.setIgnoredTag(tag)
@@ -309,7 +329,7 @@ class AppUpdaterController internal constructor(
 
             AppUpdaterPlatform.downloadApk(
                 assetUrl = update.assetUrl,
-                assetName = update.assetName,
+                assetName = update.downloadFileName(),
             ) { downloadedBytes, totalBytes ->
                 val progress = if (totalBytes != null && totalBytes > 0L) {
                     (downloadedBytes.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
@@ -318,6 +338,7 @@ class AppUpdaterController internal constructor(
                 }
                 _uiState.update { state -> state.copy(downloadProgress = progress) }
             }.onSuccess { path ->
+                val inBackground = !_uiState.value.showDialog
                 _uiState.update { state ->
                     state.copy(
                         isDownloading = false,
@@ -326,7 +347,11 @@ class AppUpdaterController internal constructor(
                         errorMessage = null,
                     )
                 }
-                installDownloadedUpdate()
+                if (inBackground) {
+                    ToastController.show(getString(Res.string.updates_ready_in_background))
+                } else {
+                    installDownloadedUpdate()
+                }
             }.onFailure { error ->
                 _uiState.update { state ->
                     state.copy(
@@ -421,6 +446,9 @@ class AppUpdaterController internal constructor(
         }
     }
 }
+
+private fun AppUpdate.downloadFileName(): String =
+    tag.replace(Regex("[^A-Za-z0-9._-]"), "_") + "-" + assetName
 
 @Composable
 fun rememberAppUpdaterController(): AppUpdaterController {

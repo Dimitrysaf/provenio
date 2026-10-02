@@ -16,6 +16,12 @@ expect object AppUpdaterPlatform {
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,
     ): Result<String>
 
+    fun completedUpdatePath(fileName: String): String?
+
+    fun hasPartialUpdate(fileName: String): Boolean
+
+    fun clearUpdateFiles(keepFileName: String?)
+
     fun canRequestPackageInstalls(): Boolean
 
     fun openUnknownSourcesSettings()

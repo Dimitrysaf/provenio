@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.core.updater
 import io.github.dimitrysaf.provenio.core.build.AppVersionConfig
 import java.awt.Desktop
 import java.io.File
+import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URI
 import java.util.prefs.Preferences
@@ -35,37 +36,97 @@ actual object AppUpdaterPlatform {
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,
     ): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
-            val target = File(downloadDirectory(), assetName)
-            val partial = File(target.parentFile, "$assetName.part")
-            var connection = URI(assetUrl).toURL().openConnection() as HttpURLConnection
-            var redirects = 0
-            while (connection.responseCode in 300..399 && redirects < 5) {
-                val location = connection.getHeaderField("Location") ?: break
-                connection.disconnect()
-                connection = URI(location).toURL().openConnection() as HttpURLConnection
-                redirects++
+            val target = updateFile(assetName)
+            if (target.exists()) {
+                onProgress(target.length(), target.length())
+                return@runCatching target.absolutePath
             }
-            check(connection.responseCode == HttpURLConnection.HTTP_OK) { "HTTP ${connection.responseCode}" }
-            val total = connection.contentLengthLong.takeIf { it > 0 }
-            connection.inputStream.use { input ->
-                partial.outputStream().use { output ->
-                    val buffer = ByteArray(64 * 1024)
-                    var downloaded = 0L
-                    while (true) {
-                        val read = input.read(buffer)
-                        if (read < 0) break
-                        output.write(buffer, 0, read)
-                        downloaded += read
-                        onProgress(downloaded, total)
+            clearUpdateFiles(target.name)
+            val partial = File(target.parentFile, target.name + PartialSuffix)
+
+            var attempt = 0
+            while (true) {
+                attempt += 1
+                val resumeFrom = partial.takeIf { it.exists() }?.length() ?: 0L
+                val connection = openFollowingRedirects(assetUrl, resumeFrom)
+                try {
+                    val code = connection.responseCode
+                    if (code == HttpRangeNotSatisfiable && attempt == 1) {
+                        partial.delete()
+                        continue
                     }
+                    check(code == HttpURLConnection.HTTP_OK || code == HttpURLConnection.HTTP_PARTIAL) { "HTTP $code" }
+                    val appending = code == HttpURLConnection.HTTP_PARTIAL && resumeFrom > 0L
+                    val alreadyDownloaded = if (appending) resumeFrom else 0L
+                    val total = connection.contentLengthLong.takeIf { it > 0 }?.let { it + alreadyDownloaded }
+                    connection.inputStream.use { input ->
+                        FileOutputStream(partial, appending).use { output ->
+                            val buffer = ByteArray(64 * 1024)
+                            var downloaded = alreadyDownloaded
+                            onProgress(downloaded, total)
+                            while (true) {
+                                val read = input.read(buffer)
+                                if (read < 0) break
+                                output.write(buffer, 0, read)
+                                downloaded += read
+                                onProgress(downloaded, total)
+                            }
+                        }
+                    }
+                } finally {
+                    connection.disconnect()
                 }
+                break
             }
-            connection.disconnect()
-            if (target.exists()) target.delete()
+
             check(partial.renameTo(target)) { "Could not save ${target.name}" }
             target.absolutePath
         }
     }
+
+    actual fun completedUpdatePath(fileName: String): String? =
+        updateFile(fileName).takeIf { it.exists() }?.absolutePath
+
+    actual fun hasPartialUpdate(fileName: String): Boolean {
+        val file = updateFile(fileName)
+        return File(file.parentFile, file.name + PartialSuffix).exists()
+    }
+
+    actual fun clearUpdateFiles(keepFileName: String?) {
+        val keep = keepFileName?.let { updateFile(it).name }
+        updatesDirectory().listFiles()?.forEach { file ->
+            if (keep == null || (file.name != keep && file.name != keep + PartialSuffix)) {
+                file.delete()
+            }
+        }
+    }
+
+    private fun openFollowingRedirects(url: String, resumeFrom: Long): HttpURLConnection {
+        var connection = open(url, resumeFrom)
+        var redirects = 0
+        while (connection.responseCode in 300..399 && redirects < 5) {
+            val location = connection.getHeaderField("Location") ?: break
+            connection.disconnect()
+            connection = open(location, resumeFrom)
+            redirects++
+        }
+        return connection
+    }
+
+    private fun open(url: String, resumeFrom: Long): HttpURLConnection =
+        (URI(url).toURL().openConnection() as HttpURLConnection).apply {
+            instanceFollowRedirects = false
+            if (resumeFrom > 0L) setRequestProperty("Range", "bytes=$resumeFrom-")
+        }
+
+    private fun updatesDirectory(): File {
+        val base = System.getenv("LOCALAPPDATA")?.takeIf { it.isNotBlank() }?.let { File(it, "Provenio") }
+            ?: File(System.getProperty("user.home"), ".provenio")
+        return File(base, "updates").apply { mkdirs() }
+    }
+
+    private fun updateFile(fileName: String): File =
+        File(updatesDirectory(), fileName.replace(Regex("[^a-zA-Z0-9._-]"), "_"))
 
     actual fun canRequestPackageInstalls(): Boolean = true
 
@@ -81,11 +142,6 @@ actual object AppUpdaterPlatform {
         Desktop.getDesktop().open(file)
     }
 
-    private fun downloadDirectory(): File {
-        val home = File(System.getProperty("user.home"))
-        val downloads = File(home, "Downloads")
-        val directory = if (downloads.isDirectory) downloads else File(System.getProperty("java.io.tmpdir"))
-        directory.mkdirs()
-        return directory
-    }
+    private const val PartialSuffix = ".part"
+    private const val HttpRangeNotSatisfiable = 416
 }

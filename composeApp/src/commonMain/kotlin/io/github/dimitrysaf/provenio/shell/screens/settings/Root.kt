@@ -25,6 +25,13 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.dimitrysaf.provenio.shell.screens.updater.AppUpdaterStatus
+import provenio.composeapp.generated.resources.updates_downloading_progress
+import provenio.composeapp.generated.resources.updates_message_ready
+import provenio.composeapp.generated.resources.updates_preparing_download
+import provenio.composeapp.generated.resources.updates_title_available
 import io.github.dimitrysaf.provenio.core.build.AppVersionConfig
 import io.github.dimitrysaf.provenio.core.diagnostics.AppLogs
 import io.github.dimitrysaf.provenio.core.updater.AppUpdaterPlatform
@@ -184,10 +191,24 @@ internal fun LazyListScope.settingsRootContent(
                         onClick = onLicensesAttributionsClick,
                     )
                     if (onCheckForUpdatesClick != null) {
+                        val updater by AppUpdaterStatus.uiState.collectAsStateWithLifecycle()
+                        val downloadPercent = updater.downloadProgress?.let { (it * 100).toInt().coerceIn(0, 100) }
                         navigationRow(
                             title = stringResource(Res.string.compose_settings_root_check_updates_title),
-                            description = stringResource(Res.string.compose_settings_root_check_updates_description),
+                            description = when {
+                                updater.isDownloading && downloadPercent != null ->
+                                    stringResource(Res.string.updates_downloading_progress, downloadPercent)
+                                updater.isDownloading -> stringResource(Res.string.updates_preparing_download)
+                                updater.downloadedApkPath != null -> stringResource(Res.string.updates_message_ready)
+                                updater.isUpdateAvailable -> stringResource(Res.string.updates_title_available)
+                                else -> stringResource(Res.string.compose_settings_root_check_updates_description)
+                            },
                             icon = Icons.Rounded.CloudDownload,
+                            progress = when {
+                                updater.isDownloading -> updater.downloadProgress ?: 0f
+                                updater.downloadedApkPath != null -> 1f
+                                else -> null
+                            },
                             onClick = onCheckForUpdatesClick,
                         )
                     }
@@ -247,7 +268,6 @@ internal fun LazyListScope.settingsRootContent(
                         AppVersionConfig.VERSION_CODE,
                     ),
                     channel,
-                    AppVersionConfig.BUILD_COMMIT,
                 ).filter { it.isNotBlank() }.joinToString(" · "),
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.bodySmall,

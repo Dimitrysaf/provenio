@@ -125,6 +125,9 @@ mkdir -p "$input"
 cp "$app_jar" "$input/provenio.jar"
 cp "$engine_library" "$input/libengine.so"
 cp "$repository"/packaging/linux/{provenio.sh,io.github.dimitrysaf.Provenio.desktop,io.github.dimitrysaf.Provenio.metainfo.xml,io.github.dimitrysaf.Provenio.png} "$input/"
+app_version="$("$repository/scripts/app-version.sh")"
+sed -i "s|<release version=\"[^\"]*\" date=\"[^\"]*\"/>|<release version=\"$app_version\" date=\"$(date -u +%F)\"/>|" \
+    "$input/io.github.dimitrysaf.Provenio.metainfo.xml"
 
 $make_flatpak || { echo "App JAR and engine ready in $input"; exit 0; }
 

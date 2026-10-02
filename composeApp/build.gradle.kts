@@ -33,7 +33,7 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
     abstract val appVersionCode: Property<Int>
 
     @get:Input
-    abstract val buildCommit: Property<String>
+    abstract val appBuildNumber: Property<Int>
 
     @get:Input
     abstract val releaseChannel: Property<String>
@@ -159,7 +159,7 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
                 |object AppVersionConfig {
                 |    const val VERSION_NAME = "${appVersionName.get()}"
                 |    const val VERSION_CODE = ${appVersionCode.get()}
-                |    const val BUILD_COMMIT = "${buildCommit.get()}"
+                |    const val BUILD_NUMBER = ${appBuildNumber.get()}
                 |    const val RELEASE_CHANNEL = "${releaseChannel.get()}"
                 |}
                 """.trimMargin()
@@ -231,16 +231,18 @@ val localProps = Properties().apply {
     if (propsFile.exists()) propsFile.inputStream().use { load(it) }
 }
 val appVersionConfigFile = rootProject.file("iosApp/Configuration/Version.xcconfig")
-val releaseAppVersionName = readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION")
-    ?: error("MARKETING_VERSION is missing from ${appVersionConfigFile.path}")
-val windowsInstallerVersion = run {
-    val parts = releaseAppVersionName.split('.')
-    val build = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.takeIf { it in 1..65535 }
-    if (build != null && parts.size >= 2) "${parts[0]}.${parts[1]}.$build" else releaseAppVersionName
-}
-val releaseAppVersionCode = readXcconfigValue(appVersionConfigFile, "CURRENT_PROJECT_VERSION")
+val appBaseVersion = readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION")
+    ?.split('.')
+    ?.map { it.trim().toIntOrNull() ?: error("MARKETING_VERSION must be <major>.<minor>, like 0.40") }
+    ?.takeIf { it.size == 2 }
+    ?: error("MARKETING_VERSION must be <major>.<minor>, like 0.40, in ${appVersionConfigFile.path}")
+val releaseAppBuildNumber = (System.getenv("PROVENIO_BUILD_NUMBER") ?: System.getenv("GITHUB_RUN_NUMBER"))
+    ?.trim()
     ?.toIntOrNull()
-    ?: error("CURRENT_PROJECT_VERSION is missing or invalid in ${appVersionConfigFile.path}")
+    ?.takeIf { it in 0..65535 }
+    ?: 0
+val releaseAppVersionName = "${appBaseVersion[0]}.${appBaseVersion[1]}.$releaseAppBuildNumber"
+val releaseAppVersionCode = appBaseVersion[0] * 10_000_000 + appBaseVersion[1] * 100_000 + releaseAppBuildNumber
 val iosDistribution = (
     providers.gradleProperty("provenio.ios.distribution").orNull
         ?: System.getenv("PROVENIO_IOS_DISTRIBUTION")
@@ -288,8 +290,7 @@ val generateRuntimeConfigs = tasks.register<GenerateRuntimeConfigsTask>("generat
     localPropertiesFile.set(rootProject.layout.projectDirectory.file("local.properties"))
     appVersionName.set(releaseAppVersionName)
     appVersionCode.set(releaseAppVersionCode)
-    // The short commit a CI build was made from; beta updates compare against it. Empty for local builds.
-    buildCommit.set(providers.environmentVariable("GITHUB_SHA").map { it.take(7) }.orElse(""))
+    appBuildNumber.set(releaseAppBuildNumber)
     releaseChannel.set(providers.environmentVariable("PROVENIO_CHANNEL").orElse("beta"))
     sentryDsn.set(runtimeConfigValue("SENTRY_DSN"))
     tmdbApiKey.set(runtimeConfigValue("TMDB_API_KEY"))
@@ -564,7 +565,7 @@ compose.desktop {
             windows {
                 // Fixed for good: Windows matches installs by this ID to upgrade them in place.
                 upgradeUuid = "6f3c2b1e-8d4a-4e7b-9c15-2a7d0e5b9f43"
-                msiPackageVersion = windowsInstallerVersion
+                msiPackageVersion = releaseAppVersionName
                 perUserInstall = true
                 menu = true
                 shortcut = true

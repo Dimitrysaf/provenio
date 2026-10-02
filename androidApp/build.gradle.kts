@@ -37,11 +37,18 @@ val sentryOrg = envOrLocalProperty("SENTRY_ORG")
 val sentryProject = envOrLocalProperty("SENTRY_PROJECT")
 val sentryMappingUploadEnabled = sentryAuthToken != null && sentryOrg != null && sentryProject != null
 val appVersionConfigFile = rootProject.file("iosApp/Configuration/Version.xcconfig")
-val releaseAppVersionName = readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION")
-    ?: error("MARKETING_VERSION is missing from ${appVersionConfigFile.path}")
-val releaseAppVersionCode = readXcconfigValue(appVersionConfigFile, "CURRENT_PROJECT_VERSION")
+val appBaseVersion = readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION")
+    ?.split('.')
+    ?.map { it.trim().toIntOrNull() ?: error("MARKETING_VERSION must be <major>.<minor>, like 0.40") }
+    ?.takeIf { it.size == 2 }
+    ?: error("MARKETING_VERSION must be <major>.<minor>, like 0.40, in ${appVersionConfigFile.path}")
+val releaseAppBuildNumber = (System.getenv("PROVENIO_BUILD_NUMBER") ?: System.getenv("GITHUB_RUN_NUMBER"))
+    ?.trim()
     ?.toIntOrNull()
-    ?: error("CURRENT_PROJECT_VERSION is missing or invalid in ${appVersionConfigFile.path}")
+    ?.takeIf { it in 0..65535 }
+    ?: 0
+val releaseAppVersionName = "${appBaseVersion[0]}.${appBaseVersion[1]}.$releaseAppBuildNumber"
+val releaseAppVersionCode = appBaseVersion[0] * 10_000_000 + appBaseVersion[1] * 100_000 + releaseAppBuildNumber
 val requestedTaskNames = gradle.startParameter.taskNames.map { it.substringAfterLast(':') }
 val buildsReleaseApks = requestedTaskNames.any {
     it.startsWith("assemble", ignoreCase = true) && it.endsWith("Release", ignoreCase = true)

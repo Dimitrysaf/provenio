@@ -64,7 +64,7 @@ actual object AppLogs {
     private fun sessionName(index: Int): String = "provenio.$index.log"
 
     private fun summary(): String = listOf(
-        "Provenio ${AppVersionConfig.VERSION_NAME} (${AppVersionConfig.BUILD_COMMIT})",
+        "Provenio ${AppVersionConfig.VERSION_NAME}",
         "${System.getProperty("os.name")} ${System.getProperty("os.version")} ${System.getProperty("os.arch")}",
         "Java ${System.getProperty("java.version")}",
         "Started ${timestamp("yyyy-MM-dd HH:mm:ss Z")}",

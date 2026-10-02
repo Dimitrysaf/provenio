@@ -19,6 +19,14 @@ actual object AppUpdaterPlatform {
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,
     ): Result<String> = AndroidAppUpdaterPlatform.downloadApk(assetUrl, assetName, onProgress)
 
+    actual fun completedUpdatePath(fileName: String): String? = AndroidAppUpdaterPlatform.completedUpdatePath(fileName)
+
+    actual fun hasPartialUpdate(fileName: String): Boolean = AndroidAppUpdaterPlatform.hasPartialUpdate(fileName)
+
+    actual fun clearUpdateFiles(keepFileName: String?) {
+        AndroidAppUpdaterPlatform.clearUpdateFiles(keepFileName)
+    }
+
     actual fun canRequestPackageInstalls(): Boolean = AndroidAppUpdaterPlatform.canRequestPackageInstalls()
 
     actual fun openUnknownSourcesSettings() {

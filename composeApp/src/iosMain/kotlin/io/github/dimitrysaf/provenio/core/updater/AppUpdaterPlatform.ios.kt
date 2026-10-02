@@ -21,6 +21,12 @@ actual object AppUpdaterPlatform {
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,
     ): Result<String> = Result.failure(IllegalStateException(getString(Res.string.updates_not_available)))
 
+    actual fun completedUpdatePath(fileName: String): String? = null
+
+    actual fun hasPartialUpdate(fileName: String): Boolean = false
+
+    actual fun clearUpdateFiles(keepFileName: String?) = Unit
+
     actual fun canRequestPackageInstalls(): Boolean = false
 
     actual fun openUnknownSourcesSettings() = Unit

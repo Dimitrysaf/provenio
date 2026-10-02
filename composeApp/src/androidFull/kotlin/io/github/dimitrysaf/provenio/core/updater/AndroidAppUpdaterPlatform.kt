@@ -61,44 +61,83 @@ object AndroidAppUpdaterPlatform {
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,
     ): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
-            val context = requireContext()
-            val safeName = assetName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
-            val destination = File(File(context.cacheDir, "updates"), safeName)
-            destination.parentFile?.mkdirs()
+            val destination = updateFile(assetName)
             if (destination.exists()) {
-                destination.delete()
+                onProgress(destination.length(), destination.length())
+                return@runCatching destination.absolutePath
             }
+            clearUpdateFiles(destination.name)
+            val partial = File(destination.parentFile, destination.name + PartialSuffix)
 
-            val request = Request.Builder()
-                .url(assetUrl)
-                .build()
+            var attempt = 0
+            while (true) {
+                attempt += 1
+                val resumeFrom = partial.takeIf { it.exists() }?.length() ?: 0L
+                val request = Request.Builder()
+                    .url(assetUrl)
+                    .apply { if (resumeFrom > 0L) header("Range", "bytes=$resumeFrom-") }
+                    .build()
 
-            httpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    error(runBlocking { getString(Res.string.updates_download_failed_http, response.code) })
-                }
-
-                val body = response.body ?: error(runBlocking { getString(Res.string.updates_empty_download_body) })
-                val totalBytes = body.contentLength().takeIf { it > 0L }
-                body.byteStream().use { input ->
-                    FileOutputStream(destination).use { output ->
-                        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                        var downloadedBytes = 0L
-                        while (true) {
-                            val read = input.read(buffer)
-                            if (read <= 0) break
-                            output.write(buffer, 0, read)
-                            downloadedBytes += read
-                            onProgress(downloadedBytes, totalBytes)
-                        }
-                        output.flush()
+                val restart = httpClient.newCall(request).execute().use { response ->
+                    if (response.code == HttpRangeNotSatisfiable && attempt == 1) {
+                        partial.delete()
+                        return@use true
                     }
+                    if (!response.isSuccessful) {
+                        error(runBlocking { getString(Res.string.updates_download_failed_http, response.code) })
+                    }
+
+                    val body = response.body ?: error(runBlocking { getString(Res.string.updates_empty_download_body) })
+                    val appending = response.code == HttpPartialContent && resumeFrom > 0L
+                    val alreadyDownloaded = if (appending) resumeFrom else 0L
+                    val totalBytes = body.contentLength().takeIf { it > 0L }?.let { it + alreadyDownloaded }
+                    body.byteStream().use { input ->
+                        FileOutputStream(partial, appending).use { output ->
+                            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                            var downloadedBytes = alreadyDownloaded
+                            onProgress(downloadedBytes, totalBytes)
+                            while (true) {
+                                val read = input.read(buffer)
+                                if (read <= 0) break
+                                output.write(buffer, 0, read)
+                                downloadedBytes += read
+                                onProgress(downloadedBytes, totalBytes)
+                            }
+                            output.flush()
+                        }
+                    }
+                    false
                 }
+                if (!restart) break
             }
 
+            check(partial.renameTo(destination)) { runBlocking { getString(Res.string.updates_downloaded_file_missing) } }
             destination.absolutePath
         }
     }
+
+    fun completedUpdatePath(fileName: String): String? =
+        updateFile(fileName).takeIf { it.exists() }?.absolutePath
+
+    fun hasPartialUpdate(fileName: String): Boolean {
+        val file = updateFile(fileName)
+        return File(file.parentFile, file.name + PartialSuffix).exists()
+    }
+
+    fun clearUpdateFiles(keepFileName: String?) {
+        val keep = keepFileName?.let { updateFile(it).name }
+        updatesDirectory().listFiles()?.forEach { file ->
+            if (keep == null || (file.name != keep && file.name != keep + PartialSuffix)) {
+                file.delete()
+            }
+        }
+    }
+
+    private fun updatesDirectory(): File =
+        File(requireContext().cacheDir, "updates").apply { mkdirs() }
+
+    private fun updateFile(fileName: String): File =
+        File(updatesDirectory(), fileName.replace(Regex("[^a-zA-Z0-9._-]"), "_"))
 
     fun canRequestPackageInstalls(): Boolean {
         val context = appContext ?: return false
@@ -144,6 +183,10 @@ object AndroidAppUpdaterPlatform {
     }
 
     private fun preferences() = requireContext().getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
+
+    private const val PartialSuffix = ".part"
+    private const val HttpPartialContent = 206
+    private const val HttpRangeNotSatisfiable = 416
 
     private fun requireContext(): Context =
         requireNotNull(appContext) { "AndroidAppUpdaterPlatform.initialize must be called before use." }
