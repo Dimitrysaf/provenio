@@ -54,7 +54,7 @@
     <string name="cd_selected">Kiválasztva</string>
     <string name="collections_copy_json">JSON másolása</string>
     <string name="collections_count_summary">%1$d gyűjtemény, %2$d mappa</string>
-    <string name="collections_delete_message">Biztosan törlöd a(z) \"%1$s\" elemet? Ez a művelet nem vonható vissza.</string>
+    <string name="collections_delete_message">Biztosan törlöd a(z) "%1$s" elemet? Ez a művelet nem vonható vissza.</string>
     <string name="collections_delete_title">Gyűjtemény törlése</string>
     <string name="collections_editor_add_catalog">Katalógus hozzáadása</string>
     <string name="collections_editor_add_folder">Mappa hozzáadása</string>
@@ -99,7 +99,7 @@
     <string name="collections_editor_shape_square">Négyzet</string>
     <string name="collections_editor_shape_wide">Széles</string>
     <string name="collections_editor_show_all_tab_desc">Az összes katalógus kombinálása egyetlen fülre</string>
-    <string name="collections_editor_show_all_tab">\"Összes\" fül megjelenítése</string>
+    <string name="collections_editor_show_all_tab">"Összes" fül megjelenítése</string>
     <string name="collections_editor_show_gif_when_configured_desc">A beállított GIF lejátszása a statikus borító helyett, ha elérhető.</string>
     <string name="collections_editor_show_gif_when_configured">GIF megjelenítése, ha be van állítva</string>
     <string name="collections_editor_source_count">%1$d forrás · %2$s</string>
@@ -1192,11 +1192,11 @@
     <string name="action_resume_episode">%1$s folytatása</string>
     <string name="collections_import_error_empty_json">A JSON üres.</string>
     <string name="collections_import_error_collection_blank_id">A(z) %1$d. gyűjtemény azonosítója (ID) üres.</string>
-    <string name="collections_import_error_collection_blank_title">A(z) \'%1$s\' gyűjtemény címe üres.</string>
-    <string name="collections_import_error_folder_blank_id">A(z) %1$d. mappa a(z) \'%2$s\' helyen üres azonosítóval rendelkezik.</string>
-    <string name="collections_import_error_folder_blank_title">A(z) \'%1$s\' mappa a(z) \'%2$s\' helyen üres címmel rendelkezik.</string>
-    <string name="collections_import_error_source_blank_fields">A(z) %1$d. forrás a(z) \'%2$s\' mappában üres mezőket tartalmaz.</string>
-    <string name="collections_import_error_trakt_list_id">A(z) %1$d. forrásból a(z) \'%2$s\' mappában hiányzik a Trakt lista ID.</string>
+    <string name="collections_import_error_collection_blank_title">A(z) '%1$s' gyűjtemény címe üres.</string>
+    <string name="collections_import_error_folder_blank_id">A(z) %1$d. mappa a(z) '%2$s' helyen üres azonosítóval rendelkezik.</string>
+    <string name="collections_import_error_folder_blank_title">A(z) '%1$s' mappa a(z) '%2$s' helyen üres címmel rendelkezik.</string>
+    <string name="collections_import_error_source_blank_fields">A(z) %1$d. forrás a(z) '%2$s' mappában üres mezőket tartalmaz.</string>
+    <string name="collections_import_error_trakt_list_id">A(z) %1$d. forrásból a(z) '%2$s' mappában hiányzik a Trakt lista ID.</string>
     <string name="collections_import_error_invalid_json">Érvénytelen JSON: %1$s</string>
     <string name="collections_folder_addon_not_found">A kiegészítő nem található: %1$s</string>
     <string name="date_month_january">január</string>

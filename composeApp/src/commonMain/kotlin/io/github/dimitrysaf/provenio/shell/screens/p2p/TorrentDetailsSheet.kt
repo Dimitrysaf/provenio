@@ -451,19 +451,13 @@ private fun TorrentHealthNotice(report: P2pTorrentHealthReport) {
         )
         P2pTorrentHealthIssue.STABLE -> Triple(
             Res.string.torrent_health_stable_title,
-            if (report.requiredSpeed != null) {
-                Res.string.torrent_health_stable_rate_message
-            } else {
-                Res.string.torrent_health_stable_message
-            },
+            Res.string.torrent_health_stable_message,
             Icons.Rounded.CheckCircle,
         )
     }
     val message = when (report.issue) {
         P2pTorrentHealthIssue.FEW_SEEDERS -> stringResource(messageRes, report.seeders)
-        P2pTorrentHealthIssue.STABLE -> report.requiredSpeed?.let { required ->
-            stringResource(messageRes, formatP2pSpeed(report.downloadSpeed), formatP2pSpeed(required))
-        } ?: stringResource(messageRes, formatP2pSpeed(report.downloadSpeed))
+        P2pTorrentHealthIssue.STABLE -> stringResource(messageRes, formatP2pSpeed(report.downloadSpeed))
         P2pTorrentHealthIssue.TOO_SLOW -> report.requiredSpeed?.let { required ->
             stringResource(messageRes, formatP2pSpeed(report.downloadSpeed), formatP2pSpeed(required))
         } ?: stringResource(messageRes)

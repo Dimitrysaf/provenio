@@ -411,7 +411,7 @@
     <string name="compose_settings_page_content_discovery">Contenu et découverte</string>
     <string name="compose_settings_page_continue_watching">Continuer à regarder</string>
     <string name="compose_settings_page_debrid">Services connectés</string>
-    <string name="compose_settings_page_homescreen">Écran d\'accueil</string>
+    <string name="compose_settings_page_homescreen">Écran d'accueil</string>
     <string name="compose_settings_page_integrations">Intégrations</string>
     <string name="compose_settings_page_licenses_attributions">Licences et attributions</string>
     <string name="compose_settings_page_mdblist_ratings">Notes MDBList</string>

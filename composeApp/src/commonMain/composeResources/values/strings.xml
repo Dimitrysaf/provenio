@@ -2495,9 +2495,9 @@
     <string name="torrent_health_getting_info_title">Getting torrent info</string>
     <string name="torrent_health_getting_info_message">Asking peers for the list of files in this torrent.</string>
     <string name="torrent_health_no_peers_title">No peers</string>
-    <string name="torrent_health_no_peers_message">Couldn\'t connect to anyone sharing this torrent. It may be dead; try another source.</string>
+    <string name="torrent_health_no_peers_message">Couldn't connect to anyone sharing this torrent. It may be dead; try another source.</string>
     <string name="torrent_health_unavailable_title">File incomplete in the swarm</string>
-    <string name="torrent_health_unavailable_message">Part of this file isn\'t available from anyone connected. Playback may stop before the end.</string>
+    <string name="torrent_health_unavailable_message">Part of this file isn't available from anyone connected. Playback may stop before the end.</string>
     <string name="torrent_health_too_slow_title">Too slow</string>
     <string name="torrent_health_too_slow_message">The player is waiting for data. Expect buffering.</string>
     <string name="torrent_health_too_slow_rate_message">Downloading at %1$s, but this video needs %2$s. Expect buffering.</string>
@@ -2508,12 +2508,11 @@
     <string name="torrent_health_few_seeders_title">Few seeders</string>
     <string name="torrent_health_few_seeders_message">Only %1$d seeders share this torrent. Loading may be slow.</string>
     <string name="torrent_health_corrupt_title">Corrupt data</string>
-    <string name="torrent_health_corrupt_message">Some peers are sending broken data. It\'s being downloaded again.</string>
+    <string name="torrent_health_corrupt_message">Some peers are sending broken data. It's being downloaded again.</string>
     <string name="torrent_health_trackers_down_title">Trackers not responding</string>
     <string name="torrent_health_trackers_down_message">Peers are being found through the DHT only.</string>
     <string name="torrent_health_stable_title">Connection stable</string>
-    <string name="torrent_health_stable_message">Downloading steadily at %1$s.</string>
-    <string name="torrent_health_stable_rate_message">Downloading at %1$s, more than the %2$s this video needs.</string>
+    <string name="torrent_health_stable_message">Downloading at %1$s and keeping up with playback.</string>
     <string name="torrent_details_waiting">Waiting for the torrent to start downloading, it may take a while.</string>
     <string name="torrent_details_not_active">This torrent isn't active right now. Its details show while it plays or downloads.</string>
     <string name="torrent_details_section_speed">Speed</string>

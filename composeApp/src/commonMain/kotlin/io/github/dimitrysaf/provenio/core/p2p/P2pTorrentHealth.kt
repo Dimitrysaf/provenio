@@ -164,15 +164,8 @@ class P2pTorrentHealthMonitor {
             add(P2pTorrentHealthReport(P2pTorrentHealthIssue.TRACKERS_DOWN))
         }
 
-        val keepsUp = requiredSpeed == null || averageSpeed * 10 >= requiredSpeed * 12
-        if (!waiting && recentFetching.size >= MinSpeedSamples && averageSpeed > 0L && keepsUp) {
-            add(
-                P2pTorrentHealthReport(
-                    P2pTorrentHealthIssue.STABLE,
-                    downloadSpeed = averageSpeed,
-                    requiredSpeed = requiredSpeed,
-                ),
-            )
+        if (!waiting && !gettingInfo && details.connectedPeers > 0) {
+            add(P2pTorrentHealthReport(P2pTorrentHealthIssue.STABLE, downloadSpeed = averageSpeed))
         }
     }
 
