@@ -86,6 +86,8 @@ import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
 import io.github.dimitrysaf.provenio.core.home.buildAddonCatalogRefreshSignature
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListSettings
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListSettingsRepository
+import io.github.dimitrysaf.provenio.core.streams.availability.StreamingAvailabilitySettings
+import io.github.dimitrysaf.provenio.core.streams.availability.StreamingAvailabilitySettingsRepository
 import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificationsRepository
 import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificationsUiState
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
@@ -835,6 +837,7 @@ internal data class SettingsData(
     val episodeReleaseNotifications: EpisodeReleaseNotificationsUiState,
     val tmdbSettings: TmdbSettings,
     val mdbListSettings: MdbListSettings,
+    val streamingAvailabilitySettings: StreamingAvailabilitySettings,
     val debridSettings: DebridSettings,
     val traktAuth: TraktAuthUiState,
     val simklAuth: SimklAuthUiState,
@@ -875,6 +878,10 @@ internal fun rememberSettingsData(): SettingsData {
     val mdbListSettings by remember {
         MdbListSettingsRepository.ensureLoaded()
         MdbListSettingsRepository.uiState
+    }.collectAsStateWithLifecycle()
+    val streamingAvailabilitySettings by remember {
+        StreamingAvailabilitySettingsRepository.ensureLoaded()
+        StreamingAvailabilitySettingsRepository.uiState
     }.collectAsStateWithLifecycle()
     val debridSettings by remember {
         DebridSettingsRepository.ensureLoaded()
@@ -957,6 +964,7 @@ internal fun rememberSettingsData(): SettingsData {
         episodeReleaseNotifications = episodeReleaseNotificationsUiState,
         tmdbSettings = tmdbSettings,
         mdbListSettings = mdbListSettings,
+        streamingAvailabilitySettings = streamingAvailabilitySettings,
         debridSettings = debridSettings,
         traktAuth = traktAuthUiState,
         simklAuth = simklAuthUiState,
@@ -1099,10 +1107,15 @@ internal fun LazyListScope.settingsPageContent(
             isTablet = isTablet,
             onTmdbClick = { links.openSubPage(SettingsPage.TmdbEnrichment) },
             onMdbListClick = { links.openSubPage(SettingsPage.MdbListRatings) },
+            onStreamingAvailabilityClick = { links.openSubPage(SettingsPage.StreamingAvailability) },
             onDebridClick = { links.openSubPage(SettingsPage.Debrid) },
         )
         SettingsPage.TmdbEnrichment -> tmdbSettingsContent(isTablet = isTablet, settings = data.tmdbSettings)
         SettingsPage.MdbListRatings -> mdbListSettingsContent(isTablet = isTablet, settings = data.mdbListSettings)
+        SettingsPage.StreamingAvailability -> streamingAvailabilitySettingsContent(
+            isTablet = isTablet,
+            settings = data.streamingAvailabilitySettings,
+        )
         SettingsPage.Debrid -> debridSettingsContent(isTablet = isTablet, settings = data.debridSettings)
         SettingsPage.TraktAuthentication -> trackingSettingsContent(
             isTablet = isTablet,

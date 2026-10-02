@@ -55,13 +55,18 @@ internal fun embeddedStreamGroups(streams: List<StreamItem>): List<AddonStreamGr
             )
         }
 
-internal fun embeddedLookupGroup(name: String): AddonStreamGroup =
+internal const val ExternalLookupGroupId = "$EmbeddedSourceAddonId::external"
+
+internal fun embeddedLookupGroup(name: String, addonId: String = EmbeddedSourceAddonId): AddonStreamGroup =
     AddonStreamGroup(
         addonName = name,
-        addonId = EmbeddedSourceAddonId,
+        addonId = addonId,
         streams = emptyList(),
         isLoading = true,
     )
+
+internal val AddonStreamGroup.isPendingEmbeddedLookup: Boolean
+    get() = addonId == EmbeddedSourceAddonId && isLoading
 
 internal fun List<AddonStreamGroup>.withEmbeddedGroups(embedded: List<AddonStreamGroup>): List<AddonStreamGroup> =
     embedded + filterNot { it.isEmbeddedSource }
@@ -87,10 +92,13 @@ internal class EmbeddedSourceState(
     private var metadataStreams: List<StreamItem>,
     private var metadataPending: Boolean,
     private var specialPending: Boolean,
+    private var externalPending: Boolean,
     private val pendingLabel: String,
+    private val externalPendingLabel: String,
     private val present: (List<AddonStreamGroup>) -> List<AddonStreamGroup>,
 ) {
     private var specialStreams: List<StreamItem> = emptyList()
+    private var externalStreams: List<StreamItem> = emptyList()
     private val mutex = Mutex()
 
     fun initialGroups(): List<AddonStreamGroup> = groups()
@@ -107,8 +115,23 @@ internal class EmbeddedSourceState(
         groups()
     }
 
+    suspend fun externalLoaded(streams: List<StreamItem>): List<AddonStreamGroup> = mutex.withLock {
+        externalStreams = streams
+        externalPending = false
+        groups()
+    }
+
     private fun groups(): List<AddonStreamGroup> {
-        val found = present(embeddedStreamGroups((metadataStreams + specialStreams).distinctSources()))
-        return if (metadataPending || specialPending) found + embeddedLookupGroup(pendingLabel) else found
+        val found = present(
+            embeddedStreamGroups((metadataStreams + specialStreams + externalStreams).distinctBy { it.embeddedSourceKey() }),
+        )
+        return when {
+            metadataPending || specialPending -> found + embeddedLookupGroup(pendingLabel)
+            externalPending -> found + embeddedLookupGroup(externalPendingLabel, ExternalLookupGroupId)
+            else -> found
+        }
     }
 }
+
+private fun StreamItem.embeddedSourceKey(): String =
+    if (url == null && infoHash == null && externalUrl != null) "$addonName:$name:$externalUrl" else sourceKey()

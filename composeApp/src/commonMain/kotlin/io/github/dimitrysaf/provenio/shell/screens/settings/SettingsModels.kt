@@ -22,6 +22,7 @@ import provenio.composeapp.generated.resources.compose_settings_page_homescreen
 import provenio.composeapp.generated.resources.compose_settings_page_integrations
 import provenio.composeapp.generated.resources.compose_settings_page_licenses_attributions
 import provenio.composeapp.generated.resources.compose_settings_page_mdblist_ratings
+import provenio.composeapp.generated.resources.compose_settings_page_streaming_availability
 import provenio.composeapp.generated.resources.compose_settings_page_meta_screen
 import provenio.composeapp.generated.resources.compose_settings_page_notifications
 import provenio.composeapp.generated.resources.compose_settings_page_playback
@@ -142,6 +143,11 @@ internal enum class SettingsPage(
     ),
     MdbListRatings(
         titleRes = Res.string.compose_settings_page_mdblist_ratings,
+        category = SettingsCategory.General,
+        parentPage = Integrations,
+    ),
+    StreamingAvailability(
+        titleRes = Res.string.compose_settings_page_streaming_availability,
         category = SettingsCategory.General,
         parentPage = Integrations,
     ),

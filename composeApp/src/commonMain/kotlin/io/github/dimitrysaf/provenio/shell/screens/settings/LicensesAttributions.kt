@@ -38,6 +38,8 @@ private const val PremiumizeUrl = "https://www.premiumize.me"
 private const val TorboxUrl = "https://torbox.app"
 private const val MdbListUrl = "https://mdblist.com"
 private const val IntroDbUrl = "https://introdb.app/"
+private const val JustWatchUrl = "https://www.justwatch.com"
+private const val StreamingAvailabilityUrl = "https://www.movieofthenight.com/about/api"
 private const val RepositoryUrl = "https://github.com/Dimitrysaf/provenio"
 private const val MpvKitUrl = "https://github.com/mpvkit/MPVKit"
 private const val ApacheLicenseUrl = "https://www.apache.org/licenses/LICENSE-2.0"
@@ -259,6 +261,18 @@ private fun attributionItems(): List<AttributionItem> = listOf(
         bodyRes = Res.string.settings_licenses_attributions_mdblist_body,
         logo = IntegrationLogo.MdbList,
         link = MdbListUrl,
+    ),
+    AttributionItem(
+        titleRes = Res.string.settings_licenses_attributions_justwatch_title,
+        bodyRes = Res.string.settings_licenses_attributions_justwatch_body,
+        logo = null,
+        link = JustWatchUrl,
+    ),
+    AttributionItem(
+        titleRes = Res.string.settings_licenses_attributions_streaming_availability_title,
+        bodyRes = Res.string.settings_licenses_attributions_streaming_availability_body,
+        logo = null,
+        link = StreamingAvailabilityUrl,
     ),
     AttributionItem(
         titleRes = Res.string.settings_licenses_attributions_introdb_title,

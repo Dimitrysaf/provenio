@@ -38,6 +38,7 @@ import io.github.dimitrysaf.provenio.core.membership.MemberAssetStorage
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsStorage
 import io.github.dimitrysaf.provenio.core.metadata.SeasonViewModeStorage
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListSettingsStorage
+import io.github.dimitrysaf.provenio.core.streams.availability.StreamingAvailabilitySettingsStorage
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbSettingsStorage
 import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificationsStorage
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsStorage
@@ -211,6 +212,7 @@ private fun initializePlatform(context: Context) {
     DebridSettingsStorage.initialize(context)
     TmdbSettingsStorage.initialize(context)
     MdbListSettingsStorage.initialize(context)
+    StreamingAvailabilitySettingsStorage.initialize(context)
     TraktAuthStorage.initialize(context)
     TraktCommentsStorage.initialize(context)
     TraktLibraryStorage.initialize(context)

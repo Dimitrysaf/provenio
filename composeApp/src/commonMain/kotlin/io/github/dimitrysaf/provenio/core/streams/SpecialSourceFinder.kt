@@ -117,19 +117,8 @@ internal object SpecialSourceFinder {
         return matchingSearchResults(parseYouTubeSearch(root), seriesName, specialTitle)
     }
 
-    private fun FoundVideo.toStreamItem(): StreamItem {
-        val watchUrl = youTubeWatchUrl(videoId)
-        val playsInApp = AppFeaturePolicy.trailerPlaybackMode == TrailerPlaybackMode.IN_APP
-        return StreamItem(
-            name = title,
-            description = detail,
-            url = watchUrl.takeIf { playsInApp },
-            externalUrl = watchUrl.takeUnless { playsInApp },
-            addonName = "YouTube",
-            addonId = EmbeddedSourceAddonId,
-            discovered = true,
-        )
-    }
+    private fun FoundVideo.toStreamItem(): StreamItem =
+        youTubeStreamItem(videoId = videoId, title = title, detail = detail)
 
     private const val YouTubeSearchMaxBytes = 8 * 1024 * 1024
     private const val YouTubeWebClientVersion = "2.20250101.00.00"
@@ -142,6 +131,20 @@ private val GenericEpisodeTitle = Regex("^(episode|special|ep\\.?|e)\\s*\\d*$", 
 private val StopWords = setOf("the", "a", "an", "of", "and", "in", "on", "to", "at", "for", "with")
 private const val MaxSearchResults = 5
 
+internal fun youTubeStreamItem(videoId: String, title: String, detail: String?): StreamItem {
+    val watchUrl = youTubeWatchUrl(videoId)
+    val playsInApp = AppFeaturePolicy.trailerPlaybackMode == TrailerPlaybackMode.IN_APP
+    return StreamItem(
+        name = title,
+        description = detail,
+        url = watchUrl.takeIf { playsInApp },
+        externalUrl = watchUrl.takeUnless { playsInApp },
+        addonName = "YouTube",
+        addonId = EmbeddedSourceAddonId,
+        discovered = true,
+    )
+}
+
 internal fun isGenericEpisodeTitle(title: String): Boolean =
     title.isBlank() || GenericEpisodeTitle.matches(title.trim())
 
@@ -150,7 +153,7 @@ internal fun normalizeTitle(value: String): String =
         .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
         .trim()
 
-private fun significantWords(value: String): Set<String> =
+internal fun significantWords(value: String): Set<String> =
     normalizeTitle(value).split(' ').filter { it.isNotBlank() && it !in StopWords }.toSet()
 
 internal fun youTubeSearchQuery(seriesName: String, specialTitle: String): String =
@@ -272,7 +275,7 @@ internal fun AddonStreamGroup.withSpecialStreams(specialStreams: List<StreamItem
 
 internal fun List<StreamItem>.distinctSources(): List<StreamItem> = distinctBy { it.sourceKey() }
 
-private fun StreamItem.sourceKey(): String =
+internal fun StreamItem.sourceKey(): String =
     url ?: infoHash?.let { "$it:${fileIdx ?: ""}" } ?: externalUrl ?: "$addonId:$name:$description"
 
 private const val SpecialStreamType = "movie"

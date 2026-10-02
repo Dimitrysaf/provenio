@@ -34,6 +34,7 @@ import io.github.dimitrysaf.provenio.core.library.LibraryStorage
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsStorage
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsStorage
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListSettingsStorage
+import io.github.dimitrysaf.provenio.core.streams.availability.StreamingAvailabilitySettingsStorage
 import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificationPlatform
 import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificationsStorage
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsStorage
@@ -124,6 +125,7 @@ open class MainActivity : AppCompatActivity() {
         DebridSettingsStorage.initialize(applicationContext)
         TmdbSettingsStorage.initialize(applicationContext)
         MdbListSettingsStorage.initialize(applicationContext)
+        StreamingAvailabilitySettingsStorage.initialize(applicationContext)
         TraktAuthStorage.initialize(applicationContext)
         TraktCommentsStorage.initialize(applicationContext)
         TraktLibraryStorage.initialize(applicationContext)

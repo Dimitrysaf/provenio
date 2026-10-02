@@ -14,6 +14,7 @@ import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleRepository
 import io.github.dimitrysaf.provenio.core.library.LibraryRepository
 import io.github.dimitrysaf.provenio.core.library.LibraryDisplaySettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListSettingsRepository
+import io.github.dimitrysaf.provenio.core.streams.availability.StreamingAvailabilitySettingsRepository
 import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificationsRepository
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
@@ -129,6 +130,7 @@ object ProfileRepository {
         EpisodeReleaseNotificationsRepository.onProfileChanged()
         TmdbSettingsRepository.onProfileChanged()
         MdbListSettingsRepository.onProfileChanged()
+        StreamingAvailabilitySettingsRepository.onProfileChanged()
         SearchHistoryRepository.onProfileChanged()
         SearchRepository.reset()
         CollectionRepository.onProfileChanged()

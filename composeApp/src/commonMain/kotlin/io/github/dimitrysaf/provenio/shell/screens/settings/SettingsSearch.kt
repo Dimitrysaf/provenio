@@ -128,6 +128,7 @@ internal fun settingsSearchEntries(
     val collectionsPage = stringResource(Res.string.collections_header)
     val tmdbPage = stringResource(Res.string.compose_settings_page_tmdb_enrichment)
     val mdbListPage = stringResource(Res.string.compose_settings_page_mdblist_ratings)
+    val streamingAvailabilityPage = stringResource(Res.string.compose_settings_page_streaming_availability)
 
     val entries = mutableListOf<SettingsSearchEntry>()
 
@@ -761,6 +762,27 @@ internal fun settingsSearchEntries(
         description = stringResource(Res.string.settings_integrations_mdblist_description),
         icon = Icons.Rounded.Link,
     )
+    addPage(
+        page = SettingsPage.StreamingAvailability,
+        key = "streaming-availability",
+        title = streamingAvailabilityPage,
+        description = stringResource(Res.string.settings_integrations_streaming_availability_description),
+        icon = Icons.Rounded.Link,
+    )
+    listOf(
+        PlaybackSearchRow("sa-enable", stringResource(Res.string.settings_sa_enable), stringResource(Res.string.settings_sa_enable_description), stringResource(Res.string.settings_sa_section_title)),
+        PlaybackSearchRow("sa-api-key", stringResource(Res.string.settings_sa_api_key_title), stringResource(Res.string.settings_sa_api_key_description), stringResource(Res.string.settings_sa_section_api_key)),
+    ).forEach { row ->
+        addRow(
+            page = SettingsPage.StreamingAvailability,
+            key = row.key,
+            title = row.title,
+            description = row.description,
+            pageLabel = streamingAvailabilityPage,
+            section = row.sectionOverride ?: stringResource(Res.string.settings_sa_section_title),
+            icon = Icons.Rounded.Link,
+        )
+    }
     val tmdbModulesSection = stringResource(Res.string.settings_tmdb_section_modules)
     listOf(
         PlaybackSearchRow("tmdb-enable", stringResource(Res.string.settings_tmdb_enable_enrichment), stringResource(Res.string.settings_tmdb_enable_enrichment_description), stringResource(Res.string.settings_tmdb_section_title)),

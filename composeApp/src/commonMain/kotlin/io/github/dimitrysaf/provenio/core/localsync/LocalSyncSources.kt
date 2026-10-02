@@ -23,6 +23,8 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsStorage
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListSettingsStorage
+import io.github.dimitrysaf.provenio.core.streams.availability.StreamingAvailabilitySettingsRepository
+import io.github.dimitrysaf.provenio.core.streams.availability.StreamingAvailabilitySettingsStorage
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbSettingsStorage
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
@@ -114,6 +116,12 @@ internal fun localSyncSources(): List<LocalSyncSource> = listOf(
         export = MdbListSettingsStorage::exportToSyncPayload,
         replace = MdbListSettingsStorage::replaceFromSyncPayload,
         reload = MdbListSettingsRepository::onProfileChanged,
+    ),
+    SettingsPayloadSource(
+        name = "streaming_availability",
+        export = StreamingAvailabilitySettingsStorage::exportToSyncPayload,
+        replace = StreamingAvailabilitySettingsStorage::replaceFromSyncPayload,
+        reload = StreamingAvailabilitySettingsRepository::onProfileChanged,
     ),
     SettingsPayloadSource(
         name = "trakt_comments",

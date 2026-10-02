@@ -165,7 +165,17 @@ object StreamsRepository {
             metadataEmbeddedStreams.isEmpty() && !MetaDetailsRepository.isMetaKnown(type, it)
         }
         val specialLookup = if (season == 0 && parentMetaId != null && episode != null) parentMetaId to episode else null
-        val hasEmbeddedSource = metadataEmbeddedStreams.isNotEmpty() || embeddedLookupMetaId != null || specialLookup != null
+        val externalRequest = externalSourceRequest(
+            type = type,
+            videoId = videoId,
+            parentMetaId = parentMetaId,
+            season = season,
+            episode = episode,
+        )
+        val hasEmbeddedSource = metadataEmbeddedStreams.isNotEmpty() ||
+            embeddedLookupMetaId != null ||
+            specialLookup != null ||
+            externalRequest != null
 
         val installedAddons = AddonRepository.uiState.value.addons.enabledAddons()
         val pluginScrapers = if (AppFeaturePolicy.pluginsEnabled) {
@@ -223,8 +233,14 @@ object StreamsRepository {
             metadataStreams = metadataEmbeddedStreams,
             metadataPending = embeddedLookupMetaId != null,
             specialPending = specialLookup != null,
+            externalPending = externalRequest != null,
             pendingLabel = if (embeddedLookupMetaId != null || specialLookup != null) {
                 runBlocking { getString(Res.string.source_embedded) }
+            } else {
+                ""
+            },
+            externalPendingLabel = if (externalRequest != null) {
+                runBlocking { getString(Res.string.source_where_to_watch) }
             } else {
                 ""
             },
@@ -339,7 +355,7 @@ object StreamsRepository {
                 }
 
                 if (
-                    _uiState.value.groups.none { it.isEmbeddedSource && it.isLoading } &&
+                    _uiState.value.groups.none { it.isPendingEmbeddedLookup } &&
                     _uiState.value.groups.withoutEmbeddedSources().areAutoPlaySourcesLoaded(
                         source = playerSettings.streamAutoPlaySource,
                         installedAddonIds = installedAddonIds,
@@ -468,6 +484,18 @@ object StreamsRepository {
                         runCatchingUnlessCancelled { SpecialSourceFinder.streams(found) }.getOrNull()
                     }.orEmpty()
                     publishEmbeddedGroups(embeddedSources.specialsLoaded(streams))
+                }
+            }
+            val externalSourcesJob = externalRequest?.let { request ->
+                launch {
+                    val special = specialContext?.await()
+                    val streams = runCatchingUnlessCancelled {
+                        ExternalSourceFinder.streams(request = request, special = special)
+                    }.getOrElse { error ->
+                        log.w(error) { "Failed to look up external sources for ${request.metaId}" }
+                        emptyList()
+                    }
+                    publishEmbeddedGroups(embeddedSources.externalLoaded(streams))
                 }
             }
 
@@ -666,6 +694,7 @@ object StreamsRepository {
             }
             embeddedLookupJob?.join()
             specialSourcesJob?.join()
+            externalSourcesJob?.join()
 
             cacheGroups(cacheKey, _uiState.value.groups)
 
