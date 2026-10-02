@@ -10,6 +10,7 @@ data class PersonDetail(
     val deathday: String?,
     val placeOfBirth: String?,
     val profilePhoto: String?,
+    val profileImages: List<String> = emptyList(),
     val knownFor: String?,
     val movieCredits: List<MetaPreview>,
     val tvCredits: List<MetaPreview>,

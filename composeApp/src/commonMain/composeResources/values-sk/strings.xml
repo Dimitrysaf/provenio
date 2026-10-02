@@ -1983,6 +1983,10 @@
     <string name="person_detail_place_of_birth">Miesto narodenia</string>
     <string name="person_detail_credits">Tvorba / Účinkovanie</string>
     <string name="person_detail_biography">Biografia</string>
+    <string name="person_detail_personal_info">Osobné údaje</string>
+    <string name="person_detail_died">Úmrtie</string>
+    <string name="person_detail_active_since">Aktívny od</string>
+    <string name="person_detail_date_with_age">%1$s (vek %2$d)</string>
     <string name="entity_browse_country">Krajina</string>
     <string name="entity_browse_type">Typ</string>
     <string name="entity_browse_catalogue">Katalóg</string>

@@ -2477,6 +2477,10 @@
     <string name="person_detail_place_of_birth">Place of birth</string>
     <string name="person_detail_credits">Credits</string>
     <string name="person_detail_biography">Biography</string>
+    <string name="person_detail_personal_info">Personal info</string>
+    <string name="person_detail_died">Died</string>
+    <string name="person_detail_active_since">Active since</string>
+    <string name="person_detail_date_with_age">%1$s (age %2$d)</string>
     <string name="entity_browse_country">Country</string>
     <string name="entity_browse_type">Type</string>
     <string name="entity_browse_catalogue">Catalogue</string>

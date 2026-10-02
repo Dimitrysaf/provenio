@@ -1,20 +1,18 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
-import io.github.dimitrysaf.provenio.shell.components.DeceasedPhotoFilter
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.fadeIn
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,63 +21,83 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
+import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.lerp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
+import io.github.dimitrysaf.provenio.core.build.isIos
+import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.i18n.localizedShortMonthName
+import io.github.dimitrysaf.provenio.core.metadata.MetaScreenBackgroundMode
+import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
+import io.github.dimitrysaf.provenio.core.metadata.PersonDetail
+import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbMetadataService
+import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
+import io.github.dimitrysaf.provenio.core.watch.watched.WatchedRepository
+import io.github.dimitrysaf.provenio.shell.components.BackButton
+import io.github.dimitrysaf.provenio.shell.components.DeceasedPhotoFilter
 import io.github.dimitrysaf.provenio.shell.components.SkeletonPosterRow
 import io.github.dimitrysaf.provenio.shell.components.landscapePosterHeightForWidth
 import io.github.dimitrysaf.provenio.shell.components.landscapePosterWidth
+import io.github.dimitrysaf.provenio.shell.components.platformPhysicalTopInset
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
+import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
+import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.shell.components.skeleton
+import io.github.dimitrysaf.provenio.shell.nav.LocalUseNativeNavigation
+import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailInfoRows
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPosterRailSection
+import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.ExpandableDescription
-import io.github.dimitrysaf.provenio.core.home.MetaPreview
-import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbMetadataService
-import io.github.dimitrysaf.provenio.core.watch.watched.WatchedRepository
-import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
-import provenio.composeapp.generated.resources.*
+import io.github.dimitrysaf.provenio.shell.screens.details.components.loadedBackdropImageBitmap
+import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroMinSmallItemWidth
+import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroOnArtworkColor
+import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroOnArtworkVariantColor
+import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeHeroLayout
+import io.github.dimitrysaf.provenio.shell.screens.home.components.heroCarouselTopInset
+import io.github.dimitrysaf.provenio.shell.screens.home.components.heroItemContentAlpha
+import io.github.dimitrysaf.provenio.shell.screens.home.components.homeHeroLayout
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
-import io.github.dimitrysaf.provenio.shell.nav.LocalUseNativeNavigation
-import io.github.dimitrysaf.provenio.core.metadata.PersonDetail
-import io.github.dimitrysaf.provenio.core.metadata.castAvatarSharedTransitionKey
+import provenio.composeapp.generated.resources.*
 
 private sealed interface PersonDetailUiState {
     data object Loading : PersonDetailUiState
@@ -88,28 +106,24 @@ private sealed interface PersonDetailUiState {
 }
 
 @Composable
-@OptIn(ExperimentalSharedTransitionApi::class)
 fun PersonDetailScreen(
     personId: Int,
     personName: String,
     initialProfilePhoto: String? = null,
-    avatarTransitionKey: String? = null,
     preferCrew: Boolean = false,
     onBack: () -> Unit,
     onOpenMeta: (MetaPreview) -> Unit,
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
     modifier: Modifier = Modifier,
 ) {
     var uiState by remember(personId) { mutableStateOf<PersonDetailUiState>(PersonDetailUiState.Loading) }
+    var loadAttempt by remember(personId) { mutableIntStateOf(0) }
     val watchedUiState by remember {
         WatchedRepository.ensureLoaded()
         WatchedRepository.uiState
     }.collectAsStateWithLifecycle()
     val fullyWatchedSeriesKeys by WatchedRepository.fullyWatchedSeriesKeys.collectAsStateWithLifecycle()
-    val resolvedAvatarTransitionKey = avatarTransitionKey ?: castAvatarSharedTransitionKey(personId)
 
-    LaunchedEffect(personId) {
+    LaunchedEffect(personId, loadAttempt) {
         uiState = PersonDetailUiState.Loading
         val detail = TmdbMetadataService.fetchPersonDetail(
             personId = personId,
@@ -132,968 +146,666 @@ fun PersonDetailScreen(
                 personId = personId,
                 personName = personName,
                 profilePhoto = initialProfilePhoto,
-                avatarTransitionKey = resolvedAvatarTransitionKey,
-                sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope,
+                onBack = onBack,
             )
             is PersonDetailUiState.Error -> PersonDetailError(
                 message = state.message,
-                onRetry = {
-                    uiState = PersonDetailUiState.Loading
-                    // Retry will be triggered by the LaunchedEffect above if we reset
-                },
+                onBack = onBack,
+                onRetry = { loadAttempt++ },
             )
             is PersonDetailUiState.Success -> PersonDetailContent(
                 person = state.personDetail,
                 watchedKeys = watchedUiState.watchedKeys,
                 fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                onBack = onBack,
                 onOpenMeta = onOpenMeta,
                 initialProfilePhoto = initialProfilePhoto,
-                avatarTransitionKey = resolvedAvatarTransitionKey,
-                sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope,
             )
-            }
-
-        if (!LocalUseNativeNavigation.current) {
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier
-                    .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(start = 4.dp, top = 4.dp)
-                    .align(Alignment.TopStart),
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = stringResource(Res.string.action_back),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
         }
     }
 }
 
+private class PersonPageMetrics(
+    val horizontalPadding: Dp,
+    val contentMaxWidth: Dp,
+)
+
 @Composable
-@OptIn(ExperimentalSharedTransitionApi::class)
-private fun PersonDetailContent(
-    person: PersonDetail,
-    watchedKeys: Set<String>,
-    fullyWatchedSeriesKeys: Set<String> = emptySet(),
-    onOpenMeta: (MetaPreview) -> Unit,
-    initialProfilePhoto: String? = null,
-    avatarTransitionKey: String,
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+private fun PersonPage(
+    pageKey: String,
+    name: String,
+    subtitle: String?,
+    images: List<String>,
+    deceased: Boolean,
+    onBack: () -> Unit,
+    infoItems: LazyListScope.(PersonPageMetrics) -> Unit,
+    railItems: LazyListScope.(PersonPageMetrics) -> Unit,
 ) {
-    val posterCardStyle = rememberPosterCardStyleUiState()
-    val isLandscapeShelfMode = posterCardStyle.catalogLandscapeModeEnabled
-    val skeletonPosterWidth = if (isLandscapeShelfMode) {
-        landscapePosterWidth(posterCardStyle.widthDp)
-    } else {
-        posterCardStyle.widthDp.dp
-    }
-    val skeletonPosterHeight = if (isLandscapeShelfMode) {
-        landscapePosterHeightForWidth(skeletonPosterWidth)
-    } else {
-        posterCardStyle.heightDp.dp
-    }
-    val accentColor = MaterialTheme.colorScheme.primary
+    val metaScreenSettingsUiState by remember {
+        MetaScreenSettingsRepository.ensureLoaded()
+        MetaScreenSettingsRepository.uiState
+    }.collectAsStateWithLifecycle()
+    val scroll = rememberDetailScrollState(pageKey)
 
-    val allCredits = remember(person.movieCredits, person.tvCredits) {
-        (person.movieCredits + person.tvCredits)
-            .distinctBy { it.id }
-    }
-
-    val todayDate = remember { CurrentDateProvider.todayIsoDate() }
-
-    val popularCredits = remember(allCredits) {
-        allCredits
-            .sortedByDescending { it.popularity ?: 0.0 }
-    }
-
-    val latestCredits = remember(allCredits, todayDate) {
-        allCredits
-            .filter { credit ->
-                val date = credit.rawReleaseDate
-                date != null && date <= todayDate
-            }
-            .sortedByDescending { it.rawReleaseDate ?: "" }
-    }
-
-    val upcomingCredits = remember(allCredits, todayDate) {
-        allCredits
-            .filter { credit ->
-                val date = credit.rawReleaseDate
-                date != null && date > todayDate
-            }
-            .sortedBy { it.rawReleaseDate ?: "" }
-    }
-
-    val scrollState = rememberScrollState()
-    val haptic = LocalHapticFeedback.current
-
-    // Hero collapse: 0 = fully expanded, 1 = fully collapsed
-    val collapseProgress by remember {
-        derivedStateOf {
-            (scrollState.value / HERO_COLLAPSE_SCROLL_RANGE).coerceIn(0f, 1f)
-        }
-    }
-
-    val shouldTriggerCatalogHaptic by remember {
-        derivedStateOf { scrollState.value >= HAPTIC_TRIGGER_SCROLL_THRESHOLD_PX }
-    }
-    var didTriggerCatalogHaptic by remember(person.tmdbId) { mutableStateOf(false) }
-    LaunchedEffect(shouldTriggerCatalogHaptic, didTriggerCatalogHaptic) {
-        if (shouldTriggerCatalogHaptic && !didTriggerCatalogHaptic) {
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            didTriggerCatalogHaptic = true
-        }
-    }
-
-    val accentGradient = remember(accentColor) {
-        Brush.verticalGradient(
-            colorStops = arrayOf(
-                0.0f to accentColor.copy(alpha = 0.18f),
-                0.15f to accentColor.copy(alpha = 0.10f),
-                0.30f to accentColor.copy(alpha = 0.04f),
-                0.50f to Color.Transparent,
-            ),
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isTwoPane = maxWidth >= DetailTwoPaneMinWidth
+        val isTablet = maxWidth >= 720.dp
+        val viewportHeight = maxHeight
+        val metrics = PersonPageMetrics(
+            horizontalPadding = when {
+                isTwoPane -> 24.dp
+                isTablet -> 32.dp
+                else -> 18.dp
+            },
+            contentMaxWidth = if (isTablet && !isTwoPane) {
+                (maxWidth * 0.6f).coerceIn(520.dp, 680.dp)
+            } else {
+                Dp.Unspecified
+            },
         )
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(accentGradient),
+        val primaryPaneWeight = if (isTwoPane) DetailPrimaryPaneWeight else 1f
+        val backdropUrl = images.firstOrNull()
+        val backgroundMode = metaScreenSettingsUiState.backgroundMode
+        val dominantColorEnabled = backgroundMode == MetaScreenBackgroundMode.DominantColor && backdropUrl != null
+        var dominantBackdropPainter by remember(pageKey, backdropUrl) { mutableStateOf<Painter?>(null) }
+        var dominantBackdropImageBitmap by remember(pageKey, backdropUrl) { mutableStateOf<ImageBitmap?>(null) }
+        val dominantBackdropColor = rememberDominantBackdropColor(
+            enabled = dominantColorEnabled,
+            imageBitmap = dominantBackdropImageBitmap,
+            painter = dominantBackdropPainter,
         )
 
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val useWideLayout = maxWidth >= PERSON_DETAIL_WIDE_LAYOUT_MIN_WIDTH
-            AnimatedVisibility(
+        Box(modifier = Modifier.fillMaxSize()) {
+            DetailBackdrop(
+                mode = backgroundMode,
+                backdropUrl = backdropUrl,
                 visible = true,
-                enter = fadeIn(),
+                dominantColor = dominantBackdropColor,
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(1f),
             ) {
-                if (useWideLayout) {
-                    WidePersonDetailContent(
-                        person = person,
-                        popularCredits = popularCredits,
-                        latestCredits = latestCredits,
-                        upcomingCredits = upcomingCredits,
-                        watchedKeys = watchedKeys,
-                        fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                        onOpenMeta = onOpenMeta,
-                        fallbackProfilePhoto = initialProfilePhoto,
-                        avatarTransitionKey = avatarTransitionKey,
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                    )
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(scrollState)
-                            .windowInsetsPadding(WindowInsets.statusBars)
-                            .padding(top = 48.dp),
-                    ) {
-                        HeroSection(
-                            person = person,
-                            collapseProgress = collapseProgress,
-                            fallbackProfilePhoto = initialProfilePhoto,
-                            avatarTransitionKey = avatarTransitionKey,
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope,
+                LazyColumn(
+                    state = scroll.listState,
+                    modifier = Modifier
+                        .weight(primaryPaneWeight)
+                        .fillMaxHeight(),
+                ) {
+                    item(key = "person-hero") {
+                        PersonHero(
+                            name = name,
+                            subtitle = subtitle,
+                            images = images,
+                            deceased = deceased,
+                            viewportHeight = viewportHeight,
+                            onHeightChanged = { scroll.heroHeightPx.intValue = it },
+                            onBackdropLoaded = { painter, imageBitmap ->
+                                dominantBackdropPainter = painter
+                                dominantBackdropImageBitmap = imageBitmap
+                            },
                         )
+                    }
 
-                        if (popularCredits.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(24.dp))
-                            DetailPosterRailSection(
-                                title = stringResource(Res.string.person_popular),
-                                items = popularCredits,
-                                watchedKeys = watchedKeys,
-                                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                                headerHorizontalPadding = 20.dp,
-                                onPosterClick = onOpenMeta,
-                            )
+                    infoItems(metrics)
+
+                    if (!isTwoPane) {
+                        railItems(metrics)
+                    }
+
+                    item(key = "person-bottom-spacer") {
+                        Spacer(modifier = Modifier.height(safeBottomPadding(32.dp)))
+                    }
+                }
+
+                if (isTwoPane) {
+                    LazyColumn(
+                        state = rememberLazyListState(),
+                        modifier = Modifier
+                            .weight(1f - primaryPaneWeight)
+                            .fillMaxHeight(),
+                        contentPadding = PaddingValues(
+                            top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
+                                TopAppBarDefaults.TopAppBarExpandedHeight,
+                        ),
+                    ) {
+                        railItems(metrics)
+
+                        item(key = "person-side-bottom-spacer") {
+                            Spacer(modifier = Modifier.height(safeBottomPadding(32.dp)))
                         }
-
-                        if (latestCredits.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(24.dp))
-                            DetailPosterRailSection(
-                                title = stringResource(Res.string.person_latest),
-                                items = latestCredits,
-                                watchedKeys = watchedKeys,
-                                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                                headerHorizontalPadding = 20.dp,
-                                onPosterClick = onOpenMeta,
-                            )
-                        }
-
-                        if (upcomingCredits.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(24.dp))
-                            DetailPosterRailSection(
-                                title = stringResource(Res.string.person_upcoming),
-                                items = upcomingCredits,
-                                watchedKeys = watchedKeys,
-                                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                                headerHorizontalPadding = 20.dp,
-                                onPosterClick = onOpenMeta,
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(32.dp))
                     }
                 }
             }
+
+            if (backgroundMode.usesBackdropBackground && scroll.heroHeightPx.intValue > 0) {
+                DetailHeroFade(
+                    color = dominantBackdropColor.takeIf { dominantColorEnabled } ?: MaterialTheme.colorScheme.background,
+                    widthFraction = primaryPaneWeight,
+                    heroHeightPx = scroll.heroHeightPx,
+                    scrollOffsetPx = scroll.scrollOffsetPx,
+                )
+            }
+
+            PersonHeaderOverlay(
+                title = name,
+                isHeroCollapsed = scroll.isHeroCollapsed,
+                backgroundColor = dominantBackdropColor.takeIf { dominantColorEnabled },
+                onBack = onBack,
+                modifier = Modifier.fillMaxWidth(primaryPaneWeight),
+            )
         }
     }
 }
 
-private val PERSON_DETAIL_WIDE_LAYOUT_MIN_WIDTH = 900.dp
-private val PERSON_DETAIL_WIDE_SIDEBAR_WIDTH = 392.dp
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PersonHero(
+    name: String,
+    subtitle: String?,
+    images: List<String>,
+    deceased: Boolean,
+    viewportHeight: Dp,
+    onHeightChanged: (Int) -> Unit,
+    onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
+) {
+    val pages = images.ifEmpty { listOf("") }
 
-private const val HERO_COLLAPSE_SCROLL_RANGE = 220f
-private const val HAPTIC_TRIGGER_SCROLL_THRESHOLD_PX = 56
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val layout = homeHeroLayout(
+            maxWidthDp = maxWidth.value,
+            viewportHeightDp = viewportHeight.value,
+        )
+        val topInset = heroCarouselTopInset()
+        val sectionHeightPx = with(LocalDensity.current) {
+            (topInset + layout.heroHeight + layout.contentVerticalPadding).roundToPx()
+        }
+        LaunchedEffect(sectionHeightPx) { onHeightChanged(sectionHeightPx) }
+        val carouselState = rememberCarouselState(itemCount = { pages.size })
+        val coroutineScope = rememberCoroutineScope()
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = topInset),
+        ) {
+            if (pages.size == 1) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = layout.contentHorizontalPadding)
+                        .height(layout.heroHeight)
+                        .clip(MaterialTheme.shapes.extraLarge),
+                ) {
+                    PersonHeroPage(
+                        url = pages[0],
+                        name = name,
+                        subtitle = subtitle,
+                        deceased = deceased,
+                        layout = layout,
+                        reportLoaded = true,
+                        contentAlpha = { 1f },
+                        onBackdropLoaded = onBackdropLoaded,
+                    )
+                }
+            } else {
+                HorizontalCenteredHeroCarousel(
+                    state = carouselState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(layout.heroHeight),
+                    itemSpacing = layout.itemSpacing,
+                    minSmallItemWidth = minOf(HeroMinSmallItemWidth, layout.smallItemWidth),
+                    maxSmallItemWidth = layout.smallItemWidth,
+                    contentPadding = PaddingValues(horizontal = layout.contentHorizontalPadding),
+                ) { index ->
+                    val drawInfo = carouselItemDrawInfo
+                    val isFocal = index == carouselState.currentItem
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .maskClip(MaterialTheme.shapes.extraLarge)
+                            .shapedClickable(MaterialTheme.shapes.extraLarge, enabled = !isFocal) {
+                                coroutineScope.launch { carouselState.animateScrollToItem(index) }
+                            },
+                    ) {
+                        PersonHeroPage(
+                            url = pages[index],
+                            name = name,
+                            subtitle = subtitle,
+                            deceased = deceased,
+                            layout = layout,
+                            reportLoaded = index == 0,
+                            contentAlpha = { heroItemContentAlpha(drawInfo) },
+                            onBackdropLoaded = onBackdropLoaded,
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(layout.contentVerticalPadding))
+        }
+    }
+}
 
 @Composable
-@OptIn(ExperimentalSharedTransitionApi::class)
-private fun WidePersonDetailContent(
-    person: PersonDetail,
-    popularCredits: List<MetaPreview>,
-    latestCredits: List<MetaPreview>,
-    upcomingCredits: List<MetaPreview>,
-    watchedKeys: Set<String>,
-    fullyWatchedSeriesKeys: Set<String> = emptySet(),
-    onOpenMeta: (MetaPreview) -> Unit,
-    fallbackProfilePhoto: String?,
-    avatarTransitionKey: String,
-    sharedTransitionScope: SharedTransitionScope?,
-    animatedVisibilityScope: AnimatedVisibilityScope?,
+private fun PersonHeroPage(
+    url: String,
+    name: String,
+    subtitle: String?,
+    deceased: Boolean,
+    layout: HomeHeroLayout,
+    reportLoaded: Boolean,
+    contentAlpha: () -> Float,
+    onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(top = 34.dp),
-    ) {
-        PersonIdentitySidebar(
-            person = person,
-            fallbackProfilePhoto = fallbackProfilePhoto,
-            avatarTransitionKey = avatarTransitionKey,
-            sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope,
-            modifier = Modifier
-                .width(PERSON_DETAIL_WIDE_SIDEBAR_WIDTH)
-                .fillMaxHeight(),
-        )
+    var artworkSettled by remember(url) { mutableStateOf(false) }
+    val skeletonAlpha by animateFloatAsState(
+        targetValue = if (artworkSettled) 0f else 1f,
+        animationSpec = tween(durationMillis = 260),
+        label = "person_hero_artwork_skeleton",
+    )
+    val centerTitle = layout.centerTitle
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (url.isBlank()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            )
+        } else {
+            AsyncImage(
+                model = url,
+                contentDescription = name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.TopCenter,
+                colorFilter = if (deceased) DeceasedPhotoFilter else null,
+                onSuccess = { state ->
+                    artworkSettled = true
+                    if (reportLoaded) {
+                        onBackdropLoaded(state.painter, loadedBackdropImageBitmap(state.result))
+                    }
+                },
+                onError = { artworkSettled = true },
+            )
+            if (skeletonAlpha > 0.01f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = skeletonAlpha }
+                        .skeleton(RectangleShape),
+                )
+            }
+        }
+
         Box(
             modifier = Modifier
-                .width(1.dp)
-                .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.30f)),
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f),
+                            MaterialTheme.colorScheme.scrim.copy(alpha = 0.86f),
+                        ),
+                    ),
+                ),
         )
 
         Column(
             modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 40.dp, bottom = 40.dp),
-            verticalArrangement = Arrangement.spacedBy(34.dp),
+                .align(Alignment.BottomStart)
+                .fillMaxWidth(layout.contentWidthFraction)
+                .widthIn(max = layout.contentMaxWidth)
+                .padding(
+                    horizontal = layout.contentHorizontalPadding,
+                    vertical = layout.contentVerticalPadding,
+                )
+                .graphicsLayer { alpha = contentAlpha() },
+            horizontalAlignment = if (centerTitle) Alignment.CenterHorizontally else Alignment.Start,
         ) {
-            if (popularCredits.isNotEmpty()) {
-                DetailPosterRailSection(
-                    title = stringResource(Res.string.person_popular),
-                    items = popularCredits,
-                    watchedKeys = watchedKeys,
-                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                    headerHorizontalPadding = 0.dp,
-                    onPosterClick = onOpenMeta,
-                )
-            }
-
-            if (latestCredits.isNotEmpty()) {
-                DetailPosterRailSection(
-                    title = stringResource(Res.string.person_latest),
-                    items = latestCredits,
-                    watchedKeys = watchedKeys,
-                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                    headerHorizontalPadding = 0.dp,
-                    onPosterClick = onOpenMeta,
-                )
-            }
-
-            if (upcomingCredits.isNotEmpty()) {
-                DetailPosterRailSection(
-                    title = stringResource(Res.string.person_upcoming),
-                    items = upcomingCredits,
-                    watchedKeys = watchedKeys,
-                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                    headerHorizontalPadding = 0.dp,
-                    onPosterClick = onOpenMeta,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-@OptIn(ExperimentalSharedTransitionApi::class)
-private fun PersonIdentitySidebar(
-    person: PersonDetail,
-    fallbackProfilePhoto: String?,
-    avatarTransitionKey: String,
-    sharedTransitionScope: SharedTransitionScope?,
-    animatedVisibilityScope: AnimatedVisibilityScope?,
-    modifier: Modifier = Modifier,
-) {
-    val accentColor = MaterialTheme.colorScheme.primary
-    val avatarUrl = person.profilePhoto?.takeIf { it.isNotBlank() } ?: fallbackProfilePhoto
-    val platformContext = LocalPlatformContext.current
-    val avatarRequest = if (!avatarUrl.isNullOrBlank()) {
-        remember(platformContext, avatarUrl, avatarTransitionKey) {
-            ImageRequest.Builder(platformContext)
-                .data(avatarUrl)
-                .memoryCacheKey(avatarTransitionKey)
-                .placeholderMemoryCacheKey(avatarTransitionKey)
-                .diskCacheKey(avatarUrl)
-                .build()
-        }
-    } else {
-        null
-    }
-    val avatarSharedElementModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-        with(sharedTransitionScope) {
-            Modifier.sharedElement(
-                sharedContentState = rememberSharedContentState(key = avatarTransitionKey),
-                animatedVisibilityScope = animatedVisibilityScope,
-            )
-        }
-    } else {
-        Modifier
-    }
-    val credits = remember(person.movieCredits, person.tvCredits) {
-        (person.movieCredits + person.tvCredits).distinctBy { it.id }
-    }
-    val creditSummary = remember(credits) {
-        buildCreditSummary(credits)
-    }
-
-    Column(
-        modifier = modifier
-            .verticalScroll(rememberScrollState())
-            .padding(start = 40.dp, end = 36.dp, top = 40.dp, bottom = 42.dp),
-        verticalArrangement = Arrangement.spacedBy(22.dp),
-    ) {
-        Box(
-            modifier = Modifier.size(162.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clip(CircleShape)
-                    .background(accentColor.copy(alpha = 0.14f)),
-            )
-            Box(
-                modifier = Modifier
-                    .then(avatarSharedElementModifier)
-                    .size(148.dp)
-                    .clip(CircleShape)
-                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.40f), CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (!avatarUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = avatarRequest ?: avatarUrl,
-                        contentDescription = person.name,
-                        modifier = Modifier.matchParentSize(),
-                        contentScale = ContentScale.Crop,
-                        colorFilter = if (!person.deathday.isNullOrBlank()) DeceasedPhotoFilter else null,
-                    )
-                } else {
-                    Text(
-                        text = person.name.initials(),
-                        style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
             Text(
-                text = person.name,
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-0.5).sp,
-                    lineHeight = 34.sp,
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 3,
+                text = name,
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.displaySmallEmphasized,
+                color = HeroOnArtworkColor,
+                textAlign = if (centerTitle) TextAlign.Center else TextAlign.Start,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(15.dp)) {
-            person.birthday?.let { birthday ->
-                PersonSidebarFact(
-                    label = stringResource(Res.string.person_detail_born),
-                    value = personBirthLine(birthday = birthday, deathday = person.deathday),
-                )
-            }
-            person.placeOfBirth?.takeIf { it.isNotBlank() }?.let { place ->
-                PersonSidebarFact(label = stringResource(Res.string.person_detail_place_of_birth), value = place)
-            }
-            if (creditSummary.isNotBlank()) {
-                PersonSidebarFact(label = stringResource(Res.string.person_detail_credits), value = creditSummary)
-            }
-        }
-
-        person.biography?.takeIf { it.isNotBlank() }?.let { biography ->
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.30f)),
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                SidebarLabel(text = stringResource(Res.string.person_detail_biography))
-                ExpandableDescription(
-                    text = biography,
-                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    collapsedMaxLines = 12,
+            if (!subtitle.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = HeroOnArtworkVariantColor,
+                    textAlign = if (centerTitle) TextAlign.Center else TextAlign.Start,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PersonSidebarFact(
-    label: String,
-    value: String,
+private fun PersonHeaderOverlay(
+    title: String,
+    isHeroCollapsed: State<Boolean>,
+    backgroundColor: Color?,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        SidebarLabel(text = label)
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis,
+    val target = if (isHeroCollapsed.value) 1f else 0f
+    val progress by animateFloatAsState(
+        targetValue = target,
+        animationSpec = tween(
+            durationMillis = if (target > 0f) 150 else 100,
+            easing = LinearOutSlowInEasing,
+        ),
+        label = "person_header_progress",
+    )
+    val useNativeNavigation = LocalUseNativeNavigation.current
+    val safeAreaTop = if (useNativeNavigation) {
+        platformPhysicalTopInset()
+    } else {
+        WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    }
+    val headerTopPadding = (safeAreaTop - 6.dp).coerceAtLeast(safeAreaTop * 0.8f)
+    val surfaceColor = backgroundColor ?: if (isIos) {
+        MaterialTheme.colorScheme.surface
+    } else {
+        MaterialTheme.colorScheme.background
+    }
+
+    Box(
+        modifier = modifier
+            .zIndex(2f)
+            .graphicsLayer {
+                shadowElevation = 4.dp.toPx() * progress
+                shape = RectangleShape
+            }
+            .background(surfaceColor.copy(alpha = progress)),
+    ) {
+        CenterAlignedTopAppBar(
+            modifier = Modifier.padding(top = headerTopPadding),
+            windowInsets = WindowInsets(0, 0, 0, 0),
+            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = Color.Transparent,
+                scrolledContainerColor = Color.Transparent,
+                titleContentColor = MaterialTheme.colorScheme.onBackground,
+                navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                actionIconContentColor = MaterialTheme.colorScheme.onBackground,
+            ),
+            title = {
+                Text(
+                    text = title,
+                    modifier = Modifier.graphicsLayer { alpha = progress },
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            navigationIcon = {
+                if (!useNativeNavigation) {
+                    BackButton(
+                        onClick = onBack,
+                        containerColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.40f * (1f - progress)),
+                        contentColor = lerp(Color.White, MaterialTheme.colorScheme.onBackground, progress),
+                    )
+                } else {
+                    Box(modifier = Modifier.size(PersonNavigationSlotSize))
+                }
+            },
+            actions = {
+                Box(modifier = Modifier.size(PersonNavigationSlotSize))
+            },
         )
     }
 }
 
 @Composable
-private fun SidebarLabel(text: String) {
-    Text(
-        text = text.uppercase(),
-        style = MaterialTheme.typography.labelSmall.copy(
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.0.sp,
-        ),
-        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.70f),
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
+private fun PersonDetailContent(
+    person: PersonDetail,
+    watchedKeys: Set<String>,
+    fullyWatchedSeriesKeys: Set<String>,
+    onBack: () -> Unit,
+    onOpenMeta: (MetaPreview) -> Unit,
+    initialProfilePhoto: String?,
+) {
+    val todayDate = remember { CurrentDateProvider.todayIsoDate() }
+    val allCredits = remember(person.movieCredits, person.tvCredits) {
+        (person.movieCredits + person.tvCredits).distinctBy { it.id }
+    }
+    val popularCredits = remember(allCredits) {
+        allCredits.sortedByDescending { it.popularity ?: 0.0 }
+    }
+    val latestCredits = remember(allCredits, todayDate) {
+        allCredits
+            .filter { credit -> credit.rawReleaseDate?.let { it <= todayDate } == true }
+            .sortedByDescending { it.rawReleaseDate.orEmpty() }
+    }
+    val upcomingCredits = remember(allCredits, todayDate) {
+        allCredits
+            .filter { credit -> credit.rawReleaseDate?.let { it > todayDate } == true }
+            .sortedBy { it.rawReleaseDate.orEmpty() }
+    }
+    val rails = listOf(
+        Triple("person-popular", stringResource(Res.string.person_popular), popularCredits),
+        Triple("person-latest", stringResource(Res.string.person_latest), latestCredits),
+        Triple("person-upcoming", stringResource(Res.string.person_upcoming), upcomingCredits),
+    ).filter { it.third.isNotEmpty() }
+    val infoRows = personInfoRows(person = person, credits = allCredits, todayDate = todayDate)
+    val infoTitle = stringResource(Res.string.person_detail_personal_info)
+    val biographyTitle = stringResource(Res.string.person_detail_biography)
+    val biography = person.biography?.trim()?.takeIf(String::isNotBlank)
+    val images = remember(person.profileImages, person.profilePhoto, initialProfilePhoto) {
+        person.profileImages.ifEmpty {
+            listOfNotNull(person.profilePhoto?.takeIf(String::isNotBlank) ?: initialProfilePhoto?.takeIf(String::isNotBlank))
+        }
+    }
+
+    PersonPage(
+        pageKey = "person-${person.tmdbId}",
+        name = person.name,
+        subtitle = person.knownFor?.trim()?.takeIf(String::isNotBlank),
+        images = images,
+        deceased = !person.deathday.isNullOrBlank(),
+        onBack = onBack,
+        infoItems = { metrics ->
+            if (infoRows.isNotEmpty()) {
+                item(key = "person-info") {
+                    DetailSectionContainer(
+                        horizontalPadding = metrics.horizontalPadding,
+                        contentMaxWidth = metrics.contentMaxWidth,
+                    ) {
+                        DetailSection(title = infoTitle) {
+                            DetailInfoRows(rows = infoRows)
+                        }
+                    }
+                }
+            }
+            if (biography != null) {
+                item(key = "person-biography") {
+                    DetailSectionContainer(
+                        horizontalPadding = metrics.horizontalPadding,
+                        contentMaxWidth = metrics.contentMaxWidth,
+                    ) {
+                        DetailSection(title = biographyTitle) {
+                            ExpandableDescription(
+                                text = biography,
+                                collapsedMaxLines = 6,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        railItems = { metrics ->
+            rails.forEach { (key, title, items) ->
+                item(key = key) {
+                    DetailSectionContainer(
+                        horizontalPadding = metrics.horizontalPadding,
+                        contentMaxWidth = Dp.Unspecified,
+                    ) {
+                        DetailPosterRailSection(
+                            title = title,
+                            items = items,
+                            watchedKeys = watchedKeys,
+                            fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                            horizontalScrollPadding = metrics.horizontalPadding,
+                            onPosterClick = onOpenMeta,
+                        )
+                    }
+                }
+            }
+        },
     )
 }
 
 @Composable
-@OptIn(ExperimentalSharedTransitionApi::class)
-private fun HeroSection(
+private fun personInfoRows(
     person: PersonDetail,
-    collapseProgress: Float = 0f,
-    fallbackProfilePhoto: String? = null,
-    avatarTransitionKey: String,
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
-) {
-    val avatarSize = lerp(140.dp, 72.dp, collapseProgress)
-    val heroScale = 1f - (collapseProgress * 0.12f)
-    val heroAlpha = 1f - (collapseProgress * 0.35f)
-    val avatarUrl = person.profilePhoto?.takeIf { it.isNotBlank() } ?: fallbackProfilePhoto
-    val avatarCacheKey = avatarTransitionKey
-    val platformContext = LocalPlatformContext.current
-    val avatarRequest = if (!avatarUrl.isNullOrBlank()) {
-        remember(platformContext, avatarUrl, avatarCacheKey) {
-            ImageRequest.Builder(platformContext)
-                .data(avatarUrl)
-                .memoryCacheKey(avatarCacheKey)
-                .placeholderMemoryCacheKey(avatarCacheKey)
-                .diskCacheKey(avatarUrl)
-                .build()
-        }
+    credits: List<MetaPreview>,
+    todayDate: String,
+): List<Pair<String, String>> {
+    val birthday = person.birthday?.trim()?.takeIf(String::isNotBlank)
+    val deathday = person.deathday?.trim()?.takeIf(String::isNotBlank)
+    val age = if (birthday != null) calculateAge(birthday, deathday ?: todayDate) else null
+    val birthdayDisplay = birthday?.let { formatDateForDisplay(it) ?: it }
+    val deathdayDisplay = deathday?.let { formatDateForDisplay(it) ?: it }
+    val bornValue = if (birthdayDisplay != null && deathdayDisplay == null && age != null) {
+        stringResource(Res.string.person_detail_date_with_age, birthdayDisplay, age)
     } else {
-        null
+        birthdayDisplay
     }
-    val avatarSharedElementModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-        with(sharedTransitionScope) {
-            Modifier.sharedElement(
-                sharedContentState = rememberSharedContentState(
-                    key = avatarTransitionKey,
-                ),
-                animatedVisibilityScope = animatedVisibilityScope,
-            )
-        }
+    val diedValue = if (deathdayDisplay != null && age != null) {
+        stringResource(Res.string.person_detail_date_with_age, deathdayDisplay, age)
     } else {
-        Modifier
+        deathdayDisplay
     }
+    val firstYear = credits.mapNotNull { it.rawReleaseDate?.take(4)?.toIntOrNull() }.minOrNull()
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .graphicsLayer {
-                scaleX = heroScale
-                scaleY = heroScale
-                alpha = heroAlpha
-                translationY = -(collapseProgress * 40f)
-            },
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        // Profile Photo
-        Box(
-            modifier = Modifier
-                .then(avatarSharedElementModifier)
-                .size(avatarSize)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (!avatarUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = avatarRequest ?: avatarUrl,
-                    contentDescription = person.name,
-                    modifier = Modifier.matchParentSize(),
-                    contentScale = ContentScale.Crop,
-                    colorFilter = if (!person.deathday.isNullOrBlank()) DeceasedPhotoFilter else null,
-                )
-            } else {
-                Text(
-                    text = person.name.firstOrNull()?.uppercase() ?: "?",
-                    style = MaterialTheme.typography.displayMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Name
-        Text(
-            text = person.name,
-            style = MaterialTheme.typography.headlineSmall.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.5).sp,
-            ),
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Personal info
-        val infoItems = buildList {
-            person.birthday?.let { bday ->
-                val age = calculateAge(bday, person.deathday)
-                val ageStr = if (age != null) stringResource(Res.string.person_age, age) else ""
-                val bdayDisplay = formatDateForDisplay(bday) ?: bday
-                val deathDisplay = person.deathday?.let { formatDateForDisplay(it) ?: it }
-                val line = if (deathDisplay != null) {
-                    buildString {
-                        append(stringResource(Res.string.person_born, bdayDisplay, ""))
-                        append(" — ")
-                        append(stringResource(Res.string.person_died, deathDisplay))
-                        append(ageStr)
-                    }
-                } else {
-                    stringResource(Res.string.person_born, bdayDisplay, ageStr)
-                }
-                add(line)
-            }
-            person.placeOfBirth?.let { add(it) }
-            person.knownFor?.let { add(stringResource(Res.string.person_known_for, it)) }
-        }
-        if (infoItems.isNotEmpty()) {
-            infoItems.forEach { info ->
-                Text(
-                    text = info,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-            }
-        }
-
-        // Biography
-        person.biography?.let { bio ->
-            Spacer(modifier = Modifier.height(12.dp))
-            ExpandableDescription(
-                text = bio,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    lineHeight = 20.sp,
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                collapsedMaxLines = 8,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+    val candidates = listOf(
+        stringResource(Res.string.person_detail_born) to bornValue,
+        stringResource(Res.string.person_detail_died) to diedValue,
+        stringResource(Res.string.person_detail_place_of_birth) to person.placeOfBirth,
+        stringResource(Res.string.person_detail_credits) to credits.size.takeIf { it > 0 }?.toString(),
+        stringResource(Res.string.person_detail_active_since) to firstYear?.toString(),
+    )
+    return candidates.mapNotNull { (label, value) ->
+        value?.trim()?.takeIf(String::isNotBlank)?.let { label to it }
     }
 }
 
-// ─── Loading / Error States ───
 
 @Composable
-@OptIn(ExperimentalSharedTransitionApi::class)
 private fun PersonDetailSkeleton(
     personId: Int,
     personName: String,
-    profilePhoto: String? = null,
-    avatarTransitionKey: String,
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    profilePhoto: String?,
+    onBack: () -> Unit,
 ) {
     val posterCardStyle = rememberPosterCardStyleUiState()
     val isLandscapeShelfMode = posterCardStyle.catalogLandscapeModeEnabled
-    val skeletonPosterWidth = if (isLandscapeShelfMode) {
+    val posterWidth = if (isLandscapeShelfMode) {
         landscapePosterWidth(posterCardStyle.widthDp)
     } else {
         posterCardStyle.widthDp.dp
     }
-    val skeletonPosterHeight = if (isLandscapeShelfMode) {
-        landscapePosterHeightForWidth(skeletonPosterWidth)
+    val posterHeight = if (isLandscapeShelfMode) {
+        landscapePosterHeightForWidth(posterWidth)
     } else {
         posterCardStyle.heightDp.dp
     }
-    val accentColor = MaterialTheme.colorScheme.primary
-    val avatarCacheKey = avatarTransitionKey
-    val platformContext = LocalPlatformContext.current
-    val avatarRequest = if (!profilePhoto.isNullOrBlank()) {
-        remember(platformContext, profilePhoto, avatarCacheKey) {
-            ImageRequest.Builder(platformContext)
-                .data(profilePhoto)
-                .memoryCacheKey(avatarCacheKey)
-                .placeholderMemoryCacheKey(avatarCacheKey)
-                .diskCacheKey(profilePhoto)
-                .build()
-        }
-    } else {
-        null
-    }
-    val accentGradient = remember(accentColor) {
-        Brush.verticalGradient(
-            colorStops = arrayOf(
-                0.0f to accentColor.copy(alpha = 0.18f),
-                0.15f to accentColor.copy(alpha = 0.10f),
-                0.30f to accentColor.copy(alpha = 0.04f),
-                0.50f to Color.Transparent,
-            ),
-        )
-    }
-    val avatarSharedElementModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-        with(sharedTransitionScope) {
-            Modifier.sharedElement(
-                sharedContentState = rememberSharedContentState(
-                    key = avatarTransitionKey,
-                ),
-                animatedVisibilityScope = animatedVisibilityScope,
-            )
-        }
-    } else {
-        Modifier
-    }
+    val showPosterLabels = !isLandscapeShelfMode && !posterCardStyle.hideLabelsEnabled
 
+    PersonPage(
+        pageKey = "person-$personId",
+        name = personName,
+        subtitle = null,
+        images = listOfNotNull(profilePhoto?.takeIf(String::isNotBlank)),
+        deceased = false,
+        onBack = onBack,
+        infoItems = { metrics ->
+            item(key = "person-info") {
+                DetailSectionContainer(
+                    horizontalPadding = metrics.horizontalPadding,
+                    contentMaxWidth = metrics.contentMaxWidth,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        SkeletonTitle()
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            listOf(0.42f, 0.30f, 0.12f, 0.16f).forEachIndexed { index, valueFraction ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 13.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    SkeletonLine(widthFraction = 0.24f, height = 14.dp)
+                                    SkeletonLine(widthFraction = valueFraction / 0.76f, height = 14.dp)
+                                }
+                                if (index < 3) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            item(key = "person-biography") {
+                DetailSectionContainer(
+                    horizontalPadding = metrics.horizontalPadding,
+                    contentMaxWidth = metrics.contentMaxWidth,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        SkeletonTitle()
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(1f, 0.96f, 0.92f, 0.98f, 0.88f, 0.64f).forEach { widthFraction ->
+                                SkeletonLine(widthFraction = widthFraction, height = 16.dp)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        railItems = { metrics ->
+            items(count = 2, key = { "person-rail-skeleton-$it" }) {
+                DetailSectionContainer(
+                    horizontalPadding = metrics.horizontalPadding,
+                    contentMaxWidth = Dp.Unspecified,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        SkeletonTitle()
+                        SkeletonPosterRow(
+                            width = posterWidth,
+                            height = posterHeight,
+                            cornerRadius = posterCardStyle.cornerRadiusDp.dp,
+                            showLabels = showPosterLabels,
+                        )
+                    }
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun SkeletonTitle() {
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(accentGradient),
-        )
-
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            if (maxWidth >= PERSON_DETAIL_WIDE_LAYOUT_MIN_WIDTH) {
-                WidePersonDetailSkeleton(
-                    personName = personName,
-                    profilePhoto = profilePhoto,
-                    avatarRequest = avatarRequest,
-                    avatarSharedElementModifier = avatarSharedElementModifier,
-                    skeletonPosterWidth = skeletonPosterWidth,
-                    skeletonPosterHeight = skeletonPosterHeight,
-                    skeletonPosterCornerRadius = posterCardStyle.cornerRadiusDp.dp,
-                    showPosterLabels = !isLandscapeShelfMode && !posterCardStyle.hideLabelsEnabled,
-                )
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .windowInsetsPadding(WindowInsets.statusBars)
-                        .padding(top = 48.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .then(avatarSharedElementModifier)
-                                .size(140.dp)
-                                .skeleton(CircleShape),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (!profilePhoto.isNullOrBlank()) {
-                                AsyncImage(
-                                    model = avatarRequest ?: profilePhoto,
-                                    contentDescription = personName,
-                                    modifier = Modifier.matchParentSize(),
-                                    contentScale = ContentScale.Crop,
-                                )
-                            } else {
-                                Text(
-                                    text = personName.firstOrNull()?.uppercase() ?: "?",
-                                    style = MaterialTheme.typography.displayMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            text = personName,
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        SkeletonLine(
-                            widthFraction = 0.58f,
-                            height = 14.dp,
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        SkeletonLine(
-                            widthFraction = 0.42f,
-                            height = 14.dp,
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        SkeletonLine(
-                            widthFraction = 0.34f,
-                            height = 14.dp,
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        listOf(1.0f, 0.96f, 0.92f, 0.98f, 0.88f, 0.94f, 0.82f, 0.74f).forEachIndexed { index, widthFraction ->
-                            SkeletonLine(
-                                widthFraction = widthFraction,
-                                height = 16.dp,
-                            )
-                            if (index != 7) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .width(120.dp)
-                                .height(18.dp)
-                                .skeleton(RoundedCornerShape(4.dp)),
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    SkeletonPosterRow(
-                        width = skeletonPosterWidth,
-                        height = skeletonPosterHeight,
-                        cornerRadius = posterCardStyle.cornerRadiusDp.dp,
-                        horizontalPadding = 20.dp,
-                        showLabels = !isLandscapeShelfMode && !posterCardStyle.hideLabelsEnabled,
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun WidePersonDetailSkeleton(
-    personName: String,
-    profilePhoto: String?,
-    avatarRequest: ImageRequest?,
-    avatarSharedElementModifier: Modifier,
-    skeletonPosterWidth: Dp,
-    skeletonPosterHeight: Dp,
-    skeletonPosterCornerRadius: Dp,
-    showPosterLabels: Boolean,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(top = 34.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .width(PERSON_DETAIL_WIDE_SIDEBAR_WIDTH)
-                .fillMaxHeight()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 40.dp, end = 36.dp, top = 40.dp, bottom = 42.dp),
-            verticalArrangement = Arrangement.spacedBy(22.dp),
-        ) {
-            Box(
-                modifier = Modifier.size(162.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
-                )
-                Box(
-                    modifier = Modifier
-                        .then(avatarSharedElementModifier)
-                        .size(148.dp)
-                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.40f), CircleShape)
-                        .skeleton(CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (!profilePhoto.isNullOrBlank()) {
-                        AsyncImage(
-                            model = avatarRequest ?: profilePhoto,
-                            contentDescription = personName,
-                            modifier = Modifier.matchParentSize(),
-                            contentScale = ContentScale.Crop,
-                        )
-                    } else {
-                        Text(
-                            text = personName.initials(),
-                            style = MaterialTheme.typography.displayMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-
-            Text(
-                text = personName,
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-0.5).sp,
-                    lineHeight = 34.sp,
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            Column(verticalArrangement = Arrangement.spacedBy(15.dp)) {
-                repeat(3) {
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        SkeletonLine(widthFraction = 0.34f, height = 10.dp)
-                        SkeletonLine(widthFraction = if (it == 1) 0.88f else 0.58f, height = 14.dp)
-                    }
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.30f)),
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SkeletonLine(
-                    widthFraction = 0.32f,
-                    height = 10.dp,
-                )
-                listOf(0.96f, 1f, 0.92f, 0.98f, 0.84f, 0.90f).forEach { widthFraction ->
-                    SkeletonLine(widthFraction = widthFraction, height = 16.dp)
-                }
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .width(1.dp)
-                .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.30f)),
-        )
-
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 40.dp, bottom = 40.dp),
-            verticalArrangement = Arrangement.spacedBy(34.dp),
-        ) {
-            repeat(3) {
-                WideSkeletonPosterRail(
-                    skeletonPosterWidth = skeletonPosterWidth,
-                    skeletonPosterHeight = skeletonPosterHeight,
-                    skeletonPosterCornerRadius = skeletonPosterCornerRadius,
-                    showPosterLabels = showPosterLabels,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun WideSkeletonPosterRail(
-    skeletonPosterWidth: Dp,
-    skeletonPosterHeight: Dp,
-    skeletonPosterCornerRadius: Dp,
-    showPosterLabels: Boolean,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(15.dp)) {
-        Box(
-            modifier = Modifier
-                .width(120.dp)
-                .height(18.dp)
-                .skeleton(RoundedCornerShape(4.dp)),
-        )
-
-        SkeletonPosterRow(
-            width = skeletonPosterWidth,
-            height = skeletonPosterHeight,
-            cornerRadius = skeletonPosterCornerRadius,
-            showLabels = showPosterLabels,
-        )
-    }
+            .width(140.dp)
+            .height(22.dp)
+            .skeleton(),
+    )
 }
 
 @Composable
@@ -1103,118 +815,68 @@ private fun SkeletonLine(
 ) {
     Box(
         modifier = Modifier
-            .fillMaxWidth(widthFraction)
+            .fillMaxWidth(widthFraction.coerceIn(0f, 1f))
             .height(height)
-            .skeleton(RoundedCornerShape(4.dp)),
+            .skeleton(),
     )
 }
 
 @Composable
 private fun PersonDetailError(
     message: String,
+    onBack: () -> Unit,
     onRetry: () -> Unit,
 ) {
+    val collapsed = remember { mutableStateOf(true) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.Center,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Text(
                 text = stringResource(Res.string.person_something_wrong),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = onRetry,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-            ) {
+            Button(onClick = onRetry) {
                 Text(stringResource(Res.string.action_retry))
             }
         }
+
+        PersonHeaderOverlay(
+            title = "",
+            isHeroCollapsed = collapsed,
+            backgroundColor = null,
+            onBack = onBack,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
-// ─── Utility ───
+private val PersonNavigationSlotSize = 48.dp
 
-private fun String.initials(): String {
-    val parts = trim()
-        .split(" ")
-        .filter { it.isNotBlank() }
-    return parts
-        .take(2)
-        .mapNotNull { it.firstOrNull()?.uppercase() }
-        .joinToString("")
-        .ifBlank { firstOrNull()?.uppercase() ?: "?" }
-}
-
-private fun buildCreditSummary(credits: List<MetaPreview>): String {
-    if (credits.isEmpty()) return ""
-    val firstYear = credits
-        .mapNotNull { it.rawReleaseDate?.take(4)?.toIntOrNull() }
-        .minOrNull()
-    return buildString {
-        append(credits.size)
-        append(if (credits.size == 1) " title" else " titles")
-        if (firstYear != null) {
-            append(" · since ")
-            append(firstYear)
-        }
-    }
-}
-
-private fun personBirthLine(birthday: String, deathday: String?): String {
-    val birthdayDisplay = formatDateForDisplay(birthday) ?: birthday
-    val deathDisplay = deathday?.let { formatDateForDisplay(it) ?: it }
-    val age = calculateAge(birthday, deathday)
-    return buildString {
-        append(birthdayDisplay)
-        if (deathDisplay != null) {
-            append(" · died ")
-            append(deathDisplay)
-        }
-        if (age != null) {
-            append(" · ")
-            append(age)
-            append(" years")
-        }
-    }
-}
-
-private fun calculateAge(birthday: String, deathday: String?): Int? {
+private fun calculateAge(birthday: String, endDate: String): Int? {
     val birthParts = birthday.split("-").mapNotNull { it.toIntOrNull() }
-    if (birthParts.size < 3) return null
-    val birthYear = birthParts[0]
-    val birthMonth = birthParts[1]
-    val birthDay = birthParts[2]
-
-    val endParts = deathday?.split("-")?.mapNotNull { it.toIntOrNull() }
-    // Use a rough current date approximation for KMP compatibility
-    val endYear: Int
-    val endMonth: Int
-    val endDay: Int
-    if (endParts != null && endParts.size >= 3) {
-        endYear = endParts[0]
-        endMonth = endParts[1]
-        endDay = endParts[2]
-    } else {
-        // Approximate current date — this is good enough for age display
-        endYear = 2026
-        endMonth = 4
-        endDay = 3
-    }
-
+    val endParts = endDate.split("-").mapNotNull { it.toIntOrNull() }
+    if (birthParts.size < 3 || endParts.size < 3) return null
+    val (birthYear, birthMonth, birthDay) = birthParts
+    val (endYear, endMonth, endDay) = endParts
     var age = endYear - birthYear
     if (endMonth < birthMonth || (endMonth == birthMonth && endDay < birthDay)) {
         age--
@@ -1225,9 +887,7 @@ private fun calculateAge(birthday: String, deathday: String?): Int? {
 private fun formatDateForDisplay(date: String): String? {
     val parts = date.split("-").mapNotNull { it.toIntOrNull() }
     if (parts.size < 3) return null
-    val month = parts[1]
-    val day = parts[2]
-    val year = parts[0]
+    val (year, month, day) = parts
     return if (month in 1..12) {
         "${localizedShortMonthName(month)} $day, $year"
     } else {

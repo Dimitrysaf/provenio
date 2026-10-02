@@ -81,7 +81,7 @@ object TmdbMetadataService {
         personCache[cacheKey]?.let { return@withContext it }
 
         try {
-            val (person, credits) = coroutineScope {
+            val (person, credits, images) = coroutineScope {
                 val personDeferred = async {
                     fetch<TmdbPersonResponse>(
                         endpoint = "person/$personId",
@@ -94,7 +94,12 @@ object TmdbMetadataService {
                         query = mapOf("language" to language),
                     )
                 }
-                personDeferred.await() to creditsDeferred.await()
+                val imagesDeferred = async {
+                    runCatching {
+                        fetch<TmdbPersonImagesResponse>(endpoint = "person/$personId/images")
+                    }.getOrNull()
+                }
+                Triple(personDeferred.await(), creditsDeferred.await(), imagesDeferred.await())
             }
 
             if (person == null) return@withContext null
@@ -207,6 +212,10 @@ object TmdbMetadataService {
                 deathday = person.deathday?.takeIf { it.isNotBlank() },
                 placeOfBirth = person.placeOfBirth?.takeIf { it.isNotBlank() },
                 profilePhoto = buildImageUrl(person.profilePath, "w500"),
+                profileImages = (listOf(person.profilePath) + images?.profiles.orEmpty().map { it.filePath })
+                    .mapNotNull { buildImageUrl(it, "h632") }
+                    .distinct()
+                    .take(MaxPersonProfileImages),
                 knownFor = person.knownForDepartment?.takeIf { it.isNotBlank() },
                 movieCredits = selectPreferredCredits(
                     preferCrew = preferCrew,
@@ -2110,6 +2119,18 @@ private data class TmdbPersonResponse(
     @SerialName("profile_path") val profilePath: String? = null,
     @SerialName("known_for_department") val knownForDepartment: String? = null,
 )
+
+@Serializable
+private data class TmdbPersonImagesResponse(
+    val profiles: List<TmdbPersonImage> = emptyList(),
+)
+
+@Serializable
+private data class TmdbPersonImage(
+    @SerialName("file_path") val filePath: String? = null,
+)
+
+private const val MaxPersonProfileImages = 10
 
 @Serializable
 private data class TmdbPersonCombinedCreditsResponse(

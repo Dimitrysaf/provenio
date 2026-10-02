@@ -2051,6 +2051,10 @@
     <string name="person_detail_place_of_birth">مكان الميلاد</string>
     <string name="person_detail_credits">طاقم العمل</string>
     <string name="person_detail_biography">السيرة الذاتية</string>
+    <string name="person_detail_personal_info">معلومات شخصية</string>
+    <string name="person_detail_died">الوفاة</string>
+    <string name="person_detail_active_since">نشط منذ</string>
+    <string name="person_detail_date_with_age">%1$s (العمر %2$d)</string>
     <string name="entity_browse_country">البلد</string>
     <string name="entity_browse_type">النوع</string>
     <string name="entity_browse_catalogue">القائمة</string>

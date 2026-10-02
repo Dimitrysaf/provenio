@@ -2078,6 +2078,10 @@ Bu özelliği tamamen kendi sorumluluğunuzda kullanırsınız. P2P istediğiniz
     <string name="person_detail_place_of_birth">Doğum Yeri</string>
     <string name="person_detail_credits">Katkıda Bulundukları</string>
     <string name="person_detail_biography">Biyografi</string>
+    <string name="person_detail_personal_info">Kişisel bilgiler</string>
+    <string name="person_detail_died">Ölüm</string>
+    <string name="person_detail_active_since">Kariyer başlangıcı</string>
+    <string name="person_detail_date_with_age">%1$s (%2$d yaşında)</string>
     <string name="entity_browse_country">Ülke</string>
     <string name="entity_browse_type">Tür</string>
     <string name="entity_browse_catalogue">Katalog</string>

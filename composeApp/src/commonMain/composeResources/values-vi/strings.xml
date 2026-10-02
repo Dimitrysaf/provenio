@@ -2177,6 +2177,10 @@
     <string name="person_detail_place_of_birth">Nơi sinh</string>
     <string name="person_detail_credits">Danh đề</string>
     <string name="person_detail_biography">Tiểu sử</string>
+    <string name="person_detail_personal_info">Thông tin cá nhân</string>
+    <string name="person_detail_died">Mất</string>
+    <string name="person_detail_active_since">Hoạt động từ</string>
+    <string name="person_detail_date_with_age">%1$s (%2$d tuổi)</string>
     <string name="entity_browse_country">Quốc gia</string>
     <string name="entity_browse_type">Loại</string>
     <string name="entity_browse_catalogue">Danh mục</string>

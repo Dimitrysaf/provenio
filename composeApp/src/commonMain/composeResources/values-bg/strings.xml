@@ -2155,6 +2155,10 @@
     <string name="person_detail_place_of_birth">Място на раждане</string>
     <string name="person_detail_credits">Участия</string>
     <string name="person_detail_biography">Биография</string>
+    <string name="person_detail_personal_info">Лична информация</string>
+    <string name="person_detail_died">Почина</string>
+    <string name="person_detail_active_since">Активен от</string>
+    <string name="person_detail_date_with_age">%1$s (на %2$d г.)</string>
     <string name="entity_browse_country">Държава</string>
     <string name="entity_browse_type">Тип</string>
     <string name="entity_browse_catalogue">Каталог</string>

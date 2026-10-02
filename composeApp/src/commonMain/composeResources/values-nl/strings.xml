@@ -2174,6 +2174,10 @@
     <string name="person_detail_place_of_birth">Geboorteplaats</string>
     <string name="person_detail_credits">Credits</string>
     <string name="person_detail_biography">Biografie</string>
+    <string name="person_detail_personal_info">Persoonlijke info</string>
+    <string name="person_detail_died">Overleden</string>
+    <string name="person_detail_active_since">Actief sinds</string>
+    <string name="person_detail_date_with_age">%1$s (leeftijd %2$d)</string>
     <string name="entity_browse_country">Land</string>
     <string name="entity_browse_type">Type</string>
     <string name="entity_browse_catalogue">Catalogus</string>

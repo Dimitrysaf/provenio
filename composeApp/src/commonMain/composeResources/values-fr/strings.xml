@@ -1904,6 +1904,10 @@
     <string name="person_detail_place_of_birth">Lieu de naissance</string>
     <string name="person_detail_credits">Crédits</string>
     <string name="person_detail_biography">Biographie</string>
+    <string name="person_detail_personal_info">Informations personnelles</string>
+    <string name="person_detail_died">Décès</string>
+    <string name="person_detail_active_since">Actif depuis</string>
+    <string name="person_detail_date_with_age">%1$s (%2$d ans)</string>
     <string name="entity_browse_country">Pays</string>
     <string name="entity_browse_type">Type</string>
     <string name="entity_browse_catalogue">Catalogue</string>

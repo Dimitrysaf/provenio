@@ -146,12 +146,9 @@ internal fun PersonDestination(
         personId = route.personId,
         personName = route.personName,
         initialProfilePhoto = route.personPhoto,
-        avatarTransitionKey = route.castAvatarTransitionKey,
         preferCrew = route.preferCrew,
         onBack = onBack,
         onOpenMeta = rememberOpenMeta(navController),
-        sharedTransitionScope = sharedTransitionScope,
-        animatedVisibilityScope = animatedVisibilityScope,
         modifier = Modifier.fillMaxSize(),
     )
 }
