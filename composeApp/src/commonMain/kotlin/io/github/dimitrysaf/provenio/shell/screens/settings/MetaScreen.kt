@@ -97,6 +97,8 @@ import provenio.composeapp.generated.resources.settings_meta_more_like_this_desc
 import provenio.composeapp.generated.resources.settings_meta_none
 import provenio.composeapp.generated.resources.settings_meta_overview
 import provenio.composeapp.generated.resources.settings_meta_overview_description
+import provenio.composeapp.generated.resources.settings_meta_parents_guide
+import provenio.composeapp.generated.resources.settings_meta_parents_guide_description
 import provenio.composeapp.generated.resources.settings_meta_poster_transition
 import provenio.composeapp.generated.resources.settings_meta_poster_transition_description
 import provenio.composeapp.generated.resources.settings_meta_production
