@@ -10,7 +10,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import io.github.dimitrysaf.provenio.core.diagnostics.AppLogSaveResult
 import io.github.dimitrysaf.provenio.core.diagnostics.AppLogs
-import io.github.dimitrysaf.provenio.core.diagnostics.rememberAppLogSaver
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.Res

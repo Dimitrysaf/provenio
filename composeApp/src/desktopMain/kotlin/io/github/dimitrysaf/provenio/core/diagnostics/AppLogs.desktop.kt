@@ -1,13 +1,7 @@
 package io.github.dimitrysaf.provenio.core.diagnostics
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import io.github.dimitrysaf.provenio.core.build.AppVersionConfig
 import io.github.dimitrysaf.provenio.desktop.Context
-import io.github.dimitrysaf.provenio.desktop.DesktopFileSaver
-import io.github.dimitrysaf.provenio.desktop.SaveChoice
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -19,12 +13,7 @@ import java.util.Locale
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import org.jetbrains.compose.resources.getString
-import provenio.composeapp.generated.resources.Res
-import provenio.composeapp.generated.resources.settings_save_logs_title
 
 actual object AppLogs {
     actual val isSupported: Boolean = true
@@ -128,27 +117,3 @@ private fun bundle(files: Map<String, ByteArray>): AppLogBundle {
 }
 
 private fun timestamp(pattern: String): String = SimpleDateFormat(pattern, Locale.US).format(Date())
-
-@Composable
-actual fun rememberAppLogSaver(onFinished: (AppLogSaveResult) -> Unit): (AppLogBundle) -> Unit {
-    val scope = rememberCoroutineScope()
-    val currentOnFinished = rememberUpdatedState(onFinished)
-    return remember {
-        { bundle ->
-            scope.launch {
-                val result = withContext(Dispatchers.IO) {
-                    val title = runBlocking { getString(Res.string.settings_save_logs_title) }
-                    when (val choice = DesktopFileSaver.chooseSaveFile(title, bundle.fileName)) {
-                        SaveChoice.Cancelled -> AppLogSaveResult.CANCELLED
-                        is SaveChoice.Chosen -> if (runCatching { choice.file.writeBytes(bundle.bytes) }.isSuccess) {
-                            AppLogSaveResult.SAVED
-                        } else {
-                            AppLogSaveResult.FAILED
-                        }
-                    }
-                }
-                currentOnFinished.value(result)
-            }
-        }
-    }
-}
