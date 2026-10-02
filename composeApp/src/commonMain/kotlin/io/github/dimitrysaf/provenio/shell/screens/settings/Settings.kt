@@ -440,7 +440,6 @@ private fun MobileSettingsScreen(
             onContinueWatchingClick = onContinueWatchingClick,
             onAddonsClick = onAddonsClick,
             onPluginsClick = onPluginsClick,
-            onCollectionsClick = onCollectionsClick,
             onTestUpdateBannerClick = onTestUpdateBannerClick,
         )
         val previousPage = page.previousPage()
@@ -490,6 +489,7 @@ private fun MobileSettingsScreen(
                             onLicensesAttributionsClick = onLicensesAttributionsClick,
                             onCheckForUpdatesClick = onCheckForUpdatesClick,
                             onDownloadsClick = onDownloadsClick,
+                            onCollectionsClick = onCollectionsClick,
                             onSwitchProfileClick = onSwitchProfile,
                         )
                     }
@@ -722,7 +722,6 @@ private fun TabletSettingsScreen(
                 onContinueWatchingClick = { openInlinePage(SettingsPage.ContinueWatching) },
                 onAddonsClick = { openInlinePage(SettingsPage.Addons) },
                 onPluginsClick = { openInlinePage(SettingsPage.Plugins) },
-                onCollectionsClick = { collectionsOpen = true },
                 onTestUpdateBannerClick = onTestUpdateBannerClick,
             )
             val previousPage = page.previousPage()
@@ -806,6 +805,7 @@ private fun TabletSettingsScreen(
                                 onLicensesAttributionsClick = { openInlinePage(SettingsPage.LicensesAttributions) },
                                 onCheckForUpdatesClick = onCheckForUpdatesClick,
                                 onDownloadsClick = ::openDownloads,
+                                onCollectionsClick = { collectionsOpen = true },
                                 onSwitchProfileClick = onSwitchProfile,
                                 showAccountSection = activeCategory == SettingsCategory.Profile,
                                 showGeneralSection = activeCategory == SettingsCategory.General,
@@ -989,7 +989,6 @@ internal class SettingsPageLinks(
     val onContinueWatchingClick: () -> Unit,
     val onAddonsClick: () -> Unit,
     val onPluginsClick: () -> Unit,
-    val onCollectionsClick: () -> Unit,
     val onTestUpdateBannerClick: (() -> Unit)?,
 )
 
@@ -1013,9 +1012,7 @@ internal fun LazyListScope.settingsPageContent(
             preferredAudioLanguage = player.preferredAudioLanguage,
             secondaryPreferredAudioLanguage = player.secondaryPreferredAudioLanguage,
             preferredSubtitleLanguage = player.preferredSubtitleLanguage,
-            secondaryPreferredSubtitleLanguage = player.secondaryPreferredSubtitleLanguage,
             streamReuseLastLinkEnabled = player.streamReuseLastLinkEnabled,
-            streamReuseLastLinkCacheHours = player.streamReuseLastLinkCacheHours,
             androidPlaybackEngine = player.androidPlaybackEngine,
             androidLibmpvVideoOutput = player.androidLibmpvVideoOutput,
             androidLibmpvHardwareDecodingEnabled = player.androidLibmpvHardwareDecodingEnabled,
@@ -1023,9 +1020,9 @@ internal fun LazyListScope.settingsPageContent(
             decoderPriority = player.decoderPriority,
             mapDV7ToHevc = player.mapDV7ToHevc,
             tunnelingEnabled = player.tunnelingEnabled,
-            useLibass = player.useLibass,
-            libassRenderType = player.libassRenderType,
+            onSubtitlesClick = { links.openSubPage(SettingsPage.Subtitles) },
         )
+        SettingsPage.Subtitles -> subtitlesSettingsContent(isTablet = isTablet)
         SettingsPage.Streams -> streamsSettingsContent(isTablet = isTablet)
         SettingsPage.Appearance -> appearanceSettingsContent(
             isTablet = isTablet,
@@ -1045,7 +1042,6 @@ internal fun LazyListScope.settingsPageContent(
             onAppLanguageSelected = ThemeSettingsRepository::setAppLanguage,
             onHomescreenClick = links.onHomescreenClick,
             onMetaScreenClick = links.onMetaScreenClick,
-            onCollectionsClick = links.onCollectionsClick,
             onContinueWatchingClick = links.onContinueWatchingClick,
             onPosterCustomizationClick = { links.openPage(SettingsPage.PosterCustomization) },
         )
@@ -1101,6 +1097,12 @@ internal fun LazyListScope.settingsPageContent(
             items = data.homescreen.items,
             isCatalogLoading = data.homescreenCatalogLoading,
             catalogErrorMessage = data.homescreenCatalogErrorMessage,
+            onHeroCarouselClick = { links.openSubPage(SettingsPage.HeroCarousel) },
+        )
+        SettingsPage.HeroCarousel -> heroCarouselSettingsContent(
+            isTablet = isTablet,
+            heroEnabled = data.homescreen.heroEnabled,
+            items = data.homescreen.items,
         )
         SettingsPage.MetaScreen -> metaScreenSettingsContent(isTablet = isTablet, uiState = data.metaScreen)
         SettingsPage.Integrations -> integrationsContent(

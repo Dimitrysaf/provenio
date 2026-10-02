@@ -9,8 +9,6 @@ internal expect object PlayerSettingsStorage {
     fun saveShowPlayerLoadingStatus(enabled: Boolean)
     fun loadShowPlayerControlLabels(): Boolean?
     fun saveShowPlayerControlLabels(enabled: Boolean)
-    fun loadPauseOverlayEnabled(): Boolean?
-    fun savePauseOverlayEnabled(enabled: Boolean)
     fun loadResizeMode(): String?
     fun saveResizeMode(mode: String)
     fun loadHoldToSpeedEnabled(): Boolean?
@@ -59,8 +57,6 @@ internal expect object PlayerSettingsStorage {
     fun saveSubtitleShowOnlyPreferredLanguages(enabled: Boolean)
     fun loadStreamReuseLastLinkEnabled(): Boolean?
     fun saveStreamReuseLastLinkEnabled(enabled: Boolean)
-    fun loadStreamReuseLastLinkCacheHours(): Int?
-    fun saveStreamReuseLastLinkCacheHours(hours: Int)
     fun loadAndroidPlaybackEngine(): String?
     fun saveAndroidPlaybackEngine(engine: String)
     fun loadAndroidLibmpvVideoOutput(): String?

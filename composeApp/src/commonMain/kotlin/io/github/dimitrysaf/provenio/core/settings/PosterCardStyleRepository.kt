@@ -21,6 +21,7 @@ private data class StoredPosterCardStylePreferences(
     val cornerRadiusDp: Int = DefaultPosterCardCornerRadiusDp,
     val catalogLandscapeModeEnabled: Boolean = false,
     val hideLabelsEnabled: Boolean = false,
+    val dynamicSizeEnabled: Boolean = false,
 )
 
 data class PosterCardStyleUiState(
@@ -29,6 +30,11 @@ data class PosterCardStyleUiState(
     val cornerRadiusDp: Int = DefaultPosterCardCornerRadiusDp,
     val catalogLandscapeModeEnabled: Boolean = false,
     val hideLabelsEnabled: Boolean = false,
+    /**
+     * The card is sized to the screen instead of [widthDp]: see `dynamicPosterWidthDp`. The fixed
+     * width stays stored, so turning this off returns to it.
+     */
+    val dynamicSizeEnabled: Boolean = false,
 )
 
 object PosterCardStyleRepository {
@@ -56,15 +62,25 @@ object PosterCardStyleRepository {
         _uiState.value = PosterCardStyleUiState()
     }
 
+    /** A fixed size, which also leaves dynamic sizing. */
     fun setWidthDp(widthDp: Int) {
         ensureLoaded()
         val nextWidth = widthDp
         val nextHeight = (nextWidth * 3) / 2
-        if (_uiState.value.widthDp == nextWidth && _uiState.value.heightDp == nextHeight) return
-        _uiState.value = _uiState.value.copy(
+        val current = _uiState.value
+        if (current.widthDp == nextWidth && current.heightDp == nextHeight && !current.dynamicSizeEnabled) return
+        _uiState.value = current.copy(
             widthDp = nextWidth,
             heightDp = nextHeight,
+            dynamicSizeEnabled = false,
         )
+        persist()
+    }
+
+    fun setDynamicSizeEnabled(enabled: Boolean) {
+        ensureLoaded()
+        if (_uiState.value.dynamicSizeEnabled == enabled) return
+        _uiState.value = _uiState.value.copy(dynamicSizeEnabled = enabled)
         persist()
     }
 
@@ -119,6 +135,7 @@ object PosterCardStyleRepository {
                 cornerRadiusDp = cornerRadiusDp,
                 catalogLandscapeModeEnabled = stored.catalogLandscapeModeEnabled,
                 hideLabelsEnabled = stored.hideLabelsEnabled,
+                dynamicSizeEnabled = stored.dynamicSizeEnabled,
             )
         } else {
             PosterCardStyleUiState()
@@ -134,6 +151,7 @@ object PosterCardStyleRepository {
                     cornerRadiusDp = _uiState.value.cornerRadiusDp,
                     catalogLandscapeModeEnabled = _uiState.value.catalogLandscapeModeEnabled,
                     hideLabelsEnabled = _uiState.value.hideLabelsEnabled,
+                    dynamicSizeEnabled = _uiState.value.dynamicSizeEnabled,
                 ),
             ),
         )

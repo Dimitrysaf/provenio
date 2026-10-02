@@ -18,6 +18,7 @@ import provenio.composeapp.generated.resources.compose_settings_page_appearance
 import provenio.composeapp.generated.resources.compose_settings_page_content_discovery
 import provenio.composeapp.generated.resources.compose_settings_page_debrid
 import provenio.composeapp.generated.resources.compose_settings_page_continue_watching
+import provenio.composeapp.generated.resources.compose_settings_page_hero_carousel
 import provenio.composeapp.generated.resources.compose_settings_page_homescreen
 import provenio.composeapp.generated.resources.compose_settings_page_integrations
 import provenio.composeapp.generated.resources.compose_settings_page_licenses_attributions
@@ -30,6 +31,7 @@ import provenio.composeapp.generated.resources.compose_settings_page_plugins
 import provenio.composeapp.generated.resources.compose_settings_page_poster_customization
 import provenio.composeapp.generated.resources.compose_settings_page_root
 import provenio.composeapp.generated.resources.compose_settings_page_streams
+import provenio.composeapp.generated.resources.compose_settings_page_subtitles
 import provenio.composeapp.generated.resources.compose_settings_page_tmdb_enrichment
 import provenio.composeapp.generated.resources.compose_settings_page_trakt
 import provenio.composeapp.generated.resources.compose_settings_page_tracking
@@ -65,6 +67,11 @@ internal enum class SettingsPage(
         titleRes = Res.string.compose_settings_page_playback,
         category = SettingsCategory.General,
         parentPage = Root,
+    ),
+    Subtitles(
+        titleRes = Res.string.compose_settings_page_subtitles,
+        category = SettingsCategory.General,
+        parentPage = Playback,
     ),
     Appearance(
         titleRes = Res.string.compose_settings_page_appearance,
@@ -125,6 +132,11 @@ internal enum class SettingsPage(
         titleRes = Res.string.compose_settings_page_homescreen,
         category = SettingsCategory.General,
         parentPage = Appearance,
+    ),
+    HeroCarousel(
+        titleRes = Res.string.compose_settings_page_hero_carousel,
+        category = SettingsCategory.General,
+        parentPage = Homescreen,
     ),
     MetaScreen(
         titleRes = Res.string.compose_settings_page_meta_screen,

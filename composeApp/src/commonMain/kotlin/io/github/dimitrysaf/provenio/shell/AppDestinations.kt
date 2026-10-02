@@ -307,8 +307,14 @@ internal fun appEntryProvider(
         )
     }
     entry<HomescreenSettingsRoute> { route ->
+        val heroCarouselTitle = stringResource(Res.string.compose_settings_page_hero_carousel)
         SettingsDestination(route, navController) { onBack ->
-            HomescreenSettingsScreen(onBack = onBack)
+            HomescreenSettingsScreen(
+                onBack = onBack,
+                onHeroCarouselClick = {
+                    navController.navigate(SettingsPageRoute(SettingsPage.HeroCarousel.name, heroCarouselTitle))
+                },
+            )
         }
     }
     entry<MetaScreenSettingsRoute> { route ->

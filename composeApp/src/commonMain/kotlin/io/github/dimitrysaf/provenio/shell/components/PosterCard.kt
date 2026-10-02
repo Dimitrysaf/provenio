@@ -20,11 +20,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import kotlin.math.roundToInt
 import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleRepository
 import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleUiState
 import provenio.composeapp.generated.resources.Res
@@ -41,12 +44,47 @@ internal fun landscapePosterWidth(basePosterWidthDp: Int): Dp =
 internal fun landscapePosterHeightForWidth(width: Dp): Dp =
     (width.value / PosterLandscapeAspectRatio).dp
 
+/**
+ * The card style every screen draws with. With dynamic sizing on, the stored width is replaced by
+ * one for the current window, so every caller sees a plain fixed size.
+ */
 @Composable
 internal fun rememberPosterCardStyleUiState(): PosterCardStyleUiState {
     PosterCardStyleRepository.ensureLoaded()
     val uiState by PosterCardStyleRepository.uiState.collectAsState()
-    return uiState
+    if (!uiState.dynamicSizeEnabled) return uiState
+    val windowWidthDp = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp().value
+    }
+    val widthDp = dynamicPosterWidthDp(windowWidthDp)
+    return uiState.copy(widthDp = widthDp, heightDp = widthDp * 3 / 2)
 }
+
+/**
+ * The card width for a window [windowWidthDp] wide: about three and a third cards across a phone,
+ * growing more slowly than the window so a wide screen shows more cards, not just bigger ones.
+ * Interpolated between these points and held at the ends.
+ */
+internal fun dynamicPosterWidthDp(windowWidthDp: Float): Int {
+    val points = DynamicPosterWidthPoints
+    if (windowWidthDp <= points.first().first) return points.first().second
+    if (windowWidthDp >= points.last().first) return points.last().second
+    val upper = points.indexOfFirst { it.first >= windowWidthDp }
+    val (fromWindow, fromWidth) = points[upper - 1]
+    val (toWindow, toWidth) = points[upper]
+    val fraction = (windowWidthDp - fromWindow) / (toWindow - fromWindow)
+    return (fromWidth + (toWidth - fromWidth) * fraction).roundToInt()
+}
+
+/** Window width to card width, both in dp: compact phone, phone, tablet, laptop, desktop, 4K/TV. */
+private val DynamicPosterWidthPoints = listOf(
+    360f to 110,
+    412f to 126,
+    840f to 150,
+    1280f to 176,
+    1920f to 210,
+    2560f to 250,
+)
 
 enum class PosterCardShape {
     Poster,

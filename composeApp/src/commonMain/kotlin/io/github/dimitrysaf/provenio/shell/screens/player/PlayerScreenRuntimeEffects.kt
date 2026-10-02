@@ -399,21 +399,6 @@ private fun PlayerScreenRuntime.BindPlayerUiVisibilityEffects() {
     }
 
     LaunchedEffect(
-        playerSettingsUiState.pauseOverlayEnabled,
-        playbackSnapshot.isPlaying,
-        playbackSnapshot.isLoading,
-        playbackSnapshot.durationMs,
-        errorMessage,
-    ) {
-        pausedOverlayVisible = false
-        if (!playerSettingsUiState.pauseOverlayEnabled || playbackSnapshot.isPlaying || playbackSnapshot.isLoading || playbackSnapshot.durationMs <= 0L || errorMessage != null) {
-            return@LaunchedEffect
-        }
-        delay(5000)
-        pausedOverlayVisible = true
-    }
-
-    LaunchedEffect(
         playbackSnapshot.positionMs,
         playbackSnapshot.isPlaying,
         playbackSnapshot.isLoading,

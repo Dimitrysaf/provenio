@@ -58,7 +58,6 @@ import io.github.dimitrysaf.provenio.core.streams.StreamBadgeImportResult
 import io.github.dimitrysaf.provenio.core.streams.StreamBadgePlacement
 import io.github.dimitrysaf.provenio.core.streams.StreamBadgeRules
 import io.github.dimitrysaf.provenio.core.streams.StreamBadgeSettingsRepository
-import io.github.dimitrysaf.provenio.core.streams.StreamBackgroundMode
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.compose_settings_page_streams
@@ -93,10 +92,6 @@ import provenio.composeapp.generated.resources.settings_stream_size_badges_title
 import provenio.composeapp.generated.resources.settings_stream_addon_logo_title
 import provenio.composeapp.generated.resources.settings_stream_addon_logo_description
 import provenio.composeapp.generated.resources.settings_stream_display_section
-import provenio.composeapp.generated.resources.settings_stream_background_title
-import provenio.composeapp.generated.resources.settings_stream_background_description
-import provenio.composeapp.generated.resources.settings_meta_background_mode_cinematic
-import provenio.composeapp.generated.resources.settings_meta_background_mode_normal
 import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.streamsSettingsContent(isTablet: Boolean) {
@@ -108,8 +103,10 @@ internal fun LazyListScope.streamsSettingsContent(isTablet: Boolean) {
         val currentRules = currentSettings.rules
         var showBadgeImportDialog by rememberSaveable { mutableStateOf(false) }
         var showBadgePositionDialog by rememberSaveable { mutableStateOf(false) }
-        var showBackgroundDialog by rememberSaveable { mutableStateOf(false) }
         val badgePlacementLabel = streamBadgePlacementLabel(currentSettings.badgePlacement)
+        // Read here, not inside the list's builder: a state read in the builder only re-runs the
+        // builder, which never re-renders the list, so the rows below would never hide.
+        val showBadges = currentSettings.showBadges
 
         SettingsSection(
             title = stringResource(Res.string.settings_stream_badges_section),
@@ -119,19 +116,22 @@ internal fun LazyListScope.streamsSettingsContent(isTablet: Boolean) {
                 switchRow(
                     title = stringResource(Res.string.settings_stream_size_badges_title),
                     description = stringResource(Res.string.settings_stream_size_badges_description),
-                    checked = { currentSettings.showFileSizeBadges },
-                    onCheckedChange = StreamBadgeSettingsRepository::setShowFileSizeBadges,
+                    checked = { currentSettings.showBadges },
+                    onCheckedChange = StreamBadgeSettingsRepository::setShowBadges,
                 )
-                navigationRow(
-                    title = stringResource(Res.string.settings_stream_badge_position_title),
-                    description = badgePlacementLabel,
-                    onClick = { showBadgePositionDialog = true },
-                )
-                navigationRow(
-                    title = stringResource(Res.string.settings_stream_badge_urls_title),
-                    description = badgeRulesPreview(currentRules),
-                    onClick = { showBadgeImportDialog = true },
-                )
+                // Where badges sit and which ones there are only matter while badges show.
+                expandableRows(expanded = showBadges) {
+                    navigationRow(
+                        title = stringResource(Res.string.settings_stream_badge_position_title),
+                        description = badgePlacementLabel,
+                        onClick = { showBadgePositionDialog = true },
+                    )
+                    navigationRow(
+                        title = stringResource(Res.string.settings_stream_badge_urls_title),
+                        description = badgeRulesPreview(currentRules),
+                        onClick = { showBadgeImportDialog = true },
+                    )
+                }
             }
         }
 
@@ -146,13 +146,6 @@ internal fun LazyListScope.streamsSettingsContent(isTablet: Boolean) {
             isTablet = isTablet,
         ) {
             SettingsList {
-                if (!isTablet) {
-                    navigationRow(
-                        title = stringResource(Res.string.settings_stream_background_title),
-                        description = streamBackgroundModeLabel(currentSettings.backgroundMode),
-                        onClick = { showBackgroundDialog = true },
-                    )
-                }
                 switchRow(
                     title = stringResource(Res.string.settings_stream_addon_logo_title),
                     description = stringResource(Res.string.settings_stream_addon_logo_description),
@@ -166,15 +159,6 @@ internal fun LazyListScope.streamsSettingsContent(isTablet: Boolean) {
             BadgeUrlManagerDialog(
                 currentRules = currentRules,
                 onDismiss = { showBadgeImportDialog = false },
-            )
-        }
-
-        if (showBackgroundDialog && !isTablet) {
-            StreamBackgroundModeDialog(
-                selectedMode = currentSettings.backgroundMode,
-                // The sheet animates itself out and then calls onDismiss, which closes it.
-                onModeSelected = StreamBadgeSettingsRepository::setBackgroundMode,
-                onDismiss = { showBackgroundDialog = false },
             )
         }
 
@@ -194,32 +178,6 @@ private fun streamBadgePlacementLabel(placement: StreamBadgePlacement): String =
         StreamBadgePlacement.TOP -> stringResource(Res.string.settings_stream_badge_position_top)
         StreamBadgePlacement.BOTTOM -> stringResource(Res.string.settings_stream_badge_position_bottom)
     }
-
-@Composable
-private fun streamBackgroundModeLabel(mode: StreamBackgroundMode): String = stringResource(
-    when (mode) {
-        StreamBackgroundMode.Cinematic -> Res.string.settings_meta_background_mode_cinematic
-        StreamBackgroundMode.Normal -> Res.string.settings_meta_background_mode_normal
-    },
-)
-
-@Composable
-private fun StreamBackgroundModeDialog(
-    selectedMode: StreamBackgroundMode,
-    onModeSelected: (StreamBackgroundMode) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    SingleChoiceBottomSheet(
-        title = stringResource(Res.string.settings_stream_background_title),
-        description = stringResource(Res.string.settings_stream_background_description),
-        options = StreamBackgroundMode.entries.map { mode ->
-            SingleChoiceOption(value = mode, label = streamBackgroundModeLabel(mode))
-        },
-        isSelected = { it == selectedMode },
-        onSelected = onModeSelected,
-        onDismiss = onDismiss,
-    )
-}
 
 @Composable
 private fun badgeRulesPreview(rules: StreamBadgeRules): String {
@@ -598,7 +556,9 @@ internal fun LazyListScope.streamsAppearanceSection(isTablet: Boolean) {
         }.collectAsStateWithLifecycle()
         var showBadgeImportDialog by rememberSaveable { mutableStateOf(false) }
         var showBadgePositionDialog by rememberSaveable { mutableStateOf(false) }
-        var showBackgroundDialog by rememberSaveable { mutableStateOf(false) }
+        // Read here, not inside the list's builder: a state read in the builder only re-runs the
+        // builder, which never re-renders the list, so the rows below would never hide.
+        val showBadges = currentSettings.showBadges
 
         SettingsSection(
             title = stringResource(Res.string.compose_settings_page_streams),
@@ -608,41 +568,29 @@ internal fun LazyListScope.streamsAppearanceSection(isTablet: Boolean) {
                 switchRow(
                     title = stringResource(Res.string.settings_stream_size_badges_title),
                     description = stringResource(Res.string.settings_stream_size_badges_description),
-                    checked = { currentSettings.showFileSizeBadges },
-                    onCheckedChange = StreamBadgeSettingsRepository::setShowFileSizeBadges,
+                    checked = { currentSettings.showBadges },
+                    onCheckedChange = StreamBadgeSettingsRepository::setShowBadges,
                 )
-                navigationRow(
-                    title = stringResource(Res.string.settings_stream_badge_position_title),
-                    description = streamBadgePlacementLabel(currentSettings.badgePlacement),
-                    onClick = { showBadgePositionDialog = true },
-                )
-                navigationRow(
-                    title = stringResource(Res.string.settings_stream_badge_urls_title),
-                    description = badgeRulesPreview(currentSettings.rules),
-                    onClick = { showBadgeImportDialog = true },
-                )
+                // Where badges sit and which ones there are only matter while badges show.
+                expandableRows(expanded = showBadges) {
+                    navigationRow(
+                        title = stringResource(Res.string.settings_stream_badge_position_title),
+                        description = streamBadgePlacementLabel(currentSettings.badgePlacement),
+                        onClick = { showBadgePositionDialog = true },
+                    )
+                    navigationRow(
+                        title = stringResource(Res.string.settings_stream_badge_urls_title),
+                        description = badgeRulesPreview(currentSettings.rules),
+                        onClick = { showBadgeImportDialog = true },
+                    )
+                }
                 switchRow(
                     title = stringResource(Res.string.settings_stream_addon_logo_title),
                     description = stringResource(Res.string.settings_stream_addon_logo_description),
                     checked = { currentSettings.showAddonLogo },
                     onCheckedChange = StreamBadgeSettingsRepository::setShowAddonLogo,
                 )
-                if (!isTablet) {
-                    navigationRow(
-                        title = stringResource(Res.string.settings_stream_background_title),
-                        description = streamBackgroundModeLabel(currentSettings.backgroundMode),
-                        onClick = { showBackgroundDialog = true },
-                    )
-                }
             }
-        }
-
-        if (showBackgroundDialog && !isTablet) {
-            StreamBackgroundModeDialog(
-                selectedMode = currentSettings.backgroundMode,
-                onModeSelected = StreamBadgeSettingsRepository::setBackgroundMode,
-                onDismiss = { showBackgroundDialog = false },
-            )
         }
 
         if (showBadgeImportDialog) {

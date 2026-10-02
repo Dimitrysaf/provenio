@@ -89,17 +89,15 @@ object StreamLinkCacheRepository {
         StreamLinkCacheStorage.removeEntry(hashedKey(contentKey))
     }
 
-    fun getValid(contentKey: String, maxAgeMs: Long): CachedStreamLink? {
-        if (maxAgeMs <= 0L) return null
+    /**
+     * The last working link for this content. It does not expire with age: a link that stops
+     * working is removed when playback fails, and one with expiring credentials is not reused.
+     */
+    fun getValid(contentKey: String): CachedStreamLink? {
         val raw = StreamLinkCacheStorage.loadEntry(hashedKey(contentKey)) ?: return null
         val entry = runCatching {
             json.decodeFromString(CachedStreamLink.serializer(), raw)
         }.getOrNull() ?: run {
-            StreamLinkCacheStorage.removeEntry(hashedKey(contentKey))
-            return null
-        }
-        val age = epochMs() - entry.cachedAtMs
-        if (entry.cachedAtMs <= 0L || age > maxAgeMs) {
             StreamLinkCacheStorage.removeEntry(hashedKey(contentKey))
             return null
         }

@@ -505,7 +505,6 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.ktor.client.core)
             implementation(libs.kotlinx.atomicfu)
-            implementation(libs.kmpalette.core)
             implementation(libs.materialKolor)
             implementation(libs.androidx.navigation3.ui)
             implementation(libs.kermit)

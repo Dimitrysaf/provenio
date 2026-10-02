@@ -25,11 +25,6 @@ enum class MetaScreenSectionKey {
     DETAILS,
     COLLECTION,
     MORE_LIKE_THIS,
-    ;
-
-    
-    val canBeTabbed: Boolean
-        get() = this != ACTIONS && this != OVERVIEW
 }
 
 data class MetaScreenSectionItem(
@@ -38,90 +33,27 @@ data class MetaScreenSectionItem(
     val description: String,
     val enabled: Boolean,
     val order: Int,
-    val tabGroup: Int? = null,
 )
 
 data class MetaScreenSettingsUiState(
     val items: List<MetaScreenSectionItem> = emptyList(),
-    val backgroundMode: MetaScreenBackgroundMode = MetaScreenBackgroundMode.Normal,
-    val cinematicBackground: Boolean = false,
     val heroTrailerPlayback: Boolean = false,
-    val tabLayout: Boolean = false,
-    val episodeCardStyle: MetaEpisodeCardStyle = MetaEpisodeCardStyle.Horizontal,
     val blurUnwatchedEpisodes: Boolean = false,
     val posterTransitionEnabled: Boolean = false,
 )
-
-enum class MetaScreenBackgroundMode {
-    Normal,
-    Cinematic,
-    DominantColor,
-    ;
-
-    val usesBackdropBackground: Boolean
-        get() = this != Normal
-
-    companion object {
-        fun parse(raw: String?): MetaScreenBackgroundMode? = when (raw?.lowercase()) {
-            "normal" -> Normal
-            "cinematic" -> Cinematic
-            "dominant_color" -> DominantColor
-            else -> null
-        }
-
-        fun persist(mode: MetaScreenBackgroundMode): String = when (mode) {
-            Normal -> "normal"
-            Cinematic -> "cinematic"
-            DominantColor -> "dominant_color"
-        }
-
-        fun fromLegacyCinematic(enabled: Boolean): MetaScreenBackgroundMode =
-            if (enabled) Cinematic else Normal
-    }
-}
-
-enum class MetaEpisodeCardStyle {
-    Horizontal,
-    List,
-    ;
-
-    companion object {
-        fun parse(raw: String?): MetaEpisodeCardStyle? = when (raw?.lowercase()) {
-            "horizontal" -> Horizontal
-            "list" -> List
-            else -> null
-        }
-
-        fun persist(style: MetaEpisodeCardStyle): String = when (style) {
-            Horizontal -> "horizontal"
-            List -> "list"
-        }
-    }
-}
-
-// Episodes are a lazy segmented list, so they never sit inside a tab group.
-internal fun MetaScreenSectionItem.tabGroupForRendering(): Int? =
-    if (key == MetaScreenSectionKey.EPISODES) null else tabGroup
 
 @Serializable
 private data class StoredMetaScreenSectionPreference(
     val key: String,
     val enabled: Boolean = true,
     val order: Int = 0,
-    val tabGroup: Int? = null,
 )
 
 @Serializable
 private data class StoredMetaScreenSettingsPayload(
     val items: List<StoredMetaScreenSectionPreference> = emptyList(),
-    @SerialName("background_mode")
-    val backgroundMode: String? = null,
-    val cinematicBackground: Boolean = false,
     @SerialName("hero_trailer_playback")
     val heroTrailerPlayback: Boolean = false,
-    @SerialName("tvStyleLayout")
-    val tabLayout: Boolean = false,
-    val episodeCardStyle: String = "horizontal",
     @SerialName("blur_unwatched_episodes")
     val blurUnwatchedEpisodes: Boolean = false,
     @SerialName("poster_transition_enabled")
@@ -203,10 +135,7 @@ object MetaScreenSettingsRepository {
 
     private var hasLoaded = false
     private var preferences: MutableMap<MetaScreenSectionKey, StoredMetaScreenSectionPreference> = mutableMapOf()
-    private var backgroundMode: MetaScreenBackgroundMode = MetaScreenBackgroundMode.Normal
     private var heroTrailerPlayback: Boolean = false
-    private var tabLayout: Boolean = false
-    private var episodeCardStyle: MetaEpisodeCardStyle = MetaEpisodeCardStyle.Horizontal
     private var blurUnwatchedEpisodes: Boolean = false
     private var posterTransitionEnabled: Boolean = false
     private fun localizedString(resource: StringResource): String = runBlocking { getString(resource) }
@@ -221,12 +150,7 @@ object MetaScreenSettingsRepository {
                 json.decodeFromString<StoredMetaScreenSettingsPayload>(payload)
             }.getOrNull()
             if (parsed != null) {
-                backgroundMode = MetaScreenBackgroundMode.parse(parsed.backgroundMode)
-                    ?: MetaScreenBackgroundMode.fromLegacyCinematic(parsed.cinematicBackground)
                 heroTrailerPlayback = parsed.heroTrailerPlayback
-                tabLayout = parsed.tabLayout
-                episodeCardStyle = MetaEpisodeCardStyle.parse(parsed.episodeCardStyle)
-                    ?: MetaEpisodeCardStyle.Horizontal
                 blurUnwatchedEpisodes = parsed.blurUnwatchedEpisodes
                 posterTransitionEnabled = parsed.posterTransitionEnabled
                 preferences = parsed.items.mapNotNull { item ->
@@ -244,44 +168,16 @@ object MetaScreenSettingsRepository {
     fun onProfileChanged() {
         hasLoaded = false
         preferences.clear()
-        backgroundMode = MetaScreenBackgroundMode.Normal
         heroTrailerPlayback = false
-        tabLayout = false
-        episodeCardStyle = MetaEpisodeCardStyle.Horizontal
         blurUnwatchedEpisodes = false
         posterTransitionEnabled = false
         _uiState.value = MetaScreenSettingsUiState()
         ensureLoaded()
     }
 
-    fun setCinematicBackground(enabled: Boolean) {
-        setBackgroundMode(MetaScreenBackgroundMode.fromLegacyCinematic(enabled))
-    }
-
-    fun setBackgroundMode(mode: MetaScreenBackgroundMode) {
-        ensureLoaded()
-        backgroundMode = mode
-        publish()
-        persist()
-    }
-
     fun setHeroTrailerPlayback(enabled: Boolean) {
         ensureLoaded()
         heroTrailerPlayback = enabled
-        publish()
-        persist()
-    }
-
-    fun setTabLayout(enabled: Boolean) {
-        ensureLoaded()
-        tabLayout = enabled
-        publish()
-        persist()
-    }
-
-    fun setEpisodeCardStyle(style: MetaEpisodeCardStyle) {
-        ensureLoaded()
-        episodeCardStyle = style
         publish()
         persist()
     }
@@ -300,59 +196,13 @@ object MetaScreenSettingsRepository {
         persist()
     }
 
-    fun setTabGroup(key: MetaScreenSectionKey, groupId: Int?) {
-        ensureLoaded()
-        if (!key.canBeTabbed) return
-        if (groupId != null) {
-            // Enforce max 3 sections per group
-            val currentGroupCount = preferences.count { it.value.tabGroup == groupId && it.key != key }
-            if (currentGroupCount >= 3) return
-        }
-        updatePreference(key) { preference ->
-            preference.copy(tabGroup = groupId)
-        }
-    }
-
     fun clearLocalState() {
         hasLoaded = false
         preferences.clear()
-        backgroundMode = MetaScreenBackgroundMode.Normal
         heroTrailerPlayback = false
-        tabLayout = false
-        episodeCardStyle = MetaEpisodeCardStyle.Horizontal
         blurUnwatchedEpisodes = false
         posterTransitionEnabled = false
         _uiState.value = MetaScreenSettingsUiState()
-    }
-
-    internal fun applyFromSync(
-        items: List<MetaScreenSectionItem>,
-        cinematicBackground: Boolean,
-        heroTrailerPlayback: Boolean = false,
-        tabLayout: Boolean,
-        episodeCardStyle: MetaEpisodeCardStyle = MetaEpisodeCardStyle.Horizontal,
-        blurUnwatchedEpisodes: Boolean = false,
-        backgroundMode: MetaScreenBackgroundMode? = null,
-        posterTransitionEnabled: Boolean = false,
-    ) {
-        ensureLoaded()
-        this.backgroundMode = backgroundMode ?: MetaScreenBackgroundMode.fromLegacyCinematic(cinematicBackground)
-        this.heroTrailerPlayback = heroTrailerPlayback
-        this.tabLayout = tabLayout
-        this.episodeCardStyle = episodeCardStyle
-        this.blurUnwatchedEpisodes = blurUnwatchedEpisodes
-        this.posterTransitionEnabled = posterTransitionEnabled
-        preferences = items.associate { item ->
-            item.key to StoredMetaScreenSectionPreference(
-                key = item.key.name,
-                enabled = item.enabled,
-                order = item.order,
-                tabGroup = item.tabGroup,
-            )
-        }.toMutableMap()
-        normalizePreferences()
-        publish()
-        persist()
     }
 
     fun setEnabled(key: MetaScreenSectionKey, enabled: Boolean) {
@@ -362,7 +212,7 @@ object MetaScreenSettingsRepository {
     }
 
     /**
-     * Restores the sections' order, visibility and tab groups.
+     * Restores the sections' order and visibility.
      *
      * Reset sits with the sections list and acts on it alone: the appearance settings above it
      * are separate choices, and clearing them from here would undo work the button does not name.
@@ -412,7 +262,6 @@ object MetaScreenSettingsRepository {
                     key = definition.key.name,
                     enabled = stored?.enabled ?: true,
                     order = index,
-                    tabGroup = stored?.tabGroup,
                 )
             }
         preferences = normalized
@@ -438,14 +287,9 @@ object MetaScreenSettingsRepository {
                         description = localizedString(definition.descriptionRes),
                         enabled = preference?.enabled ?: true,
                         order = preference?.order ?: 0,
-                        tabGroup = preference?.tabGroup,
                     )
                 },
-            backgroundMode = backgroundMode,
-            cinematicBackground = backgroundMode.usesBackdropBackground,
             heroTrailerPlayback = heroTrailerPlayback,
-            tabLayout = tabLayout,
-            episodeCardStyle = episodeCardStyle,
             blurUnwatchedEpisodes = blurUnwatchedEpisodes,
             posterTransitionEnabled = posterTransitionEnabled,
         )
@@ -456,11 +300,7 @@ object MetaScreenSettingsRepository {
             json.encodeToString(
                 StoredMetaScreenSettingsPayload(
                     items = preferences.values.sortedBy { it.order },
-                    backgroundMode = MetaScreenBackgroundMode.persist(backgroundMode),
-                    cinematicBackground = backgroundMode.usesBackdropBackground,
                     heroTrailerPlayback = heroTrailerPlayback,
-                    tabLayout = tabLayout,
-                    episodeCardStyle = MetaEpisodeCardStyle.persist(episodeCardStyle),
                     blurUnwatchedEpisodes = blurUnwatchedEpisodes,
                     posterTransitionEnabled = posterTransitionEnabled,
                 ),

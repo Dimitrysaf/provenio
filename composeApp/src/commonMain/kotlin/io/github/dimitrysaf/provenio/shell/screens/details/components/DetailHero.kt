@@ -41,9 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
@@ -88,7 +86,6 @@ fun DetailHero(
     trailerPlayWhenReady: () -> Boolean = { false },
     trailerMuted: Boolean = true,
     onTrailerMuteToggle: () -> Unit = {},
-    onBackdropLoaded: (Painter, ImageBitmap?) -> Unit = { _, _ -> },
     onOpenArtwork: ((String) -> Unit)? = null,
 ) {
     // A title with no artwork at all still gets its page, over the plain surface.
@@ -113,7 +110,6 @@ fun DetailHero(
             trailerPlayWhenReady = trailerPlayWhenReady,
             trailerMuted = trailerMuted,
             onTrailerMuteToggle = onTrailerMuteToggle,
-            onBackdropLoaded = onBackdropLoaded,
             onOpenArtwork = onOpenArtwork,
         )
     }
@@ -130,7 +126,6 @@ private fun DetailHeroPages(
     trailerPlayWhenReady: () -> Boolean,
     trailerMuted: Boolean,
     onTrailerMuteToggle: () -> Unit,
-    onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
     onOpenArtwork: ((String) -> Unit)?,
 ) {
     val carouselState = rememberCarouselState(itemCount = { pages.size })
@@ -181,7 +176,7 @@ private fun DetailHeroPages(
                     page = pages[0],
                     meta = meta,
                     layout = layout,
-                    reportBackdropLoaded = true,
+                    posterFallback = true,
                     isFocal = true,
                     trailerSources = trailerSources,
                     spentTrailerIds = spentTrailerIds,
@@ -190,8 +185,7 @@ private fun DetailHeroPages(
                     contentAlpha = { 1f },
                     onTrailerMuteToggle = onTrailerMuteToggle,
                     onTrailerSpent = { spentTrailerIds.add(it) },
-                    onBackdropLoaded = onBackdropLoaded,
-                )
+                        )
             }
         } else {
             HorizontalCenteredHeroCarousel(
@@ -225,7 +219,7 @@ private fun DetailHeroPages(
                         page = pages[index],
                         meta = meta,
                         layout = layout,
-                        reportBackdropLoaded = index == 0,
+                        posterFallback = index == 0,
                         isFocal = isFocal,
                         trailerSources = trailerSources,
                         spentTrailerIds = spentTrailerIds,
@@ -237,8 +231,7 @@ private fun DetailHeroPages(
                         contentAlpha = { heroItemContentAlpha(drawInfo) },
                         onTrailerMuteToggle = onTrailerMuteToggle,
                         onTrailerSpent = { spentTrailerIds.add(it) },
-                        onBackdropLoaded = onBackdropLoaded,
-                    )
+                                )
                 }
             }
         }
@@ -252,7 +245,7 @@ private fun DetailHeroPage(
     page: DetailHeroSlide,
     meta: MetaDetails,
     layout: HomeHeroLayout,
-    reportBackdropLoaded: Boolean,
+    posterFallback: Boolean,
     isFocal: Boolean,
     trailerSources: Map<String, TrailerPlaybackSource>,
     spentTrailerIds: List<String>,
@@ -261,16 +254,14 @@ private fun DetailHeroPage(
     contentAlpha: () -> Float,
     onTrailerMuteToggle: () -> Unit,
     onTrailerSpent: (String) -> Unit,
-    onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
 ) {
     when (page) {
         is DetailHeroSlide.Artwork -> HeroArtworkPage(
             url = page.url,
             meta = meta,
             layout = layout,
-            reportLoaded = reportBackdropLoaded,
+            posterFallback = posterFallback,
             contentAlpha = contentAlpha,
-            onBackdropLoaded = onBackdropLoaded,
         )
 
         is DetailHeroSlide.Trailer -> HeroTrailerPage(
@@ -294,9 +285,8 @@ private fun HeroArtworkPage(
     url: String,
     meta: MetaDetails,
     layout: HomeHeroLayout,
-    reportLoaded: Boolean,
+    posterFallback: Boolean,
     contentAlpha: () -> Float,
-    onBackdropLoaded: (Painter, ImageBitmap?) -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (url.isBlank()) {
@@ -309,12 +299,7 @@ private fun HeroArtworkPage(
             HeroArtworkImage(
                 url = url,
                 contentDescription = meta.name,
-                portraitFallbackUrl = meta.poster.takeIf { reportLoaded },
-                onLoaded = { painter, imageBitmap ->
-                    if (reportLoaded) {
-                        onBackdropLoaded(painter, imageBitmap)
-                    }
-                },
+                portraitFallbackUrl = meta.poster.takeIf { posterFallback },
             )
         }
 

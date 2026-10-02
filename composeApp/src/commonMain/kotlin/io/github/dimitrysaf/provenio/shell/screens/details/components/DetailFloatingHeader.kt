@@ -47,7 +47,6 @@ import org.jetbrains.compose.resources.stringResource
 fun DetailFloatingHeader(
     meta: MetaDetails,
     progress: Float,
-    backgroundColor: Color? = null,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -58,7 +57,7 @@ fun DetailFloatingHeader(
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     }
     val headerTopPadding = (safeAreaTop - 6.dp).coerceAtLeast(safeAreaTop * 0.8f)
-    val surfaceColor = backgroundColor ?: if (isIos) {
+    val surfaceColor = if (isIos) {
         MaterialTheme.colorScheme.surface.copy(alpha = 1.0f)
     } else {
         MaterialTheme.colorScheme.background

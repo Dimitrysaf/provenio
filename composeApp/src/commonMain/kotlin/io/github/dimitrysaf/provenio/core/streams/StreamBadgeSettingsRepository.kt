@@ -18,16 +18,11 @@ import kotlinx.serialization.json.Json
 
 data class StreamBadgeSettingsUiState(
     val rules: StreamBadgeRules = StreamBadgeRules(),
-    val showFileSizeBadges: Boolean = true,
+    /** Size and fusion badges alike. Stored under its original size-badge key, so the choice carries over. */
+    val showBadges: Boolean = true,
     val showAddonLogo: Boolean = true,
     val badgePlacement: StreamBadgePlacement = StreamBadgePlacement.BOTTOM,
-    val backgroundMode: StreamBackgroundMode = StreamBackgroundMode.Normal,
 )
-
-enum class StreamBackgroundMode {
-    Normal,
-    Cinematic,
-}
 
 enum class StreamBadgePlacement {
     TOP,
@@ -46,10 +41,9 @@ object StreamBadgeSettingsRepository {
 
     private var hasLoaded = false
     private var streamBadgeRules = StreamBadgeRules()
-    private var showFileSizeBadges = true
+    private var showBadges = true
     private var showAddonLogo = true
     private var badgePlacement = StreamBadgePlacement.BOTTOM
-    private var backgroundMode = StreamBackgroundMode.Normal
 
     fun ensureLoaded() {
         if (hasLoaded) return
@@ -63,21 +57,15 @@ object StreamBadgeSettingsRepository {
     fun clearLocalState() {
         hasLoaded = false
         streamBadgeRules = StreamBadgeRules()
-        showFileSizeBadges = true
+        showBadges = true
         showAddonLogo = true
         badgePlacement = StreamBadgePlacement.BOTTOM
-        backgroundMode = StreamBackgroundMode.Normal
         _uiState.value = StreamBadgeSettingsUiState()
     }
 
     fun snapshot(): StreamBadgeRules {
         ensureLoaded()
         return _uiState.value.rules
-    }
-
-    fun showFileSizeBadgesSnapshot(): Boolean {
-        ensureLoaded()
-        return _uiState.value.showFileSizeBadges
     }
 
     fun badgePlacementSnapshot(): StreamBadgePlacement {
@@ -140,10 +128,10 @@ object StreamBadgeSettingsRepository {
         saveStreamBadgeRules()
     }
 
-    fun setShowFileSizeBadges(enabled: Boolean) {
+    fun setShowBadges(enabled: Boolean) {
         ensureLoaded()
-        if (showFileSizeBadges == enabled) return
-        showFileSizeBadges = enabled
+        if (showBadges == enabled) return
+        showBadges = enabled
         publish()
         StreamBadgeSettingsStorage.saveShowFileSizeBadges(enabled)
     }
@@ -164,14 +152,6 @@ object StreamBadgeSettingsRepository {
         StreamBadgeSettingsStorage.saveStreamBadgePlacement(placement.name)
     }
 
-    fun setBackgroundMode(mode: StreamBackgroundMode) {
-        ensureLoaded()
-        if (backgroundMode == mode) return
-        backgroundMode = mode
-        publish()
-        StreamBadgeSettingsStorage.saveStreamBackgroundMode(mode.name.lowercase())
-    }
-
     private fun loadFromDisk() {
         hasLoaded = true
         val storedRules = parseStreamBadgeRules(StreamBadgeSettingsStorage.loadStreamBadgeRules())
@@ -181,11 +161,8 @@ object StreamBadgeSettingsRepository {
             null
         }
         streamBadgeRules = storedRules ?: legacyRules ?: StreamBadgeRules()
-        showFileSizeBadges = StreamBadgeSettingsStorage.loadShowFileSizeBadges() ?: true
+        showBadges = StreamBadgeSettingsStorage.loadShowFileSizeBadges() ?: true
         showAddonLogo = StreamBadgeSettingsStorage.loadShowAddonLogo() ?: true
-        backgroundMode = StreamBadgeSettingsStorage.loadStreamBackgroundMode()
-            ?.let { storedMode -> StreamBackgroundMode.entries.firstOrNull { it.name.equals(storedMode, ignoreCase = true) } }
-            ?: StreamBackgroundMode.Normal
         badgePlacement = StreamBadgeSettingsStorage.loadStreamBadgePlacement()
             ?.let { storedPlacement ->
                 StreamBadgePlacement.entries.firstOrNull { placement ->
@@ -203,10 +180,9 @@ object StreamBadgeSettingsRepository {
     private fun publish() {
         _uiState.value = StreamBadgeSettingsUiState(
             rules = streamBadgeRules,
-            showFileSizeBadges = showFileSizeBadges,
+            showBadges = showBadges,
             showAddonLogo = showAddonLogo,
             badgePlacement = badgePlacement,
-            backgroundMode = backgroundMode,
         )
     }
 

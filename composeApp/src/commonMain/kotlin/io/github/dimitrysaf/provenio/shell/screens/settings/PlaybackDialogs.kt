@@ -116,23 +116,6 @@ internal fun LanguageSelectionDialog(
 }
 
 @Composable
-internal fun ReuseCacheDurationDialog(
-    selectedHours: Int,
-    onDurationSelected: (Int) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    SingleChoiceBottomSheet(
-        title = stringResource(Res.string.settings_playback_last_link_cache_duration),
-        options = listOf(1, 2, 3, 6, 12, 24, 48, 72, 168).map { hours ->
-            SingleChoiceOption(value = hours, label = formatReuseCacheDuration(hours))
-        },
-        isSelected = { it == selectedHours },
-        onSelected = onDurationSelected,
-        onDismiss = onDismiss,
-    )
-}
-
-@Composable
 internal fun DecoderPriorityDialog(
     selectedPriority: Int,
     onPrioritySelected: (Int) -> Unit,

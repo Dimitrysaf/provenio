@@ -1,26 +1,9 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Image
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -28,17 +11,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleRepository
 import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleUiState
-import io.github.dimitrysaf.provenio.shell.components.landscapePosterHeightForWidth
-import io.github.dimitrysaf.provenio.shell.components.landscapePosterWidth
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.action_reset
 import provenio.composeapp.generated.resources.settings_poster_card_radius
@@ -46,30 +24,33 @@ import provenio.composeapp.generated.resources.settings_poster_card_width
 import provenio.composeapp.generated.resources.settings_poster_custom
 import provenio.composeapp.generated.resources.settings_poster_hide_labels
 import provenio.composeapp.generated.resources.settings_poster_landscape_mode
-import provenio.composeapp.generated.resources.settings_poster_preview_label
 import provenio.composeapp.generated.resources.settings_poster_radius_classic
 import provenio.composeapp.generated.resources.settings_poster_radius_pill
 import provenio.composeapp.generated.resources.settings_poster_radius_rounded
 import provenio.composeapp.generated.resources.settings_poster_radius_sharp
 import provenio.composeapp.generated.resources.settings_poster_radius_subtle
+import provenio.composeapp.generated.resources.settings_poster_size_dynamic
+import provenio.composeapp.generated.resources.settings_poster_size_dynamic_description
 import provenio.composeapp.generated.resources.settings_poster_width_balanced
 import provenio.composeapp.generated.resources.settings_poster_width_comfort
 import provenio.composeapp.generated.resources.settings_poster_width_compact
 import provenio.composeapp.generated.resources.settings_poster_width_dense
 import provenio.composeapp.generated.resources.settings_poster_width_large
-import provenio.composeapp.generated.resources.settings_poster_width_standard
 import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.posterCustomizationSettingsContent(
     uiState: PosterCardStyleUiState,
 ) {
     item {
+        HomeLayoutPreview(highlight = HomePreviewSection.Catalogs)
+    }
+    item {
         PosterCardStyleControls(
             widthDp = uiState.widthDp,
+            dynamicSizeEnabled = uiState.dynamicSizeEnabled,
             cornerRadiusDp = uiState.cornerRadiusDp,
             catalogLandscapeModeEnabled = uiState.catalogLandscapeModeEnabled,
             hideLabelsEnabled = uiState.hideLabelsEnabled,
-            onWidthSelected = PosterCardStyleRepository::setWidthDp,
             onCornerRadiusSelected = PosterCardStyleRepository::setCornerRadiusDp,
             onCatalogLandscapeModeChange = PosterCardStyleRepository::setCatalogLandscapeModeEnabled,
             onHideLabelsChange = PosterCardStyleRepository::setHideLabelsEnabled,
@@ -78,33 +59,36 @@ internal fun LazyListScope.posterCustomizationSettingsContent(
 }
 
 /**
- * The poster card's properties, as rows of one list.
- *
- * The preview leads the section the way a collection's backdrop leads its editor, except nothing
- * here is edited by tapping it: every property that shapes it is a row underneath, so the preview
- * only ever reports. Width and radius were rows of chips, six and five of them wrapping onto
- * three lines; as a row each states its current value and opens the app's single-choice sheet.
+ * The poster card's properties, as rows of one list, under the home screen preview that shows
+ * what they add up to. Size and radius each state their current value and open the app's
+ * single-choice sheet.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun PosterCardStyleControls(
     widthDp: Int,
+    dynamicSizeEnabled: Boolean,
     cornerRadiusDp: Int,
     catalogLandscapeModeEnabled: Boolean,
     hideLabelsEnabled: Boolean,
-    onWidthSelected: (Int) -> Unit,
     onCornerRadiusSelected: (Int) -> Unit,
     onCatalogLandscapeModeChange: (Boolean) -> Unit,
     onHideLabelsChange: (Boolean) -> Unit,
 ) {
-    val widthOptions = listOf(
-        PresetOption(stringResource(Res.string.settings_poster_width_compact), 104),
-        PresetOption(stringResource(Res.string.settings_poster_width_dense), 112),
-        PresetOption(stringResource(Res.string.settings_poster_width_standard), 120),
+    // Steps that grow as the cards do, so each one reads as a different size, up to one meant
+    // for a TV across the room.
+    val sizeOptions = listOf(
+        PresetOption(
+            label = stringResource(Res.string.settings_poster_size_dynamic),
+            value = DynamicSizeValue,
+            supporting = stringResource(Res.string.settings_poster_size_dynamic_description),
+        ),
+        PresetOption(stringResource(Res.string.settings_poster_width_compact), 96),
+        PresetOption(stringResource(Res.string.settings_poster_width_dense), 110),
         PresetOption(stringResource(Res.string.settings_poster_width_balanced), 126),
-        PresetOption(stringResource(Res.string.settings_poster_width_comfort), 134),
-        PresetOption(stringResource(Res.string.settings_poster_width_large), 140),
+        PresetOption(stringResource(Res.string.settings_poster_width_comfort), 150),
+        PresetOption(stringResource(Res.string.settings_poster_width_large), 220),
     )
+    val selectedSize = if (dynamicSizeEnabled) DynamicSizeValue else widthDp
     val radiusOptions = listOf(
         PresetOption(stringResource(Res.string.settings_poster_radius_sharp), 0),
         PresetOption(stringResource(Res.string.settings_poster_radius_subtle), 4),
@@ -113,23 +97,14 @@ private fun PosterCardStyleControls(
         PresetOption(stringResource(Res.string.settings_poster_radius_pill), 16),
     )
     val customLabel = stringResource(Res.string.settings_poster_custom)
-    var showWidthSheet by remember { mutableStateOf(false) }
+    var showSizeSheet by remember { mutableStateOf(false) }
     var showRadiusSheet by remember { mutableStateOf(false) }
 
     SettingsList {
-        customRow {
-            PosterCardStylePreviewRow(
-                widthDp = widthDp,
-                cornerRadiusDp = cornerRadiusDp,
-                landscapeEnabled = catalogLandscapeModeEnabled,
-                hideLabelsEnabled = hideLabelsEnabled,
-                shape = segmentShape(index = 0, count = PosterCardStyleRowCount),
-            )
-        }
         navigationRow(
             title = stringResource(Res.string.settings_poster_card_width),
-            description = widthOptions.labelFor(widthDp, customLabel),
-            onClick = { showWidthSheet = true },
+            description = sizeOptions.labelFor(selectedSize, customLabel),
+            onClick = { showSizeSheet = true },
         )
         navigationRow(
             title = stringResource(Res.string.settings_poster_card_radius),
@@ -159,13 +134,19 @@ private fun PosterCardStyleControls(
         Text(stringResource(Res.string.action_reset))
     }
 
-    if (showWidthSheet) {
+    if (showSizeSheet) {
         PresetChoiceSheet(
             title = stringResource(Res.string.settings_poster_card_width),
-            options = widthOptions,
-            selectedValue = widthDp,
-            onSelected = onWidthSelected,
-            onDismiss = { showWidthSheet = false },
+            options = sizeOptions,
+            selectedValue = selectedSize,
+            onSelected = { value ->
+                if (value == DynamicSizeValue) {
+                    PosterCardStyleRepository.setDynamicSizeEnabled(true)
+                } else {
+                    PosterCardStyleRepository.setWidthDp(value)
+                }
+            },
+            onDismiss = { showSizeSheet = false },
         )
     }
 
@@ -179,6 +160,9 @@ private fun PosterCardStyleControls(
         )
     }
 }
+
+/** Stands for dynamic sizing among the size presets, which are otherwise widths. */
+private const val DynamicSizeValue = -1
 
 /** The label of whichever preset holds this value, or the word for one that no preset covers. */
 private fun List<PresetOption>.labelFor(value: Int, customLabel: String): String =
@@ -195,117 +179,17 @@ private fun PresetChoiceSheet(
 ) {
     SingleChoiceBottomSheet(
         title = title,
-        options = options.map { SingleChoiceOption(value = it.value, label = it.label) },
+        options = options.map {
+            SingleChoiceOption(value = it.value, label = it.label, supportingText = it.supporting)
+        },
         isSelected = { it == selectedValue },
         onSelected = onSelected,
         onDismiss = onDismiss,
     )
 }
 
-/** The live preview, as a row of the list rather than a block floating above it. */
-@Composable
-private fun PosterCardStylePreviewRow(
-    widthDp: Int,
-    cornerRadiusDp: Int,
-    landscapeEnabled: Boolean,
-    hideLabelsEnabled: Boolean,
-    shape: Shape,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = shape,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
-            PosterCardLivePreview(
-                widthDp = widthDp,
-                cornerRadiusDp = cornerRadiusDp,
-                landscapeEnabled = landscapeEnabled,
-                hideLabelsEnabled = hideLabelsEnabled,
-            )
-        }
-    }
-}
-
-/**
- * A miniature of the card the settings describe: the same width, the same corners, the shape the
- * landscape switch gives it, and the label the hide-labels switch takes away. It carries a
- * placeholder image rather than artwork, since nothing here is about a particular title.
- */
-@Composable
-private fun PosterCardLivePreview(
-    widthDp: Int,
-    cornerRadiusDp: Int,
-    landscapeEnabled: Boolean,
-    hideLabelsEnabled: Boolean,
-) {
-    // The catalog derives a landscape card's width and height from the same width setting, so the
-    // preview derives them the same way instead of keeping its own numbers.
-    val cardWidth = if (landscapeEnabled) landscapePosterWidth(widthDp) else widthDp.dp
-    val cardHeight = if (landscapeEnabled) {
-        landscapePosterHeightForWidth(cardWidth)
-    } else {
-        (widthDp * 3 / 2).dp
-    }
-    val animatedWidth by animateDpAsState(
-        targetValue = cardWidth,
-        animationSpec = tween(durationMillis = 280),
-        label = "posterPreviewWidth",
-    )
-    val animatedHeight by animateDpAsState(
-        targetValue = cardHeight,
-        animationSpec = tween(durationMillis = 280),
-        label = "posterPreviewHeight",
-    )
-    val animatedCornerRadius by animateDpAsState(
-        targetValue = cornerRadiusDp.dp,
-        animationSpec = tween(durationMillis = 220),
-        label = "posterPreviewCornerRadius",
-    )
-    val cardShape = RoundedCornerShape(animatedCornerRadius)
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .width(animatedWidth)
-                .height(animatedHeight)
-                .clip(cardShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    shape = cardShape,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Image,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(32.dp),
-            )
-        }
-
-        if (!hideLabelsEnabled) {
-            Text(
-                text = stringResource(Res.string.settings_poster_preview_label),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                // The label sits under the card and to its edge, the way a catalog tile's does.
-                modifier = Modifier.width(animatedWidth),
-            )
-        }
-    }
-}
-
-private const val PosterCardStyleRowCount = 5
-
 private data class PresetOption(
     val label: String,
     val value: Int,
+    val supporting: String? = null,
 )

@@ -60,12 +60,14 @@ internal fun LazyListScope.contentDiscoveryContent(
                             Res.string.settings_content_discovery_addons_description
                         },
                     ),
+                    opensPage = true,
                     onClick = onAddonsClick,
                 )
                 if (showPluginsEntry) {
                     navigationRow(
                         title = stringResource(Res.string.compose_settings_page_plugins),
                         description = stringResource(Res.string.settings_content_discovery_plugins_description),
+                        opensPage = true,
                         onClick = onPluginsClick,
                     )
                 }

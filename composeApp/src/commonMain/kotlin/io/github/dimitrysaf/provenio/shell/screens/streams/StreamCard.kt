@@ -42,7 +42,7 @@ internal fun StreamRow(
     shapes: ListItemShapes,
     enabled: Boolean,
     appendInstantServiceToDefaultName: Boolean,
-    showFileSizeBadges: Boolean,
+    showBadges: Boolean,
     badgePlacement: StreamBadgePlacement,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -51,7 +51,8 @@ internal fun StreamRow(
     sourceName: String? = null,
 ) {
     val badgeImages = stream.badges.filter { it.imageURL.isNotBlank() }
-    val hasBadges = badgeImages.isNotEmpty() || (showFileSizeBadges && stream.behaviorHints.videoSize != null)
+    // One switch covers every badge, the fusion images as well as the file size.
+    val hasBadges = showBadges && (badgeImages.isNotEmpty() || stream.behaviorHints.videoSize != null)
     val subtitle = stream.streamSubtitle?.takeIf { it.isNotBlank() }
     val overline = sourceName?.takeIf { it.isNotBlank() }
     val instantLabel = if (appendInstantServiceToDefaultName) stream.instantServiceLabel() else null
@@ -90,7 +91,6 @@ internal fun StreamRow(
                         StreamRowBadges(
                             badgeImages = badgeImages,
                             stream = stream,
-                            showFileSizeBadges = showFileSizeBadges,
                         )
                     }
                     if (subtitle != null) {
@@ -100,7 +100,6 @@ internal fun StreamRow(
                         StreamRowBadges(
                             badgeImages = badgeImages,
                             stream = stream,
-                            showFileSizeBadges = showFileSizeBadges,
                         )
                     }
                 }
@@ -121,7 +120,6 @@ internal fun StreamRow(
 private fun StreamRowBadges(
     badgeImages: List<StreamBadge>,
     stream: StreamItem,
-    showFileSizeBadges: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -132,9 +130,7 @@ private fun StreamRowBadges(
         badgeImages.forEach { badge ->
             StreamBadgeImage(badge = badge)
         }
-        if (showFileSizeBadges) {
-            StreamFileSizeBadge(stream = stream)
-        }
+        StreamFileSizeBadge(stream = stream)
     }
 }
 

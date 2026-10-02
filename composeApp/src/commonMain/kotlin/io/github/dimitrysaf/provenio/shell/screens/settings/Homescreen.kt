@@ -2,9 +2,7 @@ package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.animation.animateColorAsState
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -22,9 +19,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.GridView
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -38,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -58,6 +52,8 @@ import provenio.composeapp.generated.resources.action_cancel
 import provenio.composeapp.generated.resources.action_reset
 import provenio.composeapp.generated.resources.action_retry
 import provenio.composeapp.generated.resources.action_save
+import provenio.composeapp.generated.resources.compose_action_off
+import provenio.composeapp.generated.resources.compose_settings_page_hero_carousel
 import provenio.composeapp.generated.resources.layout_catalog_type
 import provenio.composeapp.generated.resources.layout_catalog_type_sub
 import provenio.composeapp.generated.resources.layout_hide_unreleased
@@ -72,10 +68,6 @@ import provenio.composeapp.generated.resources.settings_homescreen_section_catal
 import provenio.composeapp.generated.resources.settings_homescreen_section_catalogs_collections
 import provenio.composeapp.generated.resources.settings_homescreen_section_collections
 import provenio.composeapp.generated.resources.settings_homescreen_section_hero
-import provenio.composeapp.generated.resources.settings_homescreen_section_hero_sources
-import provenio.composeapp.generated.resources.settings_homescreen_selected_count
-import provenio.composeapp.generated.resources.settings_homescreen_show_hero
-import provenio.composeapp.generated.resources.settings_homescreen_show_hero_description
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -88,19 +80,28 @@ internal fun LazyListScope.homescreenSettingsContent(
     items: List<HomeCatalogSettingsItem>,
     isCatalogLoading: Boolean,
     catalogErrorMessage: String?,
+    onHeroCarouselClick: () -> Unit,
 ) {
-    val selectedHeroSourceCount = items.count { it.heroSourceEnabled }
     item {
+        // The row's own state, so the page can be read without opening it: off, or which
+        // catalogs the carousel draws from.
+        val heroSummary = if (heroEnabled) {
+            items.filter { !it.isCollection && it.heroSourceEnabled }
+                .joinToString(separator = ", ") { it.displayTitle }
+                .ifBlank { stringResource(Res.string.settings_homescreen_no_sources_selected) }
+        } else {
+            stringResource(Res.string.compose_action_off)
+        }
         SettingsSection(
             title = stringResource(Res.string.settings_homescreen_section_hero),
             isTablet = isTablet,
         ) {
             SettingsList {
-                switchRow(
-                    title = stringResource(Res.string.settings_homescreen_show_hero),
-                    description = stringResource(Res.string.settings_homescreen_show_hero_description),
-                    checked = { heroEnabled },
-                    onCheckedChange = HomeCatalogSettingsRepository::setHeroEnabled,
+                navigationRow(
+                    title = stringResource(Res.string.compose_settings_page_hero_carousel),
+                    description = heroSummary,
+                    opensPage = true,
+                    onClick = onHeroCarouselClick,
                 )
                 switchRow(
                     title = stringResource(Res.string.layout_catalog_type),
@@ -113,24 +114,6 @@ internal fun LazyListScope.homescreenSettingsContent(
                     description = stringResource(Res.string.layout_hide_unreleased_sub),
                     checked = { hideUnreleasedContent },
                     onCheckedChange = HomeCatalogSettingsRepository::setHideUnreleasedContent,
-                )
-            }
-        }
-    }
-    item {
-        val catalogOnlyItems = items.filter { !it.isCollection }
-        if (heroEnabled && catalogOnlyItems.isNotEmpty()) {
-            var heroSourcesExpanded by remember { mutableStateOf(false) }
-            SettingsSection(
-                title = stringResource(Res.string.settings_homescreen_section_hero_sources),
-                isTablet = isTablet,
-            ) {
-                HeroSourcesDropdown(
-                    isTablet = isTablet,
-                    items = catalogOnlyItems,
-                    selectedHeroSourceCount = selectedHeroSourceCount,
-                    expanded = heroSourcesExpanded,
-                    onExpandedChange = { heroSourcesExpanded = it },
                 )
             }
         }
@@ -196,61 +179,6 @@ internal fun LazyListScope.homescreenSettingsContent(
                 ) {
                     Text(stringResource(Res.string.action_reset))
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun HeroSourcesDropdown(
-    isTablet: Boolean,
-    items: List<HomeCatalogSettingsItem>,
-    selectedHeroSourceCount: Int,
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-) {
-    val noSourcesSelected = stringResource(Res.string.settings_homescreen_no_sources_selected)
-    val chevronRotation by animateFloatAsState(
-        targetValue = if (expanded) 180f else 0f,
-        label = "heroSourcesChevron",
-    )
-    // The summary and the sources it reveals are one segmented group, so they are declared as
-    // rows: the summary then takes the group's top outer corner and the last source the bottom
-    // one, and the corners stay right as the group grows and shrinks. Composed inside the list
-    // instead of declared to it, they would have drawn on the page with no container at all.
-    SettingsList(modifier = Modifier.animateContentSize()) {
-        navigationRow(
-            title = stringResource(
-                Res.string.settings_homescreen_selected_count,
-                selectedHeroSourceCount,
-                HomeCatalogSettingsRepository.HERO_SOURCE_SELECTION_LIMIT,
-            ),
-            description = items.filter { it.heroSourceEnabled }
-                .joinToString(separator = ", ") { it.displayTitle }
-                .ifBlank { noSourcesSelected },
-            trailingContent = {
-                Icon(
-                    imageVector = Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.rotate(chevronRotation),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            },
-            onClick = { onExpandedChange(!expanded) },
-        )
-
-        if (expanded) {
-            items.forEach { item ->
-                switchRow(
-                    // No "limit reached" note: the row above already reads "n of n selected", and
-                    // a row that cannot be turned on is already disabled.
-                    title = item.displayTitle,
-                    description = item.addonName,
-                    checked = { item.heroSourceEnabled },
-                    enabled = item.heroSourceEnabled ||
-                        selectedHeroSourceCount < HomeCatalogSettingsRepository.HERO_SOURCE_SELECTION_LIMIT,
-                    onCheckedChange = { HomeCatalogSettingsRepository.setHeroSourceEnabled(item.key, it) },
-                )
             }
         }
     }

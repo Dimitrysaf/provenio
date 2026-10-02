@@ -328,7 +328,7 @@ fun StreamsSheet(
                             debridEnabled = debridSettings.canResolvePlayableLinks,
                             appendInstantServiceToDefaultName = debridSettings.canResolvePlayableLinks &&
                                 !debridSettings.hasCustomStreamFormatting,
-                            showFileSizeBadges = streamDisplaySettings.showFileSizeBadges,
+                            showBadges = streamDisplaySettings.showBadges,
                             showAddonLogo = streamDisplaySettings.showAddonLogo,
                             badgePlacement = streamDisplaySettings.badgePlacement,
                             isStreamSelected = { stream -> ActiveStreamStore.isActive(videoId, stream) },

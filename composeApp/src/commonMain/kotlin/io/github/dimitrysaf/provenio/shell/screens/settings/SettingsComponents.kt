@@ -20,7 +20,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.HorizontalDivider
@@ -34,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -58,7 +59,6 @@ import provenio.composeapp.generated.resources.settings_homescreen_hidden
 import provenio.composeapp.generated.resources.settings_homescreen_not_in_hero
 import provenio.composeapp.generated.resources.settings_homescreen_pinned
 import provenio.composeapp.generated.resources.settings_homescreen_pinned_to_top
-import provenio.composeapp.generated.resources.settings_homescreen_reorder
 import provenio.composeapp.generated.resources.settings_homescreen_visible
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableCollectionItemScope
@@ -385,9 +385,29 @@ internal fun HomescreenCatalogRow(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
 
+    // The whole row is the drag handle: holding it picks the row up, a tap still renames. A
+    // pinned row cannot move, so holding it explains why instead.
+    val reorderModifier = if (item.isPinnedToTop) {
+        Modifier.pointerInput(onPinnedDragAttempt) {
+            detectTapGestures(onLongPress = { onPinnedDragAttempt() })
+        }
+    } else {
+        with(dragHandleScope) {
+            Modifier.longPressDraggableHandle(
+                onDragStarted = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
+                onDragStopped = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                },
+            )
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .then(reorderModifier)
             .then(
                 if (onRename != null) Modifier.clickable(onClick = onRename) else Modifier,
             )
@@ -397,7 +417,7 @@ internal fun HomescreenCatalogRow(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
                 modifier = Modifier
@@ -468,26 +488,6 @@ internal fun HomescreenCatalogRow(
                             imageVector = Icons.Rounded.Lock,
                             contentDescription = stringResource(Res.string.settings_homescreen_pinned),
                             tint = supportingColor.copy(alpha = tokens.opacity.medium),
-                        )
-                    }
-                } else {
-                    IconButton(
-                        modifier = with(dragHandleScope) {
-                            Modifier.draggableHandle(
-                                onDragStarted = {
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                },
-                                onDragStopped = {
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                },
-                            )
-                        },
-                        onClick = {},
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Menu,
-                            contentDescription = stringResource(Res.string.settings_homescreen_reorder),
-                            tint = supportingColor,
                         )
                     }
                 }

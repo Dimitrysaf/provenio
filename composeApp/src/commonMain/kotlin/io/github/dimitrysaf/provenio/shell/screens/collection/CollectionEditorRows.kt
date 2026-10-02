@@ -167,6 +167,7 @@ internal fun CollectionEditorSwitchRow(
         colors = ListItemDefaults.segmentedColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
+        verticalAlignment = Alignment.CenterVertically,
         supportingContent = { Text(description) },
         trailingContent = {
             Switch(checked = checked, onCheckedChange = onCheckedChange)

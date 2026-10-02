@@ -138,8 +138,7 @@ internal fun StreamDestination(
         reuseHandled = true
         if (launch.manualSelection) return@LaunchedEffect
         if (!playerSettings.streamReuseLastLinkEnabled) return@LaunchedEffect
-        val maxAgeMs = playerSettings.streamReuseLastLinkCacheHours * 60L * 60L * 1000L
-        val cached = StreamLinkCacheRepository.getValid(launch.linkCacheKey(effectiveVideoId), maxAgeMs)
+        val cached = StreamLinkCacheRepository.getValid(launch.linkCacheKey(effectiveVideoId))
             ?: return@LaunchedEffect
         if (cached.url.isBlank() && !cached.infoHash.isNullOrBlank()) {
             requestOrOpenP2pStream(
@@ -175,10 +174,7 @@ internal fun StreamDestination(
     )
     val hasReusableLink = remember(effectiveVideoId, playerSettings.streamReuseLastLinkEnabled, reuseHandled, reuseNavigated) {
         playerSettings.streamReuseLastLinkEnabled && (!reuseHandled || reuseNavigated) &&
-            StreamLinkCacheRepository.getValid(
-                launch.linkCacheKey(effectiveVideoId),
-                playerSettings.streamReuseLastLinkCacheHours * 60L * 60L * 1000L,
-            ) != null
+            StreamLinkCacheRepository.getValid(launch.linkCacheKey(effectiveVideoId)) != null
     }
     val showLoadingScreen = autoPlayNavigationStarted || resolvingDebridStream || streamsUiState.shouldShowAutoPlayLoading(
         expectedRequestToken = expectedStreamsRequestToken,

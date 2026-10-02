@@ -425,7 +425,7 @@ private fun PlayerStreamGroupsList(
                         debridEnabled = debridSettings.canResolvePlayableLinks,
                         appendInstantServiceToDefaultName = debridSettings.canResolvePlayableLinks &&
                             !debridSettings.hasCustomStreamFormatting,
-                        showFileSizeBadges = badgeSettings.showFileSizeBadges,
+                        showBadges = badgeSettings.showBadges,
                         showAddonLogo = badgeSettings.showAddonLogo,
                         badgePlacement = badgeSettings.badgePlacement,
                         isStreamSelected = isStreamSelected,

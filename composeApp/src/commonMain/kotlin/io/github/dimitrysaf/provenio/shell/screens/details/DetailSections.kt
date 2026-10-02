@@ -1,17 +1,9 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
 import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,18 +16,11 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.rounded.CollectionsBookmark
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailActionButtons
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSecondaryAction
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailAdditionalInfoSection
@@ -67,7 +52,6 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaTrailer
 import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
 import io.github.dimitrysaf.provenio.core.metadata.MoreLikeThisSource
 import io.github.dimitrysaf.provenio.core.metadata.playLabel
-import io.github.dimitrysaf.provenio.core.metadata.tabGroupForRendering
 
 internal fun LazyListScope.configuredMetaSectionItems(
     settings: MetaScreenSettingsUiState,
@@ -140,7 +124,6 @@ internal fun LazyListScope.configuredMetaSectionItems(
     fun addSectionItem(
         key: String,
         sectionItems: List<MetaScreenSectionItem>,
-        forceTabLayout: Boolean = settings.tabLayout,
     ) {
         item(key = key) {
             DetailSectionContainer(
@@ -148,10 +131,7 @@ internal fun LazyListScope.configuredMetaSectionItems(
                 contentMaxWidth = contentMaxWidth,
             ) {
                 ConfiguredMetaSections(
-                    settings = settings.copy(
-                        items = sectionItems,
-                        tabLayout = forceTabLayout,
-                    ),
+                    settings = settings.copy(items = sectionItems),
                     meta = meta,
                     isTablet = isTablet,
                     horizontalScrollPadding = contentHorizontalPadding,
@@ -244,7 +224,6 @@ internal fun LazyListScope.configuredMetaSectionItems(
     fun addStandaloneSection(
         section: MetaScreenSectionItem,
         key: String,
-        forceTabLayout: Boolean = false,
     ) {
         if (section.key == MetaScreenSectionKey.EPISODES) {
             addLazyEpisodeListItems(key)
@@ -252,55 +231,18 @@ internal fun LazyListScope.configuredMetaSectionItems(
             addSectionItem(
                 key = key,
                 sectionItems = listOf(section),
-                forceTabLayout = forceTabLayout,
             )
         }
     }
 
-    if (!settings.tabLayout) {
-        enabledItems
-            .filter { sectionHasContent(it.key) }
-            .forEach { section ->
-                addStandaloneSection(
-                    section = section,
-                    key = "detail-section-${section.key.name}",
-                )
-            }
-        return
-    }
-
-    val processedGroups = mutableSetOf<Int>()
-    enabledItems.forEach { section ->
-        val groupId = section.tabGroupForRendering()
-        if (groupId == null) {
-            if (sectionHasContent(section.key)) {
-                addStandaloneSection(
-                    section = section,
-                    key = "detail-section-${section.key.name}",
-                    forceTabLayout = true,
-                )
-            }
-        } else if (groupId !in processedGroups) {
-            processedGroups.add(groupId)
-            val groupMembers = enabledItems.filter { item ->
-                item.tabGroupForRendering() == groupId && sectionHasContent(item.key)
-            }
-            if (groupMembers.isNotEmpty()) {
-                if (groupMembers.size == 1) {
-                    addStandaloneSection(
-                        section = groupMembers.single(),
-                        key = "detail-section-group-$groupId",
-                    )
-                } else {
-                    addSectionItem(
-                        key = "detail-section-group-$groupId",
-                        sectionItems = groupMembers,
-                        forceTabLayout = true,
-                    )
-                }
-            }
+    enabledItems
+        .filter { sectionHasContent(it.key) }
+        .forEach { section ->
+            addStandaloneSection(
+                section = section,
+                key = "detail-section-${section.key.name}",
+            )
         }
-    }
 }
 
 @Composable
@@ -409,25 +351,8 @@ internal fun ConfiguredMetaSections(
 ) {
     val enabledItems = settings.items.filter { it.enabled }
 
-    // Helper to check if a section actually has content to show
-    val sectionHasContent: (MetaScreenSectionKey) -> Boolean = { key ->
-        when (key) {
-            MetaScreenSectionKey.ACTIONS -> true
-            MetaScreenSectionKey.OVERVIEW -> true
-            MetaScreenSectionKey.PARENTS_GUIDE -> parentalWarnings.isNotEmpty()
-            MetaScreenSectionKey.PRODUCTION -> hasProductionSection
-            MetaScreenSectionKey.CAST -> meta.cast.isNotEmpty()
-            MetaScreenSectionKey.COMMENTS -> shouldShowComments && (isCommentsLoading || comments.isNotEmpty() || !commentsError.isNullOrBlank())
-            MetaScreenSectionKey.TRAILERS -> hasTrailersSection
-            MetaScreenSectionKey.EPISODES -> hasEpisodes
-            MetaScreenSectionKey.DETAILS -> hasAdditionalInfoSection
-            MetaScreenSectionKey.COLLECTION -> !hasEpisodes && hasCollectionSection
-            MetaScreenSectionKey.MORE_LIKE_THIS -> moreLikeThisItems.isNotEmpty()
-        }
-    }
-
     @Composable
-    fun RenderSection(key: MetaScreenSectionKey, showHeader: Boolean = true) {
+    fun RenderSection(key: MetaScreenSectionKey) {
         when (key) {
             MetaScreenSectionKey.ACTIONS -> {
                 DetailActionButtons(
@@ -486,13 +411,12 @@ internal fun ConfiguredMetaSections(
             }
             MetaScreenSectionKey.PRODUCTION -> {
                 if (hasProductionSection) {
-                    DetailProductionSection(meta = meta, showHeader = showHeader, onCompanyClick = onCompanyClick)
+                    DetailProductionSection(meta = meta, onCompanyClick = onCompanyClick)
                 }
             }
             MetaScreenSectionKey.CAST -> {
                 DetailCastSection(
                     cast = meta.cast,
-                    showHeader = showHeader,
                     horizontalScrollPadding = horizontalScrollPadding,
                     onCastClick = onCastClick,
                     sharedTransitionScope = sharedTransitionScope,
@@ -512,7 +436,6 @@ internal fun ConfiguredMetaSections(
                         onRetry = onRetryComments,
                         onLoadMore = onLoadMoreComments,
                         onCommentClick = onCommentClick,
-                        showHeader = showHeader,
                         horizontalScrollPadding = horizontalScrollPadding,
                     )
                 }
@@ -522,7 +445,6 @@ internal fun ConfiguredMetaSections(
                     DetailTrailersSection(
                         trailers = meta.trailers,
                         onTrailerClick = onTrailerClick,
-                        showHeader = showHeader,
                         horizontalScrollPadding = horizontalScrollPadding,
                     )
                 }
@@ -531,7 +453,7 @@ internal fun ConfiguredMetaSections(
             MetaScreenSectionKey.EPISODES -> Unit
             MetaScreenSectionKey.DETAILS -> {
                 if (hasAdditionalInfoSection) {
-                    DetailAdditionalInfoSection(meta = meta, showHeader = showHeader)
+                    DetailAdditionalInfoSection(meta = meta)
                 }
             }
             MetaScreenSectionKey.COLLECTION -> {
@@ -541,7 +463,6 @@ internal fun ConfiguredMetaSections(
                         items = meta.collectionItems,
                         watchedKeys = watchedKeys,
                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                        showHeader = showHeader,
                         horizontalScrollPadding = horizontalScrollPadding,
                         onPosterClick = onOpenMeta,
                     )
@@ -559,7 +480,6 @@ internal fun ConfiguredMetaSections(
                         items = moreLikeThisItems,
                         watchedKeys = watchedKeys,
                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                        showHeader = showHeader,
                         sourceLabel = sourceLabel,
                         onPosterClick = onOpenMeta,
                     )
@@ -568,102 +488,5 @@ internal fun ConfiguredMetaSections(
         }
     }
 
-    if (!settings.tabLayout) {
-        // Standard mode: render sections individually in order
-        enabledItems.forEach { section -> RenderSection(section.key) }
-    } else {
-        // Tab layout mode: group sections by tabGroup, render grouped ones as tabs
-        val processedGroups = mutableSetOf<Int>()
-
-        enabledItems.forEach { section ->
-            val groupId = section.tabGroup
-            if (groupId == null) {
-                // Standalone section
-                RenderSection(section.key)
-            } else if (groupId !in processedGroups) {
-                // First encounter of this group — render the whole tabbed group
-                processedGroups.add(groupId)
-                val groupMembers = enabledItems
-                    .filter { it.tabGroup == groupId && sectionHasContent(it.key) }
-                if (groupMembers.isEmpty()) return@forEach
-                if (groupMembers.size == 1) {
-                    // Only one member with content — render standalone
-                    RenderSection(groupMembers.first().key)
-                } else {
-                    TabbedSectionGroup(
-                        tabs = groupMembers.map { it.key to it.title },
-                    ) { activeKey ->
-                        RenderSection(activeKey, showHeader = false)
-                    }
-                }
-            }
-            // else: already processed as part of group, skip
-        }
-    }
-}
-
-@Composable
-internal fun TabbedSectionGroup(
-    tabs: List<Pair<MetaScreenSectionKey, String>>,
-    content: @Composable (MetaScreenSectionKey) -> Unit,
-) {
-    if (tabs.isEmpty()) return
-
-    var selectedIndex by remember { mutableIntStateOf(0) }
-    val clampedIndex = selectedIndex.coerceIn(0, tabs.lastIndex)
-    if (clampedIndex != selectedIndex) selectedIndex = clampedIndex
-
-    val headerColor = MaterialTheme.colorScheme.onBackground
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        // Tab row using the same style as DetailSectionTitle
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val titleSize = if (maxWidth >= 720.dp) 22.sp else 20.sp
-            val headerStyle = MaterialTheme.typography.titleLarge.copy(
-                fontSize = titleSize,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
-            )
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                tabs.forEachIndexed { index, (_, title) ->
-                    if (index > 0) {
-                        Text(
-                            text = "|",
-                            style = headerStyle,
-                            color = headerColor.copy(alpha = 0.45f),
-                            modifier = Modifier.padding(horizontal = 10.dp),
-                        )
-                    }
-
-                    Text(
-                        text = title,
-                        style = headerStyle,
-                        color = if (index == selectedIndex) {
-                            headerColor
-                        } else {
-                            headerColor.copy(alpha = 0.55f)
-                        },
-                        maxLines = 1,
-                        modifier = Modifier
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) { selectedIndex = index },
-                    )
-                }
-            }
-        }
-
-        // Content with crossfade
-        Crossfade(
-            targetState = tabs[selectedIndex].first,
-            animationSpec = tween(durationMillis = 200),
-            label = "tabbedSectionCrossfade",
-        ) { activeKey ->
-            content(activeKey)
-        }
-    }
+    enabledItems.forEach { section -> RenderSection(section.key) }
 }

@@ -35,8 +35,6 @@ import provenio.composeapp.generated.resources.settings_continue_watching_show_u
 import provenio.composeapp.generated.resources.settings_continue_watching_section_card_style
 import provenio.composeapp.generated.resources.settings_continue_watching_section_sort_order
 import provenio.composeapp.generated.resources.settings_continue_watching_section_up_next_behavior
-import provenio.composeapp.generated.resources.settings_continue_watching_section_visibility
-import provenio.composeapp.generated.resources.settings_continue_watching_show_description
 import provenio.composeapp.generated.resources.settings_continue_watching_show_title
 import provenio.composeapp.generated.resources.settings_continue_watching_sort_mode_default
 import provenio.composeapp.generated.resources.settings_continue_watching_sort_mode_default_desc
@@ -69,20 +67,17 @@ internal fun LazyListScope.continueWatchingSettingsContent(
     sortMode: ContinueWatchingSortMode,
 ) {
     item {
-        SettingsSection(
-            title = stringResource(Res.string.settings_continue_watching_section_visibility),
-            isTablet = isTablet,
-        ) {
-            SettingsList {
-                switchRow(
-                    title = stringResource(Res.string.settings_continue_watching_show_title),
-                    description = stringResource(Res.string.settings_continue_watching_show_description),
-                    checked = { isVisible },
-                    onCheckedChange = ContinueWatchingPreferencesRepository::setVisible,
-                )
-            }
-        }
+        HomeLayoutPreview(highlight = HomePreviewSection.ContinueWatching)
     }
+    item {
+        SettingsMainSwitch(
+            title = stringResource(Res.string.settings_continue_watching_show_title),
+            checked = isVisible,
+            onCheckedChange = ContinueWatchingPreferencesRepository::setVisible,
+        )
+    }
+    // Everything below shapes a row that is not there while the switch is off.
+    if (!isVisible) return
     item {
         SettingsSection(
             title = stringResource(Res.string.settings_continue_watching_section_card_style),

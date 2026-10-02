@@ -115,11 +115,13 @@ internal fun settingsSearchEntries(
     val contentDiscoveryPage = stringResource(Res.string.compose_settings_page_content_discovery)
     val downloadsPage = stringResource(Res.string.compose_settings_root_downloads_title)
     val playbackPage = stringResource(Res.string.compose_settings_page_playback)
+    val subtitlesPage = stringResource(Res.string.compose_settings_page_subtitles)
     val streamsPage = stringResource(Res.string.compose_settings_page_streams)
     val integrationsPage = stringResource(Res.string.compose_settings_page_integrations)
     val notificationsPage = stringResource(Res.string.compose_settings_page_notifications)
     val licensesPage = stringResource(Res.string.compose_settings_page_licenses_attributions)
     val homeLayoutPage = stringResource(Res.string.compose_settings_page_homescreen)
+    val heroCarouselPage = stringResource(Res.string.compose_settings_page_hero_carousel)
     val detailPage = stringResource(Res.string.compose_settings_page_meta_screen)
     val continueWatchingPage = stringResource(Res.string.compose_settings_page_continue_watching)
     val posterStylePage = stringResource(Res.string.compose_settings_page_poster_customization)
@@ -433,6 +435,13 @@ internal fun settingsSearchEntries(
         icon = Icons.Rounded.Home,
     )
     addPage(
+        page = SettingsPage.HeroCarousel,
+        key = "hero-carousel",
+        title = heroCarouselPage,
+        description = stringResource(Res.string.settings_homescreen_show_hero_description),
+        icon = Icons.Rounded.Home,
+    )
+    addPage(
         page = SettingsPage.MetaScreen,
         key = "detail-page",
         title = detailPage,
@@ -443,8 +452,6 @@ internal fun settingsSearchEntries(
         key = "collections",
         title = collectionsPage,
         description = stringResource(Res.string.settings_content_discovery_collections_description),
-        page = layoutPage,
-        section = stringResource(Res.string.settings_appearance_section_home),
         category = generalCategory,
         icon = Icons.Rounded.CollectionsBookmark,
         target = SettingsSearchTarget.Collections,
@@ -455,7 +462,6 @@ internal fun settingsSearchEntries(
     val playbackStreamSelection = stringResource(Res.string.settings_playback_section_stream_selection)
     val playbackStreamAutoPlay = stringResource(Res.string.settings_playback_section_stream_auto_play)
     val playbackDecoder = stringResource(Res.string.settings_playback_section_decoder)
-    val playbackSubtitleRendering = stringResource(Res.string.settings_playback_section_subtitle_rendering)
     val playbackSkipSegments = stringResource(Res.string.settings_playback_section_skip_segments)
     val playbackNextEpisode = stringResource(Res.string.settings_playback_section_next_episode)
     addRow(
@@ -467,17 +473,6 @@ internal fun settingsSearchEntries(
         section = stringResource(Res.string.settings_stream_display_section),
         icon = Icons.Rounded.Style,
     )
-    if (!isTablet) {
-        addRow(
-            page = SettingsPage.Streams,
-            key = "stream-background",
-            title = stringResource(Res.string.settings_stream_background_title),
-            description = stringResource(Res.string.settings_stream_background_description),
-            pageLabel = streamsPage,
-            section = stringResource(Res.string.settings_stream_display_section),
-            icon = Icons.Rounded.Style,
-        )
-    }
     addRow(
         page = SettingsPage.Streams,
         key = "stream-size-badges",
@@ -517,11 +512,6 @@ internal fun settingsSearchEntries(
                 stringResource(Res.string.settings_playback_show_loading_overlay_description),
             ),
             PlaybackSearchRow(
-                "pause-overlay",
-                stringResource(Res.string.settings_playback_pause_overlay),
-                stringResource(Res.string.settings_playback_pause_overlay_description),
-            ),
-            PlaybackSearchRow(
                 "external-player",
                 stringResource(Res.string.settings_playback_external_player),
                 stringResource(Res.string.settings_playback_external_player_description_android),
@@ -551,8 +541,40 @@ internal fun settingsSearchEntries(
         rows = listOf(
             PlaybackSearchRow("preferred-audio", stringResource(Res.string.settings_playback_preferred_audio_language)),
             PlaybackSearchRow("secondary-audio", stringResource(Res.string.settings_playback_secondary_audio_language)),
+        ),
+    )
+    addPage(
+        page = SettingsPage.Subtitles,
+        key = "subtitles",
+        title = subtitlesPage,
+        description = stringResource(Res.string.settings_subtitles_section_style),
+        icon = Icons.Rounded.PlayArrow,
+    )
+    addPlaybackRows(
+        addRow = ::addRow,
+        pageLabel = subtitlesPage,
+        section = stringResource(Res.string.settings_subtitles_section_languages),
+        icon = Icons.Rounded.PlayArrow,
+        page = SettingsPage.Subtitles,
+        rows = listOf(
             PlaybackSearchRow("preferred-subtitles", stringResource(Res.string.settings_playback_preferred_subtitle_language)),
             PlaybackSearchRow("secondary-subtitles", stringResource(Res.string.settings_playback_secondary_subtitle_language)),
+            PlaybackSearchRow("strip-sdh", stringResource(Res.string.settings_playback_subtitle_strip_sdh), stringResource(Res.string.settings_playback_subtitle_strip_sdh_description)),
+            PlaybackSearchRow("forced-subtitles", stringResource(Res.string.settings_playback_subtitle_use_forced), stringResource(Res.string.settings_playback_subtitle_use_forced_description)),
+        ),
+    )
+    addPlaybackRows(
+        addRow = ::addRow,
+        pageLabel = subtitlesPage,
+        section = stringResource(Res.string.settings_subtitles_section_style),
+        icon = Icons.Rounded.PlayArrow,
+        page = SettingsPage.Subtitles,
+        rows = listOf(
+            PlaybackSearchRow("subtitle-size", stringResource(Res.string.settings_playback_subtitle_size)),
+            PlaybackSearchRow("subtitle-offset", stringResource(Res.string.settings_playback_subtitle_vertical_offset)),
+            PlaybackSearchRow("subtitle-text-color", stringResource(Res.string.settings_playback_subtitle_text_color)),
+            PlaybackSearchRow("subtitle-background", stringResource(Res.string.settings_playback_subtitle_background_color)),
+            PlaybackSearchRow("subtitle-outline", stringResource(Res.string.settings_playback_subtitle_outline)),
         ),
     )
     addPlaybackRows(
@@ -566,7 +588,6 @@ internal fun settingsSearchEntries(
                 stringResource(Res.string.settings_playback_reuse_last_link),
                 stringResource(Res.string.settings_playback_reuse_last_link_description),
             ),
-            PlaybackSearchRow("last-link-cache", stringResource(Res.string.settings_playback_last_link_cache_duration)),
         ),
     )
     addPlaybackRows(
@@ -597,9 +618,10 @@ internal fun settingsSearchEntries(
         )
         addPlaybackRows(
             addRow = ::addRow,
-            pageLabel = playbackPage,
-            section = playbackSubtitleRendering,
+            pageLabel = subtitlesPage,
+            section = stringResource(Res.string.settings_subtitles_section_style),
             icon = Icons.Rounded.PlayArrow,
+            page = SettingsPage.Subtitles,
             rows = listOf(
                 PlaybackSearchRow("libass", stringResource(Res.string.settings_playback_enable_libass), stringResource(Res.string.settings_playback_enable_libass_description)),
                 PlaybackSearchRow("libass-render", stringResource(Res.string.settings_playback_render_type)),
@@ -679,10 +701,8 @@ internal fun settingsSearchEntries(
 
     val homeLayoutSection = stringResource(Res.string.settings_homescreen_section_hero)
     listOf(
-        PlaybackSearchRow("home-hero", stringResource(Res.string.settings_homescreen_show_hero), stringResource(Res.string.settings_homescreen_show_hero_description)),
         PlaybackSearchRow("home-catalog-type", stringResource(Res.string.layout_catalog_type), stringResource(Res.string.layout_catalog_type_sub)),
         PlaybackSearchRow("home-hide-unreleased", stringResource(Res.string.layout_hide_unreleased), stringResource(Res.string.layout_hide_unreleased_sub)),
-        PlaybackSearchRow("home-hero-sources", stringResource(Res.string.settings_homescreen_section_hero_sources)),
         PlaybackSearchRow("home-catalogs", stringResource(Res.string.settings_homescreen_section_catalogs)),
     ).forEach { row ->
         addRow(
@@ -692,6 +712,21 @@ internal fun settingsSearchEntries(
             description = row.description,
             pageLabel = homeLayoutPage,
             section = homeLayoutSection,
+            icon = Icons.Rounded.Home,
+        )
+    }
+
+    listOf(
+        PlaybackSearchRow("home-hero", stringResource(Res.string.settings_homescreen_show_hero), stringResource(Res.string.settings_homescreen_show_hero_description)),
+        PlaybackSearchRow("home-hero-sources", stringResource(Res.string.settings_homescreen_section_hero_sources)),
+    ).forEach { row ->
+        addRow(
+            page = SettingsPage.HeroCarousel,
+            key = row.key,
+            title = row.title,
+            description = row.description,
+            pageLabel = heroCarouselPage,
+            section = heroCarouselPage,
             icon = Icons.Rounded.Home,
         )
     }
@@ -709,9 +744,6 @@ internal fun settingsSearchEntries(
         )
     }
     listOf(
-        PlaybackSearchRow("meta-background-mode", stringResource(Res.string.settings_meta_background_mode), stringResource(Res.string.settings_meta_background_mode_description)),
-        PlaybackSearchRow("meta-tabs", stringResource(Res.string.settings_meta_tab_layout), stringResource(Res.string.settings_meta_tab_layout_description)),
-        PlaybackSearchRow("meta-episode-cards", stringResource(Res.string.settings_meta_episode_cards), stringResource(Res.string.settings_meta_episode_cards_description)),
         PlaybackSearchRow("meta-blur-episodes", stringResource(Res.string.settings_meta_blur_unwatched_episodes), stringResource(Res.string.settings_meta_blur_unwatched_episodes_description)),
     ).forEach { row ->
         addRow(
@@ -915,10 +947,11 @@ private fun addPlaybackRows(
     section: String,
     icon: ImageVector,
     rows: List<PlaybackSearchRow>,
+    page: SettingsPage = SettingsPage.Playback,
 ) {
     rows.forEach { row ->
         addRow(
-            SettingsPage.Playback,
+            page,
             "playback-${row.key}",
             row.title,
             row.description,

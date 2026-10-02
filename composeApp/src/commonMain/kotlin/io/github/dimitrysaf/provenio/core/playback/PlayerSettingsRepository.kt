@@ -12,7 +12,6 @@ data class PlayerSettingsUiState(
     val showLoadingOverlay: Boolean = true,
     val showPlayerLoadingStatus: Boolean = true,
     val showPlayerControlLabels: Boolean = false,
-    val pauseOverlayEnabled: Boolean = true,
     val resizeMode: PlayerResizeMode = PlayerResizeMode.Fit,
     val holdToSpeedEnabled: Boolean = true,
     val holdToSpeedValue: Float = 2f,
@@ -27,7 +26,6 @@ data class PlayerSettingsUiState(
     val secondaryPreferredSubtitleLanguage: String? = null,
     val subtitleStyle: SubtitleStyleState = SubtitleStyleState.DEFAULT,
     val streamReuseLastLinkEnabled: Boolean = false,
-    val streamReuseLastLinkCacheHours: Int = 24,
     val androidPlaybackEngine: AndroidPlaybackEngine = AndroidPlaybackEngine.Auto,
     val androidLibmpvVideoOutput: AndroidLibmpvVideoOutput = AndroidLibmpvVideoOutput.GpuNext,
     val androidLibmpvHardwareDecodingEnabled: Boolean = true,
@@ -80,7 +78,6 @@ object PlayerSettingsRepository {
     private var showLoadingOverlay = true
     private var showPlayerLoadingStatus = true
     private var showPlayerControlLabels = false
-    private var pauseOverlayEnabled = true
     private var resizeMode = PlayerResizeMode.Fit
     private var holdToSpeedEnabled = true
     private var holdToSpeedValue = 2f
@@ -95,7 +92,6 @@ object PlayerSettingsRepository {
     private var secondaryPreferredSubtitleLanguage: String? = null
     private var subtitleStyle = SubtitleStyleState.DEFAULT
     private var streamReuseLastLinkEnabled = false
-    private var streamReuseLastLinkCacheHours = 24
     private var androidPlaybackEngine = AndroidPlaybackEngine.Auto
     private var androidLibmpvVideoOutput = AndroidLibmpvVideoOutput.GpuNext
     private var androidLibmpvHardwareDecodingEnabled = true
@@ -153,7 +149,6 @@ object PlayerSettingsRepository {
         showLoadingOverlay = true
         showPlayerLoadingStatus = true
         showPlayerControlLabels = false
-        pauseOverlayEnabled = true
         resizeMode = PlayerResizeMode.Fit
         holdToSpeedEnabled = true
         holdToSpeedValue = 2f
@@ -168,7 +163,6 @@ object PlayerSettingsRepository {
         secondaryPreferredSubtitleLanguage = null
         subtitleStyle = SubtitleStyleState.DEFAULT
         streamReuseLastLinkEnabled = false
-        streamReuseLastLinkCacheHours = 24
         androidPlaybackEngine = AndroidPlaybackEngine.Auto
         androidLibmpvVideoOutput = AndroidLibmpvVideoOutput.GpuNext
         androidLibmpvHardwareDecodingEnabled = true
@@ -219,7 +213,6 @@ object PlayerSettingsRepository {
         showLoadingOverlay = PlayerSettingsStorage.loadShowLoadingOverlay() ?: true
         showPlayerLoadingStatus = PlayerSettingsStorage.loadShowPlayerLoadingStatus() ?: true
         showPlayerControlLabels = PlayerSettingsStorage.loadShowPlayerControlLabels() ?: false
-        pauseOverlayEnabled = PlayerSettingsStorage.loadPauseOverlayEnabled() ?: true
         resizeMode = PlayerSettingsStorage.loadResizeMode()
             ?.let { runCatching { PlayerResizeMode.valueOf(it) }.getOrNull() }
             ?: PlayerResizeMode.Fit
@@ -266,7 +259,6 @@ object PlayerSettingsRepository {
                 ?: SubtitleStyleState.DEFAULT.showOnlyPreferredLanguages,
         )
         streamReuseLastLinkEnabled = PlayerSettingsStorage.loadStreamReuseLastLinkEnabled() ?: false
-        streamReuseLastLinkCacheHours = PlayerSettingsStorage.loadStreamReuseLastLinkCacheHours() ?: 24
         androidPlaybackEngine = PlayerSettingsStorage.loadAndroidPlaybackEngine()
             ?.let { runCatching { AndroidPlaybackEngine.valueOf(it) }.getOrNull() }
             ?: AndroidPlaybackEngine.Auto
@@ -373,14 +365,6 @@ object PlayerSettingsRepository {
         showPlayerControlLabels = enabled
         publish()
         PlayerSettingsStorage.saveShowPlayerControlLabels(enabled)
-    }
-
-    fun setPauseOverlayEnabled(enabled: Boolean) {
-        ensureLoaded()
-        if (pauseOverlayEnabled == enabled) return
-        pauseOverlayEnabled = enabled
-        publish()
-        PlayerSettingsStorage.savePauseOverlayEnabled(enabled)
     }
 
     fun setResizeMode(mode: PlayerResizeMode) {
@@ -518,14 +502,6 @@ object PlayerSettingsRepository {
         streamReuseLastLinkEnabled = enabled
         publish()
         PlayerSettingsStorage.saveStreamReuseLastLinkEnabled(enabled)
-    }
-
-    fun setStreamReuseLastLinkCacheHours(hours: Int) {
-        ensureLoaded()
-        if (streamReuseLastLinkCacheHours == hours) return
-        streamReuseLastLinkCacheHours = hours
-        publish()
-        PlayerSettingsStorage.saveStreamReuseLastLinkCacheHours(hours)
     }
 
     fun setAndroidPlaybackEngine(engine: AndroidPlaybackEngine) {
@@ -916,7 +892,6 @@ object PlayerSettingsRepository {
             showLoadingOverlay = showLoadingOverlay,
             showPlayerLoadingStatus = showPlayerLoadingStatus,
             showPlayerControlLabels = showPlayerControlLabels,
-            pauseOverlayEnabled = pauseOverlayEnabled,
             resizeMode = resizeMode,
             holdToSpeedEnabled = holdToSpeedEnabled,
             holdToSpeedValue = holdToSpeedValue,
@@ -931,7 +906,6 @@ object PlayerSettingsRepository {
             secondaryPreferredSubtitleLanguage = secondaryPreferredSubtitleLanguage,
             subtitleStyle = subtitleStyle,
             streamReuseLastLinkEnabled = streamReuseLastLinkEnabled,
-            streamReuseLastLinkCacheHours = streamReuseLastLinkCacheHours,
             androidPlaybackEngine = androidPlaybackEngine,
             androidLibmpvVideoOutput = androidLibmpvVideoOutput,
             androidLibmpvHardwareDecodingEnabled = androidLibmpvHardwareDecodingEnabled,

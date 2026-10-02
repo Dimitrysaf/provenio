@@ -72,6 +72,9 @@ import provenio.composeapp.generated.resources.settings_playback_subtitle
 import provenio.composeapp.generated.resources.about_licenses_attributions_subtitle
 import provenio.composeapp.generated.resources.keyboard_shortcuts_entry_description
 import provenio.composeapp.generated.resources.keyboard_shortcuts_title
+import androidx.compose.material.icons.rounded.CollectionsBookmark
+import provenio.composeapp.generated.resources.collections_header
+import provenio.composeapp.generated.resources.settings_content_discovery_collections_description
 import org.jetbrains.compose.resources.stringResource
 
 private const val PRIVACY_POLICY_URL = "https://github.com/Dimitrysaf/provenio#privacy"
@@ -89,6 +92,7 @@ internal fun LazyListScope.settingsRootContent(
     onLicensesAttributionsClick: () -> Unit,
     onCheckForUpdatesClick: (() -> Unit)? = null,
     onDownloadsClick: () -> Unit,
+    onCollectionsClick: () -> Unit,
     onSwitchProfileClick: (() -> Unit)? = null,
     showAccountSection: Boolean = true,
     showGeneralSection: Boolean = true,
@@ -146,6 +150,12 @@ internal fun LazyListScope.settingsRootContent(
                         description = stringResource(Res.string.compose_settings_root_downloads_description),
                         icon = Icons.Rounded.CloudDownload,
                         onClick = onDownloadsClick,
+                    )
+                    navigationRow(
+                        title = stringResource(Res.string.collections_header),
+                        description = stringResource(Res.string.settings_content_discovery_collections_description),
+                        icon = Icons.Rounded.CollectionsBookmark,
+                        onClick = onCollectionsClick,
                     )
                     navigationRow(
                         title = stringResource(Res.string.compose_settings_page_playback),

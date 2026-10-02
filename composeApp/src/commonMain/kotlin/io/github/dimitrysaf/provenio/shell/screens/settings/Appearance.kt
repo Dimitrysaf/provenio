@@ -16,9 +16,7 @@ import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.settings_content_discovery_meta_screen_description
-import provenio.composeapp.generated.resources.settings_content_discovery_collections_description
 import provenio.composeapp.generated.resources.compose_settings_page_meta_screen
-import provenio.composeapp.generated.resources.collections_header
 import provenio.composeapp.generated.resources.compose_settings_page_continue_watching
 import provenio.composeapp.generated.resources.compose_settings_page_homescreen
 import provenio.composeapp.generated.resources.compose_settings_page_poster_customization
@@ -70,7 +68,6 @@ internal fun LazyListScope.appearanceSettingsContent(
     onAppLanguageSelected: (AppLanguage) -> Unit,
     onHomescreenClick: () -> Unit,
     onMetaScreenClick: () -> Unit,
-    onCollectionsClick: () -> Unit,
     onContinueWatchingClick: () -> Unit,
     onPosterCustomizationClick: () -> Unit,
 ) {
@@ -218,26 +215,25 @@ internal fun LazyListScope.appearanceSettingsContent(
                 navigationRow(
                     title = stringResource(Res.string.compose_settings_page_homescreen),
                     description = stringResource(Res.string.settings_content_discovery_homescreen_description),
+                    opensPage = true,
                     onClick = onHomescreenClick,
                 )
                 navigationRow(
                     title = stringResource(Res.string.compose_settings_page_continue_watching),
                     description = stringResource(Res.string.settings_appearance_continue_watching_description),
+                    opensPage = true,
                     onClick = onContinueWatchingClick,
                 )
                 navigationRow(
                     title = stringResource(Res.string.compose_settings_page_poster_customization),
                     description = stringResource(Res.string.settings_appearance_poster_customization_description),
+                    opensPage = true,
                     onClick = onPosterCustomizationClick,
-                )
-                navigationRow(
-                    title = stringResource(Res.string.collections_header),
-                    description = stringResource(Res.string.settings_content_discovery_collections_description),
-                    onClick = onCollectionsClick,
                 )
                 navigationRow(
                     title = stringResource(Res.string.compose_settings_page_meta_screen),
                     description = stringResource(Res.string.settings_content_discovery_meta_screen_description),
+                    opensPage = true,
                     onClick = onMetaScreenClick,
                 )
             }

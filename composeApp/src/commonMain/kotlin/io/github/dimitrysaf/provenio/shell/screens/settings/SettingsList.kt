@@ -1,6 +1,11 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemColors
@@ -73,29 +80,64 @@ internal fun SettingsList(
     val scope = remember { SettingsListScope() }
     scope.rows.clear()
     scope.content()
+    // Corners follow the rows on screen, so a collapsed group's rows are not counted. Its rows
+    // take the places they have when it is open, since that is the only time they are seen.
+    val visibleCount = scope.rows.sumOf { it.visibleRowCount }
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(ListItemBetweenSpace),
     ) {
-        scope.rows.forEachIndexed { index, row ->
-            // Every corner that faces the outside of the group is an outer corner; only the ones
-            // facing a neighbour are inner. A lone row therefore has four outer corners.
-            val shape = segmentShape(index = index, count = scope.rows.size)
-            // The same shape in every state. The spec's shape morph is defined for the *selected*
-            // state, and these rows are single-action so they never have one — left to Compose's
-            // defaults, pressing or focusing a row would re-round it.
-            row.Render(
-                shape = shape,
-                shapes = ListItemDefaults.shapes(
-                    shape = shape,
-                    selectedShape = shape,
-                    pressedShape = shape,
-                    focusedShape = shape,
-                    hoveredShape = shape,
-                ),
-            )
+        var index = 0
+        scope.rows.forEach { row ->
+            if (row is SettingsListRow.Expandable) {
+                val openCount = if (row.expanded) visibleCount else visibleCount + row.rows.size
+                val firstIndex = index
+                // The spec's own expansion: the rows grow in under the one that reveals them and
+                // shrink back into it, on the expressive spatial motion.
+                AnimatedVisibility(
+                    visible = row.expanded,
+                    enter = expandVertically(MaterialTheme.motionScheme.fastSpatialSpec()) +
+                        fadeIn(MaterialTheme.motionScheme.fastEffectsSpec()),
+                    exit = shrinkVertically(MaterialTheme.motionScheme.fastSpatialSpec()) +
+                        fadeOut(MaterialTheme.motionScheme.fastEffectsSpec()),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(ListItemBetweenSpace)) {
+                        row.rows.forEachIndexed { childIndex, child ->
+                            child.RenderSegment(index = firstIndex + childIndex, count = openCount)
+                        }
+                    }
+                }
+                if (row.expanded) index += row.rows.size
+            } else {
+                row.RenderSegment(index = index, count = visibleCount)
+                index += 1
+            }
         }
     }
+}
+
+/**
+ * Every corner that faces the outside of the group is an outer corner; only the ones facing a
+ * neighbour are inner. A lone row therefore has four outer corners.
+ *
+ * The same shape in every state. The spec's shape morph is defined for the *selected* state, and
+ * these rows are single-action so they never have one — left to Compose's defaults, pressing or
+ * focusing a row would re-round it.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SettingsListRow.RenderSegment(index: Int, count: Int) {
+    val shape = segmentShape(index = index, count = count)
+    Render(
+        shape = shape,
+        shapes = ListItemDefaults.shapes(
+            shape = shape,
+            selectedShape = shape,
+            pressedShape = shape,
+            focusedShape = shape,
+            hoveredShape = shape,
+        ),
+    )
 }
 
 /**
@@ -168,6 +210,8 @@ internal class SettingsListScope internal constructor() {
         leadingContent: (@Composable () -> Unit)? = null,
         trailingContent: (@Composable () -> Unit)? = null,
         progress: Float? = null,
+        /** The row opens a page of its own, which a chevron at its end says. */
+        opensPage: Boolean = false,
         onClick: () -> Unit,
     ) {
         rows += SettingsListRow.Navigation(
@@ -177,7 +221,7 @@ internal class SettingsListScope internal constructor() {
             iconPainter = iconPainter,
             enabled = enabled,
             leadingContent = leadingContent,
-            trailingContent = trailingContent,
+            trailingContent = trailingContent ?: if (opensPage) PageChevron else null,
             progress = progress,
             onClick = onClick,
         )
@@ -220,6 +264,21 @@ internal class SettingsListScope internal constructor() {
      */
     fun shapedRow(content: @Composable (RoundedCornerShape) -> Unit) {
         rows += SettingsListRow.Shaped(content)
+    }
+
+    /**
+     * Rows that only apply while [expanded], such as the options of a switch above them. They
+     * stay declared either way and animate in and out of the group, rather than vanishing.
+     *
+     * [expanded] has to be read outside the list's builder: a state read in the builder re-runs
+     * only the builder, and the list would never re-render.
+     */
+    inline fun expandableRows(expanded: Boolean, declare: SettingsListScope.() -> Unit) {
+        val start = rows.size
+        declare()
+        val children = rows.subList(start, rows.size).toList()
+        repeat(children.size) { rows.removeAt(rows.lastIndex) }
+        if (children.isNotEmpty()) rows += SettingsListRow.Expandable(expanded, children)
     }
 
     /**
@@ -293,6 +352,8 @@ internal sealed interface SettingsListRow {
                 } else {
                     settingsListItemColors
                 },
+                // Centred at any height: by default a tall row pins its controls to the top.
+                verticalAlignment = Alignment.CenterVertically,
                 leadingContent = leadingContent ?: leadingIcon(icon, iconPainter),
                 supportingContent = description?.takeIf { it.isNotBlank() }?.let { { Text(it) } },
                 trailingContent = trailingContent,
@@ -321,6 +382,8 @@ internal sealed interface SettingsListRow {
                 shapes = shapes,
                 enabled = enabled,
                 colors = settingsListItemColors,
+                // Centred at any height: by default a tall row pins its controls to the top.
+                verticalAlignment = Alignment.CenterVertically,
                 leadingContent = leadingIcon(icon, null),
                 supportingContent = description?.takeIf { it.isNotBlank() }?.let { { Text(it) } },
                 trailingContent = {
@@ -334,6 +397,21 @@ internal sealed interface SettingsListRow {
                 Text(title)
             }
         }
+    }
+
+    /** How many rows this entry puts on screen. */
+    val visibleRowCount: Int get() = 1
+
+    /** Rows declared by [SettingsListScope.expandableRows]; [SettingsList] lays them out itself. */
+    class Expandable(
+        val expanded: Boolean,
+        val rows: List<SettingsListRow>,
+    ) : SettingsListRow {
+        override val visibleRowCount: Int get() = if (expanded) rows.size else 0
+
+        @Composable
+        override fun Render(shape: RoundedCornerShape, shapes: ListItemShapes) =
+            error("An expandable group is laid out by SettingsList, not rendered as one row")
     }
 
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -450,4 +528,13 @@ private fun leadingIcon(
             }
         }
     }
+}
+
+/** Marks a row that opens a page of its own. */
+private val PageChevron: @Composable () -> Unit = {
+    Icon(
+        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }

@@ -32,6 +32,7 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun HomescreenSettingsScreen(
     onBack: () -> Unit,
+    onHeroCarouselClick: () -> Unit,
 ) {
     val addonsUiState by AddonRepository.uiState.collectAsStateWithLifecycle()
     val homescreenCatalogRefreshKey = remember(addonsUiState.addons) {
@@ -74,6 +75,7 @@ fun HomescreenSettingsScreen(
             items = homescreenSettingsUiState.items,
             isCatalogLoading = addonManifestsLoading,
             catalogErrorMessage = addonManifestErrorMessage,
+            onHeroCarouselClick = onHeroCarouselClick,
         )
     }
 }

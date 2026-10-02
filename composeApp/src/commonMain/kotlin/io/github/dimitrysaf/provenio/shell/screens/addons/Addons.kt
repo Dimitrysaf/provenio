@@ -161,6 +161,7 @@ internal fun AddonsSettingsPageContent(
                     title = stringResource(Res.string.addons_guide_title),
                     description = stringResource(Res.string.addons_guide_entry_description),
                     icon = Icons.AutoMirrored.Rounded.MenuBook,
+                    opensPage = true,
                     onClick = onGuideClick,
                 )
             }
@@ -371,6 +372,7 @@ private fun AddonListRow(
         colors = ListItemDefaults.segmentedColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
+        verticalAlignment = Alignment.CenterVertically,
         leadingContent = {
             AddonIconBadge(
                 imageUrl = manifest?.logoUrl,

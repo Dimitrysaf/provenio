@@ -79,9 +79,7 @@ internal fun LazyListScope.playbackSettingsContent(
     preferredAudioLanguage: String,
     secondaryPreferredAudioLanguage: String?,
     preferredSubtitleLanguage: String,
-    secondaryPreferredSubtitleLanguage: String?,
     streamReuseLastLinkEnabled: Boolean,
-    streamReuseLastLinkCacheHours: Int,
     androidPlaybackEngine: AndroidPlaybackEngine,
     androidLibmpvVideoOutput: AndroidLibmpvVideoOutput,
     androidLibmpvHardwareDecodingEnabled: Boolean,
@@ -89,8 +87,7 @@ internal fun LazyListScope.playbackSettingsContent(
     decoderPriority: Int,
     mapDV7ToHevc: Boolean,
     tunnelingEnabled: Boolean,
-    useLibass: Boolean,
-    libassRenderType: String,
+    onSubtitlesClick: () -> Unit,
 ) {
     item {
         PlaybackSettingsSection(
@@ -102,9 +99,7 @@ internal fun LazyListScope.playbackSettingsContent(
             preferredAudioLanguage = preferredAudioLanguage,
             secondaryPreferredAudioLanguage = secondaryPreferredAudioLanguage,
             preferredSubtitleLanguage = preferredSubtitleLanguage,
-            secondaryPreferredSubtitleLanguage = secondaryPreferredSubtitleLanguage,
             streamReuseLastLinkEnabled = streamReuseLastLinkEnabled,
-            streamReuseLastLinkCacheHours = streamReuseLastLinkCacheHours,
             androidPlaybackEngine = androidPlaybackEngine,
             androidLibmpvVideoOutput = androidLibmpvVideoOutput,
             androidLibmpvHardwareDecodingEnabled = androidLibmpvHardwareDecodingEnabled,
@@ -112,8 +107,7 @@ internal fun LazyListScope.playbackSettingsContent(
             decoderPriority = decoderPriority,
             mapDV7ToHevc = mapDV7ToHevc,
             tunnelingEnabled = tunnelingEnabled,
-            useLibass = useLibass,
-            libassRenderType = libassRenderType,
+            onSubtitlesClick = onSubtitlesClick,
         )
     }
 }
@@ -162,9 +156,7 @@ private fun PlaybackSettingsSection(
     preferredAudioLanguage: String,
     secondaryPreferredAudioLanguage: String?,
     preferredSubtitleLanguage: String,
-    secondaryPreferredSubtitleLanguage: String?,
     streamReuseLastLinkEnabled: Boolean,
-    streamReuseLastLinkCacheHours: Int,
     androidPlaybackEngine: AndroidPlaybackEngine,
     androidLibmpvVideoOutput: AndroidLibmpvVideoOutput,
     androidLibmpvHardwareDecodingEnabled: Boolean,
@@ -172,8 +164,7 @@ private fun PlaybackSettingsSection(
     decoderPriority: Int,
     mapDV7ToHevc: Boolean,
     tunnelingEnabled: Boolean,
-    useLibass: Boolean,
-    libassRenderType: String,
+    onSubtitlesClick: () -> Unit,
 ) {
     val settings by PlayerSettingsRepository.uiState.collectAsStateWithLifecycle()
     Column(
@@ -193,14 +184,7 @@ private fun PlaybackSettingsSection(
             preferredAudioLanguage = preferredAudioLanguage,
             secondaryPreferredAudioLanguage = secondaryPreferredAudioLanguage,
             preferredSubtitleLanguage = preferredSubtitleLanguage,
-            secondaryPreferredSubtitleLanguage = secondaryPreferredSubtitleLanguage,
-        )
-        SubtitleRenderingGroup(
-            isTablet = isTablet,
-            settings = settings,
-            androidPlaybackEngine = androidPlaybackEngine,
-            useLibass = useLibass,
-            libassRenderType = libassRenderType,
+            onSubtitlesClick = onSubtitlesClick,
         )
         if (P2pSettingsRepository.isVisible) {
             P2pGroup(isTablet = isTablet)
@@ -208,7 +192,6 @@ private fun PlaybackSettingsSection(
         StreamReuseGroup(
             isTablet = isTablet,
             streamReuseLastLinkEnabled = streamReuseLastLinkEnabled,
-            streamReuseLastLinkCacheHours = streamReuseLastLinkCacheHours,
         )
         AutoPlayGroup(isTablet = isTablet, settings = settings)
         if (!isIos) {
@@ -271,12 +254,6 @@ private fun PlayerGroup(
                 description = stringResource(Res.string.playback_show_control_labels_sub),
                 checked = { settings.showPlayerControlLabels },
                 onCheckedChange = PlayerSettingsRepository::setShowPlayerControlLabels,
-            )
-            switchRow(
-                title = stringResource(Res.string.settings_playback_pause_overlay),
-                description = stringResource(Res.string.settings_playback_pause_overlay_description),
-                checked = { settings.pauseOverlayEnabled },
-                onCheckedChange = PlayerSettingsRepository::setPauseOverlayEnabled,
             )
             // Player preference picker: Internal / External
             navigationRow(
@@ -370,7 +347,7 @@ private fun PlayerGroup(
     }
 }
 
-// Preferred audio and subtitle languages.
+// Preferred audio languages, and the way to the subtitle settings, which have a page of their own.
 @Composable
 private fun LanguageGroup(
     isTablet: Boolean,
@@ -378,26 +355,16 @@ private fun LanguageGroup(
     preferredAudioLanguage: String,
     secondaryPreferredAudioLanguage: String?,
     preferredSubtitleLanguage: String,
-    secondaryPreferredSubtitleLanguage: String?,
+    onSubtitlesClick: () -> Unit,
 ) {
     var showPreferredAudioDialog by remember { mutableStateOf(false) }
     var showSecondaryAudioDialog by remember { mutableStateOf(false) }
-    var showPreferredSubtitleDialog by remember { mutableStateOf(false) }
-    var showSecondarySubtitleDialog by remember { mutableStateOf(false) }
     SettingsSection(
         title = stringResource(Res.string.settings_playback_section_subtitle_audio),
         isTablet = isTablet,
     ) {
-        // Subtitle/Audio settings enable/disable logic:
-        // Internal: everything enabled
-        // External + forwarding enabled: subtitle language pickers enabled, other subtitle options disabled
-        // External + forwarding disabled: entire subtitle section disabled
-        // External: audio language pickers always disabled (external player manages audio tracks)
-        val isExternalPlayer = settings.externalPlayerEnabled
-        val isForwardingSubtitles = settings.externalPlayerForwardSubtitles
-        val audioLanguageEnabled = !isExternalPlayer
-        val subtitleLanguageEnabled = !isExternalPlayer || isForwardingSubtitles
-        val otherSubtitleOptionsEnabled = !isExternalPlayer
+        // An external player manages audio tracks itself, so the audio pickers have nothing to set.
+        val audioLanguageEnabled = !settings.externalPlayerEnabled
 
         SettingsList {
             navigationRow(
@@ -418,54 +385,10 @@ private fun LanguageGroup(
                 onClick = { showSecondaryAudioDialog = true },
             )
             navigationRow(
-                title = stringResource(Res.string.settings_playback_preferred_subtitle_language),
-                description = when (preferredSubtitleLanguage) {
-                    SubtitleLanguageOption.NONE -> stringResource(Res.string.settings_playback_option_none)
-                    SubtitleLanguageOption.DEVICE -> stringResource(Res.string.settings_playback_option_device_language)
-                    SubtitleLanguageOption.FORCED -> stringResource(Res.string.settings_playback_option_forced)
-                    else -> languageLabelForCode(preferredSubtitleLanguage)
-                },
-                enabled = subtitleLanguageEnabled,
-                onClick = { showPreferredSubtitleDialog = true },
-            )
-            navigationRow(
-                title = stringResource(Res.string.settings_playback_secondary_subtitle_language),
-                description = languageLabelForCode(secondaryPreferredSubtitleLanguage),
-                enabled = subtitleLanguageEnabled,
-                onClick = { showSecondarySubtitleDialog = true },
-            )
-            switchRow(
-                title = stringResource(Res.string.settings_playback_subtitle_strip_sdh),
-                description = stringResource(Res.string.settings_playback_subtitle_strip_sdh_description),
-                checked = { settings.subtitleStyle.stripSdh },
-                enabled = otherSubtitleOptionsEnabled,
-                onCheckedChange = { enabled ->
-                    PlayerSettingsRepository.setSubtitleStyle(
-                        settings.subtitleStyle.copy(stripSdh = enabled),
-                    )
-                },
-            )
-            switchRow(
-                title = stringResource(Res.string.settings_playback_subtitle_use_forced),
-                description = stringResource(Res.string.settings_playback_subtitle_use_forced_description),
-                checked = { settings.subtitleStyle.useForcedSubtitles },
-                enabled = otherSubtitleOptionsEnabled,
-                onCheckedChange = { enabled ->
-                    PlayerSettingsRepository.setSubtitleStyle(
-                        settings.subtitleStyle.copy(useForcedSubtitles = enabled),
-                    )
-                },
-            )
-            switchRow(
-                title = stringResource(Res.string.settings_playback_subtitle_show_preferred_only),
-                description = stringResource(Res.string.settings_playback_subtitle_show_preferred_only_description),
-                checked = { settings.subtitleStyle.showOnlyPreferredLanguages },
-                enabled = otherSubtitleOptionsEnabled,
-                onCheckedChange = { enabled ->
-                    PlayerSettingsRepository.setSubtitleStyle(
-                        settings.subtitleStyle.copy(showOnlyPreferredLanguages = enabled),
-                    )
-                },
+                title = stringResource(Res.string.compose_settings_page_subtitles),
+                description = preferredSubtitleLanguageLabel(preferredSubtitleLanguage),
+                opensPage = true,
+                onClick = onSubtitlesClick,
             )
         }
     }
@@ -506,191 +429,6 @@ private fun LanguageGroup(
             onDismiss = { showSecondaryAudioDialog = false },
         )
     }
-
-    if (showPreferredSubtitleDialog) {
-        LanguageSelectionDialog(
-            title = stringResource(Res.string.settings_playback_preferred_subtitle_language),
-            options = listOf(
-                LanguageSelectionOption(SubtitleLanguageOption.NONE, stringResource(Res.string.settings_playback_option_none)),
-                LanguageSelectionOption(SubtitleLanguageOption.DEVICE, stringResource(Res.string.settings_playback_option_device_language)),
-                LanguageSelectionOption(SubtitleLanguageOption.FORCED, stringResource(Res.string.settings_playback_option_forced)),
-            ) + AvailableLanguageOptions.map { option ->
-                LanguageSelectionOption(option.code, stringResource(option.labelRes))
-            },
-            selectedValue = preferredSubtitleLanguage,
-            onSelect = { value ->
-                PlayerSettingsRepository.setPreferredSubtitleLanguage(value ?: SubtitleLanguageOption.NONE)
-            },
-            onDismiss = { showPreferredSubtitleDialog = false },
-        )
-    }
-
-    if (showSecondarySubtitleDialog) {
-        LanguageSelectionDialog(
-            title = stringResource(Res.string.settings_playback_secondary_subtitle_language),
-            options = listOf(
-                LanguageSelectionOption(null, stringResource(Res.string.settings_playback_option_none)),
-                LanguageSelectionOption(SubtitleLanguageOption.FORCED, stringResource(Res.string.settings_playback_option_forced)),
-            ) + AvailableLanguageOptions.map { option ->
-                LanguageSelectionOption(option.code, stringResource(option.labelRes))
-            },
-            selectedValue = secondaryPreferredSubtitleLanguage,
-            onSelect = { value ->
-                PlayerSettingsRepository.setSecondaryPreferredSubtitleLanguage(value)
-            },
-            onDismiss = { showSecondarySubtitleDialog = false },
-        )
-    }
-}
-
-// How the internal player draws subtitles.
-@Composable
-private fun SubtitleRenderingGroup(
-    isTablet: Boolean,
-    settings: PlayerSettingsUiState,
-    androidPlaybackEngine: AndroidPlaybackEngine,
-    useLibass: Boolean,
-    libassRenderType: String,
-) {
-    var showSubtitleTextColorDialog by remember { mutableStateOf(false) }
-    var showSubtitleBackgroundColorDialog by remember { mutableStateOf(false) }
-    var showSubtitleOutlineColorDialog by remember { mutableStateOf(false) }
-    var showLibassRenderTypeDialog by remember { mutableStateOf(false) }
-    SettingsSection(
-        title = stringResource(Res.string.settings_playback_section_subtitle_rendering),
-        isTablet = isTablet,
-    ) {
-        val subtitleRenderingEnabled = !settings.externalPlayerEnabled
-        SettingsList {
-            val subtitleStyle = settings.subtitleStyle
-            SettingsSliderRow(
-                title = stringResource(Res.string.settings_playback_subtitle_size),
-                value = subtitleStyle.fontSizeSp,
-                valueText = stringResource(Res.string.compose_player_font_size_value, subtitleStyle.fontSizeSp),
-                valueRange = subtitleFontSizeRangeSp,
-                step = 2,
-                isTablet = isTablet,
-                enabled = subtitleRenderingEnabled,
-                onValueChange = { value ->
-                    PlayerSettingsRepository.setSubtitleStyle(subtitleStyle.copy(fontSizeSp = value))
-                },
-            )
-            SettingsSliderRow(
-                title = stringResource(Res.string.settings_playback_subtitle_vertical_offset),
-                value = subtitleStyle.bottomOffset,
-                valueText = subtitleStyle.bottomOffset.toString(),
-                valueRange = 0..200,
-                step = 5,
-                isTablet = isTablet,
-                enabled = subtitleRenderingEnabled,
-                onValueChange = { value ->
-                    PlayerSettingsRepository.setSubtitleStyle(subtitleStyle.copy(bottomOffset = value))
-                },
-            )
-            switchRow(
-                title = stringResource(Res.string.settings_playback_subtitle_bold),
-                description = stringResource(Res.string.settings_playback_subtitle_bold_description),
-                checked = { subtitleStyle.bold },
-                enabled = subtitleRenderingEnabled,
-                onCheckedChange = { enabled ->
-                    PlayerSettingsRepository.setSubtitleStyle(subtitleStyle.copy(bold = enabled))
-                },
-            )
-            navigationRow(
-                title = stringResource(Res.string.settings_playback_subtitle_text_color),
-                description = subtitleColorLabel(subtitleStyle.textColor),
-                enabled = subtitleRenderingEnabled,
-                onClick = { showSubtitleTextColorDialog = true },
-            )
-            navigationRow(
-                title = stringResource(Res.string.settings_playback_subtitle_background_color),
-                description = subtitleColorLabel(subtitleStyle.backgroundColor),
-                enabled = subtitleRenderingEnabled,
-                onClick = { showSubtitleBackgroundColorDialog = true },
-            )
-            switchRow(
-                title = stringResource(Res.string.settings_playback_subtitle_outline),
-                description = stringResource(Res.string.settings_playback_subtitle_outline_description),
-                checked = { subtitleStyle.outlineEnabled },
-                enabled = subtitleRenderingEnabled,
-                onCheckedChange = { enabled ->
-                    PlayerSettingsRepository.setSubtitleStyle(subtitleStyle.copy(outlineEnabled = enabled))
-                },
-            )
-            if (subtitleStyle.outlineEnabled) {
-                navigationRow(
-                    title = stringResource(Res.string.settings_playback_subtitle_outline_color),
-                    description = subtitleColorLabel(subtitleStyle.outlineColor),
-                    enabled = subtitleRenderingEnabled,
-                    onClick = { showSubtitleOutlineColorDialog = true },
-                )
-            }
-            val showLibassSettings = !isIos && androidPlaybackEngine != AndroidPlaybackEngine.Libmpv
-            if (showLibassSettings) {
-                switchRow(
-                    title = stringResource(Res.string.settings_playback_enable_libass),
-                    description = stringResource(Res.string.settings_playback_enable_libass_description),
-                    checked = { useLibass },
-                    enabled = subtitleRenderingEnabled,
-                    onCheckedChange = PlayerSettingsRepository::setUseLibass,
-                )
-                if (useLibass) {
-                    navigationRow(
-                        title = stringResource(Res.string.settings_playback_render_type),
-                        description = libassRenderTypeLabel(libassRenderType),
-                        enabled = subtitleRenderingEnabled,
-                        onClick = { showLibassRenderTypeDialog = true },
-                    )
-                }
-            }
-        }
-    }
-
-    if (showSubtitleTextColorDialog) {
-        SubtitleColorDialog(
-            title = stringResource(Res.string.settings_playback_subtitle_text_color),
-            colors = SubtitleColorSwatches,
-            selectedColor = settings.subtitleStyle.textColor,
-            onColorSelected = { color ->
-                PlayerSettingsRepository.setSubtitleStyle(settings.subtitleStyle.copy(textColor = color))
-            },
-            onDismiss = { showSubtitleTextColorDialog = false },
-        )
-    }
-
-    if (showSubtitleBackgroundColorDialog) {
-        SubtitleColorDialog(
-            title = stringResource(Res.string.settings_playback_subtitle_background_color),
-            colors = SubtitleBackgroundColorSwatches,
-            selectedColor = settings.subtitleStyle.backgroundColor,
-            onColorSelected = { color ->
-                PlayerSettingsRepository.setSubtitleStyle(settings.subtitleStyle.copy(backgroundColor = color))
-            },
-            onDismiss = { showSubtitleBackgroundColorDialog = false },
-        )
-    }
-
-    if (showSubtitleOutlineColorDialog) {
-        SubtitleColorDialog(
-            title = stringResource(Res.string.settings_playback_subtitle_outline_color),
-            colors = SubtitleColorSwatches,
-            selectedColor = settings.subtitleStyle.outlineColor,
-            onColorSelected = { color ->
-                PlayerSettingsRepository.setSubtitleStyle(settings.subtitleStyle.copy(outlineColor = color))
-            },
-            onDismiss = { showSubtitleOutlineColorDialog = false },
-        )
-    }
-
-    if (showLibassRenderTypeDialog) {
-        LibassRenderTypeDialog(
-            selectedRenderType = libassRenderType,
-            onRenderTypeSelected = { renderType ->
-                PlayerSettingsRepository.setLibassRenderType(renderType)
-            },
-            onDismiss = { showLibassRenderTypeDialog = false },
-        )
-    }
 }
 
 // Peer to peer streaming and its cache.
@@ -703,13 +441,15 @@ private fun P2pGroup(
     var showP2pCacheSizeDialog by remember { mutableStateOf(false) }
     var p2pCacheClearResult by remember { mutableStateOf<P2pCacheClearResult?>(null) }
     var p2pCacheClearFailed by remember { mutableStateOf(false) }
-    val p2pSettings by remember {
+    // Read as values here, not through delegates inside the list's builder: a state read in the
+    // builder re-runs only the builder, so the rows' labels would keep their old values.
+    val p2pSettings = remember {
         P2pSettingsRepository.ensureLoaded()
         P2pSettingsRepository.uiState
-    }.collectAsStateWithLifecycle()
-    val p2pCacheState by P2pStreamingEngine.cacheState.collectAsStateWithLifecycle()
-    val p2pStreamingState by P2pStreamingEngine.state.collectAsStateWithLifecycle()
-    val p2pDownloadStreams by P2pStreamingEngine.downloadStreamCount.collectAsStateWithLifecycle()
+    }.collectAsStateWithLifecycle().value
+    val p2pCacheState = P2pStreamingEngine.cacheState.collectAsStateWithLifecycle().value
+    val p2pStreamingState = P2pStreamingEngine.state.collectAsStateWithLifecycle().value
+    val p2pDownloadStreams = P2pStreamingEngine.downloadStreamCount.collectAsStateWithLifecycle().value
     val coroutineScope = rememberCoroutineScope()
     SettingsSection(
         title = stringResource(Res.string.settings_playback_section_p2p),
@@ -849,9 +589,7 @@ private fun P2pGroup(
 private fun StreamReuseGroup(
     isTablet: Boolean,
     streamReuseLastLinkEnabled: Boolean,
-    streamReuseLastLinkCacheHours: Int,
 ) {
-    var showReuseCacheDurationDialog by remember { mutableStateOf(false) }
     SettingsSection(
         title = stringResource(Res.string.settings_playback_section_stream_selection),
         isTablet = isTablet,
@@ -863,24 +601,7 @@ private fun StreamReuseGroup(
                 checked = { streamReuseLastLinkEnabled },
                 onCheckedChange = PlayerSettingsRepository::setStreamReuseLastLinkEnabled,
             )
-            if (streamReuseLastLinkEnabled) {
-                navigationRow(
-                    title = stringResource(Res.string.settings_playback_last_link_cache_duration),
-                    description = formatReuseCacheDuration(streamReuseLastLinkCacheHours),
-                    onClick = { showReuseCacheDurationDialog = true },
-                )
-            }
         }
-    }
-
-    if (showReuseCacheDurationDialog) {
-        ReuseCacheDurationDialog(
-            selectedHours = streamReuseLastLinkCacheHours,
-            onDurationSelected = { hours ->
-                PlayerSettingsRepository.setStreamReuseLastLinkCacheHours(hours)
-            },
-            onDismiss = { showReuseCacheDurationDialog = false },
-        )
     }
 }
 
@@ -1497,18 +1218,6 @@ private fun SettingsListScope.SteppedSliderRow(
     }
 }
 
-@Composable
-internal fun formatReuseCacheDuration(hours: Int): String = when {
-    hours < 24 && hours == 1 -> stringResource(Res.string.settings_playback_duration_hour_one, hours)
-    hours < 24 -> stringResource(Res.string.settings_playback_duration_hours, hours)
-    hours % 24 == 0 -> {
-        val days = hours / 24
-        if (days == 1) stringResource(Res.string.settings_playback_duration_day_one, days)
-        else stringResource(Res.string.settings_playback_duration_days, days)
-    }
-    else -> stringResource(Res.string.settings_playback_duration_hours, hours)
-}
-
 private fun decoderPriorityRes(priority: Int): StringResource = when (priority) {
     0 -> Res.string.settings_playback_decoder_device_only
     1 -> Res.string.settings_playback_decoder_prefer_device
@@ -1552,4 +1261,4 @@ private fun libassRenderTypeRes(renderType: String): StringResource = when (rend
 }
 
 @Composable
-private fun libassRenderTypeLabel(renderType: String): String = stringResource(libassRenderTypeRes(renderType))
+internal fun libassRenderTypeLabel(renderType: String): String = stringResource(libassRenderTypeRes(renderType))

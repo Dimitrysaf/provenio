@@ -42,8 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -103,7 +101,6 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaCompany
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSectionKey
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
 import io.github.dimitrysaf.provenio.core.metadata.MetaPerson
-import io.github.dimitrysaf.provenio.core.metadata.MetaScreenBackgroundMode
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsUiState
 import io.github.dimitrysaf.provenio.core.metadata.MetaTrailer
@@ -633,11 +630,9 @@ private fun MetaDetailsContent(
     val scroll = rememberDetailScrollState(meta.id)
     val listState = scroll.listState
     val heroHeightPx = scroll.heroHeightPx
-    val detailScrollOffsetPx = scroll.scrollOffsetPx
     val isHeroCollapsed = scroll.isHeroCollapsed
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val colorScheme = MaterialTheme.colorScheme
         val isTablet = maxWidth >= 720.dp
         val viewportHeight = maxHeight
         val contentHorizontalPadding = if (isTablet) 32.dp else 18.dp
@@ -677,10 +672,7 @@ private fun MetaDetailsContent(
         val sidePaneSettings = remember(metaScreenSettingsUiState, sidePaneSection) {
             sidePaneSection?.let { key ->
                 metaScreenSettingsUiState.copy(
-                    items = metaScreenSettingsUiState.items
-                        .filter { it.key == key }
-                        .map { it.copy(tabGroup = null) },
-                    tabLayout = false,
+                    items = metaScreenSettingsUiState.items.filter { it.key == key },
                 )
             }
         }
@@ -740,29 +732,13 @@ private fun MetaDetailsContent(
                 )
             }
         val backdropUrl = meta.background ?: meta.poster
-        val backgroundMode = metaScreenSettingsUiState.backgroundMode
-        val dominantColorEnabled = backgroundMode == MetaScreenBackgroundMode.DominantColor &&
-            deferredMetaWorkAllowed &&
-            !backdropUrl.isNullOrBlank()
-        var dominantBackdropPainter by remember(meta.id, backdropUrl) {
-            mutableStateOf<Painter?>(null)
-        }
-        var dominantBackdropImageBitmap by remember(meta.id, backdropUrl) {
-            mutableStateOf<ImageBitmap?>(null)
-        }
-        val dominantBackdropColor = rememberDominantBackdropColor(
-            enabled = dominantColorEnabled,
-            imageBitmap = dominantBackdropImageBitmap,
-            painter = dominantBackdropPainter,
-        )
 
         Box(modifier = Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxSize().detailsContentReveal(metaScreenSettingsUiState.posterTransitionEnabled)) {
                 DetailBackdrop(
-                    mode = backgroundMode,
+                    mode = metaScreenSettingsUiState.backgroundMode,
                     backdropUrl = backdropUrl,
                     visible = deferredMetaWorkAllowed,
-                    dominantColor = dominantBackdropColor,
                 )
                 Row(
                     modifier = Modifier
@@ -790,10 +766,6 @@ private fun MetaDetailsContent(
                                 trailerMuted = heroTrailerMuted,
                                 onTrailerMuteToggle = {
                                     HeroTrailerAudioState.toggleMuted()
-                                },
-                                onBackdropLoaded = { painter, imageBitmap ->
-                                    dominantBackdropPainter = painter
-                                    dominantBackdropImageBitmap = imageBitmap
                                 },
                                 onOpenArtwork = openArtwork,
                             )
@@ -828,21 +800,11 @@ private fun MetaDetailsContent(
                         }
                     }
                 }
-
-                if (backgroundMode.usesBackdropBackground && deferredMetaWorkAllowed && heroHeightPx.intValue > 0) {
-                    DetailHeroFade(
-                        color = dominantBackdropColor.takeIf { dominantColorEnabled } ?: colorScheme.background,
-                        widthFraction = primaryPaneWeight,
-                        heroHeightPx = heroHeightPx,
-                        scrollOffsetPx = detailScrollOffsetPx,
-                    )
-                }
             }
 
             DetailHeaderOverlay(
                 meta = meta,
                 isHeroCollapsed = isHeroCollapsed,
-                backgroundColor = dominantBackdropColor.takeIf { dominantColorEnabled },
                 onBack = onBackFromDetails,
                 // With a side pane, the bar belongs to the main column only.
                 modifier = Modifier.fillMaxWidth(primaryPaneWeight),
@@ -902,7 +864,6 @@ private fun MetaDetailsContent(
 private fun DetailHeaderOverlay(
     meta: MetaDetails,
     isHeroCollapsed: State<Boolean>,
-    backgroundColor: Color?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -919,7 +880,6 @@ private fun DetailHeaderOverlay(
     DetailFloatingHeader(
         meta = meta,
         progress = headerProgress,
-        backgroundColor = backgroundColor,
         onBack = onBack,
         modifier = modifier.zIndex(2f),
     )

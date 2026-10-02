@@ -1,30 +1,22 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
@@ -33,45 +25,25 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
 import io.github.dimitrysaf.provenio.core.build.TrailerPlaybackMode
-import io.github.dimitrysaf.provenio.shell.components.SelectableListRow
-import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
-import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
-import io.github.dimitrysaf.provenio.core.metadata.MetaEpisodeCardStyle
-import io.github.dimitrysaf.provenio.core.metadata.MetaScreenBackgroundMode
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSectionItem
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSectionKey
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsUiState
 import io.github.dimitrysaf.provenio.core.build.supportsPosterNavigationMotion
 import provenio.composeapp.generated.resources.Res
-import provenio.composeapp.generated.resources.action_reorder
 import provenio.composeapp.generated.resources.action_reset
 import provenio.composeapp.generated.resources.settings_homescreen_hidden
 import provenio.composeapp.generated.resources.settings_homescreen_visible
 import provenio.composeapp.generated.resources.settings_meta_actions
 import provenio.composeapp.generated.resources.settings_meta_actions_description
-import provenio.composeapp.generated.resources.settings_meta_background_mode
-import provenio.composeapp.generated.resources.settings_meta_background_mode_cinematic
-import provenio.composeapp.generated.resources.settings_meta_background_mode_cinematic_description
-import provenio.composeapp.generated.resources.settings_meta_background_mode_description
-import provenio.composeapp.generated.resources.settings_meta_background_mode_dominant
-import provenio.composeapp.generated.resources.settings_meta_background_mode_dominant_description
-import provenio.composeapp.generated.resources.settings_meta_background_mode_normal
-import provenio.composeapp.generated.resources.settings_meta_background_mode_normal_description
 import provenio.composeapp.generated.resources.settings_meta_blur_unwatched_episodes
 import provenio.composeapp.generated.resources.settings_meta_blur_unwatched_episodes_description
 import provenio.composeapp.generated.resources.settings_meta_cast
@@ -82,19 +54,12 @@ import provenio.composeapp.generated.resources.settings_meta_comments
 import provenio.composeapp.generated.resources.settings_meta_comments_description
 import provenio.composeapp.generated.resources.settings_meta_details
 import provenio.composeapp.generated.resources.settings_meta_details_description
-import provenio.composeapp.generated.resources.settings_meta_episode_cards
-import provenio.composeapp.generated.resources.settings_meta_episode_style_horizontal
-import provenio.composeapp.generated.resources.settings_meta_episode_style_horizontal_description
-import provenio.composeapp.generated.resources.settings_meta_episode_style_list
-import provenio.composeapp.generated.resources.settings_meta_episode_style_list_description
 import provenio.composeapp.generated.resources.settings_meta_episodes
 import provenio.composeapp.generated.resources.settings_meta_episodes_description
-import provenio.composeapp.generated.resources.settings_meta_group_label
 import provenio.composeapp.generated.resources.settings_meta_hero_trailer_playback
 import provenio.composeapp.generated.resources.settings_meta_hero_trailer_playback_description
 import provenio.composeapp.generated.resources.settings_meta_more_like_this
 import provenio.composeapp.generated.resources.settings_meta_more_like_this_description
-import provenio.composeapp.generated.resources.settings_meta_none
 import provenio.composeapp.generated.resources.settings_meta_overview
 import provenio.composeapp.generated.resources.settings_meta_overview_description
 import provenio.composeapp.generated.resources.settings_meta_parents_guide
@@ -105,9 +70,6 @@ import provenio.composeapp.generated.resources.settings_meta_production
 import provenio.composeapp.generated.resources.settings_meta_production_description
 import provenio.composeapp.generated.resources.settings_meta_section_appearance
 import provenio.composeapp.generated.resources.settings_meta_section_sections
-import provenio.composeapp.generated.resources.settings_meta_tab_group_format
-import provenio.composeapp.generated.resources.settings_meta_tab_layout
-import provenio.composeapp.generated.resources.settings_meta_tab_layout_description
 import provenio.composeapp.generated.resources.settings_meta_trailers
 import provenio.composeapp.generated.resources.settings_meta_trailers_description
 import org.jetbrains.compose.resources.StringResource
@@ -123,17 +85,11 @@ internal fun LazyListScope.metaScreenSettingsContent(
     val showHeroTrailerPlaybackSetting = AppFeaturePolicy.heroTrailerPlaybackSupported &&
         AppFeaturePolicy.trailerPlaybackMode == TrailerPlaybackMode.IN_APP
     item {
-        var showBackgroundSheet by rememberSaveable { mutableStateOf(false) }
         SettingsSection(
             title = stringResource(Res.string.settings_meta_section_appearance),
             isTablet = isTablet,
         ) {
             SettingsList {
-                navigationRow(
-                    title = stringResource(Res.string.settings_meta_background_mode),
-                    description = stringResource(uiState.backgroundMode.labelRes),
-                    onClick = { showBackgroundSheet = true },
-                )
                 if (supportsPosterNavigationMotion) {
                     switchRow(
                         title = stringResource(Res.string.settings_meta_poster_transition),
@@ -151,45 +107,12 @@ internal fun LazyListScope.metaScreenSettingsContent(
                     )
                 }
                 switchRow(
-                    title = stringResource(Res.string.settings_meta_tab_layout),
-                    description = stringResource(Res.string.settings_meta_tab_layout_description),
-                    checked = { uiState.tabLayout },
-                    onCheckedChange = { MetaScreenSettingsRepository.setTabLayout(it) },
-                )
-                switchRow(
                     title = stringResource(Res.string.settings_meta_blur_unwatched_episodes),
                     description = stringResource(Res.string.settings_meta_blur_unwatched_episodes_description),
                     checked = { uiState.blurUnwatchedEpisodes },
                     onCheckedChange = { MetaScreenSettingsRepository.setBlurUnwatchedEpisodes(it) },
                 )
             }
-        }
-        if (showBackgroundSheet) {
-            SingleChoiceBottomSheet(
-                title = stringResource(Res.string.settings_meta_background_mode),
-                description = stringResource(Res.string.settings_meta_background_mode_description),
-                options = MetaScreenBackgroundMode.entries.map { mode ->
-                    SingleChoiceOption(
-                        value = mode,
-                        label = stringResource(mode.labelRes),
-                        supportingText = stringResource(mode.descriptionRes),
-                    )
-                },
-                isSelected = { it == uiState.backgroundMode },
-                onSelected = MetaScreenSettingsRepository::setBackgroundMode,
-                onDismiss = { showBackgroundSheet = false },
-            )
-        }
-    }
-    item {
-        SettingsSection(
-            title = stringResource(Res.string.settings_meta_episode_cards),
-            isTablet = isTablet,
-        ) {
-            MetaEpisodeCardStyleSelector(
-                selectedStyle = uiState.episodeCardStyle,
-                onStyleSelected = MetaScreenSettingsRepository::setEpisodeCardStyle,
-            )
         }
     }
     item {
@@ -200,7 +123,6 @@ internal fun LazyListScope.metaScreenSettingsContent(
             MetaSectionReorderableList(
                 items = uiState.items,
                 isTablet = isTablet,
-                tabLayout = uiState.tabLayout,
             )
         }
     }
@@ -209,16 +131,14 @@ internal fun LazyListScope.metaScreenSettingsContent(
 /**
  * The metadata page's sections, as one segmented list.
  *
- * A row is selected when its section is shown, so tapping it is what shows or hides the section
- * and the expressive list's selected container is the state, in place of a switch. Reordering is
- * the handle at the end of each row. Reset scrolls with the rows because it belongs to them: it
+ * Tapping a row shows or hides its section, which the eye at its end reports; holding a row
+ * picks it up to reorder. Reset scrolls with the rows because it belongs to them: it
  * restores this list alone and leaves the rest of the page as it is.
  */
 @Composable
 private fun MetaSectionReorderableList(
     items: List<MetaScreenSectionItem>,
     isTablet: Boolean,
-    tabLayout: Boolean,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val lazyListState = rememberLazyListState()
@@ -227,13 +147,6 @@ private fun MetaSectionReorderableList(
     ) { from, to ->
         MetaScreenSettingsRepository.moveByIndex(from.index, to.index)
         hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-    }
-
-    // A tab group holds at most three sections, so a full group stops offering itself.
-    val groupCounts: Map<Int, Int> = if (tabLayout) {
-        items.filter { it.tabGroup != null }.groupBy { it.tabGroup!! }.mapValues { it.value.size }
-    } else {
-        emptyMap()
     }
 
     LazyColumn(
@@ -256,11 +169,8 @@ private fun MetaSectionReorderableList(
                     MetaSectionRow(
                         item = item,
                         selected = isDragging,
-                        tabLayout = tabLayout,
-                        groupCounts = groupCounts,
                         shape = shape,
                         onEnabledChange = { MetaScreenSettingsRepository.setEnabled(item.key, it) },
-                        onTabGroupChange = { MetaScreenSettingsRepository.setTabGroup(item.key, it) },
                         dragHandleScope = this@ReorderableItem,
                     )
                 }
@@ -293,19 +203,24 @@ private fun MetaSectionReorderableList(
 private fun MetaSectionRow(
     item: MetaScreenSectionItem,
     selected: Boolean,
-    tabLayout: Boolean,
-    groupCounts: Map<Int, Int>,
     shape: RoundedCornerShape,
     onEnabledChange: (Boolean) -> Unit,
-    onTabGroupChange: (Int?) -> Unit,
     dragHandleScope: ReorderableCollectionItemScope,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
-    val canPickGroup = tabLayout && item.enabled && item.key.canBeTabbed
-    var showGroupSheet by rememberSaveable { mutableStateOf(false) }
-    val groupLabel = item.tabGroup?.let { stringResource(Res.string.settings_meta_tab_group_format, it) }
 
     SegmentedListItem(
+        // The whole row is the drag handle: holding it picks the section up, a tap shows or hides it.
+        modifier = with(dragHandleScope) {
+            Modifier.longPressDraggableHandle(
+                onDragStarted = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
+                onDragStopped = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                },
+            )
+        },
         selected = selected,
         onClick = { onEnabledChange(!item.enabled) },
         // Only the selected shape differs, so pressing or focusing a row does not re-round it
@@ -321,7 +236,9 @@ private fun MetaSectionRow(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
             disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
-        leadingContent = {
+        verticalAlignment = Alignment.CenterVertically,
+        supportingContent = { Text(stringResource(item.key.descriptionRes)) },
+        trailingContent = {
             Icon(
                 imageVector = if (item.enabled) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
                 contentDescription = if (item.enabled) {
@@ -336,126 +253,10 @@ private fun MetaSectionRow(
                 },
             )
         },
-        supportingContent = { Text(stringResource(item.key.descriptionRes)) },
-        trailingContent = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (canPickGroup) {
-                    TextButton(onClick = { showGroupSheet = true }) {
-                        Text(
-                            text = groupLabel ?: stringResource(Res.string.settings_meta_none),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-                IconButton(
-                    modifier = with(dragHandleScope) {
-                        Modifier.draggableHandle(
-                            onDragStarted = {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                            },
-                            onDragStopped = {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            },
-                        )
-                    },
-                    onClick = {},
-                ) {
-                    Icon(
-                        Icons.Rounded.Menu,
-                        contentDescription = stringResource(Res.string.action_reorder),
-                    )
-                }
-            }
-        },
     ) {
         Text(stringResource(item.key.titleRes))
     }
-
-    if (showGroupSheet) {
-        // Four choices with a rule about which are still free, which is a list, not a row of chips.
-        val options = buildList {
-            add(SingleChoiceOption(value = 0, label = stringResource(Res.string.settings_meta_none)))
-            for (groupId in 1..3) {
-                val isSelected = item.tabGroup == groupId
-                add(
-                    SingleChoiceOption(
-                        value = groupId,
-                        label = stringResource(Res.string.settings_meta_group_label, groupId),
-                        enabled = isSelected || (groupCounts[groupId] ?: 0) < 3,
-                    ),
-                )
-            }
-        }
-        SingleChoiceBottomSheet(
-            title = stringResource(Res.string.settings_meta_tab_layout),
-            options = options,
-            isSelected = { it == (item.tabGroup ?: 0) },
-            onSelected = { picked -> onTabGroupChange(picked.takeIf { it != 0 }) },
-            onDismiss = { showGroupSheet = false },
-        )
-    }
 }
-
-private val MetaScreenBackgroundMode.labelRes: StringResource
-    get() = when (this) {
-        MetaScreenBackgroundMode.Normal -> Res.string.settings_meta_background_mode_normal
-        MetaScreenBackgroundMode.Cinematic -> Res.string.settings_meta_background_mode_cinematic
-        MetaScreenBackgroundMode.DominantColor -> Res.string.settings_meta_background_mode_dominant
-    }
-
-private val MetaScreenBackgroundMode.descriptionRes: StringResource
-    get() = when (this) {
-        MetaScreenBackgroundMode.Normal -> Res.string.settings_meta_background_mode_normal_description
-        MetaScreenBackgroundMode.Cinematic -> Res.string.settings_meta_background_mode_cinematic_description
-        MetaScreenBackgroundMode.DominantColor -> Res.string.settings_meta_background_mode_dominant_description
-    }
-
-/**
- * The episode card styles, as rows of one list, the way the continue watching styles are chosen.
- * Each row carries the miniature that used to be a tile, so the choice still shows what it does.
- */
-@Composable
-private fun MetaEpisodeCardStyleSelector(
-    selectedStyle: MetaEpisodeCardStyle,
-    onStyleSelected: (MetaEpisodeCardStyle) -> Unit,
-) {
-    val styles = MetaEpisodeCardStyle.entries
-
-    Column(verticalArrangement = Arrangement.spacedBy(ListItemBetweenSpace)) {
-        styles.forEachIndexed { index, style ->
-            SelectableListRow(
-                selected = style == selectedStyle,
-                onClick = { onStyleSelected(style) },
-                headline = stringResource(style.labelRes),
-                supporting = stringResource(style.descriptionRes),
-                unselectedShape = segmentShape(index = index, count = styles.size),
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                leadingContent = {
-                    MetaEpisodeCardStylePreview(
-                        style = style,
-                        modifier = Modifier.size(width = 100.dp, height = 92.dp),
-                    )
-                },
-            )
-        }
-    }
-}
-
-private val MetaEpisodeCardStyle.labelRes: StringResource
-    get() = when (this) {
-        MetaEpisodeCardStyle.Horizontal -> Res.string.settings_meta_episode_style_horizontal
-        MetaEpisodeCardStyle.List -> Res.string.settings_meta_episode_style_list
-    }
-
-private val MetaEpisodeCardStyle.descriptionRes: StringResource
-    get() = when (this) {
-        MetaEpisodeCardStyle.Horizontal -> Res.string.settings_meta_episode_style_horizontal_description
-        MetaEpisodeCardStyle.List -> Res.string.settings_meta_episode_style_list_description
-    }
 
 private val MetaScreenSectionKey.titleRes: StringResource
     get() = when (this) {
@@ -486,94 +287,3 @@ private val MetaScreenSectionKey.descriptionRes: StringResource
         MetaScreenSectionKey.COLLECTION -> Res.string.settings_meta_collection_description
         MetaScreenSectionKey.MORE_LIKE_THIS -> Res.string.settings_meta_more_like_this_description
     }
-
-@Composable
-private fun MetaEpisodeCardStylePreview(
-    style: MetaEpisodeCardStyle,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        when (style) {
-            MetaEpisodeCardStyle.Horizontal -> {
-                Box(
-                    modifier = Modifier
-                        .width(96.dp)
-                        .height(60.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(26.dp)
-                            .align(Alignment.BottomCenter)
-                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.36f)),
-                    )
-                    Box(
-                        modifier = Modifier
-                            .width(42.dp)
-                            .height(7.dp)
-                            .align(Alignment.TopStart)
-                            .padding(start = 6.dp, top = 6.dp)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.26f)),
-                    )
-                    Box(
-                        modifier = Modifier
-                            .width(72.dp)
-                            .height(6.dp)
-                            .align(Alignment.BottomStart)
-                            .padding(start = 8.dp, bottom = 8.dp)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f)),
-                    )
-                }
-            }
-
-            MetaEpisodeCardStyle.List -> {
-                Row(
-                    modifier = Modifier
-                        .width(96.dp)
-                        .height(58.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f)),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(34.dp)
-                            .height(58.dp)
-                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
-                    )
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(5.dp),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(0.82f)
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.20f)),
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(0.52f)
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f)),
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(4.dp)
-                                .clip(RoundedCornerShape(2.dp))
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}

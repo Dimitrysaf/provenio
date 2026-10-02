@@ -30,12 +30,14 @@ internal fun LazyListScope.integrationsContent(
                     title = stringResource(Res.string.compose_settings_page_tmdb_enrichment),
                     description = stringResource(Res.string.settings_integrations_tmdb_description),
                     iconPainter = integrationLogoPainter(IntegrationLogo.Tmdb),
+                    opensPage = true,
                     onClick = onTmdbClick,
                 )
                 navigationRow(
                     title = stringResource(Res.string.compose_settings_page_mdblist_ratings),
                     description = stringResource(Res.string.settings_integrations_mdblist_description),
                     iconPainter = integrationLogoPainter(IntegrationLogo.MdbList),
+                    opensPage = true,
                     onClick = onMdbListClick,
                 )
                 navigationRow(
@@ -46,6 +48,7 @@ internal fun LazyListScope.integrationsContent(
                 navigationRow(
                     title = stringResource(Res.string.compose_settings_page_debrid),
                     description = stringResource(Res.string.settings_integrations_debrid_description),
+                    opensPage = true,
                     onClick = onDebridClick,
                 )
             }
