@@ -12,6 +12,7 @@ import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toPixelMap
@@ -29,20 +30,20 @@ internal fun CompanyLogo(
     contentDescription: String?,
     modifier: Modifier = Modifier,
 ) {
-    var boxed by remember(url) { mutableStateOf<Boolean?>(null) }
+    var keepColors by remember(url) { mutableStateOf<Boolean?>(null) }
     AsyncImage(
         model = url,
         contentDescription = contentDescription,
         modifier = modifier,
         contentScale = ContentScale.Fit,
-        alpha = if (boxed == null) 0f else 1f,
-        colorFilter = if (boxed == false) ColorFilter.tint(LocalContentColor.current) else null,
-        onSuccess = { state -> boxed = runCatching { state.painter.hasOpaqueEdges() }.getOrDefault(false) },
-        onError = { boxed = true },
+        alpha = if (keepColors == null) 0f else 1f,
+        colorFilter = if (keepColors == false) ColorFilter.tint(LocalContentColor.current) else null,
+        onSuccess = { state -> keepColors = runCatching { state.painter.needsOriginalColors() }.getOrDefault(false) },
+        onError = { keepColors = true },
     )
 }
 
-private fun Painter.hasOpaqueEdges(): Boolean {
+private fun Painter.needsOriginalColors(): Boolean {
     val intrinsic = intrinsicSize
     if (intrinsic.isUnspecified || intrinsic.width <= 0f || intrinsic.height <= 0f) return false
     val scale = min(1f, LogoSampleSize / max(intrinsic.width, intrinsic.height))
@@ -55,26 +56,38 @@ private fun Painter.hasOpaqueEdges(): Boolean {
         canvas = Canvas(bitmap),
         size = Size(width.toFloat(), height.toFloat()),
     ) {
-        with(this@hasOpaqueEdges) { draw(size) }
+        with(this@needsOriginalColors) { draw(size) }
     }
     val pixels = bitmap.toPixelMap()
+
+    var edgeOpaque = 0
+    var edgeTotal = 0
     var opaque = 0
-    var total = 0
-    fun sample(x: Int, y: Int) {
-        total++
-        if (pixels[x, y].alpha > OpaqueAlpha) opaque++
+    var dark = 0
+    var light = 0
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            val color = pixels[x, y]
+            val isOpaque = color.alpha > OpaqueAlpha
+            if (x == 0 || y == 0 || x == width - 1 || y == height - 1) {
+                edgeTotal++
+                if (isOpaque) edgeOpaque++
+            }
+            if (!isOpaque) continue
+            opaque++
+            val luminance = color.luminance()
+            if (luminance < DarkLuminance) dark++
+            if (luminance > LightLuminance) light++
+        }
     }
-    for (x in 0 until width) {
-        sample(x, 0)
-        sample(x, height - 1)
-    }
-    for (y in 1 until height - 1) {
-        sample(0, y)
-        sample(width - 1, y)
-    }
-    return opaque >= total * BoxedEdgeShare
+    if (edgeOpaque >= edgeTotal * BoxedEdgeShare) return true
+    if (opaque == 0) return false
+    return dark >= opaque * ToneShare && light >= opaque * ToneShare
 }
 
 private const val LogoSampleSize = 64f
 private const val OpaqueAlpha = 0.9f
 private const val BoxedEdgeShare = 0.6f
+private const val DarkLuminance = 0.3f
+private const val LightLuminance = 0.7f
+private const val ToneShare = 0.1f
