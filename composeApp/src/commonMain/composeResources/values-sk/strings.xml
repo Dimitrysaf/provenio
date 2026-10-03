@@ -2001,6 +2001,7 @@
     <string name="update_failed_details_hide">Skryť podrobnosti</string>
     <string name="entity_browse_country">Krajina</string>
     <string name="entity_browse_type">Typ</string>
+    <string name="entity_browse_headquarters">Sídlo</string>
     <string name="entity_browse_catalogue">Katalóg</string>
     <string name="entity_browse_about">O programe</string>
     <string name="player_external_loading_subtitles">Načítavajú sa titulky z doplnkov...</string>

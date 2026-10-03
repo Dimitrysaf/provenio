@@ -1872,6 +1872,7 @@
     <string name="update_failed_details_hide">Részletek elrejtése</string>
     <string name="entity_browse_country">Ország</string>
     <string name="entity_browse_type">Típus</string>
+    <string name="entity_browse_headquarters">Székhely</string>
     <string name="entity_browse_catalogue">Katalógus</string>
     <string name="entity_browse_about">Névjegy</string>
     <string name="player_external_loading_subtitles">Feliratok betöltése a kiegészítőkből...</string>

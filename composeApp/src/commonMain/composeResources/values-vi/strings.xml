@@ -2195,6 +2195,7 @@
     <string name="update_failed_details_hide">Ẩn chi tiết</string>
     <string name="entity_browse_country">Quốc gia</string>
     <string name="entity_browse_type">Loại</string>
+    <string name="entity_browse_headquarters">Trụ sở</string>
     <string name="entity_browse_catalogue">Danh mục</string>
     <string name="entity_browse_about">Giới thiệu</string>
     <string name="player_external_loading_subtitles">Đang tải xuống phụ đề từ tiện ích...</string>

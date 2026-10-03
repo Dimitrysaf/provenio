@@ -130,7 +130,7 @@ internal fun ImageViewer(
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
-                key = { images[it].url },
+                key = { page -> "$page:${images[page].url}" },
             ) { page ->
                 val image = images[page]
                 val request = remember(platformContext, image.url, image.previewUrl) {

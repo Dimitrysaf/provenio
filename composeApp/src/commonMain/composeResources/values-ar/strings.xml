@@ -2069,6 +2069,7 @@
     <string name="update_failed_details_hide">إخفاء التفاصيل</string>
     <string name="entity_browse_country">البلد</string>
     <string name="entity_browse_type">النوع</string>
+    <string name="entity_browse_headquarters">المقر الرئيسي</string>
     <string name="entity_browse_catalogue">القائمة</string>
     <string name="entity_browse_about">حول</string>
     <string name="player_external_loading_subtitles">جارٍ تحميل الترجمات من الإضافات...</string>

@@ -40,7 +40,7 @@ internal fun DetailSectionSkeleton(
         when (key) {
             MetaScreenSectionKey.CAST -> CastSkeletonRow(horizontalScrollPadding)
             MetaScreenSectionKey.TRAILERS -> LandscapeCardSkeletonRow(horizontalScrollPadding)
-            MetaScreenSectionKey.PRODUCTION -> ProductionSkeletonRow(horizontalScrollPadding)
+            MetaScreenSectionKey.PRODUCTION -> ProductionSkeletonRow()
             MetaScreenSectionKey.COLLECTION,
             MetaScreenSectionKey.MORE_LIKE_THIS -> PosterSkeletonRow(horizontalScrollPadding)
             MetaScreenSectionKey.COMMENTS -> CommentSkeletonRow(horizontalScrollPadding)
@@ -118,11 +118,10 @@ private fun LandscapeCardSkeletonRow(horizontalScrollPadding: Dp) {
 }
 
 @Composable
-private fun ProductionSkeletonRow(horizontalScrollPadding: Dp) {
-    val itemWidth = 120.dp
-    SkeletonRow(horizontalScrollPadding = horizontalScrollPadding, spacing = 12.dp, itemWidth = itemWidth) { count ->
-        repeat(count) {
-            SkeletonBlock(width = itemWidth, height = 64.dp, cornerRadius = 12.dp)
+private fun ProductionSkeletonRow() {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf(132.dp, 108.dp, 120.dp).forEach { width ->
+            SkeletonBlock(width = width, height = 32.dp, cornerRadius = 8.dp)
         }
     }
 }

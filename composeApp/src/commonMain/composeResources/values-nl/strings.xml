@@ -2192,6 +2192,7 @@
     <string name="update_failed_details_hide">Details verbergen</string>
     <string name="entity_browse_country">Land</string>
     <string name="entity_browse_type">Type</string>
+    <string name="entity_browse_headquarters">Hoofdkantoor</string>
     <string name="entity_browse_catalogue">Catalogus</string>
     <string name="entity_browse_about">Over</string>
     <string name="player_external_loading_subtitles">Ondertitels van add-ons laden...</string>

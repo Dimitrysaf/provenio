@@ -1,64 +1,56 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
-import io.github.dimitrysaf.provenio.shell.components.WithTooltip
-import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.rounded.LocationCity
+import androidx.compose.material.icons.rounded.Movie
+import androidx.compose.material.icons.rounded.Public
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import io.github.dimitrysaf.provenio.shell.components.ScreenScaffold
+import io.github.dimitrysaf.provenio.shell.components.SkeletonBlock
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeSkeletonRow
-import io.github.dimitrysaf.provenio.shell.components.skeleton
+import io.github.dimitrysaf.provenio.shell.screens.details.components.CompanyLogo
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPosterRailSection
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbEntityBrowseData
+import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbEntityHeader
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbEntityKind
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbEntityMediaType
+import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbEntityRail
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbEntityRailType
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbMetadataService
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedRepository
@@ -70,8 +62,8 @@ private sealed interface EntityBrowseUiState {
     data class Success(val data: TmdbEntityBrowseData) : EntityBrowseUiState
 }
 
-private val ENTITY_BROWSE_WIDE_LAYOUT_MIN_WIDTH = 900.dp
-private val ENTITY_BROWSE_WIDE_SIDEBAR_WIDTH = 392.dp
+private val EntityHeaderWideMinWidth = 600.dp
+private val EntityHorizontalPadding = 16.dp
 
 @Composable
 fun TmdbEntityBrowseScreen(
@@ -83,6 +75,7 @@ fun TmdbEntityBrowseScreen(
     onOpenMeta: (MetaPreview) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var attempt by remember(entityKind, entityId) { mutableIntStateOf(0) }
     var uiState by remember(entityKind, entityId) {
         mutableStateOf<EntityBrowseUiState>(EntityBrowseUiState.Loading)
     }
@@ -93,7 +86,7 @@ fun TmdbEntityBrowseScreen(
     val fullyWatchedSeriesKeys by WatchedRepository.fullyWatchedSeriesKeys.collectAsStateWithLifecycle()
     val loadFailedMessage = stringResource(Res.string.details_browse_load_failed, entityName)
 
-    LaunchedEffect(entityKind, entityId) {
+    LaunchedEffect(entityKind, entityId, attempt) {
         uiState = EntityBrowseUiState.Loading
         val data = TmdbMetadataService.fetchEntityBrowse(
             entityKind = entityKind,
@@ -108,343 +101,134 @@ fun TmdbEntityBrowseScreen(
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Crossfade(
-            targetState = uiState,
-            label = "EntityBrowseCrossfade",
-        ) { state ->
-            when (state) {
-                is EntityBrowseUiState.Loading -> EntityBrowseSkeleton()
-                is EntityBrowseUiState.Error -> EntityBrowseError(
+    val state = uiState
+    val title = (state as? EntityBrowseUiState.Success)?.data?.header?.name ?: entityName
+    ScreenScaffold(
+        modifier = modifier,
+        title = title,
+        subtitle = entityKindLabel(entityKind),
+        onBack = onBack.takeUnless { LocalUseNativeNavigation.current },
+        horizontalPadding = 0.dp,
+    ) {
+        when (state) {
+            is EntityBrowseUiState.Loading -> entityBrowseSkeleton()
+            is EntityBrowseUiState.Error -> item(key = "error") {
+                EntityBrowseError(
                     message = state.message,
-                    onRetry = { uiState = EntityBrowseUiState.Loading },
-                )
-                is EntityBrowseUiState.Success -> EntityBrowseContent(
-                    data = state.data,
-                    sourceType = sourceType,
-                    watchedKeys = watchedUiState.watchedKeys,
-                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                    onOpenMeta = onOpenMeta,
+                    onRetry = { attempt++ },
                 )
             }
-        }
-
-        if (!LocalUseNativeNavigation.current) {
-            WithTooltip(
-                label = stringResource(Res.string.action_back),
-                modifier = Modifier
-                    .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(start = 4.dp, top = 4.dp)
-                    .align(Alignment.TopStart),
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = stringResource(Res.string.action_back),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun EntityBrowseContent(
-    data: TmdbEntityBrowseData,
-    sourceType: String,
-    watchedKeys: Set<String>,
-    fullyWatchedSeriesKeys: Set<String>,
-    onOpenMeta: (MetaPreview) -> Unit,
-) {
-    val backgroundUrl = remember(data.rails, sourceType) {
-        val preferredMediaType = if (sourceType.trim().equals("movie", ignoreCase = true)) {
-            TmdbEntityMediaType.MOVIE
-        } else {
-            TmdbEntityMediaType.TV
-        }
-        data.rails.firstOrNull { it.mediaType == preferredMediaType }
-            ?.items?.firstOrNull()?.poster
-            ?: data.rails.firstOrNull()?.items?.firstOrNull()?.poster
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (backgroundUrl != null) {
-            AsyncImage(
-                model = backgroundUrl,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-                alpha = 0.10f,
+            is EntityBrowseUiState.Success -> entityBrowseContent(
+                data = state.data,
+                watchedKeys = watchedUiState.watchedKeys,
+                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                onOpenMeta = onOpenMeta,
             )
         }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        0f to MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
-                        0.3f to MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
-                        1f to MaterialTheme.colorScheme.background,
-                    ),
-                ),
-        )
-
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val useWideLayout = maxWidth >= ENTITY_BROWSE_WIDE_LAYOUT_MIN_WIDTH
-            if (useWideLayout) {
-                WideEntityBrowseContent(
-                    data = data,
-                    watchedKeys = watchedKeys,
-                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                    onOpenMeta = onOpenMeta,
-                )
-            } else if (data.rails.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(Res.string.catalog_empty_title),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .windowInsetsPadding(WindowInsets.statusBars)
-                        .padding(top = 56.dp),
-                ) {
-                    EntityHeroSection(
-                        header = data.header,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                    )
-
-                    data.rails.forEach { rail ->
-                        DetailPosterRailSection(
-                            title = entityRailTitle(rail),
-                            items = rail.items,
-                            watchedKeys = watchedKeys,
-                            fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                            headerHorizontalPadding = 20.dp,
-                            onPosterClick = onOpenMeta,
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
-            }
-        }
     }
 }
 
-@Composable
-private fun WideEntityBrowseContent(
+private fun LazyListScope.entityBrowseContent(
     data: TmdbEntityBrowseData,
     watchedKeys: Set<String>,
     fullyWatchedSeriesKeys: Set<String>,
     onOpenMeta: (MetaPreview) -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(top = 34.dp),
-    ) {
-        EntityIdentitySidebar(
+    item(key = "header") {
+        EntityHeader(
             header = data.header,
             catalogueCount = data.rails.sumOf { it.items.size },
-            modifier = Modifier
-                .width(ENTITY_BROWSE_WIDE_SIDEBAR_WIDTH)
-                .fillMaxHeight(),
         )
-        Box(
-            modifier = Modifier
-                .width(1.dp)
-                .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.30f)),
-        )
-
-        if (data.rails.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .padding(start = 40.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(Res.string.catalog_empty_title),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .verticalScroll(rememberScrollState())
-                    .padding(start = 40.dp, bottom = 40.dp),
-                verticalArrangement = Arrangement.spacedBy(34.dp),
-            ) {
-                data.rails.forEach { rail ->
-                    DetailPosterRailSection(
-                        title = entityRailTitle(rail),
-                        items = rail.items,
-                        watchedKeys = watchedKeys,
-                        fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                        headerHorizontalPadding = 0.dp,
-                        onPosterClick = onOpenMeta,
-                    )
-                }
-            }
-        }
     }
-}
-
-@Composable
-private fun EntityIdentitySidebar(
-    header: io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbEntityHeader,
-    catalogueCount: Int,
-    modifier: Modifier = Modifier,
-) {
-    val accentColor = MaterialTheme.colorScheme.primary
-    Column(
-        modifier = modifier
-            .verticalScroll(rememberScrollState())
-            .padding(start = 40.dp, end = 36.dp, top = 40.dp, bottom = 42.dp),
-        verticalArrangement = Arrangement.spacedBy(22.dp),
-    ) {
-        Text(
-            text = when (header.kind) {
-                TmdbEntityKind.COMPANY -> stringResource(Res.string.details_browse_kind_company)
-                TmdbEntityKind.NETWORK -> stringResource(Res.string.details_browse_kind_network)
-            }.uppercase(),
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 1.6.sp,
-            ),
-            color = accentColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-
-        if (!header.logo.isNullOrBlank()) {
-            Box(
-                modifier = Modifier
-                    .width(184.dp)
-                    .height(104.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color.White)
-                    .padding(18.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                AsyncImage(
-                    model = header.logo,
-                    contentDescription = header.name,
-                    modifier = Modifier.matchParentSize(),
-                    contentScale = ContentScale.Fit,
-                )
-            }
-        } else {
-            Box(
-                modifier = Modifier.size(144.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .clip(RoundedCornerShape(28.dp))
-                        .background(accentColor.copy(alpha = 0.14f)),
-                )
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .border(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.40f),
-                            shape = RoundedCornerShape(24.dp),
-                        )
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = header.name.initials(),
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+    if (data.rails.isEmpty()) {
+        item(key = "empty") {
             Text(
-                text = header.name,
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-0.5).sp,
-                    lineHeight = 34.sp,
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-            )
-            val metaLine = listOfNotNull(
-                header.secondaryLabel?.takeIf { it.isNotBlank() },
-                header.originCountry?.takeIf { it.isNotBlank() },
-            ).joinToString(" · ")
-            if (metaLine.isNotBlank()) {
-                Text(
-                    text = metaLine,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(15.dp)) {
-            header.originCountry?.takeIf { it.isNotBlank() }?.let { country ->
-                EntitySidebarFact(label = stringResource(Res.string.entity_browse_country), value = country)
-            }
-            header.secondaryLabel?.takeIf { it.isNotBlank() }?.let { label ->
-                EntitySidebarFact(label = stringResource(Res.string.entity_browse_type), value = label)
-            }
-            if (catalogueCount > 0) {
-                EntitySidebarFact(
-                    label = stringResource(Res.string.entity_browse_catalogue),
-                    value = pluralStringResource(Res.plurals.entity_browse_title_count, catalogueCount, catalogueCount),
-                )
-            }
-        }
-
-        header.description?.takeIf { it.isNotBlank() }?.let { description ->
-            Box(
+                text = stringResource(Res.string.catalog_empty_title),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(1.dp)
-                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.30f)),
+                    .padding(horizontal = EntityHorizontalPadding, vertical = 32.dp),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                EntitySidebarLabel(text = stringResource(Res.string.entity_browse_about))
+        }
+        return
+    }
+    data.rails.forEach { rail ->
+        item(key = "rail-${rail.mediaType}-${rail.railType}") {
+            DetailPosterRailSection(
+                title = entityRailTitle(rail),
+                items = rail.items,
+                watchedKeys = watchedKeys,
+                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                headerHorizontalPadding = EntityHorizontalPadding,
+                onPosterClick = onOpenMeta,
+            )
+        }
+    }
+}
+
+@Composable
+private fun EntityHeader(
+    header: TmdbEntityHeader,
+    catalogueCount: Int,
+) {
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = EntityHorizontalPadding),
+    ) {
+        val logo: @Composable () -> Unit = { EntityLogo(header = header) }
+        val details: @Composable () -> Unit = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                EntityFacts(header = header, catalogueCount = catalogueCount)
+                header.description?.takeIf { it.isNotBlank() }?.let { description ->
+                    EntityAbout(description = description)
+                }
+            }
+        }
+        if (maxWidth >= EntityHeaderWideMinWidth) {
+            Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                logo()
+                Box(modifier = Modifier.weight(1f)) { details() }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                logo()
+                details()
+            }
+        }
+    }
+}
+
+@Composable
+private fun EntityLogo(header: TmdbEntityHeader) {
+    val logo = header.logo?.takeIf { it.isNotBlank() }
+    Surface(
+        shape = MaterialTheme.shapes.extraLarge,
+        color = if (logo != null) {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        } else {
+            MaterialTheme.colorScheme.primaryContainer
+        },
+    ) {
+        Box(
+            modifier = Modifier
+                .width(EntityLogoWidth)
+                .height(EntityLogoHeight)
+                .padding(20.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (logo != null) {
+                CompanyLogo(
+                    url = logo,
+                    contentDescription = header.name,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
                 Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 12,
-                    overflow = TextOverflow.Ellipsis,
+                    text = header.name.initials(),
+                    style = MaterialTheme.typography.headlineMedium,
+                    maxLines = 1,
                 )
             }
         }
@@ -452,38 +236,79 @@ private fun EntityIdentitySidebar(
 }
 
 @Composable
-private fun EntitySidebarFact(
+private fun EntityFacts(
+    header: TmdbEntityHeader,
+    catalogueCount: Int,
+) {
+    val facts = buildList {
+        header.originCountry?.takeIf { it.isNotBlank() }?.let { country ->
+            add(Triple(Icons.Rounded.Public, Res.string.entity_browse_country, country))
+        }
+        header.secondaryLabel?.takeIf { it.isNotBlank() }?.let { headquarters ->
+            add(Triple(Icons.Rounded.LocationCity, Res.string.entity_browse_headquarters, headquarters))
+        }
+    }
+    if (facts.isEmpty() && catalogueCount <= 0) return
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        facts.forEach { (icon, label, value) ->
+            EntityFact(icon = icon, label = stringResource(label), value = value)
+        }
+        if (catalogueCount > 0) {
+            EntityFact(
+                icon = Icons.Rounded.Movie,
+                label = stringResource(Res.string.entity_browse_catalogue),
+                value = pluralStringResource(Res.plurals.entity_browse_title_count, catalogueCount, catalogueCount),
+            )
+        }
+    }
+}
+
+@Composable
+private fun EntityFact(
+    icon: ImageVector,
     label: String,
     value: String,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        EntitySidebarLabel(text = label)
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
-private fun EntitySidebarLabel(text: String) {
-    Text(
-        text = text.uppercase(),
-        style = MaterialTheme.typography.labelSmall.copy(
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.0.sp,
-        ),
-        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.70f),
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
+    ListItem(
+        headlineContent = {
+            Text(
+                text = value,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        overlineContent = { Text(label) },
+        leadingContent = { Icon(imageVector = icon, contentDescription = null) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
     )
 }
 
 @Composable
-private fun entityRailTitle(rail: io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbEntityRail): String {
+private fun EntityAbout(description: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(Res.string.entity_browse_about),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 8,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun entityKindLabel(kind: TmdbEntityKind): String = when (kind) {
+    TmdbEntityKind.COMPANY -> stringResource(Res.string.details_browse_kind_company)
+    TmdbEntityKind.NETWORK -> stringResource(Res.string.details_browse_kind_network)
+}
+
+@Composable
+private fun entityRailTitle(rail: TmdbEntityRail): String {
     val mediaLabel = when (rail.mediaType) {
         TmdbEntityMediaType.MOVIE -> stringResource(Res.string.media_movies)
         TmdbEntityMediaType.TV -> stringResource(Res.string.media_series)
@@ -496,125 +321,18 @@ private fun entityRailTitle(rail: io.github.dimitrysaf.provenio.core.metadata.tm
     return stringResource(Res.string.details_browse_rail_title, mediaLabel, railLabel)
 }
 
-@Composable
-private fun EntityHeroSection(
-    header: io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbEntityHeader,
-    modifier: Modifier = Modifier,
-) {
-    val hasLogo = !header.logo.isNullOrBlank()
-
-    Column(modifier = modifier.padding(horizontal = 20.dp)) {
-        Text(
-            text = when (header.kind) {
-                TmdbEntityKind.COMPANY -> stringResource(Res.string.details_browse_kind_company)
-                TmdbEntityKind.NETWORK -> stringResource(Res.string.details_browse_kind_network)
-            },
-            style = MaterialTheme.typography.labelLarge.copy(
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 0.4.sp,
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (hasLogo) {
-            Box(
-                modifier = Modifier
-                    .height(60.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                AsyncImage(
-                    model = header.logo,
-                    contentDescription = header.name,
-                    modifier = Modifier.height(44.dp),
-                    contentScale = ContentScale.Fit,
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
-        Text(
-            text = header.name,
-            style = MaterialTheme.typography.headlineLarge.copy(
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = (-0.5).sp,
-            ),
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-
-        val metaLine = listOfNotNull(
-            header.originCountry?.takeIf { it.isNotBlank() },
-            header.secondaryLabel?.takeIf { it.isNotBlank() },
-        ).joinToString(" • ")
-        if (metaLine.isNotBlank()) {
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = metaLine,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        header.description?.takeIf { it.isNotBlank() }?.let { description ->
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis,
-            )
+private fun LazyListScope.entityBrowseSkeleton() {
+    item(key = "header-skeleton") {
+        Column(
+            modifier = Modifier.padding(horizontal = EntityHorizontalPadding),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            SkeletonBlock(width = EntityLogoWidth, height = EntityLogoHeight, cornerRadius = 28.dp)
+            SkeletonBlock(modifier = Modifier.fillMaxWidth(), height = 128.dp, cornerRadius = 12.dp)
         }
     }
-}
-
-@Composable
-private fun EntityBrowseSkeleton() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(top = 56.dp),
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-            Box(
-                modifier = Modifier
-                    .width(120.dp)
-                    .height(14.dp)
-                    .skeleton(RoundedCornerShape(4.dp)),
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Box(
-                modifier = Modifier
-                    .width(200.dp)
-                    .height(28.dp)
-                    .skeleton(RoundedCornerShape(6.dp)),
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            Box(
-                modifier = Modifier
-                    .width(140.dp)
-                    .height(14.dp)
-                    .skeleton(RoundedCornerShape(4.dp)),
-            )
-        }
-
-        Spacer(modifier = Modifier.height(28.dp))
-
-        repeat(3) {
-            HomeSkeletonRow(
-                modifier = Modifier.padding(bottom = 20.dp),
-                horizontalPadding = 20.dp,
-            )
-        }
+    items(3) {
+        HomeSkeletonRow(horizontalPadding = EntityHorizontalPadding)
     }
 }
 
@@ -623,31 +341,26 @@ private fun EntityBrowseError(
     message: String,
     onRetry: () -> Unit,
 ) {
-    Box(
+    Column(
         modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.Center,
+            .fillMaxWidth()
+            .padding(horizontal = EntityHorizontalPadding, vertical = 48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = onRetry,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                ),
-            ) {
-                Text(stringResource(Res.string.action_retry))
-            }
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FilledTonalButton(onClick = onRetry) {
+            Text(stringResource(Res.string.action_retry))
         }
     }
 }
+
+private val EntityLogoWidth = 200.dp
+private val EntityLogoHeight = 112.dp
 
 private fun String.initials(): String {
     val parts = trim()

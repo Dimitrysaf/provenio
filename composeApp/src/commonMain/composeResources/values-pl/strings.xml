@@ -1932,6 +1932,7 @@
     <string name="update_failed_details_hide">Ukryj szczegóły</string>
     <string name="entity_browse_country">Kraj</string>
     <string name="entity_browse_type">Typ</string>
+    <string name="entity_browse_headquarters">Siedziba</string>
     <string name="entity_browse_catalogue">Katalog</string>
     <string name="entity_browse_about">O</string>
     <string name="player_external_loading_subtitles">Ładowanie napisów z dodatków...</string>

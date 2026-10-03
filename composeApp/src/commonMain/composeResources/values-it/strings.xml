@@ -1902,6 +1902,7 @@
   <string name="update_failed_details_hide">Nascondi dettagli</string>
   <string name="entity_browse_country">Paese</string>
   <string name="entity_browse_type">Tipo</string>
+  <string name="entity_browse_headquarters">Sede</string>
   <string name="entity_browse_catalogue">Catalogo</string>
   <string name="entity_browse_about">Informazioni</string>
   <string name="player_external_loading_subtitles">Caricamento sottotitoli dagli addon...</string>

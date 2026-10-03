@@ -723,6 +723,7 @@
     <string name="person_detail_biography">ביוגרפיה</string>
     <string name="entity_browse_country">מדינה</string>
     <string name="entity_browse_type">סוג</string>
+    <string name="entity_browse_headquarters">מטה</string>
     <string name="entity_browse_catalogue">קטלוג</string>
     <string name="entity_browse_about">אודות</string>
 </resources>

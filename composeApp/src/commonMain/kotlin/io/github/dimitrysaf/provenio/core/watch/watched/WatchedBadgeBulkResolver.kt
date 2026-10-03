@@ -16,15 +16,45 @@ import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressEntry
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 private const val BADGE_RESOLUTION_CONCURRENCY = 2
 private const val AMBIGUOUS_MARKER = "__ambiguous__"
+private const val BADGE_META_CACHE_SIZE = 96
+private val BADGE_META_CACHE_TTL = 30.minutes
 
 private val log = Logger.withTag("WatchedBadgeBulk")
+
+private class BadgeMetaEntry(val meta: MetaDetails, val fetchedAt: TimeMark)
+
+private val badgeMetaCache = linkedMapOf<String, BadgeMetaEntry>()
+private val badgeMetaCacheLock = Mutex()
+
+private suspend fun cachedBadgeMeta(contentId: String): MetaDetails? = badgeMetaCacheLock.withLock {
+    val entry = badgeMetaCache[contentId] ?: return@withLock null
+    if (entry.fetchedAt.elapsedNow() > BADGE_META_CACHE_TTL) {
+        badgeMetaCache.remove(contentId)
+        null
+    } else {
+        entry.meta
+    }
+}
+
+private suspend fun rememberBadgeMeta(contentId: String, meta: MetaDetails) = badgeMetaCacheLock.withLock {
+    badgeMetaCache.remove(contentId)
+    badgeMetaCache[contentId] = BadgeMetaEntry(meta, TimeSource.Monotonic.markNow())
+    while (badgeMetaCache.size > BADGE_META_CACHE_SIZE) {
+        badgeMetaCache.remove(badgeMetaCache.keys.first())
+    }
+}
 
 suspend fun resolveWatchedBadgesBulk(
     watchedItems: List<WatchedItem>,
@@ -59,7 +89,9 @@ suspend fun resolveWatchedBadgesBulk(
     for (contentId in touchedSeriesIds) {
         semaphore.withPermit {
             val meta = try {
-                MetaDetailsRepository.fetch(type = "series", id = contentId, cacheResult = false)
+                cachedBadgeMeta(contentId)
+                    ?: MetaDetailsRepository.fetch(type = "series", id = contentId, cacheResult = false)
+                        ?.also { rememberBadgeMeta(contentId, it) }
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Throwable) {

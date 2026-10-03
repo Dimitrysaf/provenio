@@ -58,6 +58,7 @@ import io.github.dimitrysaf.provenio.shell.components.DisintegrationRequest
 import io.github.dimitrysaf.provenio.core.collection.CollectionRepository
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeCollectionRowSection
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import io.github.dimitrysaf.provenio.shell.screens.home.components.continueWatchingHeroViewportReserveHeight
@@ -201,6 +202,7 @@ fun HomeScreen(
         if (!active) return@ScreenActivityEffect
         val inputs = Triple(watchedUiState, watchProgressUiState.entries, CurrentDateProvider.todayIsoDate())
         if (resolvedBadgeInputs.value == inputs) return@ScreenActivityEffect
+        delay(BadgeResolutionSettleMillis)
         if (
             resolveWatchedBadgesBulk(
                 watchedItems = watchedUiState.items,
@@ -439,6 +441,7 @@ private fun HomeNoRowsState(
 }
 
 private const val HOME_CATALOG_PREVIEW_LIMIT = 18
+private const val BadgeResolutionSettleMillis = 1_500L
 
 internal const val HOME_CONTINUE_WATCHING_SECTION_KEY = "home_continue_watching"
 

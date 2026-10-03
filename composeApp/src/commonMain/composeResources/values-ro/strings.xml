@@ -1887,6 +1887,7 @@
     <string name="update_failed_details_hide">Ascunde detaliile</string>
     <string name="entity_browse_country">Țară</string>
     <string name="entity_browse_type">Tip</string>
+    <string name="entity_browse_headquarters">Sediu</string>
     <string name="entity_browse_catalogue">Catalog</string>
     <string name="entity_browse_about">Despre</string>
     <string name="player_external_loading_subtitles">Se încarcă subtitrările din extensii...</string>

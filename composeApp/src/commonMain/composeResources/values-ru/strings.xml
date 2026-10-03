@@ -2177,6 +2177,7 @@
     <string name="update_failed_details_hide">Скрыть подробности</string>
     <string name="entity_browse_country">Страна</string>
     <string name="entity_browse_type">Тип</string>
+    <string name="entity_browse_headquarters">Штаб-квартира</string>
     <string name="entity_browse_catalogue">Каталог</string>
     <string name="entity_browse_about">О</string>
     <string name="player_external_loading_subtitles">Загрузка субтитров из аддонов...</string>

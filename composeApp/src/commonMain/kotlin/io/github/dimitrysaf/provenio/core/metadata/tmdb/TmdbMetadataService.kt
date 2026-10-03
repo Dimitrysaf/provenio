@@ -11,6 +11,7 @@ import io.github.dimitrysaf.provenio.core.metadata.MoreLikeThisSource
 import io.github.dimitrysaf.provenio.core.metadata.PersonDetail
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.home.PosterShape
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -43,6 +44,7 @@ object TmdbMetadataService {
     private val backdropCache = linkedMapOf<String, String?>()
     private val backdropCacheMutex = Mutex()
     private val backdropRequests = Semaphore(4)
+    private val tmdbRequests = Semaphore(MaxConcurrentTmdbRequests)
 
     suspend fun fetchLocalizedBackdrop(id: String, type: String, language: String): String? =
         withContext(Dispatchers.Default) {
@@ -1225,8 +1227,9 @@ object TmdbMetadataService {
         val apiKey = TmdbApiKey.current().takeIf(String::isNotBlank) ?: return null
         val url = buildTmdbUrl(endpoint = endpoint, apiKey = apiKey, query = query)
         return runCatching {
-            json.decodeFromString<T>(httpGetText(url))
+            json.decodeFromString<T>(tmdbRequests.withPermit { httpGetText(url) })
         }.onFailure { error ->
+            if (error is CancellationException) throw error
             log.w { "TMDB request failed for $endpoint: ${error.message}" }
         }.getOrNull()
     }
@@ -1345,7 +1348,7 @@ object TmdbMetadataService {
             val seasonCount = (details?.numberOfSeasons ?: 0).coerceAtLeast(0)
             if (seasonCount > 0) {
                 val seasonVideos = coroutineScope {
-                    (1..seasonCount).map { seasonNumber ->
+                    (maxOf(1, seasonCount - MaxTrailerSeasons + 1)..seasonCount).map { seasonNumber ->
                         async {
                             seasonNumber to fetchTmdbVideos(
                                 endpoint = "tv/$tmdbId/season/$seasonNumber/videos",
@@ -2299,3 +2302,6 @@ internal data class TmdbDiscoverResult(
     @SerialName("vote_average") val voteAverage: Double? = null,
     @SerialName("vote_count") val voteCount: Int? = null,
 )
+
+private const val MaxConcurrentTmdbRequests = 6
+private const val MaxTrailerSeasons = 10

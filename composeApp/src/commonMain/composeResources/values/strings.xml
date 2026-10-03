@@ -2509,6 +2509,7 @@
     <string name="update_failed_details_hide">Hide details</string>
     <string name="entity_browse_country">Country</string>
     <string name="entity_browse_type">Type</string>
+    <string name="entity_browse_headquarters">Headquarters</string>
     <string name="entity_browse_catalogue">Catalogue</string>
     <string name="entity_browse_about">About</string>
     <string name="player_external_loading_subtitles">Loading subtitles from addons…</string>

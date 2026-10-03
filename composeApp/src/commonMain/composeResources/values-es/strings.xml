@@ -2149,6 +2149,7 @@ Utilizas esta función bajo tu propia responsabilidad. P2P se puede desactivar e
     <string name="update_failed_details_hide">Ocultar detalles</string>
     <string name="entity_browse_country">País</string>
     <string name="entity_browse_type">Tipo</string>
+    <string name="entity_browse_headquarters">Sede</string>
     <string name="entity_browse_catalogue">Catálogo</string>
     <string name="entity_browse_about">Acerca de</string>
     <string name="player_external_loading_subtitles">Cargando subtítulos de los complementos...</string>

@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.core.playback
 import co.touchlab.kermit.Logger
 import io.github.dimitrysaf.provenio.core.addons.httpRequestRaw
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbService
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
@@ -67,6 +68,7 @@ internal object ParentalGuideRepository {
             val categories = body.parentsGuide
             if (categories.isEmpty()) null else mapParentalGuideCategoriesToResult(categories)
         }.onFailure { error ->
+            if (error is CancellationException) throw error
             log.w(error) { "Failed to fetch parental guide for $normalizedImdbId" }
         }.getOrNull()
 

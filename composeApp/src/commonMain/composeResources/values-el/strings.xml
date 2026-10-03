@@ -1834,6 +1834,7 @@
     <string name="entity_browse_catalogue">Κατάλογος</string>
     <string name="entity_browse_country">Χώρα</string>
     <string name="entity_browse_type">Τύπος</string>
+    <string name="entity_browse_headquarters">Έδρα</string>
     <string name="episode_mark_previous_seasons_watched">Σήμανση προηγούμενων σεζόν ως προβληθέντων</string>
     <string name="external_player_android_system">Πρόγραμμα αναπαραγωγής συστήματος Android</string>
     <string name="external_player_failed">Δεν ήταν δυνατό το άνοιγμα του εξωτερικού προγράμματος αναπαραγωγής</string>

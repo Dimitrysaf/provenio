@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.core.metadata.tmdb
 
 import co.touchlab.kermit.Logger
 import io.github.dimitrysaf.provenio.core.addons.httpGetText
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
@@ -95,6 +96,7 @@ object TmdbService {
         return runCatching {
             json.decodeFromString<T>(httpGetText(url))
         }.onFailure { error ->
+            if (error is CancellationException) throw error
             log.w { "TMDB request failed for $endpoint: ${error.message}" }
         }.getOrNull()
     }
