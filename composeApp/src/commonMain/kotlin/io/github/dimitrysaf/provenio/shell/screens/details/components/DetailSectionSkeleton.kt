@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -153,7 +154,22 @@ private fun PosterSkeletonRow(horizontalScrollPadding: Dp) {
 
 @Composable
 private fun InfoRowsSkeleton() {
-    SkeletonBlock(modifier = Modifier.fillMaxWidth(), height = 148.dp, cornerRadius = 16.dp)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        listOf(0.36f, 0.24f, 0.18f, 0.3f).forEachIndexed { index, valueFraction ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                SkeletonBlock(modifier = Modifier.fillMaxWidth(0.28f), height = 14.dp)
+                SkeletonBlock(modifier = Modifier.fillMaxWidth(valueFraction / 0.72f), height = 14.dp)
+            }
+            if (index < 3) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            }
+        }
+    }
 }
 
 @Composable
