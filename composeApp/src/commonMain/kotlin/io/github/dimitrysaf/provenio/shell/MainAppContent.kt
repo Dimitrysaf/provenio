@@ -84,6 +84,8 @@ import io.github.dimitrysaf.provenio.shell.components.AppKeyboardShortcuts
 import io.github.dimitrysaf.provenio.shell.components.AppShortcutAction
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -153,14 +155,14 @@ internal fun MainAppContent(
         var requestedSettingsPageName by rememberSaveable { mutableStateOf<String?>(null) }
         val libraryListPicker = rememberLibraryListPickerState()
         var pendingTrackingRemoval by remember { mutableStateOf<PendingTrackingMembershipRemoval?>(null) }
-        val addonsUiState by remember {
+        val addons by remember {
             AddonRepository.initialize()
-            AddonRepository.uiState
-        }.collectAsStateWithLifecycle()
-        val libraryUiState by remember {
+            AddonRepository.uiState.map { it.addons }.distinctUntilChanged()
+        }.collectAsStateWithLifecycle(AddonRepository.uiState.value.addons)
+        val librarySourceMode by remember {
             LibraryRepository.ensureLoaded()
-            LibraryRepository.uiState
-        }.collectAsStateWithLifecycle()
+            LibraryRepository.uiState.map { it.sourceMode }.distinctUntilChanged()
+        }.collectAsStateWithLifecycle(LibraryRepository.uiState.value.sourceMode)
         val authState by AuthRepository.state.collectAsStateWithLifecycle()
         val openPosterActions: (PosterActionTarget) -> Unit = { target ->
             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -185,20 +187,20 @@ internal fun MainAppContent(
         P2pSettingsRepository.ensureLoaded()
         P2pSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
-    val watchedUiState by remember {
+    val watchedKeys by remember {
         WatchedRepository.ensureLoaded()
-        WatchedRepository.uiState
-    }.collectAsStateWithLifecycle()
+        WatchedRepository.uiState.map { it.watchedKeys }.distinctUntilChanged()
+    }.collectAsStateWithLifecycle(WatchedRepository.uiState.value.watchedKeys)
     val fullyWatchedSeriesKeys by WatchedRepository.fullyWatchedSeriesKeys.collectAsStateWithLifecycle()
-    val downloadsUiState by remember {
+    val completedDownloads by remember {
         DownloadsRepository.ensureLoaded()
-        DownloadsRepository.uiState
-    }.collectAsStateWithLifecycle()
-    val networkStatusUiState by remember {
-        NetworkStatusRepository.uiState
-    }.collectAsStateWithLifecycle()
+        DownloadsRepository.uiState.map { it.completedItems }.distinctUntilChanged()
+    }.collectAsStateWithLifecycle(DownloadsRepository.uiState.value.completedItems)
+    val networkCondition by remember {
+        NetworkStatusRepository.uiState.map { it.condition }.distinctUntilChanged()
+    }.collectAsStateWithLifecycle(NetworkStatusRepository.uiState.value.condition)
     val titles = appPageTitles()
-    val isRemoteLibrarySource = libraryUiState.sourceMode != LibrarySourceMode.LOCAL
+    val isRemoteLibrarySource = librarySourceMode != LibrarySourceMode.LOCAL
     val appContentGeneration = if (ownsAppRuntime && appGateController != null) {
         val generation by appGateController.contentGeneration.collectAsStateWithLifecycle()
         generation
@@ -209,13 +211,13 @@ internal fun MainAppContent(
         mutableStateOf(!ownsAppRuntime)
     }
     var offlineLaunchRouteHandled by rememberSaveable { mutableStateOf(false) }
-    val homeCatalogRefreshKey = remember(addonsUiState.addons) {
-        buildAddonCatalogRefreshSignature(addonsUiState.addons)
+    val homeCatalogRefreshKey = remember(addons) {
+        buildAddonCatalogRefreshSignature(addons)
     }
 
     LaunchedEffect(appContentGeneration, homeCatalogRefreshKey) {
         if (!ownsAppRuntime) return@LaunchedEffect
-        val enabledAddons = addonsUiState.addons.enabledAddons()
+        val enabledAddons = addons.enabledAddons()
         if (enabledAddons.isWaitingForFirstEnabledManifest()) return@LaunchedEffect
         HomeCatalogSettingsRepository.syncCatalogs(enabledAddons)
         HomeRepository.refresh(enabledAddons)
@@ -304,11 +306,11 @@ internal fun MainAppContent(
         initialHomeReady = true
     }
 
-    NetworkToastEffect(ownsAppRuntime, networkStatusUiState.condition)
+    NetworkToastEffect(ownsAppRuntime, networkCondition)
 
     WatchSourceReconnectEffect(
         enabled = ownsAppRuntime,
-        condition = networkStatusUiState.condition,
+        condition = networkCondition,
         authState = authState,
         activeProfileIndex = profileState.activeProfile?.profileIndex,
     )
@@ -316,13 +318,13 @@ internal fun MainAppContent(
     LaunchedEffect(
         initialHomeReady,
         offlineLaunchRouteHandled,
-        networkStatusUiState.condition,
-        downloadsUiState.completedItems,
+        networkCondition,
+        completedDownloads,
     ) {
         if (!ownsAppRuntime) return@LaunchedEffect
         if (!initialHomeReady || offlineLaunchRouteHandled) return@LaunchedEffect
 
-        when (networkStatusUiState.condition) {
+        when (networkCondition) {
             NetworkCondition.Unknown,
             NetworkCondition.Checking,
             -> return@LaunchedEffect
@@ -335,7 +337,7 @@ internal fun MainAppContent(
             NetworkCondition.ServersUnreachable,
             -> {
                 offlineLaunchRouteHandled = true
-                val hasPlayableDownload = downloadsUiState.completedItems.any {
+                val hasPlayableDownload = completedDownloads.any {
                     DownloadsRepository.playableLocalFileUri(it) != null
                 }
                 if (hasPlayableDownload) {
@@ -426,7 +428,7 @@ internal fun MainAppContent(
             )
         }
 
-        val librarySectionSubtitle = when (libraryUiState.sourceMode) {
+        val librarySectionSubtitle = when (librarySourceMode) {
             LibrarySourceMode.LOCAL -> stringResource(Res.string.compose_catalog_subtitle_library)
             LibrarySourceMode.TRAKT -> stringResource(Res.string.compose_catalog_subtitle_trakt_library)
             LibrarySourceMode.SIMKL -> stringResource(Res.string.compose_catalog_subtitle_simkl_library)
@@ -621,7 +623,7 @@ internal fun MainAppContent(
                 key(posterActionTarget) {
                     PosterActionsSheet(
                         target = posterActionTarget,
-                        watchedKeys = watchedUiState.watchedKeys,
+                        watchedKeys = watchedKeys,
                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                         isRemoteLibrarySource = isRemoteLibrarySource,
                         scope = coroutineScope,
