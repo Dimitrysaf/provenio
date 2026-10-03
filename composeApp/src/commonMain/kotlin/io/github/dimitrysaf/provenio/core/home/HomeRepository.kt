@@ -13,17 +13,23 @@ import io.github.dimitrysaf.provenio.core.collection.catalogRouteKey
 import io.github.dimitrysaf.provenio.core.collection.findCollectionCatalog
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktPublicListSourceResolver
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 
@@ -85,39 +91,29 @@ object HomeRepository {
                 putAll(cachedSections)
             }
             var firstErrorMessage: String? = null
-            var batchIndex = 0
+            val permits = Semaphore(HOME_CATALOG_FETCH_CONCURRENCY)
+            val publishLock = Mutex()
 
-            prioritizedRequests.chunked(HOME_CATALOG_FETCH_BATCH_SIZE).forEach { batch ->
-                if (activeRequestKey != requestKey) return@launch
-                val results = batch.map { request ->
-                    async {
-                        request to runCatching {
-                            request.toSection(forceRefresh = force)
+            coroutineScope {
+                prioritizedRequests.forEach { request ->
+                    launch {
+                        val result = permits.withPermit {
+                            runCatching { request.toSection(forceRefresh = force) }
+                        }
+                        result.exceptionOrNull()?.let { if (it is CancellationException) throw it }
+                        if (activeRequestKey != requestKey) return@launch
+                        publishLock.withLock {
+                            result.getOrNull()?.let { section -> loadedSections[request.cacheKey] = section }
+                            if (firstErrorMessage == null) firstErrorMessage = result.exceptionOrNull()?.message
+                            cachedSections = loadedSections.toMap()
+                            lastErrorMessage = firstErrorMessage
+                            publishCurrentState(
+                                isLoading = true,
+                                requestKey = requestKey,
+                            )
                         }
                     }
-                }.awaitAll()
-
-                if (activeRequestKey != requestKey) return@launch
-
-                results.mapNotNull { (request, result) ->
-                    result.getOrNull()?.let { section -> request.cacheKey to section }
-                }.forEach { (cacheKey, section) ->
-                    loadedSections[cacheKey] = section
                 }
-                if (firstErrorMessage == null) {
-                    firstErrorMessage = results.firstNotNullOfOrNull { (_, result) ->
-                        result.exceptionOrNull()?.message
-                    }
-                }
-                cachedSections = loadedSections.toMap()
-                lastErrorMessage = firstErrorMessage
-                if (batchIndex == 0 || (batchIndex + 1) % HOME_CATALOG_PUBLISH_INTERVAL == 0) {
-                    publishCurrentState(
-                        isLoading = true,
-                        requestKey = requestKey,
-                    )
-                }
-                batchIndex++
             }
 
             if (activeRequestKey != requestKey) return@launch
@@ -430,11 +426,10 @@ private const val HOME_COLLECTION_HERO_SOURCE_LIMIT = 6
 
 private const val HOME_COLLECTION_HERO_SOURCE_ITEM_LIMIT = 8
 
-private const val HOME_CATALOG_FETCH_BATCH_SIZE = 4
+private const val HOME_CATALOG_FETCH_CONCURRENCY = 4
 
 private const val HOME_CATALOG_PREVIEW_FETCH_LIMIT = 18
 
-private const val HOME_CATALOG_PUBLISH_INTERVAL = 2
 
 private fun prioritizeDefinitions(
     definitions: List<HomeCatalogDefinition>,

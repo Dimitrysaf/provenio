@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import androidx.compose.foundation.lazy.rememberLazyListState
+import io.github.dimitrysaf.provenio.shell.components.horizontalWheelScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -135,10 +137,13 @@ fun DetailTrailersSection(
 
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val sizing = trailerSectionSizing(maxWidth.value)
+            val trailerRowState = rememberLazyListState()
             LazyRow(
                 modifier = Modifier
                     .horizontalScrollBleed(horizontalScrollPadding)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .horizontalWheelScroll(trailerRowState),
+                state = trailerRowState,
                 contentPadding = PaddingValues(horizontal = horizontalScrollPadding),
                 horizontalArrangement = Arrangement.spacedBy(sizing.cardSpacing),
             ) {

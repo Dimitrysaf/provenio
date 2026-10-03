@@ -147,6 +147,11 @@ android {
                 debugSymbolLevel = "FULL"
             }
         }
+        create("beta") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+        }
     }
 
     compileOptions {
@@ -157,8 +162,10 @@ android {
 }
 
 androidComponents {
-    onVariants(selector().withBuildType("debug")) { variant ->
-        variant.applicationId.set("io.github.dimitrysaf.provenio.debug")
+    listOf("debug", "beta").forEach { buildType ->
+        onVariants(selector().withBuildType(buildType)) { variant ->
+            variant.applicationId.set("io.github.dimitrysaf.provenio.debug")
+        }
     }
 }
 

@@ -165,7 +165,7 @@ jobs:
       - name: Building app
         uses: ./.github/actions/build-app
         with:
-          build-type: ${{ inputs.channel == 'stable' && 'release' || 'debug' }}
+          build-type: ${{ inputs.channel == 'stable' && 'release' || 'beta' }}
           gradle-args: ${{ inputs.channel != 'stable' && '-Pprovenio.abiSplits=true --no-configuration-cache' || '' }}
           artifact-name: provenio-${{ inputs.channel || 'beta' }}
 

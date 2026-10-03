@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import io.github.dimitrysaf.provenio.shell.components.horizontalWheelPaging
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -180,7 +181,12 @@ private fun HomeHeroCarousel(
             state = carouselState,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(layout.heroHeight),
+                .height(layout.heroHeight)
+                .horizontalWheelPaging(
+                    key = carouselState,
+                    canStep = { forward -> if (forward) carouselState.canScrollForward else carouselState.canScrollBackward },
+                    step = { forward -> carouselState.animateScrollToItem(carouselState.currentItem + if (forward) 1 else -1) },
+                ),
             itemSpacing = layout.itemSpacing,
             minSmallItemWidth = minOf(HeroMinSmallItemWidth, layout.smallItemWidth),
             maxSmallItemWidth = layout.smallItemWidth,

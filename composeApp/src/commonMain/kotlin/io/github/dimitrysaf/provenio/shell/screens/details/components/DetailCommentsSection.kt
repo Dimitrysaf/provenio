@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.horizontalWheelScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -72,10 +73,13 @@ fun DetailCommentsSection(
 
         when {
             isLoading -> {
+                val skeletonRowState = rememberLazyListState()
                 LazyRow(
                     modifier = Modifier
                         .horizontalScrollBleed(horizontalScrollPadding)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .horizontalWheelScroll(skeletonRowState),
+                    state = skeletonRowState,
                     contentPadding = PaddingValues(horizontal = horizontalScrollPadding),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -110,7 +114,8 @@ fun DetailCommentsSection(
                 LazyRow(
                     modifier = Modifier
                         .horizontalScrollBleed(horizontalScrollPadding)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .horizontalWheelScroll(listState),
                     state = listState,
                     contentPadding = PaddingValues(horizontal = horizontalScrollPadding),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),

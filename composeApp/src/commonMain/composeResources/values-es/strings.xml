@@ -2155,7 +2155,7 @@ Utilizas esta función bajo tu propia responsabilidad. P2P se puede desactivar e
     <string name="player_external_loading_subtitles">Cargando subtítulos de los complementos...</string>
     <string name="player_external_downloading_subtitles">Descargando subtítulos...</string>
     <plurals name="entity_browse_title_count">
-        <item quantity="one">%d título</item>
-        <item quantity="other">%d títulos</item>
+        <item quantity="one">%1$d título</item>
+        <item quantity="other">%1$d títulos</item>
     </plurals>
 </resources>

@@ -1878,8 +1878,8 @@
     <string name="player_external_loading_subtitles">Feliratok betöltése a kiegészítőkből...</string>
     <string name="player_external_downloading_subtitles">Feliratok letöltése...</string>
     <plurals name="entity_browse_title_count">
-        <item quantity="one">%d cím</item>
-        <item quantity="other">%d cím</item>
+        <item quantity="one">%1$d cím</item>
+        <item quantity="other">%1$d cím</item>
     </plurals>
     <string name="settings_advanced_section_diagnostics">DIAGNOSZTIKA</string>
     <string name="settings_advanced_sentry_reports">Sentry összeomlási jelentések</string>

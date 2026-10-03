@@ -2201,7 +2201,7 @@
     <string name="player_external_loading_subtitles">Đang tải xuống phụ đề từ tiện ích...</string>
     <string name="player_external_downloading_subtitles">Đang tải xuống phụ đề...</string>
     <plurals name="entity_browse_title_count">
-        <item quantity="one">%d tiêu đề</item>
-        <item quantity="other">%d tiêu đề</item>
+        <item quantity="one">%1$d tiêu đề</item>
+        <item quantity="other">%1$d tiêu đề</item>
     </plurals>
 </resources>

@@ -66,7 +66,7 @@ fun <T> ShelfSection(
             )
         }
         LazyRow(
-            modifier = rowModifier,
+            modifier = rowModifier.horizontalWheelScroll(state),
             state = state,
             contentPadding = rowContentPadding,
             horizontalArrangement = Arrangement.spacedBy(itemSpacing),

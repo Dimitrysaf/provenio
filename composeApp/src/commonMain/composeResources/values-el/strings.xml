@@ -2431,8 +2431,8 @@
     <string name="updates_no_channel_release">Δεν έχει δημοσιευθεί ακόμα κάποια ενημέρωση.</string>
     <string name="updates_release_missing_title">Η έκδοση κυκλοφορίας δεν έχει ετικέτα ή όνομα</string>
     <plurals name="entity_browse_title_count">
-        <item quantity="one">%d τίτλος</item>
-        <item quantity="other">%d τίτλοι</item>
+        <item quantity="one">%1$d τίτλος</item>
+        <item quantity="other">%1$d τίτλοι</item>
     </plurals>
     <string name="torrent_details_title">Λεπτομέρειες torrent</string>
     <string name="local_sync_title">Συγχρονισμός συσκευών</string>

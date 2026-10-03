@@ -1,18 +1,18 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.format.formatReleaseDateForDisplay
@@ -90,54 +90,85 @@ internal fun DetailInfoRows(
     rows: List<Pair<String, String>>,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        rows.forEachIndexed { index, (label, value) ->
-            DetailInfoRow(
-                label = label,
-                value = value,
-                showDivider = index < rows.lastIndex,
-            )
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+    ) {
+        BoxWithConstraints(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+            val columns = if (maxWidth >= DetailInfoWideMinWidth) 3 else 2
+            val lines = remember(rows, columns) { detailInfoLines(rows, columns) }
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                lines.forEach { line ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        line.forEach { (label, value) ->
+                            DetailInfoCell(
+                                label = label,
+                                value = value,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        repeat(if (line.size == 1 && line.first().second.isLongInfoValue()) 0 else columns - line.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
         }
     }
 }
+
+private fun detailInfoLines(
+    rows: List<Pair<String, String>>,
+    columns: Int,
+): List<List<Pair<String, String>>> {
+    val lines = mutableListOf<List<Pair<String, String>>>()
+    var current = mutableListOf<Pair<String, String>>()
+    rows.forEach { row ->
+        if (row.second.isLongInfoValue()) {
+            if (current.isNotEmpty()) lines += current
+            lines += listOf(row)
+            current = mutableListOf()
+        } else {
+            current += row
+            if (current.size == columns) {
+                lines += current
+                current = mutableListOf()
+            }
+        }
+    }
+    if (current.isNotEmpty()) lines += current
+    return lines
+}
+
+private fun String.isLongInfoValue(): Boolean = length > LongInfoValueLength
 
 @Composable
-private fun DetailInfoRow(
+private fun DetailInfoCell(
     label: String,
     value: String,
-    showDivider: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(0.dp),
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = value,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 16.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.End,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-
-        if (showDivider) {
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
+
+private val DetailInfoWideMinWidth = 520.dp
+private const val LongInfoValueLength = 22

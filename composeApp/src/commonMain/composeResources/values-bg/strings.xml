@@ -2179,7 +2179,7 @@
     <string name="player_external_loading_subtitles">Зареждане на субтитри от добавки...</string>
     <string name="player_external_downloading_subtitles">Изтегляне на субтитри...</string>
     <plurals name="entity_browse_title_count">
-        <item quantity="one">%d заглавие</item>
-        <item quantity="other">%d заглавия</item>
+        <item quantity="one">%1$d заглавие</item>
+        <item quantity="other">%1$d заглавия</item>
     </plurals>
 </resources>

@@ -3,7 +3,7 @@ description: Builds the full APKs, names them for the updater and uploads them a
 
 inputs:
   build-type:
-    description: debug or release
+    description: debug, beta or release
     required: true
   gradle-args:
     description: Extra Gradle arguments

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
+import io.github.dimitrysaf.provenio.shell.components.horizontalScrollWithWheel
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material3.IconToggleButton
@@ -10,7 +11,6 @@ import androidx.compose.animation.Crossfade
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -663,7 +663,7 @@ private fun CloudLibraryToolbar(
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .horizontalScroll(rememberScrollState()),
+                    .horizontalScrollWithWheel(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 DropdownChip(

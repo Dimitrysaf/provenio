@@ -1928,7 +1928,7 @@
     <string name="player_external_loading_subtitles">Chargement des sous-titres depuis les addons…</string>
     <string name="player_external_downloading_subtitles">Téléchargement des sous-titres…</string>
     <plurals name="entity_browse_title_count">
-        <item quantity="one">%d titre</item>
-        <item quantity="other">%d titres</item>
+        <item quantity="one">%1$d titre</item>
+        <item quantity="other">%1$d titres</item>
     </plurals>
 </resources>

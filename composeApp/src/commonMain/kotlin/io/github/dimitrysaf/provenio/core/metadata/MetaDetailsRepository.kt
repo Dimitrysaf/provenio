@@ -140,7 +140,11 @@ object MetaDetailsRepository {
 
             for (manifest in manifests) {
                 val result = withContext(Dispatchers.Default) {
-                    tryFetchMeta(manifest, type, metaLookupId, includeMdbList = false)
+                    tryFetchMeta(manifest, type, metaLookupId, includeMdbList = false) { parsed ->
+                        if (activeRequestKey == requestKey && _uiState.value.meta == null) {
+                            _uiState.value = MetaDetailsUiState(isLoading = true, meta = parsed.withUnreleasedFilter())
+                        }
+                    }
                 }
                 if (result != null) {
                     publishLoadedMeta(
@@ -231,6 +235,7 @@ object MetaDetailsRepository {
         type: String,
         id: String,
         includeMdbList: Boolean,
+        onParsed: ((MetaDetails) -> Unit)? = null,
     ): MetaDetails? {
         val url = buildAddonResourceUrl(
             manifestUrl = manifest.transportUrl,
@@ -245,6 +250,7 @@ object MetaDetailsRepository {
             val payload = fetchAddonResponseText(url)
             log.d { "Raw payload length=${payload.length}, first 500 chars: ${payload.take(500)}" }
             val result = MetaDetailsParser.parse(payload)
+            onParsed?.invoke(result)
             val tmdbEnriched = withTimeoutOrNull(TMDB_ENRICH_TIMEOUT_MS) {
                 TmdbMetadataService.enrichMeta(
                     meta = result,

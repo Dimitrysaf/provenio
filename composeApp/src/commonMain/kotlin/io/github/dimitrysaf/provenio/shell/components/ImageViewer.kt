@@ -129,7 +129,13 @@ internal fun ImageViewer(
         ) {
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .horizontalWheelPaging(
+                        key = pagerState,
+                        canStep = { forward -> if (forward) pagerState.canScrollForward else pagerState.canScrollBackward },
+                        step = { forward -> pagerState.animateScrollToPage(pagerState.currentPage + if (forward) 1 else -1) },
+                    ),
                 key = { page -> "$page:${images[page].url}" },
             ) { page ->
                 val image = images[page]

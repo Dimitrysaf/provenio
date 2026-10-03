@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import androidx.compose.foundation.lazy.rememberLazyListState
+import io.github.dimitrysaf.provenio.shell.components.horizontalWheelScroll
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -76,10 +78,13 @@ fun DetailCastSection(
         BoxWithConstraints {
             val sizing = castSectionSizing(maxWidth.value)
 
+            val castRowState = rememberLazyListState()
             LazyRow(
                 modifier = Modifier
                     .horizontalScrollBleed(horizontalScrollPadding)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .horizontalWheelScroll(castRowState),
+                state = castRowState,
                 contentPadding = PaddingValues(horizontal = horizontalScrollPadding),
                 horizontalArrangement = Arrangement.spacedBy(sizing.avatarGap),
             ) {

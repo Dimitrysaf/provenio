@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import androidx.compose.foundation.lazy.rememberLazyListState
+import io.github.dimitrysaf.provenio.shell.components.horizontalWheelScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -411,7 +413,12 @@ internal fun StreamAutoPlayRegexDialog(
                     text = stringResource(Res.string.settings_playback_presets),
                     style = MaterialTheme.typography.titleSmall,
                 )
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val presetRowState = rememberLazyListState()
+                LazyRow(
+                    modifier = Modifier.horizontalWheelScroll(presetRowState),
+                    state = presetRowState,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     items(
                         count = presets.size,
                         key = { presets[it].first },

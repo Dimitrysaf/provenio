@@ -2515,8 +2515,8 @@
     <string name="player_external_loading_subtitles">Loading subtitles from addons…</string>
     <string name="player_external_downloading_subtitles">Downloading subtitles...</string>
     <plurals name="entity_browse_title_count">
-        <item quantity="one">%d title</item>
-        <item quantity="other">%d titles</item>
+        <item quantity="one">%1$d title</item>
+        <item quantity="other">%1$d titles</item>
     </plurals>
     <string name="torrent_details_title">Torrent details</string>
     <string name="local_sync_title">Device sync</string>

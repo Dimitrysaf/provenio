@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.horizontalWheelPaging
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -193,7 +194,12 @@ private fun DetailHeroPages(
                 state = carouselState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(layout.heroHeight),
+                    .height(layout.heroHeight)
+                    .horizontalWheelPaging(
+                        key = carouselState,
+                        canStep = { forward -> if (forward) carouselState.canScrollForward else carouselState.canScrollBackward },
+                        step = { forward -> carouselState.animateScrollToItem(carouselState.currentItem + if (forward) 1 else -1) },
+                    ),
                 itemSpacing = layout.itemSpacing,
                 minSmallItemWidth = minOf(HeroMinSmallItemWidth, layout.smallItemWidth),
                 maxSmallItemWidth = layout.smallItemWidth,

@@ -2200,8 +2200,8 @@
     <string name="player_external_loading_subtitles">Načítání titulků z doplňků...</string>
     <string name="player_external_downloading_subtitles">Stahování titulků...</string>
     <plurals name="entity_browse_title_count">
-        <item quantity="one">%d titul</item>
-        <item quantity="few">%d tituly</item>
-        <item quantity="other">%d titulů</item>
+        <item quantity="one">%1$d titul</item>
+        <item quantity="few">%1$d tituly</item>
+        <item quantity="other">%1$d titulů</item>
     </plurals>
 </resources>

@@ -2,7 +2,6 @@ package io.github.dimitrysaf.provenio.core.updater
 
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -43,7 +42,7 @@ object AndroidAppUpdaterPlatform {
 
     fun isDebugBuild(): Boolean {
         val context = appContext ?: return false
-        return context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+        return context.packageName.endsWith(BetaPackageSuffix)
     }
 
     fun getIgnoredTag(): String? =
@@ -187,6 +186,7 @@ object AndroidAppUpdaterPlatform {
     private const val PartialSuffix = ".part"
     private const val HttpPartialContent = 206
     private const val HttpRangeNotSatisfiable = 416
+    private const val BetaPackageSuffix = ".debug"
 
     private fun requireContext(): Context =
         requireNotNull(appContext) { "AndroidAppUpdaterPlatform.initialize must be called before use." }

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
+import io.github.dimitrysaf.provenio.shell.components.horizontalScrollWithWheel
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -31,7 +32,6 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -212,7 +212,7 @@ fun ProfileSelectionScreen(
                         ) {
                             Row(
                                 modifier = Modifier
-                                    .horizontalScroll(rememberScrollState())
+                                    .horizontalScrollWithWheel(rememberScrollState())
                                     .padding(horizontal = 4.dp),
                                 horizontalArrangement = Arrangement.spacedBy(32.dp),
                             ) {

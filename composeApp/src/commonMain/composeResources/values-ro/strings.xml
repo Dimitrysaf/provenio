@@ -1893,7 +1893,7 @@
     <string name="player_external_loading_subtitles">Se încarcă subtitrările din extensii...</string>
     <string name="player_external_downloading_subtitles">Se descarcă subtitrările...</string>
     <plurals name="entity_browse_title_count">
-        <item quantity="one">%d titlu</item>
-        <item quantity="other">%d titluri</item>
+        <item quantity="one">%1$d titlu</item>
+        <item quantity="other">%1$d titluri</item>
     </plurals>
 </resources>

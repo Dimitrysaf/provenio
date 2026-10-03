@@ -2102,7 +2102,7 @@ Bu özelliği tamamen kendi sorumluluğunuzda kullanırsınız. P2P istediğiniz
     <string name="player_external_loading_subtitles">Eklentilerden altyazılar yükleniyor...</string>
     <string name="player_external_downloading_subtitles">Altyazılar indiriliyor...</string>
     <plurals name="entity_browse_title_count">
-        <item quantity="one">%d başlık</item>
-        <item quantity="other">%d başlık</item>
+        <item quantity="one">%1$d başlık</item>
+        <item quantity="other">%1$d başlık</item>
     </plurals>
 </resources>

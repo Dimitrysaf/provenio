@@ -2198,7 +2198,7 @@
     <string name="player_external_loading_subtitles">Ondertitels van add-ons laden...</string>
     <string name="player_external_downloading_subtitles">Ondertitels downloaden...</string>
     <plurals name="entity_browse_title_count">
-        <item quantity="one">%d titel</item>
-        <item quantity="other">%d titels</item>
+        <item quantity="one">%1$d titel</item>
+        <item quantity="other">%1$d titels</item>
     </plurals>
 </resources>

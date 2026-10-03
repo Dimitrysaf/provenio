@@ -1938,10 +1938,10 @@
     <string name="player_external_loading_subtitles">Ładowanie napisów z dodatków...</string>
     <string name="player_external_downloading_subtitles">Pobieranie napisów...</string>
     <plurals name="entity_browse_title_count">
-        <item quantity="one">%d tytuł</item>
-        <item quantity="few">%d tytuły</item>
-        <item quantity="many">%d tytułów</item>
-        <item quantity="other">%d tytułów</item>
+        <item quantity="one">%1$d tytuł</item>
+        <item quantity="few">%1$d tytuły</item>
+        <item quantity="many">%1$d tytułów</item>
+        <item quantity="other">%1$d tytułów</item>
     </plurals>
 
     <string name="theme_gold">Złoto</string>
