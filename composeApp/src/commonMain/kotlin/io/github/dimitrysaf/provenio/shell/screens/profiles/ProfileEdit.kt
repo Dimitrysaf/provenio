@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.animation.core.animateIntAsState
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.background
@@ -567,16 +568,18 @@ private fun ProfileEditPaneHeader(
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        IconButton(
-            onClick = onClose,
-            colors = IconButtonDefaults.iconButtonColors(
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Close,
-                contentDescription = stringResource(Res.string.action_cancel),
-            )
+        WithTooltip(stringResource(Res.string.action_cancel)) {
+            IconButton(
+                onClick = onClose,
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Close,
+                    contentDescription = stringResource(Res.string.action_cancel),
+                )
+            }
         }
     }
 }
@@ -745,18 +748,21 @@ private fun ProfileIdentityPreview(
             )
             // The pencil sits on the avatar it edits, so what it changes needs no label, and no
             // container either: a filled button over the face would hide what it is pointing at.
-            IconButton(
-                onClick = onEditAvatar,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(AvatarEditBadgeSize),
+            WithTooltip(
+                label = stringResource(Res.string.profile_edit_avatar),
+                modifier = Modifier.align(Alignment.Center),
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Edit,
-                    contentDescription = stringResource(Res.string.profile_edit_avatar),
-                    tint = LetterTile.FontColor,
-                    modifier = Modifier.size(AvatarEditBadgeIconSize),
-                )
+                IconButton(
+                    onClick = onEditAvatar,
+                    modifier = Modifier.size(AvatarEditBadgeSize),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Edit,
+                        contentDescription = stringResource(Res.string.profile_edit_avatar),
+                        tint = LetterTile.FontColor,
+                        modifier = Modifier.size(AvatarEditBadgeIconSize),
+                    )
+                }
             }
         }
 

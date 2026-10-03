@@ -368,12 +368,14 @@
     <string name="compose_player_resize_fill">Preencher</string>
     <string name="compose_player_resize_fit">Ajustar</string>
     <string name="compose_player_resize_zoom">Zoom</string>
-    <string name="compose_player_seek_back_10">Recuar 10 segundos</string>
+    <string name="compose_player_seek_backward_seconds">Recuar %1$d segundos</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">Avançar 10 segundos</string>
+    <string name="compose_player_seek_forward_seconds">Avançar %1$d segundos</string>
+    <string name="compose_player_subtitle_delay_decrease">Diminuir atraso das legendas</string>
+    <string name="compose_player_subtitle_delay_increase">Aumentar atraso das legendas</string>
     <string name="compose_player_sources">Fontes</string>
     <string name="compose_player_style">Estilo</string>
     <string name="compose_player_select_addon_subtitle_first">Seleciona primeiro uma legenda de um addon</string>
@@ -806,6 +808,9 @@
     <string name="settings_playback_player_preference_external">Externo</string>
     <string name="settings_playback_player_preference_description">Escolhe que leitor deve tratar novas reproduções.</string>
     <string name="settings_playback_hold_speed">Velocidade ao manter premido</string>
+    <string name="settings_playback_seek_backward">Recuar</string>
+    <string name="settings_playback_seek_forward">Avançar</string>
+    <string name="settings_playback_seek_seconds_value">%1$d segundos</string>
     <string name="settings_playback_hold_to_speed">Manter premido para acelerar</string>
     <string name="settings_playback_hold_to_speed_description">Mantém premido em qualquer parte da superfície do leitor para aumentar temporariamente a velocidade de reprodução.</string>
     <string name="settings_playback_touch_gestures">Gestos táteis</string>

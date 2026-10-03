@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="288dp"
+            android:height="288dp"
+            android:viewportWidth="1080"
+            android:viewportHeight="1080">
+            <path
+                android:pathData="M395,466.5a144.5,144.5 0,1 0,289 0a144.5,144.5 0,1 0,-289 0"
+                android:strokeColor="#FFFFFFFF"
+                android:strokeWidth="84" />
+            <path
+                android:pathData="M518,418L518,516L598,466.5Z"
+                android:fillColor="#FFFFFFFF"
+                android:strokeColor="#FFFFFFFF"
+                android:strokeLineJoin="round"
+                android:strokeWidth="20" />
+            <group
+                android:name="stem"
+                android:pivotX="539.5"
+                android:pivotY="466.5">
+                <path
+                    android:pathData="M395,466.5L395,757"
+                    android:strokeColor="#FFFFFFFF"
+                    android:strokeLineCap="round"
+                    android:strokeWidth="84" />
+            </group>
+        </vector>
+    </aapt:attr>
+    <target android:name="stem">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="1400"
+                android:interpolator="@android:anim/linear_interpolator"
+                android:propertyName="rotation"
+                android:repeatCount="infinite"
+                android:valueFrom="0"
+                android:valueTo="360" />
+        </aapt:attr>
+    </target>
+</animated-vector>

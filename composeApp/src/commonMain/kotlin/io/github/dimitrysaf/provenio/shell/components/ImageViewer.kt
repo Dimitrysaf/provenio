@@ -189,14 +189,16 @@ private fun ImageViewerButton(
     contentDescription: String,
     onClick: () -> Unit,
 ) {
-    FilledTonalIconButton(
-        onClick = onClick,
-        colors = IconButtonDefaults.filledTonalIconButtonColors(
-            containerColor = Color.Black.copy(alpha = 0.55f),
-            contentColor = Color.White,
-        ),
-    ) {
-        Icon(imageVector = icon, contentDescription = contentDescription)
+    WithTooltip(contentDescription) {
+        FilledTonalIconButton(
+            onClick = onClick,
+            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                containerColor = Color.Black.copy(alpha = 0.55f),
+                contentColor = Color.White,
+            ),
+        ) {
+            Icon(imageVector = icon, contentDescription = contentDescription)
+        }
     }
 }
 

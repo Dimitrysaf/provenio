@@ -208,12 +208,14 @@
     <string name="compose_player_resize_fill">מילוי</string>
     <string name="compose_player_resize_fit">התאמה</string>
     <string name="compose_player_resize_zoom">זום</string>
-    <string name="compose_player_seek_back_10">דלג אחורה 10 שניות</string>
+    <string name="compose_player_seek_backward_seconds">דלג אחורה %1$d שניות</string>
     <string name="compose_player_seek_delta_backward">-%1$dשנ׳</string>
     <string name="compose_player_seek_delta_forward">+%1$dשנ׳</string>
     <string name="compose_player_seek_feedback_backward">-%1$dשנ׳</string>
     <string name="compose_player_seek_feedback_forward">+%1$dשנ׳</string>
-    <string name="compose_player_seek_forward_10">דלג קדימה 10 שניות</string>
+    <string name="compose_player_seek_forward_seconds">דלג קדימה %1$d שניות</string>
+    <string name="compose_player_subtitle_delay_decrease">הקטן עיכוב כתוביות</string>
+    <string name="compose_player_subtitle_delay_increase">הגדל עיכוב כתוביות</string>
     <string name="compose_player_sources">מקורות</string>
     <string name="compose_player_style">סגנון</string>
     <string name="compose_player_select_addon_subtitle_first">בחר תחילה כתוביות מתוסף</string>
@@ -362,6 +364,9 @@
     <string name="settings_playback_player_preference_internal">פנימי</string>
     <string name="settings_playback_player_preference_external">חיצוני</string>
     <string name="settings_playback_hold_speed">מהירות הפעלה בעת החזקה</string>
+    <string name="settings_playback_seek_backward">דילוג אחורה</string>
+    <string name="settings_playback_seek_forward">דילוג קדימה</string>
+    <string name="settings_playback_seek_seconds_value">%1$d שניות</string>
     <string name="settings_playback_hold_to_speed">החזק למהירות הפעלה</string>
     <string name="settings_playback_hold_to_speed_description">לחיצה ארוכה בכל מקום על משטח הנגן תאיץ זמנית את מהירות ההפעלה.</string>
     <string name="settings_playback_minutes_before_end">דקות סף</string>

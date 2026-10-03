@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
+import io.github.dimitrysaf.provenio.core.playback.DEFAULT_SEEK_INTERVAL_SECONDS
 import io.github.dimitrysaf.provenio.core.watch.watching.domain.isSettledPlaybackDuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
@@ -36,7 +38,11 @@ import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material.icons.rounded.Forward10
+import androidx.compose.material.icons.rounded.Forward30
+import androidx.compose.material.icons.rounded.Forward5
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
@@ -44,6 +50,8 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.Replay10
+import androidx.compose.material.icons.rounded.Replay30
+import androidx.compose.material.icons.rounded.Replay5
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material.icons.rounded.Tune
@@ -55,6 +63,20 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,6 +107,7 @@ import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.PI
 import kotlin.math.sin
+import kotlin.math.roundToInt
 import io.github.dimitrysaf.provenio.core.playback.PlayerResizeMode
 import io.github.dimitrysaf.provenio.core.playback.labelRes
 import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
@@ -107,6 +130,8 @@ internal fun PlayerControlsShell(
     onTogglePlayback: () -> Unit,
     onSeekBack: () -> Unit,
     onSeekForward: () -> Unit,
+    seekBackwardSeconds: Int = DEFAULT_SEEK_INTERVAL_SECONDS,
+    seekForwardSeconds: Int = DEFAULT_SEEK_INTERVAL_SECONDS,
     onResizeModeClick: () -> Unit,
     onSpeedClick: () -> Unit,
     onSubtitleClick: () -> Unit,
@@ -183,6 +208,8 @@ internal fun PlayerControlsShell(
                         playbackRequested = playbackRequested,
                         onSeekBack = onSeekBack,
                         onSeekForward = onSeekForward,
+                        seekBackwardSeconds = seekBackwardSeconds,
+                        seekForwardSeconds = seekForwardSeconds,
                         onTogglePlayback = onTogglePlayback,
                         onNextEpisode = onNextEpisode,
                         modifier = Modifier.align(Alignment.Center),
@@ -207,6 +234,8 @@ internal fun PlayerControlsShell(
                                 playbackRequested = playbackRequested,
                                 onSeekBack = onSeekBack,
                                 onSeekForward = onSeekForward,
+                                seekBackwardSeconds = seekBackwardSeconds,
+                                seekForwardSeconds = seekForwardSeconds,
                                 onTogglePlayback = onTogglePlayback,
                                 onNextEpisode = onNextEpisode,
                                 modifier = Modifier.padding(bottom = 8.dp),
@@ -370,6 +399,8 @@ private fun CenterControls(
     playbackRequested: Boolean,
     onSeekBack: () -> Unit,
     onSeekForward: () -> Unit,
+    seekBackwardSeconds: Int,
+    seekForwardSeconds: Int,
     onTogglePlayback: () -> Unit,
     onNextEpisode: (() -> Unit)?,
     modifier: Modifier = Modifier,
@@ -380,8 +411,8 @@ private fun CenterControls(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CenterControlButton(
-            icon = Icons.Rounded.Replay10,
-            contentDescription = stringResource(Res.string.compose_player_seek_back_10),
+            icon = seekBackwardIcon(seekBackwardSeconds),
+            contentDescription = stringResource(Res.string.compose_player_seek_backward_seconds, seekBackwardSeconds),
             metrics = metrics,
             onClick = onSeekBack.takeIf { controlsReady },
         )
@@ -428,12 +459,26 @@ private fun CenterControls(
             )
         }
         CenterControlButton(
-            icon = Icons.Rounded.Forward10,
-            contentDescription = stringResource(Res.string.compose_player_seek_forward_10),
+            icon = seekForwardIcon(seekForwardSeconds),
+            contentDescription = stringResource(Res.string.compose_player_seek_forward_seconds, seekForwardSeconds),
             metrics = metrics,
             onClick = onSeekForward.takeIf { controlsReady },
         )
     }
+}
+
+private fun seekBackwardIcon(seconds: Int): ImageVector = when (seconds) {
+    5 -> Icons.Rounded.Replay5
+    10 -> Icons.Rounded.Replay10
+    30 -> Icons.Rounded.Replay30
+    else -> Icons.Rounded.FastRewind
+}
+
+private fun seekForwardIcon(seconds: Int): ImageVector = when (seconds) {
+    5 -> Icons.Rounded.Forward5
+    10 -> Icons.Rounded.Forward10
+    30 -> Icons.Rounded.Forward30
+    else -> Icons.Rounded.FastForward
 }
 
 @Composable
@@ -443,20 +488,22 @@ private fun CenterControlButton(
     metrics: PlayerLayoutMetrics,
     onClick: (() -> Unit)?,
 ) {
-    Box(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(PlayerScrimColor)
-            .shapedClickable(CircleShape, enabled = onClick != null) { onClick?.invoke() }
-            .padding(metrics.sideButtonPadding),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = if (onClick != null) Color.White else Color.White.copy(alpha = 0.38f),
-            modifier = Modifier.size(metrics.sideIconSize),
-        )
+    WithTooltip(contentDescription) {
+        Box(
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(PlayerScrimColor)
+                .shapedClickable(CircleShape, enabled = onClick != null) { onClick?.invoke() }
+                .padding(metrics.sideButtonPadding),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = if (onClick != null) Color.White else Color.White.copy(alpha = 0.38f),
+                modifier = Modifier.size(metrics.sideIconSize),
+            )
+        }
     }
 }
 
@@ -478,35 +525,37 @@ private fun PrimaryControlButton(
     )
     val shape = RoundedCornerShape(corner)
     val contentColor = MaterialTheme.colorScheme.onPrimary
-    Box(modifier = Modifier.size(size), contentAlignment = Alignment.Center) {
-        if (loading) {
-            CircularProgressIndicator(
-                modifier = Modifier.requiredSize(size + 16.dp),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = PlayerScrimColor,
-                strokeWidth = 4.dp,
-            )
-        }
-        Box(
-            modifier = Modifier
-                .size(size)
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.primary)
-                .then(if (onClick != null) Modifier.shapedClickable(shape, onClick = onClick) else Modifier),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (icon == null) {
-                LoadingSpinner(
-                    color = contentColor,
-                    modifier = Modifier.size(metrics.playIconSize),
+    WithTooltip(contentDescription) {
+        Box(modifier = Modifier.size(size), contentAlignment = Alignment.Center) {
+            if (loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.requiredSize(size + 16.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = PlayerScrimColor,
+                    strokeWidth = 4.dp,
                 )
-            } else {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = contentDescription,
-                    tint = contentColor,
-                    modifier = Modifier.size(metrics.playIconSize),
-                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(size)
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .then(if (onClick != null) Modifier.shapedClickable(shape, onClick = onClick) else Modifier),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (icon == null) {
+                    LoadingSpinner(
+                        color = contentColor,
+                        modifier = Modifier.size(metrics.playIconSize),
+                    )
+                } else {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = contentDescription,
+                        tint = contentColor,
+                        modifier = Modifier.size(metrics.playIconSize),
+                    )
+                }
             }
         }
     }
@@ -519,6 +568,8 @@ private fun TransportButtonGroup(
     playbackRequested: Boolean,
     onSeekBack: () -> Unit,
     onSeekForward: () -> Unit,
+    seekBackwardSeconds: Int,
+    seekForwardSeconds: Int,
     onTogglePlayback: () -> Unit,
     onNextEpisode: (() -> Unit)?,
     modifier: Modifier = Modifier,
@@ -556,8 +607,8 @@ private fun TransportButtonGroup(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TransportSideButton(
-            icon = Icons.Rounded.Replay10,
-            contentDescription = stringResource(Res.string.compose_player_seek_back_10),
+            icon = seekBackwardIcon(seekBackwardSeconds),
+            contentDescription = stringResource(Res.string.compose_player_seek_backward_seconds, seekBackwardSeconds),
             shape = playerGroupShape(0, 3),
             onClick = onSeekBack.takeIf { controlsReady },
         )
@@ -568,8 +619,8 @@ private fun TransportButtonGroup(
             onClick = primaryClick,
         )
         TransportSideButton(
-            icon = Icons.Rounded.Forward10,
-            contentDescription = stringResource(Res.string.compose_player_seek_forward_10),
+            icon = seekForwardIcon(seekForwardSeconds),
+            contentDescription = stringResource(Res.string.compose_player_seek_forward_seconds, seekForwardSeconds),
             shape = playerGroupShape(2, 3),
             onClick = onSeekForward.takeIf { controlsReady },
         )
@@ -583,22 +634,24 @@ private fun TransportSideButton(
     shape: RoundedCornerShape,
     onClick: (() -> Unit)?,
 ) {
-    Box(
-        modifier = Modifier
-            .height(TransportButtonHeight)
-            .widthIn(min = TransportSideButtonWidth)
-            .clip(shape)
-            .background(PlayerScrimColor)
-            .shapedClickable(shape, enabled = onClick != null) { onClick?.invoke() }
-            .semantics { this.contentDescription = contentDescription },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = if (onClick != null) Color.White else Color.White.copy(alpha = 0.38f),
-            modifier = Modifier.size(TransportIconSize),
-        )
+    WithTooltip(contentDescription) {
+        Box(
+            modifier = Modifier
+                .height(TransportButtonHeight)
+                .widthIn(min = TransportSideButtonWidth)
+                .clip(shape)
+                .background(PlayerScrimColor)
+                .shapedClickable(shape, enabled = onClick != null) { onClick?.invoke() }
+                .semantics { this.contentDescription = contentDescription },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (onClick != null) Color.White else Color.White.copy(alpha = 0.38f),
+                modifier = Modifier.size(TransportIconSize),
+            )
+        }
     }
 }
 
@@ -614,22 +667,24 @@ private fun TransportPrimaryButton(
         animationSpec = tween(220),
         label = "transport_primary_corner",
     )
-    Box(
-        modifier = Modifier
-            .height(TransportButtonHeight)
-            .widthIn(min = TransportPrimaryButtonWidth)
-            .clip(RoundedCornerShape(corner))
-            .background(MaterialTheme.colorScheme.primary)
-            .shapedClickable(RoundedCornerShape(corner), onClick = onClick)
-            .semantics { this.contentDescription = contentDescription },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier.size(TransportIconSize),
-        )
+    WithTooltip(contentDescription) {
+        Box(
+            modifier = Modifier
+                .height(TransportButtonHeight)
+                .widthIn(min = TransportPrimaryButtonWidth)
+                .clip(RoundedCornerShape(corner))
+                .background(MaterialTheme.colorScheme.primary)
+                .shapedClickable(RoundedCornerShape(corner), onClick = onClick)
+                .semantics { this.contentDescription = contentDescription },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(TransportIconSize),
+            )
+        }
     }
 }
 
@@ -852,48 +907,50 @@ private fun PlayerButtonGroup(
     ) {
         actions.forEachIndexed { index, action ->
             val onClick = action.onClick
-            Box(
-                modifier = Modifier
-                    .height(PlayerGroupButtonHeight)
-                    .widthIn(min = PlayerGroupButtonMinWidth)
-                    .clip(playerGroupShape(index, actions.size))
-                    .background(PlayerScrimColor)
-                    .shapedClickable(playerGroupShape(index, actions.size), enabled = onClick != null) { onClick?.invoke() }
-                    .semantics { contentDescription = action.contentDescription }
-                    .padding(horizontal = 10.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                val tint = if (onClick != null) Color.White else Color.White.copy(alpha = 0.38f)
-                when {
-                    action.icon != null && showLabels -> Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
+            WithTooltip(action.contentDescription.takeUnless { showLabels && action.icon != null }) {
+                Box(
+                    modifier = Modifier
+                        .height(PlayerGroupButtonHeight)
+                        .widthIn(min = PlayerGroupButtonMinWidth)
+                        .clip(playerGroupShape(index, actions.size))
+                        .background(PlayerScrimColor)
+                        .shapedClickable(playerGroupShape(index, actions.size), enabled = onClick != null) { onClick?.invoke() }
+                        .semantics { contentDescription = action.contentDescription }
+                        .padding(horizontal = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val tint = if (onClick != null) Color.White else Color.White.copy(alpha = 0.38f)
+                    when {
+                        action.icon != null && showLabels -> Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = action.icon,
+                                contentDescription = null,
+                                tint = tint,
+                                modifier = Modifier.size(PlayerGroupIconSize),
+                            )
+                            Text(
+                                text = action.contentDescription,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = tint,
+                                maxLines = 1,
+                            )
+                        }
+                        action.icon != null -> Icon(
                             imageVector = action.icon,
                             contentDescription = null,
                             tint = tint,
                             modifier = Modifier.size(PlayerGroupIconSize),
                         )
-                        Text(
-                            text = action.contentDescription,
+                        action.label != null -> Text(
+                            text = action.label,
                             style = MaterialTheme.typography.labelMedium,
                             color = tint,
                             maxLines = 1,
                         )
                     }
-                    action.icon != null -> Icon(
-                        imageVector = action.icon,
-                        contentDescription = null,
-                        tint = tint,
-                        modifier = Modifier.size(PlayerGroupIconSize),
-                    )
-                    action.label != null -> Text(
-                        text = action.label,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = tint,
-                        maxLines = 1,
-                    )
                 }
             }
         }
@@ -937,25 +994,102 @@ internal fun PlayerSeekBar(
         0f
     }
     val activeColor = MaterialTheme.colorScheme.primary
-    Slider(
+    val interactionSource = remember { MutableInteractionSource() }
+    val dragged by interactionSource.collectIsDraggedAsState()
+    val pressed by interactionSource.collectIsPressedAsState()
+    var hoverX by remember { mutableStateOf<Float?>(null) }
+    var barWidth by remember { mutableIntStateOf(0) }
+    val thumbSizePx = with(LocalDensity.current) { SeekThumbSize.toPx() }
+    val scrubbing = durationKnown && (dragged || pressed)
+    val hoverFraction = hoverX?.takeIf { durationKnown && barWidth > thumbSizePx }?.let { x ->
+        ((x - thumbSizePx / 2f) / (barWidth - thumbSizePx)).coerceIn(0f, 1f)
+    }
+    val labelFraction = if (scrubbing) {
+        displayedPositionMs.coerceIn(0L, seekDurationMs).toFloat() / seekDurationMs
+    } else {
+        hoverFraction
+    }
+    val thumbSize by animateDpAsState(
+        targetValue = if (durationKnown && (scrubbing || hoverFraction != null)) SeekThumbActiveSize else SeekThumbSize,
+        animationSpec = tween(durationMillis = 150),
+        label = "seekThumbSize",
+    )
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .height(metrics.sliderTouchHeight)
-            .semantics { contentDescription = seekDescription },
-        value = if (durationKnown) displayedPositionMs.coerceIn(0L, seekDurationMs).toFloat() else 0f,
-        onValueChange = { value -> onScrubChange(value.toLong()) },
-        onValueChangeFinished = { onScrubFinished(displayedPositionMs.coerceIn(0L, seekDurationMs)) },
-        enabled = durationMs > 0L,
-        valueRange = 0f..seekDurationMs.toFloat(),
-        thumb = { Spacer(Modifier.size(SeekThumbSize)) },
-        track = { sliderState ->
-            WavyProgressTrack(
-                sliderState = sliderState,
-                bufferedFraction = bufferedFraction,
-                isPlaying = isPlaying,
-                activeColor = activeColor,
+            .onSizeChanged { barWidth = it.width }
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        val change = event.changes.firstOrNull() ?: continue
+                        if (change.type != PointerType.Mouse) continue
+                        hoverX = when (event.type) {
+                            PointerEventType.Exit -> null
+                            PointerEventType.Enter, PointerEventType.Move -> change.position.x
+                            else -> hoverX
+                        }
+                    }
+                }
+            },
+    ) {
+        Slider(
+            modifier = Modifier
+                .fillMaxSize()
+                .semantics { contentDescription = seekDescription },
+            value = if (durationKnown) displayedPositionMs.coerceIn(0L, seekDurationMs).toFloat() else 0f,
+            onValueChange = { value -> onScrubChange(value.toLong()) },
+            onValueChangeFinished = { onScrubFinished(displayedPositionMs.coerceIn(0L, seekDurationMs)) },
+            enabled = durationMs > 0L,
+            valueRange = 0f..seekDurationMs.toFloat(),
+            interactionSource = interactionSource,
+            thumb = { Spacer(Modifier.size(SeekThumbSize)) },
+            track = { sliderState ->
+                WavyProgressTrack(
+                    sliderState = sliderState,
+                    bufferedFraction = bufferedFraction,
+                    isPlaying = isPlaying,
+                    activeColor = activeColor,
+                    thumbSize = thumbSize,
+                )
+            },
+        )
+        if (labelFraction != null) {
+            SeekTimeLabel(
+                text = formatPlaybackTime((labelFraction * seekDurationMs).toLong()),
+                fraction = labelFraction,
+                thumbSizePx = thumbSizePx,
             )
-        },
+        }
+    }
+}
+
+@Composable
+private fun SeekTimeLabel(
+    text: String,
+    fraction: Float,
+    thumbSizePx: Float,
+) {
+    val spacingPx = with(LocalDensity.current) { SeekLabelSpacing.roundToPx() }
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.inverseOnSurface,
+        maxLines = 1,
+        modifier = Modifier
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
+                val width = constraints.maxWidth
+                val centerX = thumbSizePx / 2f + (width - thumbSizePx) * fraction
+                val x = (centerX - placeable.width / 2f).roundToInt().coerceIn(0, maxOf(0, width - placeable.width))
+                layout(0, 0) {
+                    placeable.place(x, -placeable.height - spacingPx)
+                }
+            }
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(MaterialTheme.colorScheme.inverseSurface)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
     )
 }
 
@@ -966,6 +1100,7 @@ private fun WavyProgressTrack(
     bufferedFraction: Float,
     isPlaying: Boolean,
     activeColor: Color,
+    thumbSize: Dp,
 ) {
     val amplitude by animateDpAsState(
         targetValue = if (isPlaying) WaveAmplitude else 0.dp,
@@ -994,7 +1129,7 @@ private fun WavyProgressTrack(
         val amplitudePx = amplitude.toPx()
         val wavelengthPx = WaveLength.toPx()
         // M3 leaves a gap after the thumb; round caps reach half a stroke past each end.
-        val gapPx = SeekThumbSize.toPx() / 2f + TrackThumbGap.toPx() + strokeWidth / 2f
+        val gapPx = thumbSize.toPx() / 2f + TrackThumbGap.toPx() + strokeWidth / 2f
         val playedEndX = playedX
         val restStartX = minOf(playedX + gapPx, size.width)
         val bufferedStartX = maxOf(bufferedX, restStartX)
@@ -1035,7 +1170,7 @@ private fun WavyProgressTrack(
         }
         drawCircle(
             color = activeColor,
-            radius = SeekThumbSize.toPx() / 2f,
+            radius = thumbSize.toPx() / 2f,
             center = Offset(playedX, centerY),
         )
     }
@@ -1049,23 +1184,28 @@ internal fun LockedPlayerOverlay(
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        Box(
+        WithTooltip(
+            label = stringResource(Res.string.compose_player_unlock_controls),
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .playerFrameInsets(WindowInsetsSides.Horizontal)
-                .padding(end = metrics.horizontalPadding)
-                .size(metrics.headerIconSize + 24.dp)
-                .clip(CircleShape)
-                .background(PlayerScrimColor)
-                .shapedClickable(CircleShape, onClick = onUnlock),
-            contentAlignment = Alignment.Center,
+                .padding(end = metrics.horizontalPadding),
         ) {
-            Icon(
-                imageVector = Icons.Rounded.LockOpen,
-                contentDescription = stringResource(Res.string.compose_player_unlock_controls),
-                tint = Color.White,
-                modifier = Modifier.size(metrics.headerIconSize),
-            )
+            Box(
+                modifier = Modifier
+                    .size(metrics.headerIconSize + 24.dp)
+                    .clip(CircleShape)
+                    .background(PlayerScrimColor)
+                    .shapedClickable(CircleShape, onClick = onUnlock),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.LockOpen,
+                    contentDescription = stringResource(Res.string.compose_player_unlock_controls),
+                    tint = Color.White,
+                    modifier = Modifier.size(metrics.headerIconSize),
+                )
+            }
         }
     }
 }
@@ -1085,6 +1225,8 @@ private val TransportSideButtonWidth = 60.dp
 private val TransportPrimaryButtonWidth = 76.dp
 private val TransportIconSize = 28.dp
 private val SeekThumbSize = 12.dp
+private val SeekThumbActiveSize = 18.dp
+private val SeekLabelSpacing = 4.dp
 private val TrackCanvasHeight = 12.dp
 private val TrackStrokeWidth = 4.dp
 private val TrackThumbGap = 4.dp

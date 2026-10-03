@@ -34,19 +34,21 @@ fun BackButton(
 ) {
     if (LocalUseNativeNavigation.current && !LocalNativeNavigationBarHidden.current) return
 
-    FilledIconButton(
-        onClick = onClick,
-        modifier = modifier.size(buttonSize),
-        shape = shape,
-        colors = IconButtonDefaults.filledIconButtonColors(
-            containerColor = containerColor,
-            contentColor = contentColor,
-        ),
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-            contentDescription = contentDescription,
-            modifier = Modifier.size(iconSize),
-        )
+    WithTooltip(contentDescription) {
+        FilledIconButton(
+            onClick = onClick,
+            modifier = modifier.size(buttonSize),
+            shape = shape,
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = containerColor,
+                contentColor = contentColor,
+            ),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(iconSize),
+            )
+        }
     }
 }

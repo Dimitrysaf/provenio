@@ -540,6 +540,8 @@ internal fun settingsSearchEntries(
                 stringResource(Res.string.settings_playback_touch_gestures_description),
             ),
             PlaybackSearchRow("hold-speed", stringResource(Res.string.settings_playback_hold_speed)),
+            PlaybackSearchRow("seek-backward", stringResource(Res.string.settings_playback_seek_backward)),
+            PlaybackSearchRow("seek-forward", stringResource(Res.string.settings_playback_seek_forward)),
         ),
     )
     addPlaybackRows(

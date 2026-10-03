@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player.skip
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -162,11 +163,13 @@ private fun TimeInputField(
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         trailingIcon = {
-            IconButton(onClick = onCapture) {
-                Icon(
-                    imageVector = Icons.Rounded.GpsFixed,
-                    contentDescription = stringResource(Res.string.submit_intro_capture_button),
-                )
+            WithTooltip(stringResource(Res.string.submit_intro_capture_button)) {
+                IconButton(onClick = onCapture) {
+                    Icon(
+                        imageVector = Icons.Rounded.GpsFixed,
+                        contentDescription = stringResource(Res.string.submit_intro_capture_button),
+                    )
+                }
             }
         },
     )

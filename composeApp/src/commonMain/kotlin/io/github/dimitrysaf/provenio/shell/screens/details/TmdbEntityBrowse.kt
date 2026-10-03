@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -129,18 +130,20 @@ fun TmdbEntityBrowseScreen(
         }
 
         if (!LocalUseNativeNavigation.current) {
-            IconButton(
-                onClick = onBack,
+            WithTooltip(
+                label = stringResource(Res.string.action_back),
                 modifier = Modifier
                     .windowInsetsPadding(WindowInsets.statusBars)
                     .padding(start = 4.dp, top = 4.dp)
                     .align(Alignment.TopStart),
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = stringResource(Res.string.action_back),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = stringResource(Res.string.action_back),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
         }
     }

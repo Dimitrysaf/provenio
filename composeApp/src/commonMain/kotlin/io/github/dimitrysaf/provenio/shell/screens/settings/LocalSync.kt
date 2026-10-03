@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -109,8 +110,10 @@ internal fun LocalSyncCard(modifier: Modifier = Modifier) {
                     if (syncing) {
                         LocalSyncProgress()
                     } else {
-                        IconButton(onClick = { peerToForgetId = peer.deviceId }) {
-                            Icon(imageVector = Icons.Rounded.Delete, contentDescription = forgetLabel)
+                        WithTooltip(forgetLabel) {
+                            IconButton(onClick = { peerToForgetId = peer.deviceId }) {
+                                Icon(imageVector = Icons.Rounded.Delete, contentDescription = forgetLabel)
+                            }
                         }
                     }
                 },
@@ -452,11 +455,13 @@ private fun LocalSyncFirewallCommand(label: String?, command: String) {
                         .weight(1f)
                         .padding(vertical = 8.dp),
                 )
-                IconButton(onClick = { clipboardManager.setText(AnnotatedString(command)) }) {
-                    Icon(
-                        imageVector = Icons.Rounded.ContentCopy,
-                        contentDescription = stringResource(Res.string.local_sync_firewall_copy),
-                    )
+                WithTooltip(stringResource(Res.string.local_sync_firewall_copy)) {
+                    IconButton(onClick = { clipboardManager.setText(AnnotatedString(command)) }) {
+                        Icon(
+                            imageVector = Icons.Rounded.ContentCopy,
+                            contentDescription = stringResource(Res.string.local_sync_firewall_copy),
+                        )
+                    }
                 }
             }
         }

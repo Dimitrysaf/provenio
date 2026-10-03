@@ -53,11 +53,13 @@ fun SearchField(
             },
             trailingIcon = if (query.isNotBlank()) {
                 {
-                    IconButton(onClick = { onQueryChange("") }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Close,
-                            contentDescription = stringResource(Res.string.compose_search_clear),
-                        )
+                    WithTooltip(stringResource(Res.string.compose_search_clear)) {
+                        IconButton(onClick = { onQueryChange("") }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Close,
+                                contentDescription = stringResource(Res.string.compose_search_clear),
+                            )
+                        }
                     }
                 }
             } else {

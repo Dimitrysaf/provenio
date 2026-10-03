@@ -185,12 +185,14 @@
   <string name="compose_player_resize_fill">Riempi</string>
   <string name="compose_player_resize_fit">Adatta</string>
   <string name="compose_player_resize_zoom">Zoom</string>
-  <string name="compose_player_seek_back_10">Indietro di 10 secondi</string>
+  <string name="compose_player_seek_backward_seconds">Indietro di %1$d secondi</string>
   <string name="compose_player_seek_delta_backward">-%1$ds</string>
   <string name="compose_player_seek_delta_forward">+%1$ds</string>
   <string name="compose_player_seek_feedback_backward">-%1$ds</string>
   <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-  <string name="compose_player_seek_forward_10">Avanti di 10 secondi</string>
+  <string name="compose_player_seek_forward_seconds">Avanti di %1$d secondi</string>
+  <string name="compose_player_subtitle_delay_decrease">Riduci ritardo sottotitoli</string>
+  <string name="compose_player_subtitle_delay_increase">Aumenta ritardo sottotitoli</string>
   <string name="compose_player_sources">Sorgenti</string>
   <string name="compose_player_style">Stile</string>
   <string name="compose_player_select_addon_subtitle_first">Seleziona prima un sottotitolo addon</string>
@@ -471,6 +473,9 @@
   <string name="settings_playback_enable_libass">Abilita libass</string>
   <string name="settings_playback_enable_libass_description">Usa libass per il rendering dei sottotitoli ASS/SSA invece del renderer predefinito.</string>
   <string name="settings_playback_hold_speed">Velocità pressione prolungata</string>
+  <string name="settings_playback_seek_backward">Salto indietro</string>
+  <string name="settings_playback_seek_forward">Salto avanti</string>
+  <string name="settings_playback_seek_seconds_value">%1$d secondi</string>
   <string name="settings_playback_hold_to_speed">Premi per velocizzare</string>
   <string name="settings_playback_hold_to_speed_description">Premi a lungo in un punto qualsiasi del player per aumentare temporaneamente la velocità di riproduzione.</string>
   <string name="settings_playback_invalid_regex_pattern">Pattern regex non valido</string>

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.search
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.stopScroll
@@ -479,11 +480,13 @@ private fun SearchRecentRow(
             )
         },
         trailingContent = {
-            IconButton(onClick = onRemovePress) {
-                Icon(
-                    imageVector = Icons.Rounded.Close,
-                    contentDescription = stringResource(Res.string.compose_search_remove_recent_search),
-                )
+            WithTooltip(stringResource(Res.string.compose_search_remove_recent_search)) {
+                IconButton(onClick = onRemovePress) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = stringResource(Res.string.compose_search_remove_recent_search),
+                    )
+                }
             }
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),

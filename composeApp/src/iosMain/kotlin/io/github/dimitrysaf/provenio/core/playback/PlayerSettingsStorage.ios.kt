@@ -23,6 +23,8 @@ actual object PlayerSettingsStorage {
     private const val resizeModeKey = "resize_mode"
     private const val holdToSpeedEnabledKey = "hold_to_speed_enabled"
     private const val holdToSpeedValueKey = "hold_to_speed_value"
+    private const val seekBackwardSecondsKey = "seek_backward_seconds"
+    private const val seekForwardSecondsKey = "seek_forward_seconds"
     private const val touchGesturesEnabledKey = "touch_gestures_enabled"
     private const val externalPlayerEnabledKey = "external_player_enabled"
     private const val externalPlayerForwardSubtitlesKey = "external_player_forward_subtitles"
@@ -93,6 +95,8 @@ actual object PlayerSettingsStorage {
         resizeModeKey,
         holdToSpeedEnabledKey,
         holdToSpeedValueKey,
+        seekBackwardSecondsKey,
+        seekForwardSecondsKey,
         touchGesturesEnabledKey,
         externalPlayerEnabledKey,
         externalPlayerForwardSubtitlesKey,
@@ -610,6 +614,24 @@ actual object PlayerSettingsStorage {
         NSUserDefaults.standardUserDefaults.setObject(regex, forKey = ProfileScopedKey.of(streamAutoPlayRegexKey))
     }
 
+    actual fun loadSeekBackwardSeconds(): Int? = loadSeekSeconds(seekBackwardSecondsKey)
+
+    actual fun saveSeekBackwardSeconds(seconds: Int) {
+        NSUserDefaults.standardUserDefaults.setInteger(seconds.toLong(), forKey = ProfileScopedKey.of(seekBackwardSecondsKey))
+    }
+
+    actual fun loadSeekForwardSeconds(): Int? = loadSeekSeconds(seekForwardSecondsKey)
+
+    actual fun saveSeekForwardSeconds(seconds: Int) {
+        NSUserDefaults.standardUserDefaults.setInteger(seconds.toLong(), forKey = ProfileScopedKey.of(seekForwardSecondsKey))
+    }
+
+    private fun loadSeekSeconds(baseKey: String): Int? {
+        val defaults = NSUserDefaults.standardUserDefaults
+        val key = ProfileScopedKey.of(baseKey)
+        return if (defaults.objectForKey(key) != null) defaults.integerForKey(key).toInt() else null
+    }
+
     actual fun loadStreamAutoPlayTimeoutSeconds(): Int? {
         val defaults = NSUserDefaults.standardUserDefaults
         val key = ProfileScopedKey.of(streamAutoPlayTimeoutSecondsKey)
@@ -896,6 +918,8 @@ actual object PlayerSettingsStorage {
         loadResizeMode()?.let { put(resizeModeKey, encodeSyncString(it)) }
         loadHoldToSpeedEnabled()?.let { put(holdToSpeedEnabledKey, encodeSyncBoolean(it)) }
         loadHoldToSpeedValue()?.let { put(holdToSpeedValueKey, encodeSyncFloat(it)) }
+        loadSeekBackwardSeconds()?.let { put(seekBackwardSecondsKey, encodeSyncInt(it)) }
+        loadSeekForwardSeconds()?.let { put(seekForwardSecondsKey, encodeSyncInt(it)) }
         loadTouchGesturesEnabled()?.let { put(touchGesturesEnabledKey, encodeSyncBoolean(it)) }
         loadExternalPlayerEnabled()?.let { put(externalPlayerEnabledKey, encodeSyncBoolean(it)) }
         loadExternalPlayerForwardSubtitles()?.let { put(externalPlayerForwardSubtitlesKey, encodeSyncBoolean(it)) }
@@ -971,6 +995,8 @@ actual object PlayerSettingsStorage {
         payload.decodeSyncString(resizeModeKey)?.let(::saveResizeMode)
         payload.decodeSyncBoolean(holdToSpeedEnabledKey)?.let(::saveHoldToSpeedEnabled)
         payload.decodeSyncFloat(holdToSpeedValueKey)?.let(::saveHoldToSpeedValue)
+        payload.decodeSyncInt(seekBackwardSecondsKey)?.let(::saveSeekBackwardSeconds)
+        payload.decodeSyncInt(seekForwardSecondsKey)?.let(::saveSeekForwardSeconds)
         payload.decodeSyncBoolean(touchGesturesEnabledKey)?.let(::saveTouchGesturesEnabled)
         payload.decodeSyncBoolean(externalPlayerEnabledKey)?.let(::saveExternalPlayerEnabled)
         payload.decodeSyncBoolean(externalPlayerForwardSubtitlesKey)?.let(::saveExternalPlayerForwardSubtitles)

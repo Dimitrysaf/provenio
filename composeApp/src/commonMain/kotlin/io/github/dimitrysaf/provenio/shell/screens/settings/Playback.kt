@@ -228,6 +228,8 @@ private fun PlayerGroup(
     var showExternalPlayerDialog by remember { mutableStateOf(false) }
     var showExternalPlayerAppDialog by remember { mutableStateOf(false) }
     var showHoldToSpeedValueDialog by remember { mutableStateOf(false) }
+    var showSeekBackwardDialog by remember { mutableStateOf(false) }
+    var showSeekForwardDialog by remember { mutableStateOf(false) }
     val availableExternalPlayers = ExternalPlayerPlatform.availablePlayers()
     val selectedExternalPlayer = availableExternalPlayers.firstOrNull {
         it.id == settings.externalPlayerId
@@ -312,6 +314,18 @@ private fun PlayerGroup(
                     onClick = { showHoldToSpeedValueDialog = true },
                 )
             }
+            if (!settings.externalPlayerEnabled) {
+                navigationRow(
+                    title = stringResource(Res.string.settings_playback_seek_backward),
+                    description = stringResource(Res.string.settings_playback_seek_seconds_value, settings.seekBackwardSeconds),
+                    onClick = { showSeekBackwardDialog = true },
+                )
+                navigationRow(
+                    title = stringResource(Res.string.settings_playback_seek_forward),
+                    description = stringResource(Res.string.settings_playback_seek_seconds_value, settings.seekForwardSeconds),
+                    onClick = { showSeekForwardDialog = true },
+                )
+            }
         }
     }
 
@@ -343,6 +357,24 @@ private fun PlayerGroup(
                 PlayerSettingsRepository.setHoldToSpeedValue(speed)
             },
             onDismiss = { showHoldToSpeedValueDialog = false },
+        )
+    }
+
+    if (showSeekBackwardDialog) {
+        SeekIntervalDialog(
+            title = stringResource(Res.string.settings_playback_seek_backward),
+            selectedSeconds = settings.seekBackwardSeconds,
+            onSecondsSelected = PlayerSettingsRepository::setSeekBackwardSeconds,
+            onDismiss = { showSeekBackwardDialog = false },
+        )
+    }
+
+    if (showSeekForwardDialog) {
+        SeekIntervalDialog(
+            title = stringResource(Res.string.settings_playback_seek_forward),
+            selectedSeconds = settings.seekForwardSeconds,
+            onSecondsSelected = PlayerSettingsRepository::setSeekForwardSeconds,
+            onDismiss = { showSeekForwardDialog = false },
         )
     }
 }

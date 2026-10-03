@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -481,14 +482,16 @@ internal fun HomescreenCatalogRow(
                     onCheckedChange = onEnabledChange,
                 )
                 if (item.isPinnedToTop) {
-                    IconButton(
-                        onClick = onPinnedDragAttempt,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Lock,
-                            contentDescription = stringResource(Res.string.settings_homescreen_pinned),
-                            tint = supportingColor.copy(alpha = tokens.opacity.medium),
-                        )
+                    WithTooltip(stringResource(Res.string.settings_homescreen_pinned)) {
+                        IconButton(
+                            onClick = onPinnedDragAttempt,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Lock,
+                                contentDescription = stringResource(Res.string.settings_homescreen_pinned),
+                                tint = supportingColor.copy(alpha = tokens.opacity.medium),
+                            )
+                        }
                     }
                 }
             }

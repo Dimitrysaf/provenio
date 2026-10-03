@@ -451,12 +451,14 @@
     <string name="compose_player_resize_fill">Запълни</string>
     <string name="compose_player_resize_fit">Побери</string>
     <string name="compose_player_resize_zoom">Мащабирай</string>
-    <string name="compose_player_seek_back_10">Превъртане назад с 10 секунди</string>
+    <string name="compose_player_seek_backward_seconds">Превъртане назад с %1$d секунди</string>
     <string name="compose_player_seek_delta_backward">-%1$dс</string>
     <string name="compose_player_seek_delta_forward">+%1$dс</string>
     <string name="compose_player_seek_feedback_backward">-%1$dс</string>
     <string name="compose_player_seek_feedback_forward">+%1$dс</string>
-    <string name="compose_player_seek_forward_10">Превъртане напред с 10 секунди</string>
+    <string name="compose_player_seek_forward_seconds">Превъртане напред с %1$d секунди</string>
+    <string name="compose_player_subtitle_delay_decrease">Намаляване на закъснението на субтитрите</string>
+    <string name="compose_player_subtitle_delay_increase">Увеличаване на закъснението на субтитрите</string>
     <string name="compose_player_sources">Източници</string>
     <string name="compose_player_style">Стил</string>
     <string name="compose_player_select_addon_subtitle_first">Първо изберете субтитри от добавка</string>
@@ -981,6 +983,9 @@
     <string name="settings_playback_player_preference_external">Външен</string>
     <string name="settings_playback_player_preference_description">Изберете кой плейър да обработва новото възпроизвеждане.</string>
     <string name="settings_playback_hold_speed">Скорост при задържане</string>
+    <string name="settings_playback_seek_backward">Превъртане назад</string>
+    <string name="settings_playback_seek_forward">Превъртане напред</string>
+    <string name="settings_playback_seek_seconds_value">%1$d секунди</string>
     <string name="settings_playback_hold_to_speed">Задръж за скорост</string>
     <string name="settings_playback_hold_to_speed_description">Задръжте натиснато навсякъде върху плейъра, за да увеличите временно скоростта на възпроизвеждане.</string>
     <string name="settings_playback_touch_gestures">Жестове с докосване</string>

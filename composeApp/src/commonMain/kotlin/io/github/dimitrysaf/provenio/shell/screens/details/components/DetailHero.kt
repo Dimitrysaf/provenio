@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -431,20 +432,26 @@ private fun HeroTrailerPage(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            FilledTonalIconToggleButton(
-                checked = !muted,
-                onCheckedChange = { onMuteToggle() },
+            WithTooltip(
+                stringResource(
+                    if (muted) Res.string.detail_hero_trailer_audio_unmute else Res.string.detail_hero_trailer_audio_mute,
+                ),
             ) {
-                Icon(
-                    imageVector = if (muted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
-                    contentDescription = stringResource(
-                        if (muted) {
-                            Res.string.detail_hero_trailer_audio_unmute
-                        } else {
-                            Res.string.detail_hero_trailer_audio_mute
-                        },
-                    ),
-                )
+                FilledTonalIconToggleButton(
+                    checked = !muted,
+                    onCheckedChange = { onMuteToggle() },
+                ) {
+                    Icon(
+                        imageVector = if (muted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
+                        contentDescription = stringResource(
+                            if (muted) {
+                                Res.string.detail_hero_trailer_audio_unmute
+                            } else {
+                                Res.string.detail_hero_trailer_audio_mute
+                            },
+                        ),
+                    )
+                }
             }
             Text(
                 text = trailer.displayName?.takeIf { it.isNotBlank() } ?: trailer.name,

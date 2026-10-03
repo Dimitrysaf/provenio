@@ -32,6 +32,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.playback.AndroidPlaybackEngine
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerApp
+import io.github.dimitrysaf.provenio.core.playback.SEEK_INTERVAL_SECONDS_OPTIONS
 import io.github.dimitrysaf.provenio.shell.screens.player.formatPlaybackSpeedLabel
 import io.github.dimitrysaf.provenio.shell.screens.player.isTransparentArgb
 import io.github.dimitrysaf.provenio.core.streams.StreamAutoPlayMode
@@ -200,6 +201,27 @@ internal fun HoldToSpeedValueDialog(
         },
         isSelected = { it == selectedSpeed },
         onSelected = onSpeedSelected,
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+internal fun SeekIntervalDialog(
+    title: String,
+    selectedSeconds: Int,
+    onSecondsSelected: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    SingleChoiceBottomSheet(
+        title = title,
+        options = SEEK_INTERVAL_SECONDS_OPTIONS.map { seconds ->
+            SingleChoiceOption(
+                value = seconds,
+                label = stringResource(Res.string.settings_playback_seek_seconds_value, seconds),
+            )
+        },
+        isSelected = { it == selectedSeconds },
+        onSelected = onSecondsSelected,
         onDismiss = onDismiss,
     )
 }

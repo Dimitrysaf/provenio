@@ -1,17 +1,17 @@
 package io.github.dimitrysaf.provenio.desktop
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import io.github.dimitrysaf.provenio.shell.components.AppLaunchScreen
 import io.github.dimitrysaf.provenio.shell.theme.ThemeColors
-import org.jetbrains.compose.resources.painterResource
-import provenio.composeapp.generated.resources.Res
-import provenio.composeapp.generated.resources.app_splash_logo
 
 @Composable
 internal fun DesktopLaunchScreen(content: @Composable () -> Unit) {
     AppLaunchScreen(
-        logo = painterResource(Res.drawable.app_splash_logo),
+        logoColor = DesktopLaunchLogoColor,
         background = ThemeColors.White.background,
         content = content,
     )
 }
+
+private val DesktopLaunchLogoColor = Color(0xFFA9C7FF)

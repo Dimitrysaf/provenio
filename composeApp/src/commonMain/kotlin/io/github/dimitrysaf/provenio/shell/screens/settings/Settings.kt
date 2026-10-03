@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import io.github.dimitrysaf.provenio.shell.screens.profiles.ProfileSwitcherHost
 import io.github.dimitrysaf.provenio.core.profiles.Profile
 import io.github.dimitrysaf.provenio.core.settings.ThemeMode
@@ -751,11 +752,13 @@ private fun TabletSettingsScreen(
                             title = { Text(pageTitle) },
                             navigationIcon = {
                                 if (previousPage != null) {
-                                    IconButton(onClick = onNavigateBack) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                                            contentDescription = stringResource(Res.string.action_back),
-                                        )
+                                    WithTooltip(stringResource(Res.string.action_back)) {
+                                        IconButton(onClick = onNavigateBack) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                                                contentDescription = stringResource(Res.string.action_back),
+                                            )
+                                        }
                                     }
                                 }
                             },

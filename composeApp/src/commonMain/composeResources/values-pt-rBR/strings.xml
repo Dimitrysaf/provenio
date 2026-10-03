@@ -344,12 +344,14 @@
     <string name="compose_player_resize_fill">Preencher</string>
     <string name="compose_player_resize_fit">Ajustar</string>
     <string name="compose_player_resize_zoom">Zoom</string>
-    <string name="compose_player_seek_back_10">Retroceder 10 segundos</string>
+    <string name="compose_player_seek_backward_seconds">Retroceder %1$d segundos</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">Avançar 10 segundos</string>
+    <string name="compose_player_seek_forward_seconds">Avançar %1$d segundos</string>
+    <string name="compose_player_subtitle_delay_decrease">Diminuir atraso das legendas</string>
+    <string name="compose_player_subtitle_delay_increase">Aumentar atraso das legendas</string>
     <string name="compose_player_sources">Fontes</string>
     <string name="compose_player_style">Estilo</string>
     <string name="compose_player_subs">Legendas</string>
@@ -706,6 +708,9 @@
     <string name="settings_playback_external_player_description_ios">Abrir nova reprodução com o player instalado selecionado.</string>
     <string name="settings_playback_external_player_none_available">Nenhum player externo compatível instalado</string>
     <string name="settings_playback_hold_speed">Segurar para Velocidade</string>
+    <string name="settings_playback_seek_backward">Retroceder</string>
+    <string name="settings_playback_seek_forward">Avançar</string>
+    <string name="settings_playback_seek_seconds_value">%1$d segundos</string>
     <string name="settings_playback_hold_to_speed">Segurar para Acelerar</string>
     <string name="settings_playback_hold_to_speed_description">Pressione e segure em qualquer lugar na superfície do player para aumentar temporariamente a velocidade de reprodução.</string>
     <string name="settings_playback_invalid_regex_pattern">Padrão regex inválido</string>

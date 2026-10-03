@@ -352,12 +352,14 @@
     <string name="compose_player_resize_fill">Wypełnij</string>
     <string name="compose_player_resize_fit">Dopasuj</string>
     <string name="compose_player_resize_zoom">Powiększ</string>
-    <string name="compose_player_seek_back_10">Przewiń wstecz 10 sekund</string>
+    <string name="compose_player_seek_backward_seconds">Przewiń wstecz %1$d sekund</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">Przewiń do przodu 10 sekund</string>
+    <string name="compose_player_seek_forward_seconds">Przewiń do przodu %1$d sekund</string>
+    <string name="compose_player_subtitle_delay_decrease">Zmniejsz opóźnienie napisów</string>
+    <string name="compose_player_subtitle_delay_increase">Zwiększ opóźnienie napisów</string>
     <string name="compose_player_sources">Źródła</string>
     <string name="compose_player_style">Styl</string>
     <string name="compose_player_select_addon_subtitle_first">Najpierw wybierz napisy z dodatku</string>
@@ -747,6 +749,9 @@
     <string name="settings_playback_external_player_forward_subtitles">Przekazuj napisy do zewnętrznego odtwarzacza</string>
     <string name="settings_playback_external_player_forward_subtitles_description">Pobierz napisy z dodatków w preferowanym języku i przekaż je do zewnętrznego odtwarzacza.</string>
     <string name="settings_playback_hold_speed">Prędkość przy przytrzymaniu</string>
+    <string name="settings_playback_seek_backward">Przewijanie wstecz</string>
+    <string name="settings_playback_seek_forward">Przewijanie do przodu</string>
+    <string name="settings_playback_seek_seconds_value">%1$d sekund</string>
     <string name="settings_playback_hold_to_speed">Przytrzymaj, aby przyspieszyć</string>
     <string name="settings_playback_hold_to_speed_description">Przytrzymaj dowolne miejsce na powierzchni odtwarzacza, aby tymczasowo zwiększyć prędkość odtwarzania.</string>
     <string name="settings_playback_invalid_regex_pattern">Nieprawidłowy wzorzec regex</string>

@@ -373,12 +373,14 @@
     <string name="compose_player_resize_fill">塗りつぶし</string>
     <string name="compose_player_resize_fit">フィット</string>
     <string name="compose_player_resize_zoom">ズーム</string>
-    <string name="compose_player_seek_back_10">10秒戻る</string>
+    <string name="compose_player_seek_backward_seconds">%1$d秒戻る</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">10秒進む</string>
+    <string name="compose_player_seek_forward_seconds">%1$d秒進む</string>
+    <string name="compose_player_subtitle_delay_decrease">字幕ディレイを減らす</string>
+    <string name="compose_player_subtitle_delay_increase">字幕ディレイを増やす</string>
     <string name="compose_player_sources">ソース</string>
     <string name="compose_player_style">スタイル</string>
     <string name="compose_player_select_addon_subtitle_first">アドオンの字幕を先に選択してください</string>
@@ -816,6 +818,9 @@
     <string name="settings_playback_player_preference_external">外部</string>
     <string name="settings_playback_player_preference_description">新しい再生に使用するプレーヤーを選択します。</string>
     <string name="settings_playback_hold_speed">長押し速度</string>
+    <string name="settings_playback_seek_backward">戻る秒数</string>
+    <string name="settings_playback_seek_forward">進む秒数</string>
+    <string name="settings_playback_seek_seconds_value">%1$d秒</string>
     <string name="settings_playback_hold_to_speed">長押しで速度変更</string>
     <string name="settings_playback_hold_to_speed_description">プレーヤー画面のどこかを長押しすると、一時的に再生速度を上げます。</string>
     <string name="settings_playback_touch_gestures">タッチジェスチャー</string>

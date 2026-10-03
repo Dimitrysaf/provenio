@@ -2,7 +2,6 @@ package io.github.dimitrysaf.provenio.shell
 
 import io.github.dimitrysaf.provenio.core.settings.ThemeMode
 import io.github.dimitrysaf.provenio.shell.theme.systemPrefersDarkTheme
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,6 +27,7 @@ import io.github.dimitrysaf.provenio.shell.nav.AppRoute
 import io.github.dimitrysaf.provenio.shell.nav.TabsRoute
 import androidx.compose.runtime.LaunchedEffect
 import io.github.dimitrysaf.provenio.shell.components.NativeTabBridge
+import io.github.dimitrysaf.provenio.shell.components.PointerCursorHost
 import io.github.dimitrysaf.provenio.shell.theme.themePalette
 import io.github.dimitrysaf.provenio.core.settings.AppIconOption
 import io.github.dimitrysaf.provenio.core.settings.ColorPalette
@@ -58,7 +58,7 @@ fun App(
     appGateController: AppGateController? = null,
 ) {
     AppEnvironment {
-        Box(modifier = Modifier.fillMaxSize()) {
+        PointerCursorHost(modifier = Modifier.fillMaxSize()) {
             AppGate(
                 initialTab = initialTab,
                 initialRoute = initialRoute,

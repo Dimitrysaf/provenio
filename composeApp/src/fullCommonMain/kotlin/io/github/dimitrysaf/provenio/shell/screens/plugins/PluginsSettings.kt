@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.plugins
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -411,11 +412,13 @@ private fun PluginRepositoryRow(
         },
         trailingContent = {
             Box {
-                IconButton(onClick = { menuOpen = true }) {
-                    Icon(
-                        imageVector = Icons.Rounded.MoreVert,
-                        contentDescription = stringResource(Res.string.plugins_cd_refresh_repo),
-                    )
+                WithTooltip(stringResource(Res.string.plugins_cd_refresh_repo)) {
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(
+                            imageVector = Icons.Rounded.MoreVert,
+                            contentDescription = stringResource(Res.string.plugins_cd_refresh_repo),
+                        )
+                    }
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     DropdownMenuItem(
@@ -505,11 +508,13 @@ private fun PluginProviderRow(
                     enabled = scraper.manifestEnabled,
                 )
                 Box {
-                    IconButton(onClick = { menuOpen = true }) {
-                        Icon(
-                            imageVector = Icons.Rounded.MoreVert,
-                            contentDescription = stringResource(Res.string.plugins_provider_settings),
-                        )
+                    WithTooltip(stringResource(Res.string.plugins_provider_settings)) {
+                        IconButton(onClick = { menuOpen = true }) {
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = stringResource(Res.string.plugins_provider_settings),
+                            )
+                        }
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         if (scraper.hasSettings) {

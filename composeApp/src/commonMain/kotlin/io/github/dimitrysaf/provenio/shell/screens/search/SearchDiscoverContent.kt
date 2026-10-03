@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.search
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.layout.Arrangement
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.layout.Box
@@ -161,14 +162,16 @@ private fun DiscoverHeaderRow(
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        FilledTonalIconButton(
-            onClick = { showFilters = true },
-            enabled = canFilter,
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Tune,
-                contentDescription = stringResource(Res.string.discover_filters),
-            )
+        WithTooltip(stringResource(Res.string.discover_filters)) {
+            FilledTonalIconButton(
+                onClick = { showFilters = true },
+                enabled = canFilter,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Tune,
+                    contentDescription = stringResource(Res.string.discover_filters),
+                )
+            }
         }
     }
 

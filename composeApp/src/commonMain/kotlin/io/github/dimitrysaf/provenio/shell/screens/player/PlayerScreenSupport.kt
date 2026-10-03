@@ -7,7 +7,6 @@ import io.github.dimitrysaf.provenio.core.streams.StreamItem
 // Often enough that a paired device watching along sees the position move within about half a minute.
 internal const val PlaybackProgressPersistIntervalMs = 20_000L
 
-internal const val PlayerDoubleTapSeekStepMs = 10_000L
 
 internal const val PlayerDoubleTapSeekResetDelayMs = 800L
 
@@ -53,7 +52,6 @@ internal enum class PlayerSeekDirection {
 }
 
 internal enum class PlayerGestureMode {
-    HorizontalSeek,
     Brightness,
     Volume,
 }

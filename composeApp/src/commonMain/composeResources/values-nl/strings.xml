@@ -451,12 +451,14 @@
     <string name="compose_player_resize_fill">Vullen</string>
     <string name="compose_player_resize_fit">Passend</string>
     <string name="compose_player_resize_zoom">Zoom</string>
-    <string name="compose_player_seek_back_10">10 seconden terugspoelen</string>
+    <string name="compose_player_seek_backward_seconds">%1$d seconden terugspoelen</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">10 seconden vooruitspoelen</string>
+    <string name="compose_player_seek_forward_seconds">%1$d seconden vooruitspoelen</string>
+    <string name="compose_player_subtitle_delay_decrease">Ondertitelvertraging verlagen</string>
+    <string name="compose_player_subtitle_delay_increase">Ondertitelvertraging verhogen</string>
     <string name="compose_player_sources">Bronnen</string>
     <string name="compose_player_style">Stijl</string>
     <string name="compose_player_select_addon_subtitle_first">Selecteer eerst een add-on-ondertitel</string>
@@ -981,6 +983,9 @@
     <string name="settings_playback_player_preference_external">Extern</string>
     <string name="settings_playback_player_preference_description">Kies welke speler nieuwe weergave afhandelt.</string>
     <string name="settings_playback_hold_speed">Snelheid bij ingedrukt houden</string>
+    <string name="settings_playback_seek_backward">Terugspoelen</string>
+    <string name="settings_playback_seek_forward">Vooruitspoelen</string>
+    <string name="settings_playback_seek_seconds_value">%1$d seconden</string>
     <string name="settings_playback_hold_to_speed">Ingedrukt houden voor snelheid</string>
     <string name="settings_playback_hold_to_speed_description">Houd overal op het spelervlak lang ingedrukt om de afspeelsnelheid tijdelijk te verhogen.</string>
     <string name="settings_playback_touch_gestures">Aanraakgebaren</string>

@@ -15,6 +15,8 @@ data class PlayerSettingsUiState(
     val resizeMode: PlayerResizeMode = PlayerResizeMode.Fit,
     val holdToSpeedEnabled: Boolean = true,
     val holdToSpeedValue: Float = 2f,
+    val seekBackwardSeconds: Int = DEFAULT_SEEK_INTERVAL_SECONDS,
+    val seekForwardSeconds: Int = DEFAULT_SEEK_INTERVAL_SECONDS,
     val touchGesturesEnabled: Boolean = true,
     val externalPlayerEnabled: Boolean = false,
     val externalPlayerForwardSubtitles: Boolean = false,
@@ -81,6 +83,8 @@ object PlayerSettingsRepository {
     private var resizeMode = PlayerResizeMode.Fit
     private var holdToSpeedEnabled = true
     private var holdToSpeedValue = 2f
+    private var seekBackwardSeconds = DEFAULT_SEEK_INTERVAL_SECONDS
+    private var seekForwardSeconds = DEFAULT_SEEK_INTERVAL_SECONDS
     private var touchGesturesEnabled = true
     private var externalPlayerEnabled = false
     private var externalPlayerForwardSubtitles = false
@@ -152,6 +156,8 @@ object PlayerSettingsRepository {
         resizeMode = PlayerResizeMode.Fit
         holdToSpeedEnabled = true
         holdToSpeedValue = 2f
+        seekBackwardSeconds = DEFAULT_SEEK_INTERVAL_SECONDS
+        seekForwardSeconds = DEFAULT_SEEK_INTERVAL_SECONDS
         touchGesturesEnabled = true
         externalPlayerEnabled = false
         externalPlayerForwardSubtitles = false
@@ -218,6 +224,8 @@ object PlayerSettingsRepository {
             ?: PlayerResizeMode.Fit
         holdToSpeedEnabled = PlayerSettingsStorage.loadHoldToSpeedEnabled() ?: true
         holdToSpeedValue = PlayerSettingsStorage.loadHoldToSpeedValue() ?: 2f
+        seekBackwardSeconds = normalizeSeekInterval(PlayerSettingsStorage.loadSeekBackwardSeconds())
+        seekForwardSeconds = normalizeSeekInterval(PlayerSettingsStorage.loadSeekForwardSeconds())
         touchGesturesEnabled = PlayerSettingsStorage.loadTouchGesturesEnabled() ?: true
         externalPlayerEnabled = PlayerSettingsStorage.loadExternalPlayerEnabled() ?: false
         externalPlayerForwardSubtitles = PlayerSettingsStorage.loadExternalPlayerForwardSubtitles() ?: false
@@ -391,6 +399,27 @@ object PlayerSettingsRepository {
         publish()
         PlayerSettingsStorage.saveHoldToSpeedValue(normalized)
     }
+
+    fun setSeekBackwardSeconds(seconds: Int) {
+        ensureLoaded()
+        val normalized = normalizeSeekInterval(seconds)
+        if (seekBackwardSeconds == normalized) return
+        seekBackwardSeconds = normalized
+        publish()
+        PlayerSettingsStorage.saveSeekBackwardSeconds(normalized)
+    }
+
+    fun setSeekForwardSeconds(seconds: Int) {
+        ensureLoaded()
+        val normalized = normalizeSeekInterval(seconds)
+        if (seekForwardSeconds == normalized) return
+        seekForwardSeconds = normalized
+        publish()
+        PlayerSettingsStorage.saveSeekForwardSeconds(normalized)
+    }
+
+    private fun normalizeSeekInterval(seconds: Int?): Int =
+        seconds?.takeIf { it in SEEK_INTERVAL_SECONDS_OPTIONS } ?: DEFAULT_SEEK_INTERVAL_SECONDS
 
     fun setTouchGesturesEnabled(enabled: Boolean) {
         ensureLoaded()
@@ -895,6 +924,8 @@ object PlayerSettingsRepository {
             resizeMode = resizeMode,
             holdToSpeedEnabled = holdToSpeedEnabled,
             holdToSpeedValue = holdToSpeedValue,
+            seekBackwardSeconds = seekBackwardSeconds,
+            seekForwardSeconds = seekForwardSeconds,
             touchGesturesEnabled = touchGesturesEnabled,
             externalPlayerEnabled = externalPlayerEnabled,
             externalPlayerForwardSubtitles = externalPlayerForwardSubtitles,
@@ -959,3 +990,7 @@ object PlayerSettingsRepository {
         }
     }
 }
+
+const val DEFAULT_SEEK_INTERVAL_SECONDS = 10
+
+val SEEK_INTERVAL_SECONDS_OPTIONS = listOf(5, 10, 15, 20, 30, 45, 60, 90)

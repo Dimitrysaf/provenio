@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.collection
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -163,16 +164,18 @@ internal fun EditableIdentityHeader(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
-        IconButton(
-            onClick = onEditTitle,
-            colors = IconButtonDefaults.iconButtonColors(
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Edit,
-                contentDescription = stringResource(Res.string.action_edit),
-            )
+        WithTooltip(stringResource(Res.string.action_edit)) {
+            IconButton(
+                onClick = onEditTitle,
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Edit,
+                    contentDescription = stringResource(Res.string.action_edit),
+                )
+            }
         }
     }
 }
@@ -554,11 +557,13 @@ internal fun PresetFieldRow(
                 null
             } else {
                 {
-                    IconButton(onClick = { showPresets = true }) {
-                        Icon(
-                            imageVector = Icons.Rounded.KeyboardArrowDown,
-                            contentDescription = presetSheetTitle,
-                        )
+                    WithTooltip(presetSheetTitle) {
+                        IconButton(onClick = { showPresets = true }) {
+                            Icon(
+                                imageVector = Icons.Rounded.KeyboardArrowDown,
+                                contentDescription = presetSheetTitle,
+                            )
+                        }
                     }
                 }
             },

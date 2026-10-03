@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.streams
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingState
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
@@ -277,11 +278,13 @@ fun StreamsSheet(
                 }
             }
             Row {
-                IconButton(onClick = { reloadStreams(type, videoId, parentMetaId, seasonNumber, episodeNumber, manualSelection) }, enabled = !uiState.isAnyLoading) {
-                    Icon(
-                        imageVector = Icons.Rounded.Refresh,
-                        contentDescription = stringResource(Res.string.streams_refresh),
-                    )
+                WithTooltip(stringResource(Res.string.streams_refresh)) {
+                    IconButton(onClick = { reloadStreams(type, videoId, parentMetaId, seasonNumber, episodeNumber, manualSelection) }, enabled = !uiState.isAnyLoading) {
+                        Icon(
+                            imageVector = Icons.Rounded.Refresh,
+                            contentDescription = stringResource(Res.string.streams_refresh),
+                        )
+                    }
                 }
                 SheetNavigationButton(
                     navigation = SheetNavigation.Close,

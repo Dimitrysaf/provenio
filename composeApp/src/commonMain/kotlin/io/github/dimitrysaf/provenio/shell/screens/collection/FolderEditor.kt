@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.collection
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -159,23 +160,25 @@ internal fun FolderListItem(
         ),
         leadingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    modifier = with(dragHandleScope) {
-                        Modifier.draggableHandle(
-                            onDragStarted = {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                            },
-                            onDragStopped = {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            },
+                WithTooltip(stringResource(Res.string.action_reorder)) {
+                    IconButton(
+                        modifier = with(dragHandleScope) {
+                            Modifier.draggableHandle(
+                                onDragStarted = {
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                },
+                                onDragStopped = {
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                },
+                            )
+                        },
+                        onClick = {},
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Menu,
+                            contentDescription = stringResource(Res.string.action_reorder),
                         )
-                    },
-                    onClick = {},
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Menu,
-                        contentDescription = stringResource(Res.string.action_reorder),
-                    )
+                    }
                 }
                 if (folder.coverEmoji != null) {
                     Text(
@@ -192,22 +195,26 @@ internal fun FolderListItem(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onEdit) {
-                    Icon(
-                        imageVector = Icons.Rounded.Edit,
-                        contentDescription = stringResource(Res.string.action_edit),
-                    )
+                WithTooltip(stringResource(Res.string.action_edit)) {
+                    IconButton(onClick = onEdit) {
+                        Icon(
+                            imageVector = Icons.Rounded.Edit,
+                            contentDescription = stringResource(Res.string.action_edit),
+                        )
+                    }
                 }
-                IconButton(
-                    onClick = onDelete,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Delete,
-                        contentDescription = stringResource(Res.string.action_delete),
-                    )
+                WithTooltip(stringResource(Res.string.action_delete)) {
+                    IconButton(
+                        onClick = onDelete,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Delete,
+                            contentDescription = stringResource(Res.string.action_delete),
+                        )
+                    }
                 }
             }
         },
@@ -460,11 +467,13 @@ internal fun FolderTraktSourceCard(
         onClick = onEdit,
         onRemove = onRemove,
         leadingAction = {
-            IconButton(onClick = onEdit) {
-                Icon(
-                    imageVector = Icons.Rounded.Edit,
-                    contentDescription = stringResource(Res.string.action_edit),
-                )
+            WithTooltip(stringResource(Res.string.action_edit)) {
+                IconButton(onClick = onEdit) {
+                    Icon(
+                        imageVector = Icons.Rounded.Edit,
+                        contentDescription = stringResource(Res.string.action_edit),
+                    )
+                }
             }
         },
     )
@@ -544,16 +553,18 @@ internal fun FolderSourceRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 leadingAction?.invoke()
-                IconButton(
-                    onClick = onRemove,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = stringResource(Res.string.action_remove),
-                    )
+                WithTooltip(stringResource(Res.string.action_remove)) {
+                    IconButton(
+                        onClick = onRemove,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = stringResource(Res.string.action_remove),
+                        )
+                    }
                 }
             }
         },

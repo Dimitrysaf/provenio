@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.streams
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -86,8 +87,10 @@ internal fun StreamFilterBar(state: StreamFilterState, groups: List<AddonStreamG
             trailingIcon = {
                 Row {
                     if (state.query.isNotEmpty()) {
-                        IconButton(onClick = { state.query = "" }) {
-                            Icon(imageVector = Icons.Rounded.Close, contentDescription = stringResource(Res.string.action_clear))
+                        WithTooltip(stringResource(Res.string.action_clear)) {
+                            IconButton(onClick = { state.query = "" }) {
+                                Icon(imageVector = Icons.Rounded.Close, contentDescription = stringResource(Res.string.action_clear))
+                            }
                         }
                     }
                     if (hasSizes || qualities.size > 1) {
@@ -134,12 +137,14 @@ private fun StreamFilterMenuButton(
     val title = stringResource(Res.string.streams_filter_title)
     val active = state.qualities.isNotEmpty() || state.sizeOrder != StreamSizeOrder.DEFAULT
     Box {
-        IconButton(onClick = { open = true }) {
-            Icon(
-                imageVector = Icons.Rounded.FilterList,
-                contentDescription = title,
-                tint = if (active) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-            )
+        WithTooltip(title) {
+            IconButton(onClick = { open = true }) {
+                Icon(
+                    imageVector = Icons.Rounded.FilterList,
+                    contentDescription = title,
+                    tint = if (active) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                )
+            }
         }
         if (LocalWindowBreakpoint.current.isTwoPane) {
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {

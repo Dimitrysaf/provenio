@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material.icons.rounded.PlayDisabled
 import androidx.compose.material.icons.rounded.Public
+import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.ButtonDefaults
@@ -102,6 +103,8 @@ private const val CinemetaName = "Cinemeta"
 private const val CinemetaManifestUrl = "https://v3-cinemeta.strem.io/manifest.json"
 private const val TorrentioName = "Torrentio"
 private const val TorrentioManifestUrl = "https://torrentio.strem.fun/manifest.json"
+private const val OpenSubtitlesName = "OpenSubtitles"
+private const val OpenSubtitlesManifestUrl = "https://opensubtitles-v3.strem.io/manifest.json"
 private const val AioStreamsName = "AIOStreams"
 private const val AioStreamsUrl = "https://github.com/Viren070/AIOStreams"
 private const val AioMetadataName = "AIOMetadata"
@@ -258,6 +261,14 @@ private fun AddonsGuideBody(
                     state = installState(TorrentioManifestUrl),
                     onTermClick = openTerm,
                     onInstall = { install(TorrentioManifestUrl) },
+                )
+                guideInstallRow(
+                    title = OpenSubtitlesName,
+                    body = stringResource(Res.string.addons_guide_opensubtitles_body),
+                    icon = Icons.Rounded.Subtitles,
+                    state = installState(OpenSubtitlesManifestUrl),
+                    onTermClick = openTerm,
+                    onInstall = { install(OpenSubtitlesManifestUrl) },
                 )
             }
             GuideNotice(

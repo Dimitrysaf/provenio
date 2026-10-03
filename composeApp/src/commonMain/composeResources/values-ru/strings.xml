@@ -451,12 +451,14 @@
     <string name="compose_player_resize_fill">Заполнить</string>
     <string name="compose_player_resize_fit">Вписать</string>
     <string name="compose_player_resize_zoom">Увеличить</string>
-    <string name="compose_player_seek_back_10">Перейти назад на 10 секунд</string>
+    <string name="compose_player_seek_backward_seconds">Перейти назад на %1$d секунд</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">Перейти вперед на 10 секунд</string>
+    <string name="compose_player_seek_forward_seconds">Перейти вперед на %1$d секунд</string>
+    <string name="compose_player_subtitle_delay_decrease">Уменьшить задержку субтитров</string>
+    <string name="compose_player_subtitle_delay_increase">Увеличить задержку субтитров</string>
     <string name="compose_player_sources">Источники</string>
     <string name="compose_player_style">Стиль</string>
     <string name="compose_player_select_addon_subtitle_first">Сначала выберите субтитры из аддона</string>
@@ -981,6 +983,9 @@
     <string name="settings_playback_player_preference_external">Внешний</string>
     <string name="settings_playback_player_preference_description">Выберите, какой проигрыватель будет обрабатывать новое воспроизведение.</string>
     <string name="settings_playback_hold_speed">Удерживать скорость</string>
+    <string name="settings_playback_seek_backward">Перемотка назад</string>
+    <string name="settings_playback_seek_forward">Перемотка вперед</string>
+    <string name="settings_playback_seek_seconds_value">%1$d секунд</string>
     <string name="settings_playback_hold_to_speed">Удерживайте скорость</string>
     <string name="settings_playback_hold_to_speed_description">Нажмите и удерживайте любое место на поверхности проигрывателя, чтобы временно увеличить скорость воспроизведения.</string>
     <string name="settings_playback_touch_gestures">Сенсорные жесты</string>

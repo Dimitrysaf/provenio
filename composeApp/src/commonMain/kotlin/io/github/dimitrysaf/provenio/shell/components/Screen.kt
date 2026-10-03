@@ -120,11 +120,13 @@ fun ScreenScaffold(
                 subtitle = subtitle?.let { { Text(it) } },
                 navigationIcon = {
                     if (onBack != null) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                                contentDescription = stringResource(Res.string.action_back),
-                            )
+                        WithTooltip(stringResource(Res.string.action_back)) {
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                                    contentDescription = stringResource(Res.string.action_back),
+                                )
+                            }
                         }
                     }
                 },

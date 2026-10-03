@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.animation.Crossfade
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.animation.core.animateFloatAsState
@@ -468,11 +469,13 @@ private fun PlayerSheetHeader(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (onBack != null) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = stringResource(Res.string.action_back),
-                )
+            WithTooltip(stringResource(Res.string.action_back)) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = stringResource(Res.string.action_back),
+                    )
+                }
             }
         }
         Column(modifier = Modifier.weight(1f)) {
@@ -494,11 +497,13 @@ private fun PlayerSheetHeader(
             }
         }
         if (onReload != null) {
-            IconButton(onClick = onReload, enabled = reloadEnabled) {
-                Icon(
-                    imageVector = Icons.Rounded.Refresh,
-                    contentDescription = stringResource(Res.string.streams_refresh),
-                )
+            WithTooltip(stringResource(Res.string.streams_refresh)) {
+                IconButton(onClick = onReload, enabled = reloadEnabled) {
+                    Icon(
+                        imageVector = Icons.Rounded.Refresh,
+                        contentDescription = stringResource(Res.string.streams_refresh),
+                    )
+                }
             }
         }
         if (onFetch != null) {
@@ -508,11 +513,13 @@ private fun PlayerSheetHeader(
                     if (isFetching) {
                         SmallLoadingSpinner(size = 24.dp)
                     } else {
-                        IconButton(onClick = onFetch) {
-                            Icon(
-                                imageVector = Icons.Rounded.CloudDownload,
-                                contentDescription = stringResource(Res.string.compose_player_fetch_subtitles),
-                            )
+                        WithTooltip(stringResource(Res.string.compose_player_fetch_subtitles)) {
+                            IconButton(onClick = onFetch) {
+                                Icon(
+                                    imageVector = Icons.Rounded.CloudDownload,
+                                    contentDescription = stringResource(Res.string.compose_player_fetch_subtitles),
+                                )
+                            }
                         }
                     }
                 }
@@ -787,19 +794,25 @@ private fun SubtitleDelayRow(
             supportingContent = { Text(formatSubtitleDelay(delayMs)) },
             trailingContent = {
                 Row {
-                    IconButton(
-                        onClick = {
-                            onDelayChanged((delayMs - SUBTITLE_DELAY_STEP_MS).coerceAtLeast(SUBTITLE_DELAY_MIN_MS))
-                        },
-                    ) {
-                        Icon(imageVector = Icons.Rounded.Remove, contentDescription = null)
+                    val decreaseLabel = stringResource(Res.string.compose_player_subtitle_delay_decrease)
+                    val increaseLabel = stringResource(Res.string.compose_player_subtitle_delay_increase)
+                    WithTooltip(decreaseLabel) {
+                        IconButton(
+                            onClick = {
+                                onDelayChanged((delayMs - SUBTITLE_DELAY_STEP_MS).coerceAtLeast(SUBTITLE_DELAY_MIN_MS))
+                            },
+                        ) {
+                            Icon(imageVector = Icons.Rounded.Remove, contentDescription = decreaseLabel)
+                        }
                     }
-                    IconButton(
-                        onClick = {
-                            onDelayChanged((delayMs + SUBTITLE_DELAY_STEP_MS).coerceAtMost(SUBTITLE_DELAY_MAX_MS))
-                        },
-                    ) {
-                        Icon(imageVector = Icons.Rounded.Add, contentDescription = null)
+                    WithTooltip(increaseLabel) {
+                        IconButton(
+                            onClick = {
+                                onDelayChanged((delayMs + SUBTITLE_DELAY_STEP_MS).coerceAtMost(SUBTITLE_DELAY_MAX_MS))
+                            },
+                        ) {
+                            Icon(imageVector = Icons.Rounded.Add, contentDescription = increaseLabel)
+                        }
                     }
                 }
             },

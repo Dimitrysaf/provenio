@@ -451,12 +451,14 @@
     <string name="compose_player_resize_fill">Lấp đầy</string>
     <string name="compose_player_resize_fit">Vừa màn hình</string>
     <string name="compose_player_resize_zoom">Phóng to</string>
-    <string name="compose_player_seek_back_10">Lùi 10 giây</string>
+    <string name="compose_player_seek_backward_seconds">Lùi %1$d giây</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">Tua 10 giây</string>
+    <string name="compose_player_seek_forward_seconds">Tua %1$d giây</string>
+    <string name="compose_player_subtitle_delay_decrease">Giảm độ trễ phụ đề</string>
+    <string name="compose_player_subtitle_delay_increase">Tăng độ trễ phụ đề</string>
     <string name="compose_player_sources">Nguồn</string>
     <string name="compose_player_style">Kiểu</string>
     <string name="compose_player_select_addon_subtitle_first">Vui lòng chọn tiện ích phụ đề trước</string>
@@ -983,6 +985,9 @@
     <string name="settings_playback_player_preference_external">Bên ngoài</string>
     <string name="settings_playback_player_preference_description">Chọn trình phát nào sẽ xử lý phát lại mới.</string>
     <string name="settings_playback_hold_speed">Tốc độ khi giữ</string>
+    <string name="settings_playback_seek_backward">Lùi</string>
+    <string name="settings_playback_seek_forward">Tua tới</string>
+    <string name="settings_playback_seek_seconds_value">%1$d giây</string>
     <string name="settings_playback_hold_to_speed">Giữ để tăng tốc</string>
     <string name="settings_playback_hold_to_speed_description">Nhấn giữ bất kỳ đâu trên trình phát để tạm thời tăng tốc độ phát lại</string>
     <string name="settings_playback_touch_gestures">Cử chỉ chạm</string>

@@ -389,12 +389,14 @@
     <string name="compose_player_resize_fill">ملء</string>
     <string name="compose_player_resize_fit">ملاءمة</string>
     <string name="compose_player_resize_zoom">تكبير</string>
-    <string name="compose_player_seek_back_10">رجوع 10 ثوانٍ</string>
+    <string name="compose_player_seek_backward_seconds">رجوع %1$d ثانية</string>
     <string name="compose_player_seek_delta_backward">-%1$d ث</string>
     <string name="compose_player_seek_delta_forward">+%1$d ث</string>
     <string name="compose_player_seek_feedback_backward">-%1$d ث</string>
     <string name="compose_player_seek_feedback_forward">+%1$d ث</string>
-    <string name="compose_player_seek_forward_10">تقديم 10 ثوانٍ</string>
+    <string name="compose_player_seek_forward_seconds">تقديم %1$d ثانية</string>
+    <string name="compose_player_subtitle_delay_decrease">تقليل تأخير الترجمة</string>
+    <string name="compose_player_subtitle_delay_increase">زيادة تأخير الترجمة</string>
     <string name="compose_player_sources">المصادر</string>
     <string name="compose_player_style">النمط</string>
     <string name="compose_player_select_addon_subtitle_first">اختر ترجمة من إحدى الإضافات أولًا</string>
@@ -915,6 +917,9 @@
     <string name="settings_playback_player_preference_external">خارجي</string>
     <string name="settings_playback_player_preference_description">اختر المشغّل الذي يتولى عمليات التشغيل الجديدة.</string>
     <string name="settings_playback_hold_speed">سرعة الضغط المطوّل</string>
+    <string name="settings_playback_seek_backward">مدة الرجوع</string>
+    <string name="settings_playback_seek_forward">مدة التقديم</string>
+    <string name="settings_playback_seek_seconds_value">%1$d ثانية</string>
     <string name="settings_playback_hold_to_speed">الضغط المطوّل للتسريع</string>
     <string name="settings_playback_hold_to_speed_description">اضغط مطولًا في أي مكان على سطح المشغّل لزيادة سرعة التشغيل مؤقتًا.</string>
     <string name="settings_playback_touch_gestures">إيماءات اللمس</string>

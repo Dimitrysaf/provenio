@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.downloads
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -116,17 +117,19 @@ fun DownloadsScreen(
             }
         },
         actions = {
-            IconButton(
-                onClick = {
-                    if (!DownloadsPlatformDownloader.openDownloadsDirectory()) {
-                        ToastController.show(openDownloadsDirectoryFailedText)
-                    }
-                },
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Folder,
-                    contentDescription = stringResource(Res.string.downloads_open_directory),
-                )
+            WithTooltip(stringResource(Res.string.downloads_open_directory)) {
+                IconButton(
+                    onClick = {
+                        if (!DownloadsPlatformDownloader.openDownloadsDirectory()) {
+                            ToastController.show(openDownloadsDirectoryFailedText)
+                        }
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Folder,
+                        contentDescription = stringResource(Res.string.downloads_open_directory),
+                    )
+                }
             }
         },
     ) {
@@ -375,11 +378,13 @@ private fun DownloadRow(
         // fifty more points of width, which the title and its progress line were paying for.
         trailingContent = {
             Box {
-                IconButton(onClick = { menuOpen = true }) {
-                    Icon(
-                        imageVector = Icons.Rounded.MoreVert,
-                        contentDescription = stringResource(Res.string.downloads_row_actions),
-                    )
+                WithTooltip(stringResource(Res.string.downloads_row_actions)) {
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(
+                            imageVector = Icons.Rounded.MoreVert,
+                            contentDescription = stringResource(Res.string.downloads_row_actions),
+                        )
+                    }
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     when (item.status) {

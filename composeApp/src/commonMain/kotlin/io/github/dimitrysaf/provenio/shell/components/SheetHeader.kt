@@ -40,16 +40,18 @@ fun SheetNavigationButton(
     modifier: Modifier = Modifier,
 ) {
     if (!sheetNavigationVisible()) return
-    IconButton(onClick = onClick, modifier = modifier) {
-        when (navigation) {
-            SheetNavigation.Close -> Icon(
-                imageVector = Icons.Rounded.Close,
-                contentDescription = stringResource(Res.string.action_close),
-            )
-            SheetNavigation.Back -> Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = stringResource(Res.string.action_back),
-            )
+    WithTooltip(stringResource(Res.string.action_close)) {
+        IconButton(onClick = onClick, modifier = modifier) {
+            when (navigation) {
+                SheetNavigation.Close -> Icon(
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = stringResource(Res.string.action_close),
+                )
+                SheetNavigation.Back -> Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = stringResource(Res.string.action_back),
+                )
+            }
         }
     }
 }

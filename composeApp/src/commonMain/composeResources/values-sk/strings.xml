@@ -363,12 +363,14 @@
     <string name="compose_player_resize_fill">Vyplniť</string>
     <string name="compose_player_resize_fit">Prispôsobiť</string>
     <string name="compose_player_resize_zoom">Priblížiť</string>
-    <string name="compose_player_seek_back_10">Posunúť späť o 10 sekúnd</string>
+    <string name="compose_player_seek_backward_seconds">Posunúť späť o %1$d sekúnd</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">Posunúť vpred o 10 sekúnd</string>
+    <string name="compose_player_seek_forward_seconds">Posunúť vpred o %1$d sekúnd</string>
+    <string name="compose_player_subtitle_delay_decrease">Znížiť oneskorenie titulkov</string>
+    <string name="compose_player_subtitle_delay_increase">Zvýšiť oneskorenie titulkov</string>
     <string name="compose_player_sources">Zdroje</string>
     <string name="compose_player_style">Štýl</string>
     <string name="compose_player_select_addon_subtitle_first">Najprv vyberte titulok doplnku</string>
@@ -804,6 +806,9 @@
     <string name="settings_playback_player_preference_external">Externý</string>
     <string name="settings_playback_player_preference_description">Vyberte, ktorý prehrávač spracováva nové prehrávanie.</string>
     <string name="settings_playback_hold_speed">Rýchlosť podržania</string>
+    <string name="settings_playback_seek_backward">Posun späť</string>
+    <string name="settings_playback_seek_forward">Posun vpred</string>
+    <string name="settings_playback_seek_seconds_value">%1$d sekúnd</string>
     <string name="settings_playback_hold_to_speed">Podržať pre rýchlosť</string>
     <string name="settings_playback_hold_to_speed_description">Dlhým stlačením kdekoľvek na povrchu prehrávača dočasne zvýšite rýchlosť prehrávania.</string>
     <string name="settings_playback_touch_gestures">Dotykové gestá</string>

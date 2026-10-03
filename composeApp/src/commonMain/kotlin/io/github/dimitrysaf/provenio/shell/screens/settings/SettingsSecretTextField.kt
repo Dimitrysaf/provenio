@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Visibility
@@ -47,14 +48,16 @@ internal fun SettingsSecretTextField(
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         trailingIcon = {
-            IconButton(onClick = { visible = !visible }) {
-                Icon(
-                    imageVector = if (visible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                    contentDescription = stringResource(
-                        if (visible) Res.string.settings_hide_secret else Res.string.settings_show_secret,
-                    ),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            WithTooltip(stringResource(if (visible) Res.string.settings_hide_secret else Res.string.settings_show_secret)) {
+                IconButton(onClick = { visible = !visible }) {
+                    Icon(
+                        imageVector = if (visible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
+                        contentDescription = stringResource(
+                            if (visible) Res.string.settings_hide_secret else Res.string.settings_show_secret,
+                        ),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         },
     )

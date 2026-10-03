@@ -328,12 +328,14 @@
     <string name="compose_player_resize_fill">Ausfüllen</string>
     <string name="compose_player_resize_fit">Anpassen</string>
     <string name="compose_player_resize_zoom">Zoom</string>
-    <string name="compose_player_seek_back_10">10 Sekunden zurückspulen</string>
+    <string name="compose_player_seek_backward_seconds">%1$d Sekunden zurückspulen</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">10 Sekunden vorspulen</string>
+    <string name="compose_player_seek_forward_seconds">%1$d Sekunden vorspulen</string>
+    <string name="compose_player_subtitle_delay_decrease">Untertitelverzögerung verringern</string>
+    <string name="compose_player_subtitle_delay_increase">Untertitelverzögerung erhöhen</string>
     <string name="compose_player_sources">Quellen</string>
     <string name="compose_player_style">Stil</string>
     <string name="compose_player_subs">UT</string>
@@ -612,6 +614,9 @@
     <string name="settings_playback_enable_libass">libass aktivieren</string>
     <string name="settings_playback_enable_libass_description">libass für ASS/SSA-Untertitel-Rendering anstelle des Standard-Renderers verwenden.</string>
     <string name="settings_playback_hold_speed">Halte-Geschwindigkeit</string>
+    <string name="settings_playback_seek_backward">Zurückspulen</string>
+    <string name="settings_playback_seek_forward">Vorspulen</string>
+    <string name="settings_playback_seek_seconds_value">%1$d Sekunden</string>
     <string name="settings_playback_hold_to_speed">Halten zum Beschleunigen</string>
     <string name="settings_playback_hold_to_speed_description">Halte irgendwo auf der Player-Oberfläche gedrückt, um die Wiedergabegeschwindigkeit vorübergehend zu erhöhen.</string>
     <string name="settings_playback_invalid_regex_pattern">Ungültiges Regex-Muster</string>

@@ -39,17 +39,16 @@ class NextEpisodeCardTest {
     private val countdown = mutableStateOf<Int?>(null)
     private var dismissals = 0
     private var plays = 0
-    private var seeks = 0
 
     @Test
-    fun swipingRightDismissesWithoutPlayingOrSeeking() {
+    fun swipingRightDismissesWithoutPlaying() {
         showCard()
         card().performTouchInput { swipe(Offset(width * 0.2f, centerY), Offset(width * 0.8f, centerY)) }
         assertDismissed()
     }
 
     @Test
-    fun swipingLeftDoesNotMoveDismissPlayOrSeek() {
+    fun swipingLeftDoesNotMoveDismissOrPlay() {
         showCard()
         val bounds = card().getUnclippedBoundsInRoot()
         card().performTouchInput {
@@ -63,12 +62,11 @@ class NextEpisodeCardTest {
         compose.runOnIdle {
             assertEquals(0, dismissals)
             assertEquals(0, plays)
-            assertEquals(0, seeks)
         }
     }
 
     @Test
-    fun unairedEpisodeCanBeDismissedWithoutSeeking() {
+    fun unairedEpisodeCanBeDismissed() {
         showCard(hasAired = false)
         card().performTouchInput { swipe(Offset(width * 0.2f, centerY), Offset(width * 0.8f, centerY)) }
         assertDismissed()
@@ -84,7 +82,6 @@ class NextEpisodeCardTest {
         compose.runOnIdle {
             assertEquals(0, dismissals)
             assertEquals(0, plays)
-            assertEquals(0, seeks)
         }
         card().performClick()
         compose.runOnIdle { assertEquals(1, plays) }
@@ -104,7 +101,6 @@ class NextEpisodeCardTest {
         compose.runOnIdle {
             assertEquals(0, dismissals)
             assertEquals(0, plays)
-            assertEquals(0, seeks)
         }
     }
 
@@ -147,7 +143,6 @@ class NextEpisodeCardTest {
         compose.runOnIdle {
             assertEquals(1, dismissals)
             assertEquals(0, plays)
-            assertEquals(0, seeks)
         }
     }
 
@@ -165,15 +160,9 @@ class NextEpisodeCardTest {
                         playerControlsLockedState = unlocked,
                         touchGesturesEnabledState = rememberUpdatedState(true),
                         isHoldToSpeedGestureActiveState = unlocked,
-                        currentPositionMsState = rememberUpdatedState(30_000L),
-                        currentDurationMsState = rememberUpdatedState(120_000L),
-                        deactivateHoldToSpeedState = noop,
-                        showHorizontalSeekPreviewState = rememberUpdatedState { _: Long, _: Long -> seeks++ },
                         showBrightnessFeedbackState = rememberUpdatedState { _: Float -> },
                         showVolumeFeedbackState = rememberUpdatedState { _: PlayerAudioLevel -> },
-                        clearLiveGestureFeedbackState = noop,
                         revealLockedOverlayState = noop,
-                        commitHorizontalSeekState = rememberUpdatedState { _: Long -> seeks++ },
                     ),
                     contentAlignment = Alignment.Center,
                 ) {

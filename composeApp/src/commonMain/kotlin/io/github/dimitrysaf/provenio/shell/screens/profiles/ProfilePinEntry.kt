@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -177,16 +178,18 @@ private fun PinKeypad(
                 row.forEach { key ->
                     when (key) {
                         "" -> Spacer(modifier = Modifier.size(PinKeySize))
-                        PinBackspaceKey -> FilledTonalIconButton(
-                            onClick = onBackspace,
-                            modifier = Modifier.size(PinKeySize),
-                            enabled = enabled,
-                            shape = CircleShape,
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.Backspace,
-                                contentDescription = stringResource(Res.string.pin_backspace),
-                            )
+                        PinBackspaceKey -> WithTooltip(stringResource(Res.string.pin_backspace)) {
+                            FilledTonalIconButton(
+                                onClick = onBackspace,
+                                modifier = Modifier.size(PinKeySize),
+                                enabled = enabled,
+                                shape = CircleShape,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.Backspace,
+                                    contentDescription = stringResource(Res.string.pin_backspace),
+                                )
+                            }
                         }
                         else -> FilledTonalIconButton(
                             onClick = { onDigit(key) },

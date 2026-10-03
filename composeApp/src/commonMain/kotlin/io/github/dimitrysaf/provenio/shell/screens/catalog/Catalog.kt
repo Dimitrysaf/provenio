@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.catalog
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.layout.Arrangement
@@ -194,11 +195,13 @@ fun CatalogScreen(
                         }
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                contentDescription = stringResource(Res.string.action_back),
-                            )
+                        WithTooltip(stringResource(Res.string.action_back)) {
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                    contentDescription = stringResource(Res.string.action_back),
+                                )
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(

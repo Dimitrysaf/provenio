@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.collection
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -87,22 +88,26 @@ fun CollectionManagementScreen(
         title = stringResource(Res.string.collections_header),
         onBack = onBack,
         actions = {
-            IconButton(onClick = {
-                val json = CollectionRepository.exportToJson()
-                showCopyError = runCatching {
-                    clipboardManager.setText(AnnotatedString(json))
-                }.isFailure
-            }) {
-                Icon(
-                    imageVector = Icons.Outlined.ContentCopy,
-                    contentDescription = stringResource(Res.string.collections_copy_json),
-                )
+            WithTooltip(stringResource(Res.string.collections_copy_json)) {
+                IconButton(onClick = {
+                    val json = CollectionRepository.exportToJson()
+                    showCopyError = runCatching {
+                        clipboardManager.setText(AnnotatedString(json))
+                    }.isFailure
+                }) {
+                    Icon(
+                        imageVector = Icons.Outlined.ContentCopy,
+                        contentDescription = stringResource(Res.string.collections_copy_json),
+                    )
+                }
             }
-            IconButton(onClick = { showImportDialog = true }) {
-                Icon(
-                    imageVector = Icons.Outlined.ContentPaste,
-                    contentDescription = stringResource(Res.string.collections_import),
-                )
+            WithTooltip(stringResource(Res.string.collections_import)) {
+                IconButton(onClick = { showImportDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Outlined.ContentPaste,
+                        contentDescription = stringResource(Res.string.collections_import),
+                    )
+                }
             }
         },
     ) {
@@ -306,23 +311,25 @@ private fun CollectionListItem(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
         leadingContent = {
-            IconButton(
-                modifier = with(dragHandleScope) {
-                    Modifier.draggableHandle(
-                        onDragStarted = {
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        },
-                        onDragStopped = {
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        },
+            WithTooltip(stringResource(Res.string.action_reorder)) {
+                IconButton(
+                    modifier = with(dragHandleScope) {
+                        Modifier.draggableHandle(
+                            onDragStarted = {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                            },
+                            onDragStopped = {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            },
+                        )
+                    },
+                    onClick = {},
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Menu,
+                        contentDescription = stringResource(Res.string.action_reorder),
                     )
-                },
-                onClick = {},
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Menu,
-                    contentDescription = stringResource(Res.string.action_reorder),
-                )
+                }
             }
         },
         supportingContent = { Text(summary, maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -331,22 +338,26 @@ private fun CollectionListItem(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onEdit) {
-                    Icon(
-                        imageVector = Icons.Rounded.Edit,
-                        contentDescription = stringResource(Res.string.action_edit),
-                    )
+                WithTooltip(stringResource(Res.string.action_edit)) {
+                    IconButton(onClick = onEdit) {
+                        Icon(
+                            imageVector = Icons.Rounded.Edit,
+                            contentDescription = stringResource(Res.string.action_edit),
+                        )
+                    }
                 }
-                IconButton(
-                    onClick = onDelete,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Delete,
-                        contentDescription = stringResource(Res.string.action_delete),
-                    )
+                WithTooltip(stringResource(Res.string.action_delete)) {
+                    IconButton(
+                        onClick = onDelete,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Delete,
+                            contentDescription = stringResource(Res.string.action_delete),
+                        )
+                    }
                 }
             }
         },

@@ -376,12 +376,14 @@
     <string name="compose_player_resize_fill">Doldur</string>
     <string name="compose_player_resize_fit">Sığdır</string>
     <string name="compose_player_resize_zoom">Yakınlaştır</string>
-    <string name="compose_player_seek_back_10">10 saniye geri sar</string>
+    <string name="compose_player_seek_backward_seconds">%1$d saniye geri sar</string>
     <string name="compose_player_seek_delta_backward">-%1$dsn</string>
     <string name="compose_player_seek_delta_forward">+%1$dsn</string>
     <string name="compose_player_seek_feedback_backward">-%1$dsn</string>
     <string name="compose_player_seek_feedback_forward">+%1$dsn</string>
-    <string name="compose_player_seek_forward_10">10 saniye ileri sar</string>
+    <string name="compose_player_seek_forward_seconds">%1$d saniye ileri sar</string>
+    <string name="compose_player_subtitle_delay_decrease">Altyazı gecikmesini azalt</string>
+    <string name="compose_player_subtitle_delay_increase">Altyazı gecikmesini artır</string>
     <string name="compose_player_sources">Kaynaklar</string>
     <string name="compose_player_style">Stil</string>
     <string name="compose_player_select_addon_subtitle_first">Önce bir eklenti altyazısı seçin</string>
@@ -902,6 +904,9 @@
     <string name="settings_playback_player_preference_external">Harici</string>
     <string name="settings_playback_player_preference_description">Yeni oynatmayı hangi oynatıcının yöneteceğini seçin.</string>
     <string name="settings_playback_hold_speed">Basılı tutma hızı</string>
+    <string name="settings_playback_seek_backward">Geri sarma</string>
+    <string name="settings_playback_seek_forward">İleri sarma</string>
+    <string name="settings_playback_seek_seconds_value">%1$d saniye</string>
     <string name="settings_playback_hold_to_speed">Hızlandırmak için basılı tut</string>
     <string name="settings_playback_hold_to_speed_description">Oynatıcı yüzeyinde herhangi bir yere uzun basarak oynatma hızını geçici olarak artır.</string>
     <string name="settings_playback_touch_gestures">Dokunma Hareketleri</string>

@@ -78,11 +78,13 @@ fun ScreenHeader(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 if (onBack != null) {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = stringResource(Res.string.action_back),
-                        )
+                    WithTooltip(stringResource(Res.string.action_back)) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = stringResource(Res.string.action_back),
+                            )
+                        }
                     }
                 }
                 AnimatedContent(

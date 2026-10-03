@@ -110,15 +110,9 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                 playerControlsLockedState = gestureCallbacks.playerControlsLocked,
                 touchGesturesEnabledState = gestureCallbacks.touchGesturesEnabled,
                 isHoldToSpeedGestureActiveState = gestureCallbacks.isHoldToSpeedGestureActive,
-                currentPositionMsState = gestureCallbacks.currentPositionMs,
-                currentDurationMsState = gestureCallbacks.currentDurationMs,
-                deactivateHoldToSpeedState = gestureCallbacks.deactivateHoldToSpeed,
-                showHorizontalSeekPreviewState = gestureCallbacks.showHorizontalSeekPreview,
                 showBrightnessFeedbackState = gestureCallbacks.showBrightnessFeedback,
                 showVolumeFeedbackState = gestureCallbacks.showVolumeFeedback,
-                clearLiveGestureFeedbackState = gestureCallbacks.clearLiveGestureFeedback,
                 revealLockedOverlayState = gestureCallbacks.revealLockedOverlay,
-                commitHorizontalSeekState = gestureCallbacks.commitHorizontalSeek,
             ),
     ) {
         val surfaceSource = rememberPlayerSurfaceSource(if (isP2pPlaybackActive) p2pResolvedSourceUrl else activeSourceUrl)
@@ -284,8 +278,10 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 args.onBack()
             },
             onTogglePlayback = { togglePlayback() },
-            onSeekBack = { seekBy(-10_000L) },
-            onSeekForward = { seekBy(10_000L) },
+            onSeekBack = { seekBy(-seekStepMs(PlayerSeekDirection.Backward)) },
+            onSeekForward = { seekBy(seekStepMs(PlayerSeekDirection.Forward)) },
+            seekBackwardSeconds = playerSettingsUiState.seekBackwardSeconds,
+            seekForwardSeconds = playerSettingsUiState.seekForwardSeconds,
             onResizeModeClick = { showResizeSheet = true },
             onSpeedClick = { showSpeedSheet = true },
             onSubtitleClick = {

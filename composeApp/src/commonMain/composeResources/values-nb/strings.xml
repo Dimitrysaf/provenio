@@ -343,12 +343,14 @@
     <string name="compose_player_resize_fill">Fyll</string>
     <string name="compose_player_resize_fit">Tilpass</string>
     <string name="compose_player_resize_zoom">Zoom</string>
-    <string name="compose_player_seek_back_10">Spol 10 sekunder bakover</string>
+    <string name="compose_player_seek_backward_seconds">Spol %1$d sekunder bakover</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">Spol 10 sekunder fremover</string>
+    <string name="compose_player_seek_forward_seconds">Spol %1$d sekunder fremover</string>
+    <string name="compose_player_subtitle_delay_decrease">Reduser undertekstforsinkelse</string>
+    <string name="compose_player_subtitle_delay_increase">Øk undertekstforsinkelse</string>
     <string name="compose_player_sources">Kilder</string>
     <string name="compose_player_style">Stil</string>
     <string name="compose_player_subs">Tekst</string>
@@ -719,6 +721,9 @@
     <string name="settings_playback_external_player_description_ios">Åpne ny avspilling med den valgte installerte spilleren.</string>
     <string name="settings_playback_external_player_none_available">Ingen støttede eksterne spillere installert</string>
     <string name="settings_playback_hold_speed">Hold Speed</string>
+    <string name="settings_playback_seek_backward">Spol bakover</string>
+    <string name="settings_playback_seek_forward">Spol fremover</string>
+    <string name="settings_playback_seek_seconds_value">%1$d sekunder</string>
     <string name="settings_playback_hold_to_speed">Hold for å øke hastighet</string>
     <string name="settings_playback_hold_to_speed_description">Langtrykk hvor som helst på avspillerflaten for midlertidig hastighetsøkning.</string>
     <string name="settings_playback_invalid_regex_pattern">Ugyldig regex-mønster</string>

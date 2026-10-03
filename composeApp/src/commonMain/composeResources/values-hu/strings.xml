@@ -337,12 +337,14 @@
     <string name="compose_player_resize_fill">Kitöltés</string>
     <string name="compose_player_resize_fit">Illesztés</string>
     <string name="compose_player_resize_zoom">Nagyítás</string>
-    <string name="compose_player_seek_back_10">Visszatekerés 10 másodperccel</string>
+    <string name="compose_player_seek_backward_seconds">Visszatekerés %1$d másodperccel</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">Előretekerés 10 másodperccel</string>
+    <string name="compose_player_seek_forward_seconds">Előretekerés %1$d másodperccel</string>
+    <string name="compose_player_subtitle_delay_decrease">Felirat késleltetésének csökkentése</string>
+    <string name="compose_player_subtitle_delay_increase">Felirat késleltetésének növelése</string>
     <string name="compose_player_sources">Források</string>
     <string name="compose_player_style">Stílus</string>
     <string name="compose_player_subs">Feliratok</string>
@@ -696,6 +698,9 @@
     <string name="settings_playback_external_player_description_ios">A lejátszás megnyitása a kiválasztott, telepített külső lejátszóval.</string>
     <string name="settings_playback_external_player_none_available">Nincs telepítve támogatott külső lejátszó</string>
     <string name="settings_playback_hold_speed">Gyorstekerési sebesség</string>
+    <string name="settings_playback_seek_backward">Visszatekerés</string>
+    <string name="settings_playback_seek_forward">Előretekerés</string>
+    <string name="settings_playback_seek_seconds_value">%1$d másodperc</string>
     <string name="settings_playback_hold_to_speed">Nyomva tartás a gyorsításhoz</string>
     <string name="settings_playback_hold_to_speed_description">Tartsd nyomva a kijelzőt bárhol a lejátszó felületén a lejátszási sebesség átmeneti növeléséhez.</string>
     <string name="settings_playback_invalid_regex_pattern">Érvénytelen reguláris kifejezés (regex) minta</string>

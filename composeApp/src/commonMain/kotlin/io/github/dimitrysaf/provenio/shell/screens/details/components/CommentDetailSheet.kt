@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import io.github.dimitrysaf.provenio.shell.components.SheetNavigationButton
 import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
 import androidx.compose.animation.animateContentSize
@@ -110,11 +111,13 @@ fun CommentDetailSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    FilledTonalIconButton(onClick = onPrevious, enabled = canGoBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                            contentDescription = stringResource(Res.string.action_previous),
-                        )
+                    WithTooltip(stringResource(Res.string.action_previous)) {
+                        FilledTonalIconButton(onClick = onPrevious, enabled = canGoBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
+                                contentDescription = stringResource(Res.string.action_previous),
+                            )
+                        }
                     }
 
                     Text(
@@ -123,11 +126,13 @@ fun CommentDetailSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
-                    FilledTonalIconButton(onClick = onNext, enabled = canGoForward) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                            contentDescription = stringResource(Res.string.action_next),
-                        )
+                    WithTooltip(stringResource(Res.string.action_next)) {
+                        FilledTonalIconButton(onClick = onNext, enabled = canGoForward) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                contentDescription = stringResource(Res.string.action_next),
+                            )
+                        }
                     }
 
                     SheetNavigationButton(navigation = SheetNavigation.Close, onClick = onDismiss)

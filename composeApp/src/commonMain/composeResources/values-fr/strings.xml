@@ -365,12 +365,14 @@
     <string name="compose_player_resize_fill">Remplir</string>
     <string name="compose_player_resize_fit">Ajuster</string>
     <string name="compose_player_resize_zoom">Zoom</string>
-    <string name="compose_player_seek_back_10">Reculer de 10 secondes</string>
+    <string name="compose_player_seek_backward_seconds">Reculer de %1$d secondes</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">Avancer de 10 secondes</string>
+    <string name="compose_player_seek_forward_seconds">Avancer de %1$d secondes</string>
+    <string name="compose_player_subtitle_delay_decrease">Réduire le délai des sous-titres</string>
+    <string name="compose_player_subtitle_delay_increase">Augmenter le délai des sous-titres</string>
     <string name="compose_player_sources">Sources</string>
     <string name="compose_player_style">Style</string>
     <string name="compose_player_select_addon_subtitle_first">Sélectionnez d’abord un sous-titre d’addon</string>
@@ -836,6 +838,9 @@
     <string name="settings_playback_player_preference_external">Externe</string>
     <string name="settings_playback_player_preference_description">Choisissez quel lecteur gère les nouvelles lectures.</string>
     <string name="settings_playback_hold_speed">Vitesse au maintien</string>
+    <string name="settings_playback_seek_backward">Recul</string>
+    <string name="settings_playback_seek_forward">Avance</string>
+    <string name="settings_playback_seek_seconds_value">%1$d secondes</string>
     <string name="settings_playback_hold_to_speed">Maintenir pour accélérer</string>
     <string name="settings_playback_hold_to_speed_description">Gardez le doigt appuyé n’importe où sur le lecteur pour accélérer temporairement.</string>
     <string name="settings_playback_touch_gestures">Gestes tactiles</string>

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Column
@@ -424,14 +425,16 @@ private fun BadgeUrlRow(
                     Spacer(modifier = Modifier.width(Tokens.Space.s4))
                     Text(text = stringResource(Res.string.settings_fusion_badge_preview_action), maxLines = 1)
                 }
-                IconButton(
-                    enabled = enabled,
-                    onClick = onDelete,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Delete,
-                        contentDescription = stringResource(Res.string.action_delete),
-                    )
+                WithTooltip(stringResource(Res.string.action_delete)) {
+                    IconButton(
+                        enabled = enabled,
+                        onClick = onDelete,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Delete,
+                            contentDescription = stringResource(Res.string.action_delete),
+                        )
+                    }
                 }
             }
         }

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.runtime.LaunchedEffect
@@ -271,16 +272,18 @@ fun LibraryScreen(
                     LibraryLayoutToggle(displaySettings.layoutMode)
                 }
                 if (sourceMode != LibraryViewMode.Cloud) {
-                    IconToggleButton(
-                        checked = sourceMode == LibraryViewMode.Calendar,
-                        onCheckedChange = { checked ->
-                            sourceModeName = if (checked) LibraryViewMode.Calendar.name else LibraryViewMode.Saved.name
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.CalendarMonth,
-                            contentDescription = stringResource(Res.string.library_source_calendar),
-                        )
+                    WithTooltip(stringResource(Res.string.library_source_calendar)) {
+                        IconToggleButton(
+                            checked = sourceMode == LibraryViewMode.Calendar,
+                            onCheckedChange = { checked ->
+                                sourceModeName = if (checked) LibraryViewMode.Calendar.name else LibraryViewMode.Saved.name
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.CalendarMonth,
+                                contentDescription = stringResource(Res.string.library_source_calendar),
+                            )
+                        }
                     }
                 }
             },
@@ -583,11 +586,13 @@ private fun CloudLibrarySearchField(
         },
         trailingIcon = {
             if (query.isNotEmpty()) {
-                IconButton(onClick = { onQueryChange("") }) {
-                    Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = stringResource(Res.string.compose_search_clear),
-                    )
+                WithTooltip(stringResource(Res.string.compose_search_clear)) {
+                    IconButton(onClick = { onQueryChange("") }) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = stringResource(Res.string.compose_search_clear),
+                        )
+                    }
                 }
             }
         },
@@ -685,12 +690,14 @@ private fun CloudLibraryToolbar(
                     },
                 )
             }
-            IconButton(onClick = onRefresh) {
-                Icon(
-                    imageVector = Icons.Rounded.Refresh,
-                    contentDescription = stringResource(Res.string.cloud_library_refresh),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            WithTooltip(stringResource(Res.string.cloud_library_refresh)) {
+                IconButton(onClick = onRefresh) {
+                    Icon(
+                        imageVector = Icons.Rounded.Refresh,
+                        contentDescription = stringResource(Res.string.cloud_library_refresh),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
@@ -792,11 +799,13 @@ private fun CloudLibraryRow(
                     )
                 }
                 if (playableCount > 0) {
-                    IconButton(onClick = onClick) {
-                        Icon(
-                            imageVector = Icons.Rounded.PlayArrow,
-                            contentDescription = stringResource(Res.string.action_play),
-                        )
+                    WithTooltip(stringResource(Res.string.action_play)) {
+                        IconButton(onClick = onClick) {
+                            Icon(
+                                imageVector = Icons.Rounded.PlayArrow,
+                                contentDescription = stringResource(Res.string.action_play),
+                            )
+                        }
                     }
                 }
             }
@@ -837,11 +846,13 @@ private fun CloudLibraryFilePicker(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = stringResource(Res.string.action_back),
-                    )
+                WithTooltip(stringResource(Res.string.action_back)) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = stringResource(Res.string.action_back),
+                        )
+                    }
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -1258,25 +1269,35 @@ private fun LibraryLayoutToggle(layoutMode: LibraryLayoutMode) {
     } else {
         LibraryLayoutMode.HORIZONTAL
     }
-    IconButton(onClick = { LibraryDisplaySettingsRepository.setLayoutMode(targetLayout) }) {
-        Crossfade(
-            targetState = targetLayout,
-            animationSpec = tween(durationMillis = 140),
-            label = "libraryLayoutAction",
-        ) { animatedTargetLayout ->
-            Icon(
-                imageVector = if (animatedTargetLayout == LibraryLayoutMode.VERTICAL) {
-                    Icons.Rounded.GridView
-                } else {
-                    Icons.Rounded.ViewAgenda
-                },
-                contentDescription = if (animatedTargetLayout == LibraryLayoutMode.VERTICAL) {
-                    stringResource(Res.string.library_layout_show_vertical)
-                } else {
-                    stringResource(Res.string.library_layout_show_horizontal)
-                },
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    WithTooltip(
+        stringResource(
+            if (animatedTargetLayout == LibraryLayoutMode.VERTICAL) {
+                Res.string.library_layout_show_vertical
+            } else {
+                Res.string.library_layout_show_horizontal
+            },
+        ),
+    ) {
+        IconButton(onClick = { LibraryDisplaySettingsRepository.setLayoutMode(targetLayout) }) {
+            Crossfade(
+                targetState = targetLayout,
+                animationSpec = tween(durationMillis = 140),
+                label = "libraryLayoutAction",
+            ) { animatedTargetLayout ->
+                Icon(
+                    imageVector = if (animatedTargetLayout == LibraryLayoutMode.VERTICAL) {
+                        Icons.Rounded.GridView
+                    } else {
+                        Icons.Rounded.ViewAgenda
+                    },
+                    contentDescription = if (animatedTargetLayout == LibraryLayoutMode.VERTICAL) {
+                        stringResource(Res.string.library_layout_show_vertical)
+                    } else {
+                        stringResource(Res.string.library_layout_show_horizontal)
+                    },
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

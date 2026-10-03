@@ -29,7 +29,6 @@ import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalWindowInfo
 
-private const val KeyboardSeekMs = 10_000L
 private const val KeyboardVolumeStep = 0.05f
 private const val SpaceHoldDelayMs = 400L
 private const val MouseMoveThresholdPx = 1f
@@ -106,10 +105,10 @@ private fun PlayerScreenRuntime.handlePlayerKey(event: KeyEvent, mute: MuteState
     when {
         digit != null -> seekToFraction(digit / 10f)
         event.key == Key.K -> togglePlayback()
-        event.key == Key.J -> seekBy(-KeyboardSeekMs)
-        event.key == Key.L -> seekBy(KeyboardSeekMs)
-        event.key == Key.DirectionLeft -> seekBy(-KeyboardSeekMs)
-        event.key == Key.DirectionRight -> seekBy(KeyboardSeekMs)
+        event.key == Key.J -> seekBy(-seekStepMs(PlayerSeekDirection.Backward))
+        event.key == Key.L -> seekBy(seekStepMs(PlayerSeekDirection.Forward))
+        event.key == Key.DirectionLeft -> seekBy(-seekStepMs(PlayerSeekDirection.Backward))
+        event.key == Key.DirectionRight -> seekBy(seekStepMs(PlayerSeekDirection.Forward))
         event.key == Key.DirectionUp -> changeVolumeBy(KeyboardVolumeStep)
         event.key == Key.DirectionDown -> changeVolumeBy(-KeyboardVolumeStep)
         event.key == Key.MoveHome -> seekToFraction(0f)

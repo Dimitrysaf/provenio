@@ -451,12 +451,14 @@
     <string name="compose_player_resize_fill">Rellenar</string>
     <string name="compose_player_resize_fit">Ajustar</string>
     <string name="compose_player_resize_zoom">Zoom</string>
-    <string name="compose_player_seek_back_10">Retroceder 10 segundos</string>
+    <string name="compose_player_seek_backward_seconds">Retroceder %1$d segundos</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">Avanzar 10 segundos</string>
+    <string name="compose_player_seek_forward_seconds">Avanzar %1$d segundos</string>
+    <string name="compose_player_subtitle_delay_decrease">Reducir retraso de subtítulos</string>
+    <string name="compose_player_subtitle_delay_increase">Aumentar retraso de subtítulos</string>
     <string name="compose_player_sources">Fuentes</string>
     <string name="compose_player_style">Estilo</string>
     <string name="compose_player_select_addon_subtitle_first">Selecciona primero un subtítulo de un complemento</string>
@@ -981,6 +983,9 @@
     <string name="settings_playback_player_preference_external">Externo</string>
     <string name="settings_playback_player_preference_description">Elija qué reproductor maneja la nueva reproducción.</string>
     <string name="settings_playback_hold_speed">Velocidad al mantener</string>
+    <string name="settings_playback_seek_backward">Retroceso</string>
+    <string name="settings_playback_seek_forward">Avance</string>
+    <string name="settings_playback_seek_seconds_value">%1$d segundos</string>
     <string name="settings_playback_hold_to_speed">Mantener para acelerar</string>
     <string name="settings_playback_hold_to_speed_description">Mantén pulsado en cualquier parte de la superficie del reproductor para aumentar temporalmente la velocidad.</string>
     <string name="settings_playback_touch_gestures">Gestos táctiles</string>

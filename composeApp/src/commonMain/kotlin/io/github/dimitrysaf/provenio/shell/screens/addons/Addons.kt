@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.addons
 
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -396,11 +397,13 @@ private fun AddonListRow(
                 )
                 // The menu anchors to this box, so it opens at the button it belongs to.
                 Box {
-                    IconButton(onClick = { menuOpen = true }) {
-                        Icon(
-                            imageVector = Icons.Rounded.MoreVert,
-                            contentDescription = stringResource(Res.string.addons_more_actions),
-                        )
+                    WithTooltip(stringResource(Res.string.addons_more_actions)) {
+                        IconButton(onClick = { menuOpen = true }) {
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = stringResource(Res.string.addons_more_actions),
+                            )
+                        }
                     }
                     AddonActionsMenu(
                         expanded = menuOpen,

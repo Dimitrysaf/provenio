@@ -15,6 +15,10 @@ internal expect object PlayerSettingsStorage {
     fun saveHoldToSpeedEnabled(enabled: Boolean)
     fun loadHoldToSpeedValue(): Float?
     fun saveHoldToSpeedValue(speed: Float)
+    fun loadSeekBackwardSeconds(): Int?
+    fun saveSeekBackwardSeconds(seconds: Int)
+    fun loadSeekForwardSeconds(): Int?
+    fun saveSeekForwardSeconds(seconds: Int)
     fun loadTouchGesturesEnabled(): Boolean?
     fun saveTouchGesturesEnabled(enabled: Boolean)
     fun loadExternalPlayerEnabled(): Boolean?

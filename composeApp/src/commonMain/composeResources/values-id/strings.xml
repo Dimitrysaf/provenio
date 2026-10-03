@@ -352,12 +352,14 @@
     <string name="compose_player_resize_fill">Penuh</string>
     <string name="compose_player_resize_fit">Sesuaikan</string>
     <string name="compose_player_resize_zoom">Perbesar</string>
-    <string name="compose_player_seek_back_10">Mundur 10 detik</string>
+    <string name="compose_player_seek_backward_seconds">Mundur %1$d detik</string>
     <string name="compose_player_seek_delta_backward">-%1$ds</string>
     <string name="compose_player_seek_delta_forward">+%1$ds</string>
     <string name="compose_player_seek_feedback_backward">-%1$ds</string>
     <string name="compose_player_seek_feedback_forward">+%1$ds</string>
-    <string name="compose_player_seek_forward_10">Maju 10 detik</string>
+    <string name="compose_player_seek_forward_seconds">Maju %1$d detik</string>
+    <string name="compose_player_subtitle_delay_decrease">Kurangi jeda terjemahan</string>
+    <string name="compose_player_subtitle_delay_increase">Tambah jeda terjemahan</string>
     <string name="compose_player_sources">Sumber</string>
     <string name="compose_player_style">Gaya</string>
     <string name="compose_player_select_addon_subtitle_first">Pilih addon terjemahan terlebih dahulu</string>
@@ -739,6 +741,9 @@
     <string name="settings_playback_external_player_description_ios">Buka pemutaran baru dengan pemutar video yang dipilih.</string>
     <string name="settings_playback_external_player_none_available">Tidak ada pemutar eksternal yang didukung</string>
     <string name="settings_playback_hold_speed">Kecepatan Putar saat Ditahan</string>
+    <string name="settings_playback_seek_backward">Mundur</string>
+    <string name="settings_playback_seek_forward">Maju</string>
+    <string name="settings_playback_seek_seconds_value">%1$d detik</string>
     <string name="settings_playback_hold_to_speed">Tahan untuk Mempercepat</string>
     <string name="settings_playback_hold_to_speed_description">Tekan lama di mana saja pada permukaan pemutar untuk sementara meningkatkan kecepatan putar.</string>
     <string name="settings_playback_invalid_regex_pattern">Pola regex tidak valid</string>
