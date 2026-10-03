@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,10 +16,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,6 +36,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import io.github.dimitrysaf.provenio.shell.components.LocalWindowBreakpoint
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import io.github.dimitrysaf.provenio.shell.components.horizontalScrollBleed
@@ -64,6 +69,7 @@ fun DetailTrailersSection(
     val hasCategoryChoice = grouped.size > 1
     val cornerRadius = rememberPosterCardStyleUiState().cornerRadiusDp.dp
     val trailersTitle = stringResource(Res.string.detail_trailers_title)
+    val useCategoryMenu = LocalWindowBreakpoint.current.isTwoPane
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -75,24 +81,51 @@ fun DetailTrailersSection(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (hasCategoryChoice) {
-                    FilterChip(
-                        selected = true,
-                        onClick = { categorySheetVisible = true },
-                        label = {
-                            Text(
-                                text = selectedCategory,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        },
-                        trailingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.ArrowDropDown,
-                                contentDescription = null,
-                                modifier = Modifier.size(FilterChipDefaults.IconSize),
-                            )
-                        },
-                    )
+                    Box {
+                        FilterChip(
+                            selected = true,
+                            onClick = { categorySheetVisible = true },
+                            label = {
+                                Text(
+                                    text = selectedCategory,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            },
+                            trailingIcon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.ArrowDropDown,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize),
+                                )
+                            },
+                        )
+                        if (useCategoryMenu) {
+                            DropdownMenu(
+                                expanded = categorySheetVisible,
+                                onDismissRequest = { categorySheetVisible = false },
+                            ) {
+                                grouped.forEach { (category, categoryTrailers) ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    Res.string.detail_trailer_category_count,
+                                                    category,
+                                                    categoryTrailers.size,
+                                                ),
+                                            )
+                                        },
+                                        onClick = {
+                                            selectedCategory = category
+                                            categorySheetVisible = false
+                                        },
+                                        leadingIcon = { RadioButton(selected = category == selectedCategory, onClick = null) },
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
                 if (showHeader) {
                     DetailSectionTitle(title = trailersTitle, fullWidth = false)
@@ -124,7 +157,7 @@ fun DetailTrailersSection(
         }
     }
 
-    if (categorySheetVisible) {
+    if (categorySheetVisible && !useCategoryMenu) {
         SingleChoiceBottomSheet(
             title = trailersTitle,
             options = grouped.map { (category, categoryTrailers) ->

@@ -1872,6 +1872,10 @@
     <string name="image_viewer_download">Λήψη</string>
     <string name="image_viewer_save_title">Αποθήκευση εικόνας</string>
     <string name="image_viewer_view_image">Προβολή εικόνας</string>
+    <string name="update_failed_title">Δεν ήταν δυνατή η ενημέρωση του Provenio</string>
+    <string name="update_failed_message">Η ενημέρωση δεν εγκαταστάθηκε, οπότε παραμένετε στην έκδοση %1$s. Μπορείτε να δοκιμάσετε ξανά από τον Έλεγχο για ενημερώσεις στις Ρυθμίσεις.</string>
+    <string name="update_failed_details_show">Εμφάνιση λεπτομερειών</string>
+    <string name="update_failed_details_hide">Απόκρυψη λεπτομερειών</string>
     <string name="person_detail_born">Γέννηση</string>
     <string name="person_detail_credits">Έργα</string>
     <string name="person_detail_place_of_birth">Τόπος γέννησης</string>

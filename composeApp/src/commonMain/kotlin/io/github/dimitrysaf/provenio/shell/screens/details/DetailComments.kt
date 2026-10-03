@@ -30,6 +30,8 @@ internal class DetailCommentsState {
     var error by mutableStateOf<String?>(null)
         private set
     var selected by mutableStateOf<TraktCommentReview?>(null)
+    var hasLoaded by mutableStateOf(false)
+        private set
 
     val hasMorePages: Boolean
         get() = currentPage < pageCount
@@ -39,6 +41,7 @@ internal class DetailCommentsState {
         currentPage = 0
         pageCount = 0
         error = null
+        hasLoaded = false
     }
 
     suspend fun loadFirstPage(meta: MetaDetails, forceRefresh: Boolean = false) {
@@ -53,6 +56,7 @@ internal class DetailCommentsState {
             error = e.message ?: getString(Res.string.details_comments_load_failed)
         }
         isLoading = false
+        hasLoaded = true
     }
 
     suspend fun loadNextPage(meta: MetaDetails) {

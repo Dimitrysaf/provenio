@@ -1990,6 +1990,10 @@
     <string name="image_viewer_download">Stiahnuť</string>
     <string name="image_viewer_save_title">Uložiť obrázok</string>
     <string name="image_viewer_view_image">Zobraziť obrázok</string>
+    <string name="update_failed_title">Provenio sa nepodarilo aktualizovať</string>
+    <string name="update_failed_message">Aktualizácia sa nenainštalovala, takže stále používate verziu %1$s. Môžete to skúsiť znova cez Vyhľadať aktualizácie v Nastaveniach.</string>
+    <string name="update_failed_details_show">Zobraziť podrobnosti</string>
+    <string name="update_failed_details_hide">Skryť podrobnosti</string>
     <string name="entity_browse_country">Krajina</string>
     <string name="entity_browse_type">Typ</string>
     <string name="entity_browse_catalogue">Katalóg</string>

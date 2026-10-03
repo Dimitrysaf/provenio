@@ -2181,6 +2181,10 @@
     <string name="image_viewer_download">Downloaden</string>
     <string name="image_viewer_save_title">Afbeelding opslaan</string>
     <string name="image_viewer_view_image">Afbeelding bekijken</string>
+    <string name="update_failed_title">Provenio kon niet worden bijgewerkt</string>
+    <string name="update_failed_message">De update is niet geïnstalleerd, dus je gebruikt nog versie %1$s. Je kunt het opnieuw proberen via Controleren op updates in Instellingen.</string>
+    <string name="update_failed_details_show">Details weergeven</string>
+    <string name="update_failed_details_hide">Details verbergen</string>
     <string name="entity_browse_country">Land</string>
     <string name="entity_browse_type">Type</string>
     <string name="entity_browse_catalogue">Catalogus</string>

@@ -1,6 +1,8 @@
 package io.github.dimitrysaf.provenio.core.updater
 
 import io.github.dimitrysaf.provenio.core.build.AppVersionConfig
+import io.github.dimitrysaf.provenio.desktop.UpdateFailedArgument
+import io.github.dimitrysaf.provenio.desktop.UpdateFileArgument
 import java.awt.Desktop
 import java.io.File
 import java.io.FileOutputStream
@@ -136,11 +138,47 @@ actual object AppUpdaterPlatform {
         val file = File(path)
         check(file.exists()) { "The downloaded update is missing" }
         if (isWindows) {
-            ProcessBuilder("msiexec", "/i", file.absolutePath, "/passive", "/norestart").start()
+            val script = writeWindowsUpdateScript(file)
+            ProcessBuilder("wscript", "//B", "//Nologo", script.absolutePath)
+                .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                .redirectError(ProcessBuilder.Redirect.DISCARD)
+                .start()
             exitProcess(0)
         }
         Desktop.getDesktop().open(file)
     }
+
+    private fun writeWindowsUpdateScript(msi: File): File {
+        val appExe = System.getProperty("jpackage.app-path")
+            ?.let(::File)
+            ?.takeIf { it.isFile }
+        val installDir = appExe?.parentFile?.absolutePath
+        val install = buildString {
+            append("msiexec /i ${vbsQuoted(msi.absolutePath)} /qn /norestart")
+            if (installDir != null) append(" INSTALLDIR=${vbsQuoted(installDir)}")
+        }
+        val lines = buildList {
+            add("Set shell = CreateObject(\"WScript.Shell\")")
+            add("WScript.Sleep 2000")
+            add("code = shell.Run(${vbsString(install)}, 0, True)")
+            if (appExe != null) {
+                val launch = vbsQuoted(appExe.absolutePath)
+                add("If code = 0 Or code = 1641 Or code = 3010 Then")
+                add("    shell.Run ${vbsString(launch)}, 1, False")
+                add("Else")
+                add("    shell.Run ${vbsString("$launch $UpdateFailedArgument")} & code & ${vbsString(" " + vbsQuoted(UpdateFileArgument + msi.absolutePath))}, 1, False")
+                add("End If")
+            }
+        }
+        return File(msi.parentFile, "install-update.vbs").apply {
+            val text = lines.joinToString("\r\n", postfix = "\r\n")
+            writeBytes(byteArrayOf(0xFF.toByte(), 0xFE.toByte()) + text.toByteArray(Charsets.UTF_16LE))
+        }
+    }
+
+    private fun vbsString(value: String): String = "\"" + value.replace("\"", "\"\"") + "\""
+
+    private fun vbsQuoted(path: String): String = "\"$path\""
 
     private const val PartialSuffix = ".part"
     private const val HttpRangeNotSatisfiable = 416

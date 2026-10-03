@@ -51,14 +51,6 @@ import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
 import io.github.dimitrysaf.provenio.shell.components.SheetNavigationButton
 import io.github.dimitrysaf.provenio.shell.components.MediaSheetAction
 import io.github.dimitrysaf.provenio.shell.components.ModalSheet
-import io.github.dimitrysaf.provenio.shell.components.usesNativeBottomSheet
-import io.github.dimitrysaf.provenio.shell.components.LocalWindowBreakpoint
-import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.WindowInsets
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
@@ -240,18 +232,6 @@ fun StreamsSheet(
         null
     }
 
-    // A sheet sits over the page it was opened from, and that page has to stay in view above it.
-    // Left to grow with a long list, the sheet reached the top of the screen and read as a page
-    // of its own, so it stops short by the status bar and the spec's 72dp top margin and the list
-    // scrolls inside it instead.
-    // m3.material.io/components/bottom-sheets/specs
-    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
-    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val sheetHeightCap = if (!usesNativeBottomSheet && !LocalWindowBreakpoint.current.isTwoPane && windowHeight > 0.dp) {
-        Modifier.heightIn(max = windowHeight - statusBarHeight - SheetTopMargin)
-    } else {
-        Modifier
-    }
     ModalSheet(
         onDismissRequest = {
             dismissScope.launch {
@@ -259,7 +239,7 @@ fun StreamsSheet(
             }
         },
         sheetState = sheetState,
-        modifier = modifier.then(sheetHeightCap),
+        modifier = modifier,
         fullHeight = true,
     ) {
         Row(
@@ -634,6 +614,3 @@ private fun localTorrentCandidates(groups: List<AddonStreamGroup>): List<P2pStre
 
 private const val TorrentPrefetchSettleMs = 1_500L
 private const val TorrentPrefetchCount = 2
-
-/** The gap the bottom sheet spec leaves above an expanded sheet, so what it sits on stays in view. */
-private val SheetTopMargin = 72.dp

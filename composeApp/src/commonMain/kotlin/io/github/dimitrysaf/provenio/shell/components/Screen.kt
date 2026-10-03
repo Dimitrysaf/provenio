@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
@@ -30,6 +31,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.action_back
 import org.jetbrains.compose.resources.stringResource
@@ -56,6 +58,7 @@ fun ScreenScaffold(
     horizontalPadding: Dp = 16.dp,
     topPadding: Dp? = null,
     listState: LazyListState = rememberLazyListState(),
+    contentMaxWidth: Dp = Dp.Unspecified,
     content: LazyListScope.() -> Unit,
 ) {
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -72,6 +75,33 @@ fun ScreenScaffold(
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     } else {
         null
+    }
+
+    val list: @Composable (Dp, PaddingValues) -> Unit = { sidePadding, innerPadding ->
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = sidePadding,
+                top = topPadding
+                    ?: if (title != null) {
+                        innerPadding.calculateTopPadding()
+                    } else {
+                        10.dp + statusBarTop + platformExtraTopPadding
+                    },
+                end = sidePadding,
+                // A bottom bar already reserves its own height plus the navigation bar inset in
+                // the scaffold's inner padding, so the content only adds the screen's own gap
+                // above it.
+                bottom = if (bottomBar != null) {
+                    innerPadding.calculateBottomPadding() + 18.dp
+                } else {
+                    safeBottomPadding(18.dp)
+                },
+            ),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content,
+        )
     }
 
     Scaffold(
@@ -104,30 +134,13 @@ fun ScreenScaffold(
         },
         bottomBar = { bottomBar?.invoke() },
     ) { innerPadding ->
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = horizontalPadding,
-                top = topPadding
-                    ?: if (title != null) {
-                        innerPadding.calculateTopPadding()
-                    } else {
-                        10.dp + statusBarTop + platformExtraTopPadding
-                    },
-                end = horizontalPadding,
-                // A bottom bar already reserves its own height plus the navigation bar inset in
-                // the scaffold's inner padding, so the content only adds the screen's own gap
-                // above it.
-                bottom = if (bottomBar != null) {
-                    innerPadding.calculateBottomPadding() + 18.dp
-                } else {
-                    safeBottomPadding(18.dp)
-                },
-            ),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            content = content,
-        )
+        if (contentMaxWidth == Dp.Unspecified) {
+            list(horizontalPadding, innerPadding)
+        } else {
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                list(max(horizontalPadding, (maxWidth - contentMaxWidth) / 2), innerPadding)
+            }
+        }
     }
 }
 

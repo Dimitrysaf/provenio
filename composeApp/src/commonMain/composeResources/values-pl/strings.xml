@@ -1921,6 +1921,10 @@
     <string name="image_viewer_download">Pobierz</string>
     <string name="image_viewer_save_title">Zapisz obraz</string>
     <string name="image_viewer_view_image">Wyświetl obraz</string>
+    <string name="update_failed_title">Nie udało się zaktualizować Provenio</string>
+    <string name="update_failed_message">Aktualizacja nie została zainstalowana, więc nadal używasz wersji %1$s. Możesz spróbować ponownie w Ustawieniach, wybierając Sprawdź aktualizacje.</string>
+    <string name="update_failed_details_show">Pokaż szczegóły</string>
+    <string name="update_failed_details_hide">Ukryj szczegóły</string>
     <string name="entity_browse_country">Kraj</string>
     <string name="entity_browse_type">Typ</string>
     <string name="entity_browse_catalogue">Katalog</string>

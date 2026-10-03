@@ -2497,6 +2497,10 @@
     <string name="image_viewer_download">Download</string>
     <string name="image_viewer_save_title">Save image</string>
     <string name="image_viewer_view_image">View image</string>
+    <string name="update_failed_title">Provenio couldn’t be updated</string>
+    <string name="update_failed_message">The update didn’t install, so you’re still on version %1$s. You can try again from Check for updates in Settings.</string>
+    <string name="update_failed_details_show">Show details</string>
+    <string name="update_failed_details_hide">Hide details</string>
     <string name="entity_browse_country">Country</string>
     <string name="entity_browse_type">Type</string>
     <string name="entity_browse_catalogue">Catalogue</string>

@@ -2058,6 +2058,10 @@
     <string name="image_viewer_download">تنزيل</string>
     <string name="image_viewer_save_title">حفظ الصورة</string>
     <string name="image_viewer_view_image">عرض الصورة</string>
+    <string name="update_failed_title">تعذّر تحديث Provenio</string>
+    <string name="update_failed_message">لم يتم تثبيت التحديث، لذا ما زلت تستخدم الإصدار %1$s. يمكنك المحاولة مرة أخرى من التحقق من التحديثات في الإعدادات.</string>
+    <string name="update_failed_details_show">إظهار التفاصيل</string>
+    <string name="update_failed_details_hide">إخفاء التفاصيل</string>
     <string name="entity_browse_country">البلد</string>
     <string name="entity_browse_type">النوع</string>
     <string name="entity_browse_catalogue">القائمة</string>

@@ -35,6 +35,7 @@ internal fun posterNavigationEntry(
     entry: NavEntry<NavKey>,
     state: PosterNavigationState,
 ): NavEntry<NavKey> {
+    if (entry.metadata[SheetRouteMetadataKey] == true) return entry
     val metadata = if (key == state.active?.to) {
         entry.metadata + NavDisplay.transitionSpec {
             EnterTransition.None togetherWith ExitTransition.KeepUntilTransitionsFinished

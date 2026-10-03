@@ -1891,6 +1891,10 @@
   <string name="image_viewer_download">Scarica</string>
   <string name="image_viewer_save_title">Salva immagine</string>
   <string name="image_viewer_view_image">Visualizza immagine</string>
+  <string name="update_failed_title">Impossibile aggiornare Provenio</string>
+  <string name="update_failed_message">L’aggiornamento non è stato installato, quindi sei ancora alla versione %1$s. Puoi riprovare da Controlla aggiornamenti nelle Impostazioni.</string>
+  <string name="update_failed_details_show">Mostra dettagli</string>
+  <string name="update_failed_details_hide">Nascondi dettagli</string>
   <string name="entity_browse_country">Paese</string>
   <string name="entity_browse_type">Tipo</string>
   <string name="entity_browse_catalogue">Catalogo</string>

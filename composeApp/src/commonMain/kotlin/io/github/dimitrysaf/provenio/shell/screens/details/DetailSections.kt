@@ -32,6 +32,7 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPost
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPosterRailSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailProductionSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailEpisodeListRow
+import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSectionSkeleton
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSectionTitle
 import io.github.dimitrysaf.provenio.shell.screens.details.components.EpisodeListEntry
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailTrailersSection
@@ -102,6 +103,7 @@ internal fun LazyListScope.configuredMetaSectionItems(
     onCompanyClick: ((MetaCompany, String) -> Unit)?,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
+    pendingSections: Set<MetaScreenSectionKey> = emptySet(),
 ) {
     val enabledItems = settings.items.filter { it.enabled }
     fun sectionHasContent(key: MetaScreenSectionKey): Boolean =
@@ -235,14 +237,23 @@ internal fun LazyListScope.configuredMetaSectionItems(
         }
     }
 
-    enabledItems
-        .filter { sectionHasContent(it.key) }
-        .forEach { section ->
-            addStandaloneSection(
-                section = section,
-                key = "detail-section-${section.key.name}",
-            )
+    enabledItems.forEach { section ->
+        val key = "detail-section-${section.key.name}"
+        when {
+            sectionHasContent(section.key) -> addStandaloneSection(section = section, key = key)
+            section.key in pendingSections -> item(key = key) {
+                DetailSectionContainer(
+                    horizontalPadding = contentHorizontalPadding,
+                    contentMaxWidth = contentMaxWidth,
+                ) {
+                    DetailSectionSkeleton(
+                        key = section.key,
+                        horizontalScrollPadding = contentHorizontalPadding,
+                    )
+                }
+            }
         }
+    }
 }
 
 @Composable

@@ -2085,6 +2085,10 @@ Bu özelliği tamamen kendi sorumluluğunuzda kullanırsınız. P2P istediğiniz
     <string name="image_viewer_download">İndir</string>
     <string name="image_viewer_save_title">Görseli kaydet</string>
     <string name="image_viewer_view_image">Görseli görüntüle</string>
+    <string name="update_failed_title">Provenio güncellenemedi</string>
+    <string name="update_failed_message">Güncelleme yüklenmedi, bu yüzden hâlâ %1$s sürümündesiniz. Ayarlar’daki Güncellemeleri denetle bölümünden tekrar deneyebilirsiniz.</string>
+    <string name="update_failed_details_show">Ayrıntıları göster</string>
+    <string name="update_failed_details_hide">Ayrıntıları gizle</string>
     <string name="entity_browse_country">Ülke</string>
     <string name="entity_browse_type">Tür</string>
     <string name="entity_browse_catalogue">Katalog</string>

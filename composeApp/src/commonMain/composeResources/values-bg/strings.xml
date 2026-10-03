@@ -2162,6 +2162,10 @@
     <string name="image_viewer_download">Изтегляне</string>
     <string name="image_viewer_save_title">Запазване на изображението</string>
     <string name="image_viewer_view_image">Преглед на изображението</string>
+    <string name="update_failed_title">Provenio не можа да се актуализира</string>
+    <string name="update_failed_message">Актуализацията не се инсталира, така че все още използвате версия %1$s. Можете да опитате отново от Проверка за актуализации в Настройки.</string>
+    <string name="update_failed_details_show">Показване на подробности</string>
+    <string name="update_failed_details_hide">Скриване на подробности</string>
     <string name="entity_browse_country">Държава</string>
     <string name="entity_browse_type">Тип</string>
     <string name="entity_browse_catalogue">Каталог</string>

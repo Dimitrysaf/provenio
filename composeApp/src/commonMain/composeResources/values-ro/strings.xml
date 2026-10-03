@@ -1876,6 +1876,10 @@
     <string name="image_viewer_download">Descarcă</string>
     <string name="image_viewer_save_title">Salvează imaginea</string>
     <string name="image_viewer_view_image">Vezi imaginea</string>
+    <string name="update_failed_title">Provenio nu a putut fi actualizat</string>
+    <string name="update_failed_message">Actualizarea nu s-a instalat, așa că folosești în continuare versiunea %1$s. Poți încerca din nou din Caută actualizări în Setări.</string>
+    <string name="update_failed_details_show">Afișează detaliile</string>
+    <string name="update_failed_details_hide">Ascunde detaliile</string>
     <string name="entity_browse_country">Țară</string>
     <string name="entity_browse_type">Tip</string>
     <string name="entity_browse_catalogue">Catalog</string>

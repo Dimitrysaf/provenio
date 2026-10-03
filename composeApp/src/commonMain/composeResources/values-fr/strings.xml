@@ -1911,6 +1911,10 @@
     <string name="image_viewer_download">Télécharger</string>
     <string name="image_viewer_save_title">Enregistrer l’image</string>
     <string name="image_viewer_view_image">Voir l’image</string>
+    <string name="update_failed_title">Impossible de mettre à jour Provenio</string>
+    <string name="update_failed_message">La mise à jour n’a pas été installée, vous êtes toujours sur la version %1$s. Vous pouvez réessayer depuis Rechercher des mises à jour dans les Paramètres.</string>
+    <string name="update_failed_details_show">Afficher les détails</string>
+    <string name="update_failed_details_hide">Masquer les détails</string>
     <string name="entity_browse_country">Pays</string>
     <string name="entity_browse_type">Type</string>
     <string name="entity_browse_catalogue">Catalogue</string>

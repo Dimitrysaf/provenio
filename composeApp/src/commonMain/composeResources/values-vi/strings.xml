@@ -2184,6 +2184,10 @@
     <string name="image_viewer_download">Tải xuống</string>
     <string name="image_viewer_save_title">Lưu hình ảnh</string>
     <string name="image_viewer_view_image">Xem hình ảnh</string>
+    <string name="update_failed_title">Không thể cập nhật Provenio</string>
+    <string name="update_failed_message">Bản cập nhật chưa được cài đặt nên bạn vẫn đang dùng phiên bản %1$s. Bạn có thể thử lại từ Kiểm tra cập nhật trong Cài đặt.</string>
+    <string name="update_failed_details_show">Hiện chi tiết</string>
+    <string name="update_failed_details_hide">Ẩn chi tiết</string>
     <string name="entity_browse_country">Quốc gia</string>
     <string name="entity_browse_type">Loại</string>
     <string name="entity_browse_catalogue">Danh mục</string>

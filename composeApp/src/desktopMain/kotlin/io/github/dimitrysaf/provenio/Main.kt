@@ -78,6 +78,7 @@ import io.github.dimitrysaf.provenio.desktop.DesktopStatusNotifier
 import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
 import io.github.dimitrysaf.provenio.desktop.MaterialContextMenuRepresentation
 import io.github.dimitrysaf.provenio.desktop.SingleInstance
+import io.github.dimitrysaf.provenio.desktop.UpdateFailureDialog
 import java.awt.SystemTray
 import java.io.File
 import kotlin.system.exitProcess
@@ -92,6 +93,7 @@ import org.jetbrains.compose.resources.stringResource
 
 fun main(args: Array<String>) {
     if (!SingleInstance.claim(args)) exitProcess(0)
+    UpdateFailureDialog.showIfRequested(args)
     AppLogs.install(Context.app)
     runCatching { File("/proc/self/comm").writeText("Provenio") }
     initializePlatform(Context.app)

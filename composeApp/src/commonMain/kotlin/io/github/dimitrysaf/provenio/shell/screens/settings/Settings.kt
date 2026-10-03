@@ -351,6 +351,8 @@ fun SettingsScreen(
  */
 private val SettingsSidebarWidth = 384.dp
 
+internal val SettingsContentMaxWidth = 720.dp
+
 @Composable
 private fun MobileSettingsScreen(
     page: SettingsPage,
@@ -451,6 +453,7 @@ private fun MobileSettingsScreen(
             title = if (showInternalHeader) stringResource(page.titleRes) else null,
             listState = listState,
             onBack = previousPage?.let { { onNavigateBack() } },
+            contentMaxWidth = SettingsContentMaxWidth,
         ) {
             if (!showInternalHeader) {
                 item { Spacer(modifier = Modifier.height(44.dp)) }
@@ -761,13 +764,15 @@ private fun TabletSettingsScreen(
                     }
                 },
             ) { innerPadding ->
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val contentSidePadding = max(40.dp, (maxWidth - SettingsContentMaxWidth) / 2)
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    start = 40.dp,
+                    start = contentSidePadding,
                     top = if (showInternalHeader) innerPadding.calculateTopPadding() else topOffset,
-                    end = 40.dp,
+                    end = contentSidePadding,
                     bottom = 40.dp + bottomOverlayPadding,
                 ),
                 verticalArrangement = Arrangement.spacedBy(18.dp),
@@ -816,6 +821,7 @@ private fun TabletSettingsScreen(
                     }
                     else -> settingsPageContent(page, isTablet = true, data = data, links = links)
                 }
+            }
             }
             }
         }

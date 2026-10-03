@@ -252,6 +252,7 @@ fun MetaDetailsScreen(
                         comments = comments,
                         shouldShowComments = shouldShowComments,
                         deferredMetaWorkAllowed = deferredMetaWorkAllowed,
+                        isEnriching = uiState.isLoading,
                         onBack = onBack,
                         onPlay = onPlay,
                         onPlayManually = onPlayManually,
@@ -463,6 +464,7 @@ private fun MetaDetailsContent(
     comments: DetailCommentsState,
     shouldShowComments: Boolean,
     deferredMetaWorkAllowed: Boolean,
+    isEnriching: Boolean,
     onBack: () -> Unit,
     onPlay: DetailPlayHandler?,
     onPlayManually: DetailPlayHandler?,
@@ -545,12 +547,21 @@ private fun MetaDetailsContent(
     val hasCollectionSection = sectionContent.hasCollection
     val hasTrailersSection = sectionContent.hasTrailers
     val moreLikeThisItems = sectionContent.moreLikeThisItems
-    val parentalWarnings = rememberDetailParentalWarnings(
+    val parentsGuideEnabled = metaScreenSettingsUiState.items.any {
+        it.key == MetaScreenSectionKey.PARENTS_GUIDE && it.enabled
+    }
+    val parentalGuide = rememberDetailParentalWarnings(
         meta = meta,
-        enabled = deferredMetaWorkAllowed && metaScreenSettingsUiState.items.any {
-            it.key == MetaScreenSectionKey.PARENTS_GUIDE && it.enabled
-        },
+        enabled = deferredMetaWorkAllowed && parentsGuideEnabled,
     )
+    val parentalWarnings = parentalGuide.warnings
+    val pendingSections = buildSet {
+        if (isEnriching && moreLikeThisItems.isEmpty()) add(MetaScreenSectionKey.MORE_LIKE_THIS)
+        if (parentsGuideEnabled && !parentalGuide.resolved) add(MetaScreenSectionKey.PARENTS_GUIDE)
+        if (shouldShowComments && !comments.hasLoaded && !comments.isLoading && comments.error == null) {
+            add(MetaScreenSectionKey.COMMENTS)
+        }
+    }
     val inAppTrailerPlaybackEnabled = AppFeaturePolicy.trailerPlaybackMode == TrailerPlaybackMode.IN_APP
     var isLeavingDetails by remember(meta.id) { mutableStateOf(false) }
     val heroTrailerPlaybackEnabled = AppFeaturePolicy.heroTrailerPlaybackSupported &&
@@ -729,6 +740,7 @@ private fun MetaDetailsContent(
                     onCompanyClick = onCompanyClick,
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
+                    pendingSections = pendingSections,
                 )
             }
         val backdropUrl = meta.background ?: meta.poster

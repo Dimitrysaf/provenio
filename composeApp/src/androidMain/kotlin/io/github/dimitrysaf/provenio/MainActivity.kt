@@ -1,7 +1,5 @@
 package io.github.dimitrysaf.provenio
 
-import android.os.SystemClock
-import io.github.dimitrysaf.provenio.core.startup.AppStartupState
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
@@ -11,6 +9,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.splashscreen.R as SplashR
+import android.util.TypedValue
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import io.github.dimitrysaf.provenio.shell.components.AppLaunchScreen
 import io.github.dimitrysaf.provenio.core.auth.AuthStorage
 import io.github.dimitrysaf.provenio.core.diagnostics.SentryInitializer
 import io.github.dimitrysaf.provenio.core.deeplink.handleAppUrl
@@ -74,18 +77,16 @@ import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPrefere
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.shell.App
 
-private const val MaxSplashMillis = 6_000L
-
 open class MainActivity : AppCompatActivity() {
     private var pipRemoteActionReceiver: PipRemoteActionReceiver? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // The splash stays until the first real screen has content, so no empty backdrop shows in between, and never past a cap.
-        val splashStartedAt = SystemClock.uptimeMillis()
-        installSplashScreen().setKeepOnScreenCondition {
-            !AppStartupState.firstScreenReady.value &&
-                SystemClock.uptimeMillis() - splashStartedAt < MaxSplashMillis
-        }
+        val launchLogo = TypedValue()
+            .takeIf { theme.resolveAttribute(SplashR.attr.windowSplashScreenAnimatedIcon, it, true) }
+            ?.resourceId
+            ?.takeIf { it != 0 }
+            ?: R.drawable.ic_splash_logo_arctic_blue
+        installSplashScreen()
         enableEdgeToEdge(
             navigationBarStyle = SystemBarStyle.dark(
                 scrim = 0xFF020404.toInt(),
@@ -155,7 +156,12 @@ open class MainActivity : AppCompatActivity() {
         handleIncomingAppIntent(intent)
 
         setContent {
-            App()
+            AppLaunchScreen(
+                logo = painterResource(launchLogo),
+                background = colorResource(R.color.provenio_background),
+            ) {
+                App()
+            }
         }
     }
 

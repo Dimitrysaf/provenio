@@ -68,6 +68,7 @@ fun LicensesAttributionsSettingsScreen(
         title = stringResource(Res.string.compose_settings_page_licenses_attributions),
         modifier = Modifier.fillMaxSize(),
         onBack = onBack,
+        contentMaxWidth = SettingsContentMaxWidth,
     ) {
         licensesAttributionsContent(isTablet = false)
     }

@@ -2166,6 +2166,10 @@
     <string name="image_viewer_download">Скачать</string>
     <string name="image_viewer_save_title">Сохранить изображение</string>
     <string name="image_viewer_view_image">Открыть изображение</string>
+    <string name="update_failed_title">Не удалось обновить Provenio</string>
+    <string name="update_failed_message">Обновление не установилось, поэтому у вас по-прежнему версия %1$s. Попробуйте ещё раз через «Проверить обновления» в настройках.</string>
+    <string name="update_failed_details_show">Показать подробности</string>
+    <string name="update_failed_details_hide">Скрыть подробности</string>
     <string name="entity_browse_country">Страна</string>
     <string name="entity_browse_type">Тип</string>
     <string name="entity_browse_catalogue">Каталог</string>

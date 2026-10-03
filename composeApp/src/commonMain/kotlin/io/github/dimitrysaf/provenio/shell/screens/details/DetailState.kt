@@ -156,12 +156,17 @@ internal fun rememberDetailEpisodeList(
 }
 
 @Composable
-internal fun rememberDetailParentalWarnings(meta: MetaDetails, enabled: Boolean): List<ParentalWarning> {
+internal fun rememberDetailParentalWarnings(meta: MetaDetails, enabled: Boolean): DetailParentalWarnings {
     var guide by remember(meta.id) { mutableStateOf<ParentalGuideResult?>(null) }
+    var resolved by remember(meta.id) { mutableStateOf(false) }
     LaunchedEffect(meta.id, meta.type, enabled) {
         if (!enabled || guide != null) return@LaunchedEffect
-        val imdbId = ParentalGuideRepository.resolveImdbId(listOf(meta.id), meta.type) ?: return@LaunchedEffect
-        guide = ParentalGuideRepository.getParentalGuide(imdbId)
+        try {
+            val imdbId = ParentalGuideRepository.resolveImdbId(listOf(meta.id), meta.type) ?: return@LaunchedEffect
+            guide = ParentalGuideRepository.getParentalGuide(imdbId)
+        } finally {
+            resolved = true
+        }
     }
     val labels = ParentalGuideLabels(
         nudity = stringResource(Res.string.parental_nudity),
@@ -173,8 +178,14 @@ internal fun rememberDetailParentalWarnings(meta: MetaDetails, enabled: Boolean)
         moderate = stringResource(Res.string.parental_severity_moderate),
         mild = stringResource(Res.string.parental_severity_mild),
     )
-    return remember(guide, labels) { guide?.let { buildParentalWarnings(it, labels) }.orEmpty() }
+    val warnings = remember(guide, labels) { guide?.let { buildParentalWarnings(it, labels) }.orEmpty() }
+    return DetailParentalWarnings(warnings = warnings, resolved = resolved || guide != null)
 }
+
+internal class DetailParentalWarnings(
+    val warnings: List<ParentalWarning>,
+    val resolved: Boolean,
+)
 
 // Which optional sections this title has anything to show in.
 internal data class DetailSectionContent(

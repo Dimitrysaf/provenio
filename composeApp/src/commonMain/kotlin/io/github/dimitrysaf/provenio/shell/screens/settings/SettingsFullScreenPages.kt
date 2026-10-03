@@ -66,6 +66,7 @@ fun HomescreenSettingsScreen(
         title = stringResource(Res.string.compose_settings_page_homescreen),
         modifier = Modifier.fillMaxSize(),
         onBack = onBack,
+        contentMaxWidth = SettingsContentMaxWidth,
     ) {
         homescreenSettingsContent(
             isTablet = false,
@@ -93,6 +94,7 @@ fun MetaScreenSettingsScreen(
         title = stringResource(Res.string.compose_settings_page_meta_screen),
         modifier = Modifier.fillMaxSize(),
         onBack = onBack,
+        contentMaxWidth = SettingsContentMaxWidth,
     ) {
         metaScreenSettingsContent(
             isTablet = false,
@@ -114,6 +116,7 @@ fun ContinueWatchingSettingsScreen(
         title = stringResource(Res.string.compose_settings_page_continue_watching),
         modifier = Modifier.fillMaxSize(),
         onBack = onBack,
+        contentMaxWidth = SettingsContentMaxWidth,
     ) {
         continueWatchingSettingsContent(
             isTablet = false,
@@ -141,6 +144,7 @@ fun AddonsSettingsScreen(
         title = stringResource(Res.string.compose_settings_page_addons),
         modifier = Modifier.fillMaxSize(),
         onBack = onBack,
+        contentMaxWidth = SettingsContentMaxWidth,
     ) {
         addonsSettingsContent(onGuideClick = onGuideClick)
     }
@@ -163,6 +167,7 @@ fun PluginsSettingsScreen(
         title = stringResource(Res.string.compose_settings_page_plugins),
         modifier = Modifier.fillMaxSize(),
         onBack = onBack,
+        contentMaxWidth = SettingsContentMaxWidth,
     ) {
         pluginsSettingsContent()
     }

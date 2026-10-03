@@ -2183,6 +2183,10 @@
     <string name="image_viewer_download">Stáhnout</string>
     <string name="image_viewer_save_title">Uložit obrázek</string>
     <string name="image_viewer_view_image">Zobrazit obrázek</string>
+    <string name="update_failed_title">Provenio se nepodařilo aktualizovat</string>
+    <string name="update_failed_message">Aktualizace se nenainstalovala, takže stále používáte verzi %1$s. Můžete to zkusit znovu přes Vyhledat aktualizace v Nastavení.</string>
+    <string name="update_failed_details_show">Zobrazit podrobnosti</string>
+    <string name="update_failed_details_hide">Skrýt podrobnosti</string>
     <string name="entity_browse_country">Země</string>
     <string name="entity_browse_type">Typ</string>
     <string name="entity_browse_catalogue">Katalog</string>

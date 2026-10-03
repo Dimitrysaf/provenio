@@ -1861,6 +1861,10 @@
     <string name="image_viewer_download">Letöltés</string>
     <string name="image_viewer_save_title">Kép mentése</string>
     <string name="image_viewer_view_image">Kép megtekintése</string>
+    <string name="update_failed_title">A Provenio frissítése nem sikerült</string>
+    <string name="update_failed_message">A frissítés nem települt, így továbbra is a(z) %1$s verziót használod. A Beállítások Frissítések keresése pontjában újra megpróbálhatod.</string>
+    <string name="update_failed_details_show">Részletek megjelenítése</string>
+    <string name="update_failed_details_hide">Részletek elrejtése</string>
     <string name="entity_browse_country">Ország</string>
     <string name="entity_browse_type">Típus</string>
     <string name="entity_browse_catalogue">Katalógus</string>
