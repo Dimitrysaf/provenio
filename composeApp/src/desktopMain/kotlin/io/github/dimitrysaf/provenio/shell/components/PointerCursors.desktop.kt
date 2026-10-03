@@ -14,6 +14,8 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.platform.LocalDensity
 import java.awt.BasicStroke
 import java.awt.Color
+import java.awt.Component
+import java.awt.Cursor
 import java.awt.Point
 import java.awt.RenderingHints
 import java.awt.Toolkit
@@ -34,12 +36,20 @@ internal actual fun rememberPointerCursorTracking(onCursor: (PointerCursorKind) 
     DisposableEffect(window) {
         if (window == null) return@DisposableEffect onDispose {}
         var position: Offset? = null
+        var component: Component? = null
         fun update() {
             val point = position ?: return
             val roots = window.semanticsOwners.map { it.unmergedRootSemanticsNode }
-            currentOnCursor(roots.pointerCursorAt(point) { boundsInWindow })
+            val popup = roots.drop(1).asReversed().firstOrNull { it.coversPointer(point) { boundsInWindow } }
+            if (popup != null) {
+                val kind = popup.pointerCursorAt(point) { boundsInWindow } ?: PointerCursorKind.Default
+                component?.cursor = kind.awtCursor()
+                return
+            }
+            currentOnCursor(roots.firstOrNull()?.pointerCursorAt(point) { boundsInWindow } ?: PointerCursorKind.Default)
         }
         fun track(event: MouseEvent) {
+            component = event.component
             position = Offset(event.x * currentDensity, event.y * currentDensity)
         }
         val settle = Timer(CursorSettleMillis) { update() }.apply { isRepeats = false }
@@ -79,7 +89,16 @@ internal actual fun rememberPointerCursorTracking(onCursor: (PointerCursorKind) 
 
 internal actual fun blockedPointerIcon(): PointerIcon? = BlockedPointerIcon
 
-private val BlockedPointerIcon: PointerIcon? by lazy {
+private val BlockedPointerIcon: PointerIcon? by lazy { BlockedCursor?.let { PointerIcon(it) } }
+
+private fun PointerCursorKind.awtCursor(): Cursor = when (this) {
+    PointerCursorKind.Default -> Cursor.getDefaultCursor()
+    PointerCursorKind.Hand -> Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+    PointerCursorKind.Text -> Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR)
+    PointerCursorKind.Blocked -> BlockedCursor ?: Cursor.getDefaultCursor()
+}
+
+private val BlockedCursor: Cursor? by lazy {
     runCatching {
         val toolkit = Toolkit.getDefaultToolkit()
         val best = toolkit.getBestCursorSize(32, 32)
@@ -104,7 +123,7 @@ private val BlockedPointerIcon: PointerIcon? by lazy {
             draw(bar)
             dispose()
         }
-        PointerIcon(toolkit.createCustomCursor(image, Point(size / 2, size / 2), "blocked"))
+        toolkit.createCustomCursor(image, Point(size / 2, size / 2), "blocked")
     }.getOrNull()
 }
 

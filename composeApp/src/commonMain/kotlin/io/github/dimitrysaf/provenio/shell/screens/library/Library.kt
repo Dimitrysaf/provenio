@@ -1271,7 +1271,7 @@ private fun LibraryLayoutToggle(layoutMode: LibraryLayoutMode) {
     }
     WithTooltip(
         stringResource(
-            if (animatedTargetLayout == LibraryLayoutMode.VERTICAL) {
+            if (targetLayout == LibraryLayoutMode.VERTICAL) {
                 Res.string.library_layout_show_vertical
             } else {
                 Res.string.library_layout_show_horizontal

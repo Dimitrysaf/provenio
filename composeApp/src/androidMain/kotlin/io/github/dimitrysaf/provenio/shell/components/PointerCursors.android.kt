@@ -25,8 +25,9 @@ internal actual fun rememberPointerCursorTracking(onCursor: (PointerCursorKind) 
                 val kind = if (event.type == PointerEventType.Exit) {
                     PointerCursorKind.Default
                 } else {
-                    listOf(root.semanticsOwner.unmergedRootSemanticsNode)
+                    root.semanticsOwner.unmergedRootSemanticsNode
                         .pointerCursorAt(change.position) { boundsInRoot }
+                        ?: PointerCursorKind.Default
                 }
                 currentOnCursor(kind)
             }
