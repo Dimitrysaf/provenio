@@ -2105,4 +2105,15 @@ Bu özelliği tamamen kendi sorumluluğunuzda kullanırsınız. P2P istediğiniz
         <item quantity="one">%1$d başlık</item>
         <item quantity="other">%1$d başlık</item>
     </plurals>
+    <string name="cast_sheet_title">Yayınla</string>
+    <string name="cast_searching">Ağınızdaki cihazlar aranıyor…</string>
+    <string name="cast_no_devices">Cihaz bulunamadı. Chromecast'inizin ve bu cihazın aynı Wi-Fi ağında olduğundan emin olun.</string>
+    <string name="cast_stream_unsupported">Bu yayın aktarılamaz. Torrent yayınları ve özel erişim gerektiren yayınlar yalnızca bu cihazda oynatılır.</string>
+    <string name="cast_connecting">%1$s cihazına bağlanılıyor…</string>
+    <string name="cast_casting_to">%1$s cihazına yayınlanıyor</string>
+    <string name="cast_stop">Yayını durdur</string>
+    <string name="cast_resume_here">Burada devam et</string>
+    <string name="cast_failed_unreachable">%1$s cihazına bağlanılamadı.</string>
+    <string name="cast_failed_unsupported">%1$s bu yayını oynatamıyor.</string>
+    <string name="cast_failed_disconnected">%1$s ile bağlantı kesildi.</string>
 </resources>

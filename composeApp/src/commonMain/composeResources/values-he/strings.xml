@@ -726,4 +726,15 @@
     <string name="entity_browse_headquarters">מטה</string>
     <string name="entity_browse_catalogue">קטלוג</string>
     <string name="entity_browse_about">אודות</string>
+    <string name="cast_sheet_title">העברה אל</string>
+    <string name="cast_searching">מחפש מכשירים ברשת שלך…</string>
+    <string name="cast_no_devices">לא נמצאו מכשירים. ודא שה-Chromecast והמכשיר הזה מחוברים לאותה רשת Wi-Fi.</string>
+    <string name="cast_stream_unsupported">לא ניתן להעביר את הזרם הזה. זרמי טורנט וזרמים שדורשים גישה מיוחדת מתנגנים רק במכשיר הזה.</string>
+    <string name="cast_connecting">מתחבר אל %1$s…</string>
+    <string name="cast_casting_to">מעביר אל %1$s</string>
+    <string name="cast_stop">הפסק העברה</string>
+    <string name="cast_resume_here">המשך כאן</string>
+    <string name="cast_failed_unreachable">לא ניתן להתחבר אל %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s לא יכול לנגן את הזרם הזה.</string>
+    <string name="cast_failed_disconnected">החיבור אל %1$s אבד.</string>
 </resources>

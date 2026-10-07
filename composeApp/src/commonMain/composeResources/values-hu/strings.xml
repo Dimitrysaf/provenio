@@ -2082,4 +2082,15 @@
     <string name="player_torrent_preparing_stream">Torrent stream előkészítése...</string>
     <string name="player_torrent_connecting_status">%1$s · %2$s · %3$s</string>
     <string name="player_torrent_loading_status">%1$s letöltve · %2$s · %3$s</string>
+    <string name="cast_sheet_title">Átküldés ide</string>
+    <string name="cast_searching">Eszközök keresése a hálózaton…</string>
+    <string name="cast_no_devices">Nem található eszköz. Győződj meg róla, hogy a Chromecast és ez az eszköz ugyanazon a Wi-Fi-hálózaton van.</string>
+    <string name="cast_stream_unsupported">Ez a stream nem küldhető át. A torrent streamek és a különleges hozzáférést igénylő streamek csak ezen az eszközön játszhatók le.</string>
+    <string name="cast_connecting">Csatlakozás ehhez: %1$s…</string>
+    <string name="cast_casting_to">Átküldés ide: %1$s</string>
+    <string name="cast_stop">Átküldés leállítása</string>
+    <string name="cast_resume_here">Folytatás itt</string>
+    <string name="cast_failed_unreachable">Nem sikerült csatlakozni ehhez: %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s nem tudja lejátszani ezt a streamet.</string>
+    <string name="cast_failed_disconnected">Megszakadt a kapcsolat ezzel: %1$s.</string>
 </resources>

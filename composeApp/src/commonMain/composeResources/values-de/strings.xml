@@ -1186,4 +1186,15 @@
     </plurals>
     <string name="cw_new_episode">Neue Folge</string>
     <string name="cw_new_season">Neue Staffel</string>
+    <string name="cast_sheet_title">Streamen auf</string>
+    <string name="cast_searching">Suche nach Geräten in deinem Netzwerk…</string>
+    <string name="cast_no_devices">Keine Geräte gefunden. Stelle sicher, dass dein Chromecast und dieses Gerät im selben WLAN sind.</string>
+    <string name="cast_stream_unsupported">Dieser Stream kann nicht übertragen werden. Torrent-Streams und Streams mit besonderem Zugriff laufen nur auf diesem Gerät.</string>
+    <string name="cast_connecting">Verbindung mit %1$s…</string>
+    <string name="cast_casting_to">Wird auf %1$s gestreamt</string>
+    <string name="cast_stop">Streamen beenden</string>
+    <string name="cast_resume_here">Hier fortsetzen</string>
+    <string name="cast_failed_unreachable">Verbindung mit %1$s nicht möglich.</string>
+    <string name="cast_failed_unsupported">%1$s kann diesen Stream nicht abspielen.</string>
+    <string name="cast_failed_disconnected">Die Verbindung zu %1$s wurde unterbrochen.</string>
 </resources>

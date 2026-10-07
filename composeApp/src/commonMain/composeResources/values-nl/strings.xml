@@ -2201,4 +2201,15 @@
         <item quantity="one">%1$d titel</item>
         <item quantity="other">%1$d titels</item>
     </plurals>
+    <string name="cast_sheet_title">Casten naar</string>
+    <string name="cast_searching">Zoeken naar apparaten in je netwerk…</string>
+    <string name="cast_no_devices">Geen apparaten gevonden. Zorg dat je Chromecast en dit apparaat op hetzelfde wifi-netwerk zitten.</string>
+    <string name="cast_stream_unsupported">Deze stream kan niet worden gecast. Torrents en streams die speciale toegang nodig hebben, spelen alleen op dit apparaat.</string>
+    <string name="cast_connecting">Verbinden met %1$s…</string>
+    <string name="cast_casting_to">Casten naar %1$s</string>
+    <string name="cast_stop">Casten stoppen</string>
+    <string name="cast_resume_here">Hier verder kijken</string>
+    <string name="cast_failed_unreachable">Kan geen verbinding maken met %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s kan deze stream niet afspelen.</string>
+    <string name="cast_failed_disconnected">De verbinding met %1$s is verbroken.</string>
 </resources>

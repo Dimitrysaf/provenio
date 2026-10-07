@@ -2084,4 +2084,15 @@
     <string name="library_simkl_empty_title">Váš zoznam sledovania Simkl je prázdny</string>
     <string name="library_simkl_load_failed">Nepodarilo sa načítať zoznam sledovania Simkl</string>
     <string name="library_simkl_title">Zoznam sledovania Simkl</string>
+    <string name="cast_sheet_title">Odoslať do</string>
+    <string name="cast_searching">Hľadanie zariadení vo vašej sieti…</string>
+    <string name="cast_no_devices">Nenašli sa žiadne zariadenia. Uistite sa, že Chromecast a toto zariadenie sú v rovnakej sieti Wi-Fi.</string>
+    <string name="cast_stream_unsupported">Tento stream nie je možné odoslať. Torrent streamy a streamy, ktoré vyžadujú špeciálny prístup, sa prehrávajú len na tomto zariadení.</string>
+    <string name="cast_connecting">Pripájanie k %1$s…</string>
+    <string name="cast_casting_to">Odosielanie do %1$s</string>
+    <string name="cast_stop">Zastaviť odosielanie</string>
+    <string name="cast_resume_here">Pokračovať tu</string>
+    <string name="cast_failed_unreachable">Nepodarilo sa pripojiť k %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s nemôže prehrať tento stream.</string>
+    <string name="cast_failed_disconnected">Spojenie s %1$s sa stratilo.</string>
 </resources>

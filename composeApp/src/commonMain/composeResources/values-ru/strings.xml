@@ -2188,4 +2188,15 @@
         <item quantity="many">%1$d названий</item>
         <item quantity="other">%1$d названия</item>
     </plurals>
+    <string name="cast_sheet_title">Трансляция на</string>
+    <string name="cast_searching">Поиск устройств в вашей сети…</string>
+    <string name="cast_no_devices">Устройства не найдены. Убедитесь, что Chromecast и это устройство подключены к одной сети Wi-Fi.</string>
+    <string name="cast_stream_unsupported">Этот поток нельзя транслировать. Торренты и потоки, требующие особого доступа, воспроизводятся только на этом устройстве.</string>
+    <string name="cast_connecting">Подключение к %1$s…</string>
+    <string name="cast_casting_to">Трансляция на %1$s</string>
+    <string name="cast_stop">Остановить трансляцию</string>
+    <string name="cast_resume_here">Продолжить здесь</string>
+    <string name="cast_failed_unreachable">Не удалось подключиться к %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s не может воспроизвести этот поток.</string>
+    <string name="cast_failed_disconnected">Соединение с %1$s потеряно.</string>
 </resources>

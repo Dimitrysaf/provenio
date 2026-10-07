@@ -1870,4 +1870,15 @@
     <string name="player_torrent_starting_engine">P2Pエンジンを起動中…</string>
     <string name="player_error_failed_start_torrent">トレントの開始に失敗しました：%1$s</string>
     <string name="player_error_torrent">トレントエラー：%1$s</string>
+    <string name="cast_sheet_title">キャスト先</string>
+    <string name="cast_searching">ネットワーク上のデバイスを探しています…</string>
+    <string name="cast_no_devices">デバイスが見つかりません。Chromecast とこのデバイスが同じ Wi-Fi に接続されていることを確認してください。</string>
+    <string name="cast_stream_unsupported">このストリームはキャストできません。トレントや特別なアクセスが必要なストリームはこのデバイスでのみ再生できます。</string>
+    <string name="cast_connecting">%1$s に接続しています…</string>
+    <string name="cast_casting_to">%1$s にキャスト中</string>
+    <string name="cast_stop">キャストを停止</string>
+    <string name="cast_resume_here">ここで続ける</string>
+    <string name="cast_failed_unreachable">%1$s に接続できませんでした。</string>
+    <string name="cast_failed_unsupported">%1$s はこのストリームを再生できません。</string>
+    <string name="cast_failed_disconnected">%1$s との接続が切断されました。</string>
 </resources>

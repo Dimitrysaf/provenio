@@ -1931,4 +1931,15 @@
         <item quantity="one">%1$d titre</item>
         <item quantity="other">%1$d titres</item>
     </plurals>
+    <string name="cast_sheet_title">Caster sur</string>
+    <string name="cast_searching">Recherche d'appareils sur votre réseau…</string>
+    <string name="cast_no_devices">Aucun appareil trouvé. Vérifiez que votre Chromecast et cet appareil sont sur le même Wi-Fi.</string>
+    <string name="cast_stream_unsupported">Ce flux ne peut pas être casté. Les torrents et les flux qui nécessitent un accès particulier ne sont lus que sur cet appareil.</string>
+    <string name="cast_connecting">Connexion à %1$s…</string>
+    <string name="cast_casting_to">Cast sur %1$s</string>
+    <string name="cast_stop">Arrêter le cast</string>
+    <string name="cast_resume_here">Continuer ici</string>
+    <string name="cast_failed_unreachable">Impossible de se connecter à %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s ne peut pas lire ce flux.</string>
+    <string name="cast_failed_disconnected">La connexion à %1$s a été perdue.</string>
 </resources>

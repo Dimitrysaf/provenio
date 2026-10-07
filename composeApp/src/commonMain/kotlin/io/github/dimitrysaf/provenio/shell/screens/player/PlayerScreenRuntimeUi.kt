@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.cast.CastController
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -214,6 +215,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                 onDismiss = { showTorrentDetailsSheet = false },
             )
         }
+        RenderCastLayer()
     }
 }
 
@@ -247,6 +249,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
         !externalPlayerId.isNullOrBlank() &&
             ExternalPlayerPlatform.availablePlayers().any { it.id == externalPlayerId }
     }
+    val castAvailable = rememberCastNetworkAvailable() && castMediaOrNull() != null
     AnimatedVisibility(
         visible = controlsVisible && !playerControlsLocked && !isInPip,
         enter = fadeIn(),
@@ -291,6 +294,15 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             onAudioClick = {
                 refreshTracks()
                 showAudioModal = true
+            },
+            showCastButton = CastController.isSupported,
+            onCastClick = if (castAvailable) {
+                {
+                    showCastSheet = true
+                    controlsVisible = true
+                }
+            } else {
+                null
             },
             onVideoSettingsClick = if (isIos) {
                 {

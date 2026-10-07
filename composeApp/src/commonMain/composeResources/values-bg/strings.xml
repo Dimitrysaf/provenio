@@ -2182,4 +2182,15 @@
         <item quantity="one">%1$d заглавие</item>
         <item quantity="other">%1$d заглавия</item>
     </plurals>
+    <string name="cast_sheet_title">Предаване към</string>
+    <string name="cast_searching">Търсене на устройства в мрежата ви…</string>
+    <string name="cast_no_devices">Не са намерени устройства. Уверете се, че Chromecast и това устройство са в една и съща Wi-Fi мрежа.</string>
+    <string name="cast_stream_unsupported">Този поток не може да се предава. Торент потоците и потоците, които изискват специален достъп, се възпроизвеждат само на това устройство.</string>
+    <string name="cast_connecting">Свързване с %1$s…</string>
+    <string name="cast_casting_to">Предаване към %1$s</string>
+    <string name="cast_stop">Спиране на предаването</string>
+    <string name="cast_resume_here">Продължаване тук</string>
+    <string name="cast_failed_unreachable">Неуспешно свързване с %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s не може да възпроизведе този поток.</string>
+    <string name="cast_failed_disconnected">Връзката с %1$s беше прекъсната.</string>
 </resources>

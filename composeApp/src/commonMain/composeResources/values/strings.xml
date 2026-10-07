@@ -1500,6 +1500,17 @@
     <string name="player_playback_speed">Playback speed</string>
     <string name="player_video_fit">Video fit</string>
     <string name="player_cast">Cast</string>
+    <string name="cast_sheet_title">Cast to</string>
+    <string name="cast_searching">Looking for devices on your network…</string>
+    <string name="cast_no_devices">No devices found. Make sure your Chromecast and this device are on the same Wi-Fi.</string>
+    <string name="cast_stream_unsupported">This stream can't be cast. Torrent streams and streams that need special access only play on this device.</string>
+    <string name="cast_connecting">Connecting to %1$s…</string>
+    <string name="cast_casting_to">Casting to %1$s</string>
+    <string name="cast_stop">Stop casting</string>
+    <string name="cast_resume_here">Continue here</string>
+    <string name="cast_failed_unreachable">Couldn't connect to %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s can't play this stream.</string>
+    <string name="cast_failed_disconnected">The connection to %1$s was lost.</string>
     <string name="player_torrent_seeds">Seeds %1$d</string>
     <string name="player_torrent_peers">Peers %1$d</string>
     <string name="player_torrent_downloaded">Downloaded %1$s</string>

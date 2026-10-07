@@ -1806,4 +1806,15 @@
     <string name="player_torrent_starting_engine">A iniciar motor P2P…</string>
     <string name="player_error_failed_start_torrent">Falha ao iniciar o torrent: %1$s</string>
     <string name="player_error_torrent">Erro de torrent: %1$s</string>
+    <string name="cast_sheet_title">Transmitir para</string>
+    <string name="cast_searching">A procurar dispositivos na sua rede…</string>
+    <string name="cast_no_devices">Nenhum dispositivo encontrado. Certifique-se de que o Chromecast e este dispositivo estão na mesma rede Wi-Fi.</string>
+    <string name="cast_stream_unsupported">Esta transmissão não pode ser enviada. Torrents e transmissões que precisam de acesso especial só são reproduzidos neste dispositivo.</string>
+    <string name="cast_connecting">A ligar a %1$s…</string>
+    <string name="cast_casting_to">A transmitir para %1$s</string>
+    <string name="cast_stop">Parar transmissão</string>
+    <string name="cast_resume_here">Continuar aqui</string>
+    <string name="cast_failed_unreachable">Não foi possível ligar a %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s não consegue reproduzir esta transmissão.</string>
+    <string name="cast_failed_disconnected">A ligação a %1$s foi perdida.</string>
 </resources>

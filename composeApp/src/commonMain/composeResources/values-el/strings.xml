@@ -1006,6 +1006,17 @@
     <string name="player_playback_speed">Ταχύτητα αναπαραγωγής</string>
     <string name="player_video_fit">Προσαρμογή βίντεο</string>
     <string name="player_cast">Μετάδοση</string>
+    <string name="cast_sheet_title">Μετάδοση σε</string>
+    <string name="cast_searching">Αναζήτηση συσκευών στο δίκτυό σας…</string>
+    <string name="cast_no_devices">Δεν βρέθηκαν συσκευές. Βεβαιωθείτε ότι το Chromecast και αυτή η συσκευή είναι στο ίδιο Wi-Fi.</string>
+    <string name="cast_stream_unsupported">Αυτή η ροή δεν μπορεί να μεταδοθεί. Οι ροές torrent και οι ροές που χρειάζονται ειδική πρόσβαση παίζουν μόνο σε αυτή τη συσκευή.</string>
+    <string name="cast_connecting">Σύνδεση με %1$s…</string>
+    <string name="cast_casting_to">Μετάδοση σε %1$s</string>
+    <string name="cast_stop">Διακοπή μετάδοσης</string>
+    <string name="cast_resume_here">Συνέχεια εδώ</string>
+    <string name="cast_failed_unreachable">Δεν ήταν δυνατή η σύνδεση με %1$s.</string>
+    <string name="cast_failed_unsupported">Το %1$s δεν μπορεί να αναπαράγει αυτή τη ροή.</string>
+    <string name="cast_failed_disconnected">Η σύνδεση με %1$s χάθηκε.</string>
     <string name="player_torrent_seeds">Seeds %1$d</string>
     <string name="player_torrent_peers">Peers %1$d</string>
     <string name="player_torrent_downloaded">Λήφθηκαν %1$s</string>

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio
 
+import io.github.dimitrysaf.provenio.core.cast.CastNetwork
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
@@ -115,6 +116,7 @@ open class MainActivity : AppCompatActivity() {
         SyncClientIdentityStorage.initialize(applicationContext)
         LocalSyncStorage.initialize(applicationContext)
         LocalSyncWifiLock.initialize(applicationContext)
+        CastNetwork.initialize(applicationContext)
         AddonHttpClientProvider.initialize(applicationContext)
         AddonStorage.initialize(applicationContext)
         AuthStorage.initialize(applicationContext)

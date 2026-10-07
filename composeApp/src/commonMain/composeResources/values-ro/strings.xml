@@ -1896,4 +1896,15 @@
         <item quantity="one">%1$d titlu</item>
         <item quantity="other">%1$d titluri</item>
     </plurals>
+    <string name="cast_sheet_title">Proiectează pe</string>
+    <string name="cast_searching">Se caută dispozitive în rețeaua ta…</string>
+    <string name="cast_no_devices">Nu s-au găsit dispozitive. Asigură-te că Chromecastul și acest dispozitiv sunt în aceeași rețea Wi-Fi.</string>
+    <string name="cast_stream_unsupported">Acest stream nu poate fi proiectat. Torrentele și streamurile care necesită acces special se redau doar pe acest dispozitiv.</string>
+    <string name="cast_connecting">Se conectează la %1$s…</string>
+    <string name="cast_casting_to">Se proiectează pe %1$s</string>
+    <string name="cast_stop">Oprește proiectarea</string>
+    <string name="cast_resume_here">Continuă aici</string>
+    <string name="cast_failed_unreachable">Nu s-a putut conecta la %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s nu poate reda acest stream.</string>
+    <string name="cast_failed_disconnected">Conexiunea cu %1$s s-a pierdut.</string>
 </resources>

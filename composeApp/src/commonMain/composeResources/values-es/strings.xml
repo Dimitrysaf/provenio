@@ -2158,4 +2158,15 @@ Utilizas esta función bajo tu propia responsabilidad. P2P se puede desactivar e
         <item quantity="one">%1$d título</item>
         <item quantity="other">%1$d títulos</item>
     </plurals>
+    <string name="cast_sheet_title">Enviar a</string>
+    <string name="cast_searching">Buscando dispositivos en tu red…</string>
+    <string name="cast_no_devices">No se encontraron dispositivos. Asegúrate de que tu Chromecast y este dispositivo estén en la misma red Wi-Fi.</string>
+    <string name="cast_stream_unsupported">Esta transmisión no se puede enviar. Los torrents y las transmisiones que necesitan acceso especial solo se reproducen en este dispositivo.</string>
+    <string name="cast_connecting">Conectando con %1$s…</string>
+    <string name="cast_casting_to">Enviando a %1$s</string>
+    <string name="cast_stop">Dejar de enviar</string>
+    <string name="cast_resume_here">Continuar aquí</string>
+    <string name="cast_failed_unreachable">No se pudo conectar con %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s no puede reproducir esta transmisión.</string>
+    <string name="cast_failed_disconnected">Se perdió la conexión con %1$s.</string>
 </resources>

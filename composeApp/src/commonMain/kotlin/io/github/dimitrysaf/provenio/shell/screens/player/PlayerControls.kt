@@ -136,6 +136,8 @@ internal fun PlayerControlsShell(
     onSpeedClick: () -> Unit,
     onSubtitleClick: () -> Unit,
     onAudioClick: () -> Unit,
+    showCastButton: Boolean = false,
+    onCastClick: (() -> Unit)? = null,
     onVideoSettingsClick: (() -> Unit)? = null,
     onSourcesClick: (() -> Unit)? = null,
     onEpisodesClick: (() -> Unit)? = null,
@@ -255,6 +257,8 @@ internal fun PlayerControlsShell(
                     onSpeedClick = onSpeedClick,
                     onSubtitleClick = onSubtitleClick,
                     onAudioClick = onAudioClick,
+                    showCastButton = showCastButton,
+                    onCastClick = onCastClick,
                     onLockToggle = onLockToggle,
                     onVideoSettingsClick = onVideoSettingsClick,
                     onOpenInExternalPlayer = onOpenInExternalPlayer,
@@ -702,6 +706,8 @@ private fun BottomControls(
     onSpeedClick: () -> Unit,
     onSubtitleClick: () -> Unit,
     onAudioClick: () -> Unit,
+    showCastButton: Boolean,
+    onCastClick: (() -> Unit)?,
     onLockToggle: () -> Unit,
     onVideoSettingsClick: (() -> Unit)?,
     onOpenInExternalPlayer: (() -> Unit)?,
@@ -714,7 +720,7 @@ private fun BottomControls(
     modifier: Modifier = Modifier,
 ) {
     val speedLabel = formatPlaybackSpeedLabel(playbackSnapshot.playbackSpeed)
-    val leftActions = listOf(
+    val leftActions = listOfNotNull(
         PlayerGroupAction(stringResource(resizeMode.labelRes), onResizeModeClick, icon = Icons.Rounded.AspectRatio),
         // Speed and tracks need a loaded stream, so they wait until it is ready.
         PlayerGroupAction(speedLabel, onSpeedClick.takeIf { controlsReady }, label = speedLabel),
@@ -728,8 +734,11 @@ private fun BottomControls(
             onAudioClick.takeIf { controlsReady },
             icon = Icons.Rounded.Audiotrack,
         ),
-        // Casting is not built yet, so the button is shown but does nothing.
-        PlayerGroupAction(stringResource(Res.string.player_cast), onClick = null, icon = Icons.Rounded.Cast),
+        if (showCastButton) {
+            PlayerGroupAction(stringResource(Res.string.player_cast), onCastClick?.takeIf { controlsReady }, icon = Icons.Rounded.Cast)
+        } else {
+            null
+        },
         PlayerGroupAction(
             stringResource(Res.string.compose_player_lock_controls),
             onLockToggle,

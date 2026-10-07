@@ -2203,4 +2203,15 @@
     <string name="player_torrent_preparing_stream">Przygotowywanie strumienia torrent…</string>
     <string name="player_torrent_connecting_status">%1$s · %2$s · %3$s</string>
     <string name="player_torrent_loading_status">%1$s pobrano · %2$s · %3$s</string>
+    <string name="cast_sheet_title">Przesyłaj do</string>
+    <string name="cast_searching">Szukanie urządzeń w Twojej sieci…</string>
+    <string name="cast_no_devices">Nie znaleziono urządzeń. Upewnij się, że Chromecast i to urządzenie są w tej samej sieci Wi-Fi.</string>
+    <string name="cast_stream_unsupported">Tego strumienia nie można przesłać. Torrenty i strumienie wymagające specjalnego dostępu odtwarzają się tylko na tym urządzeniu.</string>
+    <string name="cast_connecting">Łączenie z %1$s…</string>
+    <string name="cast_casting_to">Przesyłanie do %1$s</string>
+    <string name="cast_stop">Zatrzymaj przesyłanie</string>
+    <string name="cast_resume_here">Kontynuuj tutaj</string>
+    <string name="cast_failed_unreachable">Nie można połączyć się z %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s nie może odtworzyć tego strumienia.</string>
+    <string name="cast_failed_disconnected">Utracono połączenie z %1$s.</string>
 </resources>

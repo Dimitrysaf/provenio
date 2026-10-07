@@ -1405,4 +1405,15 @@
     <plurals name="cw_airs_in_days_short">
         <item quantity="other">%1$d hari lagi</item>
     </plurals>
+    <string name="cast_sheet_title">Transmisikan ke</string>
+    <string name="cast_searching">Mencari perangkat di jaringan Anda…</string>
+    <string name="cast_no_devices">Tidak ada perangkat ditemukan. Pastikan Chromecast dan perangkat ini berada di Wi-Fi yang sama.</string>
+    <string name="cast_stream_unsupported">Streaming ini tidak dapat ditransmisikan. Torrent dan streaming yang memerlukan akses khusus hanya diputar di perangkat ini.</string>
+    <string name="cast_connecting">Menghubungkan ke %1$s…</string>
+    <string name="cast_casting_to">Mentransmisikan ke %1$s</string>
+    <string name="cast_stop">Hentikan transmisi</string>
+    <string name="cast_resume_here">Lanjutkan di sini</string>
+    <string name="cast_failed_unreachable">Tidak dapat terhubung ke %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s tidak dapat memutar streaming ini.</string>
+    <string name="cast_failed_disconnected">Koneksi ke %1$s terputus.</string>
 </resources>

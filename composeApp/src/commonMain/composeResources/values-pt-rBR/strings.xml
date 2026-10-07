@@ -1311,4 +1311,15 @@
     <string name="unit_bytes_kb">KB</string>
     <string name="unit_bytes_mb">MB</string>
     <string name="unit_bytes_gb">GB</string>
+    <string name="cast_sheet_title">Transmitir para</string>
+    <string name="cast_searching">Procurando dispositivos na sua rede…</string>
+    <string name="cast_no_devices">Nenhum dispositivo encontrado. Verifique se o Chromecast e este dispositivo estão na mesma rede Wi-Fi.</string>
+    <string name="cast_stream_unsupported">Este stream não pode ser transmitido. Torrents e streams que precisam de acesso especial só tocam neste dispositivo.</string>
+    <string name="cast_connecting">Conectando a %1$s…</string>
+    <string name="cast_casting_to">Transmitindo para %1$s</string>
+    <string name="cast_stop">Parar transmissão</string>
+    <string name="cast_resume_here">Continuar aqui</string>
+    <string name="cast_failed_unreachable">Não foi possível conectar a %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s não consegue reproduzir este stream.</string>
+    <string name="cast_failed_disconnected">A conexão com %1$s foi perdida.</string>
 </resources>

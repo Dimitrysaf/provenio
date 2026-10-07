@@ -2204,4 +2204,15 @@
         <item quantity="few">%1$d tituly</item>
         <item quantity="other">%1$d titulů</item>
     </plurals>
+    <string name="cast_sheet_title">Odeslat do</string>
+    <string name="cast_searching">Hledání zařízení ve vaší síti…</string>
+    <string name="cast_no_devices">Nenalezena žádná zařízení. Ujistěte se, že Chromecast a toto zařízení jsou ve stejné síti Wi-Fi.</string>
+    <string name="cast_stream_unsupported">Tento stream nelze odeslat. Torrent streamy a streamy vyžadující zvláštní přístup se přehrávají jen na tomto zařízení.</string>
+    <string name="cast_connecting">Připojování k %1$s…</string>
+    <string name="cast_casting_to">Odesílání do %1$s</string>
+    <string name="cast_stop">Zastavit odesílání</string>
+    <string name="cast_resume_here">Pokračovat zde</string>
+    <string name="cast_failed_unreachable">Nelze se připojit k %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s nemůže přehrát tento stream.</string>
+    <string name="cast_failed_disconnected">Spojení s %1$s bylo ztraceno.</string>
 </resources>

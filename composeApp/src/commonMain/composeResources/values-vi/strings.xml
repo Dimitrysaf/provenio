@@ -2204,4 +2204,15 @@
         <item quantity="one">%1$d tiêu đề</item>
         <item quantity="other">%1$d tiêu đề</item>
     </plurals>
+    <string name="cast_sheet_title">Truyền tới</string>
+    <string name="cast_searching">Đang tìm thiết bị trong mạng của bạn…</string>
+    <string name="cast_no_devices">Không tìm thấy thiết bị. Hãy đảm bảo Chromecast và thiết bị này dùng cùng một mạng Wi-Fi.</string>
+    <string name="cast_stream_unsupported">Không thể truyền luồng này. Luồng torrent và luồng cần quyền truy cập đặc biệt chỉ phát trên thiết bị này.</string>
+    <string name="cast_connecting">Đang kết nối với %1$s…</string>
+    <string name="cast_casting_to">Đang truyền tới %1$s</string>
+    <string name="cast_stop">Dừng truyền</string>
+    <string name="cast_resume_here">Tiếp tục tại đây</string>
+    <string name="cast_failed_unreachable">Không thể kết nối với %1$s.</string>
+    <string name="cast_failed_unsupported">%1$s không thể phát luồng này.</string>
+    <string name="cast_failed_disconnected">Mất kết nối với %1$s.</string>
 </resources>
