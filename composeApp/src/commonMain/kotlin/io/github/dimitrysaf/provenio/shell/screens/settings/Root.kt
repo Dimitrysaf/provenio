@@ -25,7 +25,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
-import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.shell.screens.updater.AppUpdaterStatus
 import provenio.composeapp.generated.resources.updates_downloading_progress
@@ -182,6 +181,7 @@ internal fun LazyListScope.settingsRootContent(
     if (showAboutSection) {
         item {
             val uriHandler = LocalUriHandler.current
+            val updater = AppUpdaterStatus.uiState.collectAsStateWithLifecycle().value
             SettingsSection(
                 title = stringResource(Res.string.compose_settings_root_about_section),
                 isTablet = isTablet,
@@ -201,7 +201,6 @@ internal fun LazyListScope.settingsRootContent(
                         onClick = onLicensesAttributionsClick,
                     )
                     if (onCheckForUpdatesClick != null) {
-                        val updater by AppUpdaterStatus.uiState.collectAsStateWithLifecycle()
                         val downloadPercent = updater.downloadProgress?.let { (it * 100).toInt().coerceIn(0, 100) }
                         navigationRow(
                             title = stringResource(Res.string.compose_settings_root_check_updates_title),
