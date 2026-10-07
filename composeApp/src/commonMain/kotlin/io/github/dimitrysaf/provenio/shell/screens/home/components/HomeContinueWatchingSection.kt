@@ -230,8 +230,8 @@ private fun ContinueWatchingItem.continueWatchingCardArtworkCandidates(
     )
 }
 
-private fun artworkCandidates(vararg values: String?): String? =
-    values.firstOrNull { value -> !value.isNullOrBlank() }?.trim()
+private fun artworkCandidates(vararg values: String?): List<String> =
+    values.mapNotNull { value -> value?.trim()?.takeIf(String::isNotBlank) }.distinct()
 
 internal fun ContinueWatchingItem.shouldBlurContinueWatchingArtwork(
     blurUnwatchedEpisodes: Boolean,
