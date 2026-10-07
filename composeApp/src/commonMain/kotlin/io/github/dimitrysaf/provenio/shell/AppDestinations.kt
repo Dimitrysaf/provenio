@@ -253,6 +253,9 @@ internal fun appEntryProvider(
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )
     }
+    entry<EpisodeDetailRoute> { route ->
+        EpisodeDestination(route = route, navController = navController)
+    }
     entry<EntityBrowseRoute> { route ->
         EntityDestination(route = route, navController = navController)
     }

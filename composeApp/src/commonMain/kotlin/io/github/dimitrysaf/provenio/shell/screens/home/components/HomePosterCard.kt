@@ -24,7 +24,8 @@ fun HomePosterCard(
 
     PosterCard(
         title = item.name,
-        imageUrl = if (isLandscapeMode) (item.banner ?: item.poster) else item.poster,
+        imageUrl = if (isLandscapeMode) item.banner else item.poster,
+        fallbackImageUrls = listOf(if (isLandscapeMode) item.poster else item.banner),
         modifier = modifier,
         shape = if (isLandscapeMode) PosterCardShape.Landscape else item.posterShape.toPosterCardShape(),
         detailLine = if (isLandscapeMode || posterCardStyle.hideLabelsEnabled) null else item.releaseInfo?.let { formatReleaseDateForDisplay(it) },

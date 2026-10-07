@@ -53,6 +53,19 @@ class DetailHeroSlidesTest {
     }
 
     @Test
+    fun `uses a backdrop rather than the poster when there is no background`() {
+        val slides = buildDetailHeroSlides(
+            meta = meta(poster = "poster.jpg", extraArtwork = listOf("backdrop.jpg", "other.jpg")),
+            includeTrailers = true,
+        )
+
+        assertEquals(
+            listOf(DetailHeroSlide.Artwork("backdrop.jpg"), DetailHeroSlide.Artwork("other.jpg")),
+            slides,
+        )
+    }
+
+    @Test
     fun `leaves trailers out when hero trailer playback is off`() {
         val slides = buildDetailHeroSlides(
             meta = meta(background = "main.jpg", trailers = listOf(trailer("official"))),

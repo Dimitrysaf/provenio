@@ -29,7 +29,7 @@ internal fun StreamLoadingScreen(
         else -> stringResource(Res.string.streams_finding_source)
     }
     OpeningOverlay(
-        artwork = launch.background ?: launch.poster,
+        artworkCandidates = listOf(launch.background, launch.poster),
         logo = launch.logo,
         title = launch.title,
         onBack = onBack,

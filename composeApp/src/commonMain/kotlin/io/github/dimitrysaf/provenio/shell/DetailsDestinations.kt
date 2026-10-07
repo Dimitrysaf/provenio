@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.shell.screens.details.EpisodeDetailScreen
 import io.github.dimitrysaf.provenio.core.metadata.MetaTrailer
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -16,6 +17,7 @@ import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbEntityKind
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbService
 import io.github.dimitrysaf.provenio.shell.nav.DetailRoute
 import io.github.dimitrysaf.provenio.shell.nav.EntityBrowseRoute
+import io.github.dimitrysaf.provenio.shell.nav.EpisodeDetailRoute
 import io.github.dimitrysaf.provenio.shell.nav.Navigator
 import io.github.dimitrysaf.provenio.shell.nav.PersonDetailRoute
 import kotlinx.coroutines.launch
@@ -127,8 +129,34 @@ internal fun DetailsDestination(
                 )
             }
         },
+        onOpenEpisode = { episode ->
+            navController.navigate(
+                EpisodeDetailRoute(
+                    type = route.type,
+                    metaId = route.id,
+                    videoId = episode.id,
+                    episodeTitle = episode.title,
+                ),
+            )
+        },
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
+        modifier = Modifier.fillMaxSize(),
+    )
+}
+
+@Composable
+internal fun EpisodeDestination(
+    route: EpisodeDetailRoute,
+    navController: Navigator,
+) {
+    val onBack = rememberGuardedPopBackStack(navController, route)
+    EpisodeDetailScreen(
+        type = route.type,
+        metaId = route.metaId,
+        videoId = route.videoId,
+        episodeTitle = route.episodeTitle,
+        onBack = onBack,
         modifier = Modifier.fillMaxSize(),
     )
 }

@@ -15,7 +15,9 @@ internal fun buildDetailHeroSlides(
     meta: MetaDetails,
     includeTrailers: Boolean,
 ): List<DetailHeroSlide> {
-    val mainArtwork = (meta.background ?: meta.poster)?.trim()?.takeIf(String::isNotBlank)
+    val mainArtwork = (sequenceOf(meta.background) + meta.extraArtwork.asSequence() + sequenceOf(meta.poster))
+        .mapNotNull { it?.trim()?.takeIf(String::isNotBlank) }
+        .firstOrNull()
     val trailers = if (includeTrailers) {
         selectHeroTrailers(meta.trailers, limit = MAX_HERO_TRAILERS)
     } else {

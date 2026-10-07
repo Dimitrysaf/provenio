@@ -123,6 +123,7 @@ fun MetaDetailsScreen(
     onOpenMeta: ((MetaPreview) -> Unit)? = null,
     onCastClick: ((MetaPerson, String?) -> Unit)? = null,
     onCompanyClick: ((MetaCompany, String) -> Unit)? = null,
+    onOpenEpisode: ((MetaVideo) -> Unit)? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     modifier: Modifier = Modifier,
@@ -260,6 +261,7 @@ fun MetaDetailsScreen(
                         onOpenMeta = onOpenMeta,
                         onCastClick = onCastClick,
                         onCompanyClick = onCompanyClick,
+                        onOpenEpisode = onOpenEpisode,
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope,
                     )
@@ -472,6 +474,7 @@ private fun MetaDetailsContent(
     onOpenMeta: ((MetaPreview) -> Unit)?,
     onCastClick: ((MetaPerson, String?) -> Unit)?,
     onCompanyClick: ((MetaCompany, String) -> Unit)?,
+    onOpenEpisode: ((MetaVideo) -> Unit)?,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
 ) {
@@ -743,7 +746,8 @@ private fun MetaDetailsContent(
                     pendingSections = pendingSections,
                 )
             }
-        val backdropUrl = meta.background ?: meta.poster
+        val backdropUrl = (listOf(meta.background) + meta.extraArtwork + listOf(meta.poster))
+            .firstOrNull { !it.isNullOrBlank() }
 
         Box(modifier = Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxSize().detailsContentReveal(metaScreenSettingsUiState.posterTransitionEnabled)) {
@@ -833,6 +837,7 @@ private fun MetaDetailsContent(
                     showPlayManually = showManualPlayOption && playbackAvailability.canStream(meta.type, selectedEpisode.id),
                     onDismiss = { selectedEpisodeForActions = null },
                     onPlayManually = { onEpisodeManualPlayClick(selectedEpisode) },
+                    onShowDetails = onOpenEpisode?.let { open -> { open(selectedEpisode) } },
                     onViewImage = launchImageViewer?.let { openViewer ->
                         { url ->
                             openViewer(

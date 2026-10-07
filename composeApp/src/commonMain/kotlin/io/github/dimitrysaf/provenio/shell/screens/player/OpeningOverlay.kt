@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -46,7 +47,7 @@ import io.github.dimitrysaf.provenio.shell.theme.typeScale
 
 @Composable
 internal fun OpeningOverlay(
-    artwork: String?,
+    artworkCandidates: List<String?>,
     logo: String?,
     title: String?,
     onBack: () -> Unit,
@@ -81,12 +82,10 @@ internal fun OpeningOverlay(
         val logoWidth = minOf(320.dp, maxWidth - 48.dp)
         val logoHeight = minOf(180.dp, maxHeight * 0.4f)
         val titleFontSize = if (maxWidth < 600.dp) 30.sp else 42.sp
-        if (artwork != null) {
-            AsyncImage(
-                model = artwork,
+        if (artworkCandidates.any { !it.isNullOrBlank() }) {
+            ShapedArtworkImage(
+                candidates = artworkCandidates,
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
                 alignment = Alignment.TopEnd,
             )
             Box(

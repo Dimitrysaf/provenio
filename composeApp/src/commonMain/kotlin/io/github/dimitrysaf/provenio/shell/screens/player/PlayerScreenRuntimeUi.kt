@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
 import io.github.dimitrysaf.provenio.core.cast.CastController
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -170,7 +171,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             exit = fadeOut(),
         ) {
             OpeningOverlay(
-                artwork = background ?: poster,
+                artworkCandidates = listOf(background, poster),
                 logo = logo,
                 title = title,
                 onBack = {},
@@ -213,6 +214,26 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             TorrentDetailsSheet(
                 infoHash = activeTorrentInfoHash,
                 onDismiss = { showTorrentDetailsSheet = false },
+            )
+        }
+        if (showInfoSheet) {
+            val infoMeta = MetaDetailsRepository.peek(parentMetaType, parentMetaId)
+                ?: metaUiState.meta?.takeIf { it.id == parentMetaId }
+            PlayerInfoSheet(
+                title = title,
+                meta = infoMeta,
+                episode = if (isSeries) {
+                    (playerMetaVideos.takeIf { it.isNotEmpty() } ?: infoMeta?.videos.orEmpty())
+                        .firstOrNull { it.id == activeVideoId }
+                } else {
+                    null
+                },
+                poster = poster,
+                background = background,
+                onDismiss = {
+                    showInfoSheet = false
+                    controlsVisible = true
+                },
             )
         }
         RenderCastLayer()
@@ -272,6 +293,10 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 { showTorrentDetailsSheet = true }
             } else {
                 null
+            },
+            onTitleClick = {
+                showInfoSheet = true
+                controlsVisible = false
             },
             onLockToggle = {
                 if (playerControlsLocked) unlockPlayerControls() else lockPlayerControls()

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
 import io.github.dimitrysaf.provenio.shell.screens.watchprogress.computeAirDateText
 import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.animation.core.animateFloatAsState
@@ -39,11 +40,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.i18n.localizedSeasonEpisodeCode
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
 import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
@@ -267,7 +266,7 @@ internal fun DetailEpisodeListRow(
             }
             EpisodeRow(
                 episode = episode,
-                imageUrl = episode.thumbnail ?: meta.background ?: meta.poster,
+                imageCandidates = listOf(episode.thumbnail, meta.background) + meta.extraArtwork + listOf(meta.poster),
                 status = status,
                 airDate = if (status == EpisodeStatus.Unaired) computeAirDateText(episode.released, todayIsoDate) else null,
                 progress = watchState.inProgress?.progressFraction,
@@ -351,7 +350,7 @@ private fun SeasonRow(
 @Composable
 private fun EpisodeRow(
     episode: MetaVideo,
-    imageUrl: String?,
+    imageCandidates: List<String?>,
     status: EpisodeStatus?,
     airDate: String?,
     progress: Float?,
@@ -381,7 +380,7 @@ private fun EpisodeRow(
             ),
             leadingContent = {
                 EpisodeThumbnail(
-                    imageUrl = imageUrl,
+                    imageCandidates = imageCandidates,
                     status = status,
                     blurArtwork = blurArtwork,
                 )
@@ -430,7 +429,7 @@ private fun EpisodeRow(
 
 @Composable
 private fun EpisodeThumbnail(
-    imageUrl: String?,
+    imageCandidates: List<String?>,
     status: EpisodeStatus?,
     blurArtwork: Boolean,
 ) {
@@ -442,16 +441,14 @@ private fun EpisodeThumbnail(
             .background(MaterialTheme.colorScheme.surfaceContainerHighest),
         contentAlignment = Alignment.Center,
     ) {
-        if (imageUrl != null) {
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = null,
-                modifier = Modifier
-                    .matchParentSize()
-                    .then(if (blurArtwork) Modifier.blur(12.dp) else Modifier),
-                contentScale = ContentScale.Crop,
-            )
-        }
+        ShapedArtworkImage(
+            candidates = imageCandidates,
+            contentDescription = null,
+            letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            modifier = Modifier
+                .matchParentSize()
+                .then(if (blurArtwork) Modifier.blur(12.dp) else Modifier),
+        )
         if (status != null) {
             Box(
                 modifier = Modifier

@@ -85,6 +85,7 @@ import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -149,6 +150,7 @@ internal fun PlayerControlsShell(
     onSubmitIntroClick: (() -> Unit)? = null,
     statusLines: List<String> = emptyList(),
     onStatusClick: (() -> Unit)? = null,
+    onTitleClick: (() -> Unit)? = null,
     onScrubChange: (Long) -> Unit,
     onScrubFinished: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -186,6 +188,7 @@ internal fun PlayerControlsShell(
             metrics = metrics,
             statusLines = if (showPlaybackControls) statusLines else emptyList(),
             onStatusClick = onStatusClick,
+            onTitleClick = onTitleClick.takeIf { showPlaybackControls },
             onBack = onBack,
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -289,6 +292,7 @@ private fun PlayerHeader(
     metrics: PlayerLayoutMetrics,
     statusLines: List<String>,
     onStatusClick: (() -> Unit)?,
+    onTitleClick: (() -> Unit)?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -303,7 +307,17 @@ private fun PlayerHeader(
         Column(modifier = Modifier.weight(1f)) {
             // Title and episode line sit centred against the back button, with or without the episode line.
             Column(
-                modifier = Modifier.heightIn(min = metrics.headerIconSize + 16.dp),
+                modifier = Modifier
+                    .heightIn(min = metrics.headerIconSize + 16.dp)
+                    .then(
+                        if (onTitleClick != null) {
+                            Modifier
+                                .clip(MaterialTheme.shapes.small)
+                                .clickable(onClick = onTitleClick)
+                        } else {
+                            Modifier
+                        },
+                    ),
                 verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
             ) {
                 Text(

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -83,7 +84,6 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailInfo
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPosterRailSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.ExpandableDescription
-import io.github.dimitrysaf.provenio.shell.screens.details.components.HeroArtworkImage
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroMinSmallItemWidth
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroOnArtworkColor
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroOnArtworkVariantColor
@@ -170,21 +170,22 @@ fun PersonDetailScreen(
     }
 }
 
-private class PersonPageMetrics(
+internal class DetailPageMetrics(
     val horizontalPadding: Dp,
     val contentMaxWidth: Dp,
 )
 
+/** A details page: the artwork carousel with the title over it, then [infoItems], with [railItems] beside them on wide screens. */
 @Composable
-private fun PersonPage(
+internal fun DetailPage(
     pageKey: String,
     name: String,
     subtitle: String?,
     images: List<String>,
     deceased: Boolean,
     onBack: () -> Unit,
-    infoItems: LazyListScope.(PersonPageMetrics) -> Unit,
-    railItems: LazyListScope.(PersonPageMetrics) -> Unit,
+    infoItems: LazyListScope.(DetailPageMetrics) -> Unit,
+    railItems: LazyListScope.(DetailPageMetrics) -> Unit,
 ) {
     val metaScreenSettingsUiState by remember {
         MetaScreenSettingsRepository.ensureLoaded()
@@ -197,7 +198,7 @@ private fun PersonPage(
         val isTwoPane = maxWidth >= DetailTwoPaneMinWidth
         val isTablet = maxWidth >= 720.dp
         val viewportHeight = maxHeight
-        val metrics = PersonPageMetrics(
+        val metrics = DetailPageMetrics(
             horizontalPadding = when {
                 isTwoPane -> 24.dp
                 isTablet -> 32.dp
@@ -407,11 +408,12 @@ private fun PersonHeroPage(
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             )
         } else {
-            HeroArtworkImage(
-                url = url,
+            ShapedArtworkImage(
+                candidates = listOf(url),
                 contentDescription = name,
                 alignment = Alignment.TopCenter,
                 colorFilter = if (deceased) DeceasedPhotoFilter else null,
+                showSkeleton = true,
             )
         }
 
@@ -583,7 +585,7 @@ private fun PersonDetailContent(
         }
     }
 
-    PersonPage(
+    DetailPage(
         pageKey = "person-${person.tmdbId}",
         name = person.name,
         subtitle = person.knownFor?.trim()?.takeIf(String::isNotBlank),
@@ -700,7 +702,7 @@ private fun PersonDetailSkeleton(
     }
     val showPosterLabels = !isLandscapeShelfMode && !posterCardStyle.hideLabelsEnabled
 
-    PersonPage(
+    DetailPage(
         pageKey = "person-$personId",
         name = personName,
         subtitle = null,

@@ -25,6 +25,7 @@ internal val navigationSavedStateConfiguration = SavedStateConfiguration {
             subclass(TabsRoute::class, TabsRoute.serializer())
             subclass(DetailRoute::class, DetailRoute.serializer())
             subclass(PersonDetailRoute::class, PersonDetailRoute.serializer())
+            subclass(EpisodeDetailRoute::class, EpisodeDetailRoute.serializer())
             subclass(EntityBrowseRoute::class, EntityBrowseRoute.serializer())
             subclass(SettingsPageRoute::class, SettingsPageRoute.serializer())
             subclass(HomescreenSettingsRoute::class, HomescreenSettingsRoute.serializer())

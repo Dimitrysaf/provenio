@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
 import io.github.dimitrysaf.provenio.shell.components.horizontalWheelPaging
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.animation.core.animateFloatAsState
@@ -273,7 +274,7 @@ private fun DetailHeroPage(
 
         is DetailHeroSlide.Trailer -> HeroTrailerPage(
             trailer = page.trailer,
-            artworkUrl = meta.background ?: meta.poster,
+            artworkCandidates = meta.landscapeArtworkCandidates(),
             source = trailerSources[page.trailer.id],
             isFocal = isFocal,
             spent = page.trailer.id in spentTrailerIds,
@@ -303,10 +304,10 @@ private fun HeroArtworkPage(
                     .background(MaterialTheme.colorScheme.surface),
             )
         } else {
-            HeroArtworkImage(
-                url = url,
+            ShapedArtworkImage(
+                candidates = if (posterFallback) listOf(url) + meta.landscapeArtworkCandidates() else listOf(url),
                 contentDescription = meta.name,
-                portraitFallbackUrl = meta.poster.takeIf { posterFallback },
+                showSkeleton = true,
             )
         }
 
@@ -332,7 +333,7 @@ private fun HeroArtworkPage(
 @Composable
 private fun HeroTrailerPage(
     trailer: MetaTrailer,
-    artworkUrl: String?,
+    artworkCandidates: List<String?>,
     source: TrailerPlaybackSource?,
     isFocal: Boolean,
     spent: Boolean,
@@ -351,14 +352,10 @@ private fun HeroTrailerPage(
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
-        if (artworkUrl != null) {
-            AsyncImage(
-                model = artworkUrl,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        }
+        ShapedArtworkImage(
+            candidates = artworkCandidates,
+            contentDescription = null,
+        )
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -536,3 +533,7 @@ private fun HeroPageScrim() {
             ),
     )
 }
+
+/** The title's wide pictures best first, with the poster last for a title that has none. */
+private fun MetaDetails.landscapeArtworkCandidates(): List<String?> =
+    listOf(background) + extraArtwork + listOf(poster)

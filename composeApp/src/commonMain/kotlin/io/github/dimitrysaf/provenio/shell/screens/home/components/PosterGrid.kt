@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -19,12 +20,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.format.formatReleaseDateForDisplay
 import io.github.dimitrysaf.provenio.shell.components.PosterWatchedOverlay
 import io.github.dimitrysaf.provenio.shell.components.PosterLandscapeAspectRatio
@@ -132,9 +131,8 @@ private fun PosterGridTile(
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
 ) {
-    // Landscape mode shows the backdrop, as the shelves do, and falls back to the poster for
-    // anything that has no backdrop.
-    val imageUrl = if (landscape) (item.banner ?: item.poster) else item.poster
+    val imageCandidates = if (landscape) listOf(item.banner, item.poster) else listOf(item.poster, item.banner)
+    val imageUrl = imageCandidates.firstOrNull { !it.isNullOrBlank() }
     val aspectRatio = if (landscape) {
         PosterLandscapeAspectRatio
     } else {
@@ -159,11 +157,10 @@ private fun PosterGridTile(
                 ),
         ) {
             if (imageUrl != null) {
-                AsyncImage(
-                    model = imageUrl,
+                ShapedArtworkImage(
+                    candidates = imageCandidates,
                     contentDescription = item.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
+                    letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                 )
             }
             PosterWatchedOverlay(isWatched = isWatched)

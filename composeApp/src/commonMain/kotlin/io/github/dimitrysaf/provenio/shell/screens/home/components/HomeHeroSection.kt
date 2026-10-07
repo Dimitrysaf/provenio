@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import io.github.dimitrysaf.provenio.shell.components.rememberShapedArtwork
 import io.github.dimitrysaf.provenio.shell.components.horizontalWheelPaging
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -240,12 +241,16 @@ private fun HeroItemContent(
     layout: HomeHeroLayout,
     contentAlpha: () -> Float,
 ) {
-    val artwork = item.banner ?: item.poster
     val scrim = MaterialTheme.colorScheme.scrim
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val artworkWidth = maxHeight * HeroArtworkAspectRatio
         val logoMaxHeight = maxHeight * HeroLogoMaxHeightFraction
-        if (!layout.centerTitle && maxWidth >= artworkWidth * HeroSplitThreshold) {
+        val split = !layout.centerTitle && maxWidth >= artworkWidth * HeroSplitThreshold
+        val slotRatio = if (split || maxHeight.value <= 0f) HeroArtworkAspectRatio else maxWidth / maxHeight
+        val artworkChoice = rememberShapedArtwork(listOf(item.banner, item.poster), slotRatio)
+        val artwork = artworkChoice?.url
+        val artworkScale = if (artworkChoice?.letterbox == true) ContentScale.Fit else ContentScale.Crop
+        if (split) {
             AsyncImage(
                 model = artwork,
                 contentDescription = null,
@@ -278,7 +283,7 @@ private fun HeroItemContent(
                     .fillMaxHeight()
                     .width(artworkWidth)
                     .fadeInFromStart(start = HeroArtworkBlurFadeFraction, end = HeroArtworkFadeFraction),
-                contentScale = ContentScale.Crop,
+                contentScale = artworkScale,
             )
             Box(
                 modifier = Modifier
@@ -320,11 +325,14 @@ private fun HeroItemContent(
                 )
             }
         } else {
+            if (artworkChoice?.letterbox == true) {
+                Box(modifier = Modifier.fillMaxSize().background(Color.Black))
+            }
             AsyncImage(
                 model = artwork,
                 contentDescription = item.name,
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
+                contentScale = artworkScale,
             )
             Box(
                 modifier = Modifier

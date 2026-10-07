@@ -98,6 +98,7 @@ fun PosterCard(
     imageUrl: String?,
     modifier: Modifier = Modifier,
     shape: PosterCardShape = PosterCardShape.Poster,
+    fallbackImageUrls: List<String?> = emptyList(),
     detailLine: String? = null,
     showTitleBelow: Boolean = true,
     bottomLeftLogoUrl: String? = null,
@@ -128,17 +129,17 @@ fun PosterCard(
                 .posterCardClickable(
                     onClick = onClick,
                     onLongClick = onLongClick,
-                    zoomImageUrl = imageUrl,
+                    zoomImageUrl = imageUrl ?: fallbackImageUrls.firstOrNull { !it.isNullOrBlank() },
                     zoomCornerRadius = posterCardStyle.cornerRadiusDp.dp,
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            if (imageUrl != null) {
-                AsyncImage(
-                    model = imageUrl,
+            if (imageUrl != null || fallbackImageUrls.any { !it.isNullOrBlank() }) {
+                ShapedArtworkImage(
+                    candidates = listOf(imageUrl) + fallbackImageUrls,
                     contentDescription = title,
                     modifier = Modifier.matchParentSize(),
-                    contentScale = ContentScale.Crop,
+                    letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                 )
             } else {
                 Text(

@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.PlaylistAddCheckCircle
 import androidx.compose.runtime.Composable
@@ -37,8 +38,18 @@ fun EpisodeWatchedActionSheet(
     showPlayManually: Boolean = false,
     onPlayManually: (() -> Unit)? = null,
     onViewImage: (() -> Unit)? = null,
+    onShowDetails: (() -> Unit)? = null,
 ) {
     val actions = buildList {
+        if (onShowDetails != null) {
+            add(
+                MediaSheetAction(
+                    icon = Icons.Rounded.Info,
+                    label = stringResource(Res.string.episode_action_show_details),
+                    onSelected = onShowDetails,
+                ),
+            )
+        }
         add(
             MediaSheetAction(
                 icon = Icons.Rounded.CheckCircle,
