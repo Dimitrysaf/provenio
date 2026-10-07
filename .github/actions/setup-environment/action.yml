@@ -27,6 +27,12 @@ runs:
       with:
         cache-read-only: false
 
+    # Runners have 16 GB, so Gradle and the R8 run inside it get more room than the project default.
+    - shell: bash
+      run: |
+        mkdir -p "${HOME}/.gradle"
+        echo "org.gradle.jvmargs=-Xmx8g -Dfile.encoding=UTF-8 -XX:MaxMetaspaceSize=1024m -XX:+UseParallelGC" >> "${HOME}/.gradle/gradle.properties"
+
     - shell: bash
       env:
         LOCAL_PROPERTIES_BASE64: ${{ inputs.local-properties-base64 }}
