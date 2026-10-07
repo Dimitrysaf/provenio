@@ -53,4 +53,18 @@ class ReleaseDateDisplayTest {
     fun formatReleaseDateWithoutYearLeavesNonIsoUnchanged() {
         assertEquals("TBA", formatReleaseDateWithoutYear("TBA"))
     }
+
+    @Test
+    fun formatReleaseDateLongUsesMonthOrdinalDayAndYear() {
+        assertEquals("March 1st, 2026", formatReleaseDateLong("2026-03-01"))
+        assertEquals("March 2nd, 2026", formatReleaseDateLong("2026-03-02"))
+        assertEquals("March 3rd, 2026", formatReleaseDateLong("2026-03-03"))
+        assertEquals("March 11th, 2026", formatReleaseDateLong("2026-03-11"))
+        assertEquals("March 22nd, 2026", formatReleaseDateLong("2026-03-22"))
+    }
+
+    @Test
+    fun formatReleaseDateLongLeavesNonIsoUnchanged() {
+        assertEquals("TBA", formatReleaseDateLong("TBA"))
+    }
 }

@@ -2,6 +2,8 @@ package io.github.dimitrysaf.provenio.core.i18n
 
 import kotlinx.coroutines.runBlocking
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.cw_airs_today_short
+import provenio.composeapp.generated.resources.cw_airs_tomorrow_short
 import provenio.composeapp.generated.resources.action_play
 import provenio.composeapp.generated.resources.action_play_episode
 import provenio.composeapp.generated.resources.action_resume
@@ -105,6 +107,14 @@ fun localizedUpNextLabel(seasonNumber: Int?, episodeNumber: Int?): String =
         }
     } else {
         resourceString("Next Up") { getString(Res.string.continue_watching_up_next) }
+    }
+
+/** "Today" or "Tomorrow" for a day 0 or 1 days away, null for any other. */
+fun localizedRelativeDay(daysUntil: Int): String? =
+    when (daysUntil) {
+        0 -> resourceString("Today") { getString(Res.string.cw_airs_today_short) }
+        1 -> resourceString("Tomorrow") { getString(Res.string.cw_airs_tomorrow_short) }
+        else -> null
     }
 
 fun localizedMonthName(month: Int): String =

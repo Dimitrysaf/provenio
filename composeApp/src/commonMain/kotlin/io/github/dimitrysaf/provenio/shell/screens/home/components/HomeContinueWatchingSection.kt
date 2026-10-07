@@ -67,6 +67,7 @@ import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressCompletion
 import io.github.dimitrysaf.provenio.core.watch.progress.continueWatchingItemKey
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import io.github.dimitrysaf.provenio.shell.screens.watchprogress.computeAirDateBadgeText
+import io.github.dimitrysaf.provenio.shell.screens.watchprogress.computeAirDateText
 import kotlin.math.roundToInt
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -664,7 +665,8 @@ private fun ContinueWatchingCard(
     } else {
         null
     }
-    val episodeTitle = item.episodeTitle?.trim()?.takeIf { it.isNotBlank() } ?: airDateText
+    val airDate = if (airDateText != null && !item.isReleaseAlert) computeAirDateText(item.released, todayIsoDate) else null
+    val episodeTitle = item.episodeTitle?.trim()?.takeIf { it.isNotBlank() } ?: airDate ?: airDateText
     val badgeText = continueWatchingCardBadgeText(item = item, airDateText = airDateText)
     val scrim = MaterialTheme.colorScheme.scrim
 
@@ -736,6 +738,15 @@ private fun ContinueWatchingCard(
                     Text(
                         text = episodeTitle,
                         style = MaterialTheme.typography.bodySmall,
+                        color = OnScrimVariantColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (airDate != null && airDate != episodeTitle && airDate != badgeText) {
+                    Text(
+                        text = airDate,
+                        style = MaterialTheme.typography.labelSmall,
                         color = OnScrimVariantColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -865,6 +876,11 @@ private fun ContinueWatchingWideCard(
             ) {
                 val wideMetaLine = localizedContinueWatchingMetaLine(item)
                 val episodeTitle = item.episodeTitle?.trim()?.takeIf { it.isNotBlank() }
+                val airDate = if (item.progressFraction <= 0f && !item.isReleaseAlert) {
+                    computeAirDateText(item.released, CurrentDateProvider.todayIsoDate())
+                } else {
+                    null
+                }
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -897,6 +913,15 @@ private fun ContinueWatchingWideCard(
                         Text(
                             text = episodeTitle,
                             style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (airDate != null && airDate != upNextBadgeText(item)) {
+                        Text(
+                            text = airDate,
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,

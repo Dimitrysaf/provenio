@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.calendar.UpcomingEpisode
 import io.github.dimitrysaf.provenio.core.calendar.UpcomingEpisodesUiState
-import io.github.dimitrysaf.provenio.core.format.formatReleaseDateForDisplay
+import io.github.dimitrysaf.provenio.core.format.formatReleaseDateLong
 import io.github.dimitrysaf.provenio.core.time.daysUntilEpisodeRelease
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
 import org.jetbrains.compose.resources.stringResource
@@ -95,7 +95,7 @@ private fun calendarDateLabel(todayIsoDate: String, dateIso: String): String =
     when (daysUntilEpisodeRelease(todayIsoDate, dateIso)) {
         0 -> stringResource(Res.string.cw_airs_today_short)
         1 -> stringResource(Res.string.cw_airs_tomorrow_short)
-        else -> formatReleaseDateForDisplay(dateIso)
+        else -> formatReleaseDateLong(dateIso)
     }
 
 @Composable

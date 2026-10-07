@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.screens.watchprogress.computeAirDateText
 import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -268,6 +269,7 @@ internal fun DetailEpisodeListRow(
                 episode = episode,
                 imageUrl = episode.thumbnail ?: meta.background ?: meta.poster,
                 status = status,
+                airDate = if (status == EpisodeStatus.Unaired) computeAirDateText(episode.released, todayIsoDate) else null,
                 progress = watchState.inProgress?.progressFraction,
                 selected = if (currentEpisodeId != null) {
                     episode.id == currentEpisodeId
@@ -351,6 +353,7 @@ private fun EpisodeRow(
     episode: MetaVideo,
     imageUrl: String?,
     status: EpisodeStatus?,
+    airDate: String?,
     progress: Float?,
     selected: Boolean,
     blurArtwork: Boolean,
@@ -389,6 +392,15 @@ private fun EpisodeRow(
                         text = code,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
+                    )
+                }
+            },
+            supportingContent = airDate?.let { date ->
+                {
+                    Text(
+                        text = date,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             },

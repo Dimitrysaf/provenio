@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
+import io.github.dimitrysaf.provenio.core.format.formatReleaseDay
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -538,7 +540,7 @@ private fun PlayerScreenRuntime.BindPlayerMetadataAndSkipEffects() {
                 hasAired = PlayerNextEpisodeRules.hasEpisodeAired(nextVideo.released),
                 isWatched = isWatched,
                 unairedMessage = if (!PlayerNextEpisodeRules.hasEpisodeAired(nextVideo.released)) {
-                    "$airsPrefix ${nextVideo.released ?: tbaLabel}"
+                    "$airsPrefix ${nextVideo.released?.let { formatReleaseDay(it, CurrentDateProvider.todayIsoDate()) } ?: tbaLabel}"
                 } else null,
             )
         } else null
