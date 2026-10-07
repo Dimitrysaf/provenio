@@ -16,6 +16,7 @@ actual object AppUpdaterPlatform {
     actual suspend fun downloadApk(
         assetUrl: String,
         assetName: String,
+        sha256: String?,
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,
     ): Result<String> = AndroidAppUpdaterPlatform.downloadApk(assetUrl, assetName, onProgress)
 

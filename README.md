@@ -22,7 +22,7 @@
 
 ## Get Provenio
 
-- [Android APK, Windows MSI and Linux Flatpak](https://github.com/Dimitrysaf/provenio/releases/latest)
+- [Android APK, Windows installer and Linux Flatpak](https://github.com/Dimitrysaf/provenio/releases/latest)
 
 On Linux, install from the Flatpak repository to get updates through your software center:
 

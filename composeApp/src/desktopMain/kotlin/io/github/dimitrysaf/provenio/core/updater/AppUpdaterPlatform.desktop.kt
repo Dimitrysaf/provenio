@@ -1,20 +1,20 @@
 package io.github.dimitrysaf.provenio.core.updater
 
 import io.github.dimitrysaf.provenio.core.build.AppVersionConfig
-import io.github.dimitrysaf.provenio.desktop.UpdateFailedArgument
-import io.github.dimitrysaf.provenio.desktop.UpdateFileArgument
+import io.github.dimitrysaf.provenio.desktop.Context
 import java.awt.Desktop
 import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URI
+import java.security.MessageDigest
 import java.util.prefs.Preferences
 import kotlin.system.exitProcess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private const val IgnoredTagKey = "updater_ignored_tag"
-private const val WindowsAssetName = "Provenio.msi"
+private const val WindowsAssetName = "Provenio-Setup.exe"
 
 actual object AppUpdaterPlatform {
     private val osName = System.getProperty("os.name").orEmpty().lowercase()
@@ -35,13 +35,17 @@ actual object AppUpdaterPlatform {
     actual suspend fun downloadApk(
         assetUrl: String,
         assetName: String,
+        sha256: String?,
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,
     ): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             val target = updateFile(assetName)
             if (target.exists()) {
-                onProgress(target.length(), target.length())
-                return@runCatching target.absolutePath
+                if (target.matchesSha256(sha256)) {
+                    onProgress(target.length(), target.length())
+                    return@runCatching target.absolutePath
+                }
+                target.delete()
             }
             clearUpdateFiles(target.name)
             val partial = File(target.parentFile, target.name + PartialSuffix)
@@ -81,6 +85,10 @@ actual object AppUpdaterPlatform {
                 break
             }
 
+            if (!partial.matchesSha256(sha256)) {
+                partial.delete()
+                error("The downloaded update does not match its published checksum. Try again.")
+            }
             check(partial.renameTo(target)) { "Could not save ${target.name}" }
             target.absolutePath
         }
@@ -95,6 +103,7 @@ actual object AppUpdaterPlatform {
     }
 
     actual fun clearUpdateFiles(keepFileName: String?) {
+        legacyUpdatesDirectory()?.takeIf { it.isDirectory }?.deleteRecursively()
         val keep = keepFileName?.let { updateFile(it).name }
         updatesDirectory().listFiles()?.forEach { file ->
             if (keep == null || (file.name != keep && file.name != keep + PartialSuffix)) {
@@ -121,11 +130,12 @@ actual object AppUpdaterPlatform {
             if (resumeFrom > 0L) setRequestProperty("Range", "bytes=$resumeFrom-")
         }
 
-    private fun updatesDirectory(): File {
-        val base = System.getenv("LOCALAPPDATA")?.takeIf { it.isNotBlank() }?.let { File(it, "Provenio") }
-            ?: File(System.getProperty("user.home"), ".provenio")
-        return File(base, "updates").apply { mkdirs() }
-    }
+    /** Folder for downloaded updates, kept with the app's cache rather than in the install folder. */
+    private fun updatesDirectory(): File = File(Context.app.cacheDir, "updates").apply { mkdirs() }
+
+    /** Where older versions saved updates, inside the install folder. */
+    private fun legacyUpdatesDirectory(): File? =
+        System.getenv("LOCALAPPDATA")?.takeIf { it.isNotBlank() }?.let { File(File(it, "Provenio"), "updates") }
 
     private fun updateFile(fileName: String): File =
         File(updatesDirectory(), fileName.replace(Regex("[^a-zA-Z0-9._-]"), "_"))
@@ -134,12 +144,15 @@ actual object AppUpdaterPlatform {
 
     actual fun openUnknownSourcesSettings() = Unit
 
+    /**
+     * Runs the downloaded installer silently. It waits for the app to close, replaces the app's
+     * files in place, shows its own progress and opens the app again when it is done.
+     */
     actual fun installDownloadedApk(path: String): Result<Unit> = runCatching {
         val file = File(path)
         check(file.exists()) { "The downloaded update is missing" }
         if (isWindows) {
-            val script = writeWindowsUpdateScript(file)
-            ProcessBuilder("wscript", "//B", "//Nologo", script.absolutePath)
+            ProcessBuilder(file.absolutePath, "/SILENT", "/NORESTART", "/CLOSEAPPLICATIONS", "/RELAUNCH=1")
                 .redirectOutput(ProcessBuilder.Redirect.DISCARD)
                 .redirectError(ProcessBuilder.Redirect.DISCARD)
                 .start()
@@ -148,37 +161,20 @@ actual object AppUpdaterPlatform {
         Desktop.getDesktop().open(file)
     }
 
-    private fun writeWindowsUpdateScript(msi: File): File {
-        val appExe = System.getProperty("jpackage.app-path")
-            ?.let(::File)
-            ?.takeIf { it.isFile }
-        val installDir = appExe?.parentFile?.absolutePath
-        val install = buildString {
-            append("msiexec /i ${vbsQuoted(msi.absolutePath)} /qn /norestart")
-            if (installDir != null) append(" INSTALLDIR=${vbsQuoted(installDir)}")
-        }
-        val lines = buildList {
-            add("Set shell = CreateObject(\"WScript.Shell\")")
-            add("WScript.Sleep 2000")
-            add("code = shell.Run(${vbsString(install)}, 0, True)")
-            if (appExe != null) {
-                val launch = vbsQuoted(appExe.absolutePath)
-                add("If code = 0 Or code = 1641 Or code = 3010 Then")
-                add("    shell.Run ${vbsString(launch)}, 1, False")
-                add("Else")
-                add("    shell.Run ${vbsString("$launch $UpdateFailedArgument")} & code & ${vbsString(" " + vbsQuoted(UpdateFileArgument + msi.absolutePath))}, 1, False")
-                add("End If")
+    /** True when [sha256] is unknown or matches the file's SHA-256. */
+    private fun File.matchesSha256(sha256: String?): Boolean {
+        val expected = sha256?.trim()?.lowercase()?.takeIf { it.isNotEmpty() } ?: return true
+        val digest = MessageDigest.getInstance("SHA-256")
+        inputStream().use { input ->
+            val buffer = ByteArray(64 * 1024)
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                digest.update(buffer, 0, read)
             }
         }
-        return File(msi.parentFile, "install-update.vbs").apply {
-            val text = lines.joinToString("\r\n", postfix = "\r\n")
-            writeBytes(byteArrayOf(0xFF.toByte(), 0xFE.toByte()) + text.toByteArray(Charsets.UTF_16LE))
-        }
+        return digest.digest().joinToString("") { "%02x".format(it) } == expected
     }
-
-    private fun vbsString(value: String): String = "\"" + value.replace("\"", "\"\"") + "\""
-
-    private fun vbsQuoted(path: String): String = "\"$path\""
 
     private const val PartialSuffix = ".part"
     private const val HttpRangeNotSatisfiable = 416

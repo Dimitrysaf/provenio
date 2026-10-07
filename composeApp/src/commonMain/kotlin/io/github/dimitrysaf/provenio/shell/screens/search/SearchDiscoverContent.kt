@@ -1,29 +1,18 @@
 package io.github.dimitrysaf.provenio.shell.screens.search
 
-import io.github.dimitrysaf.provenio.shell.components.WithTooltip
-import androidx.compose.foundation.layout.Arrangement
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.SearchOff
-import androidx.compose.material.icons.rounded.Tune
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -32,8 +21,6 @@ import io.github.dimitrysaf.provenio.core.network.NetworkCondition
 import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.NetworkOfflineCard
-import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
-import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.shell.screens.home.components.PosterGridRow
 import io.github.dimitrysaf.provenio.shell.screens.home.components.PosterGridSkeletonRow
@@ -47,9 +34,6 @@ internal fun LazyListScope.discoverContent(
     isSourceLoading: Boolean,
     columns: Int,
     networkCondition: NetworkCondition,
-    onTypeSelected: (String) -> Unit,
-    onCatalogSelected: (String) -> Unit,
-    onGenreSelected: (String?) -> Unit,
     onRetry: (() -> Unit)? = null,
     watchedKeys: Set<String> = emptySet(),
     fullyWatchedSeriesKeys: Set<String> = emptySet(),
@@ -57,13 +41,7 @@ internal fun LazyListScope.discoverContent(
     onPosterLongClick: ((MetaPreview) -> Unit)? = null,
 ) {
     item {
-        DiscoverHeaderRow(
-            state = state,
-            modifier = Modifier.padding(horizontal = 16.dp),
-            onTypeSelected = onTypeSelected,
-            onCatalogSelected = onCatalogSelected,
-            onGenreSelected = onGenreSelected,
-        )
+        DiscoverHeaderRow(modifier = Modifier.padding(horizontal = 16.dp))
     }
     state.selectedCatalog?.let { selectedCatalog ->
         item {
@@ -126,130 +104,15 @@ internal fun LazyListScope.discoverContent(
     }
 }
 
-/**
- * The heading, and the one control that narrows what is under it.
- *
- * Three chips spent a whole row saying what could be filtered; one button says the same thing and
- * gives the row back to the titles. Pressing it opens the list of filters, and picking one opens
- * that filter's own choices — each a sheet, because each is a list to pick from.
- */
+/** The Discover heading; its filters live in the search field's filter button. */
 @Composable
-private fun DiscoverHeaderRow(
-    state: DiscoverUiState,
-    onTypeSelected: (String) -> Unit,
-    onCatalogSelected: (String) -> Unit,
-    onGenreSelected: (String?) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var showFilters by remember { mutableStateOf(false) }
-    var openFilter by remember { mutableStateOf<DiscoverFilter?>(null) }
-
-    val allGenresLabel = stringResource(Res.string.discover_all_genres)
-    val selectedCatalog = state.selectedCatalog
-    val typeLabel = state.selectedType?.displayTypeLabel() ?: stringResource(Res.string.discover_type)
-    val catalogLabel = selectedCatalog?.catalogName ?: stringResource(Res.string.discover_catalog)
-    val genreLabel = state.selectedGenre ?: allGenresLabel
-    val canFilter = state.typeOptions.isNotEmpty() || state.catalogOptions.isNotEmpty()
-
-    Row(
+private fun DiscoverHeaderRow(modifier: Modifier = Modifier) {
+    Text(
+        text = stringResource(Res.string.compose_search_discover_title),
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = stringResource(Res.string.compose_search_discover_title),
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        WithTooltip(stringResource(Res.string.discover_filters)) {
-            FilledTonalIconButton(
-                onClick = { showFilters = true },
-                enabled = canFilter,
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Tune,
-                    contentDescription = stringResource(Res.string.discover_filters),
-                )
-            }
-        }
-    }
-
-    if (showFilters) {
-        SingleChoiceBottomSheet(
-            title = stringResource(Res.string.discover_filters),
-            options = listOf(
-                SingleChoiceOption(
-                    value = DiscoverFilter.TYPE,
-                    label = stringResource(Res.string.discover_type),
-                    supportingText = typeLabel,
-                    enabled = state.typeOptions.isNotEmpty(),
-                ),
-                SingleChoiceOption(
-                    value = DiscoverFilter.CATALOG,
-                    label = stringResource(Res.string.discover_catalog),
-                    supportingText = catalogLabel,
-                    enabled = state.catalogOptions.isNotEmpty(),
-                ),
-                SingleChoiceOption(
-                    value = DiscoverFilter.GENRE,
-                    label = stringResource(Res.string.discover_genre),
-                    supportingText = genreLabel,
-                    enabled = state.genreOptions.isNotEmpty() || selectedCatalog?.genreRequired == true,
-                ),
-            ),
-            // Nothing here is chosen; each row opens the choices for that filter.
-            isSelected = { false },
-            onSelected = { filter -> openFilter = filter },
-            onDismiss = { showFilters = false },
-        )
-    }
-
-    when (openFilter) {
-        DiscoverFilter.TYPE -> SingleChoiceBottomSheet(
-            title = stringResource(Res.string.discover_select_type),
-            options = state.typeOptions.map { type ->
-                SingleChoiceOption(value = type, label = type.displayTypeLabel())
-            },
-            isSelected = { it == state.selectedType },
-            onSelected = onTypeSelected,
-            onDismiss = { openFilter = null },
-        )
-
-        DiscoverFilter.CATALOG -> SingleChoiceBottomSheet(
-            title = stringResource(Res.string.discover_select_catalog),
-            options = state.catalogOptions.map { option ->
-                SingleChoiceOption(value = option.key, label = option.catalogName)
-            },
-            isSelected = { it == state.selectedCatalogKey },
-            onSelected = onCatalogSelected,
-            onDismiss = { openFilter = null },
-        )
-
-        DiscoverFilter.GENRE -> SingleChoiceBottomSheet(
-            title = stringResource(Res.string.discover_select_genre),
-            options = buildList {
-                if (selectedCatalog?.genreRequired != true) {
-                    add(SingleChoiceOption(value = "", label = allGenresLabel))
-                }
-                state.genreOptions.forEach { genre ->
-                    add(SingleChoiceOption(value = genre, label = genre))
-                }
-            },
-            isSelected = { it == (state.selectedGenre ?: "") },
-            onSelected = { genre -> onGenreSelected(genre.ifBlank { null }) },
-            onDismiss = { openFilter = null },
-        )
-
-        null -> Unit
-    }
-}
-
-/** Which filter's choices are open. */
-private enum class DiscoverFilter {
-    TYPE,
-    CATALOG,
-    GENRE,
+        style = MaterialTheme.typography.headlineMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
 }
 
 @Composable
@@ -329,7 +192,7 @@ private fun DiscoverEmptyStateCard(
 }
 
 @Composable
-private fun String.displayTypeLabel(): String =
+internal fun String.displayTypeLabel(): String =
     when (lowercase()) {
         "movie" -> stringResource(Res.string.media_movies)
         "series" -> stringResource(Res.string.media_series)

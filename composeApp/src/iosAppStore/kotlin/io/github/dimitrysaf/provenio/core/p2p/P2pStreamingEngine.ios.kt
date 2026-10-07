@@ -13,7 +13,7 @@ actual object P2pStreamingEngine {
     actual val torrentDetails: StateFlow<P2pTorrentDetails?> =
         MutableStateFlow<P2pTorrentDetails?>(null).asStateFlow()
     actual val downloadStreamCount: StateFlow<Int> = MutableStateFlow(0).asStateFlow()
-    actual fun acquireTorrentDetails() = Unit
+    actual fun acquireTorrentDetails(infoHash: String?) = Unit
     actual fun releaseTorrentDetails() = Unit
 
     actual suspend fun startStream(request: P2pStreamRequest): String {

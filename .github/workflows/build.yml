@@ -363,19 +363,35 @@ jobs:
 
       - name: Packaging Windows
         run: |
-          ./gradlew :composeApp:packageReleaseMsi -Pprovenio.engine.fromSource=false --no-configuration-cache --stacktrace
-          mkdir -p dist
-          msi="$(ls composeApp/build/compose/binaries/main-release/msi/*.msi | head -n 1)"
-          cp "${msi}" dist/Provenio.msi
+          ./gradlew :composeApp:createReleaseDistributable -Pprovenio.engine.fromSource=false --no-configuration-cache --stacktrace
+          echo "APP_VERSION=$(scripts/app-version.sh)" >> "${GITHUB_ENV}"
+
+      # The installer, built from the app folder with Inno Setup.
+      - name: Building installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          New-Item -ItemType Directory -Force dist | Out-Null
+          & $iscc `
+            "/DAppVersion=$env:APP_VERSION" `
+            "/DSourceDir=$PWD\composeApp\build\compose\binaries\main-release\app\Provenio" `
+            "/DOutputDir=$PWD\dist" `
+            "/DIconFile=$PWD\build\windows\provenio.ico" `
+            packaging\windows\Provenio.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - uses: actions/upload-artifact@v7
         with:
           name: provenio-${{ inputs.channel || 'beta' }}-windows
-          path: dist/Provenio.msi
+          path: dist/Provenio-Setup.exe
           if-no-files-found: error
           retention-days: 14
 
-  # Publishes whatever was packaged, as long as at least one of the app, the Flatpak and the MSI made it.
+  # Publishes whatever was packaged, as long as at least one of the app, the Flatpak and the Windows installer made it.
   publish:
     name: Publish
     needs: [engine, app, flatpak, windows]
@@ -427,8 +443,8 @@ jobs:
           else
             echo "::warning::Flatpak is missing"
           fi
-          if [[ -f dist/Provenio.msi ]]; then
-            files+=(dist/Provenio.msi)
+          if [[ -f dist/Provenio-Setup.exe ]]; then
+            files+=(dist/Provenio-Setup.exe)
           else
             echo "::warning::Windows installer is missing"
           fi

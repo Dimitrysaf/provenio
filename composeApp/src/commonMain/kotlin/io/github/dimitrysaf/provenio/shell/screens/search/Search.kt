@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.FilterAltOff
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.History
@@ -85,10 +86,15 @@ import provenio.composeapp.generated.resources.compose_search_empty_no_search_ca
 import provenio.composeapp.generated.resources.compose_search_placeholder
 import provenio.composeapp.generated.resources.compose_search_recent_searches
 import provenio.composeapp.generated.resources.compose_search_remove_recent_search
+import provenio.composeapp.generated.resources.search_filters_clear
+import provenio.composeapp.generated.resources.search_filters_no_match_message
+import provenio.composeapp.generated.resources.search_filters_no_match_title
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.search.SearchEmptyStateReason
 import io.github.dimitrysaf.provenio.core.search.SearchHistoryRepository
 import io.github.dimitrysaf.provenio.core.search.SearchRepository
+import io.github.dimitrysaf.provenio.core.search.applySearchFilters
+import io.github.dimitrysaf.provenio.core.search.sortedFor
 
 /** The side margin the discover grid sits in, which its column count has to allow for. */
 private val DiscoverGridHorizontalPadding = 16.dp
@@ -125,6 +131,11 @@ fun SearchScreen(
     val addonsUiState by AddonRepository.uiState.collectAsStateWithLifecycle()
     val uiState by SearchRepository.uiState.collectAsStateWithLifecycle()
     val discoverUiState by SearchRepository.discoverUiState.collectAsStateWithLifecycle()
+    val filters by SearchRepository.filters.collectAsStateWithLifecycle()
+    val visibleSections = remember(uiState.sections, filters) { uiState.sections.applySearchFilters(filters) }
+    val sortedDiscoverUiState = remember(discoverUiState, filters.sort) {
+        discoverUiState.copy(items = discoverUiState.items.sortedFor(filters.sort))
+    }
     val homeCatalogSettingsUiState by remember {
         HomeCatalogSettingsRepository.snapshot()
         HomeCatalogSettingsRepository.uiState
@@ -248,6 +259,14 @@ fun SearchScreen(
                 modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
                 divided = true,
                 focusRequester = focusRequester,
+                actions = {
+                    SearchFiltersButton(
+                        searching = query.isNotBlank(),
+                        searchSections = uiState.sections,
+                        discoverState = discoverUiState,
+                        filters = filters,
+                    )
+                },
             )
             ScreenScaffold(
                 title = null,
@@ -267,13 +286,10 @@ fun SearchScreen(
                     }
                 }
                     discoverContent(
-                        state = discoverUiState,
+                        state = sortedDiscoverUiState,
                         isSourceLoading = addonManifestsLoading,
                         columns = discoverColumns,
                         networkCondition = networkStatusUiState.condition,
-                        onTypeSelected = SearchRepository::selectDiscoverType,
-                        onCatalogSelected = SearchRepository::selectDiscoverCatalog,
-                        onGenreSelected = SearchRepository::selectDiscoverGenre,
                         onRetry = {
                             NetworkStatusRepository.requestRefresh(force = true)
                             if (addonsUiState.addons.firstEnabledManifestError() != null) {
@@ -335,9 +351,22 @@ fun SearchScreen(
                             }
                         }
 
+                        visibleSections.isEmpty() -> {
+                            item {
+                                EmptyState(
+                                    icon = Icons.Rounded.FilterAltOff,
+                                    title = stringResource(Res.string.search_filters_no_match_title),
+                                    message = stringResource(Res.string.search_filters_no_match_message),
+                                    actionLabel = stringResource(Res.string.search_filters_clear),
+                                    onActionClick = SearchRepository::clearSearchFilters,
+                                    modifier = Modifier.padding(horizontal = homeSectionPadding),
+                                )
+                            }
+                        }
+
                         else -> {
                             items(
-                                items = uiState.sections.withDuplicateSafeLazyKeys { section -> section.key },
+                                items = visibleSections.withDuplicateSafeLazyKeys { section -> section.key },
                                 key = { section -> section.lazyKey },
                             ) { keyedSection ->
                                 val section = keyedSection.value

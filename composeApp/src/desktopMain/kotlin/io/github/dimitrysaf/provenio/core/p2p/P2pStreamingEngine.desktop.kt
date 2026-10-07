@@ -157,6 +157,7 @@ actual object P2pStreamingEngine {
     private var diagnosticRequestSequence = 0L
     private val torrentDetailsObservers = AtomicInteger(0)
     private var torrentDetailsJob: Job? = null
+    @Volatile private var detailsInfoHash: String? = null
     @Volatile
     private var currentStream: Stream? = null
     @Volatile
@@ -185,7 +186,8 @@ actual object P2pStreamingEngine {
         }
     }
 
-    actual fun acquireTorrentDetails() {
+    actual fun acquireTorrentDetails(infoHash: String?) {
+        detailsInfoHash = infoHash?.let(::canonicalP2pInfoHash)
         if (torrentDetailsObservers.incrementAndGet() == 1) {
             startTorrentDetailsPolling()
         }
@@ -194,6 +196,7 @@ actual object P2pStreamingEngine {
     actual fun releaseTorrentDetails() {
         if (torrentDetailsObservers.decrementAndGet() <= 0) {
             torrentDetailsObservers.set(0)
+            detailsInfoHash = null
             synchronized(lifecycleLock) {
                 torrentDetailsJob?.cancel()
                 torrentDetailsJob = null
@@ -979,8 +982,8 @@ actual object P2pStreamingEngine {
             var streamedFile: StreamedFile? = null
             while (isActive) {
                 val activeEngine = engine
-                val torrentId = currentTorrentId
-                val stream = currentStream?.takeIf { it.id == currentStreamId }
+                val torrentId = detailsTorrentId()
+                val stream = detailsStream(torrentId)
                 _torrentDetails.value = if (activeEngine == null || torrentId == null) {
                     null
                 } else {
@@ -1014,6 +1017,18 @@ actual object P2pStreamingEngine {
                 delay(1_000L)
             }
         }
+    }
+
+    /** The torrent the details sheet asked for when the engine has it, otherwise the one playing. */
+    private fun detailsTorrentId(): String? = synchronized(lifecycleLock) {
+        detailsInfoHash?.takeIf { it in knownTorrentIds } ?: currentTorrentId
+    }
+
+    /** The stream reading [torrentId], from playback or from a download. */
+    private fun detailsStream(torrentId: String?): Stream? = synchronized(lifecycleLock) {
+        if (torrentId == null) return@synchronized null
+        currentStream?.takeIf { it.id == currentStreamId && it.torrentId == torrentId }
+            ?: downloadSessions.values.firstNotNullOfOrNull { session -> session.stream?.takeIf { it.torrentId == torrentId } }
     }
 
     private fun TorrentDetails.toP2pTorrentDetails(

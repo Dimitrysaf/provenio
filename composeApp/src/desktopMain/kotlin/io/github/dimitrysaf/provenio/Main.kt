@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.input.key.Key
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
+import androidx.compose.ui.window.LocalWindowExceptionHandlerFactory
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.application
@@ -70,6 +72,7 @@ import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPrefere
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedStorage
 import io.github.dimitrysaf.provenio.core.diagnostics.AppLogs
+import io.github.dimitrysaf.provenio.desktop.AppWindowExceptionHandlerFactory
 import io.github.dimitrysaf.provenio.desktop.Context
 import io.github.dimitrysaf.provenio.desktop.DesktopDisplayScale
 import io.github.dimitrysaf.provenio.desktop.DesktopLaunchScreen
@@ -79,6 +82,7 @@ import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
 import io.github.dimitrysaf.provenio.desktop.MaterialContextMenuRepresentation
 import io.github.dimitrysaf.provenio.desktop.SingleInstance
 import io.github.dimitrysaf.provenio.desktop.UpdateFailureDialog
+import io.github.dimitrysaf.provenio.desktop.WindowsInstallerLock
 import java.awt.SystemTray
 import java.io.File
 import kotlin.system.exitProcess
@@ -91,7 +95,10 @@ import provenio.composeapp.generated.resources.tray_quit
 import provenio.composeapp.generated.resources.tray_show_app
 import org.jetbrains.compose.resources.stringResource
 
+@OptIn(ExperimentalComposeUiApi::class)
 fun main(args: Array<String>) {
+    if (!WindowsInstallerLock.mayStart(args)) exitProcess(0)
+    WindowsInstallerLock.holdAppMutex()
     if (!SingleInstance.claim(args)) exitProcess(0)
     UpdateFailureDialog.showIfRequested(args)
     AppLogs.install(Context.app)
@@ -144,41 +151,43 @@ fun main(args: Array<String>) {
                 },
             )
         }
-        Window(
-            onCloseRequest = {
-                if (trayAvailable) windowVisible = false else quit()
-            },
-            state = windowState,
-            visible = windowVisible,
-            title = "Provenio",
-            icon = appIcon,
-            onPreviewKeyEvent = { event ->
-                when {
-                    event.type != KeyEventType.KeyDown -> false
-                    event.key == Key.F11 -> {
-                        DesktopWindowState.setFullscreen(!fullscreen)
-                        true
+        CompositionLocalProvider(LocalWindowExceptionHandlerFactory provides AppWindowExceptionHandlerFactory) {
+            Window(
+                onCloseRequest = {
+                    if (trayAvailable) windowVisible = false else quit()
+                },
+                state = windowState,
+                visible = windowVisible,
+                title = "Provenio",
+                icon = appIcon,
+                onPreviewKeyEvent = { event ->
+                    when {
+                        event.type != KeyEventType.KeyDown -> false
+                        event.key == Key.F11 -> {
+                            DesktopWindowState.setFullscreen(!fullscreen)
+                            true
+                        }
+                        event.key == Key.Escape && fullscreen -> {
+                            DesktopWindowState.setFullscreen(false)
+                            true
+                        }
+                        else -> AppKeyboardShortcuts.handle(event)
                     }
-                    event.key == Key.Escape && fullscreen -> {
-                        DesktopWindowState.setFullscreen(false)
-                        true
+                },
+            ) {
+                LaunchedEffect(Unit) {
+                    SingleInstance.showRequests.collect {
+                        windowVisible = true
+                        windowState.isMinimized = false
+                        window.toFront()
+                        window.requestFocus()
                     }
-                    else -> AppKeyboardShortcuts.handle(event)
                 }
-            },
-        ) {
-            LaunchedEffect(Unit) {
-                SingleInstance.showRequests.collect {
-                    windowVisible = true
-                    windowState.isMinimized = false
-                    window.toFront()
-                    window.requestFocus()
-                }
-            }
-            ProvideDesktopDisplayScale {
-                CompositionLocalProvider(LocalContextMenuRepresentation provides MaterialContextMenuRepresentation) {
-                    DesktopLaunchScreen {
-                        App()
+                ProvideDesktopDisplayScale {
+                    CompositionLocalProvider(LocalContextMenuRepresentation provides MaterialContextMenuRepresentation) {
+                        DesktopLaunchScreen {
+                            App()
+                        }
                     }
                 }
             }

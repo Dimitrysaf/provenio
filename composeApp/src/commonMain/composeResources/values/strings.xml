@@ -1631,6 +1631,18 @@
     <string name="discover_select_genre">Select Genre</string>
     <string name="discover_select_type">Select Type</string>
     <string name="discover_type">Type</string>
+    <string name="search_filter_all_types">All types</string>
+    <string name="search_filter_all_catalogs">All catalogs</string>
+    <string name="search_sort">Sort by</string>
+    <string name="search_sort_default">Default order</string>
+    <string name="search_sort_name_ascending">Name, A to Z</string>
+    <string name="search_sort_name_descending">Name, Z to A</string>
+    <string name="search_sort_newest">Newest first</string>
+    <string name="search_sort_oldest">Oldest first</string>
+    <string name="search_sort_rating">Highest rated</string>
+    <string name="search_filters_no_match_title">Nothing matches these filters</string>
+    <string name="search_filters_no_match_message">Try a different type, catalog or genre, or clear the filters.</string>
+    <string name="search_filters_clear">Clear filters</string>
     <string name="episode_mark_previous_unwatched">Mark previous as unwatched</string>
     <string name="episode_mark_previous_watched">Mark previous as watched</string>
     <string name="episode_mark_season_unwatched">Mark %1$s as unwatched</string>
@@ -2408,6 +2420,7 @@
     <string name="plugins_test_failed">Provider test failed</string>
     <string name="plugins_test_results_count">Test results (%1$d)</string>
     <string name="search_error_no_results_for_catalog">No search results returned for %1$s.</string>
+    <string name="search_error_timed_out">%1$s took too long to answer.</string>
     <string name="settings_playback_introdb_invalid_key">Invalid API Key or connection failed</string>
     <string name="streams_plugin_repository_fallback">Plugin repository</string>
     <string name="submit_intro_action">Submit Intro</string>

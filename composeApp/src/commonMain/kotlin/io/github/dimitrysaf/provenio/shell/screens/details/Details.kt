@@ -207,7 +207,7 @@ fun MetaDetailsScreen(
         type = type,
         id = id,
         displayedMeta = displayedMeta,
-        isLoading = uiState.isLoading,
+        isLoading = uiState.isLoading && uiState.requestKey == "$type:$id",
         networkCondition = networkStatusUiState.condition,
         moreLikeThisSource = trackingSettingsUiState.moreLikeThisSource,
         traktMode = traktAuthUiState.mode,
@@ -219,13 +219,7 @@ fun MetaDetailsScreen(
             .background(MaterialTheme.colorScheme.background),
     ) {
         when {
-            displayedMeta == null && uiState.isLoading -> {
-                LoadingSpinner(
-                    modifier = Modifier.align(Alignment.Center),
-                )
-            }
-
-            displayedMeta == null && uiState.errorMessage != null -> {
+            displayedMeta == null && uiState.errorMessage != null && uiState.requestKey == "$type:$id" -> {
                 DetailsLoadError(
                     condition = networkStatusUiState.condition,
                     errorMessage = uiState.errorMessage.orEmpty(),
@@ -233,6 +227,12 @@ fun MetaDetailsScreen(
                         NetworkStatusRepository.requestRefresh(force = true)
                         MetaDetailsRepository.load(type, id)
                     },
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
+
+            displayedMeta == null -> {
+                LoadingSpinner(
                     modifier = Modifier.align(Alignment.Center),
                 )
             }

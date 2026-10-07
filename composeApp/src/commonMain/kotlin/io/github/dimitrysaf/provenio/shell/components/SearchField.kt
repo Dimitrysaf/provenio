@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -14,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -28,7 +30,7 @@ import org.jetbrains.compose.resources.stringResource
  *
  * [divided] draws the spec's baseline style: a divider between the bar and the results below it,
  * which is what separates the two when the results are part of the same scrolling page rather
- * than a surface of their own.
+ * than a surface of their own. [actions] adds buttons after the clear button, such as filters.
  *
  * m3.material.io/components/search/specs
  */
@@ -41,6 +43,7 @@ fun SearchField(
     divided: Boolean = false,
     focusRequester: FocusRequester? = null,
     onSearch: (String) -> Unit = {},
+    actions: (@Composable () -> Unit)? = null,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         TextField(
@@ -51,15 +54,20 @@ fun SearchField(
             leadingIcon = {
                 Icon(imageVector = Icons.Outlined.Search, contentDescription = null)
             },
-            trailingIcon = if (query.isNotBlank()) {
+            trailingIcon = if (query.isNotBlank() || actions != null) {
                 {
-                    WithTooltip(stringResource(Res.string.compose_search_clear)) {
-                        IconButton(onClick = { onQueryChange("") }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Close,
-                                contentDescription = stringResource(Res.string.compose_search_clear),
-                            )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (query.isNotBlank()) {
+                            WithTooltip(stringResource(Res.string.compose_search_clear)) {
+                                IconButton(onClick = { onQueryChange("") }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = stringResource(Res.string.compose_search_clear),
+                                    )
+                                }
+                            }
                         }
+                        actions?.invoke()
                     }
                 }
             } else {

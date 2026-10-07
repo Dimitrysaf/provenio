@@ -22,17 +22,17 @@ internal object UpdateFailureDialog {
     fun showIfRequested(args: Array<String>) {
         val code = args.firstOrNull { it.startsWith(UpdateFailedArgument) }
             ?.removePrefix(UpdateFailedArgument)
-            ?.toIntOrNull()
+            ?.takeIf { it.isNotBlank() }
             ?: return
         val installer = args.firstOrNull { it.startsWith(UpdateFileArgument) }?.removePrefix(UpdateFileArgument)
         runCatching { show(code, installer) }
     }
 
-    private fun show(code: Int, installer: String?) {
+    private fun show(code: String, installer: String?) {
         val title = runBlocking { getString(Res.string.update_failed_title) }
         val message = runBlocking { getString(Res.string.update_failed_message, AppVersionConfig.VERSION_NAME) }
         val details = buildString {
-            appendLine("Windows Installer exit code: $code (${describe(code)})")
+            appendLine("Installer result: ${describe(code)}")
             appendLine("Installed version: ${AppVersionConfig.VERSION_NAME}")
             installer?.let { appendLine("Installer: $it") }
             System.getProperty("jpackage.app-path")?.let { appendLine("App: $it") }
@@ -58,16 +58,9 @@ internal object UpdateFailureDialog {
         }
     }
 
-    private fun describe(code: Int): String = when (code) {
-        1601 -> "the Windows Installer service could not be accessed"
-        1602 -> "the installation was cancelled"
-        1603 -> "a fatal error occurred during installation"
-        1618 -> "another installation is already in progress"
-        1619 -> "the installer package could not be opened"
-        1620 -> "the installer package is invalid"
-        1625 -> "the installation is blocked by system policy"
-        1638 -> "another version of the product is already installed"
-        else -> "unexpected error"
+    private fun describe(code: String): String = when (code) {
+        "setup" -> "setup stopped before it finished"
+        else -> "exit code $code"
     }
 
     private val comctl32: Comctl32 by lazy { Native.load("comctl32", Comctl32::class.java) }

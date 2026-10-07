@@ -547,7 +547,7 @@ compose.resources {
 }
 
 // The desktop app. On Linux, scripts/build-linux.sh packages the app JAR into the Flatpak; on
-// Windows, `packageReleaseMsi` builds the installer.
+// Windows, `createReleaseDistributable` builds the app folder that packaging/windows/Provenio.iss installs.
 compose.desktop {
     application {
         mainClass = "io.github.dimitrysaf.provenio.MainKt"
@@ -562,7 +562,7 @@ compose.desktop {
             appResourcesRootDir.set(rootProject.layout.projectDirectory.dir("build/linux/app-resources"))
             targetFormats(TargetFormat.Msi)
             windows {
-                // Fixed for good: Windows matches installs by this ID to upgrade them in place.
+                // The MSI older versions installed with; the Inno Setup installer finds and removes it by this ID.
                 upgradeUuid = "6f3c2b1e-8d4a-4e7b-9c15-2a7d0e5b9f43"
                 msiPackageVersion = releaseAppVersionName
                 perUserInstall = true

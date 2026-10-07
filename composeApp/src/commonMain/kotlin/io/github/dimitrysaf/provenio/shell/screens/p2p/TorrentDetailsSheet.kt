@@ -91,6 +91,7 @@ import io.github.dimitrysaf.provenio.core.p2p.P2pTorrentHealthReport
 import io.github.dimitrysaf.provenio.core.p2p.P2pTorrentState
 import io.github.dimitrysaf.provenio.core.p2p.P2pTrackerDetails
 import io.github.dimitrysaf.provenio.core.p2p.P2pTrackerStatus
+import io.github.dimitrysaf.provenio.core.p2p.canonicalP2pInfoHash
 import io.github.dimitrysaf.provenio.core.p2p.formatP2pSpeed
 import io.github.dimitrysaf.provenio.shell.components.BottomSheetBodyMargin
 import io.github.dimitrysaf.provenio.shell.components.EmptyState
@@ -123,17 +124,18 @@ fun TorrentDetailsSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
-    DisposableEffect(Unit) {
-        P2pStreamingEngine.acquireTorrentDetails()
+    DisposableEffect(infoHash) {
+        P2pStreamingEngine.acquireTorrentDetails(infoHash)
         onDispose { P2pStreamingEngine.releaseTorrentDetails() }
     }
     val details by P2pStreamingEngine.torrentDetails.collectAsStateWithLifecycle()
     val streamingState by P2pStreamingEngine.state.collectAsStateWithLifecycle()
+    val downloadStreamCount by P2pStreamingEngine.downloadStreamCount.collectAsStateWithLifecycle()
     val settings by remember {
         P2pSettingsRepository.ensureLoaded()
         P2pSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
-    val shown = details?.takeIf { infoHash == null || it.infoHash.equals(infoHash, ignoreCase = true) }
+    val shown = details?.takeIf { infoHash == null || canonicalP2pInfoHash(it.infoHash) == canonicalP2pInfoHash(infoHash) }
     val healthMonitor = remember { P2pTorrentHealthMonitor() }
     val healthClock = remember { TimeSource.Monotonic.markNow() }
     val health = remember(shown) {
@@ -157,7 +159,8 @@ fun TorrentDetailsSheet(
             // with a different torrent.
             val starting = details == null && (
                 streamingState is P2pStreamingState.Connecting ||
-                    streamingState is P2pStreamingState.Streaming
+                    streamingState is P2pStreamingState.Streaming ||
+                    (infoHash != null && downloadStreamCount > 0)
                 )
             if (starting) {
                 EmptyState(

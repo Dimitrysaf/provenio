@@ -50,6 +50,7 @@ data class AppUpdate(
     val assetName: String,
     val assetUrl: String,
     val assetSizeBytes: Long?,
+    val assetSha256: String? = null,
 )
 
 data class AppUpdaterUiState(
@@ -83,6 +84,7 @@ private data class GitHubAssetDto(
     @SerialName("browser_download_url") val browserDownloadUrl: String,
     val size: Long? = null,
     @SerialName("content_type") val contentType: String? = null,
+    val digest: String? = null,
 )
 
 private val appUpdaterJson = Json {
@@ -167,6 +169,7 @@ private object AppUpdaterRepository {
             assetName = asset.name,
             assetUrl = asset.browserDownloadUrl,
             assetSizeBytes = asset.size,
+            assetSha256 = asset.digest?.takeIf { it.startsWith("sha256:") }?.removePrefix("sha256:"),
         )
     }
 
@@ -330,6 +333,7 @@ class AppUpdaterController internal constructor(
             AppUpdaterPlatform.downloadApk(
                 assetUrl = update.assetUrl,
                 assetName = update.downloadFileName(),
+                sha256 = update.assetSha256,
             ) { downloadedBytes, totalBytes ->
                 val progress = if (totalBytes != null && totalBytes > 0L) {
                     (downloadedBytes.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)

@@ -129,7 +129,7 @@ actual object P2pStreamingEngine {
         MutableStateFlow<P2pTorrentDetails?>(null).asStateFlow()
     private val _downloadStreamCount = MutableStateFlow(0)
     actual val downloadStreamCount: StateFlow<Int> = _downloadStreamCount.asStateFlow()
-    actual fun acquireTorrentDetails() = Unit
+    actual fun acquireTorrentDetails(infoHash: String?) = Unit
     actual fun releaseTorrentDetails() = Unit
 
     private val engineContext = Dispatchers.Default.limitedParallelism(1)

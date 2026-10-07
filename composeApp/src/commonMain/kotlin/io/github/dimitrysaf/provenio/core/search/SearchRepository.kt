@@ -20,18 +20,22 @@ import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSection
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.home.filterReleasedItems
+import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 
@@ -48,6 +52,8 @@ object SearchRepository {
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
     private val _discoverUiState = MutableStateFlow(DiscoverUiState())
     val discoverUiState: StateFlow<DiscoverUiState> = _discoverUiState.asStateFlow()
+    private val _filters = MutableStateFlow(SearchFilterState())
+    val filters: StateFlow<SearchFilterState> = _filters.asStateFlow()
 
     private var activeJob: Job? = null
     private var activeDiscoverJob: Job? = null
@@ -113,6 +119,9 @@ object SearchRepository {
             )
         }
         if (canReuseRequestState(forceRefresh, requestKey, lastRequestKey)) return
+        if (lastRequestKey?.substringBefore('|') != requestKey.substringBefore('|')) {
+            _filters.value = _filters.value.copy(catalogKey = null, genre = null)
+        }
         lastRequestKey = requestKey
 
         activeJob?.cancel()
@@ -122,7 +131,7 @@ object SearchRepository {
             val resultChannel = Channel<IndexedSearchResult>(Channel.UNLIMITED)
             val jobs = requests.mapIndexed { index, request ->
                 launch {
-                    runCatching { request.toSection(forceRefresh = forceRefresh) }
+                    runCatching { request.toSectionWithRetry(forceRefresh = forceRefresh) }
                         .fold(
                             onSuccess = { section ->
                                 resultChannel.trySend(
@@ -170,6 +179,7 @@ object SearchRepository {
             val sections = results.orderedSections()
             val firstFailure = completedResults.firstNotNullOfOrNull { it.error?.message }
             val allFailed = completedResults.isNotEmpty() && completedResults.all { it.error != null }
+            sections.forEach { section -> MetaDetailsRepository.rememberPreviews(section.items) }
 
             _uiState.value = SearchUiState(
                 isLoading = sections.isEmpty() && hasPendingAddonManifests,
@@ -191,6 +201,30 @@ object SearchRepository {
         _uiState.value = SearchUiState()
     }
 
+    fun setSearchType(type: String?) {
+        val current = _filters.value
+        if (current.type == type) return
+        _filters.value = current.copy(type = type, catalogKey = null, genre = null)
+    }
+
+    fun setSearchCatalog(catalogKey: String?) {
+        val current = _filters.value
+        if (current.catalogKey == catalogKey) return
+        _filters.value = current.copy(catalogKey = catalogKey, genre = null)
+    }
+
+    fun setSearchGenre(genre: String?) {
+        _filters.value = _filters.value.copy(genre = genre)
+    }
+
+    fun setSortOrder(sort: SearchSortOrder) {
+        _filters.value = _filters.value.copy(sort = sort)
+    }
+
+    fun clearSearchFilters() {
+        _filters.value = SearchFilterState(sort = _filters.value.sort)
+    }
+
     fun reset() {
         activeJob?.cancel()
         activeDiscoverJob?.cancel()
@@ -199,6 +233,7 @@ object SearchRepository {
         lastDiscoverRequestKey = null
         _uiState.value = SearchUiState()
         _discoverUiState.value = DiscoverUiState()
+        _filters.value = SearchFilterState()
     }
 
     fun refreshDiscover(
@@ -426,7 +461,30 @@ object SearchRepository {
                 }
         }
 
-    private suspend fun SearchCatalogRequest.toSection(forceRefresh: Boolean): HomeCatalogSection {
+    /** Fetches one catalog's results with a time limit, trying once more if the first attempt fails. */
+    private suspend fun SearchCatalogRequest.toSectionWithRetry(forceRefresh: Boolean): HomeCatalogSection? {
+        var attempt = 0
+        while (true) {
+            attempt += 1
+            try {
+                return withTimeout(SEARCH_REQUEST_TIMEOUT_MS) {
+                    toSection(forceRefresh = forceRefresh || attempt > 1)
+                }
+            } catch (error: Throwable) {
+                if (error is CancellationException && error !is TimeoutCancellationException) throw error
+                if (attempt >= SEARCH_REQUEST_ATTEMPTS) {
+                    if (error is TimeoutCancellationException) {
+                        throw IllegalStateException(getString(Res.string.search_error_timed_out, catalogName))
+                    }
+                    throw error
+                }
+                log.w { "Search request failed for $catalogName, retrying: ${error.message}" }
+                delay(SEARCH_RETRY_DELAY_MS)
+            }
+        }
+    }
+
+    private suspend fun SearchCatalogRequest.toSection(forceRefresh: Boolean): HomeCatalogSection? {
         val manifest = requireNotNull(addon.manifest)
         val page = fetchCatalogPage(
             manifestUrl = manifest.transportUrl,
@@ -436,9 +494,7 @@ object SearchRepository {
             forceRefresh = forceRefresh,
         ).withUnreleasedFilter()
         val items = page.items
-        require(items.isNotEmpty()) {
-            getString(Res.string.search_error_no_results_for_catalog, catalogName)
-        }
+        if (items.isEmpty()) return null
 
         return HomeCatalogSection(
             key = "${manifest.id}:search:$type:$catalogId:${query.lowercase()}",
@@ -505,6 +561,7 @@ object SearchRepository {
                     if (latest.selectedCatalogKey != selectedCatalog.key || latest.selectedGenre != current.selectedGenre) {
                         return@fold
                     }
+                    MetaDetailsRepository.rememberPreviews(page.items)
                     val mergedItems = if (reset) {
                         page.items
                     } else {
@@ -564,6 +621,10 @@ object SearchRepository {
         }
     }
 }
+
+private const val SEARCH_REQUEST_TIMEOUT_MS = 20_000L
+private const val SEARCH_REQUEST_ATTEMPTS = 2
+private const val SEARCH_RETRY_DELAY_MS = 600L
 
 private data class IndexedSearchResult(
     val index: Int,

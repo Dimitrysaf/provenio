@@ -248,7 +248,8 @@ expect object P2pStreamingEngine {
     /** Filled only while something holds [acquireTorrentDetails]; null when nothing is loaded. */
     val torrentDetails: StateFlow<P2pTorrentDetails?>
     val downloadStreamCount: StateFlow<Int>
-    fun acquireTorrentDetails()
+    /** Starts sampling details for [infoHash], or for whatever is playing when it is null. */
+    fun acquireTorrentDetails(infoHash: String? = null)
     fun releaseTorrentDetails()
     suspend fun startStream(request: P2pStreamRequest): String
     suspend fun clearCache(): P2pCacheClearResult

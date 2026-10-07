@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.core.search
 
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSection
+import io.github.dimitrysaf.provenio.core.catalog.CatalogTarget
 import io.github.dimitrysaf.provenio.core.catalog.supportsPagination
 import provenio.composeapp.generated.resources.*
 
@@ -83,3 +84,87 @@ private fun String.typeSortKey(): String =
         "anime" -> "2_anime"
         else -> "9_$this"
     }
+
+enum class SearchSortOrder {
+    Default,
+    NameAscending,
+    NameDescending,
+    Newest,
+    Oldest,
+    Rating,
+}
+
+data class SearchFilterState(
+    val type: String? = null,
+    val catalogKey: String? = null,
+    val genre: String? = null,
+    val sort: SearchSortOrder = SearchSortOrder.Default,
+) {
+    val hasSearchFilters: Boolean
+        get() = type != null || catalogKey != null || genre != null
+}
+
+data class SearchCatalogFilterOption(
+    val key: String,
+    val label: String,
+)
+
+/** Identifies the catalog a search section came from, the same for every query. */
+fun HomeCatalogSection.searchCatalogKey(): String =
+    when (val catalog = target) {
+        is CatalogTarget.Addon -> "${catalog.manifestUrl}:${catalog.contentType}:${catalog.catalogId}"
+        else -> key
+    }
+
+/** Types present in the search results, movies and series first. */
+fun List<HomeCatalogSection>.searchTypeOptions(): List<String> =
+    map { it.target.contentType }.distinct().sortedBy { it.typeSortKey() }
+
+/** Catalogs present in the search results, limited to [type] when one is picked. */
+fun List<HomeCatalogSection>.searchCatalogOptions(type: String?): List<SearchCatalogFilterOption> =
+    filter { type == null || it.target.contentType == type }
+        .distinctBy { it.searchCatalogKey() }
+        .map { SearchCatalogFilterOption(key = it.searchCatalogKey(), label = "${it.title} • ${it.addonName}") }
+
+/** Genres the results carry, limited to [type] and [catalogKey] when picked. */
+fun List<HomeCatalogSection>.searchGenreOptions(type: String?, catalogKey: String?): List<String> =
+    filter { type == null || it.target.contentType == type }
+        .filter { catalogKey == null || it.searchCatalogKey() == catalogKey }
+        .flatMap { section -> section.items.flatMap { it.genres } }
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .distinctBy { it.lowercase() }
+        .sortedBy { it.lowercase() }
+
+/** Applies type, catalog, genre and sort order to search results, dropping sections left empty. */
+fun List<HomeCatalogSection>.applySearchFilters(filters: SearchFilterState): List<HomeCatalogSection> {
+    if (!filters.hasSearchFilters && filters.sort == SearchSortOrder.Default) return this
+    return filter { filters.type == null || it.target.contentType == filters.type }
+        .filter { filters.catalogKey == null || it.searchCatalogKey() == filters.catalogKey }
+        .map { section ->
+            val items = section.items
+                .filter { item -> filters.genre == null || item.genres.any { it.trim().equals(filters.genre, ignoreCase = true) } }
+                .sortedFor(filters.sort)
+            if (items == section.items) section else section.copy(items = items)
+        }
+        .filter { it.items.isNotEmpty() }
+}
+
+/** Orders titles by [order], keeping the catalog's own order for ties and for [SearchSortOrder.Default]. */
+fun List<MetaPreview>.sortedFor(order: SearchSortOrder): List<MetaPreview> =
+    when (order) {
+        SearchSortOrder.Default -> this
+        SearchSortOrder.NameAscending -> sortedBy { it.name.lowercase() }
+        SearchSortOrder.NameDescending -> sortedByDescending { it.name.lowercase() }
+        SearchSortOrder.Newest -> sortedWith(compareByDescending(nullsFirst<String>()) { it.releaseSortKey() })
+        SearchSortOrder.Oldest -> sortedWith(compareBy(nullsLast<String>()) { it.releaseSortKey() })
+        SearchSortOrder.Rating -> sortedWith(compareByDescending(nullsFirst<Double>()) { it.imdbRating?.trim()?.toDoubleOrNull() })
+    }
+
+/** A sortable release date, from the full date when known and the year otherwise. */
+private fun MetaPreview.releaseSortKey(): String? {
+    rawReleaseDate?.trim()?.takeIf { it.length >= 4 && it.take(4).all(Char::isDigit) }?.let { return it.take(10) }
+    return releaseInfo?.let { YearPrefix.find(it)?.value }
+}
+
+private val YearPrefix = Regex("\\d{4}")
