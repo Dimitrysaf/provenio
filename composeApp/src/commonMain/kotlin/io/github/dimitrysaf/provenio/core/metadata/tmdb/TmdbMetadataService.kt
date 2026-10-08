@@ -746,18 +746,25 @@ object TmdbMetadataService {
         )
     }
 
+    /**
+     * A title's details from TMDB alone, for when no add-on answered. A TMDB ID is used as it is;
+     * an IMDb ID, which most add-ons use, is looked up on TMDB first while TMDB enrichment is on.
+     * A series gets its whole episode list from TMDB's seasons, with episode IDs in the
+     * `id:season:episode` form stream add-ons and watch progress match on.
+     */
     suspend fun fetchStandaloneMeta(
         type: String,
         id: String,
         settings: TmdbSettings,
     ): MetaDetails? {
-        val tmdbId = id
-            .takeIf { it.startsWith("tmdb:", ignoreCase = true) }
-            ?.substringAfter(':')
-            ?.substringBefore(':')
-            ?.toIntOrNull()
-            ?: return null
         val tmdbType = normalizeMetaType(type)
+        val tmdbId = when {
+            id.startsWith("tmdb:", ignoreCase = true) ->
+                id.substringAfter(':').substringBefore(':').toIntOrNull()
+            id.startsWith("tt", ignoreCase = true) && settings.enabled ->
+                TmdbService.ensureTmdbId(videoId = id, mediaType = tmdbType)?.toIntOrNull()
+            else -> null
+        } ?: return null
         val enrichment = fetchEnrichment(
             tmdbId = tmdbId.toString(),
             mediaType = tmdbType,
@@ -765,11 +772,38 @@ object TmdbMetadataService {
             settings = settings,
         ) ?: return null
 
+        val videos = if (tmdbType == "tv" && enrichment.seasonCount > 0) {
+            val episodes = fetchEpisodeEnrichment(
+                tmdbId = tmdbId.toString(),
+                seasonNumbers = (1..enrichment.seasonCount).toList(),
+                language = settings.language,
+            )
+            episodes.entries
+                .sortedWith(compareBy({ it.key.first }, { it.key.second }))
+                .map { (seasonAndEpisode, episode) ->
+                    val (season, number) = seasonAndEpisode
+                    MetaVideo(
+                        id = "$id:$season:$number",
+                        title = episode.title ?: "Episode $number",
+                        released = episode.airDate,
+                        thumbnail = episode.thumbnail,
+                        seasonPoster = episode.seasonPoster,
+                        season = season,
+                        episode = number,
+                        overview = episode.overview,
+                        runtime = episode.runtimeMinutes,
+                    )
+                }
+        } else {
+            emptyList()
+        }
+
         return buildStandaloneMeta(
             type = type,
             id = id,
             tmdbId = tmdbId,
             enrichment = enrichment,
+            videos = videos,
         )
     }
 
@@ -778,6 +812,7 @@ object TmdbMetadataService {
         id: String,
         tmdbId: Int,
         enrichment: TmdbEnrichment,
+        videos: List<MetaVideo> = emptyList(),
     ): MetaDetails =
         MetaDetails(
             id = id,
@@ -807,6 +842,7 @@ object TmdbMetadataService {
             collectionName = enrichment.collectionName,
             collectionItems = enrichment.collectionItems,
             trailers = enrichment.trailers,
+            videos = videos,
         )
 
     internal fun applyEnrichment(
@@ -1108,6 +1144,7 @@ object TmdbMetadataService {
             },
             moreLikeThis = response.fourth.moreLikeThis,
             trailers = response.fourth.trailers,
+            seasonCount = details.numberOfSeasons?.takeIf { mediaType == "tv" } ?: 0,
         )
 
         if (!enrichment.hasContent()) return@withContext null
@@ -1477,6 +1514,8 @@ internal data class TmdbEnrichment(
     val collectionItems: List<MetaPreview> = emptyList(),
     val moreLikeThis: List<MetaPreview> = emptyList(),
     val trailers: List<MetaTrailer> = emptyList(),
+    /** How many regular seasons a series has, not counting specials; 0 for a movie. */
+    val seasonCount: Int = 0,
 ) {
     fun hasContent(): Boolean =
         localizedTitle != null ||

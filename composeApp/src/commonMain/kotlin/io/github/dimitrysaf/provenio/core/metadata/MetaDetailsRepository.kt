@@ -342,6 +342,7 @@ object MetaDetailsRepository {
     private const val MAX_REMEMBERED_PREVIEWS = 600
     private const val METADATA_PROVIDER_READY_TIMEOUT_MS = 10_000L
     private const val TMDB_ENRICH_TIMEOUT_MS = 5_000L
+    private const val TMDB_FALLBACK_TIMEOUT_MS = 20_000L
     private const val MDBLIST_ENRICH_TIMEOUT_MS = 5_000L
 
     private suspend fun tryFetchMeta(
@@ -470,7 +471,8 @@ object MetaDetailsRepository {
     }
 
     private suspend fun tryFetchTmdbFallbackMeta(type: String, id: String): MetaDetails? =
-        withTimeoutOrNull(TMDB_ENRICH_TIMEOUT_MS) {
+        // Longer than enrichment: a long series fetches every season's episodes.
+        withTimeoutOrNull(TMDB_FALLBACK_TIMEOUT_MS) {
             TmdbMetadataService.fetchStandaloneMeta(
                 type = type,
                 id = id,
