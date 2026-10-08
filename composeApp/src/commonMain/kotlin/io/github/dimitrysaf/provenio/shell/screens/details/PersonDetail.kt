@@ -68,6 +68,10 @@ import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbMetadataService
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedRepository
 import io.github.dimitrysaf.provenio.shell.components.BackButton
+import io.github.dimitrysaf.provenio.shell.components.LoadErrorState
+import io.github.dimitrysaf.provenio.core.network.LoadFailure
+import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
+import io.github.dimitrysaf.provenio.core.network.toLoadFailure
 import io.github.dimitrysaf.provenio.shell.components.DeceasedPhotoFilter
 import io.github.dimitrysaf.provenio.shell.components.ImageViewer
 import io.github.dimitrysaf.provenio.shell.components.viewerImageOf
@@ -92,14 +96,13 @@ import io.github.dimitrysaf.provenio.shell.screens.home.components.heroCarouselT
 import io.github.dimitrysaf.provenio.shell.screens.home.components.heroItemContentAlpha
 import io.github.dimitrysaf.provenio.shell.screens.home.components.homeHeroLayout
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
 private sealed interface PersonDetailUiState {
     data object Loading : PersonDetailUiState
     data class Success(val personDetail: PersonDetail) : PersonDetailUiState
-    data class Error(val message: String) : PersonDetailUiState
+    data class Error(val failure: LoadFailure) : PersonDetailUiState
 }
 
 @Composable
@@ -130,15 +133,17 @@ fun PersonDetailScreen(
         if (uiState !is PersonDetailUiState.Success) {
             uiState = PersonDetailUiState.Loading
         }
-        val detail = TmdbMetadataService.fetchPersonDetail(
+        val result = TmdbMetadataService.fetchPersonDetail(
             personId = personId,
             preferCrewCredits = preferCrew,
         )
-        uiState = when {
-            detail != null -> PersonDetailUiState.Success(detail)
-            uiState is PersonDetailUiState.Success -> uiState
-            else -> PersonDetailUiState.Error(getString(Res.string.person_load_failed, personName))
-        }
+        uiState = result.fold(
+            onSuccess = { PersonDetailUiState.Success(it) },
+            onFailure = { error ->
+                uiState.takeIf { it is PersonDetailUiState.Success }
+                    ?: PersonDetailUiState.Error(error.toLoadFailure(sourceName = "TMDB"))
+            },
+        )
     }
 
     Box(
@@ -154,7 +159,7 @@ fun PersonDetailScreen(
                 onBack = onBack,
             )
             is PersonDetailUiState.Error -> PersonDetailError(
-                message = state.message,
+                failure = state.failure,
                 onBack = onBack,
                 onRetry = { loadAttempt++ },
             )
@@ -798,41 +803,27 @@ private fun SkeletonLine(
 
 @Composable
 private fun PersonDetailError(
-    message: String,
+    failure: LoadFailure,
     onBack: () -> Unit,
     onRetry: () -> Unit,
 ) {
     val collapsed = remember { mutableStateOf(true) }
+    val networkStatusUiState by NetworkStatusRepository.uiState.collectAsStateWithLifecycle()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        Column(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = stringResource(Res.string.person_something_wrong),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(onClick = onRetry) {
-                Text(stringResource(Res.string.action_retry))
-            }
-        }
+        LoadErrorState(
+            failures = listOf(failure),
+            networkCondition = networkStatusUiState.condition,
+            onRetry = {
+                NetworkStatusRepository.requestRefresh(force = true)
+                onRetry()
+            },
+            modifier = Modifier.align(Alignment.Center),
+        )
 
         PersonHeaderOverlay(
             title = "",

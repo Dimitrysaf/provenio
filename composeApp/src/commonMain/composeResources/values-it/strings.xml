@@ -770,7 +770,6 @@
   <string name="catalog_empty_title">Nessun titolo trovato</string>
   <string name="details_check_connection">Controlla la tua connessione Wi-Fi o dati mobili e riprova.</string>
   <string name="details_director">Regista</string>
-  <string name="details_failed_to_load">Caricamento fallito</string>
   <string name="details_more_like_this">Altri titoli simili</string>
   <string name="details_seasons">Stagioni</string>
   <string name="details_series_missing_numbers">L'addon ha restituito i video per questa serie, ma nessuno include numeri di stagione o episodio.</string>
@@ -830,9 +829,7 @@
   <string name="person_died">Data di morte %1$s</string>
   <string name="person_known_for">Celebre per: %1$s</string>
   <string name="person_latest">Ultimi lavori</string>
-  <string name="person_load_failed">Impossibile caricare i dettagli di %1$s</string>
   <string name="person_popular">Popolare</string>
-  <string name="person_something_wrong">Qualcosa è andato storto</string>
   <string name="person_upcoming">In uscita</string>
   <string name="pin_backspace">Cancella</string>
   <string name="pin_cancel">Annulla</string>
@@ -926,9 +923,7 @@
   <string name="continue_watching_up_next_episode">Prossimo • S%1$dE%2$d</string>
   <string name="detail_logo_content_description">Logo di %1$s</string>
   <string name="details_comments_load_failed">Impossibile caricare i commenti</string>
-  <string name="details_load_failed_all_addons">Impossibile caricare i dettagli da alcun addon.</string>
   <string name="details_networks">Network</string>
-  <string name="details_no_addon_meta">Nessun addon fornisce metadati per questo contenuto.</string>
   <string name="download_failed">Download fallito</string>
   <string name="downloads_channel_description">Mostra i progressi e i controlli dei download in corso.</string>
   <string name="downloads_channel_name">Download</string>

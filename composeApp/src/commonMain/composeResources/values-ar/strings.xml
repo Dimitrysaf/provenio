@@ -1298,7 +1298,6 @@
     <string name="details_actions_menu_label">إجراءات إضافية</string>
     <string name="details_check_connection">تحقق من اتصال Wi-Fi أو بيانات الجوال ثم حاول مرة أخرى.</string>
     <string name="details_director">مخرج</string>
-    <string name="details_failed_to_load">فشل التحميل</string>
     <string name="details_more_like_this">مقترحات مشابهة</string>
     <string name="detail_more_like_this_powered_by_tmdb">بدعم من TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">بدعم من Trakt</string>
@@ -1365,9 +1364,7 @@
     <string name="person_died">تاريخ الوفاة %1$s</string>
     <string name="person_known_for">معروف بـ: %1$s</string>
     <string name="person_latest">الأحدث</string>
-    <string name="person_load_failed">تعذر تحميل تفاصيل %1$s</string>
     <string name="person_popular">رائج</string>
-    <string name="person_something_wrong">حدث خطأ ما</string>
     <string name="person_upcoming">يعرض قريباً</string>
     <string name="pin_backspace">حذف</string>
     <string name="pin_cancel">إلغاء</string>
@@ -1491,9 +1488,7 @@
     <string name="continue_watching_up_next_episode">التالي • S%1$dE%2$d</string>
     <string name="detail_logo_content_description">شعار %1$s</string>
     <string name="details_comments_load_failed">فشل تحميل التعليقات</string>
-    <string name="details_load_failed_all_addons">تعذر تحميل التفاصيل من أي إضافة.</string>
     <string name="details_networks">القنوات</string>
-    <string name="details_no_addon_meta">لا توفر أي إضافة بيانات وصفية لهذا المحتوى.</string>
     <string name="download_failed">فشل التحميل</string>
     <string name="downloads_channel_description">يعرض تقدم التنزيل المباشر وعناصر التحكم.</string>
     <string name="downloads_channel_name">التنزيلات</string>

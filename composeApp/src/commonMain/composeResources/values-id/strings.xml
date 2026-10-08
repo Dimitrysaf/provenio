@@ -1041,7 +1041,6 @@
     <string name="catalog_empty_title">Tidak ada judul ditemukan</string>
     <string name="details_check_connection">Periksa koneksi Wi-Fi atau data seluler Anda dan coba lagi.</string>
     <string name="details_director">Sutradara</string>
-    <string name="details_failed_to_load">Gagal memuat</string>
     <string name="details_more_like_this">Yang Serupa</string>
     <string name="details_seasons">Musim</string>
     <string name="details_series_missing_numbers">Addon ini menyediakan video untuk serial, tetapi tidak ada yang menyertakan nomor musim atau episode.</string>
@@ -1102,9 +1101,7 @@
     <string name="person_died">Meninggal %1$s</string>
     <string name="person_known_for">Dikenal karena: %1$s</string>
     <string name="person_latest">Terbaru</string>
-    <string name="person_load_failed">Tidak dapat memuat detail untuk %1$s</string>
     <string name="person_popular">Populer</string>
-    <string name="person_something_wrong">Terjadi kesalahan</string>
     <string name="person_upcoming">Mendatang</string>
     <string name="pin_backspace">Hapus</string>
     <string name="pin_cancel">Batal</string>
@@ -1213,9 +1210,7 @@
     <string name="continue_watching_up_next_episode">Berikutnya • S%1$dE%2$d</string>
     <string name="detail_logo_content_description">Logo %1$s</string>
     <string name="details_comments_load_failed">Gagal memuat komentar</string>
-    <string name="details_load_failed_all_addons">Tidak dapat memuat detail dari addon mana pun.</string>
     <string name="details_networks">Jaringan</string>
-    <string name="details_no_addon_meta">Tidak ada addon yang menyediakan meta untuk konten ini.</string>
     <string name="download_failed">Unduhan gagal</string>
     <string name="downloads_channel_description">Menampilkan progres unduhan langsung dan kontrol.</string>
     <string name="downloads_channel_name">Unduhan</string>

@@ -56,12 +56,20 @@ private suspend fun rememberBadgeMeta(contentId: String, meta: MetaDetails) = ba
     }
 }
 
+/**
+ * Works out which series are fully watched. Series in [alreadyResolvedSeriesIds] are skipped, so a
+ * rerun after a partial run only asks the add-ons again for the series that failed, not for all of
+ * them. [onSeriesResolved] reports each series as it resolves, so progress survives cancellation.
+ * Returns true when every series resolved.
+ */
 suspend fun resolveWatchedBadgesBulk(
     watchedItems: List<WatchedItem>,
     progressEntries: List<WatchProgressEntry>,
     todayIsoDate: String = CurrentDateProvider.todayIsoDate(),
+    alreadyResolvedSeriesIds: Set<String> = emptySet(),
+    onSeriesResolved: (String) -> Unit = {},
 ): Boolean = withContext(Dispatchers.Default) {
-    val touchedSeriesIds = buildSet {
+    val allSeriesIds = buildSet {
         watchedItems.forEach { item ->
             if (item.type.isSeriesLikeWatchedType() && item.season != null && item.episode != null) {
                 add(item.id)
@@ -74,63 +82,71 @@ suspend fun resolveWatchedBadgesBulk(
         }
         WatchedRepository.baseFullyWatchedSeriesKeys().mapNotNullTo(this, ::extractContentIdFromWatchedKey)
     }
+    val touchedSeriesIds = allSeriesIds - alreadyResolvedSeriesIds
     if (touchedSeriesIds.isEmpty()) return@withContext true
 
     // Use the full watchedKeys from UI state which includes extra keys from
     // provider alternate IDs (e.g. Simkl anime alternate MAL/Kitsu keys).
     val watchedKeys = WatchedRepository.uiState.value.watchedKeys
 
-    log.i { "Bulk badge resolution starting: ${touchedSeriesIds.size} series candidates" }
+    log.i {
+        "Bulk badge resolution starting: ${touchedSeriesIds.size} series candidates " +
+            "(${alreadyResolvedSeriesIds.size} already resolved)"
+    }
 
     val semaphore = Semaphore(BADGE_RESOLUTION_CONCURRENCY)
     val resolvedIds = mutableSetOf<String>()
     val resolvedStates = linkedMapOf<String, Boolean>()
 
-    for (contentId in touchedSeriesIds) {
-        semaphore.withPermit {
-            val meta = try {
-                cachedBadgeMeta(contentId)
-                    ?: MetaDetailsRepository.fetch(type = "series", id = contentId, cacheResult = false)
-                        ?.also { rememberBadgeMeta(contentId, it) }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Throwable) {
-                null
-            }
-            if (meta != null) {
-                val isFullyWatched = WatchedRepository.calculateFullyWatchedSeriesState(
-                    meta = meta,
-                    todayIsoDate = todayIsoDate,
-                    isEpisodeWatched = { episode ->
-                        val keys = watchedItemKeys(meta.type, meta.id, episode.season, episode.episode)
-                        if (keys.any(watchedKeys::contains)) {
-                            true
-                        } else {
-                            val episodeNumber = episode.episode
-                            if (episodeNumber != null) {
-                                io.github.dimitrysaf.provenio.core.tracking.simkl.SimklAnimeWatchedFallback.isWatched(episode.id, episodeNumber)
+    try {
+        for (contentId in touchedSeriesIds) {
+            semaphore.withPermit {
+                val meta = try {
+                    cachedBadgeMeta(contentId)
+                        ?: MetaDetailsRepository.fetch(type = "series", id = contentId, cacheResult = false)
+                            ?.also { rememberBadgeMeta(contentId, it) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Throwable) {
+                    null
+                }
+                if (meta != null) {
+                    val isFullyWatched = WatchedRepository.calculateFullyWatchedSeriesState(
+                        meta = meta,
+                        todayIsoDate = todayIsoDate,
+                        isEpisodeWatched = { episode ->
+                            val keys = watchedItemKeys(meta.type, meta.id, episode.season, episode.episode)
+                            if (keys.any(watchedKeys::contains)) {
+                                true
                             } else {
-                                false
+                                val episodeNumber = episode.episode
+                                if (episodeNumber != null) {
+                                    io.github.dimitrysaf.provenio.core.tracking.simkl.SimklAnimeWatchedFallback.isWatched(episode.id, episodeNumber)
+                                } else {
+                                    false
+                                }
                             }
-                        }
-                    },
-                    isEpisodeCompleted = { episode ->
-                        val playbackId = meta.episodePlaybackId(episode)
-                        progressEntries.any { entry ->
-                            entry.videoId == playbackId && entry.isEffectivelyCompleted
-                        }
-                    },
-                )
-                resolvedStates[watchedItemKey(meta.type, meta.id)] = isFullyWatched
-                if (meta.type.isSeriesLikeWatchedType() && meta.videos.isNotEmpty()) {
-                    resolvedIds.add(contentId)
+                        },
+                        isEpisodeCompleted = { episode ->
+                            val playbackId = meta.episodePlaybackId(episode)
+                            progressEntries.any { entry ->
+                                entry.videoId == playbackId && entry.isEffectivelyCompleted
+                            }
+                        },
+                    )
+                    resolvedStates[watchedItemKey(meta.type, meta.id)] = isFullyWatched
+                    if (meta.type.isSeriesLikeWatchedType() && meta.videos.isNotEmpty()) {
+                        resolvedIds.add(contentId)
+                        onSeriesResolved(contentId)
+                    }
                 }
             }
+            yield()
         }
-        yield()
+    } finally {
+        // Also on cancellation, so the series reported through onSeriesResolved keep their badges.
+        WatchedRepository.updateFullyWatchedSeriesStates(resolvedStates)
     }
-
-    WatchedRepository.updateFullyWatchedSeriesStates(resolvedStates)
     log.i { "Bulk badge resolution complete: resolved ${resolvedIds.size}/${touchedSeriesIds.size}" }
 
     // Sibling expansion

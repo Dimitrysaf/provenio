@@ -975,7 +975,6 @@
     <string name="catalog_empty_title">Nem találhatók címek</string>
     <string name="details_check_connection">Ellenőrizd a Wi-Fi- vagy a mobiladat-kapcsolatot, majd próbáld újra.</string>
     <string name="details_director">Rendező</string>
-    <string name="details_failed_to_load">Sikertelen betöltés</string>
     <string name="details_more_like_this">Hasonló tartalmak</string>
     <string name="details_seasons">Évadok</string>
     <string name="details_series_missing_numbers">Ez a kiegészítő adott vissza videókat a sorozathoz, de egyik sem tartalmazott évad- vagy epizódszámot.</string>
@@ -1035,9 +1034,7 @@
     <string name="person_died">Meghalt: %1$s</string>
     <string name="person_known_for">Főbb művei: %1$s</string>
     <string name="person_latest">Legutóbbi</string>
-    <string name="person_load_failed">Nem sikerült betölteni a részleteket a következőhöz: %1$s</string>
     <string name="person_popular">Népszerű</string>
-    <string name="person_something_wrong">Valami hiba történt</string>
     <string name="person_upcoming">Közelgő</string>
     <string name="pin_backspace">Törlés (Backspace)</string>
     <string name="pin_cancel">Mégse</string>
@@ -1145,9 +1142,7 @@
     <string name="continue_watching_up_next_episode">Következő • S%1$dE%2$d</string>
     <string name="detail_logo_content_description">%1$s logó</string>
     <string name="details_comments_load_failed">Nem sikerült betölteni a hozzászólásokat</string>
-    <string name="details_load_failed_all_addons">Egyetlen kiegészítőből sem sikerült betölteni a részleteket.</string>
     <string name="details_networks">Csatornák / Hálózatok</string>
-    <string name="details_no_addon_meta">Egyetlen kiegészítő sem biztosít metaadatokat ehhez a tartalomhoz.</string>
     <string name="download_failed">Letöltés sikertelen</string>
     <string name="downloads_channel_description">Megjeleníti az élő letöltési folyamatot és a vezérlőket.</string>
     <string name="downloads_channel_name">Letöltések</string>

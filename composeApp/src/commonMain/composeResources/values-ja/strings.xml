@@ -1139,7 +1139,6 @@
     <string name="details_actions_menu_label">その他のアクション</string>
     <string name="details_check_connection">Wi-Fiまたはモバイルデータ接続を確認して再試行してください。</string>
     <string name="details_director">監督</string>
-    <string name="details_failed_to_load">読み込みに失敗しました</string>
     <string name="details_more_like_this">この作品と似た作品</string>
     <string name="detail_more_like_this_powered_by_tmdb">Powered by TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">Powered by Trakt</string>
@@ -1206,9 +1205,7 @@
     <string name="person_died">%1$s 没</string>
     <string name="person_known_for">代表作：%1$s</string>
     <string name="person_latest">最新作</string>
-    <string name="person_load_failed">%1$s の詳細を読み込めませんでした</string>
     <string name="person_popular">人気作</string>
-    <string name="person_something_wrong">問題が発生しました</string>
     <string name="person_upcoming">公開予定</string>
     <string name="pin_backspace">削除</string>
     <string name="pin_cancel">キャンセル</string>
@@ -1320,9 +1317,7 @@
     <string name="continue_watching_up_next_episode">次のエピソード • S%1$dE%2$d</string>
     <string name="detail_logo_content_description">%1$s ロゴ</string>
     <string name="details_comments_load_failed">コメントの読み込みに失敗しました</string>
-    <string name="details_load_failed_all_addons">どのアドオンからも詳細を読み込めませんでした。</string>
     <string name="details_networks">ネットワーク</string>
-    <string name="details_no_addon_meta">このコンテンツのメタデータを提供するアドオンがありません。</string>
     <string name="download_failed">ダウンロードに失敗しました</string>
     <string name="downloads_channel_description">ダウンロードの進捗とコントロールをリアルタイムで表示します。</string>
     <string name="downloads_channel_name">ダウンロード</string>

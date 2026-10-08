@@ -28,6 +28,11 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
+import io.github.dimitrysaf.provenio.shell.components.EmptyState
+import io.github.dimitrysaf.provenio.shell.components.LoadErrorState
+import io.github.dimitrysaf.provenio.core.metadata.MetaLoadFailure
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -220,16 +225,18 @@ fun MetaDetailsScreen(
             .background(MaterialTheme.colorScheme.background),
     ) {
         when {
-            displayedMeta == null && uiState.errorMessage != null && uiState.requestKey == "$type:$id" -> {
-                DetailsLoadError(
-                    condition = networkStatusUiState.condition,
-                    errorMessage = uiState.errorMessage.orEmpty(),
-                    onRetry = {
-                        NetworkStatusRepository.requestRefresh(force = true)
-                        MetaDetailsRepository.load(type, id)
-                    },
-                    modifier = Modifier.align(Alignment.Center),
-                )
+            displayedMeta == null && uiState.failure != null && uiState.requestKey == "$type:$id" -> {
+                uiState.failure?.let { failure ->
+                    DetailsLoadError(
+                        condition = networkStatusUiState.condition,
+                        failure = failure,
+                        onRetry = {
+                            NetworkStatusRepository.requestRefresh(force = true)
+                            MetaDetailsRepository.load(type, id)
+                        },
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                }
             }
 
             displayedMeta == null -> {
@@ -420,33 +427,25 @@ private fun MetaDetailsLoadEffects(
 @Composable
 private fun DetailsLoadError(
     condition: NetworkCondition,
-    errorMessage: String,
+    failure: MetaLoadFailure,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = stringResource(Res.string.details_failed_to_load),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground,
+    when (failure) {
+        MetaLoadFailure.NoMetaAddon -> EmptyState(
+            icon = Icons.Rounded.Extension,
+            title = stringResource(Res.string.details_no_meta_addon_title),
+            message = stringResource(Res.string.details_no_meta_addon_message),
+            modifier = modifier,
+            actionLabel = stringResource(Res.string.action_retry),
+            onActionClick = onRetry,
         )
-        Text(
-            text = when (condition) {
-                NetworkCondition.NoInternet -> stringResource(Res.string.details_check_connection)
-                NetworkCondition.ServersUnreachable -> stringResource(Res.string.details_servers_unreachable)
-                else -> errorMessage
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        is MetaLoadFailure.AddonsFailed -> LoadErrorState(
+            failures = failure.failures,
+            networkCondition = condition,
+            onRetry = onRetry,
+            modifier = modifier,
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = onRetry) {
-            Text(stringResource(Res.string.action_retry))
-        }
     }
 }
 

@@ -1367,7 +1367,6 @@
     <string name="details_actions_menu_label">Още действия</string>
     <string name="details_check_connection">Проверете вашата Wi-Fi или мобилна интернет връзка и опитайте отново.</string>
     <string name="details_director">Режисьор</string>
-    <string name="details_failed_to_load">Неуспешно зареждане</string>
     <string name="details_more_like_this">Подобни</string>
     <string name="detail_more_like_this_powered_by_tmdb">Захранвано от TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">Захранвано от Trakt</string>
@@ -1435,9 +1434,7 @@
     <string name="person_died">Починал %1$s</string>
     <string name="person_known_for">Известен с: %1$s</string>
     <string name="person_latest">Последни</string>
-    <string name="person_load_failed">Не можаха да се заредят детайлите за %1$s</string>
     <string name="person_popular">Популярни</string>
-    <string name="person_something_wrong">Нещо се обърка</string>
     <string name="person_upcoming">Предстоящи</string>
     <string name="pin_backspace">Изтрий</string>
     <string name="pin_cancel">Отказ</string>
@@ -1561,9 +1558,7 @@
     <string name="continue_watching_up_next_episode">Следва • С%1$dЕ%2$d</string>
     <string name="detail_logo_content_description">Лого на %1$s</string>
     <string name="details_comments_load_failed">Коментарите не можаха да се заредят</string>
-    <string name="details_load_failed_all_addons">Детайлите не можаха да се заредят от нито една добавка.</string>
     <string name="details_networks">Мрежи</string>
-    <string name="details_no_addon_meta">Никоя добавка не предоставя метаданни за това съдържание.</string>
     <string name="download_failed">Изтеглянето не бе успешно</string>
     <string name="downloads_channel_description">Показва напредъка и контролите на изтеглянето на живо.</string>
     <string name="downloads_channel_name">Изтегляния</string>

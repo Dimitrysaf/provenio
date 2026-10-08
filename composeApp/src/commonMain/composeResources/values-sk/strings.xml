@@ -1115,7 +1115,6 @@
     <string name="details_actions_menu_label">Ďalšie akcie</string>
     <string name="details_check_connection">Skontrolujte pripojenie Wi-Fi alebo mobilné dáta a skúste znova.</string>
     <string name="details_director">Režisér</string>
-    <string name="details_failed_to_load">Nepodarilo sa načítať</string>
     <string name="details_more_like_this">Podobné tituly</string>
     <string name="detail_more_like_this_powered_by_tmdb">Poháňané TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">Poháňané Trakt</string>
@@ -1182,9 +1181,7 @@
     <string name="person_died">Zomrel %1$s</string>
     <string name="person_known_for">Známy pre: %1$s</string>
     <string name="person_latest">Najnovšie</string>
-    <string name="person_load_failed">Nepodarilo sa načítať podrobnosti pre %1$s</string>
     <string name="person_popular">Populárne</string>
-    <string name="person_something_wrong">Niečo sa pokazilo</string>
     <string name="person_upcoming">Nadchádzajúce</string>
     <string name="pin_backspace">Vymazať</string>
     <string name="pin_cancel">Zrušiť</string>
@@ -1296,9 +1293,7 @@
     <string name="continue_watching_up_next_episode">Ďalšie na rade • S%1$dE%2$d</string>
     <string name="detail_logo_content_description">Logo %1$s</string>
     <string name="details_comments_load_failed">Nepodarilo sa načítať komentáre</string>
-    <string name="details_load_failed_all_addons">Nepodarilo sa načítať podrobnosti z žiadneho doplnku.</string>
     <string name="details_networks">Siete</string>
-    <string name="details_no_addon_meta">Žiadny doplnok neposkytuje metadáta pre tento obsah.</string>
     <string name="download_failed">Sťahovanie zlyhalo</string>
     <string name="downloads_channel_description">Zobrazuje živý postup sťahovania a ovládacie prvky.</string>
     <string name="downloads_channel_name">Stiahnuté</string>

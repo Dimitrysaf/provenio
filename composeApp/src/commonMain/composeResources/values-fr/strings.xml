@@ -1159,7 +1159,6 @@
     <string name="details_actions_menu_label">Plus d’actions</string>
     <string name="details_check_connection">Vérifiez votre connexion Wi‑Fi ou données mobiles et réessayez.</string>
     <string name="details_director">Réalisateur</string>
-    <string name="details_failed_to_load">Échec du chargement</string>
     <string name="details_more_like_this">À voir aussi</string>
     <string name="detail_more_like_this_powered_by_tmdb">Données fournies par TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">Données fournies par Trakt</string>
@@ -1226,9 +1225,7 @@
     <string name="person_died">Décédé(e) le %1$s</string>
     <string name="person_known_for">Connu(e) pour : %1$s</string>
     <string name="person_latest">Récent</string>
-    <string name="person_load_failed">Impossible de charger les détails de %1$s</string>
     <string name="person_popular">Populaire</string>
-    <string name="person_something_wrong">Une erreur est survenue</string>
     <string name="person_upcoming">À venir</string>
     <string name="pin_backspace">Effacer</string>
     <string name="pin_cancel">Annuler</string>
@@ -1339,9 +1336,7 @@
     <string name="continue_watching_up_next_episode">À suivre • S%1$dE%2$d</string>
     <string name="detail_logo_content_description">Logo de %1$s</string>
     <string name="details_comments_load_failed">Impossible de charger les commentaires</string>
-    <string name="details_load_failed_all_addons">Impossible de charger les détails depuis les addons disponibles.</string>
     <string name="details_networks">Chaînes</string>
-    <string name="details_no_addon_meta">Aucun addon ne fournit de métadonnées pour ce contenu.</string>
     <string name="download_failed">Échec du téléchargement</string>
     <string name="downloads_channel_description">Affiche la progression en direct et les contrôles de téléchargement.</string>
     <string name="downloads_channel_name">Téléchargements</string>

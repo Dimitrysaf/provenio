@@ -1384,7 +1384,6 @@
     <string name="details_actions_menu_label">Meer acties</string>
     <string name="details_check_connection">Controleer je Wi-Fi- of mobiele dataverbinding en probeer het opnieuw.</string>
     <string name="details_director">Regisseur</string>
-    <string name="details_failed_to_load">Laden mislukt</string>
     <string name="details_more_like_this">Meer zoals dit</string>
     <string name="detail_more_like_this_powered_by_tmdb">Mogelijk gemaakt door TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">Mogelijk gemaakt door Trakt</string>
@@ -1452,9 +1451,7 @@
     <string name="person_died">Overleden op %1$s</string>
     <string name="person_known_for">Bekend van: %1$s</string>
     <string name="person_latest">Nieuwste</string>
-    <string name="person_load_failed">Kon details voor %1$s niet laden</string>
     <string name="person_popular">Populair</string>
-    <string name="person_something_wrong">Er is iets misgegaan</string>
     <string name="person_upcoming">Binnenkort</string>
     <string name="pin_backspace">Backspace</string>
     <string name="pin_cancel">Annuleren</string>
@@ -1580,9 +1577,7 @@
     <string name="continue_watching_up_next_episode">Volgende • S%1$dE%2$d</string>
     <string name="detail_logo_content_description">%1$s-logo</string>
     <string name="details_comments_load_failed">Laden van reacties mislukt</string>
-    <string name="details_load_failed_all_addons">Kon details van geen enkele add-on laden.</string>
     <string name="details_networks">Netwerken</string>
-    <string name="details_no_addon_meta">Geen add-on levert meta voor deze inhoud.</string>
     <string name="download_failed">Download mislukt</string>
     <string name="downloads_channel_description">Toont live downloadvoortgang en bediening.</string>
     <string name="downloads_channel_name">Downloads</string>

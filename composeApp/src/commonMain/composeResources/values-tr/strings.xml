@@ -1285,7 +1285,6 @@
     <string name="details_actions_menu_label">Diğer eylemler</string>
     <string name="details_check_connection">Wi-Fi veya mobil veri bağlantını kontrol edip tekrar dene.</string>
     <string name="details_director">Yönetmen</string>
-    <string name="details_failed_to_load">Yüklenemedi</string>
     <string name="details_more_like_this">Buna benzerler</string>
     <string name="detail_more_like_this_powered_by_tmdb">TMDB altyapısıyla</string>
     <string name="detail_more_like_this_powered_by_trakt">Trakt altyapısıyla</string>
@@ -1352,9 +1351,7 @@
     <string name="person_died">Ölüm %1$s</string>
     <string name="person_known_for">Bilinen işi: %1$s</string>
     <string name="person_latest">En yeni</string>
-    <string name="person_load_failed">%1$s detayları yüklenemedi</string>
     <string name="person_popular">Popüler</string>
-    <string name="person_something_wrong">Bir şeyler ters gitti</string>
     <string name="person_upcoming">Yakında</string>
     <string name="pin_backspace">Sil</string>
     <string name="pin_cancel">Vazgeç</string>
@@ -1478,9 +1475,7 @@
     <string name="continue_watching_up_next_episode">Sıradaki • S%1$dB%2$d</string>
     <string name="detail_logo_content_description">%1$s logosu</string>
     <string name="details_comments_load_failed">Yorumlar yüklenemedi</string>
-    <string name="details_load_failed_all_addons">Detaylar hiçbir eklentiden yüklenemedi.</string>
     <string name="details_networks">Kanallar</string>
-    <string name="details_no_addon_meta">Bu içerik için meta sağlayan eklenti yok.</string>
     <string name="download_failed">İndirme olmadı</string>
     <string name="downloads_channel_description">Canlı indirme ilerlemesini ve kontrolleri gösterir.</string>
     <string name="downloads_channel_name">İndirilenler</string>

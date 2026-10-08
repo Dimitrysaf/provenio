@@ -1053,7 +1053,6 @@
     <string name="catalog_empty_title">Nie znaleziono tytułów</string>
     <string name="details_check_connection">Sprawdź połączenie Wi-Fi lub danych mobilnych i spróbuj ponownie.</string>
     <string name="details_director">Reżyser</string>
-    <string name="details_failed_to_load">Nie udało się załadować</string>
     <string name="details_more_like_this">Podobne</string>
     <string name="details_seasons">Sezony</string>
     <string name="details_series_missing_numbers">Ten dodatek zwrócił filmy dla serialu, ale żaden nie zawierał numerów sezonów ani odcinków.</string>
@@ -1114,9 +1113,7 @@
     <string name="person_died">Zmarł %1$s</string>
     <string name="person_known_for">Znany z: %1$s</string>
     <string name="person_latest">Najnowsze</string>
-    <string name="person_load_failed">Nie można załadować szczegółów dla %1$s</string>
     <string name="person_popular">Popularne</string>
-    <string name="person_something_wrong">Coś poszło nie tak</string>
     <string name="person_upcoming">Nadchodzące</string>
     <string name="pin_backspace">Cofnij</string>
     <string name="pin_cancel">Anuluj</string>
@@ -1226,9 +1223,7 @@
     <string name="continue_watching_up_next_episode">Następny • S%1$dE%2$d</string>
     <string name="detail_logo_content_description">Logo %1$s</string>
     <string name="details_comments_load_failed">Nie udało się załadować komentarzy</string>
-    <string name="details_load_failed_all_addons">Nie można załadować szczegółów z żadnego dodatku.</string>
     <string name="details_networks">Stacje</string>
-    <string name="details_no_addon_meta">Żaden dodatek nie dostarcza metadanych dla tej treści.</string>
     <string name="download_failed">Pobieranie nie powiodło się</string>
     <string name="downloads_channel_description">Pokazuje postęp pobierania na żywo i kontrolki.</string>
     <string name="downloads_channel_name">Pobrane</string>

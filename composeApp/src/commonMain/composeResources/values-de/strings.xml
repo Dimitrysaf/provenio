@@ -876,7 +876,6 @@
     <string name="catalog_empty_title">Keine Titel gefunden</string>
     <string name="details_check_connection">Überprüfe deine WLAN- oder Mobilfunkverbindung und versuche es erneut.</string>
     <string name="details_director">Regisseur</string>
-    <string name="details_failed_to_load">Laden fehlgeschlagen</string>
     <string name="details_more_like_this">Mehr davon</string>
     <string name="details_seasons">Staffeln</string>
     <string name="details_series_missing_numbers">Dieses Addon hat Videos für die Serie zurückgegeben, aber keines enthielt Staffel- oder Episodennummern.</string>
@@ -936,9 +935,7 @@
     <string name="person_died">Gestorben am %1$s</string>
     <string name="person_known_for">Bekannt für: %1$s</string>
     <string name="person_latest">Neueste</string>
-    <string name="person_load_failed">Details für %1$s konnten nicht geladen werden</string>
     <string name="person_popular">Beliebt</string>
-    <string name="person_something_wrong">Etwas ist schiefgelaufen</string>
     <string name="person_upcoming">Demnächst</string>
     <string name="pin_backspace">Rücktaste</string>
     <string name="pin_cancel">Abbrechen</string>
@@ -1032,9 +1029,7 @@
     <string name="continue_watching_up_next_episode">Als Nächstes • S%1$dE%2$d</string>
     <string name="detail_logo_content_description">%1$s-Logo</string>
     <string name="details_comments_load_failed">Kommentare konnten nicht geladen werden</string>
-    <string name="details_load_failed_all_addons">Details konnten von keinem Addon geladen werden.</string>
     <string name="details_networks">Sender</string>
-    <string name="details_no_addon_meta">Kein Addon liefert Metadaten für diesen Inhalt.</string>
     <string name="download_failed">Download fehlgeschlagen</string>
     <string name="downloads_channel_description">Zeigt Live-Download-Fortschritt und -Steuerung an.</string>
     <string name="downloads_channel_name">Downloads</string>

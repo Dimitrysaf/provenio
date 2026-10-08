@@ -1116,7 +1116,6 @@
     <string name="catalog_empty_title">Nenhum título encontrado</string>
     <string name="details_check_connection">Verifica a tua ligação Wi-Fi ou de dados móveis e tenta novamente.</string>
     <string name="details_director">Realização</string>
-    <string name="details_failed_to_load">Falha ao carregar</string>
     <string name="details_more_like_this">Títulos semelhantes</string>
     <string name="detail_more_like_this_powered_by_tmdb">Com dados do TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">Com dados do Trakt</string>
@@ -1183,9 +1182,7 @@
     <string name="person_died">Falecimento: %1$s</string>
     <string name="person_known_for">Conhecido por: %1$s</string>
     <string name="person_latest">Mais recente</string>
-    <string name="person_load_failed">Não foi possível carregar os detalhes de %1$s</string>
     <string name="person_popular">Popular</string>
-    <string name="person_something_wrong">Algo correu mal</string>
     <string name="person_upcoming">Brevemente</string>
     <string name="pin_backspace">Apagar</string>
     <string name="pin_cancel">Cancelar</string>
@@ -1297,9 +1294,7 @@
     <string name="continue_watching_up_next_episode">A seguir • T%1$dE%2$d</string>
     <string name="detail_logo_content_description">Logótipo de %1$s</string>
     <string name="details_comments_load_failed">Falha ao carregar os comentários</string>
-    <string name="details_load_failed_all_addons">Não foi possível carregar os detalhes de nenhum addon.</string>
     <string name="details_networks">Canais/Redes</string>
-    <string name="details_no_addon_meta">Nenhum addon fornece metadados para este conteúdo.</string>
     <string name="download_failed">Falha na transferência</string>
     <string name="downloads_channel_description">Mostra o progresso e os controlos de transferências em tempo real.</string>
     <string name="downloads_channel_name">Transferências</string>

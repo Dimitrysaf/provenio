@@ -84,16 +84,17 @@ object TmdbMetadataService {
     suspend fun fetchPersonDetail(
         personId: Int,
         preferCrewCredits: Boolean? = null,
-    ): PersonDetail? = withContext(Dispatchers.Default) {
+    ): Result<PersonDetail> = withContext(Dispatchers.Default) {
         val settings = TmdbSettingsRepository.snapshot()
         val language = normalizeTmdbLanguage(settings.language)
         val cacheKey = personCacheKey(personId, preferCrewCredits, language)
-        personCache[cacheKey]?.let { return@withContext it }
+        personCache[cacheKey]?.let { return@withContext Result.success(it) }
 
         try {
             val (person, credits, images) = coroutineScope {
                 val personDeferred = async {
-                    fetch<TmdbPersonResponse>(
+                    // Throws, so the person page can say why TMDB failed.
+                    fetchOrThrow<TmdbPersonResponse>(
                         endpoint = "person/$personId",
                         query = mapOf("language" to language),
                     )
@@ -111,8 +112,6 @@ object TmdbMetadataService {
                 }
                 Triple(personDeferred.await(), creditsDeferred.await(), imagesDeferred.await())
             }
-
-            if (person == null) return@withContext null
 
             val isCjkLanguage = language.startsWith("ja") ||
                 language.startsWith("ko") ||
@@ -239,10 +238,11 @@ object TmdbMetadataService {
                 ),
             )
             personCache[cacheKey] = detail
-            detail
+            Result.success(detail)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             log.w(e) { "Failed to fetch person detail for $personId" }
-            null
+            Result.failure(e)
         }
     }
 
@@ -1218,6 +1218,15 @@ object TmdbMetadataService {
             episodeCache[cacheKey] = merged
         }
         merged
+    }
+
+    private suspend inline fun <reified T> fetchOrThrow(
+        endpoint: String,
+        query: Map<String, String> = emptyMap(),
+    ): T {
+        val apiKey = TmdbApiKey.current().takeIf(String::isNotBlank) ?: error("No TMDB API key")
+        val url = buildTmdbUrl(endpoint = endpoint, apiKey = apiKey, query = query)
+        return json.decodeFromString<T>(httpGetText(url))
     }
 
     private suspend inline fun <reified T> fetch(

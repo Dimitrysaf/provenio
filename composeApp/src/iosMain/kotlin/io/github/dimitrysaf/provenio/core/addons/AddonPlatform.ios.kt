@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.addons
 
+import io.github.dimitrysaf.provenio.core.network.HttpStatusException
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.darwin.Darwin
 import io.ktor.client.plugins.HttpTimeout
@@ -88,7 +89,7 @@ actual suspend fun httpGetText(url: String): String =
         .let { response ->
             val payload = response.bodyAsText()
             if (!response.status.isSuccess()) {
-                error(runBlocking { getString(Res.string.network_request_failed_http, response.status.value) })
+                throw HttpStatusException(response.status.value, runBlocking { getString(Res.string.network_request_failed_http, response.status.value) })
             }
             if (payload.isBlank()) {
                 throw IllegalStateException(runBlocking { getString(Res.string.network_empty_response_body) })
@@ -106,7 +107,7 @@ actual suspend fun httpPostJson(url: String, body: String): String =
         .let { response ->
             val payload = response.bodyAsText()
             if (!response.status.isSuccess()) {
-                error(runBlocking { getString(Res.string.network_request_failed_http, response.status.value) })
+                throw HttpStatusException(response.status.value, runBlocking { getString(Res.string.network_request_failed_http, response.status.value) })
             }
             if (payload.isBlank()) {
                 throw IllegalStateException(runBlocking { getString(Res.string.network_empty_response_body) })
@@ -128,7 +129,7 @@ actual suspend fun httpGetTextWithHeaders(
         .let { response ->
             val payload = response.bodyAsText()
             if (!response.status.isSuccess()) {
-                error(runBlocking { getString(Res.string.network_request_failed_http, response.status.value) })
+                throw HttpStatusException(response.status.value, runBlocking { getString(Res.string.network_request_failed_http, response.status.value) })
             }
             if (payload.isBlank()) {
                 throw IllegalStateException(runBlocking { getString(Res.string.network_empty_response_body) })
@@ -153,7 +154,7 @@ actual suspend fun httpPostJsonWithHeaders(
         .let { response ->
             val payload = response.bodyAsText()
             if (!response.status.isSuccess()) {
-                error(runBlocking { getString(Res.string.network_request_failed_http, response.status.value) })
+                throw HttpStatusException(response.status.value, runBlocking { getString(Res.string.network_request_failed_http, response.status.value) })
             }
             if (payload.isBlank()) {
                 throw IllegalStateException(runBlocking { getString(Res.string.network_empty_response_body) })

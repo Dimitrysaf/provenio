@@ -1367,7 +1367,6 @@
     <string name="details_actions_menu_label">Más acciones</string>
     <string name="details_check_connection">Comprueba tu conexión Wi‑Fi o de datos móviles e inténtalo de nuevo.</string>
     <string name="details_director">Director</string>
-    <string name="details_failed_to_load">No se pudo cargar</string>
     <string name="details_more_like_this">Más como esto</string>
     <string name="detail_more_like_this_powered_by_tmdb">Desarrollado por TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">Desarrollado por Trakt</string>
@@ -1435,9 +1434,7 @@
     <string name="person_died">Murió %1$s</string>
     <string name="person_known_for">Conocido por: %1$s</string>
     <string name="person_latest">Más reciente</string>
-    <string name="person_load_failed">No se pudieron cargar los detalles de %1$s</string>
     <string name="person_popular">Popular</string>
-    <string name="person_something_wrong">Algo salió mal</string>
     <string name="person_upcoming">Próximamente</string>
     <string name="pin_backspace">Borrar</string>
     <string name="pin_cancel">Cancelar</string>
@@ -1561,9 +1558,7 @@
     <string name="continue_watching_up_next_episode">A continuación • T%1$dE%2$d</string>
     <string name="detail_logo_content_description">logotipo de %1$s</string>
     <string name="details_comments_load_failed">No se pudieron cargar los comentarios</string>
-    <string name="details_load_failed_all_addons">No se pudieron cargar los detalles desde ningún complemento.</string>
     <string name="details_networks">Cadenas</string>
-    <string name="details_no_addon_meta">Ningún complemento proporciona metadatos para este contenido.</string>
     <string name="download_failed">Descarga fallida</string>
     <string name="downloads_channel_description">Muestra el progreso en vivo y los controles de descarga.</string>
     <string name="downloads_channel_name">Descargas</string>

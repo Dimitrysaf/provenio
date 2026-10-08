@@ -1387,7 +1387,6 @@
     <string name="details_actions_menu_label">Thao tác khác</string>
     <string name="details_check_connection">Kiểm tra kết nối Wi-Fi hoặc dữ liệu di động rồi thử lại</string>
     <string name="details_director">Đạo diễn</string>
-    <string name="details_failed_to_load">Không thể tải</string>
     <string name="details_more_like_this">Nội dung tương tự</string>
     <string name="detail_more_like_this_powered_by_tmdb">Cung cấp bởi TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">Cung cấp bởi Trakt</string>
@@ -1455,9 +1454,7 @@
     <string name="person_died">Mất %1$s</string>
     <string name="person_known_for">Nổi tiếng với: %1$s</string>
     <string name="person_latest">Mới nhất</string>
-    <string name="person_load_failed">Không thể tải chi tiết của %1$s</string>
     <string name="person_popular">Phổ biến</string>
-    <string name="person_something_wrong">Đã xảy ra lỗi</string>
     <string name="person_upcoming">Sắp chiếu</string>
     <string name="pin_backspace">Xóa ký tự trước</string>
     <string name="pin_cancel">Huỷ</string>
@@ -1583,9 +1580,7 @@
     <string name="continue_watching_up_next_episode">Tiếp theo • M%1$dT%2$d</string>
     <string name="detail_logo_content_description">Logo của %1$s</string>
     <string name="details_comments_load_failed">Không thể tải bình luận</string>
-    <string name="details_load_failed_all_addons">Không thể tải thông tin từ bất kỳ tiện ích nào</string>
     <string name="details_networks">Đơn vị phát sóng</string>
-    <string name="details_no_addon_meta">Không có tiện ích nào cung cấp thông tin cho nội dung này</string>
     <string name="download_failed">Tải xuống thất bại</string>
     <string name="downloads_channel_description">Hiển thị tiến trình tải xuống và các điều khiển theo thời gian thực</string>
     <string name="downloads_channel_name">Tải xuống</string>

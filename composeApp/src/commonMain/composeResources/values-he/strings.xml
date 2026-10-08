@@ -530,7 +530,6 @@
     <string name="app_exit_title">יציאה מהאפליקציה</string>
     <string name="catalog_empty_message">קטלוג זה לא החזיר פריטים.</string>
     <string name="details_director">במאי</string>
-    <string name="details_failed_to_load">הטעינה נכשלה</string>
     <string name="details_more_like_this">עוד כמו זה</string>
     <string name="detail_more_like_this_powered_by_tmdb">מבוסס על TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">מבוסס על Trakt</string>

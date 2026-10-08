@@ -193,6 +193,14 @@ fun HomeScreen(
     val resolvedBadgeInputs = remember(activeProfileId, effectiveWatchProgressSource) {
         mutableStateOf<Triple<WatchedUiState, List<WatchProgressEntry>, String>?>(null)
     }
+    // Series already resolved for badgeProgressInputs, so returning to Home only retries the
+    // series that failed instead of asking the add-ons for every series again.
+    val badgeProgressInputs = remember(activeProfileId, effectiveWatchProgressSource) {
+        mutableStateOf<Triple<WatchedUiState, List<WatchProgressEntry>, String>?>(null)
+    }
+    val resolvedBadgeSeriesIds = remember(activeProfileId, effectiveWatchProgressSource) {
+        mutableStateOf<Set<String>>(emptySet())
+    }
     ScreenActivityEffect(
         activeProfileId,
         effectiveWatchProgressSource,
@@ -203,11 +211,17 @@ fun HomeScreen(
         val inputs = Triple(watchedUiState, watchProgressUiState.entries, CurrentDateProvider.todayIsoDate())
         if (resolvedBadgeInputs.value == inputs) return@ScreenActivityEffect
         delay(BadgeResolutionSettleMillis)
+        if (badgeProgressInputs.value != inputs) {
+            badgeProgressInputs.value = inputs
+            resolvedBadgeSeriesIds.value = emptySet()
+        }
         if (
             resolveWatchedBadgesBulk(
                 watchedItems = watchedUiState.items,
                 progressEntries = watchProgressUiState.entries,
                 todayIsoDate = inputs.third,
+                alreadyResolvedSeriesIds = resolvedBadgeSeriesIds.value,
+                onSeriesResolved = { seriesId -> resolvedBadgeSeriesIds.value += seriesId },
             )
         ) {
             resolvedBadgeInputs.value = inputs

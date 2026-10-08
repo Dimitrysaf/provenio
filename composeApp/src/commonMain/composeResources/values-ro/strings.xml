@@ -1167,7 +1167,6 @@
     <string name="details_actions_menu_label">Mai multe acțiuni</string>
     <string name="details_check_connection">Verifică conexiunea Wi-Fi sau de date mobile și încearcă din nou.</string>
     <string name="details_director">Regizor</string>
-    <string name="details_failed_to_load">Încărcarea a eșuat</string>
     <string name="details_more_like_this">Mai multe de acest gen</string>
     <string name="detail_more_like_this_powered_by_tmdb">Oferit de TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">Oferit de Trakt</string>
@@ -1234,9 +1233,7 @@
     <string name="person_died">Decedat pe %1$s</string>
     <string name="person_known_for">Cunoscut pentru: %1$s</string>
     <string name="person_latest">Cele mai recente</string>
-    <string name="person_load_failed">Nu s-au putut încărca detaliile pentru %1$s</string>
     <string name="person_popular">Populare</string>
-    <string name="person_something_wrong">Ceva nu a mers bine</string>
     <string name="person_upcoming">Viitoare</string>
     <string name="pin_backspace">Șterge</string>
     <string name="pin_cancel">Anulează</string>
@@ -1349,9 +1346,7 @@
     <string name="continue_watching_up_next_episode">Următorul • S%1$dE%2$d</string>
     <string name="detail_logo_content_description">Siglă %1$s</string>
     <string name="details_comments_load_failed">Nu s-au putut încărca comentariile</string>
-    <string name="details_load_failed_all_addons">Nu s-au putut încărca detaliile din nicio extensie.</string>
     <string name="details_networks">Rețele</string>
-    <string name="details_no_addon_meta">Nicio extensie nu oferă metadate pentru acest conținut.</string>
     <string name="download_failed">Descărcarea a eșuat</string>
     <string name="downloads_channel_description">Afișează progresul live și comenzile pentru descărcări.</string>
     <string name="downloads_channel_name">Descărcări</string>

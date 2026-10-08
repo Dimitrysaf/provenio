@@ -1005,7 +1005,6 @@
     <string name="catalog_empty_title">Ingen titler funnet</string>
     <string name="details_check_connection">Sjekk Wi-Fi eller mobildata og prøv igjen.</string>
     <string name="details_director">Regissør</string>
-    <string name="details_failed_to_load">Kunne ikke laste</string>
     <string name="details_more_like_this">Mer som dette</string>
     <string name="details_seasons">Sesonger</string>
     <string name="details_series_missing_numbers">Dette tillegget returnerte videoer for serien, men ingen inkluderte sesong- eller episodenummer.</string>
@@ -1065,9 +1064,7 @@
     <string name="person_died">Døde %1$s</string>
     <string name="person_known_for">Kjent for: %1$s</string>
     <string name="person_latest">Nyeste</string>
-    <string name="person_load_failed">Kunne ikke laste detaljer for %1$s</string>
     <string name="person_popular">Populær</string>
-    <string name="person_something_wrong">Noe gikk galt</string>
     <string name="person_upcoming">Kommende</string>
     <string name="pin_backspace">Slett</string>
     <string name="pin_cancel">Avbryt</string>
@@ -1175,9 +1172,7 @@
     <string name="continue_watching_up_next_episode">Neste • S%1$dE%2$d</string>
     <string name="detail_logo_content_description">%1$s logo</string>
     <string name="details_comments_load_failed">Kunne ikke laste kommentarer</string>
-    <string name="details_load_failed_all_addons">Kunne ikke laste detaljer fra noen tillegg.</string>
     <string name="details_networks">Nettverk</string>
-    <string name="details_no_addon_meta">Ingen tillegg gir meta for dette innholdet.</string>
     <string name="download_failed">Nedlasting mislyktes</string>
     <string name="downloads_channel_description">Viser live nedlastingsfremdrift og kontroller.</string>
     <string name="downloads_channel_name">Nedlastinger</string>

@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.core.metadata
 
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
+import io.github.dimitrysaf.provenio.core.network.LoadFailure
 import io.github.dimitrysaf.provenio.core.streams.StreamItem
 
 data class MetaDetails(
@@ -106,6 +107,15 @@ data class MetaVideo(
 data class MetaDetailsUiState(
     val isLoading: Boolean = false,
     val meta: MetaDetails? = null,
-    val errorMessage: String? = null,
+    val failure: MetaLoadFailure? = null,
     val requestKey: String? = null,
 )
+
+/** Why a title's details could not be loaded. Nothing here is kept once the user leaves or retries. */
+sealed interface MetaLoadFailure {
+    /** No enabled add-on offers details for this kind of title. */
+    data object NoMetaAddon : MetaLoadFailure
+
+    /** Every add-on that could have the title failed; [failures] has one entry per add-on. */
+    data class AddonsFailed(val failures: List<LoadFailure>) : MetaLoadFailure
+}

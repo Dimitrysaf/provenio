@@ -1141,7 +1141,6 @@
     <string name="details_actions_menu_label">Další akce</string>
     <string name="details_check_connection">Zkontrolujte své připojení k Wi-Fi nebo mobilním datům a zkuste to znovu.</string>
     <string name="details_director">Režisér</string>
-    <string name="details_failed_to_load">Nepodařilo se načíst</string>
     <string name="details_more_like_this">Podobné tituly</string>
     <string name="detail_more_like_this_powered_by_tmdb">Poháněno TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">Poháněno Trakt</string>
@@ -1208,9 +1207,7 @@
     <string name="person_died">Zemřel/a %1$s</string>
     <string name="person_known_for">Známý/á pro: %1$s</string>
     <string name="person_latest">Nejnovější</string>
-    <string name="person_load_failed">Nelze načíst podrobnosti pro %1$s</string>
     <string name="person_popular">Populární</string>
-    <string name="person_something_wrong">Něco se pokazilo</string>
     <string name="person_upcoming">Nadcházející</string>
     <string name="pin_backspace">Zpět</string>
     <string name="pin_cancel">Zrušit</string>
@@ -1323,9 +1320,7 @@
     <string name="continue_watching_up_next_episode">Další na řadě • S%1$dE%2$d</string>
     <string name="detail_logo_content_description">Logo %1$s</string>
     <string name="details_comments_load_failed">Nepodařilo se načíst komentáře</string>
-    <string name="details_load_failed_all_addons">Nepodařilo se načíst podrobnosti z žádného doplňku.</string>
     <string name="details_networks">Sítě</string>
-    <string name="details_no_addon_meta">Žádný doplněk neposkytuje metadata pro tento obsah.</string>
     <string name="download_failed">Stahování selhalo</string>
     <string name="downloads_channel_description">Zobrazuje živý průběh a ovládání stahování.</string>
     <string name="downloads_channel_name">Stažené položky</string>

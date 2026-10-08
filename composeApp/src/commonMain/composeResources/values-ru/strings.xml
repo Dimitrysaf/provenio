@@ -1367,7 +1367,6 @@
     <string name="details_actions_menu_label">Дополнительные действия</string>
     <string name="details_check_connection">Проверьте подключение к Wi-Fi или мобильной сети и повторите попытку.</string>
     <string name="details_director">Режиссер</string>
-    <string name="details_failed_to_load">Не удалось загрузить</string>
     <string name="details_more_like_this">Больше подобного</string>
     <string name="detail_more_like_this_powered_by_tmdb">При поддержке TMDB</string>
     <string name="detail_more_like_this_powered_by_trakt">При поддержке Trakt</string>
@@ -1435,9 +1434,7 @@
     <string name="person_died">Умер %1$s</string>
     <string name="person_known_for">Известен: %1$s</string>
     <string name="person_latest">Последние</string>
-    <string name="person_load_failed">Не удалось загрузить подробную информацию о %1$s.</string>
     <string name="person_popular">Популярный</string>
-    <string name="person_something_wrong">Что-то пошло не так</string>
     <string name="person_upcoming">Предстоящие</string>
     <string name="pin_backspace">Backspace</string>
     <string name="pin_cancel">Отмена</string>
@@ -1561,9 +1558,7 @@
     <string name="continue_watching_up_next_episode">Далее • S%1$dE%2$d</string>
     <string name="detail_logo_content_description">Логотип %1$s</string>
     <string name="details_comments_load_failed">Не удалось загрузить комментарии.</string>
-    <string name="details_load_failed_all_addons">Не удалось загрузить данные из какого-либо дополнения.</string>
     <string name="details_networks">Сети</string>
-    <string name="details_no_addon_meta">Ни один аддон не предоставляет мета для этого контента.</string>
     <string name="download_failed">Загрузка не удалась</string>
     <string name="downloads_channel_description">Показывает ход загрузки в реальном времени и элементы управления.</string>
     <string name="downloads_channel_name">Загрузки</string>

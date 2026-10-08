@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.metadata
 
+import io.github.dimitrysaf.provenio.core.network.NoContentException
 import io.github.dimitrysaf.provenio.core.trailer.youTubeWatchUrl
 import io.github.dimitrysaf.provenio.core.streams.StreamBehaviorHints
 import io.github.dimitrysaf.provenio.core.streams.StreamItem
@@ -28,7 +29,12 @@ internal object MetaDetailsParser {
         val root = json.parseToJsonElement(payload).asJsonObjectOrNull()
             ?: error("Expected top-level JSON object in response")
         val meta = root.extractMetaObject()
-            ?: error("Response did not contain a valid meta object")
+            ?: if (root["meta"] == null || root["meta"] is JsonNull) {
+                // {"meta":null} is how add-ons say they have nothing for this id.
+                throw NoContentException("Response did not contain a valid meta object")
+            } else {
+                error("Response did not contain a valid meta object")
+            }
         val links = meta.links()
         val videos = meta.videos()
 

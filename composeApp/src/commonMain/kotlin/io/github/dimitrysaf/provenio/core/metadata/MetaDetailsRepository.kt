@@ -20,13 +20,18 @@ import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktRelatedRepository
 import io.github.dimitrysaf.provenio.core.tracking.TrackingSettingsRepository
 import io.github.dimitrysaf.provenio.core.tracking.trakt.shouldUseTraktMoreLikeThis
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
+import io.github.dimitrysaf.provenio.core.network.LoadFailure
+import io.github.dimitrysaf.provenio.core.network.LoadFailureKind
+import io.github.dimitrysaf.provenio.core.network.toLoadFailure
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,10 +39,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import provenio.composeapp.generated.resources.*
-import org.jetbrains.compose.resources.getString
 
 object MetaDetailsRepository {
     private data class CachedMetaEntry(
@@ -126,9 +131,10 @@ object MetaDetailsRepository {
             val manifests = findReadyMetaManifests(type = type, id = metaLookupId)
 
             var addonMeta: MetaDetails? = null
+            var failures = emptyList<LoadFailure>()
             if (manifests.isNotEmpty()) {
                 for (attempt in 1..META_LOAD_ATTEMPTS) {
-                    addonMeta = fetchFirstAvailableMeta(manifests, type, metaLookupId) { parsed ->
+                    val attemptResult = fetchFirstAvailableMeta(manifests, type, metaLookupId) { parsed ->
                         if (activeRequestKey == requestKey && _uiState.value.meta == null) {
                             _uiState.value = MetaDetailsUiState(
                                 isLoading = true,
@@ -137,6 +143,8 @@ object MetaDetailsRepository {
                             )
                         }
                     }
+                    addonMeta = attemptResult.meta
+                    failures = attemptResult.failures
                     if (addonMeta != null || attempt == META_LOAD_ATTEMPTS) break
                     log.w { "No addon answered for type=$type id=$id, retrying" }
                     delay(META_RETRY_DELAY_MS)
@@ -179,9 +187,7 @@ object MetaDetailsRepository {
 
             if (manifests.isEmpty()) log.w { "No addon provides meta for type=$type id=$id" }
             _uiState.value = MetaDetailsUiState(
-                errorMessage = getString(
-                    if (manifests.isEmpty()) Res.string.details_no_addon_meta else Res.string.details_load_failed_all_addons,
-                ),
+                failure = if (manifests.isEmpty()) MetaLoadFailure.NoMetaAddon else MetaLoadFailure.AddonsFailed(failures),
                 requestKey = requestKey,
             )
             activeRequestKey = null
@@ -206,31 +212,40 @@ object MetaDetailsRepository {
         }
     }
 
+    private class MetaAttempt(val meta: MetaDetails?, val failures: List<LoadFailure>)
+
     /**
      * Asks every addon at once and returns the answer from the highest-priority addon that has one,
-     * so one slow or broken addon no longer holds up the others.
+     * so one slow or broken addon no longer holds up the others. Without an answer, the failures
+     * say why each addon had none.
      */
     private suspend fun fetchFirstAvailableMeta(
         manifests: List<AddonManifest>,
         type: String,
         id: String,
         onParsed: (MetaDetails) -> Unit,
-    ): MetaDetails? = coroutineScope {
+    ): MetaAttempt = coroutineScope {
         val requests = manifests.map { manifest ->
             async(Dispatchers.Default) {
                 withTimeoutOrNull(META_REQUEST_TIMEOUT_MS) { tryFetchRawMeta(manifest, type, id) }
+                    ?: MetaFetchOutcome.Failed(LoadFailure(sourceName = manifest.name, kind = LoadFailureKind.Timeout))
             }
         }
         var found: MetaDetails? = null
+        val failures = mutableListOf<LoadFailure>()
         for (request in requests) {
-            found = request.await()
+            when (val outcome = request.await()) {
+                is MetaFetchOutcome.Loaded -> found = outcome.meta
+                is MetaFetchOutcome.Failed -> failures += outcome.failure
+            }
             if (found != null) break
         }
         requests.forEach { it.cancel() }
-        found?.let { raw ->
+        val meta = found?.let { raw ->
             onParsed(raw)
             withContext(Dispatchers.Default) { enrichFetchedMeta(raw, id, includeMdbList = false) }
         }
+        MetaAttempt(meta = meta, failures = failures)
     }
 
     fun peek(type: String, id: String): MetaDetails? {
@@ -257,6 +272,29 @@ object MetaDetailsRepository {
         val requestKey = "$type:$id"
         cachedMetaByRequestKey[requestKey]?.let { return it.baseMeta }
 
+        // Callers asking for the same title at the same time share one request. Only the request
+        // in flight is shared; once it finishes, failed or not, the next caller asks again.
+        val request = inFlightFetchesLock.withLock {
+            inFlightFetches.getOrPut(requestKey) {
+                fetchScope.async {
+                    try {
+                        fetchUncached(type, id)
+                    } finally {
+                        withContext(NonCancellable) {
+                            inFlightFetchesLock.withLock { inFlightFetches.remove(requestKey) }
+                        }
+                    }
+                }
+            }
+        }
+        val result = request.await()
+        if (result != null && cacheResult) {
+            cachedMetaByRequestKey[requestKey] = CachedMetaEntry(baseMeta = result)
+        }
+        return result
+    }
+
+    private suspend fun fetchUncached(type: String, id: String): MetaDetails? {
         val metaLookupId = resolveMetaLookupId(itemId = id, itemType = type)
         val manifests = findReadyMetaManifests(type = type, id = metaLookupId)
 
@@ -266,20 +304,20 @@ object MetaDetailsRepository {
                     tryFetchMeta(manifest, type, metaLookupId, includeMdbList = false)
                 }
             }
-            if (result != null) {
-                if (cacheResult) {
-                    cachedMetaByRequestKey[requestKey] = CachedMetaEntry(baseMeta = result)
-                }
-                return result
-            }
+            if (result != null) return result
         }
 
-        return tryFetchTmdbFallbackMeta(type = type, id = id)?.also { result ->
-            if (cacheResult) {
-                cachedMetaByRequestKey[requestKey] = CachedMetaEntry(baseMeta = result)
-            }
-        }
+        return tryFetchTmdbFallbackMeta(type = type, id = id)
     }
+
+    private sealed interface MetaFetchOutcome {
+        data class Loaded(val meta: MetaDetails) : MetaFetchOutcome
+        data class Failed(val failure: LoadFailure) : MetaFetchOutcome
+    }
+
+    private val fetchScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val inFlightFetchesLock = Mutex()
+    private val inFlightFetches = mutableMapOf<String, Deferred<MetaDetails?>>()
 
     private const val FETCH_TIMEOUT_MS = 5_000L
     private const val META_REQUEST_TIMEOUT_MS = 15_000L
@@ -297,7 +335,7 @@ object MetaDetailsRepository {
         includeMdbList: Boolean,
         onParsed: ((MetaDetails) -> Unit)? = null,
     ): MetaDetails? {
-        val result = tryFetchRawMeta(manifest, type, id) ?: return null
+        val result = (tryFetchRawMeta(manifest, type, id) as? MetaFetchOutcome.Loaded)?.meta ?: return null
         onParsed?.invoke(result)
         return enrichFetchedMeta(result, id, includeMdbList)
     }
@@ -306,7 +344,7 @@ object MetaDetailsRepository {
         manifest: AddonManifest,
         type: String,
         id: String,
-    ): MetaDetails? {
+    ): MetaFetchOutcome {
         val url = buildAddonResourceUrl(
             manifestUrl = manifest.transportUrl,
             resource = "meta",
@@ -318,11 +356,18 @@ object MetaDetailsRepository {
             log.d { "Fetching meta from: $url" }
             val payload = fetchAddonResponseText(url)
             log.d { "Raw payload length=${payload.length}, first 500 chars: ${payload.take(500)}" }
-            MetaDetailsParser.parse(payload)
+            MetaFetchOutcome.Loaded(MetaDetailsParser.parse(payload))
         } catch (e: Throwable) {
             if (e is CancellationException) throw e
-            log.e(e) { "Failed to fetch/parse meta from $url (manifest=${manifest.transportUrl})" }
-            null
+            val failure = e.toLoadFailure(sourceName = manifest.name)
+            when (failure.kind) {
+                // Expected answers from a healthy add-on; a stack trace adds nothing.
+                LoadFailureKind.NotFound,
+                LoadFailureKind.RateLimited,
+                -> log.w { "Meta unavailable from $url: ${failure.kind} (${e.message})" }
+                else -> log.e(e) { "Failed to fetch/parse meta from $url (manifest=${manifest.transportUrl})" }
+            }
+            MetaFetchOutcome.Failed(failure)
         }
     }
 

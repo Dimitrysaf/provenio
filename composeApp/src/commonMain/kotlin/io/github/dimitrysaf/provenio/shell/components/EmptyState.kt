@@ -28,6 +28,9 @@ import androidx.compose.ui.unit.dp
  * Some empty states are recoverable, so one action is allowed. It is the only thing to press on
  * the page, which is what makes it a filled button rather than the flat one a settings page uses
  * for an action competing with a list.
+ *
+ * [supportingContent] sits under the message, for detail that backs it up, such as which sources
+ * failed and how.
  */
 @Composable
 fun EmptyState(
@@ -37,6 +40,7 @@ fun EmptyState(
     modifier: Modifier = Modifier,
     actionLabel: String? = null,
     onActionClick: (() -> Unit)? = null,
+    supportingContent: (@Composable () -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
@@ -63,6 +67,7 @@ fun EmptyState(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        supportingContent?.invoke()
         if (actionLabel != null && onActionClick != null) {
             Spacer(modifier = Modifier.height(8.dp))
             Button(onClick = onActionClick) {

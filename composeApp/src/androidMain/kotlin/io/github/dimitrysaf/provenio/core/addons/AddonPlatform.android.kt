@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.addons
 
+import io.github.dimitrysaf.provenio.core.network.HttpStatusException
 import android.content.Context
 import android.content.SharedPreferences
 import io.github.dimitrysaf.provenio.core.diagnostics.SentryNetworkBreadcrumbInterceptor
@@ -211,7 +212,7 @@ private suspend fun executeTextRequest(
     AddonHttpClientProvider.get().newCall(request).execute().use { response ->
         val payload = readResponseBody(response.body)
         if (!response.isSuccessful) {
-            error(runBlocking { getString(Res.string.network_request_failed_http, response.code) })
+            throw HttpStatusException(response.code, runBlocking { getString(Res.string.network_request_failed_http, response.code) })
         }
         if (payload.isBlank()) {
             throw IllegalStateException(runBlocking { getString(Res.string.network_empty_response_body) })
