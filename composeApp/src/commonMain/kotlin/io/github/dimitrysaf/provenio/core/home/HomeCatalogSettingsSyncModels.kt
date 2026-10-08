@@ -17,6 +17,8 @@ data class SyncCatalogItem(
     @SerialName("is_collection") val isCollection: Boolean = false,
     @SerialName("collection_id") val collectionId: String = "",
     val key: String = "",
+    // Absent from older versions, which kept each device's carousel sources to itself.
+    @SerialName("hero_source_enabled") val heroSourceEnabled: Boolean? = null,
 )
 
 @Serializable

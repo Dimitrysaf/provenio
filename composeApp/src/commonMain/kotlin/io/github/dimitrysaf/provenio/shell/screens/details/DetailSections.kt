@@ -25,6 +25,23 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailActi
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSecondaryAction
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailAdditionalInfoSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailCastSection
+import io.github.dimitrysaf.provenio.shell.screens.details.components.CastCell
+import io.github.dimitrysaf.provenio.shell.screens.details.components.CommentCard
+import io.github.dimitrysaf.provenio.shell.screens.details.components.LoadingCommentCard
+import io.github.dimitrysaf.provenio.shell.screens.details.components.TrailerCard
+import io.github.dimitrysaf.provenio.shell.screens.details.components.TrailerCategories
+import io.github.dimitrysaf.provenio.shell.screens.details.components.TrailerCategoryPicker
+import io.github.dimitrysaf.provenio.shell.screens.details.components.castSectionSizing
+import io.github.dimitrysaf.provenio.shell.screens.details.components.commentCardSize
+import io.github.dimitrysaf.provenio.shell.screens.details.components.trailerSectionSizing
+import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailCommentsSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailMetaInfo
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailParentsGuideSection
@@ -104,6 +121,9 @@ internal fun LazyListScope.configuredMetaSectionItems(
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
     pendingSections: Set<MetaScreenSectionKey> = emptySet(),
+    shelfGrid: DetailShelfGridContext? = null,
+    resolvedCast: List<MetaPerson> = meta.cast,
+    trailerCategories: TrailerCategories? = null,
 ) {
     val enabledItems = settings.items.filter { it.enabled }
     fun sectionHasContent(key: MetaScreenSectionKey): Boolean =
@@ -237,10 +257,131 @@ internal fun LazyListScope.configuredMetaSectionItems(
         }
     }
 
+    // As grid shelves, the sections that are rows of cards give each row its own list item.
+    fun addGridSection(section: MetaScreenSectionItem, key: String): Boolean {
+        val grid = shelfGrid ?: return false
+        when (section.key) {
+            MetaScreenSectionKey.CAST -> {
+                val sizing = castSectionSizing(grid.contentWidth.value)
+                detailShelfGrid(
+                    key = key,
+                    title = { stringResource(Res.string.settings_meta_cast) },
+                    entries = resolvedCast,
+                    cellWidth = sizing.itemWidth,
+                    spacing = sizing.avatarGap,
+                    context = grid,
+                ) { index, person ->
+                    CastCell(
+                        index = index,
+                        person = person,
+                        sizing = sizing,
+                        onCastClick = onCastClick,
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                    )
+                }
+            }
+            MetaScreenSectionKey.TRAILERS -> {
+                val categories = trailerCategories ?: return false
+                val sizing = trailerSectionSizing(grid.contentWidth.value)
+                detailShelfGrid(
+                    key = key,
+                    title = { stringResource(Res.string.detail_trailers_title) },
+                    entries = categories.selectedTrailers,
+                    cellWidth = sizing.cardWidth,
+                    spacing = sizing.cardSpacing,
+                    context = grid,
+                    headerLeading = { TrailerCategoryPicker(categories) },
+                ) { _, trailer ->
+                    TrailerCard(
+                        trailer = trailer,
+                        cardWidth = sizing.cardWidth,
+                        cornerRadius = rememberPosterCardStyleUiState().cornerRadiusDp.dp,
+                        onClick = { onTrailerClick(trailer) },
+                    )
+                }
+            }
+            MetaScreenSectionKey.COLLECTION -> detailPosterShelfGrid(
+                key = key,
+                title = { meta.collectionName.orEmpty() },
+                items = meta.collectionItems,
+                context = grid,
+                watchedKeys = watchedKeys,
+                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                onPosterClick = onOpenMeta,
+            )
+            MetaScreenSectionKey.MORE_LIKE_THIS -> detailPosterShelfGrid(
+                key = key,
+                title = { stringResource(Res.string.details_more_like_this) },
+                items = moreLikeThisItems,
+                context = grid,
+                watchedKeys = watchedKeys,
+                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                sourceLabel = {
+                    when (meta.moreLikeThisSource) {
+                        MoreLikeThisSource.TMDB -> stringResource(Res.string.detail_more_like_this_powered_by_tmdb)
+                        MoreLikeThisSource.TRAKT -> stringResource(Res.string.detail_more_like_this_powered_by_trakt)
+                        null -> null
+                    }
+                },
+                onPosterClick = onOpenMeta,
+            )
+            MetaScreenSectionKey.COMMENTS -> {
+                val size = commentCardSize(grid.contentWidth)
+                val title: @Composable () -> String = { stringResource(Res.string.detail_comments_title) }
+                when {
+                    isCommentsLoading -> detailShelfGrid(
+                        key = key,
+                        title = title,
+                        entries = List(3) { it },
+                        cellWidth = size.width,
+                        context = grid,
+                    ) { _, _ -> LoadingCommentCard(fixedSize = size) }
+                    !commentsError.isNullOrBlank() || comments.isEmpty() -> detailShelfGrid(
+                        key = key,
+                        title = title,
+                        entries = emptyList<Unit>(),
+                        cellWidth = size.width,
+                        context = grid,
+                        footer = { CommentsGridMessage(error = commentsError, onRetry = onRetryComments) },
+                    ) { _, _ -> }
+                    else -> detailShelfGrid(
+                        key = key,
+                        title = title,
+                        entries = comments,
+                        cellWidth = size.width,
+                        context = grid,
+                        footer = if (isCommentsLoadingMore || commentsCurrentPage < commentsPageCount) {
+                            {
+                                CommentsGridNextPage(
+                                    loadedCount = comments.size,
+                                    isLoadingMore = isCommentsLoadingMore,
+                                    onLoadMore = onLoadMoreComments,
+                                )
+                            }
+                        } else {
+                            null
+                        },
+                    ) { _, review ->
+                        CommentCard(
+                            review = review,
+                            onClick = { onCommentClick(review) },
+                            fixedSize = size,
+                        )
+                    }
+                }
+            }
+            else -> return false
+        }
+        return true
+    }
+
     enabledItems.forEach { section ->
         val key = "detail-section-${section.key.name}"
         when {
-            sectionHasContent(section.key) -> addStandaloneSection(section = section, key = key)
+            sectionHasContent(section.key) -> {
+                if (!addGridSection(section = section, key = key)) addStandaloneSection(section = section, key = key)
+            }
             section.key in pendingSections -> item(key = key) {
                 DetailSectionContainer(
                     horizontalPadding = contentHorizontalPadding,
@@ -253,6 +394,37 @@ internal fun LazyListScope.configuredMetaSectionItems(
                 }
             }
         }
+    }
+}
+
+/** A grid comments shelf with nothing to show: why, and a retry when loading failed. */
+@Composable
+private fun CommentsGridMessage(error: String?, onRetry: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = error?.takeIf(String::isNotBlank) ?: stringResource(Res.string.detail_comments_empty),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (!error.isNullOrBlank()) {
+            FilledTonalButton(onClick = onRetry) {
+                Text(stringResource(Res.string.action_retry))
+            }
+        }
+    }
+}
+
+/**
+ * The end of a grid comments shelf when more pages exist: reaching it loads the next page, as
+ * reaching the end of the row does, and it shows a spinner while that page loads.
+ */
+@Composable
+private fun CommentsGridNextPage(loadedCount: Int, isLoadingMore: Boolean, onLoadMore: () -> Unit) {
+    LaunchedEffect(loadedCount, isLoadingMore) {
+        if (!isLoadingMore) onLoadMore()
+    }
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        SmallLoadingSpinner(size = 24.dp)
     }
 }
 

@@ -32,10 +32,21 @@ data class HomeCatalogSettingsItem(
         get() = customTitle.ifBlank { defaultTitle }
 }
 
+/** How a shelf lays out its titles. Continue Watching is always a row, whatever this says. */
+enum class HomeShelfLayout {
+    /** Titles wrap into rows that fit the width, so the page only scrolls down. */
+    Grid,
+
+    /** One row per shelf that scrolls sideways. */
+    Horizontal,
+}
+
 data class HomeCatalogSettingsUiState(
     val heroEnabled: Boolean = true,
     val showCatalogType: Boolean = true,
     val hideUnreleasedContent: Boolean = false,
+    val shelfLayout: HomeShelfLayout = HomeShelfLayout.Grid,
+    val shelvesExpandedByDefault: Boolean = true,
     val items: List<HomeCatalogSettingsItem> = emptyList(),
 ) {
     val signature: String
@@ -68,6 +79,10 @@ private data class StoredHomeCatalogSettingsPayload(
     val heroEnabled: Boolean = true,
     val showCatalogType: Boolean = true,
     val hideUnreleasedContent: Boolean = false,
+    // How shelves look suits the device's screen, so these stay on the device and are left out
+    // of the synced payload.
+    val shelfLayout: HomeShelfLayout = HomeShelfLayout.Grid,
+    val shelvesExpandedByDefault: Boolean = true,
     val items: List<StoredHomeCatalogPreference> = emptyList(),
 )
 
@@ -96,6 +111,8 @@ object HomeCatalogSettingsRepository {
     private var heroEnabled = true
     private var showCatalogType = true
     private var hideUnreleasedContent = false
+    private var shelfLayout = HomeShelfLayout.Grid
+    private var shelvesExpandedByDefault = true
 
     fun onProfileChanged() {
         hasLoaded = false
@@ -103,6 +120,8 @@ object HomeCatalogSettingsRepository {
         heroEnabled = true
         showCatalogType = true
         hideUnreleasedContent = false
+        shelfLayout = HomeShelfLayout.Grid
+        shelvesExpandedByDefault = true
         definitions = emptyList()
         collectionDefinitions = emptyList()
         lastCatalogSync = null
@@ -120,6 +139,8 @@ object HomeCatalogSettingsRepository {
         heroEnabled = true
         showCatalogType = true
         hideUnreleasedContent = false
+        shelfLayout = HomeShelfLayout.Grid
+        shelvesExpandedByDefault = true
         _uiState.value = HomeCatalogSettingsUiState()
     }
 
@@ -192,6 +213,22 @@ object HomeCatalogSettingsRepository {
         publish()
         persist()
         HomeRepository.applyCurrentSettings()
+    }
+
+    fun setShelfLayout(layout: HomeShelfLayout) {
+        ensureLoaded()
+        if (shelfLayout == layout) return
+        shelfLayout = layout
+        publish()
+        persist()
+    }
+
+    fun setShelvesExpandedByDefault(expanded: Boolean) {
+        ensureLoaded()
+        if (shelvesExpandedByDefault == expanded) return
+        shelvesExpandedByDefault = expanded
+        publish()
+        persist()
     }
 
     fun setHideUnreleasedContent(enabled: Boolean) {
@@ -298,6 +335,8 @@ object HomeCatalogSettingsRepository {
             heroEnabled = parsedPayload.heroEnabled
             showCatalogType = parsedPayload.showCatalogType
             hideUnreleasedContent = parsedPayload.hideUnreleasedContent
+            shelfLayout = parsedPayload.shelfLayout
+            shelvesExpandedByDefault = parsedPayload.shelvesExpandedByDefault
             preferences = parsedPayload.items.associateBy { it.key }
             publish()
             return
@@ -398,6 +437,8 @@ object HomeCatalogSettingsRepository {
             heroEnabled = heroEnabled,
             showCatalogType = showCatalogType,
             hideUnreleasedContent = hideUnreleasedContent,
+            shelfLayout = shelfLayout,
+            shelvesExpandedByDefault = shelvesExpandedByDefault,
             items = items,
         )
     }
@@ -409,6 +450,8 @@ object HomeCatalogSettingsRepository {
                     heroEnabled = heroEnabled,
                     showCatalogType = showCatalogType,
                     hideUnreleasedContent = hideUnreleasedContent,
+                    shelfLayout = shelfLayout,
+                    shelvesExpandedByDefault = shelvesExpandedByDefault,
                     items = preferences.values.sortedBy { it.order },
                 ),
             ),
@@ -496,6 +539,7 @@ object HomeCatalogSettingsRepository {
                     customTitle = pref.customTitle,
                     isCollection = false,
                     key = pref.key,
+                    heroSourceEnabled = pref.heroSourceEnabled,
                 )
             }
         }
@@ -508,8 +552,8 @@ object HomeCatalogSettingsRepository {
 
     fun applyFromRemote(payload: SyncHomeCatalogPayload) {
         ensureLoaded()
-        showCatalogType = payload.showCatalogType
-        hideUnreleasedContent = payload.hideUnreleasedContent
+        // Showing the catalog type and hiding unreleased titles are how this device's Home looks,
+        // so the other device's choice is not taken.
         if (payload.items.isNotEmpty()) {
             val existingHeroState = preferences.mapValues { it.value.heroSourceEnabled }
             val remotePreferences = payload.items.associate { item ->
@@ -518,7 +562,7 @@ object HomeCatalogSettingsRepository {
                     key = key,
                     customTitle = item.customTitle,
                     enabled = item.enabled,
-                    heroSourceEnabled = existingHeroState[key] ?: true,
+                    heroSourceEnabled = item.heroSourceEnabled ?: existingHeroState[key] ?: true,
                     order = item.order,
                 )
             }

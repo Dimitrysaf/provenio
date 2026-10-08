@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.addons
 
+import io.github.dimitrysaf.provenio.core.network.EmptyResponseException
 import io.github.dimitrysaf.provenio.core.network.HttpStatusException
 import io.github.dimitrysaf.provenio.desktop.Context
 import io.github.dimitrysaf.provenio.desktop.SharedPreferences
@@ -213,7 +214,7 @@ private suspend fun executeTextRequest(
             throw HttpStatusException(response.code, runBlocking { getString(Res.string.network_request_failed_http, response.code) })
         }
         if (payload.isBlank()) {
-            throw IllegalStateException(runBlocking { getString(Res.string.network_empty_response_body) })
+            throw EmptyResponseException(runBlocking { getString(Res.string.network_empty_response_body) })
         }
         payload
     }

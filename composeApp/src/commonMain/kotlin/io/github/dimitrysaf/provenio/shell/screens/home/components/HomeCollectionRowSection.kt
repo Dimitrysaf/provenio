@@ -1,5 +1,10 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,6 +29,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.dimitrysaf.provenio.shell.components.LocalScreenActive
+import io.github.dimitrysaf.provenio.shell.components.CollapsibleShelfHeader
+import io.github.dimitrysaf.provenio.shell.components.ShelfGrid
 import io.github.dimitrysaf.provenio.shell.components.ShelfSection
 import io.github.dimitrysaf.provenio.shell.components.PosterLandscapeAspectRatio
 import io.github.dimitrysaf.provenio.shell.components.landscapePosterWidth
@@ -40,6 +47,8 @@ fun HomeCollectionRowSection(
     sectionPadding: Dp? = null,
     animateGifs: Boolean = true,
     onFolderClick: ((collectionId: String, folderId: String) -> Unit)? = null,
+    gridExpanded: Boolean? = null,
+    onToggleExpanded: () -> Unit = {},
 ) {
     if (collection.folders.isEmpty()) return
 
@@ -50,6 +59,8 @@ fun HomeCollectionRowSection(
             sectionPadding = sectionPadding,
             animateGifs = animateGifs,
             onFolderClick = onFolderClick,
+            gridExpanded = gridExpanded,
+            onToggleExpanded = onToggleExpanded,
         )
     } else {
         BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
@@ -59,6 +70,8 @@ fun HomeCollectionRowSection(
                 sectionPadding = homeSectionHorizontalPaddingForWidth(maxWidth.value),
                 animateGifs = animateGifs,
                 onFolderClick = onFolderClick,
+                gridExpanded = gridExpanded,
+                onToggleExpanded = onToggleExpanded,
             )
         }
     }
@@ -71,7 +84,38 @@ private fun HomeCollectionRowSectionContent(
     sectionPadding: Dp,
     animateGifs: Boolean,
     onFolderClick: ((collectionId: String, folderId: String) -> Unit)?,
+    gridExpanded: Boolean?,
+    onToggleExpanded: () -> Unit,
 ) {
+    // A grid shelf: its title opens and closes it, and the folders wrap instead of scrolling.
+    if (gridExpanded != null) {
+        Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            CollapsibleShelfHeader(
+                title = collection.title,
+                expanded = gridExpanded,
+                onToggle = onToggleExpanded,
+                horizontalPadding = sectionPadding,
+            )
+            AnimatedVisibility(
+                visible = gridExpanded,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                ShelfGrid(
+                    entries = collection.folders,
+                    horizontalPadding = sectionPadding,
+                    key = { folder -> "collection_${collection.id}_folder_${folder.id}" },
+                ) { folder ->
+                    CollectionFolderCard(
+                        folder = folder,
+                        animateGifs = animateGifs,
+                        onClick = onFolderClick?.let { { it(collection.id, folder.id) } },
+                    )
+                }
+            }
+        }
+        return
+    }
     ShelfSection(
         title = collection.title,
         entries = collection.folders,

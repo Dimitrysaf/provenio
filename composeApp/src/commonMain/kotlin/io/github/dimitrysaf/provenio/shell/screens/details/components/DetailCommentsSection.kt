@@ -1,6 +1,5 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
-import io.github.dimitrysaf.provenio.shell.components.horizontalWheelScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -77,8 +76,7 @@ fun DetailCommentsSection(
                 LazyRow(
                     modifier = Modifier
                         .horizontalScrollBleed(horizontalScrollPadding)
-                        .fillMaxWidth()
-                        .horizontalWheelScroll(skeletonRowState),
+                        .fillMaxWidth(),
                     state = skeletonRowState,
                     contentPadding = PaddingValues(horizontal = horizontalScrollPadding),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -114,8 +112,7 @@ fun DetailCommentsSection(
                 LazyRow(
                     modifier = Modifier
                         .horizontalScrollBleed(horizontalScrollPadding)
-                        .fillMaxWidth()
-                        .horizontalWheelScroll(listState),
+                        .fillMaxWidth(),
                     state = listState,
                     contentPadding = PaddingValues(horizontal = horizontalScrollPadding),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -142,10 +139,11 @@ fun DetailCommentsSection(
 }
 
 @Composable
-private fun CommentCard(
+internal fun CommentCard(
     review: TraktCommentReview,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    fixedSize: CommentCardSize? = null,
 ) {
     val bodyText = if (review.hasSpoilerContent) {
         stringResource(Res.string.detail_comments_spoiler_card)
@@ -154,7 +152,7 @@ private fun CommentCard(
     }
 
     BoxWithConstraints {
-        val size = commentCardSize(maxWidth)
+        val size = fixedSize ?: commentCardSize(maxWidth)
 
         Card(
             onClick = onClick,
@@ -231,9 +229,9 @@ private fun CommentChip(text: String) {
 }
 
 @Composable
-private fun LoadingCommentCard() {
+internal fun LoadingCommentCard(fixedSize: CommentCardSize? = null) {
     BoxWithConstraints {
-        val size = commentCardSize(maxWidth)
+        val size = fixedSize ?: commentCardSize(maxWidth)
 
         Card(modifier = Modifier.width(size.width).height(size.height)) {
             Column(
@@ -252,7 +250,7 @@ private fun LoadingCommentCard() {
     }
 }
 
-private data class CommentCardSize(val width: Dp, val height: Dp)
+internal data class CommentCardSize(val width: Dp, val height: Dp)
 
-private fun commentCardSize(maxWidth: Dp): CommentCardSize =
+internal fun commentCardSize(maxWidth: Dp): CommentCardSize =
     if (maxWidth >= 720.dp) CommentCardSize(340.dp, 210.dp) else CommentCardSize(280.dp, 190.dp)

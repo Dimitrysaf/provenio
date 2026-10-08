@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -53,6 +54,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -68,7 +70,12 @@ import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbMetadataService
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedRepository
 import io.github.dimitrysaf.provenio.shell.components.BackButton
-import io.github.dimitrysaf.provenio.shell.components.LoadErrorState
+import io.github.dimitrysaf.provenio.shell.components.LoadErrorDialog
+import io.github.dimitrysaf.provenio.shell.components.PageScrollbar
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterCellWidth
+import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
+import io.github.dimitrysaf.provenio.core.home.HomeShelfLayout
+import io.github.dimitrysaf.provenio.shell.components.loadErrorIcon
 import io.github.dimitrysaf.provenio.core.network.LoadFailure
 import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
 import io.github.dimitrysaf.provenio.core.network.toLoadFailure
@@ -141,7 +148,7 @@ fun PersonDetailScreen(
             onSuccess = { PersonDetailUiState.Success(it) },
             onFailure = { error ->
                 uiState.takeIf { it is PersonDetailUiState.Success }
-                    ?: PersonDetailUiState.Error(error.toLoadFailure(sourceName = "TMDB"))
+                    ?: PersonDetailUiState.Error(error.toLoadFailure(sourceName = "TMDB", request = "person/$personId"))
             },
         )
     }
@@ -159,6 +166,9 @@ fun PersonDetailScreen(
                 onBack = onBack,
             )
             is PersonDetailUiState.Error -> PersonDetailError(
+                personId = personId,
+                personName = personName,
+                profilePhoto = initialProfilePhoto,
                 failure = state.failure,
                 onBack = onBack,
                 onRetry = { loadAttempt++ },
@@ -178,9 +188,14 @@ fun PersonDetailScreen(
 internal class DetailPageMetrics(
     val horizontalPadding: Dp,
     val contentMaxWidth: Dp,
+    /** How the rails lay out as grid shelves; null while shelves are horizontal rows. */
+    val railShelfGrid: DetailShelfGridContext? = null,
 )
 
-/** A details page: the artwork carousel with the title over it, then [infoItems], with [railItems] beside them on wide screens. */
+/**
+ * A details page: the artwork carousel with the title over it, then [infoItems], with [railItems]
+ * beside them on wide screens. Without [images], the carousel shows [placeholderIcon] instead.
+ */
 @Composable
 internal fun DetailPage(
     pageKey: String,
@@ -191,31 +206,51 @@ internal fun DetailPage(
     onBack: () -> Unit,
     infoItems: LazyListScope.(DetailPageMetrics) -> Unit,
     railItems: LazyListScope.(DetailPageMetrics) -> Unit,
+    placeholderIcon: ImageVector? = null,
 ) {
     val metaScreenSettingsUiState by remember {
         MetaScreenSettingsRepository.ensureLoaded()
         MetaScreenSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
     val scroll = rememberDetailScrollState(pageKey)
+    val sidePaneListState = rememberLazyListState()
+    val shelfSettings by remember {
+        HomeCatalogSettingsRepository.uiState
+    }.collectAsStateWithLifecycle()
+    val posterCellWidth = rememberPosterCellWidth()
     var viewerIndex by remember(pageKey) { mutableStateOf<Int?>(null) }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val isTwoPane = maxWidth >= DetailTwoPaneMinWidth
         val isTablet = maxWidth >= 720.dp
         val viewportHeight = maxHeight
+        val horizontalPadding = when {
+            isTwoPane -> 24.dp
+            isTablet -> 32.dp
+            else -> 18.dp
+        }
+        val primaryPaneWeight = if (isTwoPane) DetailPrimaryPaneWeight else 1f
         val metrics = DetailPageMetrics(
-            horizontalPadding = when {
-                isTwoPane -> 24.dp
-                isTablet -> 32.dp
-                else -> 18.dp
-            },
+            horizontalPadding = horizontalPadding,
             contentMaxWidth = if (isTablet && !isTwoPane) {
                 (maxWidth * 0.6f).coerceIn(520.dp, 680.dp)
             } else {
                 Dp.Unspecified
             },
+            railShelfGrid = if (shelfSettings.shelfLayout == HomeShelfLayout.Grid) {
+                DetailShelfGridContext(
+                    // Rails fill their pane: the side pane on wide screens, the page otherwise.
+                    contentWidth = (if (isTwoPane) maxWidth * (1f - primaryPaneWeight) else maxWidth) -
+                        horizontalPadding * 2,
+                    horizontalPadding = horizontalPadding,
+                    contentMaxWidth = Dp.Unspecified,
+                    expandedByDefault = shelfSettings.shelvesExpandedByDefault,
+                    posterCellWidth = posterCellWidth,
+                )
+            } else {
+                null
+            },
         )
-        val primaryPaneWeight = if (isTwoPane) DetailPrimaryPaneWeight else 1f
         val backdropUrl = images.firstOrNull()
         val backgroundMode = metaScreenSettingsUiState.backgroundMode
 
@@ -242,6 +277,7 @@ internal fun DetailPage(
                             subtitle = subtitle,
                             images = images,
                             deceased = deceased,
+                            placeholderIcon = placeholderIcon,
                             viewportHeight = viewportHeight,
                             onOpenImage = { viewerIndex = it },
                             onHeightChanged = { scroll.heroHeightPx.intValue = it },
@@ -261,7 +297,7 @@ internal fun DetailPage(
 
                 if (isTwoPane) {
                     LazyColumn(
-                        state = rememberLazyListState(),
+                        state = sidePaneListState,
                         modifier = Modifier
                             .weight(1f - primaryPaneWeight)
                             .fillMaxHeight(),
@@ -277,6 +313,22 @@ internal fun DetailPage(
                         }
                     }
                 }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(primaryPaneWeight)
+                    .fillMaxHeight()
+                    .zIndex(1f),
+            ) {
+                PageScrollbar(state = scroll.listState, modifier = Modifier.align(Alignment.TopEnd))
+            }
+            if (isTwoPane) {
+                PageScrollbar(
+                    state = sidePaneListState,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .zIndex(1f),
+                )
             }
 
             PersonHeaderOverlay(
@@ -308,6 +360,7 @@ private fun PersonHero(
     subtitle: String?,
     images: List<String>,
     deceased: Boolean,
+    placeholderIcon: ImageVector?,
     viewportHeight: Dp,
     onOpenImage: (Int) -> Unit,
     onHeightChanged: (Int) -> Unit,
@@ -348,6 +401,7 @@ private fun PersonHero(
                         name = name,
                         subtitle = subtitle,
                         deceased = deceased,
+                        placeholderIcon = placeholderIcon,
                         layout = layout,
                         contentAlpha = { 1f },
                     )
@@ -382,6 +436,7 @@ private fun PersonHero(
                             name = name,
                             subtitle = subtitle,
                             deceased = deceased,
+                            placeholderIcon = placeholderIcon,
                             layout = layout,
                             contentAlpha = { heroItemContentAlpha(drawInfo) },
                         )
@@ -400,6 +455,7 @@ private fun PersonHeroPage(
     name: String,
     subtitle: String?,
     deceased: Boolean,
+    placeholderIcon: ImageVector?,
     layout: HomeHeroLayout,
     contentAlpha: () -> Float,
 ) {
@@ -411,7 +467,17 @@ private fun PersonHeroPage(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-            )
+                contentAlignment = Alignment.Center,
+            ) {
+                if (placeholderIcon != null) {
+                    Icon(
+                        imageVector = placeholderIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(72.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         } else {
             ShapedArtworkImage(
                 candidates = listOf(url),
@@ -630,6 +696,19 @@ private fun PersonDetailContent(
         },
         railItems = { metrics ->
             rails.forEach { (key, title, items) ->
+                val grid = metrics.railShelfGrid
+                if (grid != null) {
+                    detailPosterShelfGrid(
+                        key = key,
+                        title = { title },
+                        items = items,
+                        context = grid,
+                        watchedKeys = watchedKeys,
+                        fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                        onPosterClick = onOpenMeta,
+                    )
+                    return@forEach
+                }
                 item(key = key) {
                     DetailSectionContainer(
                         horizontalPadding = metrics.horizontalPadding,
@@ -692,6 +771,7 @@ private fun PersonDetailSkeleton(
     personName: String,
     profilePhoto: String?,
     onBack: () -> Unit,
+    placeholderIcon: ImageVector? = null,
 ) {
     val posterCardStyle = rememberPosterCardStyleUiState()
     val isLandscapeShelfMode = posterCardStyle.catalogLandscapeModeEnabled
@@ -714,6 +794,7 @@ private fun PersonDetailSkeleton(
         images = listOfNotNull(profilePhoto?.takeIf(String::isNotBlank)),
         deceased = false,
         onBack = onBack,
+        placeholderIcon = placeholderIcon,
         infoItems = { metrics ->
             item(key = "person-info") {
                 DetailSectionContainer(
@@ -801,37 +882,35 @@ private fun SkeletonLine(
     )
 }
 
+/** The person page's skeleton, with what is already known, under a dialog saying why it didn't load. */
 @Composable
 private fun PersonDetailError(
+    personId: Int,
+    personName: String,
+    profilePhoto: String?,
     failure: LoadFailure,
     onBack: () -> Unit,
     onRetry: () -> Unit,
 ) {
-    val collapsed = remember { mutableStateOf(true) }
     val networkStatusUiState by NetworkStatusRepository.uiState.collectAsStateWithLifecycle()
+    val failures = listOf(failure)
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-    ) {
-        LoadErrorState(
-            failures = listOf(failure),
-            networkCondition = networkStatusUiState.condition,
-            onRetry = {
-                NetworkStatusRepository.requestRefresh(force = true)
-                onRetry()
-            },
-            modifier = Modifier.align(Alignment.Center),
-        )
-
-        PersonHeaderOverlay(
-            title = "",
-            isHeroCollapsed = collapsed,
-            onBack = onBack,
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
+    PersonDetailSkeleton(
+        personId = personId,
+        personName = personName,
+        profilePhoto = profilePhoto,
+        onBack = onBack,
+        placeholderIcon = loadErrorIcon(failures, networkStatusUiState.condition),
+    )
+    LoadErrorDialog(
+        failures = failures,
+        networkCondition = networkStatusUiState.condition,
+        onRetry = {
+            NetworkStatusRepository.requestRefresh(force = true)
+            onRetry()
+        },
+        onDismiss = onBack,
+    )
 }
 
 private val PersonNavigationSlotSize = 48.dp

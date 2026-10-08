@@ -334,6 +334,7 @@ private fun HomeContinueWatchingSectionContent(
             key = { entry -> entry.key },
             animatePlacement = true,
             state = listState,
+            wheelScrollsRow = true,
         ) { entry ->
             val item = entry.item
             val onClick = if (entry.exiting) null else onItemClick?.let { { it(item) } }

@@ -74,6 +74,14 @@ import io.github.dimitrysaf.provenio.core.home.shouldShowInitialHomeLoading
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsItem
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
 import io.github.dimitrysaf.provenio.core.home.HomeRepository
+import io.github.dimitrysaf.provenio.core.home.HomeShelfLayout
+import io.github.dimitrysaf.provenio.shell.components.CollapsibleShelfHeader
+import io.github.dimitrysaf.provenio.shell.components.ShelfExpansion
+import io.github.dimitrysaf.provenio.shell.components.ShelfGridRow
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterCellWidth
+import io.github.dimitrysaf.provenio.shell.components.shelfGridColumns
+import io.github.dimitrysaf.provenio.shell.screens.home.components.HomePosterCard
+import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingState
 
 @Composable
 fun HomeScreen(
@@ -256,6 +264,8 @@ fun HomeScreen(
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val homeSectionPadding = homeSectionHorizontalPaddingForWidth(maxWidth.value)
         val posterCardStyle = rememberPosterCardStyleUiState()
+        val shelfCellWidth = rememberPosterCellWidth()
+        val shelfGridColumns = shelfGridColumns(maxWidth - homeSectionPadding * 2, shelfCellWidth)
         val continueWatchingLayout = rememberContinueWatchingLayout(maxWidth.value, posterCardStyle)
         val nativeBottomNavigationOverlayHeight =
             if (LocalBottomNavigationOverlayPadding.current > 0.dp) {
@@ -370,6 +380,12 @@ fun HomeScreen(
                         keyedItems = keyedEnabledHomeItems,
                         collectionsMap = collectionsMap,
                         sectionsMap = sectionsMap,
+                        catalogKeys = homeUiState.catalogKeys,
+                        attemptedCatalogKeys = homeUiState.attemptedCatalogKeys,
+                        shelfLayout = homeSettingsUiState.shelfLayout,
+                        shelvesExpandedByDefault = homeSettingsUiState.shelvesExpandedByDefault,
+                        shelfGridColumns = shelfGridColumns,
+                        shelfCellWidth = shelfCellWidth,
                         sectionPadding = homeSectionPadding,
                         animateCollectionGifs = animateCollectionGifs,
                         watchedKeys = watchedUiState.watchedKeys,
@@ -526,11 +542,26 @@ private fun HomeHeroSlot(
     }
 }
 
-// The collection and catalog rows, in the order the home settings put them.
+/**
+ * The collection and catalog rows, in the order the home settings put them.
+ *
+ * Catalogs load as Home reaches them: the first catalog not fetched yet shows a placeholder, which
+ * asks for it once it comes into view, and nothing is placed below it until it has loaded, so the
+ * page grows downward in order and catalogs nobody scrolls to are never fetched.
+ *
+ * As a grid, each row of posters is its own list item, so only the rows on screen are composed and
+ * only their artwork loads.
+ */
 private fun LazyListScope.homeRows(
     keyedItems: List<DuplicateSafeLazyEntry<HomeCatalogSettingsItem>>,
     collectionsMap: Map<String, Collection>,
     sectionsMap: Map<String, HomeCatalogSection>,
+    catalogKeys: Set<String>,
+    attemptedCatalogKeys: Set<String>,
+    shelfLayout: HomeShelfLayout,
+    shelvesExpandedByDefault: Boolean,
+    shelfGridColumns: Int,
+    shelfCellWidth: Dp,
     sectionPadding: Dp,
     animateCollectionGifs: Boolean,
     watchedKeys: Set<String>,
@@ -540,10 +571,12 @@ private fun LazyListScope.homeRows(
     onPosterClick: ((MetaPreview) -> Unit)?,
     onPosterLongClick: ((MetaPreview) -> Unit)?,
 ) {
-    keyedItems.forEach { keyedSettingsItem ->
+    val asGrid = shelfLayout == HomeShelfLayout.Grid
+    for (keyedSettingsItem in keyedItems) {
         val settingsItem = keyedSettingsItem.value
         if (settingsItem.isCollection) {
-            val collection = collectionsMap[settingsItem.key] ?: return@forEach
+            val collection = collectionsMap[settingsItem.key] ?: continue
+            val expansionKey = settingsItem.key
             item(key = keyedSettingsItem.lazyKey, contentType = "collection") {
                 HomeCollectionRowSection(
                     collection = collection,
@@ -551,26 +584,118 @@ private fun LazyListScope.homeRows(
                     sectionPadding = sectionPadding,
                     animateGifs = animateCollectionGifs,
                     onFolderClick = onFolderClick,
-                )
-            }
-        } else {
-            val section = sectionsMap[settingsItem.key]
-            if (section == null || section.items.isEmpty()) return@forEach
-            item(key = keyedSettingsItem.lazyKey, contentType = "catalog") {
-                HomeCatalogRowSection(
-                    section = section,
-                    entries = section.items.take(HOME_CATALOG_PREVIEW_LIMIT),
-                    modifier = Modifier.padding(bottom = 12.dp),
-                    sectionPadding = sectionPadding,
-                    onViewAllClick = if (section.canOpenCatalog(HOME_CATALOG_PREVIEW_LIMIT)) {
-                        onCatalogClick?.let { { it(section) } }
+                    gridExpanded = if (asGrid) {
+                        ShelfExpansion.isExpanded(expansionKey, shelvesExpandedByDefault)
                     } else {
                         null
                     },
+                    onToggleExpanded = { ShelfExpansion.toggle(expansionKey, shelvesExpandedByDefault) },
+                )
+            }
+            continue
+        }
+
+        val section = sectionsMap[settingsItem.key]
+        if (section == null || section.items.isEmpty()) {
+            if (settingsItem.key in catalogKeys && settingsItem.key !in attemptedCatalogKeys) {
+                val sectionKey = settingsItem.key
+                item(key = "${keyedSettingsItem.lazyKey}-loading", contentType = "skeleton") {
+                    LaunchedEffect(sectionKey) { HomeRepository.requestSection(sectionKey) }
+                    HomeSkeletonRow(horizontalPadding = sectionPadding)
+                }
+                break
+            }
+            continue
+        }
+
+        val entries = section.items.take(HOME_CATALOG_PREVIEW_LIMIT)
+        val onViewAllClick = if (section.canOpenCatalog(HOME_CATALOG_PREVIEW_LIMIT)) {
+            onCatalogClick?.let { { it(section) } }
+        } else {
+            null
+        }
+        if (asGrid) {
+            homeCatalogGrid(
+                lazyKey = keyedSettingsItem.lazyKey,
+                section = section,
+                entries = entries,
+                columns = shelfGridColumns,
+                cellWidth = shelfCellWidth,
+                expanded = ShelfExpansion.isExpanded(settingsItem.key, shelvesExpandedByDefault),
+                onToggle = { ShelfExpansion.toggle(settingsItem.key, shelvesExpandedByDefault) },
+                sectionPadding = sectionPadding,
+                onViewAllClick = onViewAllClick,
+                watchedKeys = watchedKeys,
+                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                onPosterClick = onPosterClick,
+                onPosterLongClick = onPosterLongClick,
+            )
+        } else {
+            item(key = keyedSettingsItem.lazyKey, contentType = "catalog") {
+                HomeCatalogRowSection(
+                    section = section,
+                    entries = entries,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                    sectionPadding = sectionPadding,
+                    onViewAllClick = onViewAllClick,
                     watchedKeys = watchedKeys,
                     fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                     onPosterClick = onPosterClick,
                     onPosterLongClick = onPosterLongClick,
+                )
+            }
+        }
+    }
+}
+
+/** A catalog as a grid: its title, which opens and closes it, then one list item per row of posters. */
+private fun LazyListScope.homeCatalogGrid(
+    lazyKey: Any,
+    section: HomeCatalogSection,
+    entries: List<MetaPreview>,
+    columns: Int,
+    cellWidth: Dp,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    sectionPadding: Dp,
+    onViewAllClick: (() -> Unit)?,
+    watchedKeys: Set<String>,
+    fullyWatchedSeriesKeys: Set<String>,
+    onPosterClick: ((MetaPreview) -> Unit)?,
+    onPosterLongClick: ((MetaPreview) -> Unit)?,
+) {
+    item(key = "$lazyKey-header", contentType = "shelf-header") {
+        CollapsibleShelfHeader(
+            title = section.title,
+            expanded = expanded,
+            onToggle = onToggle,
+            modifier = Modifier.animateItem(),
+            horizontalPadding = sectionPadding,
+            onViewAllClick = onViewAllClick,
+        )
+    }
+    if (!expanded) return
+    val rows = entries.chunked(columns)
+    rows.forEachIndexed { index, rowItems ->
+        item(key = "$lazyKey-row-$index", contentType = "poster-grid-row") {
+            ShelfGridRow(
+                items = rowItems,
+                columns = columns,
+                cellWidth = cellWidth,
+                modifier = Modifier
+                    .animateItem()
+                    .padding(horizontal = sectionPadding)
+                    .padding(bottom = if (index == rows.lastIndex) 12.dp else 0.dp),
+            ) { item ->
+                HomePosterCard(
+                    item = item,
+                    isWatched = WatchingState.isPosterWatched(
+                        watchedKeys = watchedKeys,
+                        item = item,
+                        fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                    ),
+                    onClick = onPosterClick?.let { { it(item) } },
+                    onLongClick = onPosterLongClick?.let { { it(item) } },
                 )
             }
         }

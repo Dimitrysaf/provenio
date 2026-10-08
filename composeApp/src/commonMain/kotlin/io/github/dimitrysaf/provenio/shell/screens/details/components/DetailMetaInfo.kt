@@ -1,6 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
-import io.github.dimitrysaf.provenio.shell.components.horizontalScrollWithWheel
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -263,7 +263,7 @@ private fun DetailRatingsRow(
         modifier = Modifier
             .horizontalScrollBleed(horizontalScrollPadding)
             .fillMaxWidth()
-            .horizontalScrollWithWheel(rememberScrollState())
+            .horizontalScroll(rememberScrollState())
             .padding(horizontal = horizontalScrollPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),

@@ -1724,8 +1724,6 @@
     <string name="library_filter_list">Выбрать список</string>
     <string name="library_filter_sort">Сортировать библиотеку</string>
     <string name="library_filter_type">Выберите тип</string>
-    <string name="library_layout_show_horizontal">Показать горизонтальные полки</string>
-    <string name="library_layout_show_vertical">Показать вертикальную сетку</string>
     <string name="library_load_failed">Не удалось загрузить библиотеку</string>
     <string name="library_other">Другое</string>
     <string name="library_sort_added_asc">Самый старый добавленный</string>

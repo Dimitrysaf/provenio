@@ -1641,8 +1641,6 @@
     <string name="library_filter_list">Liste seç</string>
     <string name="library_filter_sort">Kütüphaneyi sırala</string>
     <string name="library_filter_type">Tür seç</string>
-    <string name="library_layout_show_horizontal">Yatay rafları göster</string>
-    <string name="library_layout_show_vertical">Dikey ızgarayı göster</string>
     <string name="library_load_failed">Kitaplık yüklenemedi</string>
     <string name="library_other">Diğer</string>
     <string name="library_sort_added_asc">En eski eklenen</string>

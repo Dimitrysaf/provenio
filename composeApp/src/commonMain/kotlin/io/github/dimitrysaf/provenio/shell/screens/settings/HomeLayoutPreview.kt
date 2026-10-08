@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
+import io.github.dimitrysaf.provenio.core.home.HomeShelfLayout
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPreferencesRepository
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingSectionStyle
 import io.github.dimitrysaf.provenio.shell.components.landscapePosterHeightForWidth
@@ -136,10 +138,12 @@ internal fun HomeLayoutPreview(highlight: HomePreviewSection) {
             val posterColor = accentOrBlock(catalogHighlighted, MaterialTheme.colorScheme.secondaryContainer)
             val labelColor = accentOrBlock(catalogHighlighted, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f))
             val showLabels = !posterStyle.hideLabelsEnabled
+            val catalogAsGrid = homeSettings.shelfLayout == HomeShelfLayout.Grid
             repeat(PreviewCatalogRowCount) {
                 PreviewRow(
                     itemWidth = posterWidth * PreviewScale,
                     itemHeight = posterHeight * PreviewScale,
+                    gridRows = if (catalogAsGrid && homeSettings.shelvesExpandedByDefault) 2 else if (catalogAsGrid) 0 else null,
                 ) { modifier ->
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         PreviewBlock(modifier, posterColor, RoundedCornerShape(cornerRadius))
@@ -250,15 +254,21 @@ private fun PreviewContinueWatchingRow(
 }
 
 /**
- * A section's title, then its items running off the right edge. [item] draws one item at the
- * size of the modifier it is given.
+ * A section's title, then its items running off the right edge, or, with [gridRows], that many
+ * rows wrapped to the width as a grid shelf lays them out (none for a collapsed one). [item] draws
+ * one item at the size of the modifier it is given.
  */
 @Composable
 private fun PreviewRow(
     itemWidth: Dp,
     itemHeight: Dp,
+    gridRows: Int? = null,
     item: @Composable (Modifier) -> Unit,
 ) {
+    if (gridRows != null) {
+        PreviewGridShelf(itemWidth = itemWidth, itemHeight = itemHeight, rows = gridRows, item = item)
+        return
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -281,6 +291,47 @@ private fun PreviewRow(
         ) {
             repeat(PreviewItemsPerRow) {
                 item(Modifier.size(width = itemWidth, height = itemHeight))
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreviewGridShelf(
+    itemWidth: Dp,
+    itemHeight: Dp,
+    rows: Int,
+    item: @Composable (Modifier) -> Unit,
+) {
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
+        val perRow = (((maxWidth - 24.dp + 5.dp) / (itemWidth + 5.dp)).toInt()).coerceAtLeast(1)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.padding(start = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PreviewBlock(
+                    modifier = Modifier.size(width = 64.dp, height = 8.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    shape = RoundedCornerShape(4.dp),
+                )
+                // The chevron that opens and closes the shelf.
+                PreviewBlock(
+                    modifier = Modifier.size(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    shape = RoundedCornerShape(4.dp),
+                )
+            }
+            repeat(rows) {
+                Row(
+                    modifier = Modifier.padding(start = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    repeat(perRow) {
+                        item(Modifier.size(width = itemWidth, height = itemHeight))
+                    }
+                }
             }
         }
     }

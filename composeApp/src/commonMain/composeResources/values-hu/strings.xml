@@ -2042,8 +2042,6 @@
     <string name="library_filter_list">Lista kiválasztása</string>
     <string name="library_filter_sort">Könyvtár rendezése</string>
     <string name="library_filter_type">Típus kiválasztása</string>
-    <string name="library_layout_show_horizontal">Vízszintes polcok megjelenítése</string>
-    <string name="library_layout_show_vertical">Függőleges rács megjelenítése</string>
     <string name="library_sort_added_asc">Legrégebben hozzáadott</string>
     <string name="library_sort_added_desc">Legutóbb hozzáadott</string>
     <string name="library_sort_title_asc">Cím szerint A–Z</string>

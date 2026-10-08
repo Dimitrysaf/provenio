@@ -13,6 +13,8 @@ import io.github.dimitrysaf.provenio.core.collection.catalogRouteKey
 import io.github.dimitrysaf.provenio.core.collection.findCollectionCatalog
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktPublicListSourceResolver
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
+import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.getAndUpdate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,16 +22,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.sync.withPermit
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 
@@ -48,24 +47,40 @@ object HomeRepository {
     private var collectionHeroRequestKey: String? = null
     private var lastPublishedCatalogHeroEmpty: Boolean = true
     private var lastErrorMessage: String? = null
+    private var attemptedCacheKeys: Set<String> = emptySet()
+    private val requestedCacheKeys = atomic<Set<String>>(emptySet())
+    private var sectionRequests: Job = SupervisorJob()
+    private val sectionLoadLock = Mutex()
 
+    /**
+     * Loads the catalogs Home needs now: the first one that has titles, the hero's own sources, and
+     * on a forced refresh every catalog already on screen. Every other catalog waits until Home
+     * scrolls down to it and asks through [requestSection], one at a time in Home's order, so
+     * catalogs nobody scrolls to are never fetched.
+     */
     fun refresh(addons: List<ManagedAddon>, force: Boolean = false) {
         val activeAddons = addons.enabledAddons()
         val requests = buildHomeCatalogDefinitions(activeAddons)
         currentDefinitions = requests
         val requestCacheKeys = requests.mapTo(mutableSetOf(), HomeCatalogDefinition::cacheKey)
         cachedSections = cachedSections.filterKeys(requestCacheKeys::contains)
+        attemptedCacheKeys = attemptedCacheKeys.filterTo(mutableSetOf(), requestCacheKeys::contains)
         val requestKey = requests.joinToString(separator = "|", transform = HomeCatalogDefinition::cacheKey)
         currentRequestKey = requestKey
 
         if (!force && activeRequestKey == requestKey && _uiState.value.isLoading) return
         activeRequestKey = requestKey
 
+        sectionRequests.cancel()
+        sectionRequests = SupervisorJob()
+        requestedCacheKeys.value = emptySet()
+
         if (requests.isEmpty()) {
             activeJob?.cancel()
             activeJob = null
             activeRequestKey = null
             cachedSections = emptyMap()
+            attemptedCacheKeys = emptySet()
             lastErrorMessage = null
             publishCurrentState(
                 isLoading = false,
@@ -82,44 +97,37 @@ object HomeRepository {
 
         activeJob?.cancel()
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+        val reloadCacheKeys = if (force) attemptedCacheKeys else emptySet()
         activeJob = scope.launch {
-            val prioritizedRequests = prioritizeDefinitions(
-                definitions = requests,
-                snapshot = HomeCatalogSettingsRepository.snapshot(),
-            )
-            val loadedSections = linkedMapOf<String, HomeCatalogSection>().apply {
-                putAll(cachedSections)
-            }
-            var firstErrorMessage: String? = null
-            val permits = Semaphore(HOME_CATALOG_FETCH_CONCURRENCY)
-            val publishLock = Mutex()
-
-            coroutineScope {
-                prioritizedRequests.forEach { request ->
-                    launch {
-                        val result = permits.withPermit {
-                            runCatching { request.toSection(forceRefresh = force) }
-                        }
-                        result.exceptionOrNull()?.let { if (it is CancellationException) throw it }
-                        if (activeRequestKey != requestKey) return@launch
-                        publishLock.withLock {
-                            result.getOrNull()?.let { section -> loadedSections[request.cacheKey] = section }
-                            if (firstErrorMessage == null) firstErrorMessage = result.exceptionOrNull()?.message
-                            cachedSections = loadedSections.toMap()
-                            lastErrorMessage = firstErrorMessage
-                            publishCurrentState(
-                                isLoading = true,
-                                requestKey = requestKey,
-                            )
-                        }
-                    }
+            val snapshot = HomeCatalogSettingsRepository.snapshot()
+            val ordered = prioritizeDefinitions(definitions = requests, snapshot = snapshot)
+            val shown = ordered.filter { definition -> snapshot.preferences[definition.key]?.enabled != false }
+            val heroOnly = if (snapshot.heroEnabled) {
+                ordered.filter { definition ->
+                    val preference = snapshot.preferences[definition.key]
+                    preference?.enabled == false && preference.heroSourceEnabled
                 }
+            } else {
+                emptyList()
+            }
+            lastErrorMessage = null
+
+            // Already on screen, so a forced refresh fetches them again, in Home's order.
+            shown.filter { it.cacheKey in reloadCacheKeys }.forEach { definition ->
+                loadSection(definition, forceRefresh = true, requestKey = requestKey)
+            }
+            // The first catalog with titles; empty or failed ones before it are passed over.
+            for (definition in shown) {
+                if (_uiState.value.sections.isNotEmpty()) break
+                if (definition.cacheKey in attemptedCacheKeys) continue
+                loadSection(definition, forceRefresh = force, requestKey = requestKey)
+            }
+            // The hero is on screen from the start, so its own sources load now too.
+            heroOnly.filter { force || it.cacheKey !in attemptedCacheKeys }.forEach { definition ->
+                loadSection(definition, forceRefresh = force, requestKey = requestKey)
             }
 
             if (activeRequestKey != requestKey) return@launch
-
-            cachedSections = loadedSections.toMap()
-            lastErrorMessage = firstErrorMessage
             activeRequestKey = null
             publishCurrentState(
                 isLoading = false,
@@ -129,6 +137,44 @@ object HomeRepository {
                 addons = activeAddons,
                 forceRefresh = force,
                 refreshSources = true,
+                requestKey = requestKey,
+            )
+        }
+    }
+
+    /**
+     * Home has scrolled down to the catalog with [key] and shows its placeholder: fetch it now.
+     * Requests queue behind each other, so catalogs load one at a time in the order they come.
+     */
+    fun requestSection(key: String) {
+        val definition = currentDefinitions.firstOrNull { it.key == key } ?: return
+        val cacheKey = definition.cacheKey
+        if (cacheKey in attemptedCacheKeys) return
+        val previous = requestedCacheKeys.getAndUpdate { it + cacheKey }
+        if (cacheKey in previous) return
+        val requestKey = currentRequestKey
+        scope.launch(sectionRequests) {
+            loadSection(definition, forceRefresh = false, requestKey = requestKey)
+        }
+    }
+
+    /** Fetches one catalog and publishes it; loads never overlap, so they finish in request order. */
+    private suspend fun loadSection(
+        definition: HomeCatalogDefinition,
+        forceRefresh: Boolean,
+        requestKey: String?,
+    ) {
+        sectionLoadLock.withLock {
+            if (currentRequestKey != requestKey) return
+            if (!forceRefresh && definition.cacheKey in attemptedCacheKeys) return
+            val result = runCatching { definition.toSection(forceRefresh = forceRefresh) }
+            result.exceptionOrNull()?.let { if (it is CancellationException) throw it }
+            if (currentRequestKey != requestKey) return
+            result.getOrNull()?.let { section -> cachedSections = cachedSections + (definition.cacheKey to section) }
+            attemptedCacheKeys = attemptedCacheKeys + definition.cacheKey
+            if (lastErrorMessage == null) lastErrorMessage = result.exceptionOrNull()?.message
+            publishCurrentState(
+                isLoading = _uiState.value.isLoading,
                 requestKey = requestKey,
             )
         }
@@ -150,6 +196,10 @@ object HomeRepository {
     fun clear() {
         activeJob?.cancel()
         activeJob = null
+        sectionRequests.cancel()
+        sectionRequests = SupervisorJob()
+        requestedCacheKeys.value = emptySet()
+        attemptedCacheKeys = emptySet()
         activeRequestKey = null
         currentRequestKey = null
         currentDefinitions = emptyList()
@@ -207,11 +257,16 @@ object HomeRepository {
             emptyList()
         }
 
+        val definitionsByCacheKey = currentDefinitions.associateBy(HomeCatalogDefinition::cacheKey)
         _uiState.value = HomeUiState(
             isLoading = isLoading,
             heroItems = heroItems,
             sections = sections,
             errorMessage = if (sections.isEmpty()) lastErrorMessage else null,
+            catalogKeys = currentDefinitions.mapTo(mutableSetOf(), HomeCatalogDefinition::key),
+            attemptedCatalogKeys = attemptedCacheKeys.mapNotNullTo(mutableSetOf()) { cacheKey ->
+                definitionsByCacheKey[cacheKey]?.key
+            },
         )
     }
 
@@ -425,8 +480,6 @@ private const val HOME_HERO_ITEM_LIMIT = 8
 private const val HOME_COLLECTION_HERO_SOURCE_LIMIT = 6
 
 private const val HOME_COLLECTION_HERO_SOURCE_ITEM_LIMIT = 8
-
-private const val HOME_CATALOG_FETCH_CONCURRENCY = 4
 
 private const val HOME_CATALOG_PREVIEW_FETCH_LIMIT = 18
 

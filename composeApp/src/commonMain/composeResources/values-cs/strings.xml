@@ -2135,8 +2135,6 @@
     <string name="library_filter_list">Vybrat seznam</string>
     <string name="library_filter_sort">Seřadit knihovnu</string>
     <string name="library_filter_type">Vybrat typ</string>
-    <string name="library_layout_show_horizontal">Zobrazit vodorovné řádky</string>
-    <string name="library_layout_show_vertical">Zobrazit svislou mřížku</string>
     <string name="library_sort_added_asc">Nejdříve přidané</string>
     <string name="library_sort_added_desc">Naposledy přidané</string>
     <string name="library_sort_title_asc">Název A–Z</string>

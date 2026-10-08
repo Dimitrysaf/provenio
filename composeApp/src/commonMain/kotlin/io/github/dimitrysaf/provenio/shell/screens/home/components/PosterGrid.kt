@@ -1,39 +1,21 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
-import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import io.github.dimitrysaf.provenio.core.format.formatReleaseDateForDisplay
-import io.github.dimitrysaf.provenio.shell.components.PosterWatchedOverlay
 import io.github.dimitrysaf.provenio.shell.components.PosterLandscapeAspectRatio
 import io.github.dimitrysaf.provenio.shell.components.landscapePosterWidth
 import io.github.dimitrysaf.provenio.shell.components.SkeletonPoster
-import io.github.dimitrysaf.provenio.shell.components.posterCardClickable
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
-import io.github.dimitrysaf.provenio.core.home.PosterShape
 import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingState
+import io.github.dimitrysaf.provenio.shell.components.ShelfGridRow
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterCellWidth
+import androidx.compose.foundation.layout.width
 
 /**
  * How many posters fit across, at the width the person chose for them.
@@ -59,6 +41,10 @@ internal fun rememberPosterGridColumnCount(availableWidth: Dp): Int {
 /** The gap between posters, which the column count has to account for. */
 internal val PosterGridSpacing = 12.dp
 
+/**
+ * One row of a poster grid. Each poster is the card every shelf draws, at the poster card style's
+ * width, height and corners, never stretched to fill its column: spare width goes into the gaps.
+ */
 @Composable
 internal fun PosterGridRow(
     items: List<MetaPreview>,
@@ -69,32 +55,23 @@ internal fun PosterGridRow(
     onPosterClick: ((MetaPreview) -> Unit)? = null,
     onPosterLongClick: ((MetaPreview) -> Unit)? = null,
 ) {
-    val posterCardStyle = rememberPosterCardStyleUiState()
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(PosterGridSpacing),
-        verticalAlignment = Alignment.Top,
-    ) {
-        items.forEach { item ->
-            PosterGridTile(
+    ShelfGridRow(
+        items = items,
+        columns = columns,
+        cellWidth = rememberPosterCellWidth(),
+        modifier = modifier,
+        spacing = PosterGridSpacing,
+    ) { item ->
+        HomePosterCard(
+            item = item,
+            isWatched = WatchingState.isPosterWatched(
+                watchedKeys = watchedKeys,
                 item = item,
-                cornerRadiusDp = posterCardStyle.cornerRadiusDp,
-                hideLabels = posterCardStyle.hideLabelsEnabled,
-                landscape = posterCardStyle.catalogLandscapeModeEnabled,
-                modifier = Modifier.weight(1f),
-                isWatched = WatchingState.isPosterWatched(
-                    watchedKeys = watchedKeys,
-                    item = item,
-                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                ),
-                onClick = onPosterClick?.let { { it(item) } },
-                onLongClick = onPosterLongClick?.let { { it(item) } },
-            )
-        }
-        repeat(columns - items.size) {
-            Spacer(modifier = Modifier.weight(1f))
-        }
+                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+            ),
+            onClick = onPosterClick?.let { { it(item) } },
+            onLongClick = onPosterLongClick?.let { { it(item) } },
+        )
     }
 }
 
@@ -104,94 +81,19 @@ internal fun PosterGridSkeletonRow(
     modifier: Modifier = Modifier,
 ) {
     val posterCardStyle = rememberPosterCardStyleUiState()
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(PosterGridSpacing),
-    ) {
-        repeat(columns) {
-            SkeletonPoster(
-                modifier = Modifier.weight(1f),
-                cornerRadius = posterCardStyle.cornerRadiusDp.dp,
-                showLabels = !posterCardStyle.hideLabelsEnabled,
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun PosterGridTile(
-    item: MetaPreview,
-    cornerRadiusDp: Int,
-    hideLabels: Boolean,
-    landscape: Boolean,
-    modifier: Modifier = Modifier,
-    isWatched: Boolean = false,
-    onClick: (() -> Unit)? = null,
-    onLongClick: (() -> Unit)? = null,
-) {
-    val imageCandidates = if (landscape) listOf(item.banner, item.poster) else listOf(item.poster, item.banner)
-    val imageUrl = imageCandidates.firstOrNull { !it.isNullOrBlank() }
-    val aspectRatio = if (landscape) {
-        PosterLandscapeAspectRatio
-    } else {
-        item.posterShape.posterGridAspectRatio()
-    }
-
-    Column(
+    val cellWidth = rememberPosterCellWidth()
+    ShelfGridRow(
+        items = List(columns) { it },
+        columns = columns,
+        cellWidth = cellWidth,
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        spacing = PosterGridSpacing,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(aspectRatio)
-                .clip(RoundedCornerShape(cornerRadiusDp.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                .posterCardClickable(
-                    onClick = onClick,
-                    onLongClick = onLongClick,
-                    zoomImageUrl = imageUrl,
-                    zoomCornerRadius = cornerRadiusDp.dp,
-                ),
-        ) {
-            if (imageUrl != null) {
-                ShapedArtworkImage(
-                    candidates = imageCandidates,
-                    contentDescription = item.name,
-                    letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                )
-            }
-            PosterWatchedOverlay(isWatched = isWatched)
-        }
-        if (!hideLabels) {
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            val detail = item.releaseInfo?.let { formatReleaseDateForDisplay(it) }
-            if (detail != null) {
-                Text(
-                    text = detail,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            } else {
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
+        SkeletonPoster(
+            modifier = Modifier.width(cellWidth),
+            aspectRatio = if (posterCardStyle.catalogLandscapeModeEnabled) PosterLandscapeAspectRatio else 0.675f,
+            cornerRadius = posterCardStyle.cornerRadiusDp.dp,
+            showLabels = !posterCardStyle.hideLabelsEnabled,
+        )
     }
 }
-
-private fun PosterShape.posterGridAspectRatio(): Float =
-    when (this) {
-        PosterShape.Poster -> 0.68f
-        PosterShape.Square -> 1f
-        PosterShape.Landscape -> 1.78f
-    }

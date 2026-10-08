@@ -1746,8 +1746,6 @@
     <string name="library_filter_list">Chọn danh sách</string>
     <string name="library_filter_sort">Sắp xếp thư viện</string>
     <string name="library_filter_type">Chọn loại</string>
-    <string name="library_layout_show_horizontal">Hiển thị danh sách dạng hàng ngang"</string>
-    <string name="library_layout_show_vertical">Hiển thị danh sách dạng lưới dọc</string>
     <string name="library_load_failed">Không thể tải thư viện</string>
     <string name="library_other">Khác</string>
     <string name="library_sort_added_asc">Đã thêm đầu tiên</string>

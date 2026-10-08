@@ -1,7 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import androidx.compose.foundation.lazy.rememberLazyListState
-import io.github.dimitrysaf.provenio.shell.components.horizontalWheelScroll
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -65,10 +64,7 @@ fun DetailCastSection(
     metaType: String? = null,
 ) {
     if (cast.isEmpty()) return
-    val resolvedCast by produceState(initialValue = cast, cast, metaId, metaType) {
-        value = CastResolver.resolve(cast, metaId, metaType)
-    }
-    val launchImageViewer = LocalImageViewerLauncher.current
+    val resolvedCast = rememberResolvedCast(cast, metaId, metaType)
 
     DetailSection(
         title = stringResource(Res.string.settings_meta_cast),
@@ -82,45 +78,22 @@ fun DetailCastSection(
             LazyRow(
                 modifier = Modifier
                     .horizontalScrollBleed(horizontalScrollPadding)
-                    .fillMaxWidth()
-                    .horizontalWheelScroll(castRowState),
+                    .fillMaxWidth(),
                 state = castRowState,
                 contentPadding = PaddingValues(horizontal = horizontalScrollPadding),
                 horizontalArrangement = Arrangement.spacedBy(sizing.avatarGap),
             ) {
                 itemsIndexed(
                     items = resolvedCast,
-                    key = { index, person -> "${person.name}-${person.role.orEmpty()}-${person.photo.orEmpty()}-$index" },
+                    key = { index, person -> castCellKey(index, person) },
                 ) { index, person ->
-                    val sharedTransitionKey = person.tmdbId
-                        ?.takeIf { it > 0 }
-                        ?.let { castAvatarSharedTransitionKey(it, occurrenceIndex = index) }
-                    CastItem(
+                    CastCell(
+                        index = index,
                         person = person,
-                        sharedTransitionKey = sharedTransitionKey,
                         sizing = sizing,
+                        onCastClick = onCastClick,
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope,
-                        onClick = if (onCastClick != null && person.tmdbId != null && person.tmdbId > 0) {
-                            { onCastClick(person, sharedTransitionKey) }
-                        } else {
-                            null
-                        },
-                        onLongClick = person.photo
-                            ?.takeIf(String::isNotBlank)
-                            ?.let { photo ->
-                                launchImageViewer?.let { openViewer ->
-                                    {
-                                        openViewer(
-                                            ImageViewerRequest(
-                                                images = listOf(viewerImageOf(photo)),
-                                                title = person.name,
-                                                colorFilter = if (person.deceased) DeceasedPhotoFilter else null,
-                                            ),
-                                        )
-                                    }
-                                }
-                            },
                     )
                 }
             }
@@ -128,9 +101,65 @@ fun DetailCastSection(
     }
 }
 
+/** The cast with their photos and IDs filled in where the resolver finds them; the raw cast until then. */
+@Composable
+internal fun rememberResolvedCast(cast: List<MetaPerson>, metaId: String?, metaType: String?): List<MetaPerson> {
+    val resolvedCast by produceState(initialValue = cast, cast, metaId, metaType) {
+        value = CastResolver.resolve(cast, metaId, metaType)
+    }
+    return resolvedCast
+}
+
+/** One cast member: opens their page on click and their photo on long press. */
+@Composable
+@OptIn(ExperimentalSharedTransitionApi::class)
+internal fun CastCell(
+    index: Int,
+    person: MetaPerson,
+    sizing: CastSectionSizing,
+    onCastClick: ((MetaPerson, String?) -> Unit)?,
+    sharedTransitionScope: SharedTransitionScope?,
+    animatedVisibilityScope: AnimatedVisibilityScope?,
+) {
+    val launchImageViewer = LocalImageViewerLauncher.current
+    val sharedTransitionKey = person.tmdbId
+        ?.takeIf { it > 0 }
+        ?.let { castAvatarSharedTransitionKey(it, occurrenceIndex = index) }
+    CastItem(
+        person = person,
+        sharedTransitionKey = sharedTransitionKey,
+        sizing = sizing,
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
+        onClick = if (onCastClick != null && person.tmdbId != null && person.tmdbId > 0) {
+            { onCastClick(person, sharedTransitionKey) }
+        } else {
+            null
+        },
+        onLongClick = person.photo
+            ?.takeIf(String::isNotBlank)
+            ?.let { photo ->
+                launchImageViewer?.let { openViewer ->
+                    {
+                        openViewer(
+                            ImageViewerRequest(
+                                images = listOf(viewerImageOf(photo)),
+                                title = person.name,
+                                colorFilter = if (person.deceased) DeceasedPhotoFilter else null,
+                            ),
+                        )
+                    }
+                }
+            },
+    )
+}
+
+internal fun castCellKey(index: Int, person: MetaPerson): String =
+    "${person.name}-${person.role.orEmpty()}-${person.photo.orEmpty()}-$index"
+
 @Composable
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
-private fun CastItem(
+internal fun CastItem(
     person: MetaPerson,
     modifier: Modifier = Modifier,
     sharedTransitionKey: String? = null,
@@ -245,7 +274,7 @@ private fun CastItem(
     }
 }
 
-private data class CastSectionSizing(
+internal data class CastSectionSizing(
     val photoWidth: androidx.compose.ui.unit.Dp,
     val itemWidth: androidx.compose.ui.unit.Dp,
     val avatarGap: androidx.compose.ui.unit.Dp,
@@ -253,7 +282,7 @@ private data class CastSectionSizing(
     val subLabelSize: TextUnit,
 )
 
-private fun castSectionSizing(maxWidthDp: Float): CastSectionSizing =
+internal fun castSectionSizing(maxWidthDp: Float): CastSectionSizing =
     when {
         maxWidthDp >= 1200f -> CastSectionSizing(
             photoWidth = 100.dp,

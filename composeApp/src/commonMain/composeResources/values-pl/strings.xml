@@ -2161,8 +2161,6 @@
     <string name="library_filter_list">Wybierz listę</string>
     <string name="library_filter_sort">Sortuj bibliotekę</string>
     <string name="library_filter_type">Wybierz typ</string>
-    <string name="library_layout_show_horizontal">Pokaż poziome półki</string>
-    <string name="library_layout_show_vertical">Pokaż siatkę pionową</string>
     <string name="library_sort_added_asc">Najstarsze dodane</string>
     <string name="library_sort_added_desc">Ostatnio dodane</string>
     <string name="library_sort_title_asc">Tytuł A–Z</string>

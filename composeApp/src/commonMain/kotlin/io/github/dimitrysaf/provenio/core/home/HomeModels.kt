@@ -47,6 +47,10 @@ data class HomeUiState(
     val heroItems: List<MetaPreview> = emptyList(),
     val sections: List<HomeCatalogSection> = emptyList(),
     val errorMessage: String? = null,
+    /** Every catalog the enabled add-ons offer, by settings key. */
+    val catalogKeys: Set<String> = emptySet(),
+    /** Catalogs already fetched, whether they had titles or not; the rest wait to be scrolled to. */
+    val attemptedCatalogKeys: Set<String> = emptySet(),
 )
 
 internal fun shouldShowInitialHomeLoading(

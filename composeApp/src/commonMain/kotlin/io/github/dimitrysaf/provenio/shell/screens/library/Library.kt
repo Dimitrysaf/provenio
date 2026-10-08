@@ -1,6 +1,20 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
-import io.github.dimitrysaf.provenio.shell.components.horizontalScrollWithWheel
+import io.github.dimitrysaf.provenio.shell.components.CollapsibleShelfHeader
+import io.github.dimitrysaf.provenio.shell.components.ShelfGridRow
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterCellWidth
+import io.github.dimitrysaf.provenio.shell.components.shelfGridColumns
+import androidx.compose.ui.unit.Dp
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.Box
+import io.github.dimitrysaf.provenio.core.library.LibraryDisplaySettingsUiState
+import io.github.dimitrysaf.provenio.core.home.HomeShelfLayout
+import io.github.dimitrysaf.provenio.shell.components.ShelfExpansion
+import androidx.compose.foundation.horizontalScroll
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material3.IconToggleButton
@@ -254,6 +268,8 @@ fun LibraryScreen(
         // Same arithmetic as the discover grid: the posters are the size Poster Card Style says
         // they are, and the column count follows from how many fit.
         val gridColumns = rememberPosterGridColumnCount(maxWidth - LibraryGridHorizontalPadding * 2)
+        val shelfCellWidth = rememberPosterCellWidth()
+        val shelfGridColumns = shelfGridColumns(maxWidth - LibraryShelfHorizontalPadding * 2, shelfCellWidth)
 
         ScreenScaffold(
             title = when {
@@ -269,7 +285,7 @@ fun LibraryScreen(
             listState = listState,
             actions = {
                 if (sourceMode == LibraryViewMode.Saved) {
-                    LibraryLayoutToggle(displaySettings.layoutMode)
+                    LibraryLayoutMenu(displaySettings)
                 }
                 if (sourceMode != LibraryViewMode.Cloud) {
                     WithTooltip(stringResource(Res.string.library_source_calendar)) {
@@ -385,6 +401,15 @@ fun LibraryScreen(
                         when (displaySettings.layoutMode) {
                             LibraryLayoutMode.HORIZONTAL -> librarySections(
                                 displaySections = librarySectionsDisplay,
+                                shelfGrid = if (displaySettings.shelfLayout == HomeShelfLayout.Grid) {
+                                    LibraryShelfGrid(
+                                        columns = shelfGridColumns,
+                                        cellWidth = shelfCellWidth,
+                                        expandedByDefault = displaySettings.shelvesExpandedByDefault,
+                                    )
+                                } else {
+                                    null
+                                },
                                 watchedKeys = watchedUiState.watchedKeys,
                                 fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                                 sortOption = effectiveSortOption,
@@ -663,7 +688,7 @@ private fun CloudLibraryToolbar(
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .horizontalScrollWithWheel(rememberScrollState()),
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 DropdownChip(
@@ -1085,8 +1110,83 @@ private enum class LibraryViewMode {
     Cloud,
 }
 
+/**
+ * A library shelf as a grid: its title opens and closes it, and each row of posters is a list item
+ * of its own, so only the rows on screen are composed and only their artwork loads.
+ */
+private fun LazyListScope.libraryShelfGrid(
+    section: LibraryDisplaySection,
+    grid: LibraryShelfGrid,
+    watchedKeys: Set<String>,
+    fullyWatchedSeriesKeys: Set<String>,
+    onViewAllClick: (() -> Unit)?,
+    onPosterClick: ((LibraryItem) -> Unit)?,
+    onPosterLongClick: ((LibraryItem, LibrarySection) -> Unit)?,
+    onDisintegrated: (String) -> Unit,
+) {
+    val expansionKey = "${ShelfExpansion.LibraryKeyPrefix}${section.type}"
+    val expanded = ShelfExpansion.isExpanded(expansionKey, grid.expandedByDefault)
+    item(key = "library-grid:${section.type}:header", contentType = "library-shelf-header") {
+        CollapsibleShelfHeader(
+            title = section.displayTitle,
+            expanded = expanded,
+            onToggle = { ShelfExpansion.toggle(expansionKey, grid.expandedByDefault) },
+            modifier = libraryContentTransitionModifier(),
+            horizontalPadding = LibraryShelfHorizontalPadding,
+            onViewAllClick = onViewAllClick,
+        )
+    }
+    if (!expanded) return
+    val rows = section.previewEntries.chunked(grid.columns)
+    rows.forEachIndexed { rowIndex, row ->
+        item(key = "library-grid:${section.type}:row-$rowIndex", contentType = "library-shelf-row") {
+            ShelfGridRow(
+                items = row,
+                columns = grid.columns,
+                cellWidth = grid.cellWidth,
+                modifier = libraryContentTransitionModifier()
+                    .padding(horizontal = LibraryShelfHorizontalPadding)
+                    .padding(bottom = if (rowIndex == rows.lastIndex) 12.dp else 0.dp),
+            ) { entry ->
+                val item = entry.item
+                val posterItem = item.toMetaPreview()
+                val entrySource = entry.section
+                DisintegratingContainer(
+                    disintegrating = entry.exiting,
+                    onDisintegrated = { onDisintegrated(entry.globalKey) },
+                ) {
+                    HomePosterCard(
+                        item = posterItem,
+                        isWatched = WatchingState.isPosterWatched(
+                            watchedKeys = watchedKeys,
+                            item = posterItem,
+                            fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                        ),
+                        onClick = if (entry.exiting) null else onPosterClick?.let { { it(item) } },
+                        onLongClick = if (entry.exiting || entrySource == null) {
+                            null
+                        } else {
+                            onPosterLongClick?.let { { it(item, entrySource) } }
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** How the library's shelves lay out as grids: columns, the poster width, and whether they start open. */
+private class LibraryShelfGrid(
+    val columns: Int,
+    val cellWidth: Dp,
+    val expandedByDefault: Boolean,
+)
+
+private val LibraryShelfHorizontalPadding = 16.dp
+
 private fun LazyListScope.librarySections(
     displaySections: List<LibraryDisplaySection>,
+    shelfGrid: LibraryShelfGrid?,
     watchedKeys: Set<String>,
     fullyWatchedSeriesKeys: Set<String>,
     sortOption: LibrarySortOption,
@@ -1095,6 +1195,23 @@ private fun LazyListScope.librarySections(
     onPosterLongClick: ((LibraryItem, LibrarySection) -> Unit)?,
     onDisintegrated: (String) -> Unit,
 ) {
+    if (shelfGrid != null) {
+        displaySections.forEach { section ->
+            libraryShelfGrid(
+                section = section,
+                grid = shelfGrid,
+                watchedKeys = watchedKeys,
+                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                onViewAllClick = section.source
+                    ?.takeIf { it.items.size > LIBRARY_SECTION_PREVIEW_LIMIT }
+                    ?.let { source -> onSectionViewAllClick?.let { { it(source, sortOption) } } },
+                onPosterClick = onPosterClick,
+                onPosterLongClick = onPosterLongClick,
+                onDisintegrated = onDisintegrated,
+            )
+        }
+        return
+    }
     items(
         items = displaySections,
         key = { section -> "library-horizontal:${section.type}" },
@@ -1261,41 +1378,59 @@ private fun LibraryReconnectEffect(condition: NetworkCondition, isRemoteSource: 
     }
 }
 
-// Switches the saved library between rows and a grid.
+/**
+ * How the saved library lays out, Library's own choice apart from Home's: shelves in rows that
+ * scroll sideways, shelves as grids whose titles open and close them, or one grid of everything.
+ * With grid shelves, whether they start open is chosen here too.
+ */
 @Composable
-private fun LibraryLayoutToggle(layoutMode: LibraryLayoutMode) {
-    val targetLayout = if (layoutMode == LibraryLayoutMode.HORIZONTAL) {
-        LibraryLayoutMode.VERTICAL
-    } else {
-        LibraryLayoutMode.HORIZONTAL
-    }
-    WithTooltip(
-        stringResource(
-            if (targetLayout == LibraryLayoutMode.VERTICAL) {
-                Res.string.library_layout_show_vertical
-            } else {
-                Res.string.library_layout_show_horizontal
-            },
-        ),
-    ) {
-        IconButton(onClick = { LibraryDisplaySettingsRepository.setLayoutMode(targetLayout) }) {
-            Crossfade(
-                targetState = targetLayout,
-                animationSpec = tween(durationMillis = 140),
-                label = "libraryLayoutAction",
-            ) { animatedTargetLayout ->
+private fun LibraryLayoutMenu(settings: LibraryDisplaySettingsUiState) {
+    var menuVisible by remember { mutableStateOf(false) }
+    val gridShelves = settings.layoutMode == LibraryLayoutMode.HORIZONTAL &&
+        settings.shelfLayout == HomeShelfLayout.Grid
+    val label = stringResource(Res.string.library_layout_menu)
+    Box {
+        WithTooltip(label) {
+            IconButton(onClick = { menuVisible = true }) {
                 Icon(
-                    imageVector = if (animatedTargetLayout == LibraryLayoutMode.VERTICAL) {
-                        Icons.Rounded.GridView
-                    } else {
+                    imageVector = if (settings.layoutMode == LibraryLayoutMode.HORIZONTAL && !gridShelves) {
                         Icons.Rounded.ViewAgenda
-                    },
-                    contentDescription = if (animatedTargetLayout == LibraryLayoutMode.VERTICAL) {
-                        stringResource(Res.string.library_layout_show_vertical)
                     } else {
-                        stringResource(Res.string.library_layout_show_horizontal)
+                        Icons.Rounded.GridView
                     },
+                    contentDescription = label,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        DropdownMenu(expanded = menuVisible, onDismissRequest = { menuVisible = false }) {
+            val options = listOf(
+                Triple(Res.string.library_layout_shelves_rows, LibraryLayoutMode.HORIZONTAL, HomeShelfLayout.Horizontal),
+                Triple(Res.string.library_layout_shelves_grid, LibraryLayoutMode.HORIZONTAL, HomeShelfLayout.Grid),
+                Triple(Res.string.library_layout_single_grid, LibraryLayoutMode.VERTICAL, null),
+            )
+            options.forEach { (labelRes, layoutMode, shelfLayout) ->
+                val selected = settings.layoutMode == layoutMode &&
+                    (shelfLayout == null || settings.shelfLayout == shelfLayout)
+                DropdownMenuItem(
+                    text = { Text(stringResource(labelRes)) },
+                    leadingIcon = { RadioButton(selected = selected, onClick = null) },
+                    onClick = {
+                        LibraryDisplaySettingsRepository.setLayoutMode(layoutMode)
+                        shelfLayout?.let(LibraryDisplaySettingsRepository::setShelfLayout)
+                        menuVisible = false
+                    },
+                )
+            }
+            if (gridShelves) {
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.settings_shelf_expanded_by_default)) },
+                    leadingIcon = { Checkbox(checked = settings.shelvesExpandedByDefault, onCheckedChange = null) },
+                    onClick = {
+                        ShelfExpansion.resetLibrary()
+                        LibraryDisplaySettingsRepository.setShelvesExpandedByDefault(!settings.shelvesExpandedByDefault)
+                    },
                 )
             }
         }

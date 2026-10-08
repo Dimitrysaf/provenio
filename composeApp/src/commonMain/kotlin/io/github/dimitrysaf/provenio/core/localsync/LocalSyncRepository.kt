@@ -510,8 +510,11 @@ object LocalSyncRepository {
                 }
                 .onFailure { error -> log.w(error) { "Could not read ${source.prefix} for sync" } }
         }
+        val ledger = loadLedger().let { stored ->
+            stored.copy(records = stored.records.filterKeys { key -> !isRetiredSyncKey(key) })
+        }
         val refreshed = refreshSyncLedger(
-            ledger = loadLedger(),
+            ledger = ledger,
             current = snapshot,
             ownedPrefixes = readablePrefixes,
             deviceId = SyncClientIdentity.currentClientId(),

@@ -1,12 +1,14 @@
 package io.github.dimitrysaf.provenio.shell.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -25,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -78,30 +81,38 @@ fun ScreenScaffold(
     }
 
     val list: @Composable (Dp, PaddingValues) -> Unit = { sidePadding, innerPadding ->
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = sidePadding,
-                top = topPadding
-                    ?: if (title != null) {
-                        innerPadding.calculateTopPadding()
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = sidePadding,
+                    top = topPadding
+                        ?: if (title != null) {
+                            innerPadding.calculateTopPadding()
+                        } else {
+                            10.dp + statusBarTop + platformExtraTopPadding
+                        },
+                    end = sidePadding,
+                    // A bottom bar already reserves its own height plus the navigation bar inset in
+                    // the scaffold's inner padding, so the content only adds the screen's own gap
+                    // above it.
+                    bottom = if (bottomBar != null) {
+                        innerPadding.calculateBottomPadding() + 18.dp
                     } else {
-                        10.dp + statusBarTop + platformExtraTopPadding
+                        safeBottomPadding(18.dp)
                     },
-                end = sidePadding,
-                // A bottom bar already reserves its own height plus the navigation bar inset in
-                // the scaffold's inner padding, so the content only adds the screen's own gap
-                // above it.
-                bottom = if (bottomBar != null) {
-                    innerPadding.calculateBottomPadding() + 18.dp
-                } else {
-                    safeBottomPadding(18.dp)
-                },
-            ),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            content = content,
-        )
+                ),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                content = content,
+            )
+            PageScrollbar(
+                state = listState,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = innerPadding.calculateTopPadding()),
+            )
+        }
     }
 
     Scaffold(

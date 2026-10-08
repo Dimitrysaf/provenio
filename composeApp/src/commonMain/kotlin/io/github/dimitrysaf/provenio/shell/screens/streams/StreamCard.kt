@@ -1,6 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.streams
 
-import io.github.dimitrysaf.provenio.shell.components.horizontalScrollWithWheel
+import androidx.compose.foundation.horizontalScroll
 import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -123,7 +123,7 @@ private fun StreamRowBadges(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.horizontalScrollWithWheel(rememberScrollState()),
+        modifier = modifier.horizontalScroll(rememberScrollState()),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {

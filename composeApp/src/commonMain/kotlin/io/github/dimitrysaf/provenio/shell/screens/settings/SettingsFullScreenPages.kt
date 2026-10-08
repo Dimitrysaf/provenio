@@ -73,6 +73,8 @@ fun HomescreenSettingsScreen(
             heroEnabled = homescreenSettingsUiState.heroEnabled,
             showCatalogType = homescreenSettingsUiState.showCatalogType,
             hideUnreleasedContent = homescreenSettingsUiState.hideUnreleasedContent,
+            shelfLayout = homescreenSettingsUiState.shelfLayout,
+            shelvesExpandedByDefault = homescreenSettingsUiState.shelvesExpandedByDefault,
             items = homescreenSettingsUiState.items,
             isCatalogLoading = addonManifestsLoading,
             catalogErrorMessage = addonManifestErrorMessage,

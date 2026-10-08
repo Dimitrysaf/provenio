@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.library
 
+import io.github.dimitrysaf.provenio.core.home.HomeShelfLayout
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +26,9 @@ enum class LibrarySortOption {
 data class LibraryDisplaySettingsUiState(
     val layoutMode: LibraryLayoutMode = LibraryLayoutMode.HORIZONTAL,
     val sortOption: LibrarySortOption = LibrarySortOption.DEFAULT,
+    /** How each shelf lays out while the library shows shelves; Library's own, apart from Home's. */
+    val shelfLayout: HomeShelfLayout = HomeShelfLayout.Grid,
+    val shelvesExpandedByDefault: Boolean = true,
 )
 
 object LibraryDisplaySettingsRepository {
@@ -51,6 +55,20 @@ object LibraryDisplaySettingsRepository {
         ensureLoaded()
         if (_uiState.value.layoutMode == layoutMode) return
         _uiState.value = _uiState.value.copy(layoutMode = layoutMode)
+        persist()
+    }
+
+    fun setShelfLayout(shelfLayout: HomeShelfLayout) {
+        ensureLoaded()
+        if (_uiState.value.shelfLayout == shelfLayout) return
+        _uiState.value = _uiState.value.copy(shelfLayout = shelfLayout)
+        persist()
+    }
+
+    fun setShelvesExpandedByDefault(expanded: Boolean) {
+        ensureLoaded()
+        if (_uiState.value.shelvesExpandedByDefault == expanded) return
+        _uiState.value = _uiState.value.copy(shelvesExpandedByDefault = expanded)
         persist()
     }
 
@@ -201,6 +219,8 @@ internal fun encodeLibraryDisplaySettings(state: LibraryDisplaySettingsUiState):
         StoredLibraryDisplaySettings(
             layoutMode = state.layoutMode.name,
             sortOption = state.sortOption.name,
+            shelfLayout = state.shelfLayout.name,
+            shelvesExpandedByDefault = state.shelvesExpandedByDefault,
         ),
     )
 
@@ -219,6 +239,10 @@ internal fun decodeLibraryDisplaySettings(payload: String?): LibraryDisplaySetti
         sortOption = stored?.sortOption
             ?.let { value -> LibrarySortOption.entries.firstOrNull { it.name == value } }
             ?: LibrarySortOption.DEFAULT,
+        shelfLayout = stored?.shelfLayout
+            ?.let { value -> HomeShelfLayout.entries.firstOrNull { it.name == value } }
+            ?: HomeShelfLayout.Grid,
+        shelvesExpandedByDefault = stored?.shelvesExpandedByDefault ?: true,
     )
 }
 
@@ -251,4 +275,6 @@ internal val LibrarySourceMode.isRemoteTrackingSource: Boolean
 private data class StoredLibraryDisplaySettings(
     @SerialName("layout_mode") val layoutMode: String = LibraryLayoutMode.HORIZONTAL.name,
     @SerialName("sort_option") val sortOption: String = LibrarySortOption.DEFAULT.name,
+    @SerialName("shelf_layout") val shelfLayout: String = HomeShelfLayout.Grid.name,
+    @SerialName("shelves_expanded_by_default") val shelvesExpandedByDefault: Boolean = true,
 )

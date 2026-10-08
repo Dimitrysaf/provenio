@@ -1103,6 +1103,8 @@ internal fun LazyListScope.settingsPageContent(
             heroEnabled = data.homescreen.heroEnabled,
             showCatalogType = data.homescreen.showCatalogType,
             hideUnreleasedContent = data.homescreen.hideUnreleasedContent,
+            shelfLayout = data.homescreen.shelfLayout,
+            shelvesExpandedByDefault = data.homescreen.shelvesExpandedByDefault,
             items = data.homescreen.items,
             isCatalogLoading = data.homescreenCatalogLoading,
             catalogErrorMessage = data.homescreenCatalogErrorMessage,

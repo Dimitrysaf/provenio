@@ -22,6 +22,8 @@ import io.github.dimitrysaf.provenio.core.tracking.trakt.shouldUseTraktMoreLikeT
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import io.github.dimitrysaf.provenio.core.network.LoadFailure
 import io.github.dimitrysaf.provenio.core.network.LoadFailureKind
+import io.github.dimitrysaf.provenio.core.network.loadFailureWithoutException
+import io.github.dimitrysaf.provenio.core.network.redactUrl
 import io.github.dimitrysaf.provenio.core.network.toLoadFailure
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -228,7 +230,21 @@ object MetaDetailsRepository {
         val requests = manifests.map { manifest ->
             async(Dispatchers.Default) {
                 withTimeoutOrNull(META_REQUEST_TIMEOUT_MS) { tryFetchRawMeta(manifest, type, id) }
-                    ?: MetaFetchOutcome.Failed(LoadFailure(sourceName = manifest.name, kind = LoadFailureKind.Timeout))
+                    ?: MetaFetchOutcome.Failed(
+                        loadFailureWithoutException(
+                            sourceName = manifest.name,
+                            kind = LoadFailureKind.Timeout,
+                            request = redactUrl(
+                                buildAddonResourceUrl(
+                                    manifestUrl = manifest.transportUrl,
+                                    resource = "meta",
+                                    type = type,
+                                    id = id,
+                                ),
+                            ),
+                            note = "No answer within ${META_REQUEST_TIMEOUT_MS / 1000} s.",
+                        ),
+                    )
             }
         }
         var found: MetaDetails? = null
@@ -359,7 +375,7 @@ object MetaDetailsRepository {
             MetaFetchOutcome.Loaded(MetaDetailsParser.parse(payload))
         } catch (e: Throwable) {
             if (e is CancellationException) throw e
-            val failure = e.toLoadFailure(sourceName = manifest.name)
+            val failure = e.toLoadFailure(sourceName = manifest.name, request = redactUrl(url))
             when (failure.kind) {
                 // Expected answers from a healthy add-on; a stack trace adds nothing.
                 LoadFailureKind.NotFound,

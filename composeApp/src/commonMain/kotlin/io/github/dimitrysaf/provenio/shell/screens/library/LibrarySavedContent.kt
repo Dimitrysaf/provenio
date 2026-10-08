@@ -1,6 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
-import io.github.dimitrysaf.provenio.shell.components.horizontalScrollWithWheel
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -55,7 +55,7 @@ internal fun LibrarySavedControls(
     val allTypesLabel = stringResource(Res.string.library_filter_all_types)
 
     Row(
-        modifier = modifier.horizontalScrollWithWheel(rememberScrollState()),
+        modifier = modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (layoutMode == LibraryLayoutMode.VERTICAL && sourceMode.isRemoteTrackingSource) {

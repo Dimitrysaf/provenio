@@ -1653,8 +1653,6 @@
     <string name="library_filter_list">اختر القائمة</string>
     <string name="library_filter_sort">ترتيب المكتبة</string>
     <string name="library_filter_type">اختر النوع</string>
-    <string name="library_layout_show_horizontal">إظهار رفوف أفقية</string>
-    <string name="library_layout_show_vertical">إظهار شبكة عمودية</string>
     <string name="library_load_failed">تعذر تحميل المكتبة</string>
     <string name="library_other">أخرى</string>
     <string name="library_sort_added_asc">الأقدم إضافةً</string>

@@ -2,15 +2,11 @@ package io.github.dimitrysaf.provenio.core.localsync
 
 import io.github.dimitrysaf.provenio.core.addons.AddonRepository
 import io.github.dimitrysaf.provenio.core.collection.Collection
-import io.github.dimitrysaf.provenio.core.collection.CollectionMobileSettingsRepository
-import io.github.dimitrysaf.provenio.core.collection.CollectionMobileSettingsStorage
 import io.github.dimitrysaf.provenio.core.collection.CollectionRepository
 import io.github.dimitrysaf.provenio.core.debrid.DebridSettingsRepository
 import io.github.dimitrysaf.provenio.core.debrid.DebridSettingsStorage
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
 import io.github.dimitrysaf.provenio.core.home.SyncHomeCatalogPayload
-import io.github.dimitrysaf.provenio.core.library.LibraryDisplaySettingsRepository
-import io.github.dimitrysaf.provenio.core.library.LibraryDisplaySettingsStorage
 import io.github.dimitrysaf.provenio.core.library.LibraryItem
 import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificationsRepository
 import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificationsStorage
@@ -19,8 +15,6 @@ import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.search.SearchHistoryRepository
 import io.github.dimitrysaf.provenio.core.search.SearchHistoryStorage
 import io.github.dimitrysaf.provenio.core.library.LibraryRepository
-import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
-import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsStorage
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListSettingsStorage
 import io.github.dimitrysaf.provenio.core.streams.availability.StreamingAvailabilitySettingsRepository
@@ -29,12 +23,6 @@ import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbSettingsRepository
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbSettingsStorage
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsStorage
-import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleRepository
-import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleStorage
-import io.github.dimitrysaf.provenio.core.settings.ThemeSettingsRepository
-import io.github.dimitrysaf.provenio.core.settings.ThemeSettingsStorage
-import io.github.dimitrysaf.provenio.core.streams.StreamBadgeSettingsRepository
-import io.github.dimitrysaf.provenio.core.streams.StreamBadgeSettingsStorage
 import io.github.dimitrysaf.provenio.core.tracking.TrackingSettingsRepository
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktCommentsSettings
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktCommentsStorage
@@ -74,14 +62,13 @@ internal interface LocalSyncSource {
     fun apply(changes: Map<String, JsonElement?>)
 }
 
-/** Everything that is synced for the active profile. */
+/**
+ * Everything that is synced for the active profile: what the person has and what the app does,
+ * such as add-ons, catalogs, library, progress, integrations and playback. How the app looks
+ * (theme, poster cards, page and shelf layouts, badges) stays on each device, since it suits that
+ * device's screen.
+ */
 internal fun localSyncSources(): List<LocalSyncSource> = listOf(
-    SettingsPayloadSource(
-        name = "theme",
-        export = ThemeSettingsStorage::exportToSyncPayload,
-        replace = ThemeSettingsStorage::replaceFromSyncPayload,
-        reload = ThemeSettingsRepository::onProfileChanged,
-    ),
     SettingsPayloadSource(
         name = "player",
         export = PlayerSettingsStorage::exportToSyncPayload,
@@ -92,12 +79,6 @@ internal fun localSyncSources(): List<LocalSyncSource> = listOf(
             introDbApiKey?.let(PlayerSettingsStorage::saveIntroDbApiKey)
         },
         reload = PlayerSettingsRepository::onProfileChanged,
-    ),
-    SettingsPayloadSource(
-        name = "stream_badges",
-        export = StreamBadgeSettingsStorage::exportToSyncPayload,
-        replace = StreamBadgeSettingsStorage::replaceFromSyncPayload,
-        reload = StreamBadgeSettingsRepository::onProfileChanged,
     ),
     SettingsPayloadSource(
         name = "debrid",
@@ -129,26 +110,10 @@ internal fun localSyncSources(): List<LocalSyncSource> = listOf(
         replace = TraktCommentsStorage::replaceFromSyncPayload,
         reload = TraktCommentsSettings::onProfileChanged,
     ),
-    SettingsTextSource(
-        name = "poster_card_style",
-        load = PosterCardStyleStorage::loadPayload,
-        save = PosterCardStyleStorage::savePayload,
-        reload = PosterCardStyleRepository::onProfileChanged,
-    ),
-    SettingsTextSource(
-        name = "meta_screen",
-        load = MetaScreenSettingsStorage::loadPayload,
-        save = MetaScreenSettingsStorage::savePayload,
-        reload = MetaScreenSettingsRepository::onProfileChanged,
-    ),
-    SettingsTextSource(
-        name = "collection_mobile",
-        load = CollectionMobileSettingsStorage::loadPayload,
-        save = CollectionMobileSettingsStorage::savePayload,
-        reload = CollectionMobileSettingsRepository::onProfileChanged,
-    ),
-    SettingsTextSource(
-        name = "continue_watching",
+    // Continue Watching's behaviour, and the up-next items dismissed; how the row looks stays here.
+    SettingsFieldsSource(
+        name = "up_next",
+        fields = setOf("upNextFromFurthestEpisode", "show_unaired_next_up", "dismissedNextUpKeys", "sort_mode"),
         load = ContinueWatchingPreferencesStorage::loadPayload,
         save = ContinueWatchingPreferencesStorage::savePayload,
         reload = ContinueWatchingPreferencesRepository::onProfileChanged,
@@ -158,12 +123,6 @@ internal fun localSyncSources(): List<LocalSyncSource> = listOf(
         load = TraktSettingsStorage::loadPayload,
         save = TraktSettingsStorage::savePayload,
         reload = TrackingSettingsRepository::onProfileChanged,
-    ),
-    SettingsTextSource(
-        name = "library_display",
-        load = LibraryDisplaySettingsStorage::loadPayload,
-        save = LibraryDisplaySettingsStorage::savePayload,
-        reload = LibraryDisplaySettingsRepository::onProfileChanged,
     ),
     SettingsTextSource(
         name = "episode_alerts",
@@ -185,6 +144,60 @@ internal fun localSyncSources(): List<LocalSyncSource> = listOf(
     WatchedSyncSource,
     ProgressSyncSource,
 )
+
+/**
+ * Keys earlier versions synced for how the app looks, which now stay on each device. Their old
+ * records are dropped from the ledger, so this device neither offers them again nor keeps what
+ * another device sends under them.
+ */
+private val RetiredSyncKeys = setOf(
+    "settings/poster_card_style",
+    "settings/meta_screen",
+    "settings/collection_mobile",
+    "settings/continue_watching",
+    "settings/library_display",
+)
+private val RetiredSyncPrefixes = listOf(
+    "settings/theme/",
+    "settings/stream_badges/",
+)
+
+internal fun isRetiredSyncKey(key: String): Boolean =
+    key in RetiredSyncKeys || RetiredSyncPrefixes.any(key::startsWith)
+
+/**
+ * Some fields of a settings store kept as one JSON payload, each synced on its own; the rest of the
+ * payload stays on the device.
+ */
+private class SettingsFieldsSource(
+    name: String,
+    private val fields: Set<String>,
+    private val load: () -> String?,
+    private val save: (String) -> Unit,
+    private val reload: () -> Unit,
+) : LocalSyncSource {
+    override val prefix: String = "settings/$name/"
+
+    private fun stored(): JsonObject =
+        load()?.trim()?.takeIf(String::isNotEmpty)
+            ?.let { runCatching { syncJson.parseToJsonElement(it) as? JsonObject }.getOrNull() }
+            ?: JsonObject(emptyMap())
+
+    override fun snapshot(): Map<String, JsonElement> =
+        stored().filterKeys { it in fields }.mapKeys { (field, _) -> prefix + field }
+
+    override fun apply(changes: Map<String, JsonElement?>) {
+        if (changes.isEmpty()) return
+        val payload = stored().toMutableMap()
+        changes.forEach { (key, value) ->
+            val field = key.removePrefix(prefix)
+            if (field !in fields) return@forEach
+            if (value == null) payload.remove(field) else payload[field] = value
+        }
+        save(syncJson.encodeToString(JsonObject.serializer(), JsonObject(payload)))
+        reload()
+    }
+}
 
 /** A settings store that exports a JSON object; each of its keys is synced on its own. */
 private class SettingsPayloadSource(

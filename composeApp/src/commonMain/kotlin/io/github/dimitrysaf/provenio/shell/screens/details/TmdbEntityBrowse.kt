@@ -1,11 +1,16 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterCellWidth
+import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
+import io.github.dimitrysaf.provenio.core.home.HomeShelfLayout
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.unit.Dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.layout.BoxWithConstraints
+androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -26,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -94,27 +98,45 @@ fun TmdbEntityBrowseScreen(
 
     val state = uiState
     val title = (state as? EntityBrowseUiState.Success)?.data?.header?.name ?: entityName
-    ScreenScaffold(
-        modifier = modifier,
-        title = title,
-        subtitle = entityKindLabel(entityKind),
-        onBack = onBack.takeUnless { LocalUseNativeNavigation.current },
-        horizontalPadding = 0.dp,
-    ) {
-        when (state) {
-            is EntityBrowseUiState.Loading -> entityBrowseSkeleton()
-            is EntityBrowseUiState.Error -> item(key = "error") {
-                EntityBrowseError(
-                    message = state.message,
-                    onRetry = { attempt++ },
+    val shelfSettings by remember {
+        HomeCatalogSettingsRepository.uiState
+    }.collectAsStateWithLifecycle()
+    val posterCellWidth = rememberPosterCellWidth()
+    BoxWithConstraints(modifier = modifier) {
+        val railShelfGrid = if (shelfSettings.shelfLayout == HomeShelfLayout.Grid) {
+            DetailShelfGridContext(
+                contentWidth = maxWidth - EntityHorizontalPadding * 2,
+                horizontalPadding = EntityHorizontalPadding,
+                contentMaxWidth = Dp.Unspecified,
+                expandedByDefault = shelfSettings.shelvesExpandedByDefault,
+                posterCellWidth = posterCellWidth,
+            )
+        } else {
+            null
+        }
+        ScreenScaffold(
+            modifier = Modifier.fillMaxSize(),
+            title = title,
+            subtitle = entityKindLabel(entityKind),
+            onBack = onBack.takeUnless { LocalUseNativeNavigation.current },
+            horizontalPadding = 0.dp,
+        ) {
+            when (state) {
+                is EntityBrowseUiState.Loading -> entityBrowseSkeleton()
+                is EntityBrowseUiState.Error -> item(key = "error") {
+                    EntityBrowseError(
+                        message = state.message,
+                        onRetry = { attempt++ },
+                    )
+                }
+                is EntityBrowseUiState.Success -> entityBrowseContent(
+                    data = state.data,
+                    watchedKeys = watchedUiState.watchedKeys,
+                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                    railShelfGrid = railShelfGrid,
+                    onOpenMeta = onOpenMeta,
                 )
             }
-            is EntityBrowseUiState.Success -> entityBrowseContent(
-                data = state.data,
-                watchedKeys = watchedUiState.watchedKeys,
-                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                onOpenMeta = onOpenMeta,
-            )
         }
     }
 }
@@ -123,6 +145,7 @@ private fun LazyListScope.entityBrowseContent(
     data: TmdbEntityBrowseData,
     watchedKeys: Set<String>,
     fullyWatchedSeriesKeys: Set<String>,
+    railShelfGrid: DetailShelfGridContext?,
     onOpenMeta: (MetaPreview) -> Unit,
 ) {
     item(key = "header") {
@@ -145,6 +168,18 @@ private fun LazyListScope.entityBrowseContent(
         return
     }
     data.rails.forEach { rail ->
+        if (railShelfGrid != null) {
+            detailPosterShelfGrid(
+                key = "rail-${rail.mediaType}-${rail.railType}",
+                title = { entityRailTitle(rail) },
+                items = rail.items,
+                context = railShelfGrid,
+                watchedKeys = watchedKeys,
+                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                onPosterClick = onOpenMeta,
+            )
+            return@forEach
+        }
         item(key = "rail-${rail.mediaType}-${rail.railType}") {
             DetailPosterRailSection(
                 title = entityRailTitle(rail),

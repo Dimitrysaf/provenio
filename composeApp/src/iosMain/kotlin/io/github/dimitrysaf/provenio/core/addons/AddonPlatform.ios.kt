@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.addons
 
+import io.github.dimitrysaf.provenio.core.network.EmptyResponseException
 import io.github.dimitrysaf.provenio.core.network.HttpStatusException
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.darwin.Darwin
@@ -92,7 +93,7 @@ actual suspend fun httpGetText(url: String): String =
                 throw HttpStatusException(response.status.value, runBlocking { getString(Res.string.network_request_failed_http, response.status.value) })
             }
             if (payload.isBlank()) {
-                throw IllegalStateException(runBlocking { getString(Res.string.network_empty_response_body) })
+                throw EmptyResponseException(runBlocking { getString(Res.string.network_empty_response_body) })
             }
             payload
         }
@@ -110,7 +111,7 @@ actual suspend fun httpPostJson(url: String, body: String): String =
                 throw HttpStatusException(response.status.value, runBlocking { getString(Res.string.network_request_failed_http, response.status.value) })
             }
             if (payload.isBlank()) {
-                throw IllegalStateException(runBlocking { getString(Res.string.network_empty_response_body) })
+                throw EmptyResponseException(runBlocking { getString(Res.string.network_empty_response_body) })
             }
             payload
         }
@@ -132,7 +133,7 @@ actual suspend fun httpGetTextWithHeaders(
                 throw HttpStatusException(response.status.value, runBlocking { getString(Res.string.network_request_failed_http, response.status.value) })
             }
             if (payload.isBlank()) {
-                throw IllegalStateException(runBlocking { getString(Res.string.network_empty_response_body) })
+                throw EmptyResponseException(runBlocking { getString(Res.string.network_empty_response_body) })
             }
             payload
         }
@@ -157,7 +158,7 @@ actual suspend fun httpPostJsonWithHeaders(
                 throw HttpStatusException(response.status.value, runBlocking { getString(Res.string.network_request_failed_http, response.status.value) })
             }
             if (payload.isBlank()) {
-                throw IllegalStateException(runBlocking { getString(Res.string.network_empty_response_body) })
+                throw EmptyResponseException(runBlocking { getString(Res.string.network_empty_response_body) })
             }
             payload
         }

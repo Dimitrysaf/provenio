@@ -1948,8 +1948,6 @@
     <string name="library_filter_list">Vybrať zoznam</string>
     <string name="library_filter_sort">Zoradiť knižnicu</string>
     <string name="library_filter_type">Vybrať typ</string>
-    <string name="library_layout_show_horizontal">Zobraziť horizontálne poličky</string>
-    <string name="library_layout_show_vertical">Zobraziť vertikálnu mriežku</string>
     <string name="library_sort_added_asc">Najstaršie pridané</string>
     <string name="library_sort_added_desc">Najnovšie pridané</string>
     <string name="library_sort_title_asc">Názov A–Z</string>

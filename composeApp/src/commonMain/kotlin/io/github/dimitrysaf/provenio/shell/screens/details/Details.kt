@@ -28,8 +28,15 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
-import io.github.dimitrysaf.provenio.shell.components.EmptyState
-import io.github.dimitrysaf.provenio.shell.components.LoadErrorState
+import io.github.dimitrysaf.provenio.shell.components.ErrorDialog
+import io.github.dimitrysaf.provenio.shell.components.LoadErrorDialog
+import io.github.dimitrysaf.provenio.shell.components.PageScrollbar
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterCellWidth
+import io.github.dimitrysaf.provenio.shell.screens.details.components.rememberResolvedCast
+import io.github.dimitrysaf.provenio.shell.screens.details.components.rememberTrailerCategories
+import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
+import io.github.dimitrysaf.provenio.core.home.HomeShelfLayout
+import io.github.dimitrysaf.provenio.shell.components.loadErrorIcon
 import io.github.dimitrysaf.provenio.core.metadata.MetaLoadFailure
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Extension
@@ -219,24 +226,43 @@ fun MetaDetailsScreen(
         traktMode = traktAuthUiState.mode,
     )
 
+    val currentFailure = uiState.failure?.takeIf { uiState.requestKey == "$type:$id" }
+    // Kept through a retry, so the page stays in place while the add-ons are asked again.
+    var lastFailure by remember(type, id) { mutableStateOf<MetaLoadFailure?>(null) }
+    LaunchedEffect(currentFailure) {
+        if (currentFailure != null) lastFailure = currentFailure
+    }
+    val pageFailure = currentFailure ?: lastFailure
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
         when {
-            displayedMeta == null && uiState.failure != null && uiState.requestKey == "$type:$id" -> {
-                uiState.failure?.let { failure ->
-                    DetailsLoadError(
-                        condition = networkStatusUiState.condition,
-                        failure = failure,
-                        onRetry = {
-                            NetworkStatusRepository.requestRefresh(force = true)
-                            MetaDetailsRepository.load(type, id)
-                        },
-                        modifier = Modifier.align(Alignment.Center),
+            displayedMeta == null && pageFailure != null -> {
+                val placeholder = remember(type, id, libraryUiState.items, watchProgressUiState.entries, homeSections) {
+                    detailPlaceholderFor(
+                        type = type,
+                        id = id,
+                        libraryItems = libraryUiState.items,
+                        progressEntries = watchProgressUiState.entries,
+                        homeSections = homeSections,
                     )
                 }
+                DetailsLoadError(
+                    type = type,
+                    id = id,
+                    failure = pageFailure,
+                    showDialog = currentFailure != null,
+                    condition = networkStatusUiState.condition,
+                    placeholder = placeholder,
+                    onRetry = {
+                        NetworkStatusRepository.requestRefresh(force = true)
+                        MetaDetailsRepository.load(type, id)
+                    },
+                    onBack = onBack,
+                )
             }
 
             displayedMeta == null -> {
@@ -424,27 +450,46 @@ private fun MetaDetailsLoadEffects(
     }
 }
 
+/**
+ * The page for a title whose details did not load: its skeleton with what the device already
+ * knows, under a dialog saying why. During a retry the dialog steps aside and the page stays.
+ */
 @Composable
 private fun DetailsLoadError(
-    condition: NetworkCondition,
+    type: String,
+    id: String,
     failure: MetaLoadFailure,
+    showDialog: Boolean,
+    condition: NetworkCondition,
+    placeholder: DetailPlaceholder,
     onRetry: () -> Unit,
-    modifier: Modifier = Modifier,
+    onBack: () -> Unit,
 ) {
+    val failures = (failure as? MetaLoadFailure.AddonsFailed)?.failures.orEmpty()
+    DetailUnavailablePage(
+        type = type,
+        id = id,
+        placeholder = placeholder,
+        placeholderIcon = when (failure) {
+            MetaLoadFailure.NoMetaAddon -> Icons.Rounded.Extension
+            is MetaLoadFailure.AddonsFailed -> loadErrorIcon(failures, condition)
+        },
+        onBack = onBack,
+    )
+    if (!showDialog) return
     when (failure) {
-        MetaLoadFailure.NoMetaAddon -> EmptyState(
+        MetaLoadFailure.NoMetaAddon -> ErrorDialog(
             icon = Icons.Rounded.Extension,
             title = stringResource(Res.string.details_no_meta_addon_title),
             message = stringResource(Res.string.details_no_meta_addon_message),
-            modifier = modifier,
-            actionLabel = stringResource(Res.string.action_retry),
-            onActionClick = onRetry,
+            onRetry = onRetry,
+            onDismiss = onBack,
         )
-        is MetaLoadFailure.AddonsFailed -> LoadErrorState(
-            failures = failure.failures,
+        is MetaLoadFailure.AddonsFailed -> LoadErrorDialog(
+            failures = failures,
             networkCondition = condition,
             onRetry = onRetry,
-            modifier = modifier,
+            onDismiss = onBack,
         )
     }
 }
@@ -644,6 +689,13 @@ private fun MetaDetailsContent(
     val listState = scroll.listState
     val heroHeightPx = scroll.heroHeightPx
     val isHeroCollapsed = scroll.isHeroCollapsed
+    // Details shelves follow the Home shelf layout, so the app lays shelves out one way.
+    val shelfSettings by remember {
+        HomeCatalogSettingsRepository.uiState
+    }.collectAsStateWithLifecycle()
+    val resolvedCast = rememberResolvedCast(meta.cast, meta.id, meta.type)
+    val trailerCategories = rememberTrailerCategories(meta.trailers)
+    val posterCellWidth = rememberPosterCellWidth()
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val isTablet = maxWidth >= 720.dp
@@ -689,8 +741,13 @@ private fun MetaDetailsContent(
                 )
             }
         }
-        val detailSectionItems: LazyListScope.(MetaScreenSettingsUiState, Dp) -> Unit =
-            { sectionSettings, sectionMaxWidth ->
+        // The width a pane's sections lay out in, which the grid shelves count their columns from.
+        fun paneContentWidth(paneWidth: Dp, sectionMaxWidth: Dp): Dp {
+            val padded = paneWidth - sectionHorizontalPadding * 2
+            return if (sectionMaxWidth == Dp.Unspecified) padded else minOf(padded, sectionMaxWidth)
+        }
+        val detailSectionItems: LazyListScope.(MetaScreenSettingsUiState, Dp, Dp) -> Unit =
+            { sectionSettings, sectionMaxWidth, paneWidth ->
                 configuredMetaSectionItems(
                     settings = sectionSettings,
                     meta = meta,
@@ -743,11 +800,25 @@ private fun MetaDetailsContent(
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
                     pendingSections = pendingSections,
+                    shelfGrid = if (shelfSettings.shelfLayout == HomeShelfLayout.Grid) {
+                        DetailShelfGridContext(
+                            contentWidth = paneContentWidth(paneWidth, sectionMaxWidth),
+                            horizontalPadding = sectionHorizontalPadding,
+                            contentMaxWidth = sectionMaxWidth,
+                            expandedByDefault = shelfSettings.shelvesExpandedByDefault,
+                            posterCellWidth = posterCellWidth,
+                        )
+                    } else {
+                        null
+                    },
+                    resolvedCast = resolvedCast,
+                    trailerCategories = trailerCategories,
                 )
             }
         val backdropUrl = (listOf(meta.background) + meta.extraArtwork + listOf(meta.poster))
             .firstOrNull { !it.isNullOrBlank() }
 
+        val sidePaneListState = rememberLazyListState()
         Box(modifier = Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxSize().detailsContentReveal(metaScreenSettingsUiState.posterTransitionEnabled)) {
                 DetailBackdrop(
@@ -789,6 +860,7 @@ private fun MetaDetailsContent(
                         detailSectionItems(
                             primaryPaneSettings,
                             if (isTablet && sidePaneSection == null) contentMaxWidth else Dp.Unspecified,
+                            maxWidth * primaryPaneWeight,
                         )
 
                         item(key = "detail-bottom-spacer") {
@@ -798,7 +870,7 @@ private fun MetaDetailsContent(
 
                     if (sidePaneSettings != null) {
                         LazyColumn(
-                            state = rememberLazyListState(),
+                            state = sidePaneListState,
                             modifier = Modifier
                                 .weight(1f - primaryPaneWeight)
                                 .fillMaxHeight(),
@@ -807,13 +879,29 @@ private fun MetaDetailsContent(
                                     TopAppBarDefaults.TopAppBarExpandedHeight,
                             ),
                         ) {
-                            detailSectionItems(sidePaneSettings, Dp.Unspecified)
+                            detailSectionItems(sidePaneSettings, Dp.Unspecified, maxWidth * (1f - primaryPaneWeight))
 
                             item(key = "detail-side-bottom-spacer") {
                                 Spacer(modifier = Modifier.height(safeBottomPadding(32.dp)))
                             }
                         }
                     }
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(primaryPaneWeight)
+                        .fillMaxHeight()
+                        .zIndex(1f),
+                ) {
+                    PageScrollbar(state = listState, modifier = Modifier.align(Alignment.TopEnd))
+                }
+                if (sidePaneSettings != null) {
+                    PageScrollbar(
+                        state = sidePaneListState,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .zIndex(1f),
+                    )
                 }
             }
 
