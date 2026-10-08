@@ -7,6 +7,9 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.SwingUtilities
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 private const val ItemPath = "/StatusNotifierItem"
 private const val MenuPath = "/MenuBar"
@@ -72,6 +75,16 @@ internal object DesktopStatusNotifier {
     private val glib: GLib get() = DesktopDbus.glib
     private val gio: Gio get() = DesktopDbus.gio
 
+    enum class State { Starting, Registered, Failed }
+
+    private val _state = MutableStateFlow(State.Starting)
+
+    /**
+     * Whether the tray icon is really shown: Registered only once the tray host accepted it, so
+     * closing the window hides it to the tray only when the tray can bring it back.
+     */
+    val state: StateFlow<State> = _state.asStateFlow()
+
     private var itemVTable: GDBusInterfaceVTable? = null
     private var menuVTable: GDBusInterfaceVTable? = null
     private var iconPixmap: Pointer? = null
@@ -85,7 +98,7 @@ internal object DesktopStatusNotifier {
         onShow: () -> Unit,
         onQuit: () -> Unit,
     ): Boolean {
-        if (!System.getProperty("os.name").orEmpty().lowercase().contains("linux")) return false
+        if (!System.getProperty("os.name").orEmpty().lowercase().contains("linux")) return fail()
         val watcherPresent = DesktopDbus.call(
             busName = "org.freedesktop.DBus",
             objectPath = "/org/freedesktop/DBus",
@@ -93,7 +106,7 @@ internal object DesktopStatusNotifier {
             method = "NameHasOwner",
             arguments = "(${WatcherName.toGVariantString()},)",
         )?.contains("true") == true
-        if (!watcherPresent) return false
+        if (!watcherPresent) return fail()
 
         val exported = CountDownLatch(1)
         val success = AtomicBoolean(false)
@@ -101,18 +114,42 @@ internal object DesktopStatusNotifier {
             runLoop(exported, success) { export(appId, title, icon, showLabel, quitLabel, onShow, onQuit) }
         }, "status-notifier").apply { isDaemon = true }.start()
         exported.await(3, TimeUnit.SECONDS)
-        if (!success.get()) return false
+        if (!success.get()) return fail()
         Thread({
-            DesktopDbus.call(
-                busName = WatcherName,
-                objectPath = "/StatusNotifierWatcher",
-                interfaceName = WatcherName,
-                method = "RegisterStatusNotifierItem",
-                arguments = "(${ItemPath.toGVariantString()},)",
-                timeoutMilliseconds = 10_000,
-            )
+            _state.value = if (register(appId)) State.Registered else State.Failed
         }, "status-notifier-register").apply { isDaemon = true }.start()
         return true
+    }
+
+    private fun fail(): Boolean {
+        _state.value = State.Failed
+        return false
+    }
+
+    /**
+     * Registers the item under a bus name of its own. Some tray hosts, Cinnamon's among them, do not
+     * show an item registered by object path alone, and a Flatpak may only own names under its app
+     * ID, so the name is the app ID's. The host's answer decides whether the icon counts as shown.
+     */
+    private fun register(appId: String): Boolean {
+        val serviceName = "$appId.Tray"
+        val owned = DesktopDbus.call(
+            busName = "org.freedesktop.DBus",
+            objectPath = "/org/freedesktop/DBus",
+            interfaceName = "org.freedesktop.DBus",
+            method = "RequestName",
+            // 4: do not queue behind another owner.
+            arguments = "(${serviceName.toGVariantString()}, uint32 4)",
+        )?.let { reply -> reply.contains("uint32 1") || reply.contains("(1,)") } == true
+        val reply = DesktopDbus.call(
+            busName = WatcherName,
+            objectPath = "/StatusNotifierWatcher",
+            interfaceName = WatcherName,
+            method = "RegisterStatusNotifierItem",
+            arguments = "(${(if (owned) serviceName else ItemPath).toGVariantString()},)",
+            timeoutMilliseconds = 10_000,
+        )
+        return reply != null
     }
 
     private fun runLoop(exported: CountDownLatch, success: AtomicBoolean, export: () -> Boolean) {

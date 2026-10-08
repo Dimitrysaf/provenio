@@ -94,13 +94,16 @@ object SingleInstance {
         Thread({
             while (!socket.isClosed) {
                 val client = runCatching { socket.accept() }.getOrNull() ?: break
+                // Only another launch of the app, which ends its message with the show command, brings
+                // the window forward; any other connection to this port is ignored.
+                var showRequested = false
                 runCatching {
                     client.use { connection ->
                         connection.soTimeout = ConnectTimeoutMs
                         connection.getInputStream().bufferedReader().readLines().forEach { line ->
                             val value = line.trim()
                             when {
-                                value == ShowCommand -> Unit
+                                value == ShowCommand -> showRequested = true
                                 value.startsWith("provenio:") || value.startsWith("stremio:") -> onUrl(value)
                             }
                         }
@@ -110,11 +113,17 @@ object SingleInstance {
                         }
                     }
                 }
-                requests.tryEmit(Unit)
+                if (showRequested) requests.tryEmit(Unit)
             }
         }, "single-instance").apply { isDaemon = true }.start()
     }
 
+    /**
+     * Hands this launch to the running app. Once the message is written it counts as delivered, even
+     * if the acknowledgement is slow: retrying then would send the show request again and again,
+     * bringing the window forward each time. Only a failed connection, such as a port file left by
+     * an app that is still starting or already gone, is retried.
+     */
     private fun forwardToRunningInstance(args: Array<String>): Boolean = runCatching {
         val port = portFile.readText().trim().toInt()
         Socket().use { socket ->
@@ -125,7 +134,8 @@ object SingleInstance {
             writer.appendLine(ShowCommand)
             writer.flush()
             socket.shutdownOutput()
-            socket.getInputStream().bufferedReader().readLine()?.trim() == AckCommand
+            runCatching { socket.getInputStream().bufferedReader().readLine() }
+            true
         }
     }.getOrDefault(false)
 }

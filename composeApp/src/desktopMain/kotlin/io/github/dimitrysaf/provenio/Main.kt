@@ -136,10 +136,13 @@ fun main(args: Array<String>) {
                 onQuit = quit,
             )
         }
-        val awtTrayAvailable = remember {
-            !statusNotifierActive && runCatching { SystemTray.isSupported() }.getOrDefault(false)
-        }
-        val trayAvailable = statusNotifierActive || awtTrayAvailable
+        val statusNotifierState by DesktopStatusNotifier.state.collectAsState()
+        // Java's own tray stands in when the desktop's tray host would not take the icon.
+        val awtTraySupported = remember { runCatching { SystemTray.isSupported() }.getOrDefault(false) }
+        val awtTrayAvailable = awtTraySupported &&
+            (!statusNotifierActive || statusNotifierState == DesktopStatusNotifier.State.Failed)
+        // Closing hides the window only when a tray icon can bring it back; otherwise it quits.
+        val trayAvailable = statusNotifierState == DesktopStatusNotifier.State.Registered || awtTrayAvailable
         if (awtTrayAvailable) {
             Tray(
                 icon = appIcon,
@@ -177,6 +180,9 @@ fun main(args: Array<String>) {
             ) {
                 LaunchedEffect(Unit) {
                     SingleInstance.showRequests.collect {
+                        // Already in front: taking focus again would only pull it away from where
+                        // the person is typing.
+                        if (windowVisible && !windowState.isMinimized && window.isFocused) return@collect
                         windowVisible = true
                         windowState.isMinimized = false
                         window.toFront()
