@@ -728,6 +728,8 @@ private fun MetaDetailsContent(
             null
         }
         val primaryPaneWeight = if (sidePaneSection != null) DetailPrimaryPaneWeight else 1f
+        val primaryPaneWidth = maxWidth * primaryPaneWeight
+        val sidePaneWidth = maxWidth * (1f - primaryPaneWeight)
         val sectionHorizontalPadding = if (sidePaneSection != null) 24.dp else contentHorizontalPadding
         val primaryPaneSettings = remember(metaScreenSettingsUiState, sidePaneSection) {
             metaScreenSettingsUiState.copy(
@@ -860,7 +862,7 @@ private fun MetaDetailsContent(
                         detailSectionItems(
                             primaryPaneSettings,
                             if (isTablet && sidePaneSection == null) contentMaxWidth else Dp.Unspecified,
-                            maxWidth * primaryPaneWeight,
+                            primaryPaneWidth,
                         )
 
                         item(key = "detail-bottom-spacer") {
@@ -879,7 +881,7 @@ private fun MetaDetailsContent(
                                     TopAppBarDefaults.TopAppBarExpandedHeight,
                             ),
                         ) {
-                            detailSectionItems(sidePaneSettings, Dp.Unspecified, maxWidth * (1f - primaryPaneWeight))
+                            detailSectionItems(sidePaneSettings, Dp.Unspecified, sidePaneWidth)
 
                             item(key = "detail-side-bottom-spacer") {
                                 Spacer(modifier = Modifier.height(safeBottomPadding(32.dp)))
