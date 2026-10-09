@@ -102,6 +102,7 @@ fun ShapedArtworkImage(
     colorFilter: ColorFilter? = null,
     letterboxColor: Color = Color.Black,
     showSkeleton: Boolean = false,
+    fallback: (@Composable () -> Unit)? = null,
 ) {
     val urls = remember(candidates) {
         candidates.mapNotNull { it?.trim()?.takeIf(String::isNotEmpty) }.distinct()
@@ -118,6 +119,9 @@ fun ShapedArtworkImage(
             animationSpec = tween(durationMillis = 260),
             label = "artwork_skeleton",
         )
+        if (choice == null && fallback != null) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { fallback() }
+        }
         if (choice != null && choice.letterbox) {
             Box(modifier = Modifier.fillMaxSize().background(letterboxColor))
         }

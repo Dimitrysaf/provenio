@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import androidx.compose.runtime.CompositionLocalProvider
+import io.github.dimitrysaf.provenio.shell.components.LocalPosterAreaWidth
 import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -218,6 +220,7 @@ internal fun DetailPage(
         HomeCatalogSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
     val posterCellWidth = rememberPosterCellWidth()
+    val posterCardStyle = rememberPosterCardStyleUiState()
     var viewerIndex by remember(pageKey) { mutableStateOf<Int?>(null) }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -246,6 +249,7 @@ internal fun DetailPage(
                     contentMaxWidth = Dp.Unspecified,
                     expandedByDefault = shelfSettings.shelvesExpandedByDefault,
                     posterCellWidth = posterCellWidth,
+                    posterCardStyle = posterCardStyle,
                 )
             } else {
                 null
@@ -265,6 +269,7 @@ internal fun DetailPage(
                     .fillMaxSize()
                     .zIndex(1f),
             ) {
+                CompositionLocalProvider(LocalPosterAreaWidth provides maxWidth * primaryPaneWeight) {
                 LazyColumn(
                     state = scroll.listState,
                     modifier = Modifier
@@ -294,8 +299,9 @@ internal fun DetailPage(
                         Spacer(modifier = Modifier.height(safeBottomPadding(32.dp)))
                     }
                 }
+                }
 
-                if (isTwoPane) {
+                if (isTwoPane) CompositionLocalProvider(LocalPosterAreaWidth provides maxWidth * (1f - primaryPaneWeight)) {
                     LazyColumn(
                         state = sidePaneListState,
                         modifier = Modifier

@@ -1,9 +1,23 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
+import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
+import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
+import io.github.dimitrysaf.provenio.shell.components.SelectableListRow
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
+import io.github.dimitrysaf.provenio.shell.components.SheetHeader
+import io.github.dimitrysaf.provenio.shell.components.ModalSheet
+import io.github.dimitrysaf.provenio.shell.components.BottomSheetBodyMargin
+import org.jetbrains.compose.resources.StringResource
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.Switch
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import io.github.dimitrysaf.provenio.core.build.isDesktop
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
 import io.github.dimitrysaf.provenio.shell.components.CollapsibleShelfHeader
 import io.github.dimitrysaf.provenio.shell.components.ShelfGridRow
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCellWidth
-import io.github.dimitrysaf.provenio.shell.components.shelfGridColumns
+import io.github.dimitrysaf.provenio.shell.components.posterGridColumns
 import androidx.compose.ui.unit.Dp
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -269,7 +283,7 @@ fun LibraryScreen(
         // they are, and the column count follows from how many fit.
         val gridColumns = rememberPosterGridColumnCount(maxWidth - LibraryGridHorizontalPadding * 2)
         val shelfCellWidth = rememberPosterCellWidth()
-        val shelfGridColumns = shelfGridColumns(maxWidth - LibraryShelfHorizontalPadding * 2, shelfCellWidth)
+        val shelfGridColumns = posterGridColumns(maxWidth - LibraryShelfHorizontalPadding * 2, rememberPosterCardStyleUiState())
 
         ScreenScaffold(
             title = when {
@@ -1144,6 +1158,7 @@ private fun LazyListScope.libraryShelfGrid(
                 items = row,
                 columns = grid.columns,
                 cellWidth = grid.cellWidth,
+                fillCells = rememberPosterCardStyleUiState().dynamicSizeEnabled,
                 modifier = libraryContentTransitionModifier()
                     .padding(horizontal = LibraryShelfHorizontalPadding)
                     .padding(bottom = if (rowIndex == rows.lastIndex) 12.dp else 0.dp),
@@ -1381,7 +1396,8 @@ private fun LibraryReconnectEffect(condition: NetworkCondition, isRemoteSource: 
 /**
  * How the saved library lays out, Library's own choice apart from Home's: shelves in rows that
  * scroll sideways, shelves as grids whose titles open and close them, or one grid of everything.
- * With grid shelves, whether they start open is chosen here too.
+ * With grid shelves, whether they start open is chosen here too. Desktop opens a menu under the
+ * button; phones and tablets open a bottom sheet.
  */
 @Composable
 private fun LibraryLayoutMenu(settings: LibraryDisplaySettingsUiState) {
@@ -1389,6 +1405,7 @@ private fun LibraryLayoutMenu(settings: LibraryDisplaySettingsUiState) {
     val gridShelves = settings.layoutMode == LibraryLayoutMode.HORIZONTAL &&
         settings.shelfLayout == HomeShelfLayout.Grid
     val label = stringResource(Res.string.library_layout_menu)
+    val options = LibraryLayoutOption.entries
     Box {
         WithTooltip(label) {
             IconButton(onClick = { menuVisible = true }) {
@@ -1403,38 +1420,115 @@ private fun LibraryLayoutMenu(settings: LibraryDisplaySettingsUiState) {
                 )
             }
         }
-        DropdownMenu(expanded = menuVisible, onDismissRequest = { menuVisible = false }) {
-            val options = listOf(
-                Triple(Res.string.library_layout_shelves_rows, LibraryLayoutMode.HORIZONTAL, HomeShelfLayout.Horizontal),
-                Triple(Res.string.library_layout_shelves_grid, LibraryLayoutMode.HORIZONTAL, HomeShelfLayout.Grid),
-                Triple(Res.string.library_layout_single_grid, LibraryLayoutMode.VERTICAL, null),
+        if (isDesktop) {
+            DropdownMenu(expanded = menuVisible, onDismissRequest = { menuVisible = false }) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(option.labelRes)) },
+                        leadingIcon = { RadioButton(selected = option.isSelected(settings), onClick = null) },
+                        onClick = {
+                            option.apply()
+                            menuVisible = false
+                        },
+                    )
+                }
+                if (gridShelves) {
+                    HorizontalDivider()
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.settings_shelf_expanded_by_default)) },
+                        leadingIcon = { Checkbox(checked = settings.shelvesExpandedByDefault, onCheckedChange = null) },
+                        onClick = { toggleLibraryShelvesExpanded(settings) },
+                    )
+                }
+            }
+        } else if (menuVisible) {
+            LibraryLayoutSheet(
+                title = label,
+                settings = settings,
+                gridShelves = gridShelves,
+                onDismiss = { menuVisible = false },
             )
-            options.forEach { (labelRes, layoutMode, shelfLayout) ->
-                val selected = settings.layoutMode == layoutMode &&
-                    (shelfLayout == null || settings.shelfLayout == shelfLayout)
-                DropdownMenuItem(
-                    text = { Text(stringResource(labelRes)) },
-                    leadingIcon = { RadioButton(selected = selected, onClick = null) },
-                    onClick = {
-                        LibraryDisplaySettingsRepository.setLayoutMode(layoutMode)
-                        shelfLayout?.let(LibraryDisplaySettingsRepository::setShelfLayout)
-                        menuVisible = false
+        }
+    }
+}
+
+/** The layout choices as a bottom sheet: picking one applies it, and the sheet stays for the shelf switch. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LibraryLayoutSheet(
+    title: String,
+    settings: LibraryDisplaySettingsUiState,
+    gridShelves: Boolean,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val close: () -> Unit = { scope.launch { dismissBottomSheet(sheetState, onDismiss) } }
+    ModalSheet(
+        onDismissRequest = close,
+        sheetState = sheetState,
+    ) {
+        SheetHeader(
+            title = title,
+            navigation = SheetNavigation.Close,
+            onNavigate = close,
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = BottomSheetBodyMargin)
+                .padding(bottom = safeBottomPadding(BottomSheetBodyMargin)),
+        ) {
+            LibraryLayoutOption.entries.forEach { option ->
+                val selected = option.isSelected(settings)
+                SelectableListRow(
+                    selected = selected,
+                    onClick = option::apply,
+                    headline = stringResource(option.labelRes),
+                    trailingContent = {
+                        if (selected) Icon(imageVector = Icons.Rounded.Check, contentDescription = null)
                     },
                 )
             }
             if (gridShelves) {
-                HorizontalDivider()
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.settings_shelf_expanded_by_default)) },
-                    leadingIcon = { Checkbox(checked = settings.shelvesExpandedByDefault, onCheckedChange = null) },
-                    onClick = {
-                        ShelfExpansion.resetLibrary()
-                        LibraryDisplaySettingsRepository.setShelvesExpandedByDefault(!settings.shelvesExpandedByDefault)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                SelectableListRow(
+                    selected = false,
+                    onClick = { toggleLibraryShelvesExpanded(settings) },
+                    headline = stringResource(Res.string.settings_shelf_expanded_by_default),
+                    trailingContent = {
+                        Switch(checked = settings.shelvesExpandedByDefault, onCheckedChange = null)
                     },
                 )
             }
         }
     }
+}
+
+/** One of Library's layouts: the layout mode, and for shelves whether they are rows or grids. */
+private enum class LibraryLayoutOption(
+    val labelRes: StringResource,
+    val layoutMode: LibraryLayoutMode,
+    val shelfLayout: HomeShelfLayout?,
+) {
+    ShelvesRows(Res.string.library_layout_shelves_rows, LibraryLayoutMode.HORIZONTAL, HomeShelfLayout.Horizontal),
+    ShelvesGrid(Res.string.library_layout_shelves_grid, LibraryLayoutMode.HORIZONTAL, HomeShelfLayout.Grid),
+    SingleGrid(Res.string.library_layout_single_grid, LibraryLayoutMode.VERTICAL, null),
+    ;
+
+    fun isSelected(settings: LibraryDisplaySettingsUiState): Boolean =
+        settings.layoutMode == layoutMode && (shelfLayout == null || settings.shelfLayout == shelfLayout)
+
+    fun apply() {
+        LibraryDisplaySettingsRepository.setLayoutMode(layoutMode)
+        shelfLayout?.let(LibraryDisplaySettingsRepository::setShelfLayout)
+    }
+}
+
+/** Flips whether Library's grid shelves start open, forgetting the shelves opened or closed by hand. */
+private fun toggleLibraryShelvesExpanded(settings: LibraryDisplaySettingsUiState) {
+    ShelfExpansion.resetLibrary()
+    LibraryDisplaySettingsRepository.setShelvesExpandedByDefault(!settings.shelvesExpandedByDefault)
 }
 
 @Composable

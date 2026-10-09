@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
+import io.github.dimitrysaf.provenio.shell.components.LocalPosterAreaWidth
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -696,6 +698,7 @@ private fun MetaDetailsContent(
     val resolvedCast = rememberResolvedCast(meta.cast, meta.id, meta.type)
     val trailerCategories = rememberTrailerCategories(meta.trailers)
     val posterCellWidth = rememberPosterCellWidth()
+    val posterCardStyle = rememberPosterCardStyleUiState()
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val isTablet = maxWidth >= 720.dp
@@ -809,6 +812,7 @@ private fun MetaDetailsContent(
                             contentMaxWidth = sectionMaxWidth,
                             expandedByDefault = shelfSettings.shelvesExpandedByDefault,
                             posterCellWidth = posterCellWidth,
+                            posterCardStyle = posterCardStyle,
                         )
                     } else {
                         null
@@ -833,6 +837,7 @@ private fun MetaDetailsContent(
                         .fillMaxSize()
                         .zIndex(1f),
                 ) {
+                    CompositionLocalProvider(LocalPosterAreaWidth provides primaryPaneWidth) {
                     LazyColumn(
                         state = listState,
                         modifier = Modifier
@@ -869,8 +874,9 @@ private fun MetaDetailsContent(
                             Spacer(modifier = Modifier.height(safeBottomPadding(32.dp)))
                         }
                     }
+                    }
 
-                    if (sidePaneSettings != null) {
+                    if (sidePaneSettings != null) CompositionLocalProvider(LocalPosterAreaWidth provides sidePaneWidth) {
                         LazyColumn(
                             state = sidePaneListState,
                             modifier = Modifier

@@ -695,6 +695,10 @@ internal fun settingsSearchEntries(
     val posterSection = stringResource(Res.string.settings_poster_card_style)
     listOf(
         PlaybackSearchRow("poster-width", stringResource(Res.string.settings_poster_card_width)),
+        PlaybackSearchRow("poster-cards-per-row", stringResource(Res.string.settings_poster_cards_per_row)),
+        PlaybackSearchRow("poster-shelf-grid", stringResource(Res.string.settings_shelf_layout_grid), stringResource(Res.string.settings_shelf_layout_grid_description), sectionOverride = stringResource(Res.string.settings_homescreen_section_shelves)),
+        PlaybackSearchRow("poster-shelf-horizontal", stringResource(Res.string.settings_shelf_layout_horizontal), stringResource(Res.string.settings_shelf_layout_horizontal_description), sectionOverride = stringResource(Res.string.settings_homescreen_section_shelves)),
+        PlaybackSearchRow("poster-shelf-expanded", stringResource(Res.string.settings_shelf_expanded_by_default), stringResource(Res.string.settings_shelf_expanded_by_default_description), sectionOverride = stringResource(Res.string.settings_homescreen_section_shelves)),
         PlaybackSearchRow("poster-radius", stringResource(Res.string.settings_poster_card_radius)),
         PlaybackSearchRow("poster-landscape", stringResource(Res.string.settings_poster_landscape_mode)),
         PlaybackSearchRow("poster-hide-labels", stringResource(Res.string.settings_poster_hide_labels)),
@@ -705,7 +709,7 @@ internal fun settingsSearchEntries(
             title = row.title,
             description = row.description,
             pageLabel = posterStylePage,
-            section = posterSection,
+            section = row.sectionOverride ?: posterSection,
             icon = Icons.Rounded.Tune,
         )
     }

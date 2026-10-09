@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.catalog
 
+import io.github.dimitrysaf.provenio.shell.components.PosterLandscapeAspectRatio
+import io.github.dimitrysaf.provenio.shell.components.PosterPortraitAspectRatio
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
@@ -386,9 +388,9 @@ private fun CatalogLoadingFooter() {
 
 private fun PosterShape.catalogAspectRatio(): Float =
     when (this) {
-        PosterShape.Poster -> 0.68f
+        PosterShape.Poster -> PosterPortraitAspectRatio
         PosterShape.Square -> 1f
-        PosterShape.Landscape -> 1.78f
+        PosterShape.Landscape -> PosterLandscapeAspectRatio
     }
 
 private fun catalogGridColumnsForWidth(screenWidth: Dp): Int =

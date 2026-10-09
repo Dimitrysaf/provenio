@@ -141,7 +141,7 @@ internal fun SkeletonBlock(
 @Composable
 internal fun SkeletonPoster(
     modifier: Modifier = Modifier,
-    aspectRatio: Float = 0.68f,
+    aspectRatio: Float = PosterPortraitAspectRatio,
     cornerRadius: Dp,
     showLabels: Boolean,
     showDetail: Boolean = true,

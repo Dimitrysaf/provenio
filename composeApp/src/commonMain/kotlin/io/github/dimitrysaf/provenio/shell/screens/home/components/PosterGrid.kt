@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import io.github.dimitrysaf.provenio.shell.components.PosterPortraitAspectRatio
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
@@ -8,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.shell.components.PosterLandscapeAspectRatio
-import io.github.dimitrysaf.provenio.shell.components.landscapePosterWidth
+import io.github.dimitrysaf.provenio.shell.components.posterGridColumns
 import io.github.dimitrysaf.provenio.shell.components.SkeletonPoster
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
@@ -18,23 +19,14 @@ import io.github.dimitrysaf.provenio.shell.components.rememberPosterCellWidth
 import androidx.compose.foundation.layout.width
 
 /**
- * How many posters fit across, at the width the person chose for them.
- *
- * Poster Card Style sets a poster's width, so the grid asks how many of those fit rather than
- * picking a count from the screen size and stretching whatever lands in it. Landscape mode makes
- * each one wider, so fewer fit, which is the same arithmetic.
+ * How many posters fit across, at the width the person chose for them, or the number of cards
+ * per row they chose for dynamic sizing. Landscape mode makes each one wider, so fewer fit.
  */
 @Composable
 internal fun rememberPosterGridColumnCount(availableWidth: Dp): Int {
     val posterCardStyle = rememberPosterCardStyleUiState()
-    val tileWidth = if (posterCardStyle.catalogLandscapeModeEnabled) {
-        landscapePosterWidth(posterCardStyle.widthDp)
-    } else {
-        posterCardStyle.widthDp.dp
-    }
-    return remember(availableWidth, tileWidth) {
-        val fits = (availableWidth + PosterGridSpacing).value / (tileWidth + PosterGridSpacing).value
-        fits.toInt().coerceAtLeast(1)
+    return remember(availableWidth, posterCardStyle) {
+        posterGridColumns(availableWidth, posterCardStyle, PosterGridSpacing)
     }
 }
 
@@ -61,6 +53,7 @@ internal fun PosterGridRow(
         cellWidth = rememberPosterCellWidth(),
         modifier = modifier,
         spacing = PosterGridSpacing,
+        fillCells = rememberPosterCardStyleUiState().dynamicSizeEnabled,
     ) { item ->
         HomePosterCard(
             item = item,
@@ -88,10 +81,11 @@ internal fun PosterGridSkeletonRow(
         cellWidth = cellWidth,
         modifier = modifier,
         spacing = PosterGridSpacing,
+        fillCells = posterCardStyle.dynamicSizeEnabled,
     ) {
         SkeletonPoster(
             modifier = Modifier.width(cellWidth),
-            aspectRatio = if (posterCardStyle.catalogLandscapeModeEnabled) PosterLandscapeAspectRatio else 0.675f,
+            aspectRatio = if (posterCardStyle.catalogLandscapeModeEnabled) PosterLandscapeAspectRatio else PosterPortraitAspectRatio,
             cornerRadius = posterCardStyle.cornerRadiusDp.dp,
             showLabels = !posterCardStyle.hideLabelsEnabled,
         )

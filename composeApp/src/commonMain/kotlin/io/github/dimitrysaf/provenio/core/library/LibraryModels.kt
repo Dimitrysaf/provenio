@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.library
 
+import io.github.dimitrysaf.provenio.core.home.imdbBackdropUrl
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.home.PosterShape
@@ -101,7 +102,7 @@ fun LibraryItem.toMetaPreview(): MetaPreview =
         type = type,
         name = name,
         poster = poster,
-        banner = banner,
+        banner = banner?.takeIf { it.isNotBlank() && it != poster } ?: imdbBackdropUrl(imdbId ?: id),
         logo = logo,
         posterShape = posterShape,
         description = description,

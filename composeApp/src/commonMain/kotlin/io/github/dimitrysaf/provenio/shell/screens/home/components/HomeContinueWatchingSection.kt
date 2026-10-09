@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterAreaContentWidth
+import io.github.dimitrysaf.provenio.shell.components.posterAreaMarginDp
 import androidx.compose.material3.ripple
 import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -675,7 +677,7 @@ private fun ContinueWatchingCard(
 
     Surface(
         modifier = Modifier
-            .width(cardMetrics.width)
+            .width(minOf(cardMetrics.width, rememberPosterAreaContentWidth()))
             .aspectRatio(PosterLandscapeAspectRatio)
             .posterCardClickable(
                 onClick = onClick,
@@ -1178,11 +1180,16 @@ internal data class ContinueWatchingLayout(
     val posterTitleBlockHeight: Dp,
 )
 
+private const val MinWideCardWidthDp = 160f
+
 internal fun rememberContinueWatchingLayout(
     maxWidthDp: Float,
     posterCardStyle: PosterCardStyleUiState = PosterCardStyleUiState(),
 ): ContinueWatchingLayout {
-    val wideCardWidth = posterCardStyle.widthDp.dp * 2.1f
+    val wideCardWidth = minOf(
+        posterCardStyle.widthDp * 2.1f,
+        (maxWidthDp - posterAreaMarginDp(maxWidthDp) * 2).coerceAtLeast(MinWideCardWidthDp),
+    ).dp
     val wideCardHeight = wideCardWidth * 0.4f
     val widePosterStripWidth = wideCardHeight * (2f / 3f)
     return when {

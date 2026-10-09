@@ -270,6 +270,7 @@ internal fun LazyListScope.configuredMetaSectionItems(
                     cellWidth = sizing.itemWidth,
                     spacing = sizing.avatarGap,
                     context = grid,
+                    previewRows = CastPreviewRows,
                 ) { index, person ->
                     CastCell(
                         index = index,
@@ -673,3 +674,6 @@ internal fun ConfiguredMetaSections(
 
     enabledItems.forEach { section -> RenderSection(section.key) }
 }
+
+/** How many rows of cast a grid shows before Show All. */
+private const val CastPreviewRows = 2

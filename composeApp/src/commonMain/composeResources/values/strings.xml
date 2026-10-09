@@ -873,6 +873,7 @@
     <string name="settings_shelf_expanded_by_default">Expanded by default</string>
     <string name="settings_shelf_expanded_by_default_description">Show every title on each shelf when Home opens. Tap a shelf’s title to collapse or expand it.</string>
     <string name="shelf_collapse">Collapse</string>
+    <string name="shelf_show_all">Show All</string>
     <string name="shelf_expand">Expand</string>
     <string name="settings_homescreen_section_hero_sources">Hero catalogs</string>
     <string name="settings_homescreen_selected_count">%1$d of %2$d selected</string>
@@ -940,7 +941,11 @@
     <string name="settings_poster_width_comfort">Comfort</string>
     <string name="settings_poster_width_compact">Compact</string>
     <string name="settings_poster_size_dynamic">Dynamic</string>
-    <string name="settings_poster_size_dynamic_description">Sized to fit the screen</string>
+    <string name="settings_poster_size_dynamic_description">Sized to fit the page</string>
+    <string name="settings_poster_cards_per_row">Cards per row</string>
+    <string name="settings_poster_cards_per_row_auto">Automatic</string>
+    <string name="settings_poster_cards_per_row_auto_description">As many as fit the page</string>
+    <string name="settings_poster_section_cards">Cards</string>
     <string name="settings_poster_width_dense">Dense</string>
     <string name="settings_poster_width_large">Large</string>
     <string name="settings_poster_width_standard">Standard</string>

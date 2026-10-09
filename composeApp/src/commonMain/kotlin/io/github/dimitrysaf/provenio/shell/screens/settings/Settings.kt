@@ -1076,7 +1076,12 @@ internal fun LazyListScope.settingsPageContent(
             blurNextUp = data.continueWatching.blurNextUp,
             sortMode = data.continueWatching.sortMode,
         )
-        SettingsPage.PosterCustomization -> posterCustomizationSettingsContent(uiState = data.posterCardStyle)
+        SettingsPage.PosterCustomization -> posterCustomizationSettingsContent(
+            isTablet = isTablet,
+            uiState = data.posterCardStyle,
+            shelfLayout = data.homescreen.shelfLayout,
+            shelvesExpandedByDefault = data.homescreen.shelvesExpandedByDefault,
+        )
         SettingsPage.ContentDiscovery -> contentDiscoveryContent(
             isTablet = isTablet,
             showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
@@ -1103,8 +1108,6 @@ internal fun LazyListScope.settingsPageContent(
             heroEnabled = data.homescreen.heroEnabled,
             showCatalogType = data.homescreen.showCatalogType,
             hideUnreleasedContent = data.homescreen.hideUnreleasedContent,
-            shelfLayout = data.homescreen.shelfLayout,
-            shelvesExpandedByDefault = data.homescreen.shelvesExpandedByDefault,
             items = data.homescreen.items,
             isCatalogLoading = data.homescreenCatalogLoading,
             catalogErrorMessage = data.homescreenCatalogErrorMessage,

@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import io.github.dimitrysaf.provenio.core.home.portraitArtworkCandidates
+import io.github.dimitrysaf.provenio.core.home.landscapeArtworkCandidates
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import io.github.dimitrysaf.provenio.core.format.formatReleaseDateForDisplay
@@ -24,8 +26,8 @@ fun HomePosterCard(
 
     PosterCard(
         title = item.name,
-        imageUrl = if (isLandscapeMode) item.banner else item.poster,
-        fallbackImageUrls = listOf(if (isLandscapeMode) item.poster else item.banner),
+        imageUrl = null,
+        fallbackImageUrls = if (isLandscapeMode) item.landscapeArtworkCandidates() else item.portraitArtworkCandidates(),
         modifier = modifier,
         shape = if (isLandscapeMode) PosterCardShape.Landscape else item.posterShape.toPosterCardShape(),
         detailLine = if (isLandscapeMode || posterCardStyle.hideLabelsEnabled) null else item.releaseInfo?.let { formatReleaseDateForDisplay(it) },

@@ -1,5 +1,9 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import provenio.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
+import io.github.dimitrysaf.provenio.shell.components.posterGridColumns
+import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleUiState
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +33,7 @@ internal class DetailShelfGridContext(
     val contentMaxWidth: Dp,
     val expandedByDefault: Boolean,
     val posterCellWidth: Dp,
+    val posterCardStyle: PosterCardStyleUiState,
 )
 
 /**
@@ -36,6 +41,7 @@ internal class DetailShelfGridContext(
  * a list item of its own, so only the rows on screen are composed and only their images load.
  * Items keep their own width ([cellWidth]); spare width goes into the gaps. [footer] follows the
  * rows, for a source credit or the next page of comments, and shows even with no rows.
+ * With [previewRows] above 0, only that many rows show until Show All next to the title opens the rest.
  */
 internal fun <T> LazyListScope.detailShelfGrid(
     key: String,
@@ -44,12 +50,19 @@ internal fun <T> LazyListScope.detailShelfGrid(
     cellWidth: Dp,
     context: DetailShelfGridContext,
     spacing: Dp = ShelfGridSpacing,
+    columns: Int = shelfGridColumns(context.contentWidth, cellWidth, spacing),
+    fillCells: Boolean = false,
+    previewRows: Int = 0,
     headerLeading: (@Composable () -> Unit)? = null,
     footer: (@Composable () -> Unit)? = null,
     cell: @Composable (index: Int, entry: T) -> Unit,
 ) {
     val expansionKey = "details:$key"
     val expanded = ShelfExpansion.isExpanded(expansionKey, context.expandedByDefault)
+    val allRows = entries.withIndex().toList().chunked(columns)
+    val canShowAll = previewRows > 0 && allRows.size > previewRows
+    val showAllKey = "$expansionKey:all"
+    val showingAll = canShowAll && ShelfExpansion.isExpanded(showAllKey, false)
     item(key = "$key-header", contentType = "detail-shelf-header") {
         DetailSectionContainer(
             horizontalPadding = context.horizontalPadding,
@@ -61,14 +74,19 @@ internal fun <T> LazyListScope.detailShelfGrid(
                 title = title(),
                 expanded = expanded,
                 onToggle = { ShelfExpansion.toggle(expansionKey, context.expandedByDefault) },
+                onViewAllClick = if (expanded && canShowAll) {
+                    { ShelfExpansion.toggle(showAllKey, false) }
+                } else {
+                    null
+                },
+                viewAllLabel = stringResource(if (showingAll) Res.string.details_show_less else Res.string.shelf_show_all),
                 leading = headerLeading,
             )
         }
     }
     if (!expanded) return
 
-    val columns = shelfGridColumns(context.contentWidth, cellWidth, spacing)
-    val rows = entries.withIndex().toList().chunked(columns)
+    val rows = if (canShowAll && !showingAll) allRows.take(previewRows) else allRows
     rows.forEachIndexed { rowIndex, row ->
         item(key = "$key-row-$rowIndex", contentType = "detail-shelf-row-$key") {
             DetailSectionContainer(
@@ -82,6 +100,7 @@ internal fun <T> LazyListScope.detailShelfGrid(
                     columns = columns,
                     cellWidth = cellWidth,
                     spacing = spacing,
+                    fillCells = fillCells,
                 ) { indexed -> cell(indexed.index, indexed.value) }
             }
         }
@@ -118,6 +137,8 @@ internal fun LazyListScope.detailPosterShelfGrid(
         entries = items,
         cellWidth = context.posterCellWidth,
         context = context,
+        columns = posterGridColumns(context.contentWidth, context.posterCardStyle),
+        fillCells = context.posterCardStyle.dynamicSizeEnabled,
         footer = sourceLabel?.let { label ->
             {
                 label()?.takeIf(String::isNotBlank)?.let { text ->

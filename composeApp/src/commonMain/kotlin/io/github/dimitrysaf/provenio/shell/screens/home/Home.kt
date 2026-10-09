@@ -79,7 +79,7 @@ import io.github.dimitrysaf.provenio.shell.components.CollapsibleShelfHeader
 import io.github.dimitrysaf.provenio.shell.components.ShelfExpansion
 import io.github.dimitrysaf.provenio.shell.components.ShelfGridRow
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCellWidth
-import io.github.dimitrysaf.provenio.shell.components.shelfGridColumns
+import io.github.dimitrysaf.provenio.shell.components.posterGridColumns
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HomePosterCard
 import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingState
 
@@ -265,7 +265,7 @@ fun HomeScreen(
         val homeSectionPadding = homeSectionHorizontalPaddingForWidth(maxWidth.value)
         val posterCardStyle = rememberPosterCardStyleUiState()
         val shelfCellWidth = rememberPosterCellWidth()
-        val shelfGridColumns = shelfGridColumns(maxWidth - homeSectionPadding * 2, shelfCellWidth)
+        val shelfGridColumns = posterGridColumns(maxWidth - homeSectionPadding * 2, posterCardStyle)
         val continueWatchingLayout = rememberContinueWatchingLayout(maxWidth.value, posterCardStyle)
         val nativeBottomNavigationOverlayHeight =
             if (LocalBottomNavigationOverlayPadding.current > 0.dp) {
@@ -682,6 +682,7 @@ private fun LazyListScope.homeCatalogGrid(
                 items = rowItems,
                 columns = columns,
                 cellWidth = cellWidth,
+                fillCells = rememberPosterCardStyleUiState().dynamicSizeEnabled,
                 modifier = Modifier
                     .animateItem()
                     .padding(horizontal = sectionPadding)

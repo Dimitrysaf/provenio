@@ -173,6 +173,7 @@ fun CollapsibleShelfHeader(
     modifier: Modifier = Modifier,
     horizontalPadding: Dp = 0.dp,
     onViewAllClick: (() -> Unit)? = null,
+    viewAllLabel: String? = null,
     leading: (@Composable () -> Unit)? = null,
 ) {
     val chevronRotation by animateFloatAsState(
@@ -215,7 +216,7 @@ fun CollapsibleShelfHeader(
         }
         if (onViewAllClick != null) {
             TextButton(onClick = onViewAllClick) {
-                Text(stringResource(Res.string.home_view_all))
+                Text(viewAllLabel ?: stringResource(Res.string.home_view_all))
             }
         }
     }

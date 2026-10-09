@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import io.github.dimitrysaf.provenio.shell.components.PosterPortraitAspectRatio
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -148,7 +149,7 @@ private fun CollectionFolderCard(
     when (shape) {
         PosterShape.Poster -> {
             cardWidth = posterCardStyle.widthDp.dp
-            aspectRatio = 0.675f
+            aspectRatio = PosterPortraitAspectRatio
         }
         PosterShape.Landscape -> {
             cardWidth = landscapePosterWidth(posterCardStyle.widthDp)

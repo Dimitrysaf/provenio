@@ -14,6 +14,9 @@ internal const val DefaultPosterCardHeightDp = 189
 
 internal const val DefaultPosterCardCornerRadiusDp = 12
 
+/** The most cards a row can be set to hold. */
+internal const val MaxCardsPerRow = 12
+
 @Serializable
 private data class StoredPosterCardStylePreferences(
     val widthDp: Int = DefaultPosterCardWidthDp,
@@ -22,6 +25,7 @@ private data class StoredPosterCardStylePreferences(
     val catalogLandscapeModeEnabled: Boolean = false,
     val hideLabelsEnabled: Boolean = false,
     val dynamicSizeEnabled: Boolean = false,
+    val cardsPerRow: Int = 0,
 )
 
 data class PosterCardStyleUiState(
@@ -35,6 +39,8 @@ data class PosterCardStyleUiState(
      * width stays stored, so turning this off returns to it.
      */
     val dynamicSizeEnabled: Boolean = false,
+    /** Cards across the page with dynamic sizing; 0 lets the page width decide. */
+    val cardsPerRow: Int = 0,
 )
 
 object PosterCardStyleRepository {
@@ -81,6 +87,16 @@ object PosterCardStyleRepository {
         ensureLoaded()
         if (_uiState.value.dynamicSizeEnabled == enabled) return
         _uiState.value = _uiState.value.copy(dynamicSizeEnabled = enabled)
+        persist()
+    }
+
+    /** How many cards fit across the page, which also turns dynamic sizing on; 0 is automatic. */
+    fun setCardsPerRow(cardsPerRow: Int) {
+        ensureLoaded()
+        val next = cardsPerRow.coerceIn(0, MaxCardsPerRow)
+        val current = _uiState.value
+        if (current.cardsPerRow == next && current.dynamicSizeEnabled) return
+        _uiState.value = current.copy(cardsPerRow = next, dynamicSizeEnabled = true)
         persist()
     }
 
@@ -136,6 +152,7 @@ object PosterCardStyleRepository {
                 catalogLandscapeModeEnabled = stored.catalogLandscapeModeEnabled,
                 hideLabelsEnabled = stored.hideLabelsEnabled,
                 dynamicSizeEnabled = stored.dynamicSizeEnabled,
+                cardsPerRow = stored.cardsPerRow.coerceIn(0, MaxCardsPerRow),
             )
         } else {
             PosterCardStyleUiState()
@@ -152,6 +169,7 @@ object PosterCardStyleRepository {
                     catalogLandscapeModeEnabled = _uiState.value.catalogLandscapeModeEnabled,
                     hideLabelsEnabled = _uiState.value.hideLabelsEnabled,
                     dynamicSizeEnabled = _uiState.value.dynamicSizeEnabled,
+                    cardsPerRow = _uiState.value.cardsPerRow,
                 ),
             ),
         )

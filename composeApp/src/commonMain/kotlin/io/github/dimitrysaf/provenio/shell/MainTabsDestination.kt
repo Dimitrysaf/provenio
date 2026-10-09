@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.shell.components.ProvidePosterAreaWidth
 import io.github.dimitrysaf.provenio.shell.components.SnackbarAnchor
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.setValue
@@ -178,7 +179,7 @@ internal fun MainTabsDestination(
                         Spacer(modifier = Modifier.weight(1f))
                     }
 
-                    Box(modifier = Modifier.weight(1f)) { content() }
+                    ProvidePosterAreaWidth(modifier = Modifier.weight(1f)) { content() }
                 }
             }
 

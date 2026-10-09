@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleUiState
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -74,10 +75,26 @@ fun shelfGridColumns(availableWidth: Dp, cellWidth: Dp, spacing: Dp = ShelfGridS
     ((availableWidth + spacing) / (cellWidth + spacing)).toInt().coerceAtLeast(1)
 
 /**
+ * How many posters a grid [availableWidth] wide shows across: the number chosen in Card styles when
+ * dynamic sizing has one, otherwise as many of the style's cards as fit.
+ */
+internal fun posterGridColumns(
+    availableWidth: Dp,
+    style: PosterCardStyleUiState,
+    spacing: Dp = ShelfGridSpacing,
+): Int {
+    if (style.dynamicSizeEnabled && style.cardsPerRow > 0) return style.cardsPerRow
+    val cellWidth = if (style.catalogLandscapeModeEnabled) landscapePosterWidth(style.widthDp) else style.widthDp.dp
+    return shelfGridColumns(availableWidth, cellWidth, spacing)
+}
+
+/**
  * One row of a grid shelf whose rows are separate list items, so only the rows on screen are
  * composed. Every cell is [cellWidth] wide, the width the item draws itself at (the poster card
  * style's, for posters), and is never stretched: spare width goes into the gaps instead, and every
  * row uses the same gaps so the columns line up. A short last row starts at the left like the rest.
+ * With [fillCells] the cells share the row's width instead and each item is drawn at its cell's
+ * width, as dynamic poster sizing wants. Cells never get wider than [columns] of them can fit.
  */
 @Composable
 fun <T> ShelfGridRow(
@@ -86,6 +103,7 @@ fun <T> ShelfGridRow(
     cellWidth: Dp,
     modifier: Modifier = Modifier,
     spacing: Dp = ShelfGridSpacing,
+    fillCells: Boolean = false,
     cell: @Composable (T) -> Unit,
 ) {
     androidx.compose.ui.layout.Layout(
@@ -93,8 +111,9 @@ fun <T> ShelfGridRow(
         modifier = modifier.fillMaxWidth(),
     ) { measurables, constraints ->
         val width = constraints.maxWidth
-        val cellPx = cellWidth.roundToPx()
         val spacingPx = spacing.roundToPx()
+        val fittingPx = ((width - spacingPx * (columns - 1)) / columns.coerceAtLeast(1)).coerceAtLeast(1)
+        val cellPx = if (fillCells) fittingPx else cellWidth.roundToPx().coerceAtMost(fittingPx)
         val gap = if (columns > 1) {
             ((width - columns * cellPx) / (columns - 1)).coerceIn(spacingPx, spacingPx * 3)
         } else {
@@ -102,7 +121,8 @@ fun <T> ShelfGridRow(
         }
         val gridWidth = columns * cellPx + (columns - 1) * gap
         val startX = ((width - gridWidth) / 2).coerceAtLeast(0)
-        val placeables = measurables.map { it.measure(Constraints(maxWidth = cellPx.coerceAtMost(width))) }
+        val itemConstraints = if (fillCells) Constraints.fixedWidth(cellPx) else Constraints(maxWidth = cellPx)
+        val placeables = measurables.map { it.measure(itemConstraints) }
         val height = placeables.maxOfOrNull { it.height } ?: 0
         layout(width, height) {
             placeables.forEachIndexed { index, placeable ->

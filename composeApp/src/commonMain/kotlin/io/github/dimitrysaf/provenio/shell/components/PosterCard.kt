@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,6 +39,9 @@ import org.jetbrains.compose.resources.stringResource
 
 internal const val PosterLandscapeAspectRatio = 1.77f
 
+/** A poster's width to height, 2:3, the same for cards, grids and their skeletons. */
+internal const val PosterPortraitAspectRatio = 2f / 3f
+
 private const val PosterLandscapeWidthScale = 180f / 110f
 
 internal fun landscapePosterWidth(basePosterWidthDp: Int): Dp =
@@ -44,47 +50,113 @@ internal fun landscapePosterWidth(basePosterWidthDp: Int): Dp =
 internal fun landscapePosterHeightForWidth(width: Dp): Dp =
     (width.value / PosterLandscapeAspectRatio).dp
 
+/** The width of the page area posters are laid out in, when a screen knows it; null means the window. */
+val LocalPosterAreaWidth = compositionLocalOf<Dp?> { null }
+
+/** Lays out [content] and tells the posters in it how wide it is, for dynamic card sizing. */
+@Composable
+fun ProvidePosterAreaWidth(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    BoxWithConstraints(modifier = modifier) {
+        CompositionLocalProvider(LocalPosterAreaWidth provides maxWidth) { content() }
+    }
+}
+
 /**
  * The card style every screen draws with. With dynamic sizing on, the stored width is replaced by
- * one for the current window, so every caller sees a plain fixed size.
+ * one that fits the chosen number of cards across the page area, so every caller sees a plain
+ * fixed size. A fixed size is kept unless a single card would be wider than the page area.
  */
 @Composable
 internal fun rememberPosterCardStyleUiState(): PosterCardStyleUiState {
     PosterCardStyleRepository.ensureLoaded()
     val uiState by PosterCardStyleRepository.uiState.collectAsState()
-    if (!uiState.dynamicSizeEnabled) return uiState
     val windowWidthDp = with(LocalDensity.current) {
         LocalWindowInfo.current.containerSize.width.toDp().value
     }
-    val widthDp = dynamicPosterWidthDp(windowWidthDp)
+    val areaWidthDp = LocalPosterAreaWidth.current?.value?.takeIf { it.isFinite() && it > 0f } ?: windowWidthDp
+    if (areaWidthDp <= 0f) return uiState
+    val widthDp = if (uiState.dynamicSizeEnabled) {
+        dynamicPosterWidthDp(
+            areaWidthDp = areaWidthDp,
+            cardsPerRow = uiState.cardsPerRow,
+            landscape = uiState.catalogLandscapeModeEnabled,
+        )
+    } else {
+        val widest = dynamicPosterWidthDp(
+            areaWidthDp = areaWidthDp,
+            cardsPerRow = 1,
+            landscape = uiState.catalogLandscapeModeEnabled,
+        )
+        if (uiState.widthDp <= widest) return uiState
+        widest
+    }
     return uiState.copy(widthDp = widthDp, heightDp = widthDp * 3 / 2)
 }
 
-/**
- * The card width for a window [windowWidthDp] wide: about three and a third cards across a phone,
- * growing more slowly than the window so a wide screen shows more cards, not just bigger ones.
- * Interpolated between these points and held at the ends.
- */
-internal fun dynamicPosterWidthDp(windowWidthDp: Float): Int {
-    val points = DynamicPosterWidthPoints
-    if (windowWidthDp <= points.first().first) return points.first().second
-    if (windowWidthDp >= points.last().first) return points.last().second
-    val upper = points.indexOfFirst { it.first >= windowWidthDp }
-    val (fromWindow, fromWidth) = points[upper - 1]
-    val (toWindow, toWidth) = points[upper]
-    val fraction = (windowWidthDp - fromWindow) / (toWindow - fromWindow)
-    return (fromWidth + (toWidth - fromWidth) * fraction).roundToInt()
+/** The width a single card may take up in the current page area: the area less its side margins. */
+@Composable
+internal fun rememberPosterAreaContentWidth(): Dp {
+    val windowWidthDp = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp().value
+    }
+    val areaWidthDp = LocalPosterAreaWidth.current?.value?.takeIf { it.isFinite() && it > 0f } ?: windowWidthDp
+    return (areaWidthDp - posterAreaMarginDp(areaWidthDp) * 2).coerceAtLeast(MinPosterWidthDp.toFloat()).dp
 }
 
-/** Window width to card width, both in dp: compact phone, phone, tablet, laptop, desktop, 4K/TV. */
-private val DynamicPosterWidthPoints = listOf(
-    360f to 110,
-    412f to 126,
-    840f to 150,
-    1280f to 176,
-    1920f to 210,
-    2560f to 250,
+/**
+ * The poster width that fits [cardsPerRow] cards across a page area [areaWidthDp] wide, after its
+ * side margins and the gaps between cards. With [cardsPerRow] at 0 the count follows the area: about
+ * three and a third posters across a phone, more rather than bigger ones on wider screens.
+ * In [landscape] mode the count is of landscape cards.
+ */
+internal fun dynamicPosterWidthDp(areaWidthDp: Float, cardsPerRow: Int = 0, landscape: Boolean = false): Int {
+    val content = (areaWidthDp - posterAreaMarginDp(areaWidthDp) * 2).coerceAtLeast(MinPosterWidthDp.toFloat())
+    val spacing = ShelfGridSpacing.value
+    val scale = if (landscape) PosterLandscapeWidthScale else 1f
+    val columns = if (cardsPerRow > 0) {
+        cardsPerRow
+    } else {
+        val target = autoPosterWidthDp(areaWidthDp) * scale
+        ((content + spacing) / (target + spacing)).roundToInt().coerceAtLeast(1)
+    }
+    val cell = (content - spacing * (columns - 1)) / columns
+    return (cell / scale).toInt().coerceAtLeast(MinPosterWidthDp)
+}
+
+/** The side margin pages give their shelves at this width, matching the Home screen's. */
+internal fun posterAreaMarginDp(areaWidthDp: Float): Float = when {
+    areaWidthDp >= 1440f -> 32f
+    areaWidthDp >= 1024f -> 28f
+    areaWidthDp >= 768f -> 24f
+    else -> 16f
+}
+
+/** The poster width automatic sizing aims for, interpolated between these points and held at the ends. */
+private fun autoPosterWidthDp(areaWidthDp: Float): Float {
+    val points = AutoPosterWidthPoints
+    if (areaWidthDp <= points.first().first) return points.first().second
+    if (areaWidthDp >= points.last().first) return points.last().second
+    val upper = points.indexOfFirst { it.first >= areaWidthDp }
+    val (fromArea, fromWidth) = points[upper - 1]
+    val (toArea, toWidth) = points[upper]
+    val fraction = (areaWidthDp - fromArea) / (toArea - fromArea)
+    return fromWidth + (toWidth - fromWidth) * fraction
+}
+
+/** Page area width to poster width, both in dp: compact phone, phone, tablet, laptop, desktop, 4K/TV. */
+private val AutoPosterWidthPoints = listOf(
+    360f to 104f,
+    412f to 118f,
+    840f to 150f,
+    1280f to 176f,
+    1920f to 210f,
+    2560f to 250f,
 )
+
+private const val MinPosterWidthDp = 56
 
 enum class PosterCardShape {
     Poster,
@@ -134,14 +206,7 @@ fun PosterCard(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            if (imageUrl != null || fallbackImageUrls.any { !it.isNullOrBlank() }) {
-                ShapedArtworkImage(
-                    candidates = listOf(imageUrl) + fallbackImageUrls,
-                    contentDescription = title,
-                    modifier = Modifier.matchParentSize(),
-                    letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                )
-            } else {
+            val titleFallback: @Composable () -> Unit = {
                 Text(
                     text = title,
                     modifier = Modifier.padding(horizontal = 14.dp),
@@ -152,6 +217,13 @@ fun PosterCard(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            ShapedArtworkImage(
+                candidates = listOf(imageUrl) + fallbackImageUrls,
+                contentDescription = title,
+                modifier = Modifier.matchParentSize(),
+                letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                fallback = titleFallback,
+            )
 
             if (!bottomLeftLogoUrl.isNullOrBlank() || !bottomLeftText.isNullOrBlank()) {
                 Box(
@@ -210,7 +282,7 @@ fun PosterCard(
 
 private val PosterCardShape.aspectRatio: Float
     get() = when (this) {
-        PosterCardShape.Poster -> 0.675f
+        PosterCardShape.Poster -> PosterPortraitAspectRatio
         PosterCardShape.Square -> 1f
         PosterCardShape.Landscape -> PosterLandscapeAspectRatio
     }

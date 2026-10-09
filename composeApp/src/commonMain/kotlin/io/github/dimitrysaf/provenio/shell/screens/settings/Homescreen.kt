@@ -46,7 +46,6 @@ import io.github.dimitrysaf.provenio.shell.theme.provenio
 import io.github.dimitrysaf.provenio.core.addons.AddonRepository
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsItem
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
-import io.github.dimitrysaf.provenio.core.home.HomeShelfLayout
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeEmptyStateCard
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.action_cancel
@@ -69,7 +68,6 @@ import provenio.composeapp.generated.resources.settings_homescreen_section_catal
 import provenio.composeapp.generated.resources.settings_homescreen_section_catalogs_collections
 import provenio.composeapp.generated.resources.settings_homescreen_section_collections
 import provenio.composeapp.generated.resources.settings_homescreen_section_hero
-import provenio.composeapp.generated.resources.settings_homescreen_section_shelves
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -79,8 +77,6 @@ internal fun LazyListScope.homescreenSettingsContent(
     heroEnabled: Boolean,
     showCatalogType: Boolean,
     hideUnreleasedContent: Boolean,
-    shelfLayout: HomeShelfLayout,
-    shelvesExpandedByDefault: Boolean,
     items: List<HomeCatalogSettingsItem>,
     isCatalogLoading: Boolean,
     catalogErrorMessage: String?,
@@ -120,17 +116,6 @@ internal fun LazyListScope.homescreenSettingsContent(
                     onCheckedChange = HomeCatalogSettingsRepository::setHideUnreleasedContent,
                 )
             }
-        }
-    }
-    item {
-        SettingsSection(
-            title = stringResource(Res.string.settings_homescreen_section_shelves),
-            isTablet = isTablet,
-        ) {
-            HomeShelfSettings(
-                shelfLayout = shelfLayout,
-                shelvesExpandedByDefault = shelvesExpandedByDefault,
-            )
         }
     }
     item {

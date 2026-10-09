@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCellWidth
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
 import io.github.dimitrysaf.provenio.core.home.HomeShelfLayout
@@ -102,6 +103,7 @@ fun TmdbEntityBrowseScreen(
         HomeCatalogSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
     val posterCellWidth = rememberPosterCellWidth()
+    val posterCardStyle = rememberPosterCardStyleUiState()
     BoxWithConstraints(modifier = modifier) {
         val railShelfGrid = if (shelfSettings.shelfLayout == HomeShelfLayout.Grid) {
             DetailShelfGridContext(
@@ -110,6 +112,7 @@ fun TmdbEntityBrowseScreen(
                 contentMaxWidth = Dp.Unspecified,
                 expandedByDefault = shelfSettings.shelvesExpandedByDefault,
                 posterCellWidth = posterCellWidth,
+                posterCardStyle = posterCardStyle,
             )
         } else {
             null

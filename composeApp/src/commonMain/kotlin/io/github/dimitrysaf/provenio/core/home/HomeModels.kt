@@ -22,6 +22,19 @@ data class MetaPreview(
 
 fun MetaPreview.stableKey(): String = "$type:$id"
 
+/** The title's wide pictures best first, then its poster, for a landscape card. */
+fun MetaPreview.landscapeArtworkCandidates(): List<String?> = listOf(banner, imdbBackdropUrl(id), poster)
+
+/** The title's poster first, then its wide pictures, for a portrait card. */
+fun MetaPreview.portraitArtworkCandidates(): List<String?> = listOf(poster, banner, imdbBackdropUrl(id))
+
+/** The backdrop Stremio's image service keeps for an IMDb title, the one Cinemeta catalogs use. */
+fun imdbBackdropUrl(id: String?): String? =
+    id?.trim()
+        ?.substringBefore(':')
+        ?.takeIf { it.length > 2 && it.startsWith("tt") && it.drop(2).all(Char::isDigit) }
+        ?.let { "https://images.metahub.space/background/medium/$it/img" }
+
 enum class PosterShape {
     Poster,
     Square,
