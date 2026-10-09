@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.horizontalShelfColumns
 import io.github.dimitrysaf.provenio.shell.components.snapsHorizontalShelves
 import io.github.dimitrysaf.provenio.shell.components.horizontalShelfRows
 import androidx.compose.runtime.setValue
@@ -67,6 +68,7 @@ fun DetailPosterRailSection(
             rowModifier = Modifier.horizontalScrollBleed(horizontalScrollPadding),
             key = { item -> item.stableKey() },
             rows = posterCardStyle.horizontalShelfRows,
+            columns = posterCardStyle.horizontalShelfColumns,
             snapToItems = posterCardStyle.snapsHorizontalShelves,
         ) { item ->
             val landscape = posterCardStyle.catalogLandscapeModeEnabled || item.posterShape == PosterShape.Landscape

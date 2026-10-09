@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
+import io.github.dimitrysaf.provenio.shell.components.limitShelfRows
+import io.github.dimitrysaf.provenio.shell.components.horizontalShelfColumns
 import io.github.dimitrysaf.provenio.shell.components.snapsHorizontalShelves
 import io.github.dimitrysaf.provenio.shell.components.horizontalShelfRows
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
@@ -285,7 +287,8 @@ fun LibraryScreen(
         // they are, and the column count follows from how many fit.
         val gridColumns = rememberPosterGridColumnCount(maxWidth - LibraryGridHorizontalPadding * 2)
         val shelfCellWidth = rememberPosterCellWidth()
-        val shelfGridColumns = posterGridColumns(maxWidth - LibraryShelfHorizontalPadding * 2, rememberPosterCardStyleUiState())
+        val libraryCardStyle = rememberPosterCardStyleUiState()
+        val shelfGridColumns = posterGridColumns(maxWidth - LibraryShelfHorizontalPadding * 2, libraryCardStyle)
 
         ScreenScaffold(
             title = when {
@@ -420,6 +423,7 @@ fun LibraryScreen(
                                 shelfGrid = if (displaySettings.shelfLayout == HomeShelfLayout.Grid) {
                                     LibraryShelfGrid(
                                         columns = shelfGridColumns,
+                                        maxRows = libraryCardStyle.shelfRows,
                                         cellWidth = shelfCellWidth,
                                         expandedByDefault = displaySettings.shelvesExpandedByDefault,
                                     )
@@ -1142,6 +1146,10 @@ private fun LazyListScope.libraryShelfGrid(
 ) {
     val expansionKey = "${ShelfExpansion.LibraryKeyPrefix}${section.type}"
     val expanded = ShelfExpansion.isExpanded(expansionKey, grid.expandedByDefault)
+    val allRows = section.previewEntries.chunked(grid.columns)
+    val showingAll = ShelfExpansion.isShowingAll(expansionKey)
+    val rows = allRows.limitShelfRows(grid.maxRows, showingAll)
+    val canShowAll = onViewAllClick == null && grid.maxRows > 0 && allRows.size > grid.maxRows
     item(key = "library-grid:${section.type}:header", contentType = "library-shelf-header") {
         CollapsibleShelfHeader(
             title = section.displayTitle,
@@ -1149,11 +1157,19 @@ private fun LazyListScope.libraryShelfGrid(
             onToggle = { ShelfExpansion.toggle(expansionKey, grid.expandedByDefault) },
             modifier = libraryContentTransitionModifier(),
             horizontalPadding = LibraryShelfHorizontalPadding,
-            onViewAllClick = onViewAllClick,
+            onViewAllClick = onViewAllClick ?: if (expanded && canShowAll) {
+                { ShelfExpansion.toggleShowAll(expansionKey) }
+            } else {
+                null
+            },
+            viewAllLabel = if (canShowAll) {
+                stringResource(if (showingAll) Res.string.details_show_less else Res.string.shelf_show_all)
+            } else {
+                null
+            },
         )
     }
     if (!expanded) return
-    val rows = section.previewEntries.chunked(grid.columns)
     rows.forEachIndexed { rowIndex, row ->
         item(key = "library-grid:${section.type}:row-$rowIndex", contentType = "library-shelf-row") {
             ShelfGridRow(
@@ -1195,6 +1211,7 @@ private fun LazyListScope.libraryShelfGrid(
 /** How the library's shelves lay out as grids: columns, the poster width, and whether they start open. */
 private class LibraryShelfGrid(
     val columns: Int,
+    val maxRows: Int,
     val cellWidth: Dp,
     val expandedByDefault: Boolean,
 )
@@ -1247,6 +1264,7 @@ private fun LazyListScope.librarySections(
             key = { entry -> entry.globalKey },
             animatePlacement = true,
             rows = shelfCardStyle.horizontalShelfRows,
+            columns = shelfCardStyle.horizontalShelfColumns,
             snapToItems = shelfCardStyle.snapsHorizontalShelves,
         ) { entry ->
             val item = entry.item

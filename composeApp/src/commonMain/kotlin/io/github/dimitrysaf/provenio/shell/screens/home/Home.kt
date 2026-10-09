@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.home
 
+import io.github.dimitrysaf.provenio.shell.components.limitShelfRows
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.MutatePriority
@@ -385,6 +386,7 @@ fun HomeScreen(
                         shelfLayout = homeSettingsUiState.shelfLayout,
                         shelvesExpandedByDefault = homeSettingsUiState.shelvesExpandedByDefault,
                         shelfGridColumns = shelfGridColumns,
+                        shelfGridRows = posterCardStyle.shelfRows,
                         shelfCellWidth = shelfCellWidth,
                         sectionPadding = homeSectionPadding,
                         animateCollectionGifs = animateCollectionGifs,
@@ -561,6 +563,7 @@ private fun LazyListScope.homeRows(
     shelfLayout: HomeShelfLayout,
     shelvesExpandedByDefault: Boolean,
     shelfGridColumns: Int,
+    shelfGridRows: Int,
     shelfCellWidth: Dp,
     sectionPadding: Dp,
     animateCollectionGifs: Boolean,
@@ -620,6 +623,8 @@ private fun LazyListScope.homeRows(
                 section = section,
                 entries = entries,
                 columns = shelfGridColumns,
+                maxRows = shelfGridRows,
+                expansionKey = settingsItem.key,
                 cellWidth = shelfCellWidth,
                 expanded = ShelfExpansion.isExpanded(settingsItem.key, shelvesExpandedByDefault),
                 onToggle = { ShelfExpansion.toggle(settingsItem.key, shelvesExpandedByDefault) },
@@ -648,12 +653,18 @@ private fun LazyListScope.homeRows(
     }
 }
 
-/** A catalog as a grid: its title, which opens and closes it, then one list item per row of posters. */
+/**
+ * A catalog as a grid: its title, which opens and closes it, then one list item per row of posters.
+ * With [maxRows] above 0 only that many rows show; View All opens the rest, or, for a catalog that
+ * cannot be opened on its own, Show All next to the title.
+ */
 private fun LazyListScope.homeCatalogGrid(
     lazyKey: Any,
     section: HomeCatalogSection,
     entries: List<MetaPreview>,
     columns: Int,
+    maxRows: Int,
+    expansionKey: String,
     cellWidth: Dp,
     expanded: Boolean,
     onToggle: () -> Unit,
@@ -664,6 +675,10 @@ private fun LazyListScope.homeCatalogGrid(
     onPosterClick: ((MetaPreview) -> Unit)?,
     onPosterLongClick: ((MetaPreview) -> Unit)?,
 ) {
+    val allRows = entries.chunked(columns)
+    val showingAll = ShelfExpansion.isShowingAll(expansionKey)
+    val rows = allRows.limitShelfRows(maxRows, showingAll)
+    val canShowAll = onViewAllClick == null && maxRows > 0 && allRows.size > maxRows
     item(key = "$lazyKey-header", contentType = "shelf-header") {
         CollapsibleShelfHeader(
             title = section.title,
@@ -671,11 +686,19 @@ private fun LazyListScope.homeCatalogGrid(
             onToggle = onToggle,
             modifier = Modifier.animateItem(),
             horizontalPadding = sectionPadding,
-            onViewAllClick = onViewAllClick,
+            onViewAllClick = onViewAllClick ?: if (expanded && canShowAll) {
+                { ShelfExpansion.toggleShowAll(expansionKey) }
+            } else {
+                null
+            },
+            viewAllLabel = if (canShowAll) {
+                stringResource(if (showingAll) Res.string.details_show_less else Res.string.shelf_show_all)
+            } else {
+                null
+            },
         )
     }
     if (!expanded) return
-    val rows = entries.chunked(columns)
     rows.forEachIndexed { index, rowItems ->
         item(key = "$lazyKey-row-$index", contentType = "poster-grid-row") {
             ShelfGridRow(

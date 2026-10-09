@@ -17,6 +17,15 @@ internal object ShelfExpansion {
         overrides[key] = !isExpanded(key, expandedByDefault)
     }
 
+    /** Whether a grid shelf limited to some rows has been opened to show all of them. */
+    fun isShowingAll(key: String): Boolean = overrides[showAllKey(key)] ?: false
+
+    fun toggleShowAll(key: String) {
+        overrides[showAllKey(key)] = !isShowingAll(key)
+    }
+
+    private fun showAllKey(key: String) = "$key:all"
+
     /** Library's shelves have keys starting with this, so its setting resets only its own taps. */
     const val LibraryKeyPrefix = "library:"
 

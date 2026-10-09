@@ -943,12 +943,12 @@
     <string name="settings_poster_size_dynamic">Dynamic</string>
     <string name="settings_poster_size_dynamic_description">Sized to fit the page</string>
     <string name="settings_poster_columns">Columns</string>
-    <string name="settings_poster_columns_description">How many cards go across, on grids and horizontal shelves alike. Leave it empty to fit the screen.</string>
+    <string name="settings_poster_columns_description">On grids, how many cards go across. On horizontal shelves, how many columns a shelf fills before starting its next row. Leave it empty to fit the screen.</string>
     <string name="settings_poster_rows">Rows</string>
-    <string name="settings_poster_rows_description">How many rows of cards each horizontal shelf holds. Leave it empty for one.</string>
+    <string name="settings_poster_rows_description">On grids, how many rows each shelf shows before View All. On horizontal shelves, how many rows each shelf has. Leave it empty for automatic.</string>
     <string name="settings_poster_count_automatic">Automatic</string>
     <string name="settings_poster_count_helper">From %1$d to %2$d</string>
-    <string name="settings_poster_columns_above_automatic">More than the %1$d that fit this screen, so cards will be smaller than usual</string>
+    <string name="settings_poster_columns_above_automatic">More than the %1$d that fit this screen, so cards on grids will be smaller than usual</string>
     <string name="settings_poster_restore_defaults">Restore defaults</string>
     <string name="settings_poster_section_cards">Cards</string>
     <string name="settings_poster_width_dense">Dense</string>

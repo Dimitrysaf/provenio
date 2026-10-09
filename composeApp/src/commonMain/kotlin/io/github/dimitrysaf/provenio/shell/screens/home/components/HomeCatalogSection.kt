@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import io.github.dimitrysaf.provenio.shell.components.horizontalShelfColumns
 import io.github.dimitrysaf.provenio.shell.components.snapsHorizontalShelves
 import io.github.dimitrysaf.provenio.shell.components.horizontalShelfRows
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -81,6 +82,7 @@ private fun HomeCatalogRowSectionContent(
         viewAllPillSize = ViewAllPillSize.Compact,
         key = { item -> item.stableKey() },
         rows = posterCardStyle.horizontalShelfRows,
+        columns = posterCardStyle.horizontalShelfColumns,
         snapToItems = posterCardStyle.snapsHorizontalShelves,
     ) { item ->
         HomePosterCard(

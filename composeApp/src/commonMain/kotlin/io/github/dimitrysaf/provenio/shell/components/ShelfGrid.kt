@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import kotlin.math.roundToInt
 import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleUiState
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -77,7 +78,9 @@ fun shelfGridColumns(availableWidth: Dp, cellWidth: Dp, spacing: Dp = ShelfGridS
 /**
  * How many posters a grid [availableWidth] wide shows across: the number of columns chosen in Card
  * styles when dynamic sizing has one, as long as each poster stays at least [MinPosterWidthDp]
- * wide, otherwise as many of the style's cards as fit.
+ * wide. Automatic dynamic sizing rounds to the nearest whole number of its cards, since the cells
+ * then share the width, so a page with wider margins than Home's shows the same count rather than
+ * one fewer, stretched. A fixed size fits as many of its cards as there is room for.
  */
 internal fun posterGridColumns(
     availableWidth: Dp,
@@ -90,12 +93,26 @@ internal fun posterGridColumns(
         return minOf(style.cardsPerRow, shelfGridColumns(availableWidth, narrowest, spacing))
     }
     val cellWidth = if (landscape) landscapePosterWidth(style.widthDp) else style.widthDp.dp
+    if (style.dynamicSizeEnabled) {
+        return ((availableWidth + spacing) / (cellWidth + spacing)).roundToInt().coerceAtLeast(1)
+    }
     return shelfGridColumns(availableWidth, cellWidth, spacing)
 }
+
+/**
+ * The rows of a grid shelf to show: the first [maxRows] of them, or all when [maxRows] is 0 or the
+ * shelf has been opened to show all.
+ */
+internal fun <T> List<List<T>>.limitShelfRows(maxRows: Int, showingAll: Boolean): List<List<T>> =
+    if (maxRows > 0 && !showingAll) take(maxRows) else this
 
 /** How many rows of cards a horizontal poster shelf holds under the card style: at least one. */
 internal val PosterCardStyleUiState.horizontalShelfRows: Int
     get() = shelfRows.coerceAtLeast(1)
+
+/** How many columns a horizontal poster shelf fills before its next row; 0 spreads the cards evenly over the rows. */
+internal val PosterCardStyleUiState.horizontalShelfColumns: Int
+    get() = if (dynamicSizeEnabled) cardsPerRow else 0
 
 /** Whether horizontal poster shelves snap to whole columns: when the columns or rows are set by hand. */
 internal val PosterCardStyleUiState.snapsHorizontalShelves: Boolean

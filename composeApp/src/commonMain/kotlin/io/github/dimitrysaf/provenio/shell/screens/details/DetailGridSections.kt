@@ -139,6 +139,7 @@ internal fun LazyListScope.detailPosterShelfGrid(
         context = context,
         columns = posterGridColumns(context.contentWidth, context.posterCardStyle),
         fillCells = context.posterCardStyle.dynamicSizeEnabled,
+        previewRows = context.posterCardStyle.shelfRows,
         footer = sourceLabel?.let { label ->
             {
                 label()?.takeIf(String::isNotBlank)?.let { text ->

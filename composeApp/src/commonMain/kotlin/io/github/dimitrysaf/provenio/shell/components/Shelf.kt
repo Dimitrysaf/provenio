@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import kotlin.math.ceil
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.gestures.snapping.SnapPosition
@@ -47,9 +48,10 @@ enum class ViewAllPillSize {
 }
 
 /**
- * A titled shelf of cards that scrolls sideways. With [rows] above 1 the cards stack into columns
- * that many tall, filling each column before the next; with [snapToItems] a fling settles on the
- * start of a column rather than partway through one.
+ * A titled shelf of cards that scrolls sideways. With [rows] above 1 the shelf is blocks of
+ * [columns] by [rows] cards, side by side, each filled a row at a time from the left like a grid;
+ * [columns] at 0 makes a single block that spreads the cards evenly over the rows. With
+ * [snapToItems] a fling settles on the start of a column rather than partway through one.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -68,6 +70,7 @@ fun <T> ShelfSection(
     state: LazyListState = rememberLazyListState(),
     wheelScrollsRow: Boolean = false,
     rows: Int = 1,
+    columns: Int = 0,
     snapToItems: Boolean = false,
     itemContent: @Composable (T) -> Unit,
 ) {
@@ -99,15 +102,15 @@ fun <T> ShelfSection(
             },
         ) {
             if (rows > 1) {
-                val columns: List<Pair<Any, List<T>>> = if (key != null) {
-                    entries.withDuplicateSafeLazyKeys(key).chunked(rows).map { column ->
+                val shelfColumns: List<Pair<Any, List<T>>> = if (key != null) {
+                    shelfBlockColumns(entries.withDuplicateSafeLazyKeys(key), rows, columns).map { column ->
                         column.first().lazyKey to column.map { it.value }
                     }
                 } else {
-                    entries.chunked(rows).mapIndexed { index, column -> index to column }
+                    shelfBlockColumns(entries, rows, columns).mapIndexed { index, column -> index to column }
                 }
                 items(
-                    items = columns,
+                    items = shelfColumns,
                     key = if (key != null) { column: Pair<Any, List<T>> -> column.first } else null,
                 ) { (_, column) ->
                     Column(
@@ -137,6 +140,23 @@ fun <T> ShelfSection(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * The columns of a shelf laid out as blocks of [columns] by [rows] entries, each block filled a row
+ * at a time: the first [columns] entries are its top row, the next [columns] the row below. A last
+ * block that is not full keeps the same rows, so its columns may be shorter. [columns] at 0 makes a
+ * single block just wide enough for every entry.
+ */
+private fun <E> shelfBlockColumns(entries: List<E>, rows: Int, columns: Int): List<List<E>> {
+    if (entries.isEmpty()) return emptyList()
+    val blockColumns = if (columns > 0) columns else ceil(entries.size / rows.toDouble()).toInt()
+    return entries.chunked(blockColumns * rows).flatMap { block ->
+        val width = minOf(blockColumns, block.size)
+        List(width) { column ->
+            (0 until rows).map { row -> row * blockColumns + column }.filter { it < block.size }.map { block[it] }
         }
     }
 }
