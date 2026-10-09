@@ -233,6 +233,8 @@ internal fun DetailPage(
             else -> 18.dp
         }
         val primaryPaneWeight = if (isTwoPane) DetailPrimaryPaneWeight else 1f
+        val primaryPaneWidth = maxWidth * primaryPaneWeight
+        val sidePaneWidth = maxWidth * (1f - primaryPaneWeight)
         val metrics = DetailPageMetrics(
             horizontalPadding = horizontalPadding,
             contentMaxWidth = if (isTablet && !isTwoPane) {
@@ -269,7 +271,7 @@ internal fun DetailPage(
                     .fillMaxSize()
                     .zIndex(1f),
             ) {
-                CompositionLocalProvider(LocalPosterAreaWidth provides maxWidth * primaryPaneWeight) {
+                CompositionLocalProvider(LocalPosterAreaWidth provides primaryPaneWidth) {
                 LazyColumn(
                     state = scroll.listState,
                     modifier = Modifier
@@ -301,7 +303,7 @@ internal fun DetailPage(
                 }
                 }
 
-                if (isTwoPane) CompositionLocalProvider(LocalPosterAreaWidth provides maxWidth * (1f - primaryPaneWeight)) {
+                if (isTwoPane) CompositionLocalProvider(LocalPosterAreaWidth provides sidePaneWidth) {
                     LazyColumn(
                         state = sidePaneListState,
                         modifier = Modifier
