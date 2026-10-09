@@ -36,7 +36,6 @@ import io.github.dimitrysaf.provenio.core.downloads.DownloadsStorage
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsStorage
 import io.github.dimitrysaf.provenio.core.library.LibraryDisplaySettingsStorage
 import io.github.dimitrysaf.provenio.core.library.LibraryStorage
-import io.github.dimitrysaf.provenio.core.membership.MemberAssetStorage
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsStorage
 import io.github.dimitrysaf.provenio.core.metadata.SeasonViewModeStorage
 import io.github.dimitrysaf.provenio.core.metadata.mdblist.MdbListSettingsStorage
@@ -53,9 +52,7 @@ import io.github.dimitrysaf.provenio.core.profiles.ProfileStorage
 import io.github.dimitrysaf.provenio.core.search.DiscoverSelectionStorage
 import io.github.dimitrysaf.provenio.core.search.SearchHistoryStorage
 import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleStorage
-import io.github.dimitrysaf.provenio.core.settings.SentrySettingsStorage
 import io.github.dimitrysaf.provenio.core.settings.ThemeSettingsStorage
-import io.github.dimitrysaf.provenio.core.storage.PlatformLocalAccountDataCleaner
 import io.github.dimitrysaf.provenio.core.streams.BingeGroupCacheStorage
 import io.github.dimitrysaf.provenio.core.streams.StreamBadgeSettingsStorage
 import io.github.dimitrysaf.provenio.core.streams.StreamLinkCacheStorage
@@ -204,7 +201,6 @@ fun main(args: Array<String>) {
 /** The desktop counterpart of MainActivity's storage set-up. */
 private fun initializePlatform(context: Context) {
     ThemeSettingsStorage.initialize(context)
-    SentrySettingsStorage.initialize(context)
     SyncClientIdentityStorage.initialize(context)
     LocalSyncStorage.initialize(context)
     AddonHttpClientProvider.initialize(context)
@@ -221,7 +217,6 @@ private fun initializePlatform(context: Context) {
     ProfileStorage.initialize(context)
     AvatarStorage.initialize(context)
     ProfilePinCacheStorage.initialize(context)
-    MemberAssetStorage.initialize(context)
     DiscoverSelectionStorage.initialize(context)
     SearchHistoryStorage.initialize(context)
     SeasonViewModeStorage.initialize(context)
@@ -247,5 +242,4 @@ private fun initializePlatform(context: Context) {
     CollectionMobileSettingsStorage.initialize(context)
     CollectionStorage.initialize(context)
     DownloadsStorage.initialize(context)
-    PlatformLocalAccountDataCleaner.initialize(context)
 }

@@ -62,7 +62,6 @@ import io.github.dimitrysaf.provenio.core.build.isIos
 import io.github.dimitrysaf.provenio.core.build.supportsPosterNavigationMotion
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
-import io.github.dimitrysaf.provenio.core.settings.SentrySettingsRepository
 
 internal sealed class SettingsSearchTarget {
     data class Page(val page: SettingsPage) : SettingsSearchTarget()
@@ -368,18 +367,6 @@ internal fun settingsSearchEntries(
         category = advancedCategory,
         icon = Icons.Rounded.Tune,
     )
-    if (SentrySettingsRepository.isSupported) {
-        addRow(
-            page = SettingsPage.Advanced,
-            key = "sentry-crash-reports",
-            title = stringResource(Res.string.settings_advanced_sentry_reports),
-            description = stringResource(Res.string.settings_advanced_sentry_reports_subtitle),
-            pageLabel = advancedPage,
-            section = stringResource(Res.string.settings_advanced_section_diagnostics),
-            category = advancedCategory,
-            icon = Icons.Rounded.Tune,
-        )
-    }
     addRow(
         page = SettingsPage.Advanced,
         key = "clear-cw-cache",

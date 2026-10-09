@@ -35,7 +35,7 @@ For the beta channel, use `provenio-beta.flatpakref` instead.
 ## Build from source
 
 ```bash
-git clone --recurse-submodules https://github.com/Dimitrysaf/provenio.git
+git clone https://github.com/Dimitrysaf/provenio.git
 cd provenio
 ```
 
@@ -44,23 +44,12 @@ cd provenio
 Android development requires Android Studio and the Android SDK.
 
 ```bash
-./gradlew :androidApp:assembleFullDebug
+./gradlew :androidApp:assembleDebug
 ```
 
 ### iOS
 
-iOS development requires macOS and Xcode.
-
-```bash
-env PROVENIO_IOS_DISTRIBUTION=full xcodebuild \
-  -project iosApp/iosApp.xcodeproj \
-  -scheme iosApp \
-  -configuration Debug \
-  -sdk iphonesimulator \
-  -derivedDataPath build/ios-derived-full-simulator \
-  CODE_SIGNING_ALLOWED=NO \
-  build
-```
+The iOS app is not maintained or released. Its code stays in the repository for anyone who wants to pick it up; see [iosApp/README.md](./iosApp/README.md).
 
 The shared app is built with Kotlin Multiplatform and Compose Multiplatform.
 

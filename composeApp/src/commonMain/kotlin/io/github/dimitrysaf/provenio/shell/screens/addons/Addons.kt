@@ -58,7 +58,6 @@ import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
 import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.shell.components.NewEntryRow
-import io.github.dimitrysaf.provenio.shell.components.ScreenScaffold
 import io.github.dimitrysaf.provenio.shell.components.StatusModal
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.components.TextPromptDialog
@@ -76,23 +75,6 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 import io.github.dimitrysaf.provenio.core.addons.AddAddonResult
 import io.github.dimitrysaf.provenio.core.addons.AddonRepository
 import io.github.dimitrysaf.provenio.core.addons.ManagedAddon
-
-@Composable
-fun AddonsScreen(
-    modifier: Modifier = Modifier,
-    title: String? = null,
-    onBack: (() -> Unit)? = null,
-) {
-    ScreenScaffold(
-        title = title ?: stringResource(Res.string.addon_title),
-        modifier = modifier,
-        onBack = onBack,
-    ) {
-        item {
-            AddonsSettingsPageContent()
-        }
-    }
-}
 
 private const val AddAddonRowKey = "addons:add"
 

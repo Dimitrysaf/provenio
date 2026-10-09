@@ -2,9 +2,6 @@ package io.github.dimitrysaf.provenio.core.home
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 
 @Serializable
 data class SyncCatalogItem(
@@ -28,10 +25,3 @@ data class SyncHomeCatalogPayload(
     val items: List<SyncCatalogItem> = emptyList(),
 )
 
-internal fun mergeHomeCatalogSettingsJson(
-    remoteJson: JsonObject?,
-    localJson: JsonObject,
-): JsonObject = buildJsonObject {
-    remoteJson?.forEach { (key, value) -> put(key, value) }
-    localJson.forEach { (key, value) -> put(key, value) }
-}

@@ -258,9 +258,10 @@ internal fun LazyListScope.settingsRootContent(
                 .padding(horizontal = 20.dp, vertical = if (isTablet) 20.dp else 16.dp),
         ) {
             if (showAboutSection) {
-                MemberBrandWordmark(
-                    height = if (isTablet) 30.dp else 26.dp,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                AppBrandWordmark(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .height(if (isTablet) 30.dp else 26.dp),
                 )
                 androidx.compose.foundation.layout.Spacer(
                     modifier = Modifier.height(if (isTablet) 10.dp else 8.dp),

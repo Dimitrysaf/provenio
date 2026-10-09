@@ -2,21 +2,16 @@ package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,7 +19,6 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.ListItemDefaults
@@ -37,21 +31,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.shell.theme.Tokens
-import io.github.dimitrysaf.provenio.shell.components.BackButton
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
 import io.github.dimitrysaf.provenio.shell.theme.provenio
-import io.github.dimitrysaf.provenio.shell.components.consumeAllPointerEvents
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsItem
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.settings_homescreen_collection_with_addon
@@ -81,72 +69,6 @@ private fun SettingsCard(
         ),
     ) {
         Column(content = content)
-    }
-}
-
-@Composable
-internal fun SettingsGroup(
-    isTablet: Boolean,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    SettingsCard(
-        isTablet = isTablet,
-        modifier = modifier,
-    ) {
-        Column(content = content)
-    }
-}
-
-@Composable
-internal fun SettingsGroupDivider(isTablet: Boolean) {
-    val tokens = MaterialTheme.provenio
-    HorizontalDivider(
-        modifier = Modifier.padding(start = if (isTablet) Tokens.Space.s80 - Tokens.Space.s2 else Tokens.Space.s64 + Tokens.Space.s2),
-        thickness = tokens.borders.hairline,
-        color = MaterialTheme.colorScheme.outlineVariant,
-    )
-}
-
-@Composable
-internal fun TabletPageHeader(
-    title: String,
-    showBack: Boolean,
-    onBack: () -> Unit,
-) {
-    val tokens = MaterialTheme.provenio
-    Box(
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .consumeAllPointerEvents(),
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(tokens.spacing.listGap),
-        ) {
-            if (showBack) {
-                BackButton(
-                    onClick = onBack,
-                    modifier = Modifier
-                        .size(36.dp),
-                    shape = tokens.shapes.compactCard,
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    buttonSize = Tokens.Space.s36,
-                    iconSize = tokens.icons.md,
-                )
-            }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold,
-            )
-        }
     }
 }
 
@@ -217,141 +139,6 @@ internal fun SettingsSection(
             Spacer(modifier = Modifier.height(if (isTablet) tokens.spacing.listGap else Tokens.Space.s10))
         }
         content()
-    }
-}
-
-@Composable
-internal fun SettingsNavigationRow(
-    title: String,
-    description: String?,
-    icon: ImageVector? = null,
-    iconPainter: Painter? = null,
-    enabled: Boolean = true,
-    isTablet: Boolean,
-    trailingContent: (@Composable RowScope.() -> Unit)? = null,
-    onClick: () -> Unit,
-) {
-    val tokens = MaterialTheme.provenio
-    val iconSize = if (isTablet) 42.dp else 36.dp
-    val verticalPadding = if (isTablet) 16.dp else 14.dp
-    val horizontalPadding = if (isTablet) 20.dp else 16.dp
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = horizontalPadding, vertical = verticalPadding)
-            .alpha(if (enabled) Tokens.Opacity.visible else tokens.opacity.medium),
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 12.dp)
-                .widthIn(max = if (isTablet) 560.dp else Dp.Unspecified),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (icon != null || iconPainter != null) {
-                Surface(
-                    modifier = Modifier.size(iconSize),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = tokens.opacity.pressed),
-                    shape = tokens.shapes.compactCard,
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (iconPainter != null) {
-                            androidx.compose.foundation.Image(
-                                painter = iconPainter,
-                                contentDescription = null,
-                                modifier = Modifier.size(if (isTablet) 28.dp else 24.dp),
-                                contentScale = ContentScale.Fit,
-                            )
-                        } else if (icon != null) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.width(if (isTablet) 16.dp else 14.dp))
-            }
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Medium,
-                )
-                if (!description.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.alpha(0.92f),
-                    )
-                }
-            }
-        }
-        trailingContent?.invoke(this)
-    }
-}
-
-@Composable
-internal fun SettingsSwitchRow(
-    title: String,
-    description: String? = null,
-    checked: Boolean,
-    enabled: Boolean = true,
-    isTablet: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    val tokens = MaterialTheme.provenio
-    val verticalPadding = if (isTablet) 16.dp else 14.dp
-    val horizontalPadding = if (isTablet) 20.dp else 16.dp
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled) { onCheckedChange(!checked) }
-            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 12.dp)
-                .widthIn(max = if (isTablet) 560.dp else Dp.Unspecified)
-                .alpha(if (enabled) Tokens.Opacity.visible else tokens.opacity.medium),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Medium,
-            )
-            if (!description.isNullOrBlank()) {
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            enabled = enabled,
-            modifier = Modifier.padding(start = 4.dp),
-        )
     }
 }
 

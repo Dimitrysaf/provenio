@@ -34,9 +34,46 @@ object AndroidAppUpdaterPlatform {
 
     private var appContext: Context? = null
 
+    private var installedByHand: Boolean? = null
+
     fun initialize(context: Context) {
         appContext = context.applicationContext
     }
+
+    /**
+     * Whether this copy was installed by hand, from an APK or over adb, rather than by an app store
+     * such as F-Droid that keeps it up to date itself. Only a copy installed by hand updates itself.
+     */
+    fun isInstalledByHand(): Boolean {
+        installedByHand?.let { return it }
+        val context = appContext ?: return false
+        val installer = runCatching { installerPackageName(context) }.getOrNull()
+        return (installer == null || installer !in AppStoreInstallers).also { installedByHand = it }
+    }
+
+    private fun installerPackageName(context: Context): String? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            context.packageManager.getInstallSourceInfo(context.packageName).installingPackageName
+        } else {
+            @Suppress("DEPRECATION")
+            context.packageManager.getInstallerPackageName(context.packageName)
+        }
+
+    /** App stores and update managers that install and update apps on their own. */
+    private val AppStoreInstallers = setOf(
+        "org.fdroid.fdroid",
+        "org.fdroid.basic",
+        "org.fdroid.fdroid.privileged",
+        "com.looker.droidify",
+        "com.machiav3lli.fdroid",
+        "dev.imranr.obtainium",
+        "dev.imranr.obtainium.fdroid",
+        "com.aurora.store",
+        "com.android.vending",
+        "com.amazon.venezia",
+        "com.sec.android.app.samsungapps",
+        "com.huawei.appmarket",
+    )
 
     fun getSupportedAbis(): List<String> = Build.SUPPORTED_ABIS?.toList().orEmpty()
 

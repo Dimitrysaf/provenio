@@ -2,41 +2,41 @@
 
 package io.github.dimitrysaf.provenio.core.p2p
 
-import cnames.structs.nuvio_engine
-import io.github.dimitrysaf.provenio.core.p2p.native.NUVIO_ENGINE_EVENT_DISK_CACHE_RECLAIMED
-import io.github.dimitrysaf.provenio.core.p2p.native.NUVIO_ENGINE_EVENT_STREAM_PREPARED
-import io.github.dimitrysaf.provenio.core.p2p.native.NUVIO_ENGINE_EVENT_STREAM_STOPPED
-import io.github.dimitrysaf.provenio.core.p2p.native.NUVIO_ENGINE_EVENT_TORRENT_ERROR
-import io.github.dimitrysaf.provenio.core.p2p.native.NUVIO_ENGINE_EVENT_TORRENT_METADATA_READY
-import io.github.dimitrysaf.provenio.core.p2p.native.NUVIO_ENGINE_STATUS_NO_EVENT
-import io.github.dimitrysaf.provenio.core.p2p.native.NUVIO_ENGINE_STATUS_OK
-import io.github.dimitrysaf.provenio.core.p2p.native.NUVIO_ENGINE_TORRENT_PROFILE_BALANCED
-import io.github.dimitrysaf.provenio.core.p2p.native.NUVIO_ENGINE_TORRENT_PROFILE_FAST
-import io.github.dimitrysaf.provenio.core.p2p.native.NUVIO_ENGINE_TORRENT_PROFILE_SOFT
-import io.github.dimitrysaf.provenio.core.p2p.native.NUVIO_ENGINE_UPLOAD_DISABLED
-import io.github.dimitrysaf.provenio.core.p2p.native.NUVIO_ENGINE_UPLOAD_UNLIMITED
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_add_torrent
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_config
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_config_init_sized
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_create
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_destroy
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_event
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_event_init_sized
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_get_stats
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_get_stream_stats
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_poll_event
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_prepare_stream
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_reclaim_disk_cache
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_stats
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_stats_init_sized
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_status_message
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_stop_stream
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_stream_request
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_stream_request_init_sized
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_stream_stats
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_stream_stats_init_sized
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_torrent_request
-import io.github.dimitrysaf.provenio.core.p2p.native.nuvio_engine_torrent_request_init_sized
+import cnames.structs.engine as NativeEngine
+import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_EVENT_DISK_CACHE_RECLAIMED
+import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_EVENT_STREAM_PREPARED
+import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_EVENT_STREAM_STOPPED
+import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_EVENT_TORRENT_ERROR
+import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_EVENT_TORRENT_METADATA_READY
+import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_STATUS_NO_EVENT
+import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_STATUS_OK
+import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_TORRENT_PROFILE_BALANCED
+import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_TORRENT_PROFILE_FAST
+import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_TORRENT_PROFILE_SOFT
+import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_UPLOAD_DISABLED
+import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_UPLOAD_UNLIMITED
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_add_torrent
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_config
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_config_init_sized
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_create
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_destroy
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_event
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_event_init_sized
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_get_stats
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_get_stream_stats
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_poll_event
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_prepare_stream
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_reclaim_disk_cache
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_stats
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_stats_init_sized
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_status_message
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_stop_stream
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_stream_request
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_stream_request_init_sized
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_stream_stats
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_stream_stats_init_sized
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_torrent_request
+import io.github.dimitrysaf.provenio.core.p2p.native.engine_torrent_request_init_sized
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.CPointerVar
 import kotlinx.cinterop.ULongVar
@@ -116,7 +116,7 @@ actual object P2pStreamingEngine {
     )
 
     private class DownloadSession {
-        var engine: CPointer<nuvio_engine>? = null
+        var engine: CPointer<NativeEngine>? = null
         var stream: NativeStream? = null
     }
 
@@ -135,7 +135,7 @@ actual object P2pStreamingEngine {
     private val engineContext = Dispatchers.Default.limitedParallelism(1)
     private val scope = CoroutineScope(SupervisorJob() + engineContext)
     private val lifecycleMutex = Mutex()
-    private var engine: CPointer<nuvio_engine>? = null
+    private var engine: CPointer<NativeEngine>? = null
     private var engineConfigurationKey: EngineConfigurationKey? = null
     private var currentTorrentId: String? = null
     private var currentStream: NativeStream? = null
@@ -161,7 +161,7 @@ actual object P2pStreamingEngine {
         var phase = "build_magnet"
         var startupStatsJob: Job? = null
         var preparedStream: NativeStream? = null
-        var streamEngine: CPointer<nuvio_engine>? = null
+        var streamEngine: CPointer<NativeEngine>? = null
         try {
             val magnet = buildP2pMagnetUri(
                 request.infoHash,
@@ -268,7 +268,7 @@ actual object P2pStreamingEngine {
             val session = DownloadSession()
             downloadSessions.put(downloadId, session)?.let(::stopDownloadSession)
             _downloadStreamCount.value = downloadSessions.size
-            var sessionEngine: CPointer<nuvio_engine>? = null
+            var sessionEngine: CPointer<NativeEngine>? = null
             var preparedStream: NativeStream? = null
             try {
                 val magnet = buildP2pMagnetUri(
@@ -366,7 +366,7 @@ actual object P2pStreamingEngine {
     private fun torrentMutex(infoHash: String): Mutex = torrentMutexes.getOrPut(infoHash) { Mutex() }
 
     private fun startStartupStatsPolling(
-        activeEngine: CPointer<nuvio_engine>,
+        activeEngine: CPointer<NativeEngine>,
         streamGeneration: Long,
         phase: () -> String,
     ): Job = scope.launch {
@@ -388,7 +388,7 @@ actual object P2pStreamingEngine {
     }
 
     private fun startStatsPolling(
-        activeEngine: CPointer<nuvio_engine>,
+        activeEngine: CPointer<NativeEngine>,
         stream: NativeStream,
         streamGeneration: Long,
         payloadBaseline: Long,
@@ -437,7 +437,7 @@ actual object P2pStreamingEngine {
         )
     }
 
-    private fun ensureEngine(keepRunning: Boolean): CPointer<nuvio_engine> {
+    private fun ensureEngine(keepRunning: Boolean): CPointer<NativeEngine> {
         P2pSettingsRepository.ensureLoaded()
         val settings = P2pSettingsRepository.uiState.value
         val configuration = EngineConfigurationKey(
@@ -448,34 +448,34 @@ actual object P2pStreamingEngine {
         engine?.takeIf { engineConfigurationKey == configuration || keepRunning }?.let { return it }
         closeEngine()
 
-        val stateDirectory = "${NSHomeDirectory()}/Library/Application Support/NuvioEngine/state"
-        val cacheDirectory = "${NSHomeDirectory()}/Library/Caches/NuvioEngine/payload"
+        val stateDirectory = "${NSHomeDirectory()}/Library/Application Support/Engine/state"
+        val cacheDirectory = "${NSHomeDirectory()}/Library/Caches/Engine/payload"
         createDirectory(stateDirectory)
         createDirectory(cacheDirectory)
         val created = memScoped {
-            val config = alloc<nuvio_engine_config>()
-            nuvio_engine_config_init_sized(config.ptr, sizeOf<nuvio_engine_config>().toUInt())
+            val config = alloc<engine_config>()
+            engine_config_init_sized(config.ptr, sizeOf<engine_config>().toUInt())
             config.data_directory = stateDirectory.cstr.getPointer(this)
             config.cache_directory = cacheDirectory.cstr.getPointer(this)
             config.memory_cache_capacity_bytes = MemoryCacheCapacityBytes.toULong()
             config.disk_cache_capacity_bytes = configuration.diskCacheCapacityBytes.toULong()
             config.upload_mode = if (configuration.uploadEnabled) {
-                NUVIO_ENGINE_UPLOAD_UNLIMITED
+                ENGINE_UPLOAD_UNLIMITED
             } else {
-                NUVIO_ENGINE_UPLOAD_DISABLED
+                ENGINE_UPLOAD_DISABLED
             }
             config.upload_limit_bytes_per_second = 0uL
             config.stream_inactivity_timeout_milliseconds = 0u
             config.warm_torrent_timeout_milliseconds = 60_000u
             config.tls_ca_bundle_path = null
             config.torrent_profile = when (configuration.torrentProfile) {
-                P2pTorrentProfile.SOFT -> NUVIO_ENGINE_TORRENT_PROFILE_SOFT
-                P2pTorrentProfile.BALANCED -> NUVIO_ENGINE_TORRENT_PROFILE_BALANCED
-                P2pTorrentProfile.FAST -> NUVIO_ENGINE_TORRENT_PROFILE_FAST
+                P2pTorrentProfile.SOFT -> ENGINE_TORRENT_PROFILE_SOFT
+                P2pTorrentProfile.BALANCED -> ENGINE_TORRENT_PROFILE_BALANCED
+                P2pTorrentProfile.FAST -> ENGINE_TORRENT_PROFILE_FAST
             }
-            val output = alloc<CPointerVar<nuvio_engine>>()
-            checkStatus(nuvio_engine_create(config.ptr, output.ptr))
-            output.value ?: throw P2pStreamingException("Nuvio Engine returned an empty handle")
+            val output = alloc<CPointerVar<NativeEngine>>()
+            checkStatus(engine_create(config.ptr, output.ptr))
+            output.value ?: throw P2pStreamingException("The engine returned an empty handle")
         }
         engine = created
         engineConfigurationKey = configuration
@@ -489,51 +489,51 @@ actual object P2pStreamingEngine {
         engineConfigurationKey = null
         knownTorrentIds.clear()
         unclaimedEvents.clear()
-        nuvio_engine_destroy(activeEngine)
+        engine_destroy(activeEngine)
     }
 
-    private suspend fun addMagnet(activeEngine: CPointer<nuvio_engine>, magnet: String): String {
+    private suspend fun addMagnet(activeEngine: CPointer<NativeEngine>, magnet: String): String {
         val requestId = submit(activeEngine) {
             memScoped {
-                val request = alloc<nuvio_engine_torrent_request>()
-                nuvio_engine_torrent_request_init_sized(
+                val request = alloc<engine_torrent_request>()
+                engine_torrent_request_init_sized(
                     request.ptr,
-                    sizeOf<nuvio_engine_torrent_request>().toUInt(),
+                    sizeOf<engine_torrent_request>().toUInt(),
                 )
                 request.magnet_uri = magnet.cstr.getPointer(this)
                 request.source_type = 0u
                 val output = alloc<ULongVar>()
-                checkStatus(nuvio_engine_add_torrent(activeEngine, request.ptr, output.ptr))
+                checkStatus(engine_add_torrent(activeEngine, request.ptr, output.ptr))
                 output.value
             }
         }
-        return awaitEvent(activeEngine, requestId, NUVIO_ENGINE_EVENT_TORRENT_METADATA_READY)
+        return awaitEvent(activeEngine, requestId, ENGINE_EVENT_TORRENT_METADATA_READY)
             .torrentId
             ?: throw P2pStreamingException("Torrent metadata event omitted its identifier")
     }
 
     private suspend fun prepareStream(
-        activeEngine: CPointer<nuvio_engine>,
+        activeEngine: CPointer<NativeEngine>,
         torrentId: String,
         fileIndex: Int?,
         filename: String?,
     ): NativeStream {
         val requestId = submit(activeEngine) {
             memScoped {
-                val request = alloc<nuvio_engine_stream_request>()
-                nuvio_engine_stream_request_init_sized(
+                val request = alloc<engine_stream_request>()
+                engine_stream_request_init_sized(
                     request.ptr,
-                    sizeOf<nuvio_engine_stream_request>().toUInt(),
+                    sizeOf<engine_stream_request>().toUInt(),
                 )
                 request.torrent_id = torrentId.cstr.getPointer(this)
                 request.file_index = fileIndex?.toUInt() ?: UInt.MAX_VALUE
                 request.filename_hint = filename?.cstr?.getPointer(this)
                 val output = alloc<ULongVar>()
-                checkStatus(nuvio_engine_prepare_stream(activeEngine, request.ptr, output.ptr))
+                checkStatus(engine_prepare_stream(activeEngine, request.ptr, output.ptr))
                 output.value
             }
         }
-        val event = awaitEvent(activeEngine, requestId, NUVIO_ENGINE_EVENT_STREAM_PREPARED)
+        val event = awaitEvent(activeEngine, requestId, ENGINE_EVENT_STREAM_PREPARED)
         return NativeStream(
             id = event.streamId
                 ?: throw P2pStreamingException("Stream event omitted its identifier"),
@@ -545,36 +545,36 @@ actual object P2pStreamingEngine {
         )
     }
 
-    private suspend fun stopNativeStream(activeEngine: CPointer<nuvio_engine>?, streamId: String) {
+    private suspend fun stopNativeStream(activeEngine: CPointer<NativeEngine>?, streamId: String) {
         if (activeEngine == null || engine != activeEngine) return
         val requestId = submit(activeEngine) {
             memScoped {
                 val output = alloc<ULongVar>()
-                checkStatus(nuvio_engine_stop_stream(activeEngine, streamId, output.ptr))
+                checkStatus(engine_stop_stream(activeEngine, streamId, output.ptr))
                 output.value
             }
         }
-        awaitEvent(activeEngine, requestId, NUVIO_ENGINE_EVENT_STREAM_STOPPED)
+        awaitEvent(activeEngine, requestId, ENGINE_EVENT_STREAM_STOPPED)
     }
 
-    private suspend fun reclaimDiskCache(activeEngine: CPointer<nuvio_engine>) {
+    private suspend fun reclaimDiskCache(activeEngine: CPointer<NativeEngine>) {
         val requestId = submit(activeEngine) {
             memScoped {
                 val output = alloc<ULongVar>()
-                checkStatus(nuvio_engine_reclaim_disk_cache(activeEngine, 0uL, output.ptr))
+                checkStatus(engine_reclaim_disk_cache(activeEngine, 0uL, output.ptr))
                 output.value
             }
         }
-        awaitEvent(activeEngine, requestId, NUVIO_ENGINE_EVENT_DISK_CACHE_RECLAIMED)
+        awaitEvent(activeEngine, requestId, ENGINE_EVENT_DISK_CACHE_RECLAIMED)
     }
 
-    private fun submit(activeEngine: CPointer<nuvio_engine>, command: () -> ULong): ULong {
+    private fun submit(activeEngine: CPointer<NativeEngine>, command: () -> ULong): ULong {
         if (engine != activeEngine) throw P2pStreamingException("Torrent engine was shut down")
         return command().also(awaitedRequests::add)
     }
 
     private suspend fun awaitEvent(
-        activeEngine: CPointer<nuvio_engine>,
+        activeEngine: CPointer<NativeEngine>,
         requestId: ULong,
         expectedType: UInt,
     ): NativeEvent {
@@ -588,7 +588,7 @@ actual object P2pStreamingEngine {
                     delay(20L)
                     continue
                 }
-                if (event.type == NUVIO_ENGINE_EVENT_TORRENT_ERROR) {
+                if (event.type == ENGINE_EVENT_TORRENT_ERROR) {
                     throw P2pStreamingException(event.message ?: "Torrent engine command failed")
                 }
                 return event
@@ -607,7 +607,7 @@ actual object P2pStreamingEngine {
     }
 
     private fun drainEvents(
-        activeEngine: CPointer<nuvio_engine>,
+        activeEngine: CPointer<NativeEngine>,
         requestId: ULong,
         expectedType: UInt,
     ): NativeEvent? {
@@ -621,13 +621,13 @@ actual object P2pStreamingEngine {
     }
 
     private fun NativeEvent.answers(expectedType: UInt): Boolean =
-        type == expectedType || type == NUVIO_ENGINE_EVENT_TORRENT_ERROR
+        type == expectedType || type == ENGINE_EVENT_TORRENT_ERROR
 
-    private fun pollEvent(activeEngine: CPointer<nuvio_engine>): NativeEvent? = memScoped {
-        val event = alloc<nuvio_engine_event>()
-        nuvio_engine_event_init_sized(event.ptr, sizeOf<nuvio_engine_event>().toUInt())
-        val status = nuvio_engine_poll_event(activeEngine, event.ptr)
-        if (status == NUVIO_ENGINE_STATUS_NO_EVENT) return@memScoped null
+    private fun pollEvent(activeEngine: CPointer<NativeEngine>): NativeEvent? = memScoped {
+        val event = alloc<engine_event>()
+        engine_event_init_sized(event.ptr, sizeOf<engine_event>().toUInt())
+        val status = engine_poll_event(activeEngine, event.ptr)
+        if (status == ENGINE_STATUS_NO_EVENT) return@memScoped null
         checkStatus(status)
         NativeEvent(
             type = event.type,
@@ -641,10 +641,10 @@ actual object P2pStreamingEngine {
         )
     }
 
-    private fun readAggregateStats(activeEngine: CPointer<nuvio_engine>): AggregateStats = memScoped {
-        val stats = alloc<nuvio_engine_stats>()
-        nuvio_engine_stats_init_sized(stats.ptr, sizeOf<nuvio_engine_stats>().toUInt())
-        checkStatus(nuvio_engine_get_stats(activeEngine, stats.ptr))
+    private fun readAggregateStats(activeEngine: CPointer<NativeEngine>): AggregateStats = memScoped {
+        val stats = alloc<engine_stats>()
+        engine_stats_init_sized(stats.ptr, sizeOf<engine_stats>().toUInt())
+        checkStatus(engine_get_stats(activeEngine, stats.ptr))
         AggregateStats(
             peers = stats.connected_peers.toInt(),
             seeds = stats.connected_seeds.toInt(),
@@ -657,15 +657,15 @@ actual object P2pStreamingEngine {
     }
 
     private fun readStreamStats(
-        activeEngine: CPointer<nuvio_engine>,
+        activeEngine: CPointer<NativeEngine>,
         streamId: String,
     ): StreamStats = memScoped {
-        val stats = alloc<nuvio_engine_stream_stats>()
-        nuvio_engine_stream_stats_init_sized(
+        val stats = alloc<engine_stream_stats>()
+        engine_stream_stats_init_sized(
             stats.ptr,
-            sizeOf<nuvio_engine_stream_stats>().toUInt(),
+            sizeOf<engine_stream_stats>().toUInt(),
         )
-        checkStatus(nuvio_engine_get_stream_stats(activeEngine, streamId, stats.ptr))
+        checkStatus(engine_get_stream_stats(activeEngine, streamId, stats.ptr))
         StreamStats(
             fileSize = stats.file_size.toLong(),
             contiguousReady = stats.contiguous_ready_bytes.toLong(),
@@ -683,9 +683,9 @@ actual object P2pStreamingEngine {
     }
 
     private fun checkStatus(status: UInt) {
-        if (status == NUVIO_ENGINE_STATUS_OK) return
-        val message = nuvio_engine_status_message(status)?.toKString()
-            ?: "Nuvio Engine status $status"
+        if (status == ENGINE_STATUS_OK) return
+        val message = engine_status_message(status)?.toKString()
+            ?: "Engine status $status"
         throw P2pStreamingException(message)
     }
 
@@ -696,7 +696,7 @@ actual object P2pStreamingEngine {
             withIntermediateDirectories = true,
             attributes = null,
             error = null,
-        )) { "Could not create Nuvio Engine directory" }
+        )) { "Could not create the engine directory" }
     }
 
     private fun ratio(value: Long, total: Long): Float =

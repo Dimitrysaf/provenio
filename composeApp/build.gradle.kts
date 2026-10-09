@@ -39,12 +39,6 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
     abstract val releaseChannel: Property<String>
 
     @get:Input
-    abstract val sentryDsn: Property<String>
-
-    @get:Input
-    abstract val sentryEnvironment: Property<String>
-
-    @get:Input
     abstract val tmdbApiKey: Property<String>
 
     @TaskAction
@@ -53,20 +47,6 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
         localPropertiesFile.asFile.orNull?.takeIf { it.exists() }?.inputStream()?.use { props.load(it) }
 
         val outDir = outputDir.get().asFile
-        outDir.resolve("io/github/dimitrysaf/provenio/core/diagnostics").apply {
-            mkdirs()
-            resolve("SentryConfig.kt").writeText(
-                """
-                |package io.github.dimitrysaf.provenio.core.diagnostics
-                |
-                |object SentryConfig {
-                |    const val DSN = "${sentryDsn.get()}"
-                |    const val ENVIRONMENT = "${sentryEnvironment.get()}"
-                |}
-                """.trimMargin()
-            )
-        }
-
         outDir.resolve("io/github/dimitrysaf/provenio/core/metadata/tmdb").apply {
             mkdirs()
             resolve("TmdbConfig.kt").writeText(
@@ -118,20 +98,6 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
                 |
                 |object IntroDbConfig {
                 |    const val URL = "${props.getProperty("INTRODB_API_URL", "")}" 
-                |}
-                """.trimMargin()
-            )
-        }
-
-        outDir.resolve("io/github/dimitrysaf/provenio/core/metadata").apply {
-            mkdirs()
-            resolve("ImdbEpisodeRatingsConfig.kt").writeText(
-                """
-                |package io.github.dimitrysaf.provenio.core.metadata
-                |
-                |object ImdbEpisodeRatingsConfig {
-                |    const val IMDB_RATINGS_API_BASE_URL = "${props.getProperty("IMDB_RATINGS_API_BASE_URL", "")}" 
-                |    const val IMDB_TAPFRAME_API_BASE_URL = "${props.getProperty("IMDB_TAPFRAME_API_BASE_URL", "")}" 
                 |}
                 """.trimMargin()
             )
@@ -258,7 +224,7 @@ val iosDistributionSourceDir = if (iosDistribution == "full") {
     "src/iosAppStore/kotlin"
 }
 val iosFrameworkBundleId = "io.github.dimitrysaf.provenio"
-val engineAppleFramework = rootProject.file("../nuvio-engine/platform/apple/NuvioEngine.xcframework")
+val engineAppleFramework = rootProject.file("engine/platform/apple/Engine.xcframework")
 val fullCommonSourceDir = project.file("src/fullCommonMain/kotlin")
 // The in-app YouTube resolver, shared by Android, desktop and iOS Full.
 val youtubeSourceDir = project.file("src/youtubeMain/kotlin")
@@ -292,15 +258,7 @@ val generateRuntimeConfigs = tasks.register<GenerateRuntimeConfigsTask>("generat
     appVersionCode.set(releaseAppVersionCode)
     appBuildNumber.set(releaseAppBuildNumber)
     releaseChannel.set(providers.environmentVariable("PROVENIO_CHANNEL").orElse("beta"))
-    sentryDsn.set(runtimeConfigValue("SENTRY_DSN"))
     tmdbApiKey.set(runtimeConfigValue("TMDB_API_KEY"))
-    sentryEnvironment.set(
-        when {
-            requestedGradleTasks.any { "benchmark" in it } -> "benchmark"
-            requestedGradleTasks.any { "debug" in it } -> "debug"
-            else -> "production"
-        }
-    )
 }
 
 val checkCoreBoundary = tasks.register<CheckCoreBoundaryTask>("checkCoreBoundary") {
@@ -361,11 +319,11 @@ kotlin {
                     compilerOpts("-I${project.projectDir}/src/nativeInterop/cinterop")
                 }
                 if (iosDistribution == "full") {
-                    check(engineSliceDirectory.resolve("libCNuvioEngine.a").isFile) {
-                        "Build the local Nuvio Engine Apple XCFramework before compiling iOS Full."
+                    check(engineSliceDirectory.resolve("libCEngine.a").isFile) {
+                        "Build the engine's Apple XCFramework with engine/scripts/build-apple-xcframework.sh before compiling iOS Full."
                     }
-                    create("nuvioengine") {
-                        defFile(project.file("src/nativeInterop/cinterop/nuvioengine.def"))
+                    create("engine") {
+                        defFile(project.file("src/nativeInterop/cinterop/engine.def"))
                         compilerOpts("-I${engineSliceDirectory.resolve("Headers").absolutePath}")
                         extraOpts("-libraryPath", engineSliceDirectory.absolutePath)
                     }
@@ -409,7 +367,6 @@ kotlin {
             kotlin.srcDir(generatedRuntimeConfigDir)
         }
         androidMain {
-            kotlin.srcDir(project.file("src/androidFull/kotlin"))
             // Code both JVM targets share, such as the local sync sockets and crypto.
             kotlin.srcDir(project.file("src/jvmSharedMain/kotlin"))
             kotlin.srcDir(fullCommonSourceDir)
@@ -424,14 +381,14 @@ kotlin {
                 // Supplies ProcessLifecycleOwner, which used to arrive through the Supabase client.
                 implementation("androidx.lifecycle:lifecycle-process:2.9.0")
                 implementation("com.google.zxing:core:3.5.3")
-                implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+                implementation(libs.androidx.camera.camera2)
+                implementation(libs.androidx.camera.lifecycle)
+                implementation(libs.androidx.camera.view)
                 implementation(libs.coil.gif)
                 implementation("androidx.recyclerview:recyclerview:1.4.0")
                 implementation("com.squareup.okhttp3:okhttp:4.12.0")
-                implementation("com.google.code.gson:gson:2.11.0")
                 implementation("io.github.peerless2012:ass-media:0.5.1")
                 implementation(libs.ktor.client.okhttp)
-                implementation(libs.sentry.android)
                 implementation(libs.androidx.media3.exoplayer.hls)
                 implementation(libs.androidx.media3.exoplayer.dash)
                 implementation(libs.androidx.media3.exoplayer.smoothstreaming)
@@ -439,7 +396,6 @@ kotlin {
                 implementation(libs.androidx.media3.datasource)
                 implementation(libs.androidx.media3.datasource.okhttp)
                 implementation(libs.androidx.media3.decoder)
-                implementation(libs.androidx.media3.session)
                 implementation(libs.androidx.media3.common)
                 implementation(libs.androidx.media3.container)
                 implementation(libs.androidx.media3.extractor)
@@ -472,7 +428,6 @@ kotlin {
                 implementation("androidx.work:work-testing:${libs.versions.androidx.work.get()}")
                 implementation("com.squareup.okhttp3:mockwebserver:5.3.2")
             }
-            kotlin.srcDir(project.file("src/androidFullHostTest/kotlin"))
         }
         commonMain.dependencies {
             implementation("io.coil-kt.coil3:coil-compose:${libs.versions.coil.get()}") {
@@ -487,17 +442,13 @@ kotlin {
             implementation("io.coil-kt.coil3:coil-svg:${libs.versions.coil.get()}") {
                 exclude(group = "org.jetbrains.skiko", module = "skiko")
             }
-            implementation("dev.chrisbanes.haze:haze:1.7.2")
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
-            implementation(libs.compose.material3.adaptiveNavigationSuite)
-            implementation(libs.compose.materialRipple)
             implementation(libs.compose.materialIconsCore)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.androidx.savedstate)
             implementation(libs.androidx.savedstate.compose)

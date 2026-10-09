@@ -1,7 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
-import androidx.compose.animation.core.animateIntAsState
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
@@ -31,7 +29,6 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -61,20 +58,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.shell.components.ScreenScaffold
 import io.github.dimitrysaf.provenio.shell.components.TextPromptDialog
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
-import io.github.dimitrysaf.provenio.core.membership.CosmeticEntitlement
-import io.github.dimitrysaf.provenio.core.membership.MemberAccessRepository
-import io.github.dimitrysaf.provenio.core.membership.ProfileBackgroundRepository
 import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
 import kotlinx.coroutines.launch
@@ -126,19 +115,10 @@ fun ProfileEditScreen(
     var showPinClear by remember { mutableStateOf(false) }
     var showNameDialog by rememberSaveable { mutableStateOf(false) }
     var showAvatarDialog by rememberSaveable { mutableStateOf(false) }
-    val memberAccess by remember {
-        MemberAccessRepository.ensureStarted()
-        MemberAccessRepository.access
-    }.collectAsStateWithLifecycle()
-    val backgroundCatalog by ProfileBackgroundRepository.catalog.collectAsStateWithLifecycle()
-    val canChooseBackground = !isNew && memberAccess.entitlements.includes(CosmeticEntitlement.PROFILE_BACKGROUNDS)
 
     val avatars by AvatarRepository.avatars.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         AvatarRepository.refreshAvatars()
-    }
-    LaunchedEffect(canChooseBackground) {
-        if (canChooseBackground) ProfileBackgroundRepository.preloadLandscapeImages()
     }
     LaunchedEffect(isNew, avatars, selectedAvatarId, avatarUrl) {
         if (isNew && avatarUrl.isBlank() && selectedAvatarId == null && avatars.isNotEmpty()) {
@@ -204,27 +184,6 @@ fun ProfileEditScreen(
                         icon = if (pinEnabled) Icons.Outlined.LockOpen else Icons.Outlined.Lock,
                         onClick = {
                             if (pinEnabled) showPinClear = true else showPinSetup = true
-                        },
-                    )
-                }
-            }
-        }
-
-        if (canChooseBackground) {
-                item {
-                ProfileEditSection(
-                    title = stringResource(Res.string.profile_choose_background),
-                    description = stringResource(Res.string.profile_background_member_note),
-                ) {
-                    ProfileBackgroundPicker(
-                        backgrounds = backgroundCatalog,
-                        selectedBackgroundId = selectedBackgroundId,
-                        selectedBackgroundUrl = selectedBackgroundUrl,
-                        customBackgroundUrl = currentProfile?.profileBackgroundUrl,
-                        standardBackgroundColor = previewAccent,
-                        onSelectionChange = { id, url ->
-                            selectedBackgroundId = id
-                            selectedBackgroundUrl = url
                         },
                     )
                 }

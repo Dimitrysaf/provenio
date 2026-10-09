@@ -1,7 +1,5 @@
 package io.github.dimitrysaf.provenio.core.sync
 
-import kotlinx.serialization.json.JsonObjectBuilder
-import kotlinx.serialization.json.put
 import kotlin.random.Random
 
 private const val CLIENT_ID_LENGTH = 32
@@ -38,10 +36,6 @@ object SyncClientIdentity {
 
     private fun String.isValidSyncClientId(): Boolean =
         length in 16..96 && all { it.isLetterOrDigit() || it == '-' || it == '_' }
-}
-
-internal fun JsonObjectBuilder.putSyncOriginClientId() {
-    put(ORIGIN_CLIENT_ID_PARAM, SyncClientIdentity.currentClientId())
 }
 
 internal expect object SyncClientIdentityStorage {

@@ -1,0 +1,3 @@
+headers = engine/engine.h
+package = io.github.dimitrysaf.provenio.core.p2p.native
+staticLibraries = libCEngine.a

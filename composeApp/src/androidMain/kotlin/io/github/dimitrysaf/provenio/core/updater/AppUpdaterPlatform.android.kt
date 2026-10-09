@@ -1,7 +1,8 @@
 package io.github.dimitrysaf.provenio.core.updater
 
 actual object AppUpdaterPlatform {
-    actual val isSupported: Boolean = true
+    actual val isSupported: Boolean
+        get() = AndroidAppUpdaterPlatform.isInstalledByHand()
     actual val isDebugBuild: Boolean
         get() = AndroidAppUpdaterPlatform.isDebugBuild()
 

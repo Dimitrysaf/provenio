@@ -16,7 +16,6 @@ fun readXcconfigValue(file: File, key: String): String? {
 
 plugins {
     alias(libs.plugins.androidApplication)
-    alias(libs.plugins.sentry.android.gradle)
 }
 
 val localProps = Properties().apply {
@@ -28,14 +27,7 @@ val releaseStorePassword = localProps.getProperty("PROVENIO_RELEASE_STORE_PASSWO
 val releaseKeyAlias = localProps.getProperty("PROVENIO_RELEASE_KEY_ALIAS")?.takeIf { it.isNotBlank() }
 val releaseKeyPassword = localProps.getProperty("PROVENIO_RELEASE_KEY_PASSWORD")?.takeIf { it.isNotBlank() }
 val releaseKeystore = releaseStoreFile?.let(rootProject::file)
-fun envOrLocalProperty(key: String): String? =
-    providers.environmentVariable(key).orNull?.trim()?.takeIf { it.isNotBlank() }
-        ?: localProps.getProperty(key)?.trim()?.takeIf { it.isNotBlank() }
 
-val sentryAuthToken = envOrLocalProperty("SENTRY_AUTH_TOKEN")
-val sentryOrg = envOrLocalProperty("SENTRY_ORG")
-val sentryProject = envOrLocalProperty("SENTRY_PROJECT")
-val sentryMappingUploadEnabled = sentryAuthToken != null && sentryOrg != null && sentryProject != null
 val appVersionConfigFile = rootProject.file("iosApp/Configuration/Version.xcconfig")
 val appBaseVersion = readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION")
     ?.split('.')
@@ -88,18 +80,6 @@ android {
         versionCode = releaseAppVersionCode
         versionName = releaseAppVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    flavorDimensions += "distribution"
-    productFlavors {
-        create("full") {
-            dimension = "distribution"
-        }
-    }
-
-    sourceSets.getByName("full") {
-        manifest.srcFile("src/full/AndroidManifest.xml")
-        jniLibs.directories.add("../composeApp/src/full/jniLibs")
     }
 
     packaging {
@@ -166,28 +146,6 @@ androidComponents {
         onVariants(selector().withBuildType(buildType)) { variant ->
             variant.applicationId.set("io.github.dimitrysaf.provenio.debug")
         }
-    }
-}
-
-sentry {
-    includeProguardMapping.set(true)
-    autoUploadProguardMapping.set(sentryMappingUploadEnabled)
-    uploadNativeSymbols.set(false)
-    autoUploadNativeSymbols.set(false)
-    includeNativeSources.set(false)
-    includeSourceContext.set(false)
-    autoUploadSourceContext.set(false)
-    includeDependenciesReport.set(false)
-    telemetry.set(false)
-    sentryAuthToken?.let(authToken::set)
-    sentryOrg?.let(org::set)
-    sentryProject?.let(projectName::set)
-    ignoredBuildTypes.set(setOf("debug"))
-    autoInstallation {
-        enabled.set(false)
-    }
-    tracingInstrumentation {
-        enabled.set(false)
     }
 }
 

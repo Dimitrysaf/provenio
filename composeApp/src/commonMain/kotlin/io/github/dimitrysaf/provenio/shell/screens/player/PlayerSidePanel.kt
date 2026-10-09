@@ -1,14 +1,12 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
 import androidx.compose.animation.AnimatedVisibility
-import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -22,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -34,11 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
 import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.shell.theme.provenio
@@ -158,70 +153,3 @@ internal fun PlayerDialogButton(
     }
 }
 
-@Composable
-internal fun PlayerModalLoading(
-    modifier: Modifier = Modifier,
-) {
-    val tokens = MaterialTheme.provenio
-
-    Box(
-        modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center,
-    ) {
-        SmallLoadingSpinner(size = 24.dp)
-    }
-}
-
-@Composable
-internal fun AddonFilterChip(
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    isLoading: Boolean = false,
-    hasError: Boolean = false,
-) {
-    val tokens = MaterialTheme.provenio
-    val containerColor = when {
-        hasError -> tokens.colors.danger.copy(alpha = 0.06f)
-        isSelected -> tokens.colors.accent
-        else -> tokens.colors.surfaceCard
-    }
-    val contentColor = when {
-        hasError -> tokens.colors.danger
-        isSelected -> tokens.colors.onAccent
-        else -> tokens.colors.textSecondary
-    }
-
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(containerColor)
-            .border(
-                1.dp,
-                if (hasError) tokens.colors.danger.copy(alpha = 0.7f) else tokens.colors.borderDefault,
-                RoundedCornerShape(20.dp),
-            )
-            .shapedClickable(RoundedCornerShape(20.dp), onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            if (isLoading) {
-                SmallLoadingSpinner(
-                    color = contentColor,
-                    size = 12.dp,
-                )
-            }
-            Text(
-                text = label,
-                color = contentColor,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                maxLines = 1,
-            )
-        }
-    }
-}

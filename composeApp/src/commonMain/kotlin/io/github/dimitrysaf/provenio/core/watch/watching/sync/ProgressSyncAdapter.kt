@@ -1,6 +1,5 @@
 package io.github.dimitrysaf.provenio.core.watch.watching.sync
 
-import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressEntry
 
 data class ProgressSyncRecord(
     val contentId: String,
@@ -28,28 +27,3 @@ data class ProgressDeltaEvent(
     val lastWatched: Long = 0L,
 )
 
-interface ProgressSyncAdapter {
-    suspend fun pull(
-        profileId: Int,
-        sinceLastWatched: Long? = null,
-        limit: Int? = null,
-    ): List<ProgressSyncRecord>
-
-    suspend fun getDeltaCursor(profileId: Int): Long? = null
-
-    suspend fun pullDelta(
-        profileId: Int,
-        sinceEventId: Long,
-        limit: Int,
-    ): List<ProgressDeltaEvent> = emptyList()
-
-    suspend fun push(
-        profileId: Int,
-        entries: Collection<WatchProgressEntry>,
-    )
-
-    suspend fun delete(
-        profileId: Int,
-        entries: Collection<WatchProgressEntry>,
-    )
-}

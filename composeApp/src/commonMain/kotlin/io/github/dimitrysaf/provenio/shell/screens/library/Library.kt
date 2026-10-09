@@ -39,10 +39,6 @@ import androidx.compose.material3.IconToggleButton
 import androidx.compose.runtime.LaunchedEffect
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import io.github.dimitrysaf.provenio.core.calendar.UpcomingEpisodesRepository
-import androidx.compose.animation.Crossfade
-import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -87,7 +83,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -99,7 +94,6 @@ import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
 import io.github.dimitrysaf.provenio.shell.components.DisintegrationRequest
 import io.github.dimitrysaf.provenio.shell.components.DropdownChip
 import io.github.dimitrysaf.provenio.shell.components.DropdownOption
-import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.NetworkOfflineCard
 import io.github.dimitrysaf.provenio.shell.components.ScreenScaffold
 import io.github.dimitrysaf.provenio.shell.components.ShelfSection
@@ -112,7 +106,6 @@ import io.github.dimitrysaf.provenio.core.cloud.CloudLibraryItemType
 import io.github.dimitrysaf.provenio.core.cloud.CloudLibraryRepository
 import io.github.dimitrysaf.provenio.core.cloud.CloudLibraryUiState
 import io.github.dimitrysaf.provenio.core.debrid.DebridSettingsRepository
-import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeEmptyStateCard
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HomePosterCard
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeSkeletonRow
@@ -744,47 +737,6 @@ private fun CloudLibraryToolbar(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun LibraryChip(
-    label: String,
-    selected: Boolean,
-    loading: Boolean = false,
-    error: Boolean = false,
-    onClick: () -> Unit,
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    Surface(
-        modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
-            .shapedClickable(RoundedCornerShape(18.dp), onClick = onClick),
-        shape = RoundedCornerShape(18.dp),
-        color = if (selected) colorScheme.primaryContainer else colorScheme.surfaceContainerLow,
-        border = if (selected) BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.45f)) else null,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            if (loading) {
-                SmallLoadingSpinner(size = 12.dp)
-            }
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = when {
-                    error -> colorScheme.error
-                    selected -> colorScheme.onPrimaryContainer
-                    else -> colorScheme.onSurfaceVariant
-                },
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
         }
     }
 }

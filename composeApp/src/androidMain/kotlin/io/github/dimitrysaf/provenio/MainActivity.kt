@@ -4,7 +4,6 @@ import io.github.dimitrysaf.provenio.core.cast.CastNetwork
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
@@ -25,9 +24,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import io.github.dimitrysaf.provenio.core.auth.AuthStorage
-import io.github.dimitrysaf.provenio.core.diagnostics.SentryInitializer
 import io.github.dimitrysaf.provenio.core.deeplink.handleAppUrl
-import io.github.dimitrysaf.provenio.core.storage.PlatformLocalAccountDataCleaner
 import io.github.dimitrysaf.provenio.core.sync.SyncClientIdentityStorage
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncStorage
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncWifiLock
@@ -42,7 +39,6 @@ import io.github.dimitrysaf.provenio.core.diagnostics.AppLogs
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsArchive
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsStorage
 import io.github.dimitrysaf.provenio.core.library.LibraryDisplaySettingsStorage
-import io.github.dimitrysaf.provenio.core.membership.MemberAssetStorage
 import io.github.dimitrysaf.provenio.core.library.LibraryStorage
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsStorage
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsStorage
@@ -66,7 +62,6 @@ import io.github.dimitrysaf.provenio.core.profiles.ProfileStorage
 import io.github.dimitrysaf.provenio.core.metadata.SeasonViewModeStorage
 import io.github.dimitrysaf.provenio.core.search.DiscoverSelectionStorage
 import io.github.dimitrysaf.provenio.core.search.SearchHistoryStorage
-import io.github.dimitrysaf.provenio.core.settings.SentrySettingsStorage
 import io.github.dimitrysaf.provenio.core.settings.AppIconPlatform
 import io.github.dimitrysaf.provenio.core.settings.ThemeSettingsStorage
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktAuthStorage
@@ -108,8 +103,6 @@ open class MainActivity : AppCompatActivity() {
         )
         ThemeSettingsStorage.initialize(applicationContext)
         AppIconPlatform.initialize(applicationContext)
-        SentrySettingsStorage.initialize(applicationContext)
-        SentryInitializer.start(application)
         super.onCreate(savedInstanceState)
         window.setBackgroundDrawableResource(R.color.provenio_background)
         pipRemoteActionReceiver = PipRemoteActionReceiver.register(this)
@@ -133,7 +126,6 @@ open class MainActivity : AppCompatActivity() {
         ProfileStorage.initialize(applicationContext)
         AvatarStorage.initialize(applicationContext)
         ProfilePinCacheStorage.initialize(applicationContext)
-        MemberAssetStorage.initialize(applicationContext)
         DiscoverSelectionStorage.initialize(applicationContext)
         SearchHistoryStorage.initialize(applicationContext)
         SeasonViewModeStorage.initialize(applicationContext)
@@ -165,7 +157,6 @@ open class MainActivity : AppCompatActivity() {
         DownloadsPlatformDownloader.initialize(applicationContext)
         DownloadsLiveStatusPlatform.initialize(applicationContext)
         AndroidAppUpdaterPlatform.initialize(applicationContext)
-        PlatformLocalAccountDataCleaner.initialize(applicationContext)
         EpisodeReleaseNotificationPlatform.initialize(applicationContext)
         EpisodeReleaseNotificationPlatform.bindActivity(this)
         handleIncomingAppIntent(intent)

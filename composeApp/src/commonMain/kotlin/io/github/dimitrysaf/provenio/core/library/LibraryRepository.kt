@@ -117,20 +117,6 @@ object LibraryRepository {
         _uiState.value = LibraryUiState()
     }
 
-    internal fun runAccountStorageWipe(wipeStorage: () -> Unit) {
-        synchronized(loadLock) {
-            val transition = localState.reset()
-            transition.detachedPushJob?.cancel()
-            synchronized(persistenceLock) {
-                try {
-                    wipeStorage()
-                } finally {
-                    lastPersistedRevisionByProfile.clear()
-                }
-            }
-        }
-    }
-
     private fun loadFromDisk(profileId: Int): Boolean {
         var shouldPublish = false
         val loaded = synchronized(loadLock) {

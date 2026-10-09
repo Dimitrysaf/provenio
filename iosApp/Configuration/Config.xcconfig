@@ -3,4 +3,3 @@
 TEAM_ID=
 
 PRODUCT_NAME=Provenio
-PRODUCT_BUNDLE_IDENTIFIER=io.github.dimitrysaf.provenio.Provenio$(TEAM_ID)

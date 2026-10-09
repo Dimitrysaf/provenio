@@ -4,7 +4,6 @@ import io.github.dimitrysaf.provenio.core.network.EmptyResponseException
 import io.github.dimitrysaf.provenio.core.network.HttpStatusException
 import android.content.Context
 import android.content.SharedPreferences
-import io.github.dimitrysaf.provenio.core.diagnostics.SentryNetworkBreadcrumbInterceptor
 import io.github.dimitrysaf.provenio.core.network.IPv4FirstDns
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -110,7 +109,6 @@ private fun buildAddonHttpClient(cache: Cache? = null): OkHttpClient =
         .writeTimeout(60, TimeUnit.SECONDS)
         .followRedirects(true)
         .followSslRedirects(true)
-        .addInterceptor(SentryNetworkBreadcrumbInterceptor())
         .proxy(Proxy.NO_PROXY)
         .apply {
             if (cache != null) {
