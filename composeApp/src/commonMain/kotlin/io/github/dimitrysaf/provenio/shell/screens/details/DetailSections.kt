@@ -45,7 +45,6 @@ import androidx.compose.runtime.LaunchedEffect
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailCommentsSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailMetaInfo
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailParentsGuideSection
-import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPosterGridSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPosterRailSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailProductionSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailEpisodeListRow
@@ -659,11 +658,12 @@ internal fun ConfiguredMetaSections(
                         MoreLikeThisSource.TRAKT -> stringResource(Res.string.detail_more_like_this_powered_by_trakt)
                         null -> null
                     }
-                    DetailPosterGridSection(
+                    DetailPosterRailSection(
                         title = stringResource(Res.string.details_more_like_this),
                         items = moreLikeThisItems,
                         watchedKeys = watchedKeys,
                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                        horizontalScrollPadding = horizontalScrollPadding,
                         sourceLabel = sourceLabel,
                         onPosterClick = onOpenMeta,
                     )

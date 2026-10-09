@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
+import io.github.dimitrysaf.provenio.shell.components.snapsHorizontalShelves
+import io.github.dimitrysaf.provenio.shell.components.horizontalShelfRows
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
 import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SelectableListRow
@@ -1231,6 +1233,7 @@ private fun LazyListScope.librarySections(
         items = displaySections,
         key = { section -> "library-horizontal:${section.type}" },
     ) { section ->
+        val shelfCardStyle = rememberPosterCardStyleUiState()
         ShelfSection(
             title = section.displayTitle,
             entries = section.previewEntries,
@@ -1243,6 +1246,8 @@ private fun LazyListScope.librarySections(
             viewAllPillSize = ViewAllPillSize.Compact,
             key = { entry -> entry.globalKey },
             animatePlacement = true,
+            rows = shelfCardStyle.horizontalShelfRows,
+            snapToItems = shelfCardStyle.snapsHorizontalShelves,
         ) { entry ->
             val item = entry.item
             val posterItem = item.toMetaPreview()

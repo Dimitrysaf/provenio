@@ -75,18 +75,31 @@ fun shelfGridColumns(availableWidth: Dp, cellWidth: Dp, spacing: Dp = ShelfGridS
     ((availableWidth + spacing) / (cellWidth + spacing)).toInt().coerceAtLeast(1)
 
 /**
- * How many posters a grid [availableWidth] wide shows across: the number chosen in Card styles when
- * dynamic sizing has one, otherwise as many of the style's cards as fit.
+ * How many posters a grid [availableWidth] wide shows across: the number of columns chosen in Card
+ * styles when dynamic sizing has one, as long as each poster stays at least [MinPosterWidthDp]
+ * wide, otherwise as many of the style's cards as fit.
  */
 internal fun posterGridColumns(
     availableWidth: Dp,
     style: PosterCardStyleUiState,
     spacing: Dp = ShelfGridSpacing,
 ): Int {
-    if (style.dynamicSizeEnabled && style.cardsPerRow > 0) return style.cardsPerRow
-    val cellWidth = if (style.catalogLandscapeModeEnabled) landscapePosterWidth(style.widthDp) else style.widthDp.dp
+    val landscape = style.catalogLandscapeModeEnabled
+    if (style.dynamicSizeEnabled && style.cardsPerRow > 0) {
+        val narrowest = if (landscape) landscapePosterWidth(MinPosterWidthDp) else MinPosterWidthDp.dp
+        return minOf(style.cardsPerRow, shelfGridColumns(availableWidth, narrowest, spacing))
+    }
+    val cellWidth = if (landscape) landscapePosterWidth(style.widthDp) else style.widthDp.dp
     return shelfGridColumns(availableWidth, cellWidth, spacing)
 }
+
+/** How many rows of cards a horizontal poster shelf holds under the card style: at least one. */
+internal val PosterCardStyleUiState.horizontalShelfRows: Int
+    get() = shelfRows.coerceAtLeast(1)
+
+/** Whether horizontal poster shelves snap to whole columns: when the columns or rows are set by hand. */
+internal val PosterCardStyleUiState.snapsHorizontalShelves: Boolean
+    get() = (dynamicSizeEnabled && cardsPerRow > 0) || shelfRows > 1
 
 /**
  * One row of a grid shelf whose rows are separate list items, so only the rows on screen are

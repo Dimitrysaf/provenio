@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import io.github.dimitrysaf.provenio.shell.components.snapsHorizontalShelves
+import io.github.dimitrysaf.provenio.shell.components.horizontalShelfRows
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -78,6 +80,8 @@ private fun HomeCatalogRowSectionContent(
         onViewAllClick = onViewAllClick,
         viewAllPillSize = ViewAllPillSize.Compact,
         key = { item -> item.stableKey() },
+        rows = posterCardStyle.horizontalShelfRows,
+        snapToItems = posterCardStyle.snapsHorizontalShelves,
     ) { item ->
         HomePosterCard(
             item = item,

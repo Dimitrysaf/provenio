@@ -108,22 +108,43 @@ internal fun rememberPosterAreaContentWidth(): Dp {
 
 /**
  * The poster width that fits [cardsPerRow] cards across a page area [areaWidthDp] wide, after its
- * side margins and the gaps between cards. With [cardsPerRow] at 0 the count follows the area: about
- * three and a third posters across a phone, more rather than bigger ones on wider screens.
- * In [landscape] mode the count is of landscape cards.
+ * side margins and the gaps between cards, with a sliver of the next card showing so a horizontal
+ * shelf still reads as one that scrolls; grids share out their width themselves. With [cardsPerRow]
+ * at 0 the count follows the area: about three and a third posters across a phone, more rather than
+ * bigger ones on wider screens. In [landscape] mode the count is of landscape cards.
  */
 internal fun dynamicPosterWidthDp(areaWidthDp: Float, cardsPerRow: Int = 0, landscape: Boolean = false): Int {
     val content = (areaWidthDp - posterAreaMarginDp(areaWidthDp) * 2).coerceAtLeast(MinPosterWidthDp.toFloat())
     val spacing = ShelfGridSpacing.value
     val scale = if (landscape) PosterLandscapeWidthScale else 1f
-    val columns = if (cardsPerRow > 0) {
-        cardsPerRow
+    val columns = if (cardsPerRow > 0) cardsPerRow else autoPosterColumns(areaWidthDp, landscape)
+    val cell = if (cardsPerRow > 0) {
+        (content - spacing * columns) / (columns + NextCardPeekFraction)
     } else {
-        val target = autoPosterWidthDp(areaWidthDp) * scale
-        ((content + spacing) / (target + spacing)).roundToInt().coerceAtLeast(1)
+        (content - spacing * (columns - 1)) / columns
     }
-    val cell = (content - spacing * (columns - 1)) / columns
     return (cell / scale).toInt().coerceAtLeast(MinPosterWidthDp)
+}
+
+/** How many cards automatic sizing fits across a page area [areaWidthDp] wide. */
+internal fun autoPosterColumns(areaWidthDp: Float, landscape: Boolean = false): Int {
+    val content = (areaWidthDp - posterAreaMarginDp(areaWidthDp) * 2).coerceAtLeast(MinPosterWidthDp.toFloat())
+    val spacing = ShelfGridSpacing.value
+    val scale = if (landscape) PosterLandscapeWidthScale else 1f
+    val target = autoPosterWidthDp(areaWidthDp) * scale
+    return ((content + spacing) / (target + spacing)).roundToInt().coerceAtLeast(1)
+}
+
+/** How many columns automatic sizing gives the current page area, for the card style in use. */
+@Composable
+internal fun rememberAutoPosterColumns(): Int {
+    PosterCardStyleRepository.ensureLoaded()
+    val uiState by PosterCardStyleRepository.uiState.collectAsState()
+    val windowWidthDp = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp().value
+    }
+    val areaWidthDp = LocalPosterAreaWidth.current?.value?.takeIf { it.isFinite() && it > 0f } ?: windowWidthDp
+    return autoPosterColumns(areaWidthDp, uiState.catalogLandscapeModeEnabled)
 }
 
 /** The side margin pages give their shelves at this width, matching the Home screen's. */
@@ -156,7 +177,11 @@ private val AutoPosterWidthPoints = listOf(
     2560f to 250f,
 )
 
-private const val MinPosterWidthDp = 56
+/** The narrowest a poster gets, however many columns are asked for. */
+internal const val MinPosterWidthDp = 56
+
+/** How much of the next card a horizontal shelf shows past a set number of columns. */
+private const val NextCardPeekFraction = 0.15f
 
 enum class PosterCardShape {
     Poster,

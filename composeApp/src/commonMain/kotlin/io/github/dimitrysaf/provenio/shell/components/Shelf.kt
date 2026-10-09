@@ -1,5 +1,9 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.stopScroll
@@ -42,6 +46,12 @@ enum class ViewAllPillSize {
     Compact,
 }
 
+/**
+ * A titled shelf of cards that scrolls sideways. With [rows] above 1 the cards stack into columns
+ * that many tall, filling each column before the next; with [snapToItems] a fling settles on the
+ * start of a column rather than partway through one.
+ */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun <T> ShelfSection(
     title: String,
@@ -57,6 +67,8 @@ fun <T> ShelfSection(
     animatePlacement: Boolean = false,
     state: LazyListState = rememberLazyListState(),
     wheelScrollsRow: Boolean = false,
+    rows: Int = 1,
+    snapToItems: Boolean = false,
     itemContent: @Composable (T) -> Unit,
 ) {
     ScreenActivityEffect(state) { active ->
@@ -80,8 +92,32 @@ fun <T> ShelfSection(
             state = state,
             contentPadding = rowContentPadding,
             horizontalArrangement = Arrangement.spacedBy(itemSpacing),
+            flingBehavior = if (snapToItems) {
+                rememberSnapFlingBehavior(lazyListState = state, snapPosition = SnapPosition.Start)
+            } else {
+                ScrollableDefaults.flingBehavior()
+            },
         ) {
-            if (key != null) {
+            if (rows > 1) {
+                val columns: List<Pair<Any, List<T>>> = if (key != null) {
+                    entries.withDuplicateSafeLazyKeys(key).chunked(rows).map { column ->
+                        column.first().lazyKey to column.map { it.value }
+                    }
+                } else {
+                    entries.chunked(rows).mapIndexed { index, column -> index to column }
+                }
+                items(
+                    items = columns,
+                    key = if (key != null) { column: Pair<Any, List<T>> -> column.first } else null,
+                ) { (_, column) ->
+                    Column(
+                        modifier = if (animatePlacement) Modifier.animateItem() else Modifier,
+                        verticalArrangement = Arrangement.spacedBy(itemSpacing),
+                    ) {
+                        column.forEach { entry -> itemContent(entry) }
+                    }
+                }
+            } else if (key != null) {
                 items(
                     items = entries.withDuplicateSafeLazyKeys(key),
                     key = { entry -> entry.lazyKey },

@@ -14,8 +14,11 @@ internal const val DefaultPosterCardHeightDp = 189
 
 internal const val DefaultPosterCardCornerRadiusDp = 12
 
-/** The most cards a row can be set to hold. */
-internal const val MaxCardsPerRow = 12
+/** The fewest columns or rows of cards that can be set; 0 stands for automatic instead. */
+internal const val MinCardCount = 1
+
+/** The most columns or rows of cards that can be set. */
+internal const val MaxCardCount = 999
 
 @Serializable
 private data class StoredPosterCardStylePreferences(
@@ -26,6 +29,7 @@ private data class StoredPosterCardStylePreferences(
     val hideLabelsEnabled: Boolean = false,
     val dynamicSizeEnabled: Boolean = false,
     val cardsPerRow: Int = 0,
+    val shelfRows: Int = 0,
 )
 
 data class PosterCardStyleUiState(
@@ -39,8 +43,10 @@ data class PosterCardStyleUiState(
      * width stays stored, so turning this off returns to it.
      */
     val dynamicSizeEnabled: Boolean = false,
-    /** Cards across the page with dynamic sizing; 0 lets the page width decide. */
+    /** Columns of cards across the page with dynamic sizing; 0 lets the page width decide. */
     val cardsPerRow: Int = 0,
+    /** Rows of cards in a horizontal shelf; 0 is automatic, a single row. */
+    val shelfRows: Int = 0,
 )
 
 object PosterCardStyleRepository {
@@ -90,15 +96,27 @@ object PosterCardStyleRepository {
         persist()
     }
 
-    /** How many cards fit across the page, which also turns dynamic sizing on; 0 is automatic. */
+    /** How many columns of cards fit across the page, which also turns dynamic sizing on; 0 is automatic. */
     fun setCardsPerRow(cardsPerRow: Int) {
         ensureLoaded()
-        val next = cardsPerRow.coerceIn(0, MaxCardsPerRow)
+        val next = cardCount(cardsPerRow)
         val current = _uiState.value
         if (current.cardsPerRow == next && current.dynamicSizeEnabled) return
         _uiState.value = current.copy(cardsPerRow = next, dynamicSizeEnabled = true)
         persist()
     }
+
+    /** How many rows of cards a horizontal shelf holds; 0 is automatic. */
+    fun setShelfRows(shelfRows: Int) {
+        ensureLoaded()
+        val next = cardCount(shelfRows)
+        if (_uiState.value.shelfRows == next) return
+        _uiState.value = _uiState.value.copy(shelfRows = next)
+        persist()
+    }
+
+    /** A column or row count kept to 0 for automatic, or snapped into [MinCardCount]..[MaxCardCount]. */
+    private fun cardCount(value: Int): Int = if (value <= 0) 0 else value.coerceIn(MinCardCount, MaxCardCount)
 
     fun setCornerRadiusDp(cornerRadiusDp: Int) {
         ensureLoaded()
@@ -152,7 +170,8 @@ object PosterCardStyleRepository {
                 catalogLandscapeModeEnabled = stored.catalogLandscapeModeEnabled,
                 hideLabelsEnabled = stored.hideLabelsEnabled,
                 dynamicSizeEnabled = stored.dynamicSizeEnabled,
-                cardsPerRow = stored.cardsPerRow.coerceIn(0, MaxCardsPerRow),
+                cardsPerRow = cardCount(stored.cardsPerRow),
+                shelfRows = cardCount(stored.shelfRows),
             )
         } else {
             PosterCardStyleUiState()
@@ -170,6 +189,7 @@ object PosterCardStyleRepository {
                     hideLabelsEnabled = _uiState.value.hideLabelsEnabled,
                     dynamicSizeEnabled = _uiState.value.dynamicSizeEnabled,
                     cardsPerRow = _uiState.value.cardsPerRow,
+                    shelfRows = _uiState.value.shelfRows,
                 ),
             ),
         )
