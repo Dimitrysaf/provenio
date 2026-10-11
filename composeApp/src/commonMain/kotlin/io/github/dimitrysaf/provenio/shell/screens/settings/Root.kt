@@ -40,6 +40,8 @@ import provenio.composeapp.generated.resources.compose_about_channel_beta
 import provenio.composeapp.generated.resources.compose_about_channel_release
 import provenio.composeapp.generated.resources.compose_about_version_format
 import provenio.composeapp.generated.resources.settings_category_profile_tracking
+import provenio.composeapp.generated.resources.settings_network_description
+import provenio.composeapp.generated.resources.settings_network_title
 import provenio.composeapp.generated.resources.compose_settings_page_account
 import provenio.composeapp.generated.resources.compose_settings_page_advanced
 import provenio.composeapp.generated.resources.compose_settings_page_appearance

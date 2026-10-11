@@ -36,6 +36,8 @@ import provenio.composeapp.generated.resources.compose_settings_page_tmdb_enrich
 import provenio.composeapp.generated.resources.compose_settings_page_trakt
 import provenio.composeapp.generated.resources.compose_settings_page_tracking
 import provenio.composeapp.generated.resources.settings_category_profile_tracking
+import provenio.composeapp.generated.resources.settings_network_title
+import provenio.composeapp.generated.resources.settings_p2p_title
 import org.jetbrains.compose.resources.StringResource
 
 internal enum class SettingsCategory(
@@ -72,11 +74,6 @@ internal enum class SettingsPage(
         titleRes = Res.string.settings_network_title,
         category = SettingsCategory.General,
         parentPage = Root,
-    ),
-    P2pStreaming(
-        titleRes = Res.string.settings_p2p_title,
-        category = SettingsCategory.General,
-        parentPage = Integrations,
     ),
     Subtitles(
         titleRes = Res.string.compose_settings_page_subtitles,
@@ -175,6 +172,11 @@ internal enum class SettingsPage(
     ),
     Debrid(
         titleRes = Res.string.compose_settings_page_debrid,
+        category = SettingsCategory.General,
+        parentPage = Integrations,
+    ),
+    P2pStreaming(
+        titleRes = Res.string.settings_p2p_title,
         category = SettingsCategory.General,
         parentPage = Integrations,
     ),
