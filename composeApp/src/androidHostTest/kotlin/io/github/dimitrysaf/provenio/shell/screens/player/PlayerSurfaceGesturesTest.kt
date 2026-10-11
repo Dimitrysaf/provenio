@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.shell.screens.player
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -67,6 +68,7 @@ class PlayerSurfaceGesturesTest {
                     )
                     .playerSurfaceDragGestures(
                         gestureController = gestureController,
+                        volumeBoost = remember { PlayerVolumeBoost() },
                         layoutSize = IntSize(320, 180),
                         playbackGesturesEnabled = playbackReady.value,
                         sideGestureSystemEdgeExclusionPx = 0f,

@@ -18,6 +18,11 @@ interface PlayerEngineController {
     fun retry()
     fun setPlaybackSpeed(speed: Float)
     fun setMuted(muted: Boolean) {}
+    /**
+     * Amplifies the player's own output above full volume: 1 leaves it as it is, 2 doubles it.
+     * Engines that cannot amplify ignore it.
+     */
+    fun setVolumeBoost(gain: Float) {}
     fun getAudioTracks(): List<AudioTrack>
     fun getSubtitleTracks(): List<SubtitleTrack>
     fun applyAudioLanguagePreferences(languages: List<String>)

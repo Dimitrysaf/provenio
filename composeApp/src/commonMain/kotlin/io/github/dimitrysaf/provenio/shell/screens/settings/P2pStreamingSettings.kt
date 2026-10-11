@@ -32,8 +32,8 @@ import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The P2P Streaming page: the torrent server's status, the switch that turns it on or off, then
- * its options and its cache.
+ * The P2P Streaming page: the torrent server's status, the switch that turns it on or off, its
+ * options and its cache, then the network it streams over and a speed test.
  */
 internal fun LazyListScope.p2pStreamingSettingsContent(isTablet: Boolean) {
     item {
@@ -44,6 +44,9 @@ internal fun LazyListScope.p2pStreamingSettingsContent(isTablet: Boolean) {
     }
     item {
         P2pGroup(isTablet = isTablet)
+    }
+    item {
+        P2pNetworkGroup(isTablet = isTablet)
     }
 }
 

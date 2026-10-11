@@ -47,6 +47,24 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
         }
     }
 
+    val boostGain = volumeBoost.gain
+    LaunchedEffect(playerController, boostGain) {
+        playerController?.setVolumeBoost(boostGain)
+    }
+    // The boost sits on top of full device volume, so once the device volume drops, by the
+    // hardware keys or anything else, the boost goes first.
+    LaunchedEffect(boostGain > 1f) {
+        if (boostGain <= 1f) return@LaunchedEffect
+        while (true) {
+            delay(VolumeBoostDeviceCheckMs)
+            val device = gestureController?.currentVolume() ?: continue
+            if (device.isMuted || device.fraction < 0.995f) {
+                volumeBoost.dropGain()
+                break
+            }
+        }
+    }
+
     LaunchedEffect(parentMetaType, parentMetaId) {
         playerMeta = MetaDetailsRepository.peek(parentMetaType, parentMetaId)
         playerMetaVideos = playerMeta?.videos.orEmpty()
@@ -785,3 +803,5 @@ private fun findCredentialRefreshCandidate(
 
 private const val CREDENTIAL_REFRESH_POLL_COUNT = 30
 private const val CREDENTIAL_REFRESH_POLL_INTERVAL_MS = 500L
+
+private const val VolumeBoostDeviceCheckMs = 500L

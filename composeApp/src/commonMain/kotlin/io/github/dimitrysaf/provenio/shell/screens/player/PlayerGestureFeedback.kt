@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -71,16 +72,21 @@ internal fun BoxScope.PlayerGestureFeedbackOverlay(
     ) {
         feedback ?: return@AnimatedVisibility
         if (level != null) {
-            GestureLevelSlider(icon = feedback.levelIcon(level), level = level)
+            GestureLevelSlider(icon = feedback.levelIcon(level), level = level, levelMax = feedback.levelMax)
         } else {
             GestureMessagePill(feedback)
         }
     }
 }
 
+/**
+ * A vertical level bar. With [levelMax] above 1 the bar covers the boost too: a line marks full
+ * volume halfway up, and the part above it is drawn in the error colour.
+ */
 @Composable
-private fun GestureLevelSlider(icon: ImageVector, level: Float) {
-    val shown by animateFloatAsState(level.coerceIn(0f, 1f))
+private fun GestureLevelSlider(icon: ImageVector, level: Float, levelMax: Float) {
+    val boosted = level > 1f
+    val shown by animateFloatAsState((level / levelMax).coerceIn(0f, 1f))
     Surface(
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -108,12 +114,22 @@ private fun GestureLevelSlider(icon: ImageVector, level: Float) {
                 Surface(
                     modifier = Modifier.fillMaxWidth().fillMaxHeight(shown),
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = if (boosted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                 ) {}
+                if (levelMax > 1f) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .fillMaxWidth()
+                            .height(2.dp)
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)),
+                    )
+                }
             }
             Text(
-                text = "${(level.coerceIn(0f, 1f) * 100f).roundToInt()}",
+                text = "${(level.coerceIn(0f, levelMax) * 100f).roundToInt()}",
                 style = MaterialTheme.typography.labelLarge,
+                color = if (boosted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
             )
         }
     }

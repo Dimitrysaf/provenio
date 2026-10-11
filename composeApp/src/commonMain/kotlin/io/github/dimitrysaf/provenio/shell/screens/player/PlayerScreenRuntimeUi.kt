@@ -106,6 +106,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             )
             .playerSurfaceDragGestures(
                 gestureController = gestureController,
+                volumeBoost = volumeBoost,
                 layoutSize = layoutSize,
                 playbackGesturesEnabled = playbackGesturesEnabled,
                 sideGestureSystemEdgeExclusionPx = sideGestureSystemEdgeExclusionPx,
@@ -476,6 +477,8 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
             }
         },
         onAudioModalDismissed = { showAudioModal = false },
+        volumeBoostEnabled = volumeBoost.enabled,
+        onVolumeBoostChanged = volumeBoost::setEnabled,
         showSubtitleModal = showSubtitleModal,
         subtitleTracks = subtitleTracks,
         selectedSubtitleIndex = selectedSubtitleIndex,

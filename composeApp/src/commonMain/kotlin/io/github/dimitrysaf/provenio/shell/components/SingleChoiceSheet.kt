@@ -54,6 +54,7 @@ fun <T> SingleChoiceBottomSheet(
     description: String? = null,
     footnote: String? = null,
     navigation: SheetNavigation = SheetNavigation.Close,
+    header: (@Composable () -> Unit)? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -83,6 +84,9 @@ fun <T> SingleChoiceBottomSheet(
                 .padding(horizontal = BottomSheetBodyMargin)
                 .padding(bottom = BottomSheetBodyMargin),
         ) {
+            if (header != null) {
+                item { header() }
+            }
             if (description != null) {
                 item {
                     Text(

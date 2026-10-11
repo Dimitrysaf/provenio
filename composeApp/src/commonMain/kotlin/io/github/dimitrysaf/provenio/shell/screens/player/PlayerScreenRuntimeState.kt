@@ -98,6 +98,7 @@ internal class PlayerScreenRuntime(
     var genericUnknownLabel: String = ""
 
     var gestureController: PlayerGestureController? = null
+    val volumeBoost = PlayerVolumeBoost()
 
     var controlsVisible by mutableStateOf(false)
     // Bumped by pointer movement, so the controls' hide timer starts over while the mouse moves.

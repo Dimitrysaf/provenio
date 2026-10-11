@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.NetworkCheck
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Info
@@ -40,8 +39,6 @@ import provenio.composeapp.generated.resources.compose_about_channel_beta
 import provenio.composeapp.generated.resources.compose_about_channel_release
 import provenio.composeapp.generated.resources.compose_about_version_format
 import provenio.composeapp.generated.resources.settings_category_profile_tracking
-import provenio.composeapp.generated.resources.settings_network_description
-import provenio.composeapp.generated.resources.settings_network_title
 import provenio.composeapp.generated.resources.compose_settings_page_account
 import provenio.composeapp.generated.resources.compose_settings_page_advanced
 import provenio.composeapp.generated.resources.compose_settings_page_appearance
@@ -84,7 +81,6 @@ private const val PRIVACY_POLICY_URL = "https://github.com/Dimitrysaf/provenio#p
 internal fun LazyListScope.settingsRootContent(
     isTablet: Boolean,
     onPlaybackClick: () -> Unit,
-    onNetworkClick: () -> Unit,
     onAppearanceClick: () -> Unit,
     onAdvancedClick: () -> Unit,
     onKeyboardShortcutsClick: () -> Unit,
@@ -165,12 +161,6 @@ internal fun LazyListScope.settingsRootContent(
                         description = stringResource(Res.string.settings_playback_subtitle),
                         icon = Icons.Rounded.PlayArrow,
                         onClick = onPlaybackClick,
-                    )
-                    navigationRow(
-                        title = stringResource(Res.string.settings_network_title),
-                        description = stringResource(Res.string.settings_network_description),
-                        icon = Icons.Rounded.NetworkCheck,
-                        onClick = onNetworkClick,
                     )
                     navigationRow(
                         title = stringResource(Res.string.compose_settings_page_integrations),

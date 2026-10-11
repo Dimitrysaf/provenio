@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ImageInfo
+import kotlin.math.roundToInt
 
 /**
  * One libmpv instance with software rendering: mpv draws each frame straight into a Skia bitmap's
@@ -140,6 +141,12 @@ internal class MpvPlayer private constructor(
     fun setSpeed(speed: Float) = enqueue { setProperty("speed", speed.toString()) }
 
     fun setMuted(muted: Boolean) = enqueue { setProperty("mute", if (muted) "yes" else "no") }
+
+    /** Amplifies mpv's output above full volume, up to twice as loud, for the player's volume boost. */
+    fun setVolumeBoost(gain: Float) = enqueue {
+        setProperty("volume-max", "200")
+        setProperty("volume", (gain.coerceIn(1f, 2f) * 100f).roundToInt().toString())
+    }
 
     fun setSubtitleDelayMs(delayMs: Int) = enqueue { setProperty("sub-delay", (delayMs / 1000.0).toString()) }
 

@@ -1,6 +1,9 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +33,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalWindowInfo
 
 private const val KeyboardVolumeStep = 0.05f
+private val KeyRepeatGap = 150.milliseconds
 private const val SpaceHoldDelayMs = 400L
 private const val MouseMoveThresholdPx = 1f
 
@@ -55,6 +59,10 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
         .focusRequester(focusRequester)
         .focusable()
         .onPreviewKeyEvent { event ->
+            if (event.key == Key.DirectionUp && event.type == KeyEventType.KeyUp) {
+                mute.volumeUpHeld = false
+                mute.volumeUpReleasedAt = TimeSource.Monotonic.markNow()
+            }
             if (event.key == Key.Spacebar) {
                 handleSpaceKey(event.type, scope, spaceHold)
             } else {
@@ -96,6 +104,11 @@ private fun FocusRequester.claimFocus(state: PlayerFocusState) {
 
 private class MuteState {
     var mutedController: PlayerEngineController? = null
+    // Held keys repeat; a repeat may not raise the volume past full, only a fresh press can. Some
+    // systems repeat a held key as quick release and press pairs, so a press right after a
+    // release counts as a repeat too.
+    var volumeUpHeld = false
+    var volumeUpReleasedAt: TimeMark? = null
 }
 
 private fun PlayerScreenRuntime.handlePlayerKey(event: KeyEvent, mute: MuteState): Boolean {
@@ -109,8 +122,13 @@ private fun PlayerScreenRuntime.handlePlayerKey(event: KeyEvent, mute: MuteState
         event.key == Key.L -> seekBy(seekStepMs(PlayerSeekDirection.Forward))
         event.key == Key.DirectionLeft -> seekBy(-seekStepMs(PlayerSeekDirection.Backward))
         event.key == Key.DirectionRight -> seekBy(seekStepMs(PlayerSeekDirection.Forward))
-        event.key == Key.DirectionUp -> changeVolumeBy(KeyboardVolumeStep)
-        event.key == Key.DirectionDown -> changeVolumeBy(-KeyboardVolumeStep)
+        event.key == Key.DirectionUp -> {
+            val fresh = !mute.volumeUpHeld &&
+                (mute.volumeUpReleasedAt?.elapsedNow()?.let { it >= KeyRepeatGap } ?: true)
+            mute.volumeUpHeld = true
+            changeVolumeBy(KeyboardVolumeStep, mayRaiseBoost = fresh)
+        }
+        event.key == Key.DirectionDown -> changeVolumeBy(-KeyboardVolumeStep, mayRaiseBoost = false)
         event.key == Key.MoveHome -> seekToFraction(0f)
         event.key == Key.M -> toggleMute(mute)
         event.key == Key.C -> {
@@ -165,7 +183,7 @@ private fun PlayerScreenRuntime.toggleMute(mute: MuteState) {
     val muted = mute.mutedController !== controller
     controller.setMuted(muted)
     mute.mutedController = if (muted) controller else null
-    val fraction = gestureController?.currentVolume()?.fraction ?: 1f
+    val fraction = volumeBoost.level(gestureController?.currentVolume()?.fraction)
     showVolumeFeedback(PlayerAudioLevel(fraction = if (muted) 0f else fraction, isMuted = muted))
 }
 
@@ -200,10 +218,16 @@ private fun PlayerScreenRuntime.handleSpaceKey(type: KeyEventType, scope: Corout
     return true
 }
 
-private fun PlayerScreenRuntime.changeVolumeBy(delta: Float) {
-    val controller = gestureController ?: return
-    val current = controller.currentVolume()?.fraction ?: return
-    controller.setVolume((current + delta).coerceIn(0f, 1f))?.let { showVolumeFeedback(it) }
+private fun PlayerScreenRuntime.changeVolumeBy(delta: Float, mayRaiseBoost: Boolean) {
+    val controller = gestureController
+    val device = controller?.currentVolume()?.fraction
+    if (controller != null && device == null) return
+    val level = volumeBoost.level(device)
+    if (delta > 0f && !mayRaiseBoost && level >= 1f) {
+        if (volumeBoost.enabled || controller != null) showVolumeFeedback(PlayerAudioLevel(fraction = level, isMuted = false))
+        return
+    }
+    volumeBoost.moveBy(level, delta, controller)?.let { showVolumeFeedback(it) }
 }
 
 // Switches the window between full screen and windowed where the platform has one; false where it does not.

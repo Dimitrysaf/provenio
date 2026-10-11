@@ -1,9 +1,11 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.network.NetworkCondition
 import io.github.dimitrysaf.provenio.core.network.NetworkConnectionInfo
@@ -19,22 +21,13 @@ import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
 /**
- * The Network page: whether the internet is reachable, each connection and its addresses, the
- * public address on request, and a speed test.
+ * The P2P Streaming page's Network section: whether the internet is reachable, each connection
+ * and its addresses, the public address on request, and the speed test, which opens in a dialog.
  */
-internal fun LazyListScope.networkSettingsContent(isTablet: Boolean) {
-    item {
-        NetworkStatusGroup(isTablet = isTablet)
-    }
-    if (NetworkDiagnosticsRepository.isSupported) {
-        item {
-            SpeedTestGroup(isTablet = isTablet)
-        }
-    }
-}
-
 @Composable
-private fun NetworkStatusGroup(isTablet: Boolean) {
+internal fun P2pNetworkGroup(isTablet: Boolean) {
+    var showSpeedTest by remember { mutableStateOf(false) }
+    val speedTest = NetworkDiagnosticsRepository.speedTest.collectAsStateWithLifecycle().value
     val status = remember {
         NetworkStatusRepository.ensureStarted()
         NetworkStatusRepository.uiState
@@ -71,9 +64,11 @@ private fun NetworkStatusGroup(isTablet: Boolean) {
         ).joinToString(" · ")
     }
     val noConnection = stringResource(Res.string.settings_network_no_connection)
+    val speedTestTitle = stringResource(Res.string.settings_network_section_speed)
+    val speedTestDescription = speedTestSummary(speedTest)
 
     SettingsSection(
-        title = stringResource(Res.string.settings_network_section_status),
+        title = stringResource(Res.string.settings_network_title),
         isTablet = isTablet,
     ) {
         SettingsList {
@@ -98,8 +93,41 @@ private fun NetworkStatusGroup(isTablet: Boolean) {
                     enabled = publicIp != PublicIpState.Loading,
                     onClick = NetworkDiagnosticsRepository::lookUpPublicIp,
                 )
+                navigationRow(
+                    title = speedTestTitle,
+                    description = speedTestDescription,
+                    progress = (speedTest as? SpeedTestState.Running)?.progress,
+                    onClick = { showSpeedTest = true },
+                )
             }
         }
+    }
+    if (showSpeedTest) {
+        SpeedTestDialog(onDismiss = { showSpeedTest = false })
+    }
+}
+
+/** The speed test row's line: the last results once there are some, otherwise what it does. */
+@Composable
+private fun speedTestSummary(state: SpeedTestState): String {
+    val result = state.result
+    val download = result.downloadMbps
+    val upload = result.uploadMbps
+    return when {
+        state is SpeedTestState.Running -> stringResource(
+            when (state.phase) {
+                SpeedTestPhase.Latency -> Res.string.settings_network_speed_running_latency
+                SpeedTestPhase.Download -> Res.string.settings_network_speed_running_download
+                SpeedTestPhase.Upload -> Res.string.settings_network_speed_running_upload
+            },
+        )
+        download != null && upload != null -> stringResource(
+            Res.string.settings_network_speed_summary,
+            formatMbps(download),
+            formatMbps(upload),
+        )
+        state is SpeedTestState.Failed -> stringResource(Res.string.settings_network_speed_failed)
+        else -> stringResource(Res.string.settings_network_speed_hint)
     }
 }
 
@@ -115,63 +143,6 @@ private fun connectionTitle(connection: NetworkConnectionInfo): String {
         },
     )
     return "$kind · ${connection.name}"
-}
-
-@Composable
-private fun SpeedTestGroup(isTablet: Boolean) {
-    val state = NetworkDiagnosticsRepository.speedTest.collectAsStateWithLifecycle().value
-    val running = state as? SpeedTestState.Running
-    val result = state.result
-    val actionTitle = stringResource(
-        when (state) {
-            is SpeedTestState.Running -> Res.string.settings_network_speed_stop
-            SpeedTestState.Idle -> Res.string.settings_network_speed_run
-            is SpeedTestState.Done, is SpeedTestState.Failed -> Res.string.settings_network_speed_again
-        },
-    )
-    val actionDescription = when {
-        running != null -> stringResource(
-            when (running.phase) {
-                SpeedTestPhase.Latency -> Res.string.settings_network_speed_running_latency
-                SpeedTestPhase.Download -> Res.string.settings_network_speed_running_download
-                SpeedTestPhase.Upload -> Res.string.settings_network_speed_running_upload
-            },
-        )
-        state is SpeedTestState.Failed -> stringResource(Res.string.settings_network_speed_failed)
-        else -> stringResource(Res.string.settings_network_speed_hint)
-    }
-    val pending = "—"
-    val latency = result.latencyMs?.let { stringResource(Res.string.settings_network_ms_value, it) } ?: pending
-    val jitter = result.jitterMs?.let { stringResource(Res.string.settings_network_ms_value, it) } ?: pending
-    val download = result.downloadMbps?.let { stringResource(Res.string.settings_network_mbps_value, formatMbps(it)) } ?: pending
-    val upload = result.uploadMbps?.let { stringResource(Res.string.settings_network_mbps_value, formatMbps(it)) } ?: pending
-    val showResults = state !is SpeedTestState.Idle
-
-    SettingsSection(
-        title = stringResource(Res.string.settings_network_section_speed),
-        isTablet = isTablet,
-    ) {
-        SettingsList {
-            navigationRow(
-                title = actionTitle,
-                description = actionDescription,
-                progress = running?.progress,
-                onClick = {
-                    if (running != null) {
-                        NetworkDiagnosticsRepository.cancelSpeedTest()
-                    } else {
-                        NetworkDiagnosticsRepository.runSpeedTest()
-                    }
-                },
-            )
-            if (showResults) {
-                infoRow(title = stringResource(Res.string.settings_network_latency), value = latency)
-                infoRow(title = stringResource(Res.string.settings_network_jitter), value = jitter)
-                infoRow(title = stringResource(Res.string.settings_network_download), value = download)
-                infoRow(title = stringResource(Res.string.settings_network_upload), value = upload)
-            }
-        }
-    }
 }
 
 /** A speed in megabits per second, with one decimal below 100. */

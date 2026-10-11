@@ -34,6 +34,7 @@ import org.jetbrains.compose.resources.getString
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.AudioAttributes
+import android.media.audiofx.LoudnessEnhancer
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
@@ -80,6 +81,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlin.math.log10
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
@@ -546,6 +548,11 @@ private fun ExoPlayerSurface(
         Log.d(TAG, "$reason: preserving audio track index=${selection.index} id=${selection.id}")
     }
 
+    val loudnessBoost = remember(exoPlayer) { ExoLoudnessBoost(exoPlayer) }
+    DisposableEffect(loudnessBoost) {
+        onDispose { loudnessBoost.release() }
+    }
+
     DisposableEffect(exoPlayer) {
         PlayerPictureInPictureManager.registerPausePlaybackCallback {
             exoPlayer.pause()
@@ -781,6 +788,10 @@ private fun ExoPlayerSurface(
 
                 override fun setMuted(muted: Boolean) {
                     exoPlayer.volume = if (muted) 0f else 1f
+                }
+
+                override fun setVolumeBoost(gain: Float) {
+                    loudnessBoost.setGain(gain)
                 }
 
                 override fun updateNowPlayingMetadata(info: PlayerNowPlayingInfo) {
@@ -1529,6 +1540,13 @@ private class LibmpvView(
 
             override fun setMuted(muted: Boolean) {
                 executeMpv { mpv.setPropertyBoolean("mute", muted) }
+            }
+
+            override fun setVolumeBoost(gain: Float) {
+                executeMpv {
+                    mpv.setPropertyString("volume-max", "$MpvVolumeBoostMaxPercent")
+                    mpv.setPropertyInt("volume", (gain.coerceIn(1f, 2f) * 100f).roundToInt())
+                }
             }
 
             override fun getAudioTracks(): List<AudioTrack> =
@@ -2420,3 +2438,41 @@ private fun diagnosticThrowableChain(value: Throwable): String =
             "${error.javaClass.simpleName}:${diagnosticPlayerMessage(error.message)}"
         }
         .let(::diagnosticPlayerMessage)
+
+private const val MpvVolumeBoostMaxPercent = 200
+
+/**
+ * Raises ExoPlayer's output above full volume with the platform's loudness enhancer, for the
+ * player's volume boost. The enhancer is made on first use and follows the player's audio session.
+ */
+private class ExoLoudnessBoost(private val player: ExoPlayer) {
+    private var enhancer: LoudnessEnhancer? = null
+    private var sessionId = C.AUDIO_SESSION_ID_UNSET
+
+    fun setGain(gain: Float) {
+        val millibels = if (gain <= 1f) 0 else (2000f * log10(gain)).roundToInt()
+        if (millibels <= 0) {
+            enhancer?.let { runCatching { it.enabled = false } }
+            return
+        }
+        val session = player.audioSessionId
+        if (session == C.AUDIO_SESSION_ID_UNSET) return
+        val active = enhancer?.takeIf { sessionId == session } ?: runCatching {
+            enhancer?.release()
+            LoudnessEnhancer(session).also {
+                enhancer = it
+                sessionId = session
+            }
+        }.getOrNull() ?: return
+        runCatching {
+            active.setTargetGain(millibels)
+            active.enabled = true
+        }
+    }
+
+    fun release() {
+        enhancer?.let { runCatching { it.release() } }
+        enhancer = null
+        sessionId = C.AUDIO_SESSION_ID_UNSET
+    }
+}

@@ -483,7 +483,6 @@ private fun MobileSettingsScreen(
                         settingsRootContent(
                             isTablet = false,
                             onPlaybackClick = { onPageChange(SettingsPage.Playback) },
-                            onNetworkClick = { onPageChange(SettingsPage.Network) },
                             onAppearanceClick = { onPageChange(SettingsPage.Appearance) },
                             onAdvancedClick = { onPageChange(SettingsPage.Advanced) },
                             onKeyboardShortcutsClick = { onPageChange(SettingsPage.KeyboardShortcuts) },
@@ -804,7 +803,6 @@ private fun TabletSettingsScreen(
                             settingsRootContent(
                                 isTablet = true,
                                 onPlaybackClick = { openInlinePage(SettingsPage.Playback) },
-                                onNetworkClick = { openInlinePage(SettingsPage.Network) },
                                 onAppearanceClick = { openInlinePage(SettingsPage.Appearance) },
                                 onAdvancedClick = { openInlinePage(SettingsPage.Advanced) },
                                 onKeyboardShortcutsClick = { openInlinePage(SettingsPage.KeyboardShortcuts) },
@@ -1034,7 +1032,6 @@ internal fun LazyListScope.settingsPageContent(
             onSubtitlesClick = { links.openSubPage(SettingsPage.Subtitles) },
         )
         SettingsPage.Subtitles -> subtitlesSettingsContent(isTablet = isTablet)
-        SettingsPage.Network -> networkSettingsContent(isTablet = isTablet)
         SettingsPage.P2pStreaming -> p2pStreamingSettingsContent(isTablet = isTablet)
         SettingsPage.Streams -> streamsSettingsContent(isTablet = isTablet)
         SettingsPage.Appearance -> appearanceSettingsContent(

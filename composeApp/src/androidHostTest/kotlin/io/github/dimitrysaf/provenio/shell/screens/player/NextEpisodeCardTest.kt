@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -154,6 +155,7 @@ class NextEpisodeCardTest {
                 Box(
                     modifier = Modifier.size(640.dp, 360.dp).playerSurfaceDragGestures(
                         gestureController = null,
+                        volumeBoost = remember { PlayerVolumeBoost() },
                         layoutSize = IntSize(640, 360),
                         playbackGesturesEnabled = true,
                         sideGestureSystemEdgeExclusionPx = 0f,

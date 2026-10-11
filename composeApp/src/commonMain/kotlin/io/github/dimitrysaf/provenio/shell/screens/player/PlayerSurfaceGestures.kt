@@ -44,6 +44,7 @@ internal fun Modifier.playerSurfaceTapGestures(
 
 internal fun Modifier.playerSurfaceDragGestures(
     gestureController: PlayerGestureController?,
+    volumeBoost: PlayerVolumeBoost,
     layoutSize: IntSize,
     playbackGesturesEnabled: Boolean,
     sideGestureSystemEdgeExclusionPx: Float,
@@ -91,7 +92,7 @@ internal fun Modifier.playerSurfaceDragGestures(
                 null
             }
             val initialVolume = if (region == PlayerSideGesture.Volume) {
-                controller?.currentVolume()
+                controller?.currentVolume()?.let { volumeBoost.level(it.fraction) }
             } else {
                 null
             }
@@ -153,7 +154,7 @@ internal fun Modifier.playerSurfaceDragGestures(
                         val activeTotalDy = totalDy - verticalGestureActivationDy
                         val gestureDeltaFraction =
                             (-activeTotalDy / height) * PlayerVerticalGestureSensitivity
-                        controller?.setVolume((initialVolume?.fraction ?: 0f) + gestureDeltaFraction)
+                        volumeBoost.moveBy(initialVolume ?: 0f, gestureDeltaFraction, controller)
                             ?.let(showVolumeFeedbackState.value)
                     }
                 }

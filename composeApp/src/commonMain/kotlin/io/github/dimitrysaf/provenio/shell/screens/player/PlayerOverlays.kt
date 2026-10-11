@@ -23,4 +23,6 @@ internal data class GestureFeedbackState(
     val secondaryMessageArgs: List<Any> = emptyList(),
     val secondaryMessageColor: Color? = null,
     val level: Float? = null,
+    /** The top of the level's scale: 1, or 2 while the volume boost is on. */
+    val levelMax: Float = 1f,
 )

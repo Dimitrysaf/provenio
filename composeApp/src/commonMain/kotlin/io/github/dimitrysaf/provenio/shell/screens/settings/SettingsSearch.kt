@@ -264,28 +264,6 @@ internal fun settingsSearchEntries(
         description = stringResource(Res.string.settings_playback_subtitle),
         icon = Icons.Rounded.PlayArrow,
     )
-    val networkPage = stringResource(Res.string.settings_network_title)
-    addPage(
-        page = SettingsPage.Network,
-        key = "network",
-        title = networkPage,
-        description = stringResource(Res.string.settings_network_description),
-        icon = Icons.Rounded.NetworkCheck,
-    )
-    listOf(
-        PlaybackSearchRow("network-public-ip", stringResource(Res.string.settings_network_public_ip), stringResource(Res.string.settings_network_public_ip_hint)),
-        PlaybackSearchRow("network-speed-test", stringResource(Res.string.settings_network_section_speed), stringResource(Res.string.settings_network_speed_hint)),
-    ).forEach { row ->
-        addRow(
-            page = SettingsPage.Network,
-            key = row.key,
-            title = row.title,
-            description = row.description,
-            pageLabel = networkPage,
-            section = networkPage,
-            icon = Icons.Rounded.NetworkCheck,
-        )
-    }
     if (P2pSettingsRepository.isVisible) {
         addPage(
             page = SettingsPage.P2pStreaming,
@@ -304,6 +282,21 @@ internal fun settingsSearchEntries(
             section = stringResource(Res.string.settings_p2p_section_options),
             icon = Icons.Rounded.Link,
         )
+        val networkSection = stringResource(Res.string.settings_network_title)
+        listOf(
+            PlaybackSearchRow("p2p-network-public-ip", stringResource(Res.string.settings_network_public_ip), stringResource(Res.string.settings_network_public_ip_hint)),
+            PlaybackSearchRow("p2p-network-speed-test", stringResource(Res.string.settings_network_section_speed), stringResource(Res.string.settings_network_speed_hint)),
+        ).forEach { row ->
+            addRow(
+                page = SettingsPage.P2pStreaming,
+                key = row.key,
+                title = row.title,
+                description = row.description,
+                pageLabel = p2pPage,
+                section = networkSection,
+                icon = Icons.Rounded.NetworkCheck,
+            )
+        }
     }
     addPage(
         page = SettingsPage.Streams,

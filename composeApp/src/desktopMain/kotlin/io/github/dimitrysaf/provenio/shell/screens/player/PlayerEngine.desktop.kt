@@ -152,6 +152,7 @@ private class MpvPlayerController(private val player: MpvPlayer) : PlayerEngineC
     override fun retry() = player.reload()
     override fun setPlaybackSpeed(speed: Float) = player.setSpeed(speed)
     override fun setMuted(muted: Boolean) = player.setMuted(muted)
+    override fun setVolumeBoost(gain: Float) = player.setVolumeBoost(gain)
     override fun getAudioTracks(): List<AudioTrack> = player.audioTracks()
     override fun getSubtitleTracks(): List<SubtitleTrack> = player.subtitleTracks()
     override fun applyAudioLanguagePreferences(languages: List<String>) = player.setPreferredAudioLanguages(languages)

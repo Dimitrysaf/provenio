@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -32,6 +33,8 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -112,10 +115,15 @@ internal fun PlayerAudioSheet(
     audioTracks: List<AudioTrack>,
     selectedIndex: Int,
     onTrackSelected: (Int) -> Unit,
+    volumeBoostEnabled: Boolean,
+    onVolumeBoostChanged: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     SingleChoiceBottomSheet(
         title = stringResource(Res.string.compose_player_audio_tracks),
+        header = {
+            VolumeBoostSwitch(checked = volumeBoostEnabled, onCheckedChange = onVolumeBoostChanged)
+        },
         options = audioTracks.map { track ->
             SingleChoiceOption(
                 value = track.index,
@@ -134,6 +142,54 @@ internal fun PlayerAudioSheet(
             null
         },
     )
+}
+
+/**
+ * Turns the volume boost on for this playback. It is never on by itself, and turning it off puts
+ * the volume straight back to full.
+ */
+@Composable
+private fun VolumeBoostSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    val containerColor = if (checked) {
+        MaterialTheme.colorScheme.errorContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHighest
+    }
+    val contentColor = if (checked) {
+        MaterialTheme.colorScheme.onErrorContainer
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    Surface(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 12.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = containerColor,
+        contentColor = contentColor,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Icon(imageVector = Icons.AutoMirrored.Rounded.VolumeUp, contentDescription = null)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(Res.string.player_volume_boost_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = stringResource(Res.string.player_volume_boost_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = contentColor.copy(alpha = 0.8f),
+                )
+            }
+            Switch(checked = checked, onCheckedChange = null)
+        }
+    }
 }
 
 internal val PlayerPlaybackSpeeds = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f)

@@ -460,6 +460,8 @@
     <string name="compose_player_subtitles">Subtitles</string>
     <string name="compose_player_brightness_level">Brightness %1$s</string>
     <string name="compose_player_volume_level">Volume %1$s</string>
+    <string name="player_volume_boost_title">Volume boost</string>
+    <string name="player_volume_boost_description">Louder than full volume, up to 200%. To go past 100%, swipe again from 100%.</string>
     <string name="compose_player_muted">Muted</string>
     <string name="compose_player_downloaded">Downloaded</string>
     <string name="compose_player_airs_prefix">Airs</string>
@@ -2094,8 +2096,6 @@
     <string name="p2p_consent_cancel">Cancel</string>
     <string name="p2p_error_unknown">Unknown torrent error</string>
     <string name="settings_network_title">Network</string>
-    <string name="settings_network_description">Connection, addresses, speed test and P2P streaming</string>
-    <string name="settings_network_section_status">Status</string>
     <string name="settings_network_internet">Internet</string>
     <string name="settings_network_internet_online">Connected</string>
     <string name="settings_network_internet_offline">No internet</string>
@@ -2120,12 +2120,13 @@
     <string name="settings_network_speed_running_download">Measuring download speed…</string>
     <string name="settings_network_speed_running_upload">Measuring upload speed…</string>
     <string name="settings_network_speed_failed">The speed test could not finish</string>
-    <string name="settings_network_latency">Latency</string>
     <string name="settings_network_jitter">Jitter</string>
     <string name="settings_network_download">Download</string>
     <string name="settings_network_upload">Upload</string>
     <string name="settings_network_ms_value">%1$d ms</string>
     <string name="settings_network_mbps_value">%1$s Mbit/s</string>
+    <string name="settings_network_speed_summary">↓ %1$s · ↑ %2$s Mbit/s</string>
+    <string name="settings_network_speed_ping">Ping</string>
     <string name="settings_p2p_section_options">Options</string>
     <string name="settings_p2p_status_off">P2P streaming is off</string>
     <string name="settings_p2p_status_off_hint">Turn it on to play torrents</string>

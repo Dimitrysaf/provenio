@@ -36,7 +36,6 @@ import provenio.composeapp.generated.resources.compose_settings_page_tmdb_enrich
 import provenio.composeapp.generated.resources.compose_settings_page_trakt
 import provenio.composeapp.generated.resources.compose_settings_page_tracking
 import provenio.composeapp.generated.resources.settings_category_profile_tracking
-import provenio.composeapp.generated.resources.settings_network_title
 import provenio.composeapp.generated.resources.settings_p2p_title
 import org.jetbrains.compose.resources.StringResource
 
@@ -67,11 +66,6 @@ internal enum class SettingsPage(
     ),
     Playback(
         titleRes = Res.string.compose_settings_page_playback,
-        category = SettingsCategory.General,
-        parentPage = Root,
-    ),
-    Network(
-        titleRes = Res.string.settings_network_title,
         category = SettingsCategory.General,
         parentPage = Root,
     ),
