@@ -55,12 +55,12 @@ internal fun SpeedTestDialog(onDismiss: () -> Unit) {
     val running = state as? SpeedTestState.Running
     val result = state.result
     val phase = running?.phase
-    val gaugeMbps = when {
+    val measuredMbps = when {
         phase == SpeedTestPhase.Upload -> result.uploadMbps
         phase == SpeedTestPhase.Download -> result.downloadMbps
         phase == SpeedTestPhase.Latency -> null
-        else -> result.downloadMbps
-    } ?: 0.0
+        else -> result.downloadMbps ?: result.uploadMbps
+    }
     val gaugeColor = if (phase == SpeedTestPhase.Upload) {
         MaterialTheme.colorScheme.tertiary
     } else {
@@ -70,7 +70,10 @@ internal fun SpeedTestDialog(onDismiss: () -> Unit) {
         phase == SpeedTestPhase.Latency -> stringResource(Res.string.settings_network_speed_running_latency)
         phase == SpeedTestPhase.Download -> stringResource(Res.string.settings_network_download)
         phase == SpeedTestPhase.Upload -> stringResource(Res.string.settings_network_upload)
-        state is SpeedTestState.Failed -> stringResource(Res.string.settings_network_speed_failed)
+        state is SpeedTestState.Failed -> state.reason?.let {
+            stringResource(Res.string.settings_network_speed_failed_reason, it)
+        } ?: stringResource(Res.string.settings_network_speed_failed)
+        state is SpeedTestState.Done && result.downloadMbps == null -> stringResource(Res.string.settings_network_upload)
         state is SpeedTestState.Done -> stringResource(Res.string.settings_network_download)
         else -> stringResource(Res.string.settings_network_speed_hint)
     }
@@ -89,9 +92,9 @@ internal fun SpeedTestDialog(onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 SpeedGauge(
-                    mbps = gaugeMbps,
+                    mbps = measuredMbps ?: 0.0,
                     color = gaugeColor,
-                    showValue = state !is SpeedTestState.Idle && phase != SpeedTestPhase.Latency,
+                    showValue = measuredMbps != null,
                     label = phaseLabel,
                 )
                 Row(

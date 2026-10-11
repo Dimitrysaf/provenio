@@ -52,7 +52,7 @@ internal actual object NetworkDiagnosticsPlatform {
 
     actual suspend fun timeRequest(url: String): Long = withContext(Dispatchers.IO) {
         val start = System.nanoTime()
-        client.newCall(Request.Builder().url(url).build()).execute().use { response ->
+        client.newCall(speedTestRequest(url).build()).execute().use { response ->
             if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
             response.body?.bytes()
         }
@@ -64,7 +64,7 @@ internal actual object NetworkDiagnosticsPlatform {
         maxMillis: Long,
         onProgress: (Long, Long) -> Unit,
     ): Pair<Long, Long> = withContext(Dispatchers.IO) {
-        val call = client.newCall(Request.Builder().url(url).build())
+        val call = client.newCall(speedTestRequest(url).build())
         val start = System.nanoTime()
         var bytes = 0L
         var lastReport = 0L
@@ -125,12 +125,26 @@ internal actual object NetworkDiagnosticsPlatform {
             }
         }
         try {
-            client.newCall(Request.Builder().url(url).post(body).build()).execute().close()
+            client.newCall(speedTestRequest(url).post(body).build()).execute().use { response ->
+                if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
+            }
         } catch (error: IOException) {
             if (error.message != UploadTimeUp || sent == 0L) throw error
         }
         sent to elapsedMillis(start)
     }
+
+    /**
+     * A request to Cloudflare's speed test servers as its own speed test page makes it, which
+     * they expect, and with compression off so the bytes counted are the bytes that crossed the
+     * network.
+     */
+    private fun speedTestRequest(url: String): Request.Builder = Request.Builder()
+        .url(url)
+        .header("Referer", "https://speed.cloudflare.com/")
+        .header("Origin", "https://speed.cloudflare.com")
+        .header("Accept-Encoding", "identity")
+        .header("Cache-Control", "no-store")
 
     private fun elapsedMillis(start: Long): Long = (System.nanoTime() - start) / 1_000_000
 

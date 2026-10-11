@@ -61,7 +61,8 @@ sealed interface SpeedTestState {
 
     data class Done(override val result: SpeedTestResult) : SpeedTestState
 
-    data class Failed(override val result: SpeedTestResult) : SpeedTestState
+    /** Neither speed could be measured; [reason] is the first error, when there was one. */
+    data class Failed(override val result: SpeedTestResult, val reason: String? = null) : SpeedTestState
 }
 
 /** The network access the diagnostics need, which only the JVM platforms provide. */
@@ -126,42 +127,103 @@ object NetworkDiagnosticsRepository {
         }
     }
 
+    /**
+     * Runs latency, download and upload one after another. A phase that fails is left empty and
+     * the next one still runs; the test only counts as failed when neither speed could be measured,
+     * and then it keeps the first reason.
+     */
     fun runSpeedTest() {
         if (speedTestJob?.isActive == true) return
         speedTestJob = scope.launch {
             var result = SpeedTestResult()
+            val problems = mutableListOf<String>()
             try {
                 _speedTest.value = SpeedTestState.Running(SpeedTestPhase.Latency, 0f, result)
-                result = measureLatency(result)
+                phase(problems) { result = measureLatency(result) }
 
                 _speedTest.value = SpeedTestState.Running(SpeedTestPhase.Download, LatencyShare, result)
-                val (downBytes, downMillis) = NetworkDiagnosticsPlatform.download(DownloadUrl, PhaseMillis) { bytes, millis ->
-                    _speedTest.value = SpeedTestState.Running(
-                        SpeedTestPhase.Download,
-                        LatencyShare + DownloadShare * phaseProgress(millis),
-                        result.copy(downloadMbps = mbps(bytes, millis)),
-                    )
+                phase(problems) {
+                    val (bytes, millis) = measureDownload { soFar, elapsed ->
+                        _speedTest.value = SpeedTestState.Running(
+                            SpeedTestPhase.Download,
+                            LatencyShare + DownloadShare * phaseProgress(elapsed),
+                            result.copy(downloadMbps = mbps(soFar, elapsed)),
+                        )
+                    }
+                    result = result.copy(downloadMbps = mbps(bytes, millis))
                 }
-                result = result.copy(downloadMbps = mbps(downBytes, downMillis))
 
                 val uploadStart = LatencyShare + DownloadShare
                 _speedTest.value = SpeedTestState.Running(SpeedTestPhase.Upload, uploadStart, result)
-                val (upBytes, upMillis) = NetworkDiagnosticsPlatform.upload(UploadUrl, UploadBytes, PhaseMillis) { bytes, millis ->
-                    _speedTest.value = SpeedTestState.Running(
-                        SpeedTestPhase.Upload,
-                        uploadStart + (1f - uploadStart) * phaseProgress(millis),
-                        result.copy(uploadMbps = mbps(bytes, millis)),
-                    )
+                phase(problems) {
+                    val (bytes, millis) = measureUpload { soFar, elapsed ->
+                        _speedTest.value = SpeedTestState.Running(
+                            SpeedTestPhase.Upload,
+                            uploadStart + (1f - uploadStart) * phaseProgress(elapsed),
+                            result.copy(uploadMbps = mbps(soFar, elapsed)),
+                        )
+                    }
+                    result = result.copy(uploadMbps = mbps(bytes, millis))
                 }
-                result = result.copy(uploadMbps = mbps(upBytes, upMillis))
-                _speedTest.value = SpeedTestState.Done(result)
+                _speedTest.value = if (result.downloadMbps == null && result.uploadMbps == null) {
+                    SpeedTestState.Failed(result, problems.firstOrNull())
+                } else {
+                    SpeedTestState.Done(result)
+                }
             } catch (cancelled: CancellationException) {
                 _speedTest.value = if (result == SpeedTestResult()) SpeedTestState.Idle else SpeedTestState.Done(result)
                 throw cancelled
-            } catch (_: Throwable) {
-                _speedTest.value = SpeedTestState.Failed(result)
             }
         }
+    }
+
+    private suspend fun phase(problems: MutableList<String>, block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Throwable) {
+            problems += error.message?.takeIf(String::isNotBlank) ?: error::class.simpleName.orEmpty()
+        }
+    }
+
+    /**
+     * Downloads in pieces of [DownloadChunkBytes] until [PhaseMillis] pass or [DownloadMaxBytes]
+     * arrive, so a fast connection is measured for the whole phase without one huge request.
+     */
+    private suspend fun measureDownload(onProgress: (Long, Long) -> Unit): Pair<Long, Long> {
+        var totalBytes = 0L
+        var totalMillis = 0L
+        while (totalMillis < PhaseMillis && totalBytes < DownloadMaxBytes) {
+            val chunk = minOf(DownloadChunkBytes, DownloadMaxBytes - totalBytes)
+            val bytesBefore = totalBytes
+            val millisBefore = totalMillis
+            val (bytes, millis) = NetworkDiagnosticsPlatform.download("$DownloadUrl$chunk", PhaseMillis - totalMillis) { soFar, elapsed ->
+                onProgress(bytesBefore + soFar, millisBefore + elapsed)
+            }
+            totalBytes += bytes
+            totalMillis += millis
+            if (bytes <= 0L) break
+        }
+        return totalBytes to totalMillis
+    }
+
+    /** Uploads in pieces of [UploadChunkBytes] until [PhaseMillis] pass or [UploadMaxBytes] are sent. */
+    private suspend fun measureUpload(onProgress: (Long, Long) -> Unit): Pair<Long, Long> {
+        var totalBytes = 0L
+        var totalMillis = 0L
+        while (totalMillis < PhaseMillis && totalBytes < UploadMaxBytes) {
+            val chunk = minOf(UploadChunkBytes, UploadMaxBytes - totalBytes)
+            val bytesBefore = totalBytes
+            val millisBefore = totalMillis
+            val (bytes, millis) = NetworkDiagnosticsPlatform.upload(UploadUrl, chunk, PhaseMillis - totalMillis) { soFar, elapsed ->
+                onProgress(bytesBefore + soFar, millisBefore + elapsed)
+            }
+            totalBytes += bytes
+            totalMillis += millis
+            if (bytes < chunk) break
+        }
+        return totalBytes to totalMillis
     }
 
     fun cancelSpeedTest() {
@@ -192,9 +254,12 @@ object NetworkDiagnosticsRepository {
 
     private const val TraceUrl = "https://www.cloudflare.com/cdn-cgi/trace"
     private const val LatencyUrl = "https://speed.cloudflare.com/__down?bytes=0"
-    private const val DownloadUrl = "https://speed.cloudflare.com/__down?bytes=100000000"
+    private const val DownloadUrl = "https://speed.cloudflare.com/__down?bytes="
     private const val UploadUrl = "https://speed.cloudflare.com/__up"
-    private const val UploadBytes = 25_000_000L
+    private const val DownloadChunkBytes = 25_000_000L
+    private const val DownloadMaxBytes = 100_000_000L
+    private const val UploadChunkBytes = 5_000_000L
+    private const val UploadMaxBytes = 25_000_000L
     private const val LatencySamples = 6
     private const val PhaseMillis = 8_000L
     private const val LatencyShare = 0.1f

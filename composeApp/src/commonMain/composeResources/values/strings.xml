@@ -2120,6 +2120,7 @@
     <string name="settings_network_speed_running_download">Measuring download speed…</string>
     <string name="settings_network_speed_running_upload">Measuring upload speed…</string>
     <string name="settings_network_speed_failed">The speed test could not finish</string>
+    <string name="settings_network_speed_failed_reason">The speed test could not finish: %1$s</string>
     <string name="settings_network_jitter">Jitter</string>
     <string name="settings_network_download">Download</string>
     <string name="settings_network_upload">Upload</string>
