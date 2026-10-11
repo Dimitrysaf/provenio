@@ -37,7 +37,7 @@ internal class PlayerVolumeBoost {
     var gain by mutableFloatStateOf(FullVolume)
         private set
 
-    fun setEnabled(value: Boolean) {
+    fun switchOn(value: Boolean) {
         enabled = value
         if (!value) gain = FullVolume
     }

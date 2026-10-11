@@ -478,7 +478,7 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
         },
         onAudioModalDismissed = { showAudioModal = false },
         volumeBoostEnabled = volumeBoost.enabled,
-        onVolumeBoostChanged = volumeBoost::setEnabled,
+        onVolumeBoostChanged = volumeBoost::switchOn,
         showSubtitleModal = showSubtitleModal,
         subtitleTracks = subtitleTracks,
         selectedSubtitleIndex = selectedSubtitleIndex,
