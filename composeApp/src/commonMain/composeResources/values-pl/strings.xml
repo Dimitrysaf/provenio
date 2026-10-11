@@ -1442,7 +1442,6 @@
     <string name="settings_p2p_hide_stats_title">Ukryj statystyki torrenta</string>
     <string name="settings_p2p_subtitle">Zezwalaj na strumienie peer-to-peer (torrent)</string>
     <string name="settings_p2p_title">Strumieniowanie P2P</string>
-    <string name="settings_playback_section_p2p">STRUMIENIOWANIE P2P</string>
     <string name="settings_playback_introdb_invalid_key">Nieprawidłowy klucz API lub błąd połączenia</string>
     <string name="settings_playback_ios_audio_output">Wyjście audio</string>
     <string name="settings_playback_ios_audio_output_audiounit_desc">Użyj starszego wyjścia AudioUnit.</string>

@@ -1683,7 +1683,6 @@
     <string name="p2p_consent_cancel">Отказ</string>
     <string name="p2p_error_unknown">Неизвестна грешка в торента</string>
     <string name="settings_p2p_title">P2P излъчване</string>
-    <string name="settings_playback_section_p2p">P2P ИЗЛЪЧВАНЕ</string>
     <string name="settings_p2p_subtitle">Разрешете peer-to-peer (торент) източници</string>
     <string name="settings_p2p_hide_stats_title">Скрий статистиките на торента</string>
     <string name="settings_p2p_hide_stats_subtitle">Скрий буфера, сийдовете, пиъровете и скоростта на изтегляне по време на зареждане и възпроизвеждане</string>

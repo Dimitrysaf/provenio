@@ -1890,7 +1890,6 @@
     <string name="settings_p2p_seeding_title">Ενεργοποίηση seeding</string>
     <string name="settings_p2p_seeding_subtitle">Το seeding απαγορεύεται και είναι σοβαρότερο από τη ροή. Ενεργοποιήστε το με δική σας ευθύνη.</string>
     <string name="settings_p2p_title">Ροές P2P</string>
-    <string name="settings_playback_section_p2p">ΡΟΕΣ P2P</string>
     <string name="settings_playback_engine">Μηχανισμός αναπαραγωγής</string>
     <string name="settings_playback_engine_auto_description">Χρήση του ExoPlayer πρώτα και επιστροφή στο libmpv αν η αναπαραγωγή αποτύχει.</string>
     <string name="settings_playback_engine_exoplayer_description">Χρήση ExoPlayer και αποκωδικοποιητών Android Media3.</string>

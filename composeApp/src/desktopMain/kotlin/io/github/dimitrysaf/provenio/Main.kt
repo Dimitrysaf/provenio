@@ -72,6 +72,7 @@ import io.github.dimitrysaf.provenio.core.diagnostics.AppLogs
 import io.github.dimitrysaf.provenio.desktop.AppWindowExceptionHandlerFactory
 import io.github.dimitrysaf.provenio.desktop.Context
 import io.github.dimitrysaf.provenio.desktop.DesktopDisplayScale
+import io.github.dimitrysaf.provenio.desktop.MouseNavigationButtons
 import io.github.dimitrysaf.provenio.desktop.DesktopLaunchScreen
 import io.github.dimitrysaf.provenio.desktop.ProvideDesktopDisplayScale
 import io.github.dimitrysaf.provenio.desktop.DesktopStatusNotifier
@@ -102,6 +103,7 @@ fun main(args: Array<String>) {
     runCatching { File("/proc/self/comm").writeText("Provenio") }
     initializePlatform(Context.app)
     DesktopDisplayScale.start()
+    MouseNavigationButtons.install()
     // A provenio:// link the desktop entry was opened with.
     args.firstOrNull { it.startsWith("provenio:") || it.startsWith("stremio:") }?.let(::handleAppUrl)
     SingleInstance.listen(::handleAppUrl)

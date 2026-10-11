@@ -1522,7 +1522,6 @@
     <string name="p2p_consent_cancel">Mégse</string>
     <string name="p2p_error_unknown">Ismeretlen torrent hiba</string>
     <string name="settings_p2p_title">P2P Streaming</string>
-    <string name="settings_playback_section_p2p">P2P STREAMING</string>
     <string name="settings_p2p_subtitle">Peer-to-peer (torrent) streamek engedélyezése</string>
     <string name="settings_p2p_hide_stats_title">Torrent statisztikák elrejtése</string>
     <string name="settings_p2p_hide_stats_subtitle">Pufferelés, seederek, peerek és letöltési sebesség elrejtése a betöltés és lejátszás alatt</string>

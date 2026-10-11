@@ -1640,7 +1640,6 @@
     <string name="p2p_consent_cancel">إلغاء</string>
     <string name="p2p_error_unknown">خطأ تورنت غير معروف</string>
     <string name="settings_p2p_title">البث عبر P2P</string>
-    <string name="settings_playback_section_p2p">التورنت P2P</string>
     <string name="settings_p2p_subtitle">السماح بمصادر البث عبر الند للند (تورنت)</string>
     <string name="settings_p2p_hide_stats_title">إخفاء إحصائيات التورنت</string>
     <string name="settings_p2p_hide_stats_subtitle">إخفاء حجم التخزين المؤقت وSeeders وPeers وسرعة التنزيل أثناء التحميل والتشغيل</string>

@@ -14,6 +14,7 @@ import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamRequest
 import io.github.dimitrysaf.provenio.core.p2p.P2pPlaybackOwner
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
+import io.github.dimitrysaf.provenio.core.p2p.P2pStreams
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingState
 import io.github.dimitrysaf.provenio.core.playback.skip.NextEpisodeInfo
 import io.github.dimitrysaf.provenio.core.playback.skip.PlayerNextEpisodeRules
@@ -119,16 +120,17 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
         activeTorrentFilename,
         activeTorrentTrackers,
         p2pSettingsUiState.p2pEnabled,
+        p2pSettingsUiState.externalServer,
     ) {
         val infoHash = activeTorrentInfoHash
         if (infoHash == null) {
             p2pResolvedSourceUrl = null
-            P2pStreamingEngine.stopStream()
+            P2pStreams.stopStream()
             return@LaunchedEffect
         }
         if (!P2pSettingsRepository.isVisible || !p2pSettingsUiState.p2pEnabled) {
             p2pResolvedSourceUrl = null
-            P2pStreamingEngine.stopStream()
+            P2pStreams.stopStream()
             return@LaunchedEffect
         }
 
@@ -143,7 +145,7 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
         initialLoadCompleted = false
 
         try {
-            val localUrl = P2pStreamingEngine.startStream(
+            val localUrl = P2pStreams.startStream(
                 P2pStreamRequest(
                     infoHash = infoHash,
                     fileIdx = requestedFileIdx,
@@ -172,7 +174,7 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
     LaunchedEffect(p2pResolvedSourceUrl, playbackSnapshot.durationMs) {
         val durationMs = playbackSnapshot.durationMs
         if (p2pResolvedSourceUrl != null && durationMs > 0L) {
-            P2pStreamingEngine.setStreamDuration(durationMs)
+            P2pStreams.setStreamDuration(durationMs)
         }
     }
 
@@ -362,6 +364,7 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
         onDispose {
             playerController?.clearNowPlayingInfo()
             if (P2pPlaybackOwner.release(owner)) {
+                P2pStreams.stopStream()
                 P2pStreamingEngine.shutdown()
                 PlayerStreamsRepository.clearAll()
             }

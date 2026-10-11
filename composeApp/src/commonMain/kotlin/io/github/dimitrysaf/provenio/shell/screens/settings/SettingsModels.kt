@@ -68,6 +68,16 @@ internal enum class SettingsPage(
         category = SettingsCategory.General,
         parentPage = Root,
     ),
+    Network(
+        titleRes = Res.string.settings_network_title,
+        category = SettingsCategory.General,
+        parentPage = Root,
+    ),
+    P2pStreaming(
+        titleRes = Res.string.settings_p2p_title,
+        category = SettingsCategory.General,
+        parentPage = Integrations,
+    ),
     Subtitles(
         titleRes = Res.string.compose_settings_page_subtitles,
         category = SettingsCategory.General,

@@ -21,12 +21,16 @@ enum class AppShortcutAction {
     Settings,
     Downloads,
     Back,
+    Forward,
     KeyboardShortcuts,
 }
 
 object AppKeyboardShortcuts {
     private val pending = MutableSharedFlow<AppShortcutAction>(extraBufferCapacity = 8)
     val actions: SharedFlow<AppShortcutAction> = pending.asSharedFlow()
+
+    /** Asks for [action] from outside the keyboard, such as a mouse's back and forward buttons. */
+    fun request(action: AppShortcutAction): Boolean = pending.tryEmit(action)
 
     fun handle(event: KeyEvent): Boolean {
         if (event.type != KeyEventType.KeyDown) return false
@@ -45,10 +49,12 @@ object AppKeyboardShortcuts {
                 Key.J -> AppShortcutAction.Downloads
                 Key.Slash -> AppShortcutAction.KeyboardShortcuts
                 Key.LeftBracket -> AppShortcutAction.Back
+                Key.RightBracket -> AppShortcutAction.Forward
                 else -> null
             }
             event.isAltPressed && !command && !event.isShiftPressed && !isMacOs -> when (event.key) {
                 Key.DirectionLeft -> AppShortcutAction.Back
+                Key.DirectionRight -> AppShortcutAction.Forward
                 else -> null
             }
             !command && !event.isAltPressed && event.key == Key.F1 -> AppShortcutAction.KeyboardShortcuts

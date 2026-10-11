@@ -1521,7 +1521,6 @@
     <string name="p2p_consent_cancel">Anulează</string>
     <string name="p2p_error_unknown">Eroare torrent necunoscută</string>
     <string name="settings_p2p_title">Streaming P2P</string>
-    <string name="settings_playback_section_p2p">STREAMING P2P</string>
     <string name="settings_p2p_subtitle">Permite fluxurile de tip peer-to-peer (torrent)</string>
     <string name="settings_p2p_hide_stats_title">Ascunde statisticile torrentului</string>
     <string name="settings_p2p_hide_stats_subtitle">Ascunde datele despre buffer, seeders, peers și viteza de descărcare în timpul încărcării și redării</string>

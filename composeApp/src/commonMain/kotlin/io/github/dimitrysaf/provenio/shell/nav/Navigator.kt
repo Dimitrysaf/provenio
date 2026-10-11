@@ -18,6 +18,19 @@ internal class Navigator(
     val routes: List<AppRoute>
         get() = backStack.filterIsInstance<AppRoute>()
 
+    // Pages left by going back, newest last, so forward can return to them like a browser does.
+    private val forwardRoutes = ArrayDeque<AppRoute>()
+
+    val canGoForward: Boolean
+        get() = forwardRoutes.isNotEmpty()
+
+    /** Returns to the page last left by going back, if nothing new has been opened since. */
+    fun navigateForward(): Boolean {
+        val route = forwardRoutes.removeLastOrNull() ?: return false
+        openRoute(route)
+        return true
+    }
+
     fun navigate(route: AppRoute, options: NavigateOptions.() -> Unit = {}) {
         val resolvedOptions = NavigateOptions().apply(options)
 
@@ -44,19 +57,26 @@ internal class Navigator(
         }
 
         if (resolvedOptions.launchSingleTop && currentRoute == route) return
+        forwardRoutes.clear()
         if (onExternalNavigate != null) {
             onExternalNavigate.invoke(route, resolvedOptions.launchSingleTop)
         } else {
-            onLocalNavigate?.invoke(currentRoute, route)
-            backStack.add(route)
+            openRoute(route)
         }
+    }
+
+    private fun openRoute(route: AppRoute) {
+        onLocalNavigate?.invoke(currentRoute, route)
+        backStack.add(route)
     }
 
     fun popBackStack(expectedRoute: AppRoute? = null): Boolean {
         if (expectedRoute != null && currentRoute != expectedRoute) return false
         if (backStack.size > 1) {
             onLocalPop?.invoke()
-            backStack.removeAt(backStack.lastIndex)
+            val left = backStack.removeAt(backStack.lastIndex) as? AppRoute
+            // Playback and the sources sheet are not pages to return to.
+            if (left != null && left !is PlayerRoute && left !is StreamRoute) forwardRoutes.addLast(left)
             return true
         }
         onExternalBack?.invoke()

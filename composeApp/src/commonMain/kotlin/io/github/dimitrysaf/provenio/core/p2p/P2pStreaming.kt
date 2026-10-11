@@ -13,6 +13,11 @@ data class P2pSettingsUiState(
     val prefetchTorrentInfo: Boolean = true,
     val torrentProfile: P2pTorrentProfile = P2pTorrentProfile.BALANCED,
     val cacheSize: P2pCacheSize = P2pCacheSize.GB_2,
+    /**
+     * A torrent streaming server on another machine, such as Stremio's, as its base address; null
+     * streams with Provenio's own engine.
+     */
+    val externalServer: String? = null,
 )
 
 enum class P2pTorrentProfile {
@@ -55,6 +60,7 @@ object P2pSettingsRepository {
     private var prefetchTorrentInfo = true
     private var torrentProfile = P2pTorrentProfile.BALANCED
     private var cacheSize = P2pCacheSize.GB_2
+    private var externalServer: String? = null
 
     fun ensureLoaded() {
         if (hasLoaded) return
@@ -73,7 +79,22 @@ object P2pSettingsRepository {
         prefetchTorrentInfo = true
         torrentProfile = P2pTorrentProfile.BALANCED
         cacheSize = P2pCacheSize.GB_2
+        externalServer = null
         publish()
+    }
+
+    /**
+     * Streams torrents through the server at [address], an IP or a URL, from now on; a blank
+     * address goes back to Provenio's own engine. Returns false for an address that is not one.
+     */
+    fun setExternalServer(address: String?): Boolean {
+        ensureLoaded()
+        val next = if (address.isNullOrBlank()) null else ExternalTorrentServer.normalizeAddress(address) ?: return false
+        if (externalServer == next) return true
+        externalServer = next
+        P2pSettingsStorage.saveExternalServer(next)
+        publish()
+        return true
     }
 
     fun setP2pEnabled(enabled: Boolean) {
@@ -136,6 +157,7 @@ object P2pSettingsRepository {
         cacheSize = P2pSettingsStorage.loadCacheSize()
             ?.let { stored -> P2pCacheSize.entries.firstOrNull { it.name == stored } }
             ?: P2pCacheSize.GB_2
+        externalServer = P2pSettingsStorage.loadExternalServer()?.takeIf(String::isNotBlank)
         publish()
     }
 
@@ -147,6 +169,7 @@ object P2pSettingsRepository {
             prefetchTorrentInfo = prefetchTorrentInfo,
             torrentProfile = torrentProfile,
             cacheSize = cacheSize,
+            externalServer = externalServer,
         )
     }
 }
@@ -164,6 +187,8 @@ internal expect object P2pSettingsStorage {
     fun saveTorrentProfile(profile: String)
     fun loadCacheSize(): String?
     fun saveCacheSize(size: String)
+    fun loadExternalServer(): String?
+    fun saveExternalServer(address: String?)
 }
 
 data class P2pStreamRequest(

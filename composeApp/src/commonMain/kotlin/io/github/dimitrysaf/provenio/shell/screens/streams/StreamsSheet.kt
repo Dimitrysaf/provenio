@@ -61,7 +61,7 @@ import io.github.dimitrysaf.provenio.core.debrid.DebridSettingsRepository
 import io.github.dimitrysaf.provenio.core.debrid.DirectDebridPlayableResult
 import io.github.dimitrysaf.provenio.core.debrid.DirectDebridPlaybackResolver
 import kotlinx.coroutines.delay
-import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
+import io.github.dimitrysaf.provenio.core.p2p.P2pStreams
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamRequest
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
 import io.github.dimitrysaf.provenio.core.debrid.toastMessage
@@ -222,9 +222,8 @@ fun StreamsSheet(
     val torrentCandidates = remember(filteredGroups) { localTorrentCandidates(filteredGroups) }
     LaunchedEffect(torrentCandidates, p2pAvailable) {
         if (!p2pAvailable || torrentCandidates.isEmpty()) return@LaunchedEffect
-        P2pStreamingEngine.warmUp()
         delay(TorrentPrefetchSettleMs)
-        P2pStreamingEngine.prefetchTorrents(torrentCandidates)
+        P2pStreams.warmUp(torrentCandidates)
     }
     val subtitle = if (seasonNumber != null && episodeNumber != null) {
         val code = stringResource(Res.string.streams_episode_badge, seasonNumber, episodeNumber)

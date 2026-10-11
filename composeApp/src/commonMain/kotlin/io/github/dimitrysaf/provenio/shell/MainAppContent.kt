@@ -407,6 +407,7 @@ internal fun MainAppContent(
                             navController.popBackStack()
                         }
                     }
+                    AppShortcutAction.Forward -> navController.navigateForward()
                 }
             }
         }

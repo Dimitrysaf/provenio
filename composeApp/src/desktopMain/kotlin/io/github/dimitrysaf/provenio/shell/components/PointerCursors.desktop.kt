@@ -25,6 +25,7 @@ import java.awt.event.MouseWheelEvent
 import java.awt.geom.Ellipse2D
 import java.awt.geom.Line2D
 import java.awt.image.BufferedImage
+import javax.swing.SwingUtilities
 import javax.swing.Timer
 
 @OptIn(ComposeToolingApi::class, ExperimentalComposeUiApi::class)
@@ -37,41 +38,75 @@ internal actual fun rememberPointerCursorTracking(onCursor: (PointerCursorKind) 
         if (window == null) return@DisposableEffect onDispose {}
         var position: Offset? = null
         var component: Component? = null
+        var overPopup = false
+        // Compose sets the cursor itself while it handles the same event, so a cursor set here
+        // directly waits until that has run, or Compose's default would replace it.
+        fun setCursorAfterCompose(kind: PointerCursorKind) {
+            val target = component ?: return
+            SwingUtilities.invokeLater { target.cursor = kind.awtCursor() }
+        }
         fun update() {
             val point = position ?: return
             val roots = window.semanticsOwners.map { it.unmergedRootSemanticsNode }
             val popup = roots.drop(1).asReversed().firstOrNull { it.coversPointer(point) { boundsInWindow } }
             if (popup != null) {
-                val kind = popup.pointerCursorAt(point) { boundsInWindow } ?: PointerCursorKind.Default
-                component?.cursor = kind.awtCursor()
+                overPopup = true
+                setCursorAfterCompose(popup.pointerCursorAt(point) { boundsInWindow } ?: PointerCursorKind.Default)
                 return
             }
-            currentOnCursor(roots.firstOrNull()?.pointerCursorAt(point) { boundsInWindow } ?: PointerCursorKind.Default)
+            val kind = roots.firstOrNull()?.pointerCursorAt(point) { boundsInWindow } ?: PointerCursorKind.Default
+            // Leaving a popup, the cursor it set stays until something changes it, and the page's
+            // own cursor may already hold this value, so set it once directly.
+            if (overPopup) {
+                overPopup = false
+                setCursorAfterCompose(kind)
+            }
+            currentOnCursor(kind)
         }
         fun track(event: MouseEvent) {
             component = event.component
             position = Offset(event.x * currentDensity, event.y * currentDensity)
         }
-        val settle = Timer(CursorSettleMillis) { update() }.apply { isRepeats = false }
+        // A click or a scroll moves what is under a still pointer, and pages take a moment to
+        // settle, so the cursor is looked at again a few times after one.
+        var settleTicks = 0
+        val settle = Timer(CursorSettleIntervalMillis) {
+            update()
+            if (++settleTicks >= CursorSettleTicks) (it.source as Timer).stop()
+        }
+        fun resettle() {
+            settleTicks = 0
+            settle.restart()
+        }
         val listener = object : MouseAdapter() {
             override fun mouseMoved(e: MouseEvent) {
                 track(e)
                 update()
             }
 
+            override fun mouseDragged(e: MouseEvent) {
+                track(e)
+            }
+
             override fun mouseReleased(e: MouseEvent) {
                 track(e)
                 update()
-                settle.restart()
+                resettle()
             }
 
             override fun mouseWheelMoved(e: MouseWheelEvent) {
                 track(e)
-                settle.restart()
+                resettle()
+            }
+
+            override fun mouseEntered(e: MouseEvent) {
+                track(e)
+                update()
             }
 
             override fun mouseExited(e: MouseEvent) {
                 position = null
+                settle.stop()
             }
         }
         window.addMouseListener(listener)
@@ -127,4 +162,6 @@ private val BlockedCursor: Cursor? by lazy {
     }.getOrNull()
 }
 
-private const val CursorSettleMillis = 250
+private const val CursorSettleIntervalMillis = 150
+
+private const val CursorSettleTicks = 8

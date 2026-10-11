@@ -1685,7 +1685,6 @@
     <string name="p2p_consent_cancel">Annuleren</string>
     <string name="p2p_error_unknown">Onbekende torrentfout</string>
     <string name="settings_p2p_title">P2P-streaming</string>
-    <string name="settings_playback_section_p2p">P2P-STREAMING</string>
     <string name="settings_p2p_subtitle">Peer-to-peerstreams (torrents) toestaan</string>
     <string name="settings_p2p_hide_stats_title">Torrentstatistieken verbergen</string>
     <string name="settings_p2p_hide_stats_subtitle">Verberg buffer, seeds, peers en downloadsnelheid tijdens laden en afspelen</string>

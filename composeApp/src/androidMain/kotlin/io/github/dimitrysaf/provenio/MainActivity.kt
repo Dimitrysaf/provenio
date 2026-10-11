@@ -51,6 +51,7 @@ import io.github.dimitrysaf.provenio.core.playback.PlayerTrackPreferenceStorage
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlatform
 import io.github.dimitrysaf.provenio.core.playback.SubtitleFileCache
 import io.github.dimitrysaf.provenio.shell.components.AppKeyboardShortcuts
+import io.github.dimitrysaf.provenio.shell.components.AppShortcutAction
 import io.github.dimitrysaf.provenio.shell.screens.player.PlayerPictureInPictureManager
 import io.github.dimitrysaf.provenio.shell.screens.player.PipRemoteActionReceiver
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsStorage
@@ -214,6 +215,13 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        // A mouse's forward button arrives as the Forward key; its back button is the system's back.
+        if (event.keyCode == android.view.KeyEvent.KEYCODE_FORWARD) {
+            if (event.action == android.view.KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                AppKeyboardShortcuts.request(AppShortcutAction.Forward)
+            }
+            return true
+        }
         if (AppKeyboardShortcuts.handle(androidx.compose.ui.input.key.KeyEvent(event))) return true
         return super.dispatchKeyEvent(event)
     }

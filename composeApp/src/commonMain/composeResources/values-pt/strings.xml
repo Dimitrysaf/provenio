@@ -1478,7 +1478,6 @@
     <string name="p2p_consent_enable">Ativar P2P</string>
     <string name="p2p_consent_cancel">Cancelar</string>
     <string name="settings_p2p_title">Streaming P2P</string>
-    <string name="settings_playback_section_p2p">STREAMING P2P</string>
     <string name="settings_p2p_subtitle">Permitir streams ponto a ponto (torrent)</string>
     <string name="settings_p2p_hide_stats_title">Ocultar estatísticas de torrent</string>
     <string name="settings_p2p_hide_stats_subtitle">Oculta buffer, seeds, peers e velocidade de transferência durante o carregamento e a reprodução</string>

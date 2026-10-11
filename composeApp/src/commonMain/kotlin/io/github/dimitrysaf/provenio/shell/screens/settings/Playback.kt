@@ -21,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,27 +44,15 @@ import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsUiState
 import io.github.dimitrysaf.provenio.core.playback.skip.NextEpisodeThresholdMode
 import io.github.dimitrysaf.provenio.core.playback.STREAM_AUTO_PLAY_TIMEOUT_VALUES
-import io.github.dimitrysaf.provenio.shell.screens.player.SubtitleBackgroundColorSwatches
-import io.github.dimitrysaf.provenio.shell.screens.player.SubtitleColorSwatches
-import io.github.dimitrysaf.provenio.core.playback.SubtitleLanguageOption
 import io.github.dimitrysaf.provenio.shell.screens.player.formatPlaybackSpeedLabel
 import io.github.dimitrysaf.provenio.shell.screens.player.languageLabelForCode
-import io.github.dimitrysaf.provenio.core.playback.subtitleFontSizeRangeSp
 import io.github.dimitrysaf.provenio.shell.screens.player.isTransparentArgb
 import io.github.dimitrysaf.provenio.core.playback.toStorageHexString
-import io.github.dimitrysaf.provenio.shell.screens.p2p.P2pConsentDialog
-import io.github.dimitrysaf.provenio.core.p2p.P2pCacheClearResult
-import io.github.dimitrysaf.provenio.core.p2p.P2pCacheSize
-import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
-import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
-import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingState
-import io.github.dimitrysaf.provenio.core.p2p.P2pTorrentProfile
 import io.github.dimitrysaf.provenio.core.plugins.PluginsUiState
 import io.github.dimitrysaf.provenio.core.plugins.PluginRepository
 import io.github.dimitrysaf.provenio.core.streams.StreamAutoPlayMode
 import io.github.dimitrysaf.provenio.core.streams.StreamAutoPlaySource
 import io.github.dimitrysaf.provenio.core.build.isIos
-import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -109,31 +96,6 @@ internal fun LazyListScope.playbackSettingsContent(
             tunnelingEnabled = tunnelingEnabled,
             onSubtitlesClick = onSubtitlesClick,
         )
-    }
-}
-
-@Composable
-private fun p2pProfileLabel(profile: P2pTorrentProfile): String = when (profile) {
-    P2pTorrentProfile.SOFT -> stringResource(Res.string.settings_p2p_profile_soft)
-    P2pTorrentProfile.BALANCED -> stringResource(Res.string.settings_p2p_profile_balanced)
-    P2pTorrentProfile.FAST -> stringResource(Res.string.settings_p2p_profile_fast)
-}
-
-@Composable
-private fun p2pCacheSizeLabel(size: P2pCacheSize): String = when (size) {
-    P2pCacheSize.NONE -> stringResource(Res.string.settings_p2p_cache_none)
-    P2pCacheSize.GB_2 -> stringResource(Res.string.settings_p2p_cache_2_gb)
-    P2pCacheSize.GB_5 -> stringResource(Res.string.settings_p2p_cache_5_gb)
-    P2pCacheSize.GB_10 -> stringResource(Res.string.settings_p2p_cache_10_gb)
-}
-
-private fun formatP2pCacheBytes(bytes: Long): String {
-    val gibibyte = 1024.0 * 1024.0 * 1024.0
-    val mebibyte = 1024.0 * 1024.0
-    return if (bytes >= gibibyte) {
-        "${kotlin.math.round(bytes / gibibyte * 10.0) / 10.0} GB"
-    } else {
-        "${kotlin.math.round(bytes / mebibyte * 10.0) / 10.0} MB"
     }
 }
 
@@ -186,9 +148,6 @@ private fun PlaybackSettingsSection(
             preferredSubtitleLanguage = preferredSubtitleLanguage,
             onSubtitlesClick = onSubtitlesClick,
         )
-        if (P2pSettingsRepository.isVisible) {
-            P2pGroup(isTablet = isTablet)
-        }
         StreamReuseGroup(
             isTablet = isTablet,
             streamReuseLastLinkEnabled = streamReuseLastLinkEnabled,
@@ -459,159 +418,6 @@ private fun LanguageGroup(
                 PlayerSettingsRepository.setSecondaryPreferredAudioLanguage(value)
             },
             onDismiss = { showSecondaryAudioDialog = false },
-        )
-    }
-}
-
-// Peer to peer streaming and its cache.
-@Composable
-private fun P2pGroup(
-    isTablet: Boolean,
-) {
-    var showP2pConsentDialog by remember { mutableStateOf(false) }
-    var showP2pProfileDialog by remember { mutableStateOf(false) }
-    var showP2pCacheSizeDialog by remember { mutableStateOf(false) }
-    var p2pCacheClearResult by remember { mutableStateOf<P2pCacheClearResult?>(null) }
-    var p2pCacheClearFailed by remember { mutableStateOf(false) }
-    // Read as values here, not through delegates inside the list's builder: a state read in the
-    // builder re-runs only the builder, so the rows' labels would keep their old values.
-    val p2pSettings = remember {
-        P2pSettingsRepository.ensureLoaded()
-        P2pSettingsRepository.uiState
-    }.collectAsStateWithLifecycle().value
-    val p2pCacheState = P2pStreamingEngine.cacheState.collectAsStateWithLifecycle().value
-    val p2pStreamingState = P2pStreamingEngine.state.collectAsStateWithLifecycle().value
-    val p2pDownloadStreams = P2pStreamingEngine.downloadStreamCount.collectAsStateWithLifecycle().value
-    val coroutineScope = rememberCoroutineScope()
-    SettingsSection(
-        title = stringResource(Res.string.settings_playback_section_p2p),
-        isTablet = isTablet,
-    ) {
-        SettingsList {
-            switchRow(
-                title = stringResource(Res.string.settings_p2p_title),
-                description = stringResource(Res.string.settings_p2p_subtitle),
-                checked = { p2pSettings.p2pEnabled },
-                onCheckedChange = { enabled ->
-                    if (enabled && !p2pSettings.p2pEnabled) {
-                        showP2pConsentDialog = true
-                    } else {
-                        P2pSettingsRepository.setP2pEnabled(enabled)
-                    }
-                },
-            )
-            switchRow(
-                title = stringResource(Res.string.settings_p2p_seeding_title),
-                description = stringResource(Res.string.settings_p2p_seeding_subtitle),
-                checked = { p2pSettings.enableUpload },
-                onCheckedChange = P2pSettingsRepository::setEnableUpload,
-            )
-            switchRow(
-                title = stringResource(Res.string.settings_p2p_hide_stats_title),
-                description = stringResource(Res.string.settings_p2p_hide_stats_subtitle),
-                checked = { p2pSettings.hideTorrentStats },
-                onCheckedChange = P2pSettingsRepository::setHideTorrentStats,
-            )
-            switchRow(
-                title = stringResource(Res.string.settings_p2p_prefetch_title),
-                description = stringResource(Res.string.settings_p2p_prefetch_subtitle),
-                checked = { p2pSettings.prefetchTorrentInfo },
-                onCheckedChange = P2pSettingsRepository::setPrefetchTorrentInfo,
-            )
-            navigationRow(
-                title = stringResource(Res.string.settings_p2p_profile_title),
-                description = p2pProfileLabel(p2pSettings.torrentProfile),
-                onClick = { showP2pProfileDialog = true },
-            )
-            navigationRow(
-                title = stringResource(Res.string.settings_p2p_cache_size_title),
-                description = p2pCacheSizeLabel(p2pSettings.cacheSize),
-                onClick = { showP2pCacheSizeDialog = true },
-            )
-            val cacheClearAvailable = p2pStreamingState !is P2pStreamingState.Connecting &&
-                p2pStreamingState !is P2pStreamingState.Streaming &&
-                p2pDownloadStreams == 0 &&
-                !p2pCacheState.isClearing
-            navigationRow(
-                title = stringResource(Res.string.settings_p2p_clear_cache_title),
-                description = when {
-                    p2pCacheState.isClearing ->
-                        stringResource(Res.string.settings_p2p_clear_cache_clearing)
-                    !cacheClearAvailable ->
-                        stringResource(Res.string.settings_p2p_clear_cache_playback_active)
-                    p2pCacheClearFailed ->
-                        stringResource(Res.string.settings_p2p_clear_cache_failed)
-                    p2pCacheClearResult != null -> stringResource(
-                        Res.string.settings_p2p_clear_cache_done,
-                        formatP2pCacheBytes(p2pCacheClearResult!!.reclaimedBytes),
-                    )
-                    !p2pCacheState.hasMeasurement ->
-                        stringResource(Res.string.settings_p2p_clear_cache_usage_pending)
-                    else -> stringResource(
-                        Res.string.settings_p2p_clear_cache_usage,
-                        formatP2pCacheBytes(p2pCacheState.usedBytes),
-                    )
-                },
-                enabled = cacheClearAvailable,
-                onClick = {
-                    p2pCacheClearResult = null
-                    p2pCacheClearFailed = false
-                    coroutineScope.launch {
-                        runCatching { P2pStreamingEngine.clearCache() }
-                            .onSuccess { p2pCacheClearResult = it }
-                            .onFailure { p2pCacheClearFailed = true }
-                    }
-                },
-            )
-        }
-    }
-
-    if (showP2pProfileDialog) {
-        IosEnumSelectionDialog(
-            title = stringResource(Res.string.settings_p2p_profile_title),
-            options = P2pTorrentProfile.entries,
-            selected = p2pSettings.torrentProfile,
-            label = { p2pProfileLabel(it) },
-            description = { profile ->
-                when (profile) {
-                    P2pTorrentProfile.SOFT ->
-                        stringResource(Res.string.settings_p2p_profile_soft_description)
-                    P2pTorrentProfile.BALANCED ->
-                        stringResource(Res.string.settings_p2p_profile_balanced_description)
-                    P2pTorrentProfile.FAST ->
-                        stringResource(Res.string.settings_p2p_profile_fast_description)
-                }
-            },
-            onSelect = { profile ->
-                P2pSettingsRepository.setTorrentProfile(profile)
-                showP2pProfileDialog = false
-            },
-            onDismiss = { showP2pProfileDialog = false },
-        )
-    }
-
-    if (showP2pCacheSizeDialog) {
-        IosEnumSelectionDialog(
-            title = stringResource(Res.string.settings_p2p_cache_size_title),
-            options = P2pCacheSize.entries,
-            selected = p2pSettings.cacheSize,
-            label = { p2pCacheSizeLabel(it) },
-            onSelect = { size ->
-                P2pSettingsRepository.setCacheSize(size)
-                p2pCacheClearResult = null
-                showP2pCacheSizeDialog = false
-            },
-            onDismiss = { showP2pCacheSizeDialog = false },
-        )
-    }
-
-    if (showP2pConsentDialog) {
-        P2pConsentDialog(
-            onEnableP2p = {
-                P2pSettingsRepository.setP2pEnabled(true)
-                showP2pConsentDialog = false
-            },
-            onDismiss = { showP2pConsentDialog = false },
         )
     }
 }

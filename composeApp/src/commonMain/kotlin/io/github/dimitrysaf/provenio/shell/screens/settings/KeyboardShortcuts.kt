@@ -48,6 +48,8 @@ private val Esc = Res.string.keyboard_key_esc
 private val Home = Res.string.keyboard_key_home
 private val Menu = Res.string.keyboard_key_menu
 private val RightClick = Res.string.keyboard_key_right_click
+private val MouseBack = Res.string.keyboard_key_mouse_back
+private val MouseForward = Res.string.keyboard_key_mouse_forward
 
 private fun generalShortcuts(): List<ShortcutEntry> = buildList {
     add(ShortcutEntry(Res.string.keyboard_action_home, listOf(keys(Ctrl, "1"))))
@@ -55,7 +57,8 @@ private fun generalShortcuts(): List<ShortcutEntry> = buildList {
     add(ShortcutEntry(Res.string.keyboard_action_library, listOf(keys(Ctrl, "3"))))
     add(ShortcutEntry(Res.string.keyboard_action_settings, listOf(keys(Ctrl, "4"), keys(Ctrl, ","))))
     add(ShortcutEntry(Res.string.keyboard_action_downloads, listOf(keys(Ctrl, "J"))))
-    add(ShortcutEntry(Res.string.keyboard_action_back, if (isMacOs) listOf(keys(Ctrl, "[")) else listOf(keys(Alt, "←"), keys(Ctrl, "["))))
+    add(ShortcutEntry(Res.string.keyboard_action_back, if (isMacOs) listOf(keys(Ctrl, "["), keys(MouseBack)) else listOf(keys(Alt, "←"), keys(Ctrl, "["), keys(MouseBack))))
+    add(ShortcutEntry(Res.string.keyboard_action_forward, if (isMacOs) listOf(keys(Ctrl, "]"), keys(MouseForward)) else listOf(keys(Alt, "→"), keys(Ctrl, "]"), keys(MouseForward))))
     add(ShortcutEntry(Res.string.keyboard_action_shortcuts, listOf(keys(Ctrl, "/"), keys("F1"))))
     if (isDesktop) {
         add(ShortcutEntry(Res.string.keyboard_action_fullscreen, listOf(keys("F11"))))

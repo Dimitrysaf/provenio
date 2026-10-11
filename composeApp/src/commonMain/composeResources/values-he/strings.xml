@@ -561,7 +561,6 @@
     <string name="p2p_consent_enable">P2P הפעל</string>
     <string name="p2p_consent_cancel">ביטול</string>
     <string name="settings_p2p_title">סטרימינג P2P</string>
-    <string name="settings_playback_section_p2p">סטרימינג P2P</string>
     <string name="settings_p2p_subtitle">אפשר מקורות Stream עמית-לעמית (חינמי אך טעינה איטית).</string>
     <string name="player_error_failed_start_torrent">התחלת הטורנט נכשלה: %1$s</string>
     <string name="player_error_torrent">שגיאת טורנט: %1$s</string>

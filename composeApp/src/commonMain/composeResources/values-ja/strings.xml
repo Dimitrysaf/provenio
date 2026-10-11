@@ -1539,7 +1539,6 @@
     <string name="p2p_consent_cancel">キャンセル</string>
     <string name="p2p_error_unknown">不明なトレントエラー</string>
     <string name="settings_p2p_title">P2Pストリーミング</string>
-    <string name="settings_playback_section_p2p">P2Pストリーミング</string>
     <string name="settings_p2p_subtitle">ピアツーピア（トレント）ストリームを許可する</string>
     <string name="settings_p2p_hide_stats_title">トレント統計を非表示</string>
     <string name="settings_p2p_hide_stats_subtitle">読み込み中および再生中のバッファ・シード数・ピア数・ダウンロード速度を非表示にする</string>

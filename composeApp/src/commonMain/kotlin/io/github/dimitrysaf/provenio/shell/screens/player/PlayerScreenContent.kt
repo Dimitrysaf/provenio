@@ -17,7 +17,7 @@ import io.github.dimitrysaf.provenio.core.addons.AddonRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
-import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
+import io.github.dimitrysaf.provenio.core.p2p.P2pStreams
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedRepository
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressRepository
 import provenio.composeapp.generated.resources.Res
@@ -44,7 +44,7 @@ internal fun PlayerScreenContent(args: PlayerScreenArgs) {
         P2pSettingsRepository.ensureLoaded()
         P2pSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
-    val p2pStreamingState by P2pStreamingEngine.state.collectAsStateWithLifecycle()
+    val p2pStreamingState by P2pStreams.state.collectAsStateWithLifecycle()
     val metaScreenSettingsUiState by remember {
         MetaScreenSettingsRepository.ensureLoaded()
         MetaScreenSettingsRepository.uiState

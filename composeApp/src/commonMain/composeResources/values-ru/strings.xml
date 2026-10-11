@@ -1685,7 +1685,6 @@
     <string name="p2p_consent_cancel">Отмена</string>
     <string name="p2p_error_unknown">Неизвестная ошибка торрента</string>
     <string name="settings_p2p_title">P2P Потоковая передача</string>
-    <string name="settings_playback_section_p2p">P2P-СТРИМИНГ</string>
     <string name="settings_p2p_subtitle">Разрешить одноранговые (торрент) потоки</string>
     <string name="settings_p2p_hide_stats_title">Скрыть статистику торрентов</string>
     <string name="settings_p2p_hide_stats_subtitle">Скрывать буфер, сиды, пиры и скорость загрузки во время загрузки и воспроизведения</string>

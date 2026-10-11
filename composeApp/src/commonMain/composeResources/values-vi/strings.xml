@@ -1688,7 +1688,6 @@
     <string name="p2p_consent_cancel">Huỷ</string>
     <string name="p2p_error_unknown">Lỗi torrent không xác định</string>
     <string name="settings_p2p_title">Phát luồng P2P</string>
-    <string name="settings_playback_section_p2p">PHÁT LUỒNG P2P</string>
     <string name="settings_p2p_subtitle">Cho phép phát trực tuyến ngang hàng (torrent)</string>
     <string name="settings_p2p_hide_stats_title">Ẩn thống kê torrent</string>
     <string name="settings_p2p_hide_stats_subtitle">Ẩn bộ đệm, số lượng seed, peer và tốc độ tải xuống trong khi tải và phát lại</string>

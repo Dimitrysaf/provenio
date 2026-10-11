@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.foundation.lazy.LazyListScope
+import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
 import provenio.composeapp.generated.resources.compose_settings_page_debrid
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.compose_settings_page_mdblist_ratings
@@ -11,6 +12,8 @@ import provenio.composeapp.generated.resources.settings_integrations_debrid_desc
 import provenio.composeapp.generated.resources.settings_integrations_section_title
 import provenio.composeapp.generated.resources.settings_integrations_streaming_availability_description
 import provenio.composeapp.generated.resources.settings_integrations_tmdb_description
+import provenio.composeapp.generated.resources.settings_p2p_subtitle
+import provenio.composeapp.generated.resources.settings_p2p_title
 import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.integrationsContent(
@@ -19,7 +22,9 @@ internal fun LazyListScope.integrationsContent(
     onMdbListClick: () -> Unit,
     onStreamingAvailabilityClick: () -> Unit,
     onDebridClick: () -> Unit,
+    onP2pStreamingClick: () -> Unit,
 ) {
+    val showP2p = P2pSettingsRepository.isVisible
     item {
         SettingsSection(
             title = stringResource(Res.string.settings_integrations_section_title),
@@ -52,6 +57,14 @@ internal fun LazyListScope.integrationsContent(
                     opensPage = true,
                     onClick = onDebridClick,
                 )
+                if (showP2p) {
+                    navigationRow(
+                        title = stringResource(Res.string.settings_p2p_title),
+                        description = stringResource(Res.string.settings_p2p_subtitle),
+                        opensPage = true,
+                        onClick = onP2pStreamingClick,
+                    )
+                }
             }
         }
     }

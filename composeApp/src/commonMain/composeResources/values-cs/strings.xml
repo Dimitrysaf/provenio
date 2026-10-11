@@ -1544,7 +1544,6 @@
     <string name="p2p_consent_cancel">Zrušit</string>
     <string name="p2p_error_unknown">Neznámá chyba torrentu</string>
     <string name="settings_p2p_title">P2P Streamování</string>
-    <string name="settings_playback_section_p2p">P2P STREAMOVÁNÍ</string>
     <string name="settings_p2p_subtitle">Povolit peer-to-peer (torrent) streamy</string>
     <string name="settings_p2p_hide_stats_title">Skrýt statistiky torrentu</string>
     <string name="settings_p2p_hide_stats_subtitle">Skrýt načítání (buffer), seedery, peery a rychlost stahování během načítání a přehrávání</string>

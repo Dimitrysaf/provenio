@@ -11,7 +11,7 @@ import io.github.dimitrysaf.provenio.core.downloads.DownloadItem
 import io.github.dimitrysaf.provenio.core.downloads.DownloadSubtitles
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsRepository
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
-import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
+import io.github.dimitrysaf.provenio.core.p2p.P2pStreams
 import io.github.dimitrysaf.provenio.shell.screens.streams.ActiveStreamStore
 import io.github.dimitrysaf.provenio.core.streams.StreamItem
 import io.github.dimitrysaf.provenio.core.streams.StreamLinkCacheRepository
@@ -77,7 +77,7 @@ internal fun PlayerScreenRuntime.openExternalSourceUrl(stream: StreamItem): Bool
 
 internal fun PlayerScreenRuntime.stopActiveP2pStream() {
     if (activeTorrentInfoHash != null || p2pResolvedSourceUrl != null) {
-        P2pStreamingEngine.stopStream()
+        P2pStreams.stopStream()
     }
     activeTorrentInfoHash = null
     activeTorrentFileIdx = null

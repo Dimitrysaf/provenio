@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
+import androidx.compose.material.icons.rounded.NetworkCheck
 import io.github.dimitrysaf.provenio.core.settings.TrackingBrand
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktConnectionMode
@@ -262,6 +264,47 @@ internal fun settingsSearchEntries(
         description = stringResource(Res.string.settings_playback_subtitle),
         icon = Icons.Rounded.PlayArrow,
     )
+    val networkPage = stringResource(Res.string.settings_network_title)
+    addPage(
+        page = SettingsPage.Network,
+        key = "network",
+        title = networkPage,
+        description = stringResource(Res.string.settings_network_description),
+        icon = Icons.Rounded.NetworkCheck,
+    )
+    listOf(
+        PlaybackSearchRow("network-public-ip", stringResource(Res.string.settings_network_public_ip), stringResource(Res.string.settings_network_public_ip_hint)),
+        PlaybackSearchRow("network-speed-test", stringResource(Res.string.settings_network_section_speed), stringResource(Res.string.settings_network_speed_hint)),
+    ).forEach { row ->
+        addRow(
+            page = SettingsPage.Network,
+            key = row.key,
+            title = row.title,
+            description = row.description,
+            pageLabel = networkPage,
+            section = networkPage,
+            icon = Icons.Rounded.NetworkCheck,
+        )
+    }
+    if (P2pSettingsRepository.isVisible) {
+        addPage(
+            page = SettingsPage.P2pStreaming,
+            key = "p2p-streaming",
+            title = stringResource(Res.string.settings_p2p_title),
+            description = stringResource(Res.string.settings_p2p_subtitle),
+            icon = Icons.Rounded.Link,
+        )
+        val p2pPage = stringResource(Res.string.settings_p2p_title)
+        addRow(
+            page = SettingsPage.P2pStreaming,
+            key = "p2p-external-server",
+            title = stringResource(Res.string.settings_p2p_external_server_title),
+            description = stringResource(Res.string.settings_p2p_external_server_label),
+            pageLabel = p2pPage,
+            section = stringResource(Res.string.settings_p2p_section_options),
+            icon = Icons.Rounded.Link,
+        )
+    }
     addPage(
         page = SettingsPage.Streams,
         key = "streams",

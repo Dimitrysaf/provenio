@@ -1666,7 +1666,6 @@ Bu özelliği tamamen kendi sorumluluğunuzda kullanırsınız. P2P istediğiniz
     <string name="p2p_consent_cancel">İptal</string>
     <string name="p2p_error_unknown">Bilinmeyen torrent hatası</string>
     <string name="settings_p2p_title">P2P Akış</string>
-    <string name="settings_playback_section_p2p">P2P AKIŞ</string>
     <string name="settings_p2p_subtitle">Eşten eşe (torrent) yayınlara izin ver</string>
     <string name="settings_p2p_hide_stats_title">Torrent istatistiklerini gizle</string>
     <string name="settings_p2p_hide_stats_subtitle">Yükleme ve oynatma sırasında arabellek, seed, eşler ve indirme hızını gizle</string>
