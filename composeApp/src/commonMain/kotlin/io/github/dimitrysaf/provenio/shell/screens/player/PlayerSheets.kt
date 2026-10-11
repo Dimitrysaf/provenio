@@ -672,6 +672,15 @@ internal fun PlayerSubtitlesSheet(
                 bottom = safeBottomPadding(16.dp),
             ),
         ) {
+            item(key = "subtitle_delay") {
+                SubtitleDelayRow(
+                    delayMs = subtitleDelayMs,
+                    onDelayChanged = onSubtitleDelayChanged,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                )
+            }
             itemsIndexed(entries, key = { index, entry -> entry.key(index) }) { index, entry ->
                 val shapes = playerSegmentShapes(index, entries.size)
                 val rowModifier = Modifier
@@ -715,15 +724,6 @@ internal fun PlayerSubtitlesSheet(
                 }
             }
 
-            item(key = "subtitle_delay") {
-                SubtitleDelayRow(
-                    delayMs = subtitleDelayMs,
-                    onDelayChanged = onSubtitleDelayChanged,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp),
-                )
-            }
         }
     }
 }
