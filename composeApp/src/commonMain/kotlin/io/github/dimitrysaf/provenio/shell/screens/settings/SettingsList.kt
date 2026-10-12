@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -212,6 +213,8 @@ internal class SettingsListScope internal constructor() {
         progress: Float? = null,
         /** The row opens a page of its own, which a chevron at its end says. */
         opensPage: Boolean = false,
+        /** Colours the icon's circle in its own hue instead of the theme's. */
+        iconHue: SettingsIconHue? = null,
         onClick: () -> Unit,
     ) {
         rows += SettingsListRow.Navigation(
@@ -219,6 +222,7 @@ internal class SettingsListScope internal constructor() {
             description = description,
             icon = icon,
             iconPainter = iconPainter,
+            iconHue = iconHue,
             enabled = enabled,
             leadingContent = leadingContent,
             trailingContent = trailingContent ?: if (opensPage) PageChevron else null,
@@ -314,6 +318,7 @@ internal sealed interface SettingsListRow {
         private val description: String?,
         private val icon: ImageVector?,
         private val iconPainter: Painter?,
+        private val iconHue: SettingsIconHue? = null,
         private val enabled: Boolean,
         /** Anything the icon slots cannot express, a remote image for one. Wins over both. */
         private val leadingContent: (@Composable () -> Unit)?,
@@ -354,7 +359,7 @@ internal sealed interface SettingsListRow {
                 },
                 // Centred at any height: by default a tall row pins its controls to the top.
                 verticalAlignment = Alignment.CenterVertically,
-                leadingContent = leadingContent ?: leadingIcon(icon, iconPainter),
+                leadingContent = leadingContent ?: leadingIcon(icon, iconPainter, iconHue),
                 supportingContent = description?.takeIf { it.isNotBlank() }?.let { { Text(it) } },
                 trailingContent = trailingContent,
             ) {
@@ -501,8 +506,12 @@ private fun SettingsInfoRowContent(
 private fun leadingIcon(
     icon: ImageVector?,
     iconPainter: Painter?,
+    hue: SettingsIconHue? = null,
 ): (@Composable () -> Unit)? {
     if (icon == null && iconPainter == null) return null
+    if (hue != null && icon != null && iconPainter == null) {
+        return { SettingsIconCircle(icon = icon, hue = hue) }
+    }
     return {
         Box(
             modifier = Modifier
@@ -537,4 +546,65 @@ private val PageChevron: @Composable () -> Unit = {
         contentDescription = null,
         tint = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+/**
+ * A hue for an icon's circle, Pixel Settings style: a pastel circle with a deep icon of the same
+ * hue, lighter in the light theme and brighter in the dark one.
+ */
+internal enum class SettingsIconHue(
+    private val darkContainer: Long,
+    private val darkContent: Long,
+    private val lightContainer: Long,
+    private val lightContent: Long,
+) {
+    Blue(0xFFA8C7FA, 0xFF062E6F, 0xFFD3E3FD, 0xFF041E49),
+    Purple(0xFFD7BAFF, 0xFF3F1F70, 0xFFEADDFF, 0xFF21005D),
+    Teal(0xFF80D5D0, 0xFF003735, 0xFFB2EFEA, 0xFF00201E),
+    Pink(0xFFFFB0CB, 0xFF5E1133, 0xFFFFD9E3, 0xFF3E001D),
+    Red(0xFFFFB4AB, 0xFF690005, 0xFFFFDAD6, 0xFF410002),
+    Orange(0xFFFFB68B, 0xFF542200, 0xFFFFDBC8, 0xFF331200),
+    Indigo(0xFFBAC3FF, 0xFF1A2678, 0xFFDEE0FF, 0xFF00105C),
+    Green(0xFF8CD69A, 0xFF00391A, 0xFFC4EFC9, 0xFF00210B),
+    Yellow(0xFFE9C349, 0xFF3C2F00, 0xFFFFE08B, 0xFF241A00),
+    Brown(0xFFE7BDB0, 0xFF442A21, 0xFFFFDBD0, 0xFF2C160D),
+    Grey(0xFFC4C7C5, 0xFF2D3130, 0xFFE1E3E1, 0xFF191C1B),
+    Cyan(0xFF7DD3F0, 0xFF003545, 0xFFBEE9FF, 0xFF001F2A),
+    Lime(0xFFB5D07A, 0xFF253600, 0xFFD7EFA0, 0xFF141F00),
+    ;
+
+    /** The circle's colour and the icon's, for the theme on screen. */
+    @Composable
+    fun colors(): Pair<Color, Color> {
+        val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+        return if (dark) {
+            Color(darkContainer) to Color(darkContent)
+        } else {
+            Color(lightContainer) to Color(lightContent)
+        }
+    }
+}
+
+/** An icon in a circle of its own hue, the leading element of a category row. */
+@Composable
+internal fun SettingsIconCircle(
+    icon: ImageVector,
+    hue: SettingsIconHue,
+    modifier: Modifier = Modifier,
+) {
+    val (container, content) = hue.colors()
+    Box(
+        modifier = modifier
+            .size(LeadingIconContainerSize)
+            .clip(CircleShape)
+            .background(container),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = content,
+            modifier = Modifier.size(24.dp),
+        )
+    }
 }

@@ -657,6 +657,7 @@ private fun TabletSettingsScreen(
                             label = stringResource(category.labelRes),
                             description = stringResource(category.descriptionRes),
                             icon = category.icon,
+                            hue = category.iconHue,
                             selected = settingsSearchQuery.isBlank() && category == activeCategory,
                             index = index,
                             count = categories.size,
@@ -993,8 +994,7 @@ internal fun LazyListScope.settingsPageContent(
         SettingsPage.Root -> Unit
         SettingsPage.Accounts -> accountsSettingsContent(
             isTablet = isTablet,
-            onSwitchProfileClick = links.onSwitchProfile,
-            onTrackingClick = { links.openSubPage(SettingsPage.TraktAuthentication) },
+            data = data,
             onTmdbClick = { links.openSubPage(SettingsPage.TmdbEnrichment) },
             onMdbListClick = { links.openSubPage(SettingsPage.MdbListRatings) },
             onStreamingAvailabilityClick = { links.openSubPage(SettingsPage.StreamingAvailability) },

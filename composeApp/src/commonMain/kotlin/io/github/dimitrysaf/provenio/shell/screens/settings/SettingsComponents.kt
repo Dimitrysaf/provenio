@@ -83,6 +83,7 @@ internal fun SettingsSidebarItem(
     label: String,
     icon: ImageVector,
     description: String? = null,
+    hue: SettingsIconHue? = null,
     selected: Boolean,
     index: Int,
     count: Int,
@@ -107,7 +108,11 @@ internal fun SettingsSidebarItem(
         ),
         modifier = Modifier.padding(horizontal = 12.dp),
         leadingContent = {
-            Icon(imageVector = icon, contentDescription = null)
+            if (hue != null) {
+                SettingsIconCircle(icon = icon, hue = hue)
+            } else {
+                Icon(imageVector = icon, contentDescription = null)
+            }
         },
         supportingContent = description?.let { { Text(it, maxLines = 2, overflow = TextOverflow.Ellipsis) } },
     ) {

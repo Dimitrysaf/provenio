@@ -83,6 +83,24 @@ internal enum class SettingsCategory(
     About(Res.string.compose_settings_category_about, Res.string.settings_category_about_description, Icons.Rounded.Info),
 }
 
+/** Each category's colour in the list, so the eye can find one by its hue. */
+internal val SettingsCategory.iconHue: SettingsIconHue
+    get() = when (this) {
+        SettingsCategory.Accounts -> SettingsIconHue.Blue
+        SettingsCategory.Interface -> SettingsIconHue.Purple
+        SettingsCategory.Subtitles -> SettingsIconHue.Lime
+        SettingsCategory.Audio -> SettingsIconHue.Pink
+        SettingsCategory.Playback -> SettingsIconHue.Red
+        SettingsCategory.Addons -> SettingsIconHue.Orange
+        SettingsCategory.Plugins -> SettingsIconHue.Indigo
+        SettingsCategory.Downloads -> SettingsIconHue.Green
+        SettingsCategory.Collections -> SettingsIconHue.Brown
+        SettingsCategory.Notifications -> SettingsIconHue.Yellow
+        SettingsCategory.Advanced -> SettingsIconHue.Grey
+        SettingsCategory.Server -> SettingsIconHue.Cyan
+        SettingsCategory.About -> SettingsIconHue.Teal
+    }
+
 /** The settings page a category opens, or null for Downloads and Collections, which are screens of their own. */
 internal val SettingsCategory.page: SettingsPage?
     get() = when (this) {

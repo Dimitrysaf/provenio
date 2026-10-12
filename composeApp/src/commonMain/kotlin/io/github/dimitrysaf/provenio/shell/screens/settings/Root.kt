@@ -5,14 +5,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Keyboard
-import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.Policy
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
@@ -28,22 +27,20 @@ import io.github.dimitrysaf.provenio.core.build.AppVersionConfig
 import io.github.dimitrysaf.provenio.core.diagnostics.AppLogs
 import io.github.dimitrysaf.provenio.core.updater.AppUpdaterPlatform
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
+import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktCommentsSettings
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.compose_about_channel_beta
 import provenio.composeapp.generated.resources.compose_about_channel_release
 import provenio.composeapp.generated.resources.compose_about_version_format
-import provenio.composeapp.generated.resources.settings_category_profile_tracking
 import provenio.composeapp.generated.resources.compose_settings_page_licenses_attributions
 import provenio.composeapp.generated.resources.compose_settings_page_privacy_policy
 import provenio.composeapp.generated.resources.compose_settings_root_check_updates_description
 import provenio.composeapp.generated.resources.compose_settings_root_check_updates_title
 import provenio.composeapp.generated.resources.compose_settings_root_privacy_policy_description
-import provenio.composeapp.generated.resources.compose_settings_root_switch_profile_description
-import provenio.composeapp.generated.resources.compose_settings_root_switch_profile_title
-import provenio.composeapp.generated.resources.compose_settings_root_tracking_description
 import provenio.composeapp.generated.resources.compose_settings_root_about_section
 import provenio.composeapp.generated.resources.compose_settings_root_advanced_section
 import provenio.composeapp.generated.resources.compose_settings_page_tracking
+import provenio.composeapp.generated.resources.settings_integrations_section_title
 import provenio.composeapp.generated.resources.about_licenses_attributions_subtitle
 import provenio.composeapp.generated.resources.keyboard_shortcuts_entry_description
 import provenio.composeapp.generated.resources.keyboard_shortcuts_title
@@ -81,6 +78,7 @@ internal fun LazyListScope.settingsCategoryListContent(
                         title = title,
                         description = description,
                         icon = category.icon,
+                        iconHue = category.iconHue,
                         onClick = { onCategoryClick(category) },
                     )
                 }
@@ -89,46 +87,55 @@ internal fun LazyListScope.settingsCategoryListContent(
     }
 }
 
-/** The Accounts page: profiles and tracking, then the services that need a key or a login. */
+/**
+ * The Accounts page, in two sections: Tracking, with the tracking cards and their choices, and
+ * Integrations, with a card for each service that needs a key.
+ */
 internal fun LazyListScope.accountsSettingsContent(
     isTablet: Boolean,
-    onSwitchProfileClick: (() -> Unit)?,
-    onTrackingClick: () -> Unit,
+    data: SettingsData,
     onTmdbClick: () -> Unit,
     onMdbListClick: () -> Unit,
     onStreamingAvailabilityClick: () -> Unit,
     onDebridClick: () -> Unit,
 ) {
-    item {
-        SettingsSection(
-            title = stringResource(Res.string.settings_category_profile_tracking),
-            isTablet = isTablet,
-        ) {
-            SettingsList {
-                if (onSwitchProfileClick != null) {
-                    navigationRow(
-                        title = stringResource(Res.string.compose_settings_root_switch_profile_title),
-                        description = stringResource(Res.string.compose_settings_root_switch_profile_description),
-                        icon = Icons.Rounded.People,
-                        onClick = onSwitchProfileClick,
-                    )
-                }
-                navigationRow(
-                    title = stringResource(Res.string.compose_settings_page_tracking),
-                    description = stringResource(Res.string.compose_settings_root_tracking_description),
-                    icon = Icons.Default.Sync,
-                    opensPage = true,
-                    onClick = onTrackingClick,
-                )
-            }
-        }
+    item(key = "accounts-tracking-heading") {
+        AccountsSectionHeading(stringResource(Res.string.compose_settings_page_tracking))
     }
-    integrationsContent(
+    trackingSettingsContent(
         isTablet = isTablet,
+        traktUiState = data.traktAuth,
+        simklUiState = data.simklAuth,
+        settingsUiState = data.trackingSettings,
+        commentsEnabled = data.traktCommentsEnabled,
+        onCommentsEnabledChange = TraktCommentsSettings::setEnabled,
+    )
+    item(key = "accounts-integrations-heading") {
+        AccountsSectionHeading(stringResource(Res.string.settings_integrations_section_title))
+    }
+    integrationCardsContent(
+        isTablet = isTablet,
+        tmdbSettings = data.tmdbSettings,
+        mdbListSettings = data.mdbListSettings,
+        streamingAvailabilitySettings = data.streamingAvailabilitySettings,
+        debridSettings = data.debridSettings,
         onTmdbClick = onTmdbClick,
         onMdbListClick = onMdbListClick,
         onStreamingAvailabilityClick = onStreamingAvailabilityClick,
         onDebridClick = onDebridClick,
+    )
+}
+
+/** A heading over one of the Accounts page's two sections, a size above the sections inside them. */
+@Composable
+private fun AccountsSectionHeading(text: String) {
+    Text(
+        text = text,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 4.dp, top = 12.dp),
+        style = MaterialTheme.typography.headlineSmall,
+        color = MaterialTheme.colorScheme.onSurface,
     )
 }
 
