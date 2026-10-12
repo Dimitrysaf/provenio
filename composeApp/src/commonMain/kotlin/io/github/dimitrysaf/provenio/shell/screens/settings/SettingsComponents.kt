@@ -82,6 +82,7 @@ private fun SettingsCard(
 internal fun SettingsSidebarItem(
     label: String,
     icon: ImageVector,
+    description: String? = null,
     selected: Boolean,
     index: Int,
     count: Int,
@@ -108,6 +109,7 @@ internal fun SettingsSidebarItem(
         leadingContent = {
             Icon(imageVector = icon, contentDescription = null)
         },
+        supportingContent = description?.let { { Text(it, maxLines = 2, overflow = TextOverflow.Ellipsis) } },
     ) {
         Text(label)
     }

@@ -16,7 +16,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
@@ -202,7 +205,8 @@ fun SettingsScreen(
                 .takeIf { it.isEnabledByPolicy() }
                 ?: SettingsPage.Root
         }
-        val previousPage = page.previousPage()
+        // On a large screen a category's page is the top of its half, so it has nothing to go back to.
+        val previousPage = page.previousPage()?.takeIf { !twoPane || it != SettingsPage.Root }
 
         fun openPage(targetPage: SettingsPage) {
             if (!targetPage.isEnabledByPolicy()) return
@@ -270,8 +274,7 @@ fun SettingsScreen(
         ScreenActivityEffect(rootActionRequests, rootActionsEnabled, page) { active ->
             if (!active || !rootActionsEnabled) return@ScreenActivityEffect
             rootActionRequests.collect {
-                val pageToOpen = page.previousPage()
-                if (pageToOpen != null) {
+                if (previousPage != null) {
                     navigateBack()
                 } else {
                     scrollToTopRequests.tryEmit(Unit)
@@ -444,6 +447,9 @@ private fun MobileSettingsScreen(
             onAddonsClick = onAddonsClick,
             onPluginsClick = onPluginsClick,
             onTestUpdateBannerClick = onTestUpdateBannerClick,
+            onLicensesAttributionsClick = onLicensesAttributionsClick,
+            onSwitchProfile = onSwitchProfile,
+            onCheckForUpdatesClick = onCheckForUpdatesClick,
         )
         val previousPage = page.previousPage()
 
@@ -480,21 +486,17 @@ private fun MobileSettingsScreen(
                         onTargetClick = { openSearchTarget(it) },
                     )
                     if (settingsSearchQuery.isBlank()) {
-                        settingsRootContent(
-                            isTablet = false,
-                            onPlaybackClick = { onPageChange(SettingsPage.Playback) },
-                            onAppearanceClick = { onPageChange(SettingsPage.Appearance) },
-                            onAdvancedClick = { onPageChange(SettingsPage.Advanced) },
-                            onKeyboardShortcutsClick = { onPageChange(SettingsPage.KeyboardShortcuts) },
-                            onNotificationsClick = { onPageChange(SettingsPage.Notifications) },
-                            onContentDiscoveryClick = { onPageChange(SettingsPage.ContentDiscovery) },
-                            onIntegrationsClick = { onPageChange(SettingsPage.Integrations) },
-                            onTrackingClick = { onPageChange(SettingsPage.TraktAuthentication) },
-                            onLicensesAttributionsClick = onLicensesAttributionsClick,
-                            onCheckForUpdatesClick = onCheckForUpdatesClick,
-                            onDownloadsClick = onDownloadsClick,
-                            onCollectionsClick = onCollectionsClick,
-                            onSwitchProfileClick = onSwitchProfile,
+                        settingsCategoryListContent(
+                            categories = visibleSettingsCategories(AppFeaturePolicy.pluginsEnabled),
+                            onCategoryClick = { category ->
+                                when (category) {
+                                    SettingsCategory.Downloads -> onDownloadsClick()
+                                    SettingsCategory.Collections -> onCollectionsClick()
+                                    SettingsCategory.Addons -> onAddonsClick()
+                                    SettingsCategory.Plugins -> onPluginsClick()
+                                    else -> category.page?.let(onPageChange)
+                                }
+                            },
                         )
                     }
                 }
@@ -546,6 +548,10 @@ private fun rememberSettingsRootSearchRevealConnection(
     }
 }
 
+/**
+ * Settings on a large screen, laid out like Pixel's: the categories on the left half and the open
+ * category on the right. Downloads and Collections open in the right half too.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun TabletSettingsScreen(
@@ -562,52 +568,68 @@ private fun TabletSettingsScreen(
     onLicensesAttributionsClick: () -> Unit = {},
     onCheckForUpdatesClick: (() -> Unit)? = null,
     onTestUpdateBannerClick: (() -> Unit)? = null,
-
 ) {
-    var selectedCategory by rememberSaveable { mutableStateOf(SettingsCategory.General.name) }
-    val activeCategory = SettingsCategory.valueOf(selectedCategory)
+    val categories = visibleSettingsCategories(AppFeaturePolicy.pluginsEnabled)
+    var selectedCategory by rememberSaveable { mutableStateOf(categories.first().name) }
+    val activeCategory = categories.firstOrNull { it.name == selectedCategory } ?: categories.first()
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val topOffset = max(statusBarPadding + 24.dp, 48.dp) + 64.dp
-    // Collections open in the content pane here rather than as a destination of their own, which
-    // is what used to cover the sidebar. Only this layout needs the flag: the narrow one has no
-    // pane to fill and still navigates.
     var collectionsOpen by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(page) {
-        if (page.opensInlineOnTablet) {
+        if (page != SettingsPage.Root) {
             selectedCategory = page.category.name
         }
     }
 
     fun openInlinePage(page: SettingsPage) {
+        collectionsOpen = false
+        onDownloadsOpenChange(false)
         selectedCategory = page.category.name
         onPageChange(page)
     }
 
-    // Downloads opens in the content pane too, so the sidebar stays on screen beside it.
     fun openDownloads() {
         collectionsOpen = false
-        selectedCategory = SettingsCategory.General.name
-        if (page != SettingsPage.Root) onPageChange(SettingsPage.Root)
+        selectedCategory = SettingsCategory.Downloads.name
         onDownloadsOpenChange(true)
     }
 
+    fun openCollections() {
+        onDownloadsOpenChange(false)
+        selectedCategory = SettingsCategory.Collections.name
+        collectionsOpen = true
+    }
+
+    fun openCategory(category: SettingsCategory) {
+        when (category) {
+            SettingsCategory.Downloads -> openDownloads()
+            SettingsCategory.Collections -> openCollections()
+            else -> category.page?.let(::openInlinePage)
+        }
+    }
+
+    // The page on the right: the open one, or the selected category's own page.
+    val shownPage = if (page == SettingsPage.Root) activeCategory.page ?: SettingsPage.Root else page
+
     val saveableStateHolder = rememberSaveableStateHolder()
-    // Hoisted above the Row: the search bar lives in the sidebar while its results render in the
-    // content pane, so both sides read the same query.
+    // Hoisted above the Row: the search bar lives on the left while its results show on the right.
     var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
 
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    val categoryPaneWidth = (maxWidth * 0.5f).coerceIn(SettingsSidebarWidth, SettingsCategoryPaneMaxWidth)
     Row(modifier = Modifier.fillMaxSize()) {
         Surface(
             modifier = Modifier
-                .width(SettingsSidebarWidth)
-                .fillMaxSize(),
+                .width(categoryPaneWidth)
+                .fillMaxHeight(),
             color = MaterialTheme.colorScheme.surface,
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = topOffset),
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = topOffset, bottom = 24.dp),
             ) {
                 Text(
                     text = stringResource(Res.string.compose_settings_page_root),
@@ -630,20 +652,17 @@ private fun TabletSettingsScreen(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(ListItemBetweenSpace),
                 ) {
-                    SettingsCategory.entries.forEachIndexed { index, category ->
+                    categories.forEachIndexed { index, category ->
                         SettingsSidebarItem(
                             label = stringResource(category.labelRes),
+                            description = stringResource(category.descriptionRes),
                             icon = category.icon,
-                            selected = category == activeCategory,
+                            selected = settingsSearchQuery.isBlank() && category == activeCategory,
                             index = index,
-                            count = SettingsCategory.entries.size,
+                            count = categories.size,
                             onClick = {
-                                selectedCategory = category.name
-                                collectionsOpen = false
-                                onDownloadsOpenChange(false)
-                                if (page != SettingsPage.Root) {
-                                    onPageChange(SettingsPage.Root)
-                                }
+                                settingsSearchQuery = ""
+                                openCategory(category)
                             },
                         )
                     }
@@ -651,14 +670,14 @@ private fun TabletSettingsScreen(
             }
         }
 
-        if (collectionsOpen) {
+        if (collectionsOpen && settingsSearchQuery.isBlank()) {
             Box(modifier = Modifier.weight(1f).fillMaxSize()) {
                 CollectionsInlinePane(onExit = { collectionsOpen = false })
             }
             return@Row
         }
 
-        if (downloadsOpen) {
+        if (downloadsOpen && settingsSearchQuery.isBlank()) {
             PlatformBackHandler(enabled = true) { onDownloadsOpenChange(false) }
             Box(modifier = Modifier.weight(1f).fillMaxSize()) {
                 DownloadsScreen(
@@ -669,12 +688,9 @@ private fun TabletSettingsScreen(
             return@Row
         }
 
-        saveableStateHolder.SaveableStateProvider(page.name) {
-            var rootSearchVisible by rememberSaveable { mutableStateOf(false) }
-            var rootSearchRevealAnimating by rememberSaveable { mutableStateOf(false) }
-            val hapticFeedback = LocalHapticFeedback.current
-            val hapticScope = rememberCoroutineScope()
+        saveableStateHolder.SaveableStateProvider(shownPage.name) {
             fun openSearchTarget(target: SettingsSearchTarget) {
+                settingsSearchQuery = ""
                 when (target) {
                     is SettingsSearchTarget.Page -> {
                         if (target.page.isEnabledByPolicy()) {
@@ -682,7 +698,7 @@ private fun TabletSettingsScreen(
                         }
                     }
                     SettingsSearchTarget.Downloads -> openDownloads()
-                    SettingsSearchTarget.Collections -> { collectionsOpen = true }
+                    SettingsSearchTarget.Collections -> openCollections()
                     SettingsSearchTarget.SwitchProfile -> onSwitchProfile?.invoke()
                     SettingsSearchTarget.CheckForUpdates -> onCheckForUpdatesClick?.invoke()
                 }
@@ -693,25 +709,6 @@ private fun TabletSettingsScreen(
                 if (!screenActive) listState.stopScroll()
             }
             val bottomOverlayPadding = LocalBottomNavigationOverlayPadding.current
-            val rootSearchRevealConnection = rememberSettingsRootSearchRevealConnection(
-                page = page,
-                listState = listState,
-                query = settingsSearchQuery,
-                searchVisible = rootSearchVisible,
-            ) {
-                rootSearchVisible = true
-                rootSearchRevealAnimating = true
-                hapticScope.launch {
-                    delay(SettingsSearchRevealHapticDelayMillis)
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                }
-            }
-            LaunchedEffect(rootSearchRevealAnimating) {
-                if (rootSearchRevealAnimating) {
-                    delay(SettingsSearchRevealAnimationMillis)
-                    rootSearchRevealAnimating = false
-                }
-            }
             LaunchedEffect(scrollToTopRequests) {
                 scrollToTopRequests.collect {
                     listState.animateScrollToItem(0)
@@ -727,24 +724,24 @@ private fun TabletSettingsScreen(
                 onAddonsClick = { openInlinePage(SettingsPage.Addons) },
                 onPluginsClick = { openInlinePage(SettingsPage.Plugins) },
                 onTestUpdateBannerClick = onTestUpdateBannerClick,
+                onLicensesAttributionsClick = { openInlinePage(SettingsPage.LicensesAttributions) },
+                onSwitchProfile = onSwitchProfile,
+                onCheckForUpdatesClick = onCheckForUpdatesClick,
             )
-            val previousPage = page.previousPage()
-            val pageTitle = if (page == SettingsPage.Root) {
-                if (settingsSearchQuery.isBlank()) {
-                    stringResource(activeCategory.labelRes)
-                } else {
-                    stringResource(Res.string.compose_settings_page_root)
-                }
+            val searching = settingsSearchQuery.isNotBlank()
+            // A category's own page is the top of the right half, so only the pages below it go back.
+            val previousPage = shownPage.previousPage()?.takeIf { it != SettingsPage.Root && !searching }
+            val pageTitle = if (searching) {
+                stringResource(Res.string.compose_settings_page_root)
             } else {
-                stringResource(page.titleRes)
+                stringResource(shownPage.titleRes)
             }
             val topAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
             Scaffold(
                 modifier = Modifier
                     .fillMaxSize()
-                    .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
-                    .nestedScroll(rootSearchRevealConnection),
+                    .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
                 containerColor = MaterialTheme.colorScheme.surface,
                 topBar = {
                     if (showInternalHeader) {
@@ -767,69 +764,49 @@ private fun TabletSettingsScreen(
                     }
                 },
             ) { innerPadding ->
-            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val contentSidePadding = max(40.dp, (maxWidth - SettingsContentMaxWidth) / 2)
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = contentSidePadding,
-                    top = if (showInternalHeader) innerPadding.calculateTopPadding() else topOffset,
-                    end = contentSidePadding,
-                    bottom = 40.dp + bottomOverlayPadding,
-                ),
-                verticalArrangement = Arrangement.spacedBy(18.dp),
-            ) {
-                when (page) {
-                    SettingsPage.Root -> {
-                        settingsSearchRootContent(
-                            query = settingsSearchQuery,
-                            entries = {
-                                settingsSearchEntries(
-                                    isTablet = true,
-                                    pluginsEnabled = AppFeaturePolicy.pluginsEnabled,
+                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    val contentSidePadding = max(32.dp, (maxWidth - SettingsContentMaxWidth) / 2)
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            start = contentSidePadding,
+                            top = if (showInternalHeader) innerPadding.calculateTopPadding() else topOffset,
+                            end = contentSidePadding,
+                            bottom = 40.dp + bottomOverlayPadding,
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(18.dp),
+                    ) {
+                        if (searching) {
+                            settingsSearchRootContent(
+                                query = settingsSearchQuery,
+                                entries = {
+                                    settingsSearchEntries(
+                                        isTablet = true,
+                                        pluginsEnabled = AppFeaturePolicy.pluginsEnabled,
                                         personalMediaAddonCopyEnabled = AppFeaturePolicy.personalMediaAddonCopyEnabled,
-                                    switchProfileAvailable = onSwitchProfile != null,
-                                    checkForUpdatesAvailable = onCheckForUpdatesClick != null,
-                                )
-                            },
-                            isTablet = true,
-                            showSearchField = rootSearchVisible,
-                            animateSearchField = rootSearchRevealAnimating,
-                            onQueryChange = { settingsSearchQuery = it },
-                            onTargetClick = { openSearchTarget(it) },
-                        )
-                        if (settingsSearchQuery.isBlank()) {
-                            settingsRootContent(
+                                        switchProfileAvailable = onSwitchProfile != null,
+                                        checkForUpdatesAvailable = onCheckForUpdatesClick != null,
+                                    )
+                                },
                                 isTablet = true,
-                                onPlaybackClick = { openInlinePage(SettingsPage.Playback) },
-                                onAppearanceClick = { openInlinePage(SettingsPage.Appearance) },
-                                onAdvancedClick = { openInlinePage(SettingsPage.Advanced) },
-                                onKeyboardShortcutsClick = { openInlinePage(SettingsPage.KeyboardShortcuts) },
-                                onNotificationsClick = { openInlinePage(SettingsPage.Notifications) },
-                                onContentDiscoveryClick = { openInlinePage(SettingsPage.ContentDiscovery) },
-                                onIntegrationsClick = { openInlinePage(SettingsPage.Integrations) },
-                                onTrackingClick = { openInlinePage(SettingsPage.TraktAuthentication) },
-                                onLicensesAttributionsClick = { openInlinePage(SettingsPage.LicensesAttributions) },
-                                onCheckForUpdatesClick = onCheckForUpdatesClick,
-                                onDownloadsClick = ::openDownloads,
-                                onCollectionsClick = { collectionsOpen = true },
-                                onSwitchProfileClick = onSwitchProfile,
-                                showAccountSection = activeCategory == SettingsCategory.Profile,
-                                showGeneralSection = activeCategory == SettingsCategory.General,
-                                showAboutSection = activeCategory == SettingsCategory.About,
-                                showAdvancedSection = activeCategory == SettingsCategory.Advanced,
+                                showSearchField = false,
+                                animateSearchField = false,
+                                onQueryChange = { settingsSearchQuery = it },
+                                onTargetClick = { openSearchTarget(it) },
                             )
+                        } else {
+                            settingsPageContent(shownPage, isTablet = true, data = data, links = links)
                         }
                     }
-                    else -> settingsPageContent(page, isTablet = true, data = data, links = links)
                 }
-            }
-            }
             }
         }
     }
+    }
 }
+
+private val SettingsCategoryPaneMaxWidth = 560.dp
 
 // Everything the settings pages show, collected once for whichever layout is on screen.
 internal data class SettingsData(
@@ -999,6 +976,9 @@ internal class SettingsPageLinks(
     val onAddonsClick: () -> Unit,
     val onPluginsClick: () -> Unit,
     val onTestUpdateBannerClick: (() -> Unit)?,
+    val onLicensesAttributionsClick: () -> Unit,
+    val onSwitchProfile: (() -> Unit)?,
+    val onCheckForUpdatesClick: (() -> Unit)?,
 )
 
 // Every settings page except the root, which each layout lays out itself.
@@ -1011,6 +991,21 @@ internal fun LazyListScope.settingsPageContent(
     val player = data.playerSettings
     when (page) {
         SettingsPage.Root -> Unit
+        SettingsPage.Accounts -> accountsSettingsContent(
+            isTablet = isTablet,
+            onSwitchProfileClick = links.onSwitchProfile,
+            onTrackingClick = { links.openSubPage(SettingsPage.TraktAuthentication) },
+            onTmdbClick = { links.openSubPage(SettingsPage.TmdbEnrichment) },
+            onMdbListClick = { links.openSubPage(SettingsPage.MdbListRatings) },
+            onStreamingAvailabilityClick = { links.openSubPage(SettingsPage.StreamingAvailability) },
+            onDebridClick = { links.openSubPage(SettingsPage.Debrid) },
+        )
+        SettingsPage.Audio -> audioSettingsContent(isTablet = isTablet)
+        SettingsPage.About -> aboutSettingsContent(
+            isTablet = isTablet,
+            onLicensesAttributionsClick = links.onLicensesAttributionsClick,
+            onCheckForUpdatesClick = links.onCheckForUpdatesClick,
+        )
         SettingsPage.LicensesAttributions -> licensesAttributionsContent(isTablet = isTablet)
         SettingsPage.Playback -> playbackSettingsContent(
             isTablet = isTablet,
@@ -1018,9 +1013,6 @@ internal fun LazyListScope.settingsPageContent(
             holdToSpeedEnabled = player.holdToSpeedEnabled,
             holdToSpeedValue = player.holdToSpeedValue,
             touchGesturesEnabled = player.touchGesturesEnabled,
-            preferredAudioLanguage = player.preferredAudioLanguage,
-            secondaryPreferredAudioLanguage = player.secondaryPreferredAudioLanguage,
-            preferredSubtitleLanguage = player.preferredSubtitleLanguage,
             streamReuseLastLinkEnabled = player.streamReuseLastLinkEnabled,
             androidPlaybackEngine = player.androidPlaybackEngine,
             androidLibmpvVideoOutput = player.androidLibmpvVideoOutput,
@@ -1029,39 +1021,47 @@ internal fun LazyListScope.settingsPageContent(
             decoderPriority = player.decoderPriority,
             mapDV7ToHevc = player.mapDV7ToHevc,
             tunnelingEnabled = player.tunnelingEnabled,
-            onSubtitlesClick = { links.openSubPage(SettingsPage.Subtitles) },
         )
         SettingsPage.Subtitles -> subtitlesSettingsContent(isTablet = isTablet)
         SettingsPage.P2pStreaming -> p2pStreamingSettingsContent(isTablet = isTablet)
         SettingsPage.Streams -> streamsSettingsContent(isTablet = isTablet)
-        SettingsPage.Appearance -> appearanceSettingsContent(
-            isTablet = isTablet,
-            amoledEnabled = data.amoledEnabled,
-            onAmoledToggle = ThemeSettingsRepository::setAmoled,
-            themeMode = data.themeMode,
-            onThemeModeSelected = ThemeSettingsRepository::setThemeMode,
-            colorPalette = data.colorPalette,
-            dynamicColorAvailable = data.dynamicColorAvailable,
-            onColorPaletteSelected = ThemeSettingsRepository::setColorPalette,
-            displayScale = data.displayScale,
-            onDisplayScaleSelected = ThemeSettingsRepository::setDisplayScale,
-            appIconState = data.appIconState,
-            onAppIconSelected = data.onAppIconSelected,
-            onAppIconFailureDismissed = AppIconRepository::clearFailure,
-            selectedAppLanguage = data.selectedAppLanguage,
-            onAppLanguageSelected = ThemeSettingsRepository::setAppLanguage,
-            onHomescreenClick = links.onHomescreenClick,
-            onMetaScreenClick = links.onMetaScreenClick,
-            onContinueWatchingClick = links.onContinueWatchingClick,
-            onPosterCustomizationClick = { links.openPage(SettingsPage.PosterCustomization) },
-        )
-        SettingsPage.Advanced -> advancedSettingsContent(
-            isTablet = isTablet,
-            rememberLastProfileEnabled = data.rememberLastProfileEnabled,
-            traktConnected = data.traktAuth.mode == TraktConnectionMode.CONNECTED,
-            traktEnabled = data.trackingSettings.traktEnabled,
-            onTestUpdateBannerClick = links.onTestUpdateBannerClick,
-        )
+        SettingsPage.Appearance -> {
+            appearanceSettingsContent(
+                isTablet = isTablet,
+                amoledEnabled = data.amoledEnabled,
+                onAmoledToggle = ThemeSettingsRepository::setAmoled,
+                themeMode = data.themeMode,
+                onThemeModeSelected = ThemeSettingsRepository::setThemeMode,
+                colorPalette = data.colorPalette,
+                dynamicColorAvailable = data.dynamicColorAvailable,
+                onColorPaletteSelected = ThemeSettingsRepository::setColorPalette,
+                displayScale = data.displayScale,
+                onDisplayScaleSelected = ThemeSettingsRepository::setDisplayScale,
+                appIconState = data.appIconState,
+                onAppIconSelected = data.onAppIconSelected,
+                onAppIconFailureDismissed = AppIconRepository::clearFailure,
+                selectedAppLanguage = data.selectedAppLanguage,
+                onAppLanguageSelected = ThemeSettingsRepository::setAppLanguage,
+                onHomescreenClick = links.onHomescreenClick,
+                onMetaScreenClick = links.onMetaScreenClick,
+                onContinueWatchingClick = links.onContinueWatchingClick,
+                onPosterCustomizationClick = { links.openPage(SettingsPage.PosterCustomization) },
+            )
+            searchSettingsContent(isTablet = isTablet)
+        }
+        SettingsPage.Advanced -> {
+            advancedLinksContent(
+                isTablet = isTablet,
+                onKeyboardShortcutsClick = { links.openSubPage(SettingsPage.KeyboardShortcuts) },
+            )
+            advancedSettingsContent(
+                isTablet = isTablet,
+                rememberLastProfileEnabled = data.rememberLastProfileEnabled,
+                traktConnected = data.traktAuth.mode == TraktConnectionMode.CONNECTED,
+                traktEnabled = data.trackingSettings.traktEnabled,
+                onTestUpdateBannerClick = links.onTestUpdateBannerClick,
+            )
+        }
         SettingsPage.KeyboardShortcuts -> keyboardShortcutsContent(isTablet = isTablet)
         SettingsPage.Notifications -> notificationsSettingsContent(
             isTablet = isTablet,
@@ -1082,12 +1082,6 @@ internal fun LazyListScope.settingsPageContent(
             uiState = data.posterCardStyle,
             shelfLayout = data.homescreen.shelfLayout,
             shelvesExpandedByDefault = data.homescreen.shelvesExpandedByDefault,
-        )
-        SettingsPage.ContentDiscovery -> contentDiscoveryContent(
-            isTablet = isTablet,
-            showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
-            onAddonsClick = links.onAddonsClick,
-            onPluginsClick = links.onPluginsClick,
         )
         SettingsPage.Addons -> addonsSettingsContent(
             onGuideClick = { links.openSubPage(SettingsPage.AddonsGuide) },
@@ -1120,14 +1114,6 @@ internal fun LazyListScope.settingsPageContent(
             items = data.homescreen.items,
         )
         SettingsPage.MetaScreen -> metaScreenSettingsContent(isTablet = isTablet, uiState = data.metaScreen)
-        SettingsPage.Integrations -> integrationsContent(
-            isTablet = isTablet,
-            onTmdbClick = { links.openSubPage(SettingsPage.TmdbEnrichment) },
-            onMdbListClick = { links.openSubPage(SettingsPage.MdbListRatings) },
-            onStreamingAvailabilityClick = { links.openSubPage(SettingsPage.StreamingAvailability) },
-            onDebridClick = { links.openSubPage(SettingsPage.Debrid) },
-            onP2pStreamingClick = { links.openSubPage(SettingsPage.P2pStreaming) },
-        )
         SettingsPage.TmdbEnrichment -> tmdbSettingsContent(isTablet = isTablet, settings = data.tmdbSettings)
         SettingsPage.MdbListRatings -> mdbListSettingsContent(isTablet = isTablet, settings = data.mdbListSettings)
         SettingsPage.StreamingAvailability -> streamingAvailabilitySettingsContent(

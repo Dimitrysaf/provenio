@@ -63,9 +63,6 @@ internal fun LazyListScope.playbackSettingsContent(
     holdToSpeedEnabled: Boolean,
     holdToSpeedValue: Float,
     touchGesturesEnabled: Boolean,
-    preferredAudioLanguage: String,
-    secondaryPreferredAudioLanguage: String?,
-    preferredSubtitleLanguage: String,
     streamReuseLastLinkEnabled: Boolean,
     androidPlaybackEngine: AndroidPlaybackEngine,
     androidLibmpvVideoOutput: AndroidLibmpvVideoOutput,
@@ -74,7 +71,6 @@ internal fun LazyListScope.playbackSettingsContent(
     decoderPriority: Int,
     mapDV7ToHevc: Boolean,
     tunnelingEnabled: Boolean,
-    onSubtitlesClick: () -> Unit,
 ) {
     item {
         PlaybackSettingsSection(
@@ -83,9 +79,6 @@ internal fun LazyListScope.playbackSettingsContent(
             holdToSpeedEnabled = holdToSpeedEnabled,
             holdToSpeedValue = holdToSpeedValue,
             touchGesturesEnabled = touchGesturesEnabled,
-            preferredAudioLanguage = preferredAudioLanguage,
-            secondaryPreferredAudioLanguage = secondaryPreferredAudioLanguage,
-            preferredSubtitleLanguage = preferredSubtitleLanguage,
             streamReuseLastLinkEnabled = streamReuseLastLinkEnabled,
             androidPlaybackEngine = androidPlaybackEngine,
             androidLibmpvVideoOutput = androidLibmpvVideoOutput,
@@ -94,8 +87,18 @@ internal fun LazyListScope.playbackSettingsContent(
             decoderPriority = decoderPriority,
             mapDV7ToHevc = mapDV7ToHevc,
             tunnelingEnabled = tunnelingEnabled,
-            onSubtitlesClick = onSubtitlesClick,
         )
+    }
+}
+
+/** The Audio page: the languages the player picks audio tracks in. */
+internal fun LazyListScope.audioSettingsContent(isTablet: Boolean) {
+    item {
+        val settings = remember {
+            PlayerSettingsRepository.ensureLoaded()
+            PlayerSettingsRepository.uiState
+        }.collectAsStateWithLifecycle().value
+        AudioLanguageGroup(isTablet = isTablet, settings = settings)
     }
 }
 
@@ -115,9 +118,6 @@ private fun PlaybackSettingsSection(
     holdToSpeedEnabled: Boolean,
     holdToSpeedValue: Float,
     touchGesturesEnabled: Boolean,
-    preferredAudioLanguage: String,
-    secondaryPreferredAudioLanguage: String?,
-    preferredSubtitleLanguage: String,
     streamReuseLastLinkEnabled: Boolean,
     androidPlaybackEngine: AndroidPlaybackEngine,
     androidLibmpvVideoOutput: AndroidLibmpvVideoOutput,
@@ -126,7 +126,6 @@ private fun PlaybackSettingsSection(
     decoderPriority: Int,
     mapDV7ToHevc: Boolean,
     tunnelingEnabled: Boolean,
-    onSubtitlesClick: () -> Unit,
 ) {
     val settings by PlayerSettingsRepository.uiState.collectAsStateWithLifecycle()
     Column(
@@ -139,14 +138,6 @@ private fun PlaybackSettingsSection(
             touchGesturesEnabled = touchGesturesEnabled,
             holdToSpeedEnabled = holdToSpeedEnabled,
             holdToSpeedValue = holdToSpeedValue,
-        )
-        LanguageGroup(
-            isTablet = isTablet,
-            settings = settings,
-            preferredAudioLanguage = preferredAudioLanguage,
-            secondaryPreferredAudioLanguage = secondaryPreferredAudioLanguage,
-            preferredSubtitleLanguage = preferredSubtitleLanguage,
-            onSubtitlesClick = onSubtitlesClick,
         )
         StreamReuseGroup(
             isTablet = isTablet,
@@ -338,20 +329,18 @@ private fun PlayerGroup(
     }
 }
 
-// Preferred audio languages, and the way to the subtitle settings, which have a page of their own.
+// Preferred audio languages.
 @Composable
-private fun LanguageGroup(
+private fun AudioLanguageGroup(
     isTablet: Boolean,
     settings: PlayerSettingsUiState,
-    preferredAudioLanguage: String,
-    secondaryPreferredAudioLanguage: String?,
-    preferredSubtitleLanguage: String,
-    onSubtitlesClick: () -> Unit,
 ) {
+    val preferredAudioLanguage = settings.preferredAudioLanguage
+    val secondaryPreferredAudioLanguage = settings.secondaryPreferredAudioLanguage
     var showPreferredAudioDialog by remember { mutableStateOf(false) }
     var showSecondaryAudioDialog by remember { mutableStateOf(false) }
     SettingsSection(
-        title = stringResource(Res.string.settings_playback_section_subtitle_audio),
+        title = stringResource(Res.string.settings_playback_section_audio_languages),
         isTablet = isTablet,
     ) {
         // An external player manages audio tracks itself, so the audio pickers have nothing to set.
@@ -374,12 +363,6 @@ private fun LanguageGroup(
                 description = languageLabelForCode(secondaryPreferredAudioLanguage),
                 enabled = audioLanguageEnabled,
                 onClick = { showSecondaryAudioDialog = true },
-            )
-            navigationRow(
-                title = stringResource(Res.string.compose_settings_page_subtitles),
-                description = preferredSubtitleLanguageLabel(preferredSubtitleLanguage),
-                opensPage = true,
-                onClick = onSubtitlesClick,
             )
         }
     }

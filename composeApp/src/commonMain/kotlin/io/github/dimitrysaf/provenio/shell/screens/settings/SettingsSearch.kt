@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Dns
+import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.CloudDownload
@@ -101,24 +103,25 @@ internal fun settingsSearchEntries(
     switchProfileAvailable: Boolean,
     checkForUpdatesAvailable: Boolean,
 ): List<SettingsSearchEntry> {
-    val accountCategory = stringResource(SettingsCategory.Profile.labelRes)
+    val accountCategory = stringResource(SettingsCategory.Accounts.labelRes)
     val traktSettings by TrackingSettingsRepository.uiState.collectAsStateWithLifecycle()
     val traktAuth by TraktAuthRepository.uiState.collectAsStateWithLifecycle()
     // Trakt rows only turn up when the Tracking page shows Trakt too.
     val showTrakt = traktSettings.traktEnabled || traktAuth.mode == TraktConnectionMode.CONNECTED
-    val generalCategory = stringResource(SettingsCategory.General.labelRes)
+    val generalCategory = stringResource(Res.string.compose_settings_category_general)
     val aboutCategory = stringResource(SettingsCategory.About.labelRes)
     val advancedCategory = stringResource(SettingsCategory.Advanced.labelRes)
 
     val trackingPage = stringResource(Res.string.compose_settings_page_tracking)
-    val layoutPage = stringResource(Res.string.compose_settings_page_appearance)
+    val layoutPage = stringResource(Res.string.settings_category_interface)
     val advancedPage = stringResource(Res.string.compose_settings_page_advanced)
-    val contentDiscoveryPage = stringResource(Res.string.compose_settings_page_content_discovery)
     val downloadsPage = stringResource(Res.string.compose_settings_root_downloads_title)
-    val playbackPage = stringResource(Res.string.compose_settings_page_playback)
+    val playbackPage = stringResource(Res.string.settings_category_playback)
     val subtitlesPage = stringResource(Res.string.compose_settings_page_subtitles)
     val streamsPage = stringResource(Res.string.compose_settings_page_streams)
-    val integrationsPage = stringResource(Res.string.compose_settings_page_integrations)
+    val accountsPage = stringResource(Res.string.settings_category_accounts)
+    val audioPage = stringResource(Res.string.settings_category_audio)
+    val serverPage = stringResource(Res.string.settings_category_server)
     val notificationsPage = stringResource(Res.string.compose_settings_page_notifications)
     val licensesPage = stringResource(Res.string.compose_settings_page_licenses_attributions)
     val homeLayoutPage = stringResource(Res.string.compose_settings_page_homescreen)
@@ -233,19 +236,12 @@ internal fun settingsSearchEntries(
         category = advancedCategory,
         icon = Icons.Rounded.Tune,
     )
-    addPage(
-        page = SettingsPage.ContentDiscovery,
-        key = "content-discovery",
-        title = contentDiscoveryPage,
-        description = stringResource(Res.string.compose_settings_root_content_discovery_description),
-        icon = Icons.Rounded.Extension,
-    )
     addRow(
-        page = SettingsPage.ContentDiscovery,
+        page = SettingsPage.Appearance,
         key = "recent-searches",
         title = stringResource(Res.string.settings_content_discovery_recent_searches),
         description = stringResource(Res.string.settings_content_discovery_recent_searches_description),
-        pageLabel = contentDiscoveryPage,
+        pageLabel = layoutPage,
         section = stringResource(Res.string.settings_content_discovery_section_search),
         icon = Icons.Rounded.Search,
     )
@@ -268,11 +264,11 @@ internal fun settingsSearchEntries(
         addPage(
             page = SettingsPage.P2pStreaming,
             key = "p2p-streaming",
-            title = stringResource(Res.string.settings_p2p_title),
-            description = stringResource(Res.string.settings_p2p_subtitle),
-            icon = Icons.Rounded.Link,
+            title = serverPage,
+            description = stringResource(Res.string.settings_category_server_description),
+            icon = Icons.Rounded.Dns,
         )
-        val p2pPage = stringResource(Res.string.settings_p2p_title)
+        val p2pPage = serverPage
         addRow(
             page = SettingsPage.P2pStreaming,
             key = "p2p-external-server",
@@ -306,10 +302,10 @@ internal fun settingsSearchEntries(
         icon = Icons.Rounded.Style,
     )
     addPage(
-        page = SettingsPage.Integrations,
-        key = "integrations",
-        title = integrationsPage,
-        description = stringResource(Res.string.compose_settings_root_integrations_description),
+        page = SettingsPage.Accounts,
+        key = "accounts",
+        title = accountsPage,
+        description = stringResource(Res.string.settings_category_accounts_description),
         icon = Icons.Rounded.Link,
     )
     addPage(
@@ -481,7 +477,6 @@ internal fun settingsSearchEntries(
     )
 
     val playbackPlayer = stringResource(Res.string.settings_playback_section_player)
-    val playbackSubtitleAudio = stringResource(Res.string.settings_playback_section_subtitle_audio)
     val playbackStreamSelection = stringResource(Res.string.settings_playback_section_stream_selection)
     val playbackStreamAutoPlay = stringResource(Res.string.settings_playback_section_stream_auto_play)
     val playbackDecoder = stringResource(Res.string.settings_playback_section_decoder)
@@ -567,11 +562,19 @@ internal fun settingsSearchEntries(
             PlaybackSearchRow("seek-forward", stringResource(Res.string.settings_playback_seek_forward)),
         ),
     )
+    addPage(
+        page = SettingsPage.Audio,
+        key = "audio",
+        title = audioPage,
+        description = stringResource(Res.string.settings_category_audio_description),
+        icon = Icons.Rounded.Audiotrack,
+    )
     addPlaybackRows(
         addRow = ::addRow,
-        pageLabel = playbackPage,
-        section = playbackSubtitleAudio,
-        icon = Icons.Rounded.PlayArrow,
+        pageLabel = audioPage,
+        section = stringResource(Res.string.settings_playback_section_audio_languages),
+        icon = Icons.Rounded.Audiotrack,
+        page = SettingsPage.Audio,
         rows = listOf(
             PlaybackSearchRow("preferred-audio", stringResource(Res.string.settings_playback_preferred_audio_language)),
             PlaybackSearchRow("secondary-audio", stringResource(Res.string.settings_playback_secondary_audio_language)),
