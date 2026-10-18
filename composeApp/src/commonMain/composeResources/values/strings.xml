@@ -55,6 +55,10 @@
     <string name="addons_type_series">Series</string>
     <string name="addons_type_channels">Channels</string>
     <string name="addons_type_tv">TV</string>
+    <string name="settings_root_section_account">Account</string>
+    <string name="settings_root_section_user_interface">User interface</string>
+    <string name="settings_root_section_content">Content</string>
+    <string name="settings_root_section_about">About</string>
     <string name="app_fullscreen_enter">Fullscreen</string>
     <string name="app_fullscreen_exit">Exit fullscreen</string>
     <string name="find_in_page_hint">Find in page</string>

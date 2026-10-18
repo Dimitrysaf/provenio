@@ -1,7 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
-import io.github.dimitrysaf.provenio.shell.screens.profiles.ProfileSwitcherHost
+import io.github.dimitrysaf.provenio.shell.components.ListSubheader
+import androidx.compose.material.icons.rounded.People
 import io.github.dimitrysaf.provenio.core.profiles.Profile
 import io.github.dimitrysaf.provenio.core.settings.ThemeMode
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktConnectionMode
@@ -110,6 +111,8 @@ import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbSettingsRepository
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPreferencesRepository
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPreferencesUiState
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.compose_settings_root_switch_profile_title
+import provenio.composeapp.generated.resources.compose_settings_root_switch_profile_description
 import provenio.composeapp.generated.resources.compose_settings_page_root
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -169,18 +172,7 @@ fun SettingsScreen(
     onCollectionsClick: () -> Unit = {},
     onProfileSelected: ((Profile) -> Unit)? = null,
 ) {
-    var showProfileSwitcher by remember { mutableStateOf(false) }
-    val openProfiles: (() -> Unit)? = onSwitchProfile?.let { { showProfileSwitcher = true } }
-    if (onSwitchProfile != null) {
-        ProfileSwitcherHost(
-            visible = showProfileSwitcher,
-            onDismiss = { showProfileSwitcher = false },
-            onProfileSelected = { profile ->
-                onProfileSelected?.invoke(profile) ?: ProfileRepository.selectProfile(profile.profileIndex)
-            },
-            onAddProfileRequested = onSwitchProfile,
-        )
-    }
+    val openProfiles: (() -> Unit)? = onSwitchProfile
     BoxWithConstraints(
         modifier = modifier.fillMaxSize(),
     ) {
@@ -488,6 +480,7 @@ private fun MobileSettingsScreen(
                     if (settingsSearchQuery.isBlank()) {
                         settingsCategoryListContent(
                             categories = visibleSettingsCategories(AppFeaturePolicy.pluginsEnabled),
+                            onSwitchProfile = onSwitchProfile,
                             onCategoryClick = { category ->
                                 when (category) {
                                     SettingsCategory.Downloads -> onDownloadsClick()
@@ -649,23 +642,43 @@ private fun TabletSettingsScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(ListItemBetweenSpace),
-                ) {
-                    categories.forEachIndexed { index, category ->
-                        SettingsSidebarItem(
-                            label = stringResource(category.labelRes),
-                            description = stringResource(category.descriptionRes),
-                            icon = category.icon,
-                            hue = category.iconHue,
-                            selected = settingsSearchQuery.isBlank() && category == activeCategory,
-                            index = index,
-                            count = categories.size,
-                            onClick = {
-                                settingsSearchQuery = ""
-                                openCategory(category)
-                            },
-                        )
+                Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                    groupedSettingsCategories(categories).forEach { (section, sectionCategories) ->
+                        Column(verticalArrangement = Arrangement.spacedBy(ListItemBetweenSpace)) {
+                            ListSubheader(
+                                text = stringResource(section.labelRes),
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
+                            )
+                            val switchProfile = onSwitchProfile.takeIf { section == SettingsRootSection.Account }
+                            val rowCount = sectionCategories.size + if (switchProfile != null) 1 else 0
+                            sectionCategories.forEachIndexed { index, category ->
+                                SettingsSidebarItem(
+                                    label = stringResource(category.labelRes),
+                                    description = stringResource(category.descriptionRes),
+                                    icon = category.icon,
+                                    hue = category.iconHue,
+                                    selected = settingsSearchQuery.isBlank() && category == activeCategory,
+                                    index = index,
+                                    count = rowCount,
+                                    onClick = {
+                                        settingsSearchQuery = ""
+                                        openCategory(category)
+                                    },
+                                )
+                            }
+                            if (switchProfile != null) {
+                                SettingsSidebarItem(
+                                    label = stringResource(Res.string.compose_settings_root_switch_profile_title),
+                                    description = stringResource(Res.string.compose_settings_root_switch_profile_description),
+                                    icon = Icons.Rounded.People,
+                                    hue = SettingsIconHue.Blue,
+                                    selected = false,
+                                    index = rowCount - 1,
+                                    count = rowCount,
+                                    onClick = switchProfile,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -999,7 +1012,6 @@ internal fun LazyListScope.settingsPageContent(
             onMdbListClick = { links.openSubPage(SettingsPage.MdbListRatings) },
             onStreamingAvailabilityClick = { links.openSubPage(SettingsPage.StreamingAvailability) },
             onDebridClick = { links.openSubPage(SettingsPage.Debrid) },
-            onSwitchProfile = links.onSwitchProfile,
         )
         SettingsPage.About -> aboutSettingsContent(
             isTablet = isTablet,

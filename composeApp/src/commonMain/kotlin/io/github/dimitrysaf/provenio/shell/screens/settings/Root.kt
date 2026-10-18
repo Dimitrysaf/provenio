@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Keyboard
@@ -61,29 +63,45 @@ internal fun visibleSettingsCategories(pluginsEnabled: Boolean): List<SettingsCa
         }
     }
 
-/** The phone's first Settings page: one row per category, each opening its page or screen. */
+/**
+ * The phone's first Settings page: the categories under Account, User interface, Content and
+ * About, one row each, opening its page or screen.
+ */
 internal fun LazyListScope.settingsCategoryListContent(
     categories: List<SettingsCategory>,
     onCategoryClick: (SettingsCategory) -> Unit,
+    onSwitchProfile: (() -> Unit)? = null,
 ) {
-    item {
-        SettingsSection(
-            title = "",
-            isTablet = false,
-            showTitle = false,
-        ) {
-            val rows = categories.map { category ->
-                Triple(category, stringResource(category.labelRes), stringResource(category.descriptionRes))
-            }
-            SettingsList {
-                rows.forEach { (category, title, description) ->
-                    navigationRow(
-                        title = title,
-                        description = description,
-                        icon = category.icon,
-                        iconHue = category.iconHue,
-                        onClick = { onCategoryClick(category) },
-                    )
+    groupedSettingsCategories(categories).forEach { (section, sectionCategories) ->
+        item(key = "settings-root-${section.name}") {
+            SettingsSection(
+                title = stringResource(section.labelRes),
+                isTablet = false,
+            ) {
+                val rows = sectionCategories.map { category ->
+                    Triple(category, stringResource(category.labelRes), stringResource(category.descriptionRes))
+                }
+                val switchProfileTitle = stringResource(Res.string.compose_settings_root_switch_profile_title)
+                val switchProfileDescription = stringResource(Res.string.compose_settings_root_switch_profile_description)
+                SettingsList {
+                    rows.forEach { (category, title, description) ->
+                        navigationRow(
+                            title = title,
+                            description = description,
+                            icon = category.icon,
+                            iconHue = category.iconHue,
+                            onClick = { onCategoryClick(category) },
+                        )
+                    }
+                    if (section == SettingsRootSection.Account && onSwitchProfile != null) {
+                        navigationRow(
+                            title = switchProfileTitle,
+                            description = switchProfileDescription,
+                            icon = Icons.Rounded.People,
+                            iconHue = SettingsIconHue.Blue,
+                            onClick = onSwitchProfile,
+                        )
+                    }
                 }
             }
         }
@@ -101,22 +119,7 @@ internal fun LazyListScope.accountsSettingsContent(
     onMdbListClick: () -> Unit,
     onStreamingAvailabilityClick: () -> Unit,
     onDebridClick: () -> Unit,
-    onSwitchProfile: (() -> Unit)? = null,
 ) {
-    if (onSwitchProfile != null) {
-        item(key = "accounts-switch-profiles") {
-            SettingsSection(title = "", isTablet = isTablet, showTitle = false) {
-                SettingsList {
-                    navigationRow(
-                        title = stringResource(Res.string.compose_settings_root_switch_profile_title),
-                        description = stringResource(Res.string.compose_settings_root_switch_profile_description),
-                        icon = Icons.Rounded.People,
-                        onClick = onSwitchProfile,
-                    )
-                }
-            }
-        }
-    }
     item(key = "accounts-tracking-heading") {
         AccountsSectionHeading(stringResource(Res.string.compose_settings_page_tracking))
     }
@@ -201,6 +204,9 @@ internal fun LazyListScope.aboutSettingsContent(
                     title = stringResource(Res.string.compose_settings_page_privacy_policy),
                     description = stringResource(Res.string.compose_settings_root_privacy_policy_description),
                     icon = Icons.Rounded.Policy,
+                    trailingContent = {
+                        Icon(imageVector = Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = null)
+                    },
                     onClick = { uriHandler.openUri(PRIVACY_POLICY_URL) },
                 )
                 navigationRow(

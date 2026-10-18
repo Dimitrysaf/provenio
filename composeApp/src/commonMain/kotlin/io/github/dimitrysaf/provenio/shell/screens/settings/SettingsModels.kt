@@ -15,6 +15,10 @@ import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.ui.graphics.vector.ImageVector
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.settings_root_section_about
+import provenio.composeapp.generated.resources.settings_root_section_account
+import provenio.composeapp.generated.resources.settings_root_section_content
+import provenio.composeapp.generated.resources.settings_root_section_user_interface
 import provenio.composeapp.generated.resources.settings_category_subtitles_audio
 import provenio.composeapp.generated.resources.addons_guide_title
 import provenio.composeapp.generated.resources.collections_header
@@ -79,6 +83,40 @@ internal enum class SettingsCategory(
     Server(Res.string.settings_category_server, Res.string.settings_category_server_description, Icons.Rounded.Dns),
     About(Res.string.compose_settings_category_about, Res.string.settings_category_about_description, Icons.Rounded.Info),
 }
+
+/** The sections the Settings categories are grouped into on the first page. */
+internal enum class SettingsRootSection(val labelRes: StringResource) {
+    Account(Res.string.settings_root_section_account),
+    UserInterface(Res.string.settings_root_section_user_interface),
+    Content(Res.string.settings_root_section_content),
+    About(Res.string.settings_root_section_about),
+}
+
+/** The section a category is listed under on the first Settings page. */
+internal val SettingsCategory.rootSection: SettingsRootSection
+    get() = when (this) {
+        SettingsCategory.Accounts -> SettingsRootSection.Account
+        SettingsCategory.Interface,
+        SettingsCategory.Subtitles,
+        SettingsCategory.Playback,
+        SettingsCategory.Notifications,
+        -> SettingsRootSection.UserInterface
+        SettingsCategory.Addons,
+        SettingsCategory.Plugins,
+        SettingsCategory.Downloads,
+        SettingsCategory.Collections,
+        SettingsCategory.Server,
+        -> SettingsRootSection.Content
+        SettingsCategory.Advanced,
+        SettingsCategory.About,
+        -> SettingsRootSection.About
+    }
+
+/** [categories] grouped under their sections, in section order, leaving out sections with none. */
+internal fun groupedSettingsCategories(categories: List<SettingsCategory>): List<Pair<SettingsRootSection, List<SettingsCategory>>> =
+    SettingsRootSection.entries.mapNotNull { section ->
+        categories.filter { it.rootSection == section }.takeIf { it.isNotEmpty() }?.let { section to it }
+    }
 
 /** Each category's colour in the list, so the eye can find one by its hue. */
 internal val SettingsCategory.iconHue: SettingsIconHue

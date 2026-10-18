@@ -56,15 +56,36 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
-// The search text and chosen qualities for one list of streams.
+/** The chosen qualities and size order, kept from one list of streams to the next until changed. */
+private object RememberedStreamFilter {
+    var qualities by mutableStateOf(emptySet<StreamQuality>())
+    var sizeOrder by mutableStateOf(StreamSizeOrder.DEFAULT)
+}
+
+/**
+ * The search text for one list of streams, with the qualities and size order chosen last time.
+ * Chosen qualities a list does not have are left out for it, so they never hide every stream.
+ */
 @Stable
 internal class StreamFilterState {
     var query by mutableStateOf("")
-    var qualities by mutableStateOf(emptySet<StreamQuality>())
-    var sizeOrder by mutableStateOf(StreamSizeOrder.DEFAULT)
 
-    fun apply(groups: List<AddonStreamGroup>): List<AddonStreamGroup> =
-        groups.filteredBy(streamQueryRegex(query), qualities).sortedBySize(sizeOrder)
+    var qualities: Set<StreamQuality>
+        get() = RememberedStreamFilter.qualities
+        set(value) {
+            RememberedStreamFilter.qualities = value
+        }
+
+    var sizeOrder: StreamSizeOrder
+        get() = RememberedStreamFilter.sizeOrder
+        set(value) {
+            RememberedStreamFilter.sizeOrder = value
+        }
+
+    fun apply(groups: List<AddonStreamGroup>): List<AddonStreamGroup> {
+        val available = groups.flatMap { it.streams }.map { it.quality() }.toSet()
+        return groups.filteredBy(streamQueryRegex(query), qualities intersect available).sortedBySize(sizeOrder)
+    }
 }
 
 @Composable
