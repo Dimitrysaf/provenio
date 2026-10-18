@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -56,6 +57,7 @@ import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.playback.skip.NextEpisodeInfo
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
+import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.landscapePosterWidth
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
 import io.github.dimitrysaf.provenio.shell.components.shapedClickable
@@ -89,7 +91,7 @@ fun NextEpisodeCard(
     val isPlayable = nextEpisode.hasAired
     val mode = when {
         visible -> NextEpisodeMode.Card
-        showPlayNextButton && isPlayable -> NextEpisodeMode.Button
+        (showPlayNextButton || isLoading) && isPlayable -> NextEpisodeMode.Button
         else -> null
     }
     PlatformBackHandler(enabled = mode == NextEpisodeMode.Card, onBack = onDismiss)
@@ -172,7 +174,7 @@ fun NextEpisodeCard(
                 label = "next_episode_morph",
             ) { target ->
                 when (target) {
-                    NextEpisodeMode.Button -> PlayNextButtonContent()
+                    NextEpisodeMode.Button -> PlayNextButtonContent(isLoading = isLoading)
                     NextEpisodeMode.Card -> NextEpisodeCardContent(
                         nextEpisode = nextEpisode,
                         isLoading = isLoading,
@@ -187,20 +189,28 @@ fun NextEpisodeCard(
     }
 }
 
-/** The small form: an icon and Play next, a pill above the progress bar. */
+/** The small form: an icon and Play next, a pill above the progress bar; the icon turns into a spinner while the next episode loads. */
 @Composable
-private fun PlayNextButtonContent() {
+private fun PlayNextButtonContent(isLoading: Boolean) {
     Row(
         modifier = Modifier.padding(start = 14.dp, end = 18.dp, top = 10.dp, bottom = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = Icons.Rounded.SkipNext,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(22.dp),
-        )
+        if (isLoading) {
+            SmallLoadingSpinner(
+                size = 20.dp,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(1.dp),
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Rounded.SkipNext,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(22.dp),
+            )
+        }
         Text(
             text = stringResource(Res.string.player_play_next),
             style = MaterialTheme.typography.labelLarge,
@@ -246,12 +256,14 @@ private fun NextEpisodeCardContent(
                 contentScale = ContentScale.Crop,
             )
             if (isLoading) {
-                LoadingSpinner(
-                    color = MaterialTheme.colorScheme.onSurface,
+                Box(
                     modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(36.dp),
-                )
+                        .matchParentSize()
+                        .background(Color.Black.copy(alpha = 0.45f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    LoadingSpinner(color = Color.White, size = 40.dp)
+                }
             }
         }
         if (showTitle) {
