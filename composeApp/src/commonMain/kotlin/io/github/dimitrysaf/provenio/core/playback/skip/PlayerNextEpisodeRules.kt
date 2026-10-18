@@ -4,6 +4,8 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
 import io.github.dimitrysaf.provenio.core.watch.watching.domain.isSettledPlaybackDuration
 
 object PlayerNextEpisodeRules {
+    private const val PlayNextEarlierPercent = 15f
+    private const val PlayNextEarlierMinutes = 15f
 
     fun resolveNextEpisode(
         videos: List<MetaVideo>,
@@ -83,6 +85,31 @@ object PlayerNextEpisodeRules {
                 val clampedMinutes = thresholdMinutesBeforeEnd.coerceIn(0f, 3.5f)
                 val remainingMs = durationMs - positionMs
                 remainingMs <= (clampedMinutes * 60_000f).toLong()
+            }
+        }
+    }
+
+    /**
+     * Whether the Play next button belongs on screen: the card's own threshold from the settings,
+     * moved earlier by a fixed margin, fifteen percentage points in percentage mode or fifteen minutes
+     * in minutes mode.
+     */
+    fun isInPlayNextWindow(
+        positionMs: Long,
+        durationMs: Long,
+        thresholdMode: NextEpisodeThresholdMode,
+        thresholdPercent: Float,
+        thresholdMinutesBeforeEnd: Float,
+    ): Boolean {
+        if (durationMs <= 0L || positionMs <= 0L) return false
+        return when (thresholdMode) {
+            NextEpisodeThresholdMode.PERCENTAGE -> {
+                val buttonPercent = thresholdPercent.coerceIn(97f, 100f) - PlayNextEarlierPercent
+                (positionMs.toDouble() / durationMs.toDouble()) >= (buttonPercent / 100.0)
+            }
+            NextEpisodeThresholdMode.MINUTES_BEFORE_END -> {
+                val buttonMinutes = thresholdMinutesBeforeEnd.coerceIn(0f, 3.5f) + PlayNextEarlierMinutes
+                durationMs - positionMs <= (buttonMinutes * 60_000f).toLong()
             }
         }
     }

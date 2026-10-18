@@ -38,6 +38,7 @@ internal fun BoxScope.PlayerPlaybackOverlays(
     isSeries: Boolean,
     nextEpisodeInfo: NextEpisodeInfo?,
     showNextEpisodeCard: Boolean,
+    inPlayNextWindow: Boolean,
     nextEpisodeLoading: Boolean,
     blurUnwatchedEpisodes: Boolean,
     onPlayNextEpisode: () -> Unit,
@@ -85,7 +86,7 @@ internal fun BoxScope.PlayerPlaybackOverlays(
                     blurred = blurUnwatchedEpisodes && nextEpisodeInfo?.isWatched == false,
                     onPlayNext = onPlayNextEpisode,
                     onDismiss = onDismissNextEpisode,
-                    showPlayNextButton = controlsVisible,
+                    showPlayNextButton = controlsVisible && inPlayNextWindow,
                 )
             }
         }

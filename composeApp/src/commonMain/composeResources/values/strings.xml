@@ -46,6 +46,16 @@
     <string name="addons_modal_success_title">Addon Installed</string>
     <string name="addons_section_installed">Installed Addons</string>
     <string name="addons_version_format">Version %1$s</string>
+    <string name="addons_enabled">Enabled</string>
+    <string name="addons_resource_catalogs">Catalogs</string>
+    <string name="addons_resource_details">Details</string>
+    <string name="addons_resource_streams">Streams</string>
+    <string name="addons_resource_subtitles">Subtitles</string>
+    <string name="addons_resource_addon_catalogs">Addon catalogs</string>
+    <string name="addons_type_movies">Movies</string>
+    <string name="addons_type_series">Series</string>
+    <string name="addons_type_channels">Channels</string>
+    <string name="addons_type_tv">TV</string>
     <string name="keyboard_shortcuts_title">Keyboard shortcuts</string>
     <string name="keyboard_shortcuts_entry_description">Every shortcut for the app and the player</string>
     <string name="settings_save_logs_title">Save logs</string>

@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.playback.skip.PlayerNextEpisodeRules
+
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
 import io.github.dimitrysaf.provenio.core.cast.CastController
 import androidx.compose.animation.AnimatedVisibility
@@ -424,6 +426,13 @@ private fun BoxScope.RenderPlaybackOverlays(
             isSeries = isSeries,
             nextEpisodeInfo = nextEpisodeInfo,
             showNextEpisodeCard = showNextEpisodeCard,
+            inPlayNextWindow = PlayerNextEpisodeRules.isInPlayNextWindow(
+                positionMs = playbackSnapshot.positionMs,
+                durationMs = playbackSnapshot.durationMs,
+                thresholdMode = playerSettingsUiState.nextEpisodeThresholdMode,
+                thresholdPercent = playerSettingsUiState.nextEpisodeThresholdPercent,
+                thresholdMinutesBeforeEnd = playerSettingsUiState.nextEpisodeThresholdMinutesBeforeEnd,
+            ),
             nextEpisodeLoading = nextEpisodeAutoPlaySearching,
             blurUnwatchedEpisodes = metaScreenSettingsUiState.blurUnwatchedEpisodes,
             onPlayNextEpisode = {

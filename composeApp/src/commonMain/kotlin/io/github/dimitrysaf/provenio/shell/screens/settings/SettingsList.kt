@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,6 +63,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
  *
  * m3.material.io/components/lists/specs
  */
+/**
+ * Whether rows show their plain leading icons. Off, as Settings pages are; the category list's
+ * coloured icons show regardless. Screens outside Settings that keep their icons turn it on.
+ */
+internal val LocalSettingsRowIcons = staticCompositionLocalOf { false }
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 @NonRestartableComposable
@@ -359,7 +366,7 @@ internal sealed interface SettingsListRow {
                 },
                 // Centred at any height: by default a tall row pins its controls to the top.
                 verticalAlignment = Alignment.CenterVertically,
-                leadingContent = leadingContent ?: leadingIcon(icon, iconPainter, iconHue),
+                leadingContent = leadingContent ?: leadingIcon(icon, iconPainter, iconHue, LocalSettingsRowIcons.current),
                 supportingContent = description?.takeIf { it.isNotBlank() }?.let { { Text(it) } },
                 trailingContent = trailingContent,
             ) {
@@ -389,7 +396,7 @@ internal sealed interface SettingsListRow {
                 colors = settingsListItemColors,
                 // Centred at any height: by default a tall row pins its controls to the top.
                 verticalAlignment = Alignment.CenterVertically,
-                leadingContent = leadingIcon(icon, null),
+                leadingContent = leadingIcon(icon, null, showPlainIcons = LocalSettingsRowIcons.current),
                 supportingContent = description?.takeIf { it.isNotBlank() }?.let { { Text(it) } },
                 trailingContent = {
                     Switch(
@@ -507,11 +514,14 @@ private fun leadingIcon(
     icon: ImageVector?,
     iconPainter: Painter?,
     hue: SettingsIconHue? = null,
+    showPlainIcons: Boolean = false,
 ): (@Composable () -> Unit)? {
     if (icon == null && iconPainter == null) return null
     if (hue != null && icon != null && iconPainter == null) {
         return { SettingsIconCircle(icon = icon, hue = hue) }
     }
+    // Inside Settings only the category list carries icons; a page's rows are text alone.
+    if (!showPlainIcons) return null
     return {
         Box(
             modifier = Modifier

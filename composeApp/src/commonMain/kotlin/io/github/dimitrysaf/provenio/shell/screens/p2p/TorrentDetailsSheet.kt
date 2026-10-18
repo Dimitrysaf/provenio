@@ -49,6 +49,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSettingsRowIcons
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -500,10 +502,13 @@ private fun Subheader(text: String) {
 
 @Composable
 private fun Section(content: @Composable SettingsListScope.() -> Unit) {
-    SettingsList(
-        modifier = Modifier.padding(horizontal = BottomSheetBodyMargin),
-        content = content,
-    )
+    // A details sheet, not a settings page, so its rows keep their icons.
+    CompositionLocalProvider(LocalSettingsRowIcons provides true) {
+        SettingsList(
+            modifier = Modifier.padding(horizontal = BottomSheetBodyMargin),
+            content = content,
+        )
+    }
 }
 
 @Composable
