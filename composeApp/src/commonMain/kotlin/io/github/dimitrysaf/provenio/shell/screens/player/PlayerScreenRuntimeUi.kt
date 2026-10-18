@@ -434,6 +434,7 @@ private fun BoxScope.RenderPlaybackOverlays(
                 thresholdMinutesBeforeEnd = playerSettingsUiState.nextEpisodeThresholdMinutesBeforeEnd,
             ),
             nextEpisodeLoading = nextEpisodeAutoPlaySearching,
+            nextEpisodeCountdown = nextEpisodeAutoPlayCountdown,
             blurUnwatchedEpisodes = metaScreenSettingsUiState.blurUnwatchedEpisodes,
             onPlayNextEpisode = {
                 nextEpisodeAutoPlayJob?.cancel()

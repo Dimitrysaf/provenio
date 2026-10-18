@@ -592,7 +592,7 @@ private fun PlayerScreenRuntime.BindPlayerMetadataAndSkipEffects() {
         if (shouldShow && !showNextEpisodeCard && !nextEpisodeCardDismissed) {
             showNextEpisodeCard = true
             if (playerSettingsUiState.streamAutoPlayNextEpisodeEnabled && nextEpisodeInfo?.hasAired == true) {
-                playNextEpisode()
+                playNextEpisode(autoPlay = true)
             }
         } else if (!shouldShow) {
             showNextEpisodeCard = false
@@ -608,7 +608,7 @@ private fun PlayerScreenRuntime.BindPlayerMetadataAndSkipEffects() {
         ) {
             showNextEpisodeCard = true
             if (playerSettingsUiState.streamAutoPlayNextEpisodeEnabled && nextEpisodeInfo?.hasAired == true) {
-                playNextEpisode()
+                playNextEpisode(autoPlay = true)
             }
         }
     }

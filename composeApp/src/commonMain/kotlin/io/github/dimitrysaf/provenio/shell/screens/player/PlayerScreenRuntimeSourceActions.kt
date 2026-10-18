@@ -362,7 +362,11 @@ internal fun PlayerScreenRuntime.switchToDownloadedEpisode(downloadItem: Downloa
     controlsVisible = true
 }
 
-internal fun PlayerScreenRuntime.playNextEpisode() {
+/**
+ * Finds the next episode's stream and switches to it: straight away when asked for, or after a
+ * short countdown when [autoPlay] starts it on its own.
+ */
+internal fun PlayerScreenRuntime.playNextEpisode(autoPlay: Boolean = false) {
     scope.launchPlayerNextEpisodeAutoPlay(
         previousJob = nextEpisodeAutoPlayJob,
         nextEpisodeInfo = nextEpisodeInfo,
@@ -385,6 +389,7 @@ internal fun PlayerScreenRuntime.playNextEpisode() {
         onSourceNameChanged = { nextEpisodeAutoPlaySourceName = it },
         onCountdownChanged = { nextEpisodeAutoPlayCountdown = it },
         onNextEpisodeCardVisibleChanged = { showNextEpisodeCard = it },
+        countdownSeconds = if (autoPlay) AutoPlayCountdownSeconds else 0,
     )?.let { job ->
         nextEpisodeAutoPlayJob = job
     }
@@ -498,3 +503,5 @@ private fun PlayerScreenRuntime.saveDirectStreamForReuse(
         contentLanguage = contentLanguage,
     )
 }
+
+private const val AutoPlayCountdownSeconds = 3

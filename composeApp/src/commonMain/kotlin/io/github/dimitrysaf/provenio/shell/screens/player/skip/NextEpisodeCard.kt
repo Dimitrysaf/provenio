@@ -3,6 +3,8 @@ package io.github.dimitrysaf.provenio.shell.screens.player.skip
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
@@ -49,6 +51,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -85,13 +88,14 @@ fun NextEpisodeCard(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     showPlayNextButton: Boolean = false,
+    countdown: Int? = null,
 ) {
     if (nextEpisode == null) return
 
     val isPlayable = nextEpisode.hasAired
     val mode = when {
         visible -> NextEpisodeMode.Card
-        (showPlayNextButton || isLoading) && isPlayable -> NextEpisodeMode.Button
+        (showPlayNextButton || isLoading || countdown != null) && isPlayable -> NextEpisodeMode.Button
         else -> null
     }
     PlatformBackHandler(enabled = mode == NextEpisodeMode.Card, onBack = onDismiss)
@@ -174,10 +178,11 @@ fun NextEpisodeCard(
                 label = "next_episode_morph",
             ) { target ->
                 when (target) {
-                    NextEpisodeMode.Button -> PlayNextButtonContent(isLoading = isLoading)
+                    NextEpisodeMode.Button -> PlayNextButtonContent(isLoading = isLoading, countdown = countdown)
                     NextEpisodeMode.Card -> NextEpisodeCardContent(
                         nextEpisode = nextEpisode,
                         isLoading = isLoading,
+                        countdown = countdown,
                         blurred = blurred,
                         showTitle = !cardStyle.hideLabelsEnabled,
                         widthDp = landscapePosterWidth(cardStyle.widthDp).value,
@@ -191,13 +196,21 @@ fun NextEpisodeCard(
 
 /** The small form: an icon and Play next, a pill above the progress bar; the icon turns into a spinner while the next episode loads. */
 @Composable
-private fun PlayNextButtonContent(isLoading: Boolean) {
+private fun PlayNextButtonContent(isLoading: Boolean, countdown: Int?) {
     Row(
         modifier = Modifier.padding(start = 14.dp, end = 18.dp, top = 10.dp, bottom = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (isLoading) {
+        if (countdown != null) {
+            Box(modifier = Modifier.size(22.dp), contentAlignment = Alignment.Center) {
+                CountdownNumber(
+                    value = countdown,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+        } else if (isLoading) {
             SmallLoadingSpinner(
                 size = 20.dp,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -227,6 +240,7 @@ private fun PlayNextButtonContent(isLoading: Boolean) {
 private fun NextEpisodeCardContent(
     nextEpisode: NextEpisodeInfo,
     isLoading: Boolean,
+    countdown: Int?,
     blurred: Boolean,
     showTitle: Boolean,
     widthDp: Float,
@@ -255,7 +269,20 @@ private fun NextEpisodeCardContent(
                     .then(if (blurred) Modifier.blur(18.dp) else Modifier),
                 contentScale = ContentScale.Crop,
             )
-            if (isLoading) {
+            if (countdown != null) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color.Black.copy(alpha = 0.45f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CountdownNumber(
+                        value = countdown,
+                        color = Color.White,
+                        style = MaterialTheme.typography.displayMedium,
+                    )
+                }
+            } else if (isLoading) {
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -300,5 +327,30 @@ private fun NextEpisodeCardContent(
     }
 }
 
+/** One second of the countdown: the number grows from small to large and fades out as it goes. */
+@Composable
+private fun CountdownNumber(value: Int, color: Color, style: TextStyle) {
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(value) {
+        progress.snapTo(0f)
+        progress.animateTo(1f, tween(durationMillis = CountdownStepMillis, easing = LinearEasing))
+    }
+    Text(
+        text = value.toString(),
+        style = style,
+        fontWeight = FontWeight.Bold,
+        color = color,
+        maxLines = 1,
+        modifier = Modifier.graphicsLayer {
+            val p = progress.value
+            val scale = 0.6f + p
+            scaleX = scale
+            scaleY = scale
+            alpha = if (p < 0.35f) 1f else (1f - (p - 0.35f) / 0.65f).coerceIn(0f, 1f)
+        },
+    )
+}
+
+private const val CountdownStepMillis = 1000
 private val PillCorner = 24.dp
 private const val MorphMillis = 320
