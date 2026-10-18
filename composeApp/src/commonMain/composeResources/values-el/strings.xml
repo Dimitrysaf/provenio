@@ -756,7 +756,6 @@
     <string name="cast_sheet_title">Μετάδοση σε</string>
     <string name="cast_searching">Αναζήτηση συσκευών στο δίκτυό σας…</string>
     <string name="cast_no_devices">Δεν βρέθηκαν συσκευές. Βεβαιωθείτε ότι το Chromecast και αυτή η συσκευή είναι στο ίδιο Wi-Fi.</string>
-    <string name="cast_stream_unsupported">Αυτή η ροή δεν μπορεί να μεταδοθεί. Οι ροές torrent και οι ροές που χρειάζονται ειδική πρόσβαση παίζουν μόνο σε αυτή τη συσκευή.</string>
     <string name="cast_connecting">Σύνδεση με %1$s…</string>
     <string name="cast_casting_to">Μετάδοση σε %1$s</string>
     <string name="cast_stop">Διακοπή μετάδοσης</string>

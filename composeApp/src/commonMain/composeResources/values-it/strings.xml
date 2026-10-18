@@ -1567,7 +1567,6 @@
   <string name="cast_sheet_title">Trasmetti su</string>
   <string name="cast_searching">Ricerca di dispositivi nella tua rete…</string>
   <string name="cast_no_devices">Nessun dispositivo trovato. Assicurati che il Chromecast e questo dispositivo siano sulla stessa rete Wi-Fi.</string>
-  <string name="cast_stream_unsupported">Questo stream non può essere trasmesso. I torrent e gli stream che richiedono accessi particolari si riproducono solo su questo dispositivo.</string>
   <string name="cast_connecting">Connessione a %1$s…</string>
   <string name="cast_casting_to">Trasmissione su %1$s</string>
   <string name="cast_stop">Interrompi trasmissione</string>

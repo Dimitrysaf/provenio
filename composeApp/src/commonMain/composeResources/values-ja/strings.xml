@@ -1550,7 +1550,6 @@
     <string name="cast_sheet_title">キャスト先</string>
     <string name="cast_searching">ネットワーク上のデバイスを探しています…</string>
     <string name="cast_no_devices">デバイスが見つかりません。Chromecast とこのデバイスが同じ Wi-Fi に接続されていることを確認してください。</string>
-    <string name="cast_stream_unsupported">このストリームはキャストできません。トレントや特別なアクセスが必要なストリームはこのデバイスでのみ再生できます。</string>
     <string name="cast_connecting">%1$s に接続しています…</string>
     <string name="cast_casting_to">%1$s にキャスト中</string>
     <string name="cast_stop">キャストを停止</string>

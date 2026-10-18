@@ -1701,7 +1701,6 @@
     <string name="cast_sheet_title">Átküldés ide</string>
     <string name="cast_searching">Eszközök keresése a hálózaton…</string>
     <string name="cast_no_devices">Nem található eszköz. Győződj meg róla, hogy a Chromecast és ez az eszköz ugyanazon a Wi-Fi-hálózaton van.</string>
-    <string name="cast_stream_unsupported">Ez a stream nem küldhető át. A torrent streamek és a különleges hozzáférést igénylő streamek csak ezen az eszközön játszhatók le.</string>
     <string name="cast_connecting">Csatlakozás ehhez: %1$s…</string>
     <string name="cast_casting_to">Átküldés ide: %1$s</string>
     <string name="cast_stop">Átküldés leállítása</string>

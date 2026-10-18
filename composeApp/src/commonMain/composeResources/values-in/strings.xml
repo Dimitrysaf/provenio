@@ -1162,7 +1162,6 @@
     <string name="cast_sheet_title">Transmisikan ke</string>
     <string name="cast_searching">Mencari perangkat di jaringan Anda…</string>
     <string name="cast_no_devices">Tidak ada perangkat ditemukan. Pastikan Chromecast dan perangkat ini berada di Wi-Fi yang sama.</string>
-    <string name="cast_stream_unsupported">Streaming ini tidak dapat ditransmisikan. Torrent dan streaming yang memerlukan akses khusus hanya diputar di perangkat ini.</string>
     <string name="cast_connecting">Menghubungkan ke %1$s…</string>
     <string name="cast_casting_to">Mentransmisikan ke %1$s</string>
     <string name="cast_stop">Hentikan transmisi</string>

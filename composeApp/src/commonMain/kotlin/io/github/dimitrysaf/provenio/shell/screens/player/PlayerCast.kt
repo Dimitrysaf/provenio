@@ -48,6 +48,7 @@ import io.github.dimitrysaf.provenio.core.cast.CastController
 import io.github.dimitrysaf.provenio.core.cast.CastDevice
 import io.github.dimitrysaf.provenio.core.cast.CastFailure
 import io.github.dimitrysaf.provenio.core.cast.CastMedia
+import io.github.dimitrysaf.provenio.core.cast.CastRelay
 import io.github.dimitrysaf.provenio.core.cast.CastState
 import io.github.dimitrysaf.provenio.shell.components.BottomSheetBodyMargin
 import io.github.dimitrysaf.provenio.shell.components.ModalSheet
@@ -64,11 +65,35 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
-internal fun PlayerScreenRuntime.castMediaOrNull(): CastMedia? {
-    if (activeTorrentInfoHash != null) return null
-    if (activeSourceHeaders.keys.any { !it.equals("User-Agent", ignoreCase = true) }) return null
-    val url = activeSourceUrl.trim()
-    if (!url.isCastableUrl()) return null
+/** Why what is playing cannot be cast right now, shown in the cast sheet instead of devices. */
+internal enum class CastBlock { NoLocalNetwork, TorrentStarting, NeedsHeaders, LocalSource }
+
+/** The reason casting is blocked, or null when it can go ahead. Null [networkAvailable] means not checked yet. */
+internal fun PlayerScreenRuntime.castBlock(networkAvailable: Boolean?): CastBlock? {
+    val torrent = activeTorrentInfoHash != null
+    return when {
+        torrent && p2pResolvedSourceUrl.isNullOrBlank() -> CastBlock.TorrentStarting
+        !torrent && activeSourceHeaders.keys.any { !it.equals("User-Agent", ignoreCase = true) } -> CastBlock.NeedsHeaders
+        !torrent && !activeSourceUrl.trim().let { it.isCastableUrl() || it.isLocalFile() } -> CastBlock.LocalSource
+        networkAvailable == false -> CastBlock.NoLocalNetwork
+        else -> null
+    }
+}
+
+/**
+ * What to send the cast device. A torrent from the built-in engine is only reachable on this
+ * device, so it goes through the cast relay; anything else is sent as it is. Null when it cannot
+ * be cast, the relay included.
+ */
+private fun PlayerScreenRuntime.castMediaOrNull(): CastMedia? {
+    val torrent = activeTorrentInfoHash != null
+    val source = (if (torrent) p2pResolvedSourceUrl else activeSourceUrl)?.trim()?.takeIf(String::isNotEmpty) ?: return null
+    val url = when {
+        source.isCastableUrl() -> source
+        torrent -> CastRelay.start(source, activeTorrentFilename?.takeIf(String::isNotBlank) ?: "stream.mp4")
+        source.isLocalFile() -> CastRelay.start(source, source.substringBefore('?').substringAfterLast('/'))
+        else -> null
+    } ?: return null
     val episodeLabel = listOfNotNull(
         activeSeasonNumber?.let { season -> activeEpisodeNumber?.let { "S$season E$it" } },
         activeEpisodeTitle?.takeIf { it.isNotBlank() },
@@ -82,17 +107,38 @@ internal fun PlayerScreenRuntime.castMediaOrNull(): CastMedia? {
     )
 }
 
-internal fun PlayerScreenRuntime.startCasting(device: CastDevice) {
-    val media = castMediaOrNull() ?: return
-    showCastSheet = false
-    shouldPlay = false
-    playerController?.pause()
-    CastController.cast(device, media)
+/** Whether what is playing would reach the cast device through the relay: a torrent from the built-in engine, or a download. */
+internal val PlayerScreenRuntime.castUsesRelay: Boolean
+    get() = if (activeTorrentInfoHash != null) {
+        p2pResolvedSourceUrl?.trim()?.isCastableUrl() == false
+    } else {
+        activeSourceUrl.trim().isLocalFile()
+    }
+
+/** Whether a relayed cast plays a downloaded file rather than a torrent. */
+internal val PlayerScreenRuntime.castsDownload: Boolean
+    get() = activeTorrentInfoHash == null && activeSourceUrl.trim().isLocalFile()
+
+/** Sends what is playing to [device]; [onUnreachable] runs when the relay finds no local network address. */
+internal fun PlayerScreenRuntime.startCasting(device: CastDevice, onUnreachable: () -> Unit) {
+    scope.launch {
+        // The relay opens a socket, which stays off the main thread.
+        val media = withContext(Dispatchers.Default) { castMediaOrNull() }
+        if (media == null) {
+            onUnreachable()
+            return@launch
+        }
+        showCastSheet = false
+        shouldPlay = false
+        playerController?.pause()
+        CastController.cast(device, media)
+    }
 }
 
 internal fun PlayerScreenRuntime.stopCasting() {
     val positionMs = (CastController.state.value as? CastState.Active)?.playback?.positionMs
     CastController.stop()
+    CastRelay.stop()
     positionMs?.let { playerController?.seekTo(it) }
     shouldPlay = true
     playerController?.play()
@@ -100,13 +146,14 @@ internal fun PlayerScreenRuntime.stopCasting() {
 
 internal fun PlayerScreenRuntime.resumeAfterCastFailure() {
     CastController.dismissFailure()
+    CastRelay.stop()
     shouldPlay = true
     playerController?.play()
 }
 
 @Composable
-internal fun rememberCastNetworkAvailable(): Boolean {
-    val available by produceState(initialValue = false) {
+internal fun rememberCastNetworkAvailable(): Boolean? {
+    val available by produceState<Boolean?>(initialValue = null) {
         while (true) {
             value = withContext(Dispatchers.Default) { CastController.hasLocalNetwork() }
             delay(CastNetworkCheckMillis)
@@ -127,9 +174,13 @@ internal fun PlayerScreenRuntime.RenderCastLayer() {
             playerController?.pause()
         }
     }
+    LaunchedEffect(casting) {
+        if (!casting) CastRelay.stop()
+    }
     DisposableEffect(Unit) {
         onDispose {
             if (CastController.state.value !is CastState.Idle) CastController.disconnect()
+            CastRelay.stop()
         }
     }
 
@@ -142,12 +193,17 @@ internal fun PlayerScreenRuntime.RenderCastLayer() {
             onSeek = { CastController.seekTo(it) },
             onStop = { stopCasting() },
             onResumeHere = { resumeAfterCastFailure() },
+            viaRelay = castUsesRelay,
         )
     }
     if (showCastSheet) {
+        val networkAvailable = rememberCastNetworkAvailable()
+        var relayFailed by remember { mutableStateOf(false) }
         CastDeviceSheet(
-            castable = castMediaOrNull() != null,
-            onDeviceSelected = { startCasting(it) },
+            block = if (relayFailed) CastBlock.NoLocalNetwork else castBlock(networkAvailable),
+            viaRelay = castUsesRelay,
+            download = castsDownload,
+            onDeviceSelected = { device -> startCasting(device) { relayFailed = true } },
             onDismiss = { showCastSheet = false },
         )
     }
@@ -156,7 +212,9 @@ internal fun PlayerScreenRuntime.RenderCastLayer() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CastDeviceSheet(
-    castable: Boolean,
+    block: CastBlock?,
+    viaRelay: Boolean,
+    download: Boolean,
     onDeviceSelected: (CastDevice) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -166,8 +224,9 @@ private fun CastDeviceSheet(
     var searchedLong by remember { mutableStateOf(false) }
     val close: () -> Unit = { scope.launch { dismissBottomSheet(sheetState = sheetState, onDismiss = onDismiss) } }
 
-    DisposableEffect(Unit) {
-        CastController.startDiscovery()
+    val castable = block == null
+    DisposableEffect(castable) {
+        if (castable) CastController.startDiscovery()
         onDispose { CastController.stopDiscovery() }
     }
     LaunchedEffect(Unit) {
@@ -182,12 +241,31 @@ private fun CastDeviceSheet(
             onNavigate = close,
         )
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = BottomSheetBodyMargin)) {
-            if (!castable) {
-                Text(
-                    text = stringResource(Res.string.cast_stream_unsupported),
-                    modifier = Modifier.padding(horizontal = BottomSheetBodyMargin, vertical = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            if (block != null) {
+                CastBlockedNotice(block)
+                return@Column
+            }
+            val vpnActive = remember { CastRelay.vpnActive() }
+            if (vpnActive && devices.isNotEmpty()) {
+                CastHelp(
+                    title = stringResource(Res.string.cast_help_vpn_title),
+                    points = listOf(stringResource(Res.string.cast_help_vpn_allow_lan)),
+                    warning = true,
+                )
+            }
+            if (viaRelay && devices.isNotEmpty()) {
+                CastHelp(
+                    title = stringResource(
+                        if (download) Res.string.cast_help_download_title else Res.string.cast_help_torrent_title,
+                    ),
+                    points = listOfNotNull(
+                        if (download) {
+                            stringResource(Res.string.cast_help_download_sent)
+                        } else {
+                            stringResource(Res.string.cast_help_torrent_keeps_downloading)
+                        },
+                        stringResource(Res.string.cast_help_torrent_keep_open),
+                    ),
                 )
             }
             devices.forEach { device ->
@@ -199,7 +277,13 @@ private fun CastDeviceSheet(
                     modifier = Modifier.clickable(enabled = castable) { onDeviceSelected(device) },
                 )
             }
-            if (devices.isEmpty() || !searchedLong) {
+            if (devices.isEmpty() && searchedLong) {
+                CastHelp(
+                    title = stringResource(Res.string.cast_no_devices),
+                    points = noDevicesHelp(vpnActive),
+                    warning = vpnActive,
+                )
+            } else if (devices.isEmpty() || !searchedLong) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = BottomSheetBodyMargin, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -219,6 +303,82 @@ private fun CastDeviceSheet(
     }
 }
 
+/** Why casting cannot happen, in place of the device list, with what to do about it. */
+@Composable
+private fun CastBlockedNotice(block: CastBlock) {
+    when (block) {
+        CastBlock.TorrentStarting -> CastHelp(
+            title = stringResource(Res.string.cast_blocked_torrent_starting_title),
+            points = listOf(stringResource(Res.string.cast_blocked_torrent_starting_wait)),
+        )
+        CastBlock.NeedsHeaders -> CastHelp(
+            title = stringResource(Res.string.cast_blocked_stream_title),
+            points = listOf(
+                stringResource(Res.string.cast_blocked_headers_reason),
+                stringResource(Res.string.cast_blocked_pick_other),
+            ),
+            warning = true,
+        )
+        CastBlock.LocalSource -> CastHelp(
+            title = stringResource(Res.string.cast_blocked_stream_title),
+            points = listOf(
+                stringResource(Res.string.cast_blocked_local_reason),
+                stringResource(Res.string.cast_blocked_pick_online),
+            ),
+            warning = true,
+        )
+        CastBlock.NoLocalNetwork -> CastHelp(
+            title = stringResource(Res.string.cast_blocked_no_network_title),
+            points = listOfNotNull(
+                stringResource(Res.string.cast_blocked_no_network_connect),
+                stringResource(Res.string.cast_help_same_network),
+                if (CastRelay.vpnActive()) stringResource(Res.string.cast_help_vpn_allow_lan) else null,
+            ),
+            warning = true,
+        )
+    }
+}
+
+/** What to try when no cast device turns up, the VPN first when one is on. */
+@Composable
+private fun noDevicesHelp(vpnActive: Boolean): List<String> = listOfNotNull(
+    if (vpnActive) stringResource(Res.string.cast_help_vpn_hiding) else null,
+    stringResource(Res.string.cast_help_same_network),
+    stringResource(Res.string.cast_help_guest_wifi),
+    stringResource(Res.string.cast_help_tv_on),
+    stringResource(Res.string.cast_help_firewall),
+)
+
+/** A short heading and a bulleted list: a reason, a warning, or things to try. */
+@Composable
+private fun CastHelp(
+    title: String,
+    points: List<String>,
+    warning: Boolean = false,
+    onDark: Boolean = false,
+) {
+    val titleColor = when {
+        onDark -> Color.White
+        warning -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+    val textColor = if (onDark) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = BottomSheetBodyMargin, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(text = title, style = MaterialTheme.typography.titleSmall, color = titleColor)
+        points.forEach { point ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(text = "•", style = MaterialTheme.typography.bodyMedium, color = textColor)
+                Text(text = point, style = MaterialTheme.typography.bodyMedium, color = textColor)
+            }
+        }
+    }
+}
+
 @Composable
 private fun CastRemote(
     state: CastState,
@@ -228,6 +388,7 @@ private fun CastRemote(
     onSeek: (Long) -> Unit,
     onStop: () -> Unit,
     onResumeHere: () -> Unit,
+    viaRelay: Boolean,
 ) {
     Box(
         modifier = Modifier
@@ -286,8 +447,8 @@ private fun CastRemote(
                             onClick = { onPlayPause(state.playback.isPlaying) },
                             modifier = Modifier.size(64.dp),
                         ) {
-                            Icon(
-                                imageVector = if (state.playback.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                            PlayPauseIcon(
+                                playing = state.playback.isPlaying,
                                 contentDescription = playLabel,
                                 modifier = Modifier.size(32.dp),
                             )
@@ -295,6 +456,19 @@ private fun CastRemote(
                     }
                 }
                 else -> Unit
+            }
+            if (state is CastState.Failed && viaRelay) {
+                val vpnActive = remember { CastRelay.vpnActive() }
+                CastHelp(
+                    title = stringResource(Res.string.cast_help_relay_failed_title),
+                    points = listOfNotNull(
+                        if (vpnActive) stringResource(Res.string.cast_help_vpn_allow_lan) else null,
+                        stringResource(Res.string.cast_help_same_network),
+                        stringResource(Res.string.cast_help_guest_wifi),
+                        stringResource(Res.string.cast_help_firewall),
+                    ),
+                    onDark = true,
+                )
             }
             if (state is CastState.Failed) {
                 FilledTonalButton(onClick = onResumeHere) {
@@ -348,6 +522,8 @@ private fun castStatusText(state: CastState): String = when (state) {
     }
     CastState.Idle -> ""
 }
+
+private fun String.isLocalFile(): Boolean = lowercase().startsWith("file:")
 
 private fun String.isCastableUrl(): Boolean {
     val lower = lowercase()

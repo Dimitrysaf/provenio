@@ -567,8 +567,8 @@ private fun PrimaryControlButton(
                         modifier = Modifier.size(metrics.playIconSize),
                     )
                 } else {
-                    Icon(
-                        imageVector = icon,
+                    PlayerPrimaryIcon(
+                        icon = icon,
                         contentDescription = contentDescription,
                         tint = contentColor,
                         modifier = Modifier.size(metrics.playIconSize),
@@ -696,8 +696,8 @@ private fun TransportPrimaryButton(
                 .semantics { this.contentDescription = contentDescription },
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = icon,
+            PlayerPrimaryIcon(
+                icon = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(TransportIconSize),

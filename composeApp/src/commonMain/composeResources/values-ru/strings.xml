@@ -1745,7 +1745,6 @@
     <string name="cast_sheet_title">Трансляция на</string>
     <string name="cast_searching">Поиск устройств в вашей сети…</string>
     <string name="cast_no_devices">Устройства не найдены. Убедитесь, что Chromecast и это устройство подключены к одной сети Wi-Fi.</string>
-    <string name="cast_stream_unsupported">Этот поток нельзя транслировать. Торренты и потоки, требующие особого доступа, воспроизводятся только на этом устройстве.</string>
     <string name="cast_connecting">Подключение к %1$s…</string>
     <string name="cast_casting_to">Трансляция на %1$s</string>
     <string name="cast_stop">Остановить трансляцию</string>

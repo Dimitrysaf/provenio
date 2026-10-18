@@ -1105,7 +1105,6 @@
     <string name="cast_sheet_title">Cast til</string>
     <string name="cast_searching">Leter etter enheter på nettverket ditt…</string>
     <string name="cast_no_devices">Fant ingen enheter. Sørg for at Chromecast og denne enheten er på samme Wi-Fi.</string>
-    <string name="cast_stream_unsupported">Denne strømmen kan ikke castes. Torrentstrømmer og strømmer som krever spesiell tilgang, spilles bare av på denne enheten.</string>
     <string name="cast_connecting">Kobler til %1$s…</string>
     <string name="cast_casting_to">Caster til %1$s</string>
     <string name="cast_stop">Stopp casting</string>

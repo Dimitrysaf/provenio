@@ -271,7 +271,6 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
         !externalPlayerId.isNullOrBlank() &&
             ExternalPlayerPlatform.availablePlayers().any { it.id == externalPlayerId }
     }
-    val castAvailable = rememberCastNetworkAvailable() && castMediaOrNull() != null
     AnimatedVisibility(
         visible = controlsVisible && !playerControlsLocked && !isInPip,
         enter = fadeIn(),
@@ -322,13 +321,9 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 showAudioModal = true
             },
             showCastButton = CastController.isSupported,
-            onCastClick = if (castAvailable) {
-                {
-                    showCastSheet = true
-                    controlsVisible = true
-                }
-            } else {
-                null
+            onCastClick = {
+                showCastSheet = true
+                controlsVisible = true
             },
             onVideoSettingsClick = if (isIos) {
                 {

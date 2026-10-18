@@ -1591,7 +1591,6 @@
     <string name="cast_sheet_title">Caster sur</string>
     <string name="cast_searching">Recherche d'appareils sur votre réseau…</string>
     <string name="cast_no_devices">Aucun appareil trouvé. Vérifiez que votre Chromecast et cet appareil sont sur le même Wi-Fi.</string>
-    <string name="cast_stream_unsupported">Ce flux ne peut pas être casté. Les torrents et les flux qui nécessitent un accès particulier ne sont lus que sur cet appareil.</string>
     <string name="cast_connecting">Connexion à %1$s…</string>
     <string name="cast_casting_to">Cast sur %1$s</string>
     <string name="cast_stop">Arrêter le cast</string>

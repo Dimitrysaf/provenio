@@ -1489,7 +1489,6 @@
     <string name="cast_sheet_title">Transmitir para</string>
     <string name="cast_searching">A procurar dispositivos na sua rede…</string>
     <string name="cast_no_devices">Nenhum dispositivo encontrado. Certifique-se de que o Chromecast e este dispositivo estão na mesma rede Wi-Fi.</string>
-    <string name="cast_stream_unsupported">Esta transmissão não pode ser enviada. Torrents e transmissões que precisam de acesso especial só são reproduzidos neste dispositivo.</string>
     <string name="cast_connecting">A ligar a %1$s…</string>
     <string name="cast_casting_to">A transmitir para %1$s</string>
     <string name="cast_stop">Parar transmissão</string>

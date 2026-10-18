@@ -573,7 +573,6 @@
     <string name="cast_sheet_title">העברה אל</string>
     <string name="cast_searching">מחפש מכשירים ברשת שלך…</string>
     <string name="cast_no_devices">לא נמצאו מכשירים. ודא שה-Chromecast והמכשיר הזה מחוברים לאותה רשת Wi-Fi.</string>
-    <string name="cast_stream_unsupported">לא ניתן להעביר את הזרם הזה. זרמי טורנט וזרמים שדורשים גישה מיוחדת מתנגנים רק במכשיר הזה.</string>
     <string name="cast_connecting">מתחבר אל %1$s…</string>
     <string name="cast_casting_to">מעביר אל %1$s</string>
     <string name="cast_stop">הפסק העברה</string>

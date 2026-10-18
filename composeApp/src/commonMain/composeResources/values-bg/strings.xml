@@ -1741,7 +1741,6 @@
     <string name="cast_sheet_title">Предаване към</string>
     <string name="cast_searching">Търсене на устройства в мрежата ви…</string>
     <string name="cast_no_devices">Не са намерени устройства. Уверете се, че Chromecast и това устройство са в една и съща Wi-Fi мрежа.</string>
-    <string name="cast_stream_unsupported">Този поток не може да се предава. Торент потоците и потоците, които изискват специален достъп, се възпроизвеждат само на това устройство.</string>
     <string name="cast_connecting">Свързване с %1$s…</string>
     <string name="cast_casting_to">Предаване към %1$s</string>
     <string name="cast_stop">Спиране на предаването</string>

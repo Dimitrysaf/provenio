@@ -1697,7 +1697,6 @@
     <string name="cast_sheet_title">إرسال إلى</string>
     <string name="cast_searching">جارٍ البحث عن أجهزة على شبكتك…</string>
     <string name="cast_no_devices">لم يتم العثور على أجهزة. تأكد من أن Chromecast وهذا الجهاز على نفس شبكة Wi-Fi.</string>
-    <string name="cast_stream_unsupported">لا يمكن إرسال هذا البث. بث التورنت والبث الذي يحتاج إلى وصول خاص يعمل على هذا الجهاز فقط.</string>
     <string name="cast_connecting">جارٍ الاتصال بـ %1$s…</string>
     <string name="cast_casting_to">جارٍ الإرسال إلى %1$s</string>
     <string name="cast_stop">إيقاف الإرسال</string>
