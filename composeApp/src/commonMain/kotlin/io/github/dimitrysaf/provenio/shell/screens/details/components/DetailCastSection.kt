@@ -39,6 +39,10 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import io.github.dimitrysaf.provenio.shell.components.horizontalScrollBleed
+import io.github.dimitrysaf.provenio.shell.components.CollapsibleShelfHeader
+import io.github.dimitrysaf.provenio.shell.components.ShelfExpansion
+import io.github.dimitrysaf.provenio.shell.components.ShelfGridRow
+import io.github.dimitrysaf.provenio.shell.components.shelfGridColumns
 import io.github.dimitrysaf.provenio.core.metadata.CastResolver
 import io.github.dimitrysaf.provenio.core.metadata.MetaPerson
 import io.github.dimitrysaf.provenio.shell.components.DeceasedPhotoFilter
@@ -100,6 +104,68 @@ fun DetailCastSection(
         }
     }
 }
+
+/**
+ * The cast as a grid shelf, for places that are not a lazy list: the title opens and closes it,
+ * and [CastGridPreviewRows] rows show until Show All opens the rest, as on the Details page.
+ */
+@Composable
+internal fun DetailCastGrid(
+    cast: List<MetaPerson>,
+    expansionKey: String,
+    expandedByDefault: Boolean,
+    modifier: Modifier = Modifier,
+    metaId: String? = null,
+    metaType: String? = null,
+) {
+    if (cast.isEmpty()) return
+    val resolvedCast = rememberResolvedCast(cast, metaId, metaType)
+    val expanded = ShelfExpansion.isExpanded(expansionKey, expandedByDefault)
+    val showAllKey = "$expansionKey:all"
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val sizing = castSectionSizing(maxWidth.value)
+        val columns = shelfGridColumns(maxWidth, sizing.itemWidth, sizing.avatarGap)
+        val rows = resolvedCast.withIndex().toList().chunked(columns)
+        val canShowAll = rows.size > CastGridPreviewRows
+        val showingAll = canShowAll && ShelfExpansion.isExpanded(showAllKey, false)
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            CollapsibleShelfHeader(
+                title = stringResource(Res.string.settings_meta_cast),
+                expanded = expanded,
+                onToggle = { ShelfExpansion.toggle(expansionKey, expandedByDefault) },
+                onViewAllClick = if (expanded && canShowAll) {
+                    { ShelfExpansion.toggle(showAllKey, false) }
+                } else {
+                    null
+                },
+                viewAllLabel = stringResource(if (showingAll) Res.string.details_show_less else Res.string.shelf_show_all),
+            )
+            if (expanded) {
+                val shownRows = if (canShowAll && !showingAll) rows.take(CastGridPreviewRows) else rows
+                shownRows.forEach { row ->
+                    ShelfGridRow(
+                        items = row,
+                        columns = columns,
+                        cellWidth = sizing.itemWidth,
+                        spacing = sizing.avatarGap,
+                    ) { indexed ->
+                        CastCell(
+                            index = indexed.index,
+                            person = indexed.value,
+                            sizing = sizing,
+                            onCastClick = null,
+                            sharedTransitionScope = null,
+                            animatedVisibilityScope = null,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** How many rows of cast a grid shows before Show All. */
+internal const val CastGridPreviewRows = 2
 
 /** The cast with their photos and IDs filled in where the resolver finds them; the raw cast until then. */
 @Composable

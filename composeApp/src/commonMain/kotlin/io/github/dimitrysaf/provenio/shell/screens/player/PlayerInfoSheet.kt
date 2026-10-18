@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
+import io.github.dimitrysaf.provenio.core.home.HomeShelfLayout
 import io.github.dimitrysaf.provenio.core.i18n.localizedSeasonEpisodeCode
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSectionKey
@@ -39,6 +41,7 @@ import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
 import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailAdditionalInfoSection
+import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailCastGrid
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailCastSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailMetaInfo
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailParentsGuideSection
@@ -160,6 +163,7 @@ private fun PlayerInfoSections(
     val content = rememberDetailSectionContent(meta, emptyList())
     val parentalWarnings = rememberDetailParentalWarnings(meta, enabled = parentsGuideEnabled).warnings
     val sectionModifier = Modifier.padding(horizontal = BottomSheetBodyMargin)
+    val shelfSettings by remember { HomeCatalogSettingsRepository.uiState }.collectAsStateWithLifecycle()
     keys.forEach { key ->
         when (key) {
             MetaScreenSectionKey.OVERVIEW -> DetailMetaInfo(
@@ -173,7 +177,16 @@ private fun PlayerInfoSections(
             MetaScreenSectionKey.PRODUCTION -> if (content.hasProduction) {
                 DetailProductionSection(meta = meta, modifier = sectionModifier)
             }
-            MetaScreenSectionKey.CAST -> if (meta.cast.isNotEmpty()) {
+            MetaScreenSectionKey.CAST -> if (meta.cast.isNotEmpty() && shelfSettings.shelfLayout == HomeShelfLayout.Grid) {
+                DetailCastGrid(
+                    cast = meta.cast,
+                    expansionKey = "player-info:cast",
+                    expandedByDefault = shelfSettings.shelvesExpandedByDefault,
+                    modifier = sectionModifier,
+                    metaId = meta.id,
+                    metaType = meta.type,
+                )
+            } else if (meta.cast.isNotEmpty()) {
                 DetailCastSection(
                     cast = meta.cast,
                     modifier = sectionModifier,

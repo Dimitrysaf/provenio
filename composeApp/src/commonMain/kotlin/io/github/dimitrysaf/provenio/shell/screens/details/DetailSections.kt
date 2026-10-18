@@ -26,6 +26,7 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSeco
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailAdditionalInfoSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailCastSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.CastCell
+import io.github.dimitrysaf.provenio.shell.screens.details.components.CastGridPreviewRows
 import io.github.dimitrysaf.provenio.shell.screens.details.components.CommentCard
 import io.github.dimitrysaf.provenio.shell.screens.details.components.LoadingCommentCard
 import io.github.dimitrysaf.provenio.shell.screens.details.components.TrailerCard
@@ -269,7 +270,7 @@ internal fun LazyListScope.configuredMetaSectionItems(
                     cellWidth = sizing.itemWidth,
                     spacing = sizing.avatarGap,
                     context = grid,
-                    previewRows = CastPreviewRows,
+                    previewRows = CastGridPreviewRows,
                 ) { index, person ->
                     CastCell(
                         index = index,
@@ -676,4 +677,3 @@ internal fun ConfiguredMetaSections(
 }
 
 /** How many rows of cast a grid shows before Show All. */
-private const val CastPreviewRows = 2
