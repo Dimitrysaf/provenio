@@ -16,9 +16,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
-import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.SyncProblem
 import androidx.compose.material.icons.rounded.HourglassEmpty
-import androidx.compose.material.icons.rounded.NetworkPing
+import androidx.compose.material.icons.rounded.NetworkCheck
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -113,13 +113,13 @@ internal fun SpeedTestDialog(onDismiss: () -> Unit) {
                 ) {
                     SpeedResult(
                         label = stringResource(Res.string.settings_network_speed_ping),
-                        icon = Icons.Rounded.NetworkPing,
+                        icon = Icons.Rounded.NetworkCheck,
                         value = result.latencyMs?.let { stringResource(Res.string.settings_network_ms_value, it) },
                         modifier = Modifier.weight(1f),
                     )
                     SpeedResult(
                         label = stringResource(Res.string.settings_network_jitter),
-                        icon = Icons.Rounded.GraphicEq,
+                        icon = Icons.Rounded.SyncProblem,
                         value = result.jitterMs?.let { stringResource(Res.string.settings_network_ms_value, it) },
                         modifier = Modifier.weight(1f),
                     )
