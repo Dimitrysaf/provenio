@@ -420,11 +420,7 @@ private fun TorrentHealthNotice(report: P2pTorrentHealthReport) {
         )
         P2pTorrentHealthIssue.TOO_SLOW -> Triple(
             Res.string.torrent_health_too_slow_title,
-            if (report.requiredSpeed != null) {
-                Res.string.torrent_health_too_slow_rate_message
-            } else {
-                Res.string.torrent_health_too_slow_message
-            },
+            Res.string.torrent_health_too_slow_message,
             Icons.Rounded.Speed,
         )
         P2pTorrentHealthIssue.THROTTLED -> Triple(
@@ -458,14 +454,7 @@ private fun TorrentHealthNotice(report: P2pTorrentHealthReport) {
             Icons.Rounded.CheckCircle,
         )
     }
-    val message = when (report.issue) {
-        P2pTorrentHealthIssue.FEW_SEEDERS -> stringResource(messageRes, report.seeders)
-        P2pTorrentHealthIssue.STABLE -> stringResource(messageRes, formatP2pSpeed(report.downloadSpeed))
-        P2pTorrentHealthIssue.TOO_SLOW -> report.requiredSpeed?.let { required ->
-            stringResource(messageRes, formatP2pSpeed(report.downloadSpeed), formatP2pSpeed(required))
-        } ?: stringResource(messageRes)
-        else -> stringResource(messageRes)
-    }
+    val message = stringResource(messageRes)
     Row(
         modifier = Modifier
             .padding(horizontal = BottomSheetBodyMargin)

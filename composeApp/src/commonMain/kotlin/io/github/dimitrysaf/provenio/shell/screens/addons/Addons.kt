@@ -8,13 +8,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -47,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -83,17 +79,11 @@ import io.github.dimitrysaf.provenio.shell.screens.settings.segmentShape
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
-import sh.calvin.reorderable.ReorderableCollectionItemScope
-import sh.calvin.reorderable.ReorderableItem
-import sh.calvin.reorderable.rememberReorderableLazyListState
+import sh.calvin.reorderable.ReorderableColumn
+import sh.calvin.reorderable.ReorderableListItemScope
 import io.github.dimitrysaf.provenio.core.addons.AddAddonResult
 import io.github.dimitrysaf.provenio.core.addons.AddonRepository
 import io.github.dimitrysaf.provenio.core.addons.ManagedAddon
-
-private const val AddAddonRowKey = "addons:add"
-
-/** How tall the list may grow before it scrolls inside the page. */
-private val AddonListMaxHeight = 640.dp
 
 @Composable
 internal fun AddonsSettingsPageContent(
@@ -122,19 +112,6 @@ internal fun AddonsSettingsPageContent(
         if (addRequested) {
             showAddDialog = true
             AddonAddRequests.consume()
-        }
-    }
-
-    val lazyListState = rememberLazyListState()
-    val reorderableLazyListState = rememberReorderableLazyListState(
-        lazyListState = lazyListState,
-    ) { from, to ->
-        // The add row holds the first slot and never moves, so the addons start one further in.
-        val fromIndex = from.index - 1
-        val toIndex = to.index - 1
-        if (fromIndex >= 0 && toIndex >= 0) {
-            AddonRepository.moveAddon(fromIndex, toIndex)
-            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
     }
 
@@ -178,46 +155,48 @@ internal fun AddonsSettingsPageContent(
 
         // The row count includes the add row, so every addon's corners know where it sits.
         val rowCount = addons.size + 1
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = AddonListMaxHeight),
-            state = lazyListState,
-            verticalArrangement = Arrangement.spacedBy(ListItemBetweenSpace),
-        ) {
-            item(key = AddAddonRowKey) {
-                NewEntryRow(
-                    text = stringResource(Res.string.addons_add_row),
-                    shape = segmentShape(index = 0, count = rowCount),
-                    onClick = { showAddDialog = true },
-                )
-            }
+        Column(verticalArrangement = Arrangement.spacedBy(ListItemBetweenSpace)) {
+            NewEntryRow(
+                text = stringResource(Res.string.addons_add_row),
+                shape = segmentShape(index = 0, count = rowCount),
+                onClick = { showAddDialog = true },
+            )
+            ReorderableColumn(
+                list = addons,
+                onSettle = { fromIndex, toIndex ->
+                    AddonRepository.moveAddon(fromIndex, toIndex)
+                },
+                onMove = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                },
+                verticalArrangement = Arrangement.spacedBy(ListItemBetweenSpace),
+            ) { index, addon, isDragging ->
+                key(addon.manifestUrl) {
+                    ReorderableItem {
+                        val configureUrl = addon.configurePageUrl()
 
-            itemsIndexed(addons, key = { _, addon -> addon.manifestUrl }) { index, addon ->
-                ReorderableItem(reorderableLazyListState, key = addon.manifestUrl) { isDragging ->
-                    val configureUrl = addon.configurePageUrl()
-
-                    AddonListRow(
-                        addon = addon,
-                        shape = segmentShape(index = index + 1, count = rowCount),
-                        selected = isDragging,
-                        onEnabledChange = { enabled ->
-                            AddonRepository.setAddonEnabled(addon.manifestUrl, enabled)
-                        },
-                        onConfigure = configureUrl?.let { url -> { addonPendingConfigureUrl = url } },
-                        onDelete = { addonPendingDeletionUrl = addon.manifestUrl },
-                        onCopyUrl = {
-                            runCatching { clipboardManager.setText(AnnotatedString(addon.manifestUrl)) }
-                                .onSuccess { ToastController.show(urlCopiedMessage) }
-                        },
-                        onReload = {
-                            AddonRepository.refreshAddon(
-                                manifestUrl = addon.manifestUrl,
-                                forceRefresh = true,
-                            )
-                        },
-                        dragHandleScope = this@ReorderableItem,
-                    )
+                        AddonListRow(
+                            addon = addon,
+                            shape = segmentShape(index = index + 1, count = rowCount),
+                            selected = isDragging,
+                            onEnabledChange = { enabled ->
+                                AddonRepository.setAddonEnabled(addon.manifestUrl, enabled)
+                            },
+                            onConfigure = configureUrl?.let { url -> { addonPendingConfigureUrl = url } },
+                            onDelete = { addonPendingDeletionUrl = addon.manifestUrl },
+                            onCopyUrl = {
+                                runCatching { clipboardManager.setText(AnnotatedString(addon.manifestUrl)) }
+                                    .onSuccess { ToastController.show(urlCopiedMessage) }
+                            },
+                            onReload = {
+                                AddonRepository.refreshAddon(
+                                    manifestUrl = addon.manifestUrl,
+                                    forceRefresh = true,
+                                )
+                            },
+                            dragHandleScope = this,
+                        )
+                    }
                 }
             }
         }
@@ -333,7 +312,7 @@ private fun AddonListRow(
     onDelete: () -> Unit,
     onCopyUrl: () -> Unit,
     onReload: () -> Unit,
-    dragHandleScope: ReorderableCollectionItemScope,
+    dragHandleScope: ReorderableListItemScope,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val manifest = addon.manifest
@@ -370,64 +349,72 @@ private fun AddonListRow(
         colors = ListItemDefaults.segmentedColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
-        // The icon, switch and menu sit at the top, beside the name, however long the row grows.
-        verticalAlignment = Alignment.Top,
-        leadingContent = {
-            AddonIconBadge(
-                imageUrl = manifest?.logoUrl,
-                icon = Icons.Rounded.Extension,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        },
-        // The description gets room for a few lines, then trails off, so a long one does not
-        // stretch the row.
-        supportingContent = if (supporting.isNotBlank() || tags.isNotEmpty()) {
-            {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (supporting.isNotBlank()) {
-                        Text(text = supporting, maxLines = AddonDescriptionMaxLines, overflow = TextOverflow.Ellipsis)
-                    }
-                    if (tags.isNotEmpty()) {
-                        AddonTagsRow(tags = tags, active = addon.isActive)
-                    }
-                }
-            }
-        } else {
-            null
-        },
-        trailingContent = {
+    ) {
+        // The icon, name, switch and menu share the top line; the description and the tags run
+        // the row's full width beneath them.
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Switch(
-                    checked = addon.enabled,
-                    onCheckedChange = onEnabledChange,
+                AddonIconBadge(
+                    imageUrl = manifest?.logoUrl,
+                    icon = Icons.Rounded.Extension,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                // The menu anchors to this box, so it opens at the button it belongs to.
-                Box {
-                    WithTooltip(stringResource(Res.string.addons_more_actions)) {
-                        IconButton(onClick = { menuOpen = true }) {
-                            Icon(
-                                imageVector = Icons.Rounded.MoreVert,
-                                contentDescription = stringResource(Res.string.addons_more_actions),
-                            )
-                        }
-                    }
-                    AddonActionsMenu(
-                        expanded = menuOpen,
-                        isRefreshing = addon.isRefreshing,
-                        onDismiss = { menuOpen = false },
-                        onConfigure = onConfigure,
-                        onCopyUrl = onCopyUrl,
-                        onReload = onReload,
-                        onDelete = onDelete,
+                Text(
+                    text = addon.displayTitle,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = addon.enabled,
+                        onCheckedChange = onEnabledChange,
                     )
+                    // The menu anchors to this box, so it opens at the button it belongs to.
+                    Box {
+                        WithTooltip(stringResource(Res.string.addons_more_actions)) {
+                            IconButton(onClick = { menuOpen = true }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.MoreVert,
+                                    contentDescription = stringResource(Res.string.addons_more_actions),
+                                )
+                            }
+                        }
+                        AddonActionsMenu(
+                            expanded = menuOpen,
+                            isRefreshing = addon.isRefreshing,
+                            onDismiss = { menuOpen = false },
+                            onConfigure = onConfigure,
+                            onCopyUrl = onCopyUrl,
+                            onReload = onReload,
+                            onDelete = onDelete,
+                        )
+                    }
                 }
             }
-        },
-    ) {
-        Text(text = addon.displayTitle)
+            // The description gets room for a few lines, then trails off, so a long one does not
+            // stretch the row.
+            if (supporting.isNotBlank()) {
+                Text(
+                    text = supporting,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = AddonDescriptionMaxLines,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (tags.isNotEmpty()) {
+                AddonTagsRow(tags = tags, active = addon.isActive)
+            }
+        }
     }
 }
 

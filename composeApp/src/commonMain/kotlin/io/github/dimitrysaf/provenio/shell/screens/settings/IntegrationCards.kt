@@ -2,11 +2,10 @@ package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -238,8 +237,7 @@ private fun IntegrationBanner(
     }
 }
 
-/** What the service brings, as tonal chips: filled in while it is on, muted until then. */
-@OptIn(ExperimentalLayoutApi::class)
+/** What the service brings, as tonal chips in one row that scrolls sideways: filled in while it is on, muted until then. */
 @Composable
 private fun IntegrationTagsRow(
     tags: List<IntegrationTag>,
@@ -251,33 +249,33 @@ private fun IntegrationTagsRow(
         shape = shape,
         color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                tags.forEach { tag ->
-                    Surface(
-                        shape = CircleShape,
-                        color = if (active) {
-                            MaterialTheme.colorScheme.secondaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainerHighest
-                        },
-                        contentColor = if (active) {
-                            MaterialTheme.colorScheme.onSecondaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
+        Row(
+            modifier = Modifier
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            tags.forEach { tag ->
+                Surface(
+                    shape = CircleShape,
+                    color = if (active) {
+                        MaterialTheme.colorScheme.secondaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHighest
+                    },
+                    contentColor = if (active) {
+                        MaterialTheme.colorScheme.onSecondaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                ) {
+                    Row(
+                        modifier = Modifier.padding(start = 10.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Row(
-                            modifier = Modifier.padding(start = 10.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(imageVector = tag.icon, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text(text = tag.label, style = MaterialTheme.typography.labelLarge)
-                        }
+                        Icon(imageVector = tag.icon, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(text = tag.label, style = MaterialTheme.typography.labelLarge, maxLines = 1)
                     }
                 }
             }

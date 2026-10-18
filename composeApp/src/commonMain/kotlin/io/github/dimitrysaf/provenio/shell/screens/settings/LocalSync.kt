@@ -88,9 +88,16 @@ internal fun LocalSyncCard(modifier: Modifier = Modifier) {
     LocalSyncFeedbackEffect(state.activity)
 
     val forgetLabel = stringResource(Res.string.local_sync_forget)
+    val actions = buildList {
+        add(CardMenuAction(stringResource(Res.string.local_sync_show_code), Icons.Rounded.QrCode, onClick = LocalSyncRepository::startPairing))
+        if (scan != null) {
+            add(CardMenuAction(stringResource(Res.string.local_sync_scan_code), Icons.Rounded.QrCodeScanner, enabled = !state.joining, onClick = scan))
+        }
+        add(CardMenuAction(stringResource(Res.string.local_sync_enter_code), Icons.Rounded.Keyboard, enabled = !state.joining) { showCodeEntry = true })
+    }
     SettingsList(modifier = modifier) {
         shapedRow { shape ->
-            LocalSyncBanner(shape = shape)
+            LocalSyncBanner(shape = shape, actions = actions, busy = state.joining)
         }
         shapedRow { shape ->
             TrackingFeaturesRow(
@@ -120,40 +127,12 @@ internal fun LocalSyncCard(modifier: Modifier = Modifier) {
                 onClick = { LocalSyncRepository.syncNow(peer) },
             )
         }
-        navigationRow(
-            title = stringResource(Res.string.local_sync_show_code),
-            description = stringResource(
-                if (state.peers.isEmpty()) Res.string.local_sync_explanation else Res.string.local_sync_show_code_description,
-            ),
-            icon = Icons.Rounded.QrCode,
-            onClick = LocalSyncRepository::startPairing,
-        )
-        if (scan != null) {
-            navigationRow(
-                title = stringResource(Res.string.local_sync_scan_code),
-                description = stringResource(Res.string.local_sync_scan_code_description),
-                icon = Icons.Rounded.QrCodeScanner,
-                enabled = !state.joining,
-                trailingContent = if (state.joining) {
-                    { LocalSyncProgress() }
-                } else {
-                    null
-                },
-                onClick = scan,
+        if (state.peers.isEmpty()) {
+            infoRow(
+                title = stringResource(Res.string.local_sync_show_code),
+                description = stringResource(Res.string.local_sync_explanation),
             )
         }
-        navigationRow(
-            title = stringResource(Res.string.local_sync_enter_code),
-            description = stringResource(Res.string.local_sync_enter_code_description),
-            icon = Icons.Rounded.Keyboard,
-            enabled = !state.joining,
-            trailingContent = if (state.joining && scan == null) {
-                { LocalSyncProgress() }
-            } else {
-                null
-            },
-            onClick = { showCodeEntry = true },
-        )
     }
 
     state.pairingCode?.let { code ->
@@ -227,7 +206,11 @@ private val LocalSyncFeatures = listOf(
 
 // The same place and height as a tracker's artwork, drawn from the Material You scheme instead of a brand.
 @Composable
-private fun LocalSyncBanner(shape: RoundedCornerShape) {
+private fun LocalSyncBanner(
+    shape: RoundedCornerShape,
+    actions: List<CardMenuAction>,
+    busy: Boolean,
+) {
     val colors = MaterialTheme.colorScheme
     Box(
         modifier = Modifier
@@ -263,6 +246,7 @@ private fun LocalSyncBanner(shape: RoundedCornerShape) {
                 color = colors.onPrimaryContainer,
             )
         }
+        CardMenu(actions = actions, tint = colors.onPrimaryContainer, busy = busy)
     }
 }
 

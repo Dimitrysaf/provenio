@@ -3,11 +3,11 @@ package io.github.dimitrysaf.provenio.shell.screens.settings
 import androidx.compose.foundation.Image
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,13 +27,18 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.LinkOff
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material.icons.rounded.Sensors
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -58,6 +63,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import io.github.dimitrysaf.provenio.shell.theme.provenio
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklAuthError
@@ -117,8 +123,7 @@ import provenio.composeapp.generated.resources.tracking_feature_progress
 import provenio.composeapp.generated.resources.tracking_feature_recommendations
 import provenio.composeapp.generated.resources.tracking_feature_scrobbling
 import provenio.composeapp.generated.resources.tracking_feature_watched
-import provenio.composeapp.generated.resources.tracking_features_available
-import provenio.composeapp.generated.resources.tracking_features_syncing
+import provenio.composeapp.generated.resources.addons_more_actions
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.settings.TrackingBrand
@@ -327,14 +332,37 @@ private fun TrackingProviderCard(
             .onFailure { noticeMessage = failedOpenBrowserMessage }
     }
 
+    val connected = mode == TrackingConnectionCardMode.CONNECTED
+    val actions = buildList {
+        if (connected && syncLabel != null && onSyncRequested != null) {
+            add(CardMenuAction(syncLabel, Icons.Rounded.Sync, enabled = !isLoading && !isSyncing, onClick = onSyncRequested))
+        }
+        if (connected && infoLabel != null && onInfoRequested != null) {
+            add(CardMenuAction(infoLabel, Icons.Rounded.Info, onClick = onInfoRequested))
+        }
+        if (!websiteLabel.isNullOrBlank() && !websiteUrl.isNullOrBlank()) {
+            add(CardMenuAction(websiteLabel, Icons.Rounded.Language) { openUrl(websiteUrl) })
+        }
+        if (connected) {
+            add(
+                CardMenuAction(
+                    disconnectLabel,
+                    Icons.Rounded.LinkOff,
+                    enabled = !isLoading && !isSyncing,
+                    destructive = true,
+                ) { showDisconnectDialog = true },
+            )
+        }
+    }
+
     SettingsList(modifier = modifier) {
         shapedRow { shape ->
-            TrackingBrandBanner(brand = brand, shape = shape)
+            TrackingBrandBanner(brand = brand, shape = shape, actions = actions, busy = isSyncing)
         }
         shapedRow { shape ->
             TrackingFeaturesRow(
                 features = features,
-                active = mode == TrackingConnectionCardMode.CONNECTED,
+                active = connected,
                 shape = shape,
             )
         }
@@ -342,26 +370,6 @@ private fun TrackingProviderCard(
         when (mode) {
             TrackingConnectionCardMode.CONNECTED -> {
                 infoRow(title = connectedLabel, description = connectedDescription)
-                if (syncLabel != null && onSyncRequested != null) {
-                    navigationRow(
-                        title = syncLabel,
-                        icon = Icons.Rounded.Sync,
-                        enabled = !isLoading && !isSyncing,
-                        trailingContent = if (isSyncing) {
-                            { SmallLoadingSpinner(size = 18.dp) }
-                        } else {
-                            null
-                        },
-                        onClick = onSyncRequested,
-                    )
-                }
-                if (infoLabel != null && onInfoRequested != null) {
-                    navigationRow(
-                        title = infoLabel,
-                        icon = Icons.Rounded.Info,
-                        onClick = onInfoRequested,
-                    )
-                }
                 connectedRows?.invoke(this)
             }
 
@@ -404,24 +412,6 @@ private fun TrackingProviderCard(
                     },
                 )
             }
-        }
-
-        if (!websiteLabel.isNullOrBlank() && !websiteUrl.isNullOrBlank()) {
-            navigationRow(
-                title = websiteLabel,
-                icon = Icons.Rounded.Language,
-                trailingContent = { OpensInBrowserIcon() },
-                onClick = { openUrl(websiteUrl) },
-            )
-        }
-
-        if (mode == TrackingConnectionCardMode.CONNECTED) {
-            navigationRow(
-                title = disconnectLabel,
-                icon = Icons.Rounded.LinkOff,
-                enabled = !isLoading && !isSyncing,
-                onClick = { showDisconnectDialog = true },
-            )
         }
     }
 
@@ -468,8 +458,7 @@ private val TraktFeatures = SimklFeatures + listOf(
     TrackingFeature(Icons.Rounded.AutoAwesome, Res.string.tracking_feature_recommendations),
 )
 
-/** What the tracker syncs, as tonal chips: filled in once it is connected, muted until then. */
-@OptIn(ExperimentalLayoutApi::class)
+/** What the tracker syncs, as tonal chips in one row that scrolls sideways: filled in once it is connected, muted until then. */
 @Composable
 internal fun TrackingFeaturesRow(
     features: List<TrackingFeature>,
@@ -481,24 +470,14 @@ internal fun TrackingFeaturesRow(
         shape = shape,
         color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        Row(
+            modifier = Modifier
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                text = stringResource(
-                    if (active) Res.string.tracking_features_syncing else Res.string.tracking_features_available,
-                ),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                features.forEach { feature ->
-                    TrackingFeatureChip(feature = feature, active = active)
-                }
+            features.forEach { feature ->
+                TrackingFeatureChip(feature = feature, active = active)
             }
         }
     }
@@ -535,6 +514,7 @@ private fun TrackingFeatureChip(
             Text(
                 text = stringResource(feature.label),
                 style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
             )
         }
     }
@@ -554,6 +534,8 @@ private fun OpensInBrowserIcon() {
 private fun TrackingBrandBanner(
     brand: TrackingBrand,
     shape: RoundedCornerShape,
+    actions: List<CardMenuAction> = emptyList(),
+    busy: Boolean = false,
 ) {
     Box(
         modifier = Modifier
@@ -577,6 +559,69 @@ private fun TrackingBrandBanner(
             contentDescription = brand.displayName,
             modifier = Modifier.padding(horizontal = 20.dp),
         )
+        CardMenu(actions = actions, tint = Color.White, busy = busy)
+    }
+}
+
+/** One action a card's banner menu offers. */
+internal class CardMenuAction(
+    val label: String,
+    val icon: ImageVector,
+    val enabled: Boolean = true,
+    val destructive: Boolean = false,
+    val onClick: () -> Unit,
+)
+
+/**
+ * A card's actions, behind a menu button at the banner's top right, so the rows under the banner
+ * stay the card's state and settings. [busy] shows a spinner beside the button while one of them runs.
+ */
+@Composable
+internal fun BoxScope.CardMenu(
+    actions: List<CardMenuAction>,
+    tint: Color,
+    busy: Boolean = false,
+) {
+    if (actions.isEmpty()) return
+    var expanded by remember { mutableStateOf(false) }
+    val label = stringResource(Res.string.addons_more_actions)
+    Row(
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (busy) {
+            SmallLoadingSpinner(size = 18.dp, color = tint)
+        }
+        Box {
+            WithTooltip(label) {
+                IconButton(onClick = { expanded = true }) {
+                    Icon(imageVector = Icons.Rounded.MoreVert, contentDescription = label, tint = tint)
+                }
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                actions.forEach { action ->
+                    DropdownMenuItem(
+                        text = { Text(action.label) },
+                        leadingIcon = { Icon(action.icon, contentDescription = null) },
+                        enabled = action.enabled,
+                        colors = if (action.destructive) {
+                            MenuDefaults.itemColors(
+                                textColor = MaterialTheme.colorScheme.error,
+                                leadingIconColor = MaterialTheme.colorScheme.error,
+                            )
+                        } else {
+                            MenuDefaults.itemColors()
+                        },
+                        onClick = {
+                            expanded = false
+                            action.onClick()
+                        },
+                    )
+                }
+            }
+        }
     }
 }
 
