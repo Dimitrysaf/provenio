@@ -107,7 +107,8 @@ internal fun continueWatchingSectionHeightEstimate(
     val rowHeight = when (style) {
         ContinueWatchingSectionStyle.Card -> continueWatchingLandscapeCardHeight(basePosterWidthDp)
         ContinueWatchingSectionStyle.Wide -> layout.wideCardHeight
-        ContinueWatchingSectionStyle.Poster -> layout.posterCardHeight + layout.posterTitleBlockHeight
+        ContinueWatchingSectionStyle.Poster -> layout.posterCardHeight +
+            if (layout.posterShowsTitle) layout.posterTitleBlockHeight else 0.dp
     }
     return headerHeight + headerToRowGap + rowHeight + HomeContinueWatchingSectionBottomPadding
 }
@@ -174,6 +175,17 @@ private fun ContinueWatchingItem.continueWatchingArtworkCandidates(
         imageUrl,
     )
 }
+
+/** Wide artwork first for the Poster style in landscape mode: the episode still, then the backdrop, the poster last. */
+private fun ContinueWatchingItem.continueWatchingLandscapePosterArtworkCandidates(
+    useEpisodeThumbnails: Boolean,
+): List<String> = artworkCandidates(
+    if (useEpisodeThumbnails) episodeThumbnail else null,
+    background,
+    imageUrl,
+    episodeThumbnail,
+    poster,
+)
 
 private fun ContinueWatchingItem.continueWatchingPosterArtworkCandidates(
     useEpisodeThumbnails: Boolean,
@@ -976,7 +988,11 @@ private fun ContinueWatchingPosterCard(
     onLongClick: (() -> Unit)?,
 ) {
     val cornerRadius = rememberPosterCardStyleUiState().cornerRadiusDp.dp
-    val imageCandidates = item.continueWatchingPosterArtworkCandidates(useEpisodeThumbnails)
+    val imageCandidates = if (layout.posterLandscape) {
+        item.continueWatchingLandscapePosterArtworkCandidates(useEpisodeThumbnails)
+    } else {
+        item.continueWatchingPosterArtworkCandidates(useEpisodeThumbnails)
+    }
     val imageUrl = imageCandidates.firstOrNull()
 
     Column(
@@ -1057,7 +1073,7 @@ private fun ContinueWatchingPosterCard(
             }
         }
 
-        Row(
+        if (layout.posterShowsTitle) Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.Top,
@@ -1176,6 +1192,10 @@ internal data class ContinueWatchingLayout(
     val wideContentPadding: Dp,
     val posterCardWidth: Dp,
     val posterCardHeight: Dp,
+    /** The Poster style follows Card Style's landscape mode: wide cards with wide artwork. */
+    val posterLandscape: Boolean = false,
+    /** And its labels setting: with labels hidden the cards carry no title under them. */
+    val posterShowsTitle: Boolean = true,
     val progressHeight: Dp,
     val posterTitleBlockHeight: Dp,
 )
@@ -1192,6 +1212,16 @@ internal fun rememberContinueWatchingLayout(
     ).dp
     val wideCardHeight = wideCardWidth * 0.4f
     val widePosterStripWidth = wideCardHeight * (2f / 3f)
+    val posterWidth = if (posterCardStyle.catalogLandscapeModeEnabled) {
+        landscapePosterWidth(posterCardStyle.widthDp)
+    } else {
+        posterCardStyle.widthDp.dp
+    }
+    val posterHeight = if (posterCardStyle.catalogLandscapeModeEnabled) {
+        landscapePosterHeightForWidth(posterWidth)
+    } else {
+        posterCardStyle.heightDp.dp
+    }
     return when {
         maxWidthDp >= 1440f -> ContinueWatchingLayout(
             itemGap = 20.dp,
@@ -1199,8 +1229,10 @@ internal fun rememberContinueWatchingLayout(
             wideCardHeight = wideCardHeight,
             widePosterStripWidth = widePosterStripWidth,
             wideContentPadding = 16.dp,
-            posterCardWidth = posterCardStyle.widthDp.dp,
-            posterCardHeight = posterCardStyle.heightDp.dp,
+            posterCardWidth = posterWidth,
+            posterCardHeight = posterHeight,
+            posterLandscape = posterCardStyle.catalogLandscapeModeEnabled,
+            posterShowsTitle = !posterCardStyle.hideLabelsEnabled,
             progressHeight = 6.dp,
             posterTitleBlockHeight = 40.dp,
         )
@@ -1210,8 +1242,10 @@ internal fun rememberContinueWatchingLayout(
             wideCardHeight = wideCardHeight,
             widePosterStripWidth = widePosterStripWidth,
             wideContentPadding = 14.dp,
-            posterCardWidth = posterCardStyle.widthDp.dp,
-            posterCardHeight = posterCardStyle.heightDp.dp,
+            posterCardWidth = posterWidth,
+            posterCardHeight = posterHeight,
+            posterLandscape = posterCardStyle.catalogLandscapeModeEnabled,
+            posterShowsTitle = !posterCardStyle.hideLabelsEnabled,
             progressHeight = 5.dp,
             posterTitleBlockHeight = 40.dp,
         )
@@ -1221,8 +1255,10 @@ internal fun rememberContinueWatchingLayout(
             wideCardHeight = wideCardHeight,
             widePosterStripWidth = widePosterStripWidth,
             wideContentPadding = 12.dp,
-            posterCardWidth = posterCardStyle.widthDp.dp,
-            posterCardHeight = posterCardStyle.heightDp.dp,
+            posterCardWidth = posterWidth,
+            posterCardHeight = posterHeight,
+            posterLandscape = posterCardStyle.catalogLandscapeModeEnabled,
+            posterShowsTitle = !posterCardStyle.hideLabelsEnabled,
             progressHeight = 4.dp,
             posterTitleBlockHeight = 38.dp,
         )
@@ -1232,8 +1268,10 @@ internal fun rememberContinueWatchingLayout(
             wideCardHeight = wideCardHeight,
             widePosterStripWidth = widePosterStripWidth,
             wideContentPadding = 12.dp,
-            posterCardWidth = posterCardStyle.widthDp.dp,
-            posterCardHeight = posterCardStyle.heightDp.dp,
+            posterCardWidth = posterWidth,
+            posterCardHeight = posterHeight,
+            posterLandscape = posterCardStyle.catalogLandscapeModeEnabled,
+            posterShowsTitle = !posterCardStyle.hideLabelsEnabled,
             progressHeight = 4.dp,
             posterTitleBlockHeight = 38.dp,
         )

@@ -1226,6 +1226,7 @@
     <string name="source_mal">MyAnimeList</string>
     <string name="subtitle_language_unknown">Unknown</string>
     <string name="player_next_episode">Next Episode</string>
+    <string name="player_play_next">Play next</string>
     <string name="player_next_episode_thumbnail">Next episode thumbnail</string>
     <string name="player_next_episode_unaired">Unaired</string>
     <string name="player_replay">Replay</string>

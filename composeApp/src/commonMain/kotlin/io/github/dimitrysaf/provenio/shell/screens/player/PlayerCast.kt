@@ -12,6 +12,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.LinkOff
+import androidx.compose.material.icons.rounded.HourglassTop
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.CastConnected
 import androidx.compose.material.icons.rounded.Pause
@@ -38,6 +43,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
@@ -277,23 +284,22 @@ private fun CastDeviceSheet(
                     modifier = Modifier.clickable(enabled = castable) { onDeviceSelected(device) },
                 )
             }
-            if (devices.isEmpty() && searchedLong) {
-                CastHelp(
+            when {
+                devices.isEmpty() && searchedLong -> CastEmptyState(
+                    icon = Icons.Rounded.SearchOff,
                     title = stringResource(Res.string.cast_no_devices),
                     points = noDevicesHelp(vpnActive),
                     warning = vpnActive,
                 )
-            } else if (devices.isEmpty() || !searchedLong) {
-                Row(
+                devices.isEmpty() -> CastSearchingState()
+                !searchedLong -> Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = BottomSheetBodyMargin, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    if (!searchedLong) SmallLoadingSpinner(size = 20.dp)
+                    SmallLoadingSpinner(size = 20.dp)
                     Text(
-                        text = stringResource(
-                            if (devices.isEmpty() && searchedLong) Res.string.cast_no_devices else Res.string.cast_searching,
-                        ),
+                        text = stringResource(Res.string.cast_searching),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -303,15 +309,17 @@ private fun CastDeviceSheet(
     }
 }
 
-/** Why casting cannot happen, in place of the device list, with what to do about it. */
+/** Why casting cannot happen, as an empty state in place of the device list, with what to do about it. */
 @Composable
 private fun CastBlockedNotice(block: CastBlock) {
     when (block) {
-        CastBlock.TorrentStarting -> CastHelp(
+        CastBlock.TorrentStarting -> CastEmptyState(
+            icon = Icons.Rounded.HourglassTop,
             title = stringResource(Res.string.cast_blocked_torrent_starting_title),
             points = listOf(stringResource(Res.string.cast_blocked_torrent_starting_wait)),
         )
-        CastBlock.NeedsHeaders -> CastHelp(
+        CastBlock.NeedsHeaders -> CastEmptyState(
+            icon = Icons.Rounded.LinkOff,
             title = stringResource(Res.string.cast_blocked_stream_title),
             points = listOf(
                 stringResource(Res.string.cast_blocked_headers_reason),
@@ -319,7 +327,8 @@ private fun CastBlockedNotice(block: CastBlock) {
             ),
             warning = true,
         )
-        CastBlock.LocalSource -> CastHelp(
+        CastBlock.LocalSource -> CastEmptyState(
+            icon = Icons.Rounded.LinkOff,
             title = stringResource(Res.string.cast_blocked_stream_title),
             points = listOf(
                 stringResource(Res.string.cast_blocked_local_reason),
@@ -327,7 +336,8 @@ private fun CastBlockedNotice(block: CastBlock) {
             ),
             warning = true,
         )
-        CastBlock.NoLocalNetwork -> CastHelp(
+        CastBlock.NoLocalNetwork -> CastEmptyState(
+            icon = Icons.Rounded.CloudOff,
             title = stringResource(Res.string.cast_blocked_no_network_title),
             points = listOfNotNull(
                 stringResource(Res.string.cast_blocked_no_network_connect),
@@ -336,6 +346,72 @@ private fun CastBlockedNotice(block: CastBlock) {
             ),
             warning = true,
         )
+    }
+}
+
+/** The search for cast devices before any turns up: the loading indicator over what it is doing, centred. */
+@Composable
+private fun CastSearchingState() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        LoadingSpinner(size = 64.dp)
+        Text(
+            text = stringResource(Res.string.cast_searching),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/**
+ * The app's empty state for the cast sheet and the cast screen: an icon, what went wrong, and a
+ * short bulleted list of why or what to try.
+ */
+@Composable
+private fun CastEmptyState(
+    icon: ImageVector,
+    title: String,
+    points: List<String>,
+    warning: Boolean = false,
+    onDark: Boolean = false,
+) {
+    val iconColor = when {
+        onDark -> Color.White
+        warning -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val textColor = if (onDark) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(48.dp), tint = iconColor)
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = if (onDark) Color.White else MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+        )
+        Column(
+            modifier = Modifier.widthIn(max = 420.dp).padding(top = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            points.forEach { point ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = "•", style = MaterialTheme.typography.bodyMedium, color = textColor)
+                    Text(text = point, style = MaterialTheme.typography.bodyMedium, color = textColor)
+                }
+            }
+        }
     }
 }
 
@@ -459,7 +535,8 @@ private fun CastRemote(
             }
             if (state is CastState.Failed && viaRelay) {
                 val vpnActive = remember { CastRelay.vpnActive() }
-                CastHelp(
+                CastEmptyState(
+                    icon = Icons.Rounded.ErrorOutline,
                     title = stringResource(Res.string.cast_help_relay_failed_title),
                     points = listOfNotNull(
                         if (vpnActive) stringResource(Res.string.cast_help_vpn_allow_lan) else null,

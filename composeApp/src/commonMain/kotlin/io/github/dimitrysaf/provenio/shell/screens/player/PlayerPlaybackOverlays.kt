@@ -85,6 +85,7 @@ internal fun BoxScope.PlayerPlaybackOverlays(
                     blurred = blurUnwatchedEpisodes && nextEpisodeInfo?.isWatched == false,
                     onPlayNext = onPlayNextEpisode,
                     onDismiss = onDismissNextEpisode,
+                    showPlayNextButton = controlsVisible,
                 )
             }
         }
