@@ -6,8 +6,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.gestures.stopScroll
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import io.github.dimitrysaf.provenio.shell.screens.search.SearchBoxMaxWidth
 import io.github.dimitrysaf.provenio.shell.components.WindowBreakpoint
+import io.github.dimitrysaf.provenio.shell.components.FullscreenButton
 import io.github.dimitrysaf.provenio.shell.components.SearchBox
 import io.github.dimitrysaf.provenio.core.search.SearchHistoryRepository
 import androidx.compose.ui.Alignment
@@ -765,15 +768,23 @@ private fun HomeSearchBox(onSearch: (String) -> Unit) {
             .padding(horizontal = 24.dp, vertical = 12.dp),
         contentAlignment = Alignment.TopCenter,
     ) {
-        SearchBox(
-            query = query,
-            onQueryChange = { query = it },
-            placeholder = stringResource(Res.string.compose_search_placeholder),
-            recentSearches = recentSearches,
-            onRecentSearchClick = submit,
-            onRemoveRecentSearch = SearchHistoryRepository::removeSearch,
-            modifier = Modifier.widthIn(max = SearchBoxMaxWidth),
-            onSearch = submit,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            SearchBox(
+                query = query,
+                onQueryChange = { query = it },
+                placeholder = stringResource(Res.string.compose_search_placeholder),
+                recentSearches = recentSearches,
+                onRecentSearchClick = submit,
+                onRemoveRecentSearch = SearchHistoryRepository::removeSearch,
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .widthIn(max = SearchBoxMaxWidth),
+                onSearch = submit,
+            )
+            FullscreenButton()
+        }
     }
 }

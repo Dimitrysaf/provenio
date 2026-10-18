@@ -17,6 +17,9 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import io.github.dimitrysaf.provenio.core.startup.AppStartupState
 import kotlin.math.roundToInt
@@ -50,6 +53,7 @@ import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsStorage
 import io.github.dimitrysaf.provenio.core.playback.PlayerTrackPreferenceStorage
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlatform
 import io.github.dimitrysaf.provenio.core.playback.SubtitleFileCache
+import io.github.dimitrysaf.provenio.shell.components.AppFullscreen
 import io.github.dimitrysaf.provenio.shell.components.AppKeyboardShortcuts
 import io.github.dimitrysaf.provenio.shell.components.AppShortcutAction
 import io.github.dimitrysaf.provenio.shell.screens.player.PlayerPictureInPictureManager
@@ -164,6 +168,17 @@ open class MainActivity : AppCompatActivity() {
 
         setContent {
             App()
+        }
+        lifecycleScope.launch {
+            AppFullscreen.isFullscreen.collect { fullscreen ->
+                val controller = WindowCompat.getInsetsController(window, window.decorView)
+                if (fullscreen) {
+                    controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    controller.hide(WindowInsetsCompat.Type.systemBars())
+                } else {
+                    controller.show(WindowInsetsCompat.Type.systemBars())
+                }
+            }
         }
         showLaunchOverlay(launchLogoColor(launchLogo))
     }

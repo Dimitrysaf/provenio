@@ -55,6 +55,8 @@
     <string name="addons_type_series">Series</string>
     <string name="addons_type_channels">Channels</string>
     <string name="addons_type_tv">TV</string>
+    <string name="app_fullscreen_enter">Fullscreen</string>
+    <string name="app_fullscreen_exit">Exit fullscreen</string>
     <string name="find_in_page_hint">Find in page</string>
     <string name="find_in_page_count">%1$d of %2$d</string>
     <string name="find_in_page_next">Next match</string>

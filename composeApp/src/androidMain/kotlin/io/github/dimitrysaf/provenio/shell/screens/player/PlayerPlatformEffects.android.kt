@@ -25,6 +25,7 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.app.PictureInPictureModeChangedInfo
 import androidx.core.util.Consumer
 import androidx.core.view.WindowCompat
+import io.github.dimitrysaf.provenio.shell.components.AppFullscreen
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import kotlin.math.roundToInt
@@ -70,8 +71,10 @@ actual fun HidePlayerSystemBars() {
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 
         onDispose {
-            controller.show(WindowInsetsCompat.Type.systemBars())
-            controller.systemBarsBehavior = previousBehavior
+            if (!AppFullscreen.isFullscreen.value) {
+                controller.show(WindowInsetsCompat.Type.systemBars())
+                controller.systemBarsBehavior = previousBehavior
+            }
         }
     }
 }

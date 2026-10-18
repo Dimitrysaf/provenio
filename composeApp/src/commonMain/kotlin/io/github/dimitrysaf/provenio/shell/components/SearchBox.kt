@@ -1,14 +1,15 @@
 package io.github.dimitrysaf.provenio.shell.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
@@ -26,13 +27,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.compose_search_recent_searches
@@ -40,8 +48,9 @@ import provenio.composeapp.generated.resources.compose_search_remove_recent_sear
 
 /**
  * The search box for large screens: one rounded container rather than a field over a divider.
- * Clicking into it opens the recent searches inside the same container, under the field; picking
- * one searches for it, and the box closes again when it loses focus.
+ * Clicking into it opens the recent searches under the field as an overlay that continues the
+ * same container, without moving the page; picking one searches for it, and the box closes again
+ * when it loses focus or the page is clicked.
  */
 @Composable
 fun SearchBox(
@@ -57,17 +66,27 @@ fun SearchBox(
     actions: (@Composable () -> Unit)? = null,
 ) {
     val focusManager = LocalFocusManager.current
+    val density = LocalDensity.current
     var focused by remember { mutableStateOf(false) }
+    var fieldSize by remember { mutableStateOf(IntSize.Zero) }
     val showHistory = focused && query.isBlank() && recentSearches.isNotEmpty()
+    val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
 
-    Surface(
+    Box(
         modifier = modifier
             .fillMaxWidth()
+            .onSizeChanged { fieldSize = it }
             .onFocusChanged { focused = it.hasFocus },
-        shape = RoundedCornerShape(SearchBoxCorner),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
-        Column {
+        Surface(
+            shape = if (showHistory) {
+                RoundedCornerShape(topStart = SearchBoxCorner, topEnd = SearchBoxCorner)
+            } else {
+                RoundedCornerShape(SearchBoxCorner)
+            },
+            color = containerColor,
+            shadowElevation = if (showHistory) 6.dp else 0.dp,
+        ) {
             SearchField(
                 query = query,
                 onQueryChange = onQueryChange,
@@ -79,28 +98,44 @@ fun SearchBox(
                 },
                 actions = actions,
             )
-            AnimatedVisibility(
-                visible = showHistory,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut(),
+        }
+        if (showHistory) {
+            Popup(
+                alignment = Alignment.TopStart,
+                offset = IntOffset(0, fieldSize.height),
+                onDismissRequest = { focusManager.clearFocus() },
+                properties = PopupProperties(focusable = false),
             ) {
-                Column(modifier = Modifier.padding(bottom = 8.dp)) {
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    Text(
-                        text = stringResource(Res.string.compose_search_recent_searches),
-                        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 4.dp),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    recentSearches.forEach { recentQuery ->
-                        SearchBoxRecentRow(
-                            query = recentQuery,
-                            onClick = {
-                                onRecentSearchClick(recentQuery)
-                                focusManager.clearFocus()
-                            },
-                            onRemove = { onRemoveRecentSearch(recentQuery) },
-                        )
+                val visible = remember { MutableTransitionState(false).apply { targetState = true } }
+                AnimatedVisibility(
+                    visibleState = visible,
+                    enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+                ) {
+                    Surface(
+                        modifier = Modifier.width(with(density) { fieldSize.width.toDp() }),
+                        shape = RoundedCornerShape(bottomStart = SearchBoxCorner, bottomEnd = SearchBoxCorner),
+                        color = containerColor,
+                        shadowElevation = 6.dp,
+                    ) {
+                        Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                            Text(
+                                text = stringResource(Res.string.compose_search_recent_searches),
+                                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 4.dp),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            recentSearches.forEach { recentQuery ->
+                                SearchBoxRecentRow(
+                                    query = recentQuery,
+                                    onClick = {
+                                        onRecentSearchClick(recentQuery)
+                                        focusManager.clearFocus()
+                                    },
+                                    onRemove = { onRemoveRecentSearch(recentQuery) },
+                                )
+                            }
+                        }
                     }
                 }
             }

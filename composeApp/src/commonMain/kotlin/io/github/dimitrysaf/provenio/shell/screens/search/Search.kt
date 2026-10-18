@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.stopScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -56,6 +58,7 @@ import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
 import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.shell.components.NetworkOfflineCard
 import io.github.dimitrysaf.provenio.shell.components.ScreenScaffold
+import io.github.dimitrysaf.provenio.shell.components.FullscreenButton
 import io.github.dimitrysaf.provenio.shell.components.SearchBox
 import io.github.dimitrysaf.provenio.shell.components.SearchField
 import io.github.dimitrysaf.provenio.shell.components.WindowBreakpoint
@@ -284,17 +287,25 @@ fun SearchScreen(
                         .padding(horizontal = 24.dp, vertical = 12.dp),
                     contentAlignment = Alignment.TopCenter,
                 ) {
-                    SearchBox(
-                        query = query,
-                        onQueryChange = { query = it },
-                        placeholder = stringResource(Res.string.compose_search_placeholder),
-                        recentSearches = recentSearches,
-                        onRecentSearchClick = { recentQuery -> query = recentQuery },
-                        onRemoveRecentSearch = SearchHistoryRepository::removeSearch,
-                        modifier = Modifier.widthIn(max = SearchBoxMaxWidth),
-                        focusRequester = focusRequester,
-                        actions = filterActions,
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        SearchBox(
+                            query = query,
+                            onQueryChange = { query = it },
+                            placeholder = stringResource(Res.string.compose_search_placeholder),
+                            recentSearches = recentSearches,
+                            onRecentSearchClick = { recentQuery -> query = recentQuery },
+                            onRemoveRecentSearch = SearchHistoryRepository::removeSearch,
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .widthIn(max = SearchBoxMaxWidth),
+                            focusRequester = focusRequester,
+                            actions = filterActions,
+                        )
+                        FullscreenButton()
+                    }
                 }
             } else {
                 SearchField(
