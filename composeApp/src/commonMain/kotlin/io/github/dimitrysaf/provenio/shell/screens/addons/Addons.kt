@@ -2,44 +2,36 @@ package io.github.dimitrysaf.provenio.shell.screens.addons
 
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.rounded.CollectionsBookmark
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.LiveTv
-import androidx.compose.material.icons.rounded.Movie
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Subtitles
-import androidx.compose.material.icons.rounded.Tv
-import androidx.compose.material3.Surface
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Extension
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.LiveTv
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Movie
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Subtitles
+import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -49,6 +41,7 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.SegmentedListItem
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -70,7 +63,9 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
@@ -181,17 +176,19 @@ internal fun AddonsSettingsPageContent(
             },
         )
 
+        // The row count includes the add row, so every addon's corners know where it sits.
+        val rowCount = addons.size + 1
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = AddonListMaxHeight),
             state = lazyListState,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(ListItemBetweenSpace),
         ) {
             item(key = AddAddonRowKey) {
                 NewEntryRow(
                     text = stringResource(Res.string.addons_add_row),
-                    shape = segmentShape(index = 0, count = 1),
+                    shape = segmentShape(index = 0, count = rowCount),
                     onClick = { showAddDialog = true },
                 )
             }
@@ -200,9 +197,10 @@ internal fun AddonsSettingsPageContent(
                 ReorderableItem(reorderableLazyListState, key = addon.manifestUrl) { isDragging ->
                     val configureUrl = addon.configurePageUrl()
 
-                    AddonCard(
+                    AddonListRow(
                         addon = addon,
-                        dragging = isDragging,
+                        shape = segmentShape(index = index + 1, count = rowCount),
+                        selected = isDragging,
                         onEnabledChange = { enabled ->
                             AddonRepository.setAddonEnabled(addon.manifestUrl, enabled)
                         },
@@ -316,14 +314,20 @@ internal fun AddonsSettingsPageContent(
 }
 
 /**
- * One installed addon, as a card in the Accounts cards' style: a banner with its logo, name and
- * version, tags for what it provides, then a row for each thing that can be done to it. Holding
- * the banner and dragging moves the addon in the list.
+ * One installed addon.
+ *
+ * The row states what the addon is and whether it is on. What you can do to it lives in a menu
+ * behind the trailing button, because four labelled actions do not fit across a phone's width and
+ * a menu is what the spec offers for a row's overflow. Dragging is the row's one selected state,
+ * and it starts from a long press rather than a handle, so the row carries no control that is
+ * only there to be grabbed.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun AddonCard(
+private fun AddonListRow(
     addon: ManagedAddon,
-    dragging: Boolean,
+    shape: RoundedCornerShape,
+    selected: Boolean,
     onEnabledChange: (Boolean) -> Unit,
     onConfigure: (() -> Unit)?,
     onDelete: () -> Unit,
@@ -333,191 +337,229 @@ private fun AddonCard(
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val manifest = addon.manifest
-    val tags = addonTags(addon)
-    val enabledTitle = stringResource(Res.string.addons_enabled)
-    val description = listOfNotNull(
+    var menuOpen by remember { mutableStateOf(false) }
+    val supporting = listOfNotNull(
+        manifest?.version?.let { stringResource(Res.string.addons_version_format, it) },
         manifest?.description?.takeIf { it.isNotBlank() },
         addon.errorMessage,
-    ).joinToString(" · ").takeIf(String::isNotBlank)
-    val configureTitle = stringResource(Res.string.addons_configure_action)
-    val copyTitle = stringResource(Res.string.addons_copy_url)
-    val reloadTitle = stringResource(Res.string.addons_reload_manifest)
-    val deleteTitle = stringResource(Res.string.addons_delete)
-    val dragModifier = with(dragHandleScope) {
-        Modifier.longPressDraggableHandle(
-            onDragStarted = { hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress) },
-            onDragStopped = { hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove) },
-        )
-    }
+    ).joinToString(" · ")
+    val tags = addonTags(addon)
 
-    SettingsList(
-        modifier = Modifier.graphicsLayer {
-            val scale = if (dragging) 1.02f else 1f
-            scaleX = scale
-            scaleY = scale
+    SegmentedListItem(
+        modifier = with(dragHandleScope) {
+            Modifier.onSecondaryClick { menuOpen = true }.longPressDraggableHandle(
+                onDragStarted = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
+                onDragStopped = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                },
+            )
+        },
+        selected = selected,
+        onClick = { menuOpen = true },
+        // Only the selected shape differs, so a dragged row takes the group's outer corner
+        // while pressing or focusing one leaves it where it sits.
+        shapes = ListItemDefaults.shapes(
+            shape = shape,
+            selectedShape = RoundedCornerShape(OuterCorner),
+            pressedShape = shape,
+            focusedShape = shape,
+            hoveredShape = shape,
+        ),
+        colors = ListItemDefaults.segmentedColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        ),
+        // The icon, switch and menu sit at the top, beside the name, however long the row grows.
+        verticalAlignment = Alignment.Top,
+        leadingContent = {
+            AddonIconBadge(
+                imageUrl = manifest?.logoUrl,
+                icon = Icons.Rounded.Extension,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        // The description gets room for a few lines, then trails off, so a long one does not
+        // stretch the row.
+        supportingContent = if (supporting.isNotBlank() || tags.isNotEmpty()) {
+            {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (supporting.isNotBlank()) {
+                        Text(text = supporting, maxLines = AddonDescriptionMaxLines, overflow = TextOverflow.Ellipsis)
+                    }
+                    if (tags.isNotEmpty()) {
+                        AddonTagsRow(tags = tags, active = addon.isActive)
+                    }
+                }
+            }
+        } else {
+            null
+        },
+        trailingContent = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Switch(
+                    checked = addon.enabled,
+                    onCheckedChange = onEnabledChange,
+                )
+                // The menu anchors to this box, so it opens at the button it belongs to.
+                Box {
+                    WithTooltip(stringResource(Res.string.addons_more_actions)) {
+                        IconButton(onClick = { menuOpen = true }) {
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = stringResource(Res.string.addons_more_actions),
+                            )
+                        }
+                    }
+                    AddonActionsMenu(
+                        expanded = menuOpen,
+                        isRefreshing = addon.isRefreshing,
+                        onDismiss = { menuOpen = false },
+                        onConfigure = onConfigure,
+                        onCopyUrl = onCopyUrl,
+                        onReload = onReload,
+                        onDelete = onDelete,
+                    )
+                }
+            }
         },
     ) {
-        shapedRow { shape ->
-            AddonBanner(
-                title = addon.displayTitle,
-                version = manifest?.version?.let { stringResource(Res.string.addons_version_format, it) },
-                logoUrl = manifest?.logoUrl,
-                shape = shape,
-                modifier = dragModifier,
-            )
-        }
-        if (tags.isNotEmpty()) {
-            shapedRow { shape ->
-                AddonTagsRow(tags = tags, active = addon.isActive, shape = shape)
-            }
-        }
-        switchRow(
-            title = enabledTitle,
-            description = description,
-            checked = { addon.enabled },
-            onCheckedChange = onEnabledChange,
-        )
-        if (onConfigure != null) {
-            navigationRow(title = configureTitle, onClick = onConfigure)
-        }
-        navigationRow(title = copyTitle, onClick = onCopyUrl)
-        navigationRow(
-            title = reloadTitle,
-            enabled = !addon.isRefreshing,
-            onClick = onReload,
-        )
-        navigationRow(title = deleteTitle, onClick = onDelete)
+        Text(text = addon.displayTitle)
     }
 }
 
-/** What the addon provides, its resources then its content types, as tags. */
+/** What can be done to one addon. Each action names itself and shows what it does. */
 @Composable
-private fun addonTags(addon: ManagedAddon): List<Pair<ImageVector, String>> {
+private fun AddonActionsMenu(
+    expanded: Boolean,
+    isRefreshing: Boolean,
+    onDismiss: () -> Unit,
+    onConfigure: (() -> Unit)?,
+    onCopyUrl: () -> Unit,
+    onReload: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        // An addon with no configuration page is offered no button, rather than one that can
+        // only be dismissed.
+        onConfigure?.let { configure ->
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.addons_configure_action)) },
+                leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null) },
+                onClick = {
+                    onDismiss()
+                    configure()
+                },
+            )
+        }
+        DropdownMenuItem(
+            text = { Text(stringResource(Res.string.addons_copy_url)) },
+            leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
+            onClick = {
+                onDismiss()
+                onCopyUrl()
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(Res.string.addons_reload_manifest)) },
+            leadingIcon = { Icon(Icons.Rounded.Refresh, contentDescription = null) },
+            enabled = !isRefreshing,
+            onClick = {
+                onDismiss()
+                onReload()
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(Res.string.addons_delete)) },
+            leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
+            colors = MenuDefaults.itemColors(
+                textColor = MaterialTheme.colorScheme.error,
+                leadingIconColor = MaterialTheme.colorScheme.error,
+            ),
+            onClick = {
+                onDismiss()
+                onDelete()
+            },
+        )
+    }
+}
+
+/** One thing an addon provides, and how many of it when that can be counted. */
+private class AddonTag(val icon: ImageVector, val label: String, val count: Int? = null)
+
+/**
+ * What the addon provides, its resources then its content types. Catalogs carry how many the
+ * addon has, and each type how many of those catalogs are of it.
+ */
+@Composable
+private fun addonTags(addon: ManagedAddon): List<AddonTag> {
     val manifest = addon.manifest ?: return emptyList()
+    val catalogsByType = manifest.catalogs.groupingBy { it.type.lowercase() }.eachCount()
     val resources = manifest.resources.map { it.name.lowercase() }.distinct().map { resource ->
         when (resource) {
-            "catalog" -> Icons.Rounded.CollectionsBookmark to stringResource(Res.string.addons_resource_catalogs)
-            "meta" -> Icons.Rounded.Info to stringResource(Res.string.addons_resource_details)
-            "stream" -> Icons.Rounded.PlayArrow to stringResource(Res.string.addons_resource_streams)
-            "subtitles" -> Icons.Rounded.Subtitles to stringResource(Res.string.addons_resource_subtitles)
-            "addon_catalog" -> Icons.Rounded.Extension to stringResource(Res.string.addons_resource_addon_catalogs)
-            else -> Icons.Rounded.Extension to resource.replaceFirstChar { it.uppercase() }
+            "catalog" -> AddonTag(
+                Icons.Rounded.CollectionsBookmark,
+                stringResource(Res.string.addons_resource_catalogs),
+                manifest.catalogs.size.takeIf { it > 0 },
+            )
+            "meta" -> AddonTag(Icons.Rounded.Info, stringResource(Res.string.addons_resource_details))
+            "stream" -> AddonTag(Icons.Rounded.PlayArrow, stringResource(Res.string.addons_resource_streams))
+            "subtitles" -> AddonTag(Icons.Rounded.Subtitles, stringResource(Res.string.addons_resource_subtitles))
+            "addon_catalog" -> AddonTag(Icons.Rounded.Extension, stringResource(Res.string.addons_resource_addon_catalogs))
+            else -> AddonTag(Icons.Rounded.Extension, resource.replaceFirstChar { it.uppercase() })
         }
     }
     val types = manifest.types.map { it.lowercase() }.distinct().map { type ->
+        val count = catalogsByType[type]
         when (type) {
-            "movie" -> Icons.Rounded.Movie to stringResource(Res.string.addons_type_movies)
-            "series" -> Icons.Rounded.Tv to stringResource(Res.string.addons_type_series)
-            "channel" -> Icons.Rounded.LiveTv to stringResource(Res.string.addons_type_channels)
-            "tv" -> Icons.Rounded.LiveTv to stringResource(Res.string.addons_type_tv)
-            else -> Icons.Rounded.Movie to type.replaceFirstChar { it.uppercase() }
+            "movie" -> AddonTag(Icons.Rounded.Movie, stringResource(Res.string.addons_type_movies), count)
+            "series" -> AddonTag(Icons.Rounded.Tv, stringResource(Res.string.addons_type_series), count)
+            "channel" -> AddonTag(Icons.Rounded.LiveTv, stringResource(Res.string.addons_type_channels), count)
+            "tv" -> AddonTag(Icons.Rounded.LiveTv, stringResource(Res.string.addons_type_tv), count)
+            else -> AddonTag(Icons.Rounded.Movie, type.replaceFirstChar { it.uppercase() }, count)
         }
     }
     return resources + types
 }
 
-/** The addon's banner: its logo blurred behind, the logo itself, its name and version. */
+/** The addon's tags as tonal pills in one row that scrolls sideways, filled in while it is on. */
 @Composable
-private fun AddonBanner(
-    title: String,
-    version: String?,
-    logoUrl: String?,
-    shape: RoundedCornerShape,
-    modifier: Modifier = Modifier,
-) {
-    val container = MaterialTheme.colorScheme.secondaryContainer
-    val content = MaterialTheme.colorScheme.onSecondaryContainer
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(AddonBannerHeight)
-            .clip(shape)
-            .background(
-                Brush.linearGradient(listOf(container, MaterialTheme.colorScheme.tertiaryContainer)),
-            ),
-        contentAlignment = Alignment.CenterStart,
+private fun AddonTagsRow(tags: List<AddonTag>, active: Boolean) {
+    Row(
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        if (!logoUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = logoUrl,
-                contentDescription = null,
-                modifier = Modifier
-                    .matchParentSize()
-                    .blur(28.dp)
-                    .alpha(0.45f),
-                contentScale = ContentScale.Crop,
-            )
-        }
-        Row(
-            modifier = Modifier.padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            AddonIconBadge(
-                imageUrl = logoUrl,
-                icon = Icons.Rounded.Extension,
-                tint = content,
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = content,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (version != null) {
-                    Text(
-                        text = version,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = content.copy(alpha = 0.8f),
-                    )
-                }
-            }
-        }
-    }
-}
-
-/** What the addon provides, as tonal chips: filled in while it is on, muted while it is off. */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun AddonTagsRow(
-    tags: List<Pair<ImageVector, String>>,
-    active: Boolean,
-    shape: RoundedCornerShape,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = shape,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-    ) {
-        FlowRow(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            tags.forEach { (icon, label) ->
-                Surface(
-                    shape = CircleShape,
-                    color = if (active) {
-                        MaterialTheme.colorScheme.secondaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                    },
-                    contentColor = if (active) {
-                        MaterialTheme.colorScheme.onSecondaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+        tags.forEach { tag ->
+            Surface(
+                shape = CircleShape,
+                color = if (active) {
+                    MaterialTheme.colorScheme.secondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHighest
+                },
+                contentColor = if (active) {
+                    MaterialTheme.colorScheme.onSecondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            ) {
+                Row(
+                    modifier = Modifier.padding(start = 10.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        modifier = Modifier.padding(start = 10.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Text(text = label, style = MaterialTheme.typography.labelLarge)
+                    Icon(imageVector = tag.icon, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(text = tag.label, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                    tag.count?.let { count ->
+                        Text(
+                            text = count.toString(),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                        )
                     }
                 }
             }
@@ -525,7 +567,7 @@ private fun AddonTagsRow(
     }
 }
 
-private val AddonBannerHeight = 104.dp
+private const val AddonDescriptionMaxLines = 4
 
 private sealed interface AddonInstallModalState {
     val isBusy: Boolean

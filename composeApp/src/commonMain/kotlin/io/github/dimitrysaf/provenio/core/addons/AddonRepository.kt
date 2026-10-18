@@ -52,7 +52,7 @@ object AddonRepository {
         storedUrls.forEach { manifestUrl ->
             val existing = existingByUrl[manifestUrl]
             val addon = _uiState.value.addons.firstOrNull { it.manifestUrl == manifestUrl }
-            if (addon?.enabled == true && (existing == null || (addon.manifest == null && !addon.isRefreshing))) {
+            if (addon != null && (existing == null || addon.manifest == null)) {
                 refreshAddon(manifestUrl)
             }
         }
@@ -204,16 +204,8 @@ object AddonRepository {
         var refreshJob: Job? = null
         refreshJob = scope.launch {
             try {
-                val result = runCatching {
-                    val payload = fetchAddonResponseText(
-                        url = manifestUrl,
-                        forceRefresh = forceRefresh,
-                    )
-                    AddonManifestParser.parse(
-                        manifestUrl = manifestUrl,
-                        payload = payload,
-                    )
-                }
+                val result = runCatching { loadManifest(manifestUrl, forceRefresh) }
+                    .recoverCatching { loadManifest(manifestUrl, forceRefresh = true) }
 
                 _uiState.update { current ->
                     current.copy(
@@ -248,6 +240,12 @@ object AddonRepository {
         }
         activeRefreshJobs[manifestUrl] = refreshJob
     }
+
+    private suspend fun loadManifest(manifestUrl: String, forceRefresh: Boolean): AddonManifest =
+        AddonManifestParser.parse(
+            manifestUrl = manifestUrl,
+            payload = fetchAddonResponseText(url = manifestUrl, forceRefresh = forceRefresh),
+        )
 
     private fun markRefreshing(manifestUrl: String) {
         _uiState.update { current ->
@@ -285,7 +283,7 @@ object AddonRepository {
         persist()
         _uiState.value.addons.forEach { addon ->
             val existing = existingByUrl[addon.manifestUrl]
-            if (addon.enabled && (existing == null || (addon.manifest == null && !addon.isRefreshing))) {
+            if (existing == null || addon.manifest == null) {
                 refreshAddon(addon.manifestUrl)
             }
         }
@@ -331,7 +329,7 @@ private fun ManagedAddon?.toPendingAddon(
     when {
         this == null -> ManagedAddon(
             manifestUrl = manifestUrl,
-            isRefreshing = enabled ?: true,
+            isRefreshing = true,
             userSetName = userSetName,
             enabled = enabled ?: true,
         )
@@ -348,7 +346,7 @@ private fun ManagedAddon?.toPendingAddon(
         )
         else -> copy(
             manifestUrl = manifestUrl,
-            isRefreshing = enabled ?: this.enabled,
+            isRefreshing = true,
             errorMessage = null,
             userSetName = userSetName ?: this.userSetName,
             enabled = enabled ?: this.enabled,

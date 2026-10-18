@@ -46,7 +46,6 @@
     <string name="addons_modal_success_title">Addon Installed</string>
     <string name="addons_section_installed">Installed Addons</string>
     <string name="addons_version_format">Version %1$s</string>
-    <string name="addons_enabled">Enabled</string>
     <string name="addons_resource_catalogs">Catalogs</string>
     <string name="addons_resource_details">Details</string>
     <string name="addons_resource_streams">Streams</string>
