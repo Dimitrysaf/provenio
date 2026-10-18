@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.animation.AnimatedVisibility
+import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -367,10 +368,10 @@ internal sealed interface SettingsListRow {
                 // Centred at any height: by default a tall row pins its controls to the top.
                 verticalAlignment = Alignment.CenterVertically,
                 leadingContent = leadingContent ?: leadingIcon(icon, iconPainter, iconHue, LocalSettingsRowIcons.current),
-                supportingContent = description?.takeIf { it.isNotBlank() }?.let { { Text(it) } },
+                supportingContent = description?.takeIf { it.isNotBlank() }?.let { { FindableText(it) } },
                 trailingContent = trailingContent,
             ) {
-                Text(title)
+                FindableText(title)
             }
         }
     }
@@ -397,7 +398,7 @@ internal sealed interface SettingsListRow {
                 // Centred at any height: by default a tall row pins its controls to the top.
                 verticalAlignment = Alignment.CenterVertically,
                 leadingContent = leadingIcon(icon, null, showPlainIcons = LocalSettingsRowIcons.current),
-                supportingContent = description?.takeIf { it.isNotBlank() }?.let { { Text(it) } },
+                supportingContent = description?.takeIf { it.isNotBlank() }?.let { { FindableText(it) } },
                 trailingContent = {
                     Switch(
                         checked = isChecked,
@@ -406,7 +407,7 @@ internal sealed interface SettingsListRow {
                     )
                 },
             ) {
-                Text(title)
+                FindableText(title)
             }
         }
     }
@@ -477,13 +478,13 @@ private fun SettingsInfoRowContent(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                Text(
+                FindableText(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 description?.takeIf { it.isNotBlank() }?.let {
-                    Text(
+                    FindableText(
                         text = it,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -491,7 +492,7 @@ private fun SettingsInfoRowContent(
                 }
             }
             value?.takeIf { it.isNotBlank() }?.let {
-                Text(
+                FindableText(
                     text = it,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,

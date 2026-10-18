@@ -350,8 +350,6 @@ private fun AddonListRow(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
     ) {
-        // The icon, name, switch and menu share the top line; the description and the tags run
-        // the row's full width beneath them.
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -400,8 +398,6 @@ private fun AddonListRow(
                     }
                 }
             }
-            // The description gets room for a few lines, then trails off, so a long one does not
-            // stretch the row.
             if (supporting.isNotBlank()) {
                 Text(
                     text = supporting,

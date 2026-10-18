@@ -23,6 +23,7 @@ enum class AppShortcutAction {
     Back,
     Forward,
     KeyboardShortcuts,
+    FindInPage,
 }
 
 object AppKeyboardShortcuts {
@@ -43,7 +44,8 @@ object AppKeyboardShortcuts {
         return when {
             command && !event.isAltPressed && !event.isShiftPressed -> when (event.key) {
                 Key.One -> AppShortcutAction.Home
-                Key.Two, Key.F, Key.K -> AppShortcutAction.Search
+                Key.Two, Key.K -> AppShortcutAction.Search
+                Key.F -> AppShortcutAction.FindInPage
                 Key.Three -> AppShortcutAction.Library
                 Key.Four, Key.Comma -> AppShortcutAction.Settings
                 Key.J -> AppShortcutAction.Downloads

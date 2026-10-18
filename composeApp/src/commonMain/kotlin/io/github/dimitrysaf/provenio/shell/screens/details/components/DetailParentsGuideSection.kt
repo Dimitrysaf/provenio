@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import androidx.compose.foundation.background
+import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -70,12 +71,12 @@ private fun ParentalWarningChip(warning: ParentalWarning) {
             tint = color,
             modifier = Modifier.size(16.dp),
         )
-        Text(
+        FindableText(
             text = warning.label,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        Text(
+        FindableText(
             text = warning.severity,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,

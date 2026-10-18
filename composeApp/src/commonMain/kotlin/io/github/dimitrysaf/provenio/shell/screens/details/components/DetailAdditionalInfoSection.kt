@@ -1,6 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.text.selection.SelectionContainer
+import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,7 +39,9 @@ fun DetailAdditionalInfoSection(
         modifier = modifier,
         showHeader = showHeader,
     ) {
-        DetailInfoRows(rows = rows)
+        SelectionContainer {
+            DetailInfoRows(rows = rows)
+        }
     }
 }
 
@@ -118,12 +122,12 @@ private fun DetailInfoRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
+            FindableText(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
+            FindableText(
                 text = value,
                 modifier = Modifier
                     .weight(1f)

@@ -1,6 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
+import androidx.compose.foundation.text.selection.SelectionContainer
+import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.components.horizontalWheelPaging
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.animation.core.animateFloatAsState
@@ -456,7 +458,7 @@ private fun HeroTrailerPage(
                     )
                 }
             }
-            Text(
+            FindableText(
                 text = trailer.displayName?.takeIf { it.isNotBlank() } ?: trailer.name,
                 style = MaterialTheme.typography.labelLarge,
                 color = HeroOnArtworkColor,
@@ -492,20 +494,22 @@ private fun HeroTitleBlock(
                 onError = { logoLoadError = true },
             )
         } else {
-            Text(
-                text = meta.name,
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.displaySmallEmphasized,
-                color = HeroOnArtworkColor,
-                textAlign = if (layout.centerTitle) TextAlign.Center else TextAlign.Start,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            SelectionContainer {
+                FindableText(
+                    text = meta.name,
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.displaySmallEmphasized,
+                    color = HeroOnArtworkColor,
+                    textAlign = if (layout.centerTitle) TextAlign.Center else TextAlign.Start,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
 
         if (meta.genres.isNotEmpty()) {
             Spacer(modifier = Modifier.height(12.dp))
-            Text(
+            FindableText(
                 text = meta.genres.take(3).joinToString(" • "),
                 style = MaterialTheme.typography.labelLarge,
                 color = HeroOnArtworkVariantColor,

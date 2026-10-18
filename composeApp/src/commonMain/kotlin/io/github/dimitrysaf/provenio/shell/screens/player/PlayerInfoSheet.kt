@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
 import androidx.compose.foundation.layout.Arrangement
+import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -115,21 +117,23 @@ internal fun PlayerInfoSheet(
                 if (images.isNotEmpty()) {
                     PlayerInfoCarousel(images = images, contentDescription = heading)
                 }
-                Column(
-                    modifier = Modifier.padding(horizontal = BottomSheetBodyMargin),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = heading,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    if (!subtitle.isNullOrBlank()) {
-                        Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                SelectionContainer {
+                    Column(
+                        modifier = Modifier.padding(horizontal = BottomSheetBodyMargin),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        FindableText(
+                            text = heading,
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
+                        if (!subtitle.isNullOrBlank()) {
+                            FindableText(
+                                text = subtitle,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }

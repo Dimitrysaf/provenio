@@ -54,6 +54,18 @@ object SearchRepository {
     val discoverUiState: StateFlow<DiscoverUiState> = _discoverUiState.asStateFlow()
     private val _filters = MutableStateFlow(SearchFilterState())
     val filters: StateFlow<SearchFilterState> = _filters.asStateFlow()
+    private val _queryRequests = MutableStateFlow<String?>(null)
+
+    /** A search asked for from another screen, such as Home's search box, for the Search page to run. */
+    val queryRequests: StateFlow<String?> = _queryRequests.asStateFlow()
+
+    fun requestQuery(query: String) {
+        _queryRequests.value = query.trim().takeIf(String::isNotBlank)
+    }
+
+    fun consumeQueryRequest() {
+        _queryRequests.value = null
+    }
 
     private var activeJob: Job? = null
     private var activeDiscoverJob: Job? = null

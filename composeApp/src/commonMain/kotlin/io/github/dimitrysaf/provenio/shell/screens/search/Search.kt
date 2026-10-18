@@ -4,6 +4,7 @@ import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.stopScroll
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -39,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -53,7 +56,9 @@ import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
 import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.shell.components.NetworkOfflineCard
 import io.github.dimitrysaf.provenio.shell.components.ScreenScaffold
+import io.github.dimitrysaf.provenio.shell.components.SearchBox
 import io.github.dimitrysaf.provenio.shell.components.SearchField
+import io.github.dimitrysaf.provenio.shell.components.WindowBreakpoint
 import io.github.dimitrysaf.provenio.shell.components.ScreenActivityEffect
 import io.github.dimitrysaf.provenio.shell.components.withDuplicateSafeLazyKeys
 import io.github.dimitrysaf.provenio.core.addons.AddonRepository
@@ -98,6 +103,9 @@ import io.github.dimitrysaf.provenio.core.search.sortedFor
 
 /** The side margin the discover grid sits in, which its column count has to allow for. */
 private val DiscoverGridHorizontalPadding = 16.dp
+
+/** How wide the large screen search box grows. */
+internal val SearchBoxMaxWidth = 720.dp
 
 @Composable
 fun SearchScreen(
@@ -147,6 +155,13 @@ fun SearchScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var lastRequestedQuery by rememberSaveable { mutableStateOf<String?>(null) }
     var observedOfflineState by remember { mutableStateOf(false) }
+    val requestedQuery by SearchRepository.queryRequests.collectAsStateWithLifecycle()
+    LaunchedEffect(requestedQuery) {
+        requestedQuery?.let { requested ->
+            query = requested
+            SearchRepository.consumeQueryRequest()
+        }
+    }
     ScreenActivityEffect(scrollToTopRequests) { screenActive ->
         if (!screenActive) return@ScreenActivityEffect
         scrollToTopRequests.collect {
@@ -245,6 +260,15 @@ fun SearchScreen(
         val homeSectionPadding = remember(maxWidth) {
             homeSectionHorizontalPaddingForWidth(maxWidth.value)
         }
+        val largeScreen = WindowBreakpoint.forWidth(maxWidth) >= WindowBreakpoint.Medium
+        val filterActions: @Composable () -> Unit = {
+            SearchFiltersButton(
+                searching = query.isNotBlank(),
+                searchSections = uiState.sections,
+                discoverState = discoverUiState,
+                filters = filters,
+            )
+        }
         // No app bar: the field is the heading. A screen whose whole purpose is one text input
         // does not also need its name written above it.
         Column(
@@ -252,22 +276,37 @@ fun SearchScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface),
         ) {
-            SearchField(
-                query = query,
-                onQueryChange = { query = it },
-                placeholder = stringResource(Res.string.compose_search_placeholder),
-                modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
-                divided = true,
-                focusRequester = focusRequester,
-                actions = {
-                    SearchFiltersButton(
-                        searching = query.isNotBlank(),
-                        searchSections = uiState.sections,
-                        discoverState = discoverUiState,
-                        filters = filters,
+            if (largeScreen) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .padding(horizontal = 24.dp, vertical = 12.dp),
+                    contentAlignment = Alignment.TopCenter,
+                ) {
+                    SearchBox(
+                        query = query,
+                        onQueryChange = { query = it },
+                        placeholder = stringResource(Res.string.compose_search_placeholder),
+                        recentSearches = recentSearches,
+                        onRecentSearchClick = { recentQuery -> query = recentQuery },
+                        onRemoveRecentSearch = SearchHistoryRepository::removeSearch,
+                        modifier = Modifier.widthIn(max = SearchBoxMaxWidth),
+                        focusRequester = focusRequester,
+                        actions = filterActions,
                     )
-                },
-            )
+                }
+            } else {
+                SearchField(
+                    query = query,
+                    onQueryChange = { query = it },
+                    placeholder = stringResource(Res.string.compose_search_placeholder),
+                    modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
+                    divided = true,
+                    focusRequester = focusRequester,
+                    actions = filterActions,
+                )
+            }
             ScreenScaffold(
                 title = null,
                 horizontalPadding = 0.dp,
@@ -276,7 +315,7 @@ fun SearchScreen(
                 modifier = Modifier.weight(1f),
             ) {
             if (query.isBlank()) {
-                if (recentSearches.isNotEmpty()) {
+                if (recentSearches.isNotEmpty() && !largeScreen) {
                     item(key = "recent_searches") {
                         SearchRecentSection(
                             recentSearches = recentSearches,

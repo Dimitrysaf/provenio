@@ -1,6 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.text.selection.SelectionContainer
+import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -117,7 +119,7 @@ fun DetailMetaInfo(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         if (infoExpanded) {
-                            Text(
+                            FindableText(
                                 text = detailInfoTitle(meta),
                                 modifier = Modifier.weight(1f),
                                 style = MaterialTheme.typography.titleMediumEmphasized,
@@ -189,11 +191,13 @@ fun DetailMetaInfo(
         }
 
         if (!meta.description.isNullOrBlank()) {
-            Text(
-                text = meta.description,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            SelectionContainer {
+                FindableText(
+                    text = meta.description,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -215,7 +219,7 @@ private fun MetaFactsLine(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         if (facts.isNotEmpty()) {
-            Text(
+            FindableText(
                 text = facts,
                 modifier = Modifier.weight(1f, fill = false),
                 style = MaterialTheme.typography.titleMediumEmphasized,
@@ -235,7 +239,7 @@ private fun MetaFactsLine(
                     storeTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.width(5.dp))
-                Text(
+                FindableText(
                     text = rating,
                     style = imdbTextStyle,
                     color = ImdbYellow,
@@ -289,7 +293,7 @@ private fun DetailRatingsRow(
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(
+                FindableText(
                     text = visuals.format(rating.value),
                     style = ratingTextStyle,
                     color = visuals.valueColor,
@@ -309,7 +313,7 @@ private fun ImdbRatingSourceLabel(
             shape = RoundedCornerShape(4.dp),
             color = ImdbYellow,
         ) {
-            Text(
+            FindableText(
                 text = stringResource(Res.string.source_imdb),
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                 style = MaterialTheme.typography.labelMedium.copy(
@@ -321,7 +325,7 @@ private fun ImdbRatingSourceLabel(
             )
         }
     } else {
-        Text(
+        FindableText(
             text = stringResource(Res.string.source_imdb),
             style = storeTextStyle,
             color = storeTextColor,
@@ -336,12 +340,12 @@ private fun MetaLabelValueRow(
     value: String,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
+        FindableText(
             text = label,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(
+        FindableText(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
@@ -368,7 +372,7 @@ private fun DetailHeroMetaBadge(
         contentColor = contentColor,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Text(
+        FindableText(
             text = text,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelMedium,

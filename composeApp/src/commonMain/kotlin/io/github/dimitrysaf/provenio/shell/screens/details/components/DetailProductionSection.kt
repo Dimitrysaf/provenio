@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import androidx.compose.foundation.layout.Arrangement
+import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.height
@@ -72,7 +73,7 @@ private fun ProductionChip(
     AssistChip(
         onClick = onClick ?: {},
         label = {
-            Text(
+            FindableText(
                 text = item.name,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

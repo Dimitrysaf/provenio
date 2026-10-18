@@ -55,6 +55,11 @@
     <string name="addons_type_series">Series</string>
     <string name="addons_type_channels">Channels</string>
     <string name="addons_type_tv">TV</string>
+    <string name="find_in_page_hint">Find in page</string>
+    <string name="find_in_page_count">%1$d of %2$d</string>
+    <string name="find_in_page_next">Next match</string>
+    <string name="find_in_page_previous">Previous match</string>
+    <string name="keyboard_action_find_in_page">Find in page</string>
     <string name="keyboard_shortcuts_title">Keyboard shortcuts</string>
     <string name="keyboard_shortcuts_entry_description">Every shortcut for the app and the player</string>
     <string name="settings_save_logs_title">Save logs</string>

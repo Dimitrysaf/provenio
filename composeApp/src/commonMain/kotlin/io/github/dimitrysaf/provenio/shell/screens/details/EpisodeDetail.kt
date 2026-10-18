@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
 import androidx.compose.foundation.background
+import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -176,7 +177,7 @@ private fun EpisodeDetailPlaceholder(
                     if (loading) {
                         LoadingSpinner()
                     } else {
-                        Text(
+                        FindableText(
                             text = stringResource(Res.string.episode_details_not_found),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,

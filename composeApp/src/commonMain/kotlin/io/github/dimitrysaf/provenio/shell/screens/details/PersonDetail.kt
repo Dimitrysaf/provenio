@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
 import androidx.compose.runtime.CompositionLocalProvider
+import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.components.LocalPosterAreaWidth
 import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -522,7 +523,7 @@ private fun PersonHeroPage(
                 .graphicsLayer { alpha = contentAlpha() },
             horizontalAlignment = if (centerTitle) Alignment.CenterHorizontally else Alignment.Start,
         ) {
-            Text(
+            FindableText(
                 text = name,
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.displaySmallEmphasized,
@@ -533,7 +534,7 @@ private fun PersonHeroPage(
             )
             if (!subtitle.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(
+                FindableText(
                     text = subtitle,
                     style = MaterialTheme.typography.labelLarge,
                     color = HeroOnArtworkVariantColor,
@@ -596,7 +597,7 @@ private fun PersonHeaderOverlay(
                 actionIconContentColor = MaterialTheme.colorScheme.onBackground,
             ),
             title = {
-                Text(
+                FindableText(
                     text = title,
                     modifier = Modifier.graphicsLayer { alpha = progress },
                     style = MaterialTheme.typography.titleLarge,

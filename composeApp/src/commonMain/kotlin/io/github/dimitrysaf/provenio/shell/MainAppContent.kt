@@ -6,6 +6,7 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -81,6 +82,8 @@ import io.github.dimitrysaf.provenio.shell.nav.*
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsDownloadsPageName
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsPage
 import io.github.dimitrysaf.provenio.shell.components.AppKeyboardShortcuts
+import io.github.dimitrysaf.provenio.shell.components.FindInPage
+import io.github.dimitrysaf.provenio.shell.components.FindInPageBar
 import io.github.dimitrysaf.provenio.shell.components.AppShortcutAction
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -384,6 +387,7 @@ internal fun MainAppContent(
                 }
                 when (action) {
                     AppShortcutAction.Home -> openTab(AppScreenTab.Home)
+                    AppShortcutAction.FindInPage -> FindInPage.open()
                     AppShortcutAction.Search -> {
                         openTab(AppScreenTab.Search)
                         searchFocusRequestCount++
@@ -700,6 +704,8 @@ internal fun MainAppContent(
                     profileSwitchLoading = false
                 }
             }
+
+            FindInPageBar(modifier = Modifier.fillMaxWidth())
 
             }
         }

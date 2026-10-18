@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell
 
 import io.github.dimitrysaf.provenio.core.profiles.Profile
+import io.github.dimitrysaf.provenio.core.search.SearchRepository
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
@@ -151,6 +152,10 @@ internal fun buildAppTabActions(
             }
         },
         onContinueWatchingClick = { item -> playback.openContinueWatching(item) },
+        onSearchRequested = { query ->
+            SearchRepository.requestQuery(query)
+            activateTab(AppScreenTab.Search)
+        },
         onContinueWatchingLongPress = onContinueWatchingLongPress,
         onSwitchProfile = onSwitchProfile,
         onProfileSelected = onProfileSelected,

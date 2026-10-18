@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
+import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.screens.watchprogress.computeAirDateText
 import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.animation.core.animateFloatAsState
@@ -316,7 +317,7 @@ private fun SeasonRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
+                FindableText(
                     text = episodeCount.toString(),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -338,7 +339,7 @@ private fun SeasonRow(
             }
         },
     ) {
-        Text(
+        FindableText(
             text = label,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -387,7 +388,7 @@ private fun EpisodeRow(
             },
             overlineContent = episodeCode?.let { code ->
                 {
-                    Text(
+                    FindableText(
                         text = code,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -396,7 +397,7 @@ private fun EpisodeRow(
             },
             supportingContent = airDate?.let { date ->
                 {
-                    Text(
+                    FindableText(
                         text = date,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -404,7 +405,7 @@ private fun EpisodeRow(
                 }
             },
         ) {
-            Text(
+            FindableText(
                 text = episode.title,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

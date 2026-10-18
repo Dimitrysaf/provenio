@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import androidx.compose.foundation.lazy.rememberLazyListState
+import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -304,7 +305,7 @@ internal fun CastItem(
                     colorFilter = if (person.deceased) DeceasedPhotoFilter else null,
                 )
             } else {
-                Text(
+                FindableText(
                     text = person.name.initials(),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -313,7 +314,7 @@ internal fun CastItem(
             }
         }
         // Names wrap to as many lines as they need, splitting a word that does not fit with a hyphen.
-        Text(
+        FindableText(
             text = person.name,
             modifier = Modifier.fillMaxWidth(),
             style = MaterialTheme.typography.bodyMedium.copy(
@@ -325,7 +326,7 @@ internal fun CastItem(
             textAlign = TextAlign.Center,
         )
         if (!person.role.isNullOrBlank()) {
-            Text(
+            FindableText(
                 text = person.role,
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.bodySmall.copy(

@@ -53,7 +53,8 @@ private val MouseForward = Res.string.keyboard_key_mouse_forward
 
 private fun generalShortcuts(): List<ShortcutEntry> = buildList {
     add(ShortcutEntry(Res.string.keyboard_action_home, listOf(keys(Ctrl, "1"))))
-    add(ShortcutEntry(Res.string.keyboard_action_search, listOf(keys(Ctrl, "2"), keys(Ctrl, "F"), keys(Ctrl, "K"))))
+    add(ShortcutEntry(Res.string.keyboard_action_search, listOf(keys(Ctrl, "2"), keys(Ctrl, "K"))))
+    add(ShortcutEntry(Res.string.keyboard_action_find_in_page, listOf(keys(Ctrl, "F"))))
     add(ShortcutEntry(Res.string.keyboard_action_library, listOf(keys(Ctrl, "3"))))
     add(ShortcutEntry(Res.string.keyboard_action_settings, listOf(keys(Ctrl, "4"), keys(Ctrl, ","))))
     add(ShortcutEntry(Res.string.keyboard_action_downloads, listOf(keys(Ctrl, "J"))))

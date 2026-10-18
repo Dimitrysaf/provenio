@@ -224,7 +224,7 @@ fun PosterCard(
             contentAlignment = Alignment.Center,
         ) {
             val titleFallback: @Composable () -> Unit = {
-                Text(
+                FindableText(
                     text = title,
                     modifier = Modifier.padding(horizontal = 14.dp),
                     style = MaterialTheme.typography.titleMedium,
@@ -258,7 +258,7 @@ fun PosterCard(
                             contentScale = ContentScale.Fit,
                         )
                     } else {
-                        Text(
+                        FindableText(
                             text = bottomLeftText.orEmpty(),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -273,7 +273,7 @@ fun PosterCard(
             PosterWatchedOverlay(isWatched = isWatched)
         }
         if (shouldShowTitleBelow) {
-            Text(
+            FindableText(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -281,7 +281,7 @@ fun PosterCard(
                 overflow = TextOverflow.Ellipsis,
             )
             if (!detailLine.isNullOrBlank()) {
-                Text(
+                FindableText(
                     text = detailLine,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

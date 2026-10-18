@@ -1,9 +1,12 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import androidx.compose.animation.animateContentSize
+import io.github.dimitrysaf.provenio.shell.components.FindableText
+import io.github.dimitrysaf.provenio.shell.components.rememberFindHit
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -48,18 +51,22 @@ internal fun ExpandableDescription(
             .fillMaxWidth()
             .animateContentSize(),
     ) {
-        Text(
-            text = text,
-            style = style,
-            color = color,
-            maxLines = if (expanded) Int.MAX_VALUE else collapsedMaxLines,
-            overflow = TextOverflow.Ellipsis,
-            onTextLayout = { result ->
-                if (!expanded) {
-                    canExpand = result.hasVisualOverflow
-                }
-            },
-        )
+        val findHit = rememberFindHit(text)
+        val showAll = expanded || findHit
+        SelectionContainer {
+            FindableText(
+                text = text,
+                style = style,
+                color = color,
+                maxLines = if (showAll) Int.MAX_VALUE else collapsedMaxLines,
+                overflow = TextOverflow.Ellipsis,
+                onTextLayout = { result ->
+                    if (!showAll) {
+                        canExpand = result.hasVisualOverflow
+                    }
+                },
+            )
+        }
         if (canExpand) {
             TextButton(
                 onClick = { expanded = !expanded },
@@ -67,7 +74,7 @@ internal fun ExpandableDescription(
                     .fillMaxWidth()
                     .padding(top = 12.dp),
             ) {
-                Text(
+                FindableText(
                     text = if (expanded) {
                         stringResource(Res.string.details_show_less)
                     } else {

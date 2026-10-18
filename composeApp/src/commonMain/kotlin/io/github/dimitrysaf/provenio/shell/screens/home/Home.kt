@@ -6,6 +6,18 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.gestures.stopScroll
 import androidx.compose.foundation.layout.BoxWithConstraints
+import io.github.dimitrysaf.provenio.shell.screens.search.SearchBoxMaxWidth
+import io.github.dimitrysaf.provenio.shell.components.WindowBreakpoint
+import io.github.dimitrysaf.provenio.shell.components.SearchBox
+import io.github.dimitrysaf.provenio.core.search.SearchHistoryRepository
+import androidx.compose.ui.Alignment
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
@@ -97,6 +109,7 @@ fun HomeScreen(
     continueWatchingDisintegrationRequest: DisintegrationRequest<String>? = null,
     onFolderClick: ((collectionId: String, folderId: String) -> Unit)? = null,
     onFirstCatalogRendered: (() -> Unit)? = null,
+    onSearch: ((String) -> Unit)? = null,
 ) {
     LaunchedEffect(Unit) {
         AddonRepository.initialize()
@@ -321,6 +334,11 @@ fun HomeScreen(
             topPadding = if (showHeroSlot) 0.dp else null,
             listState = homeListState,
         ) {
+            if (onSearch != null && WindowBreakpoint.forWidth(maxWidth) >= WindowBreakpoint.Medium) {
+                item(key = "home_search", contentType = "search") {
+                    HomeSearchBox(onSearch = onSearch)
+                }
+            }
             if (showHeroSlot) {
                 item(key = "home_hero", contentType = "hero") {
                     HomeHeroSlot(
@@ -723,5 +741,39 @@ private fun LazyListScope.homeCatalogGrid(
                 )
             }
         }
+    }
+}
+
+/** Home's search box on large screens: searching from it, or picking a recent search, opens the Search page with it. */
+@Composable
+private fun HomeSearchBox(onSearch: (String) -> Unit) {
+    var query by rememberSaveable { mutableStateOf("") }
+    val recentSearches by remember {
+        SearchHistoryRepository.ensureLoaded()
+        SearchHistoryRepository.uiState
+    }.collectAsStateWithLifecycle()
+    val submit: (String) -> Unit = { submitted ->
+        if (submitted.isNotBlank()) {
+            onSearch(submitted.trim())
+            query = ""
+        }
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        SearchBox(
+            query = query,
+            onQueryChange = { query = it },
+            placeholder = stringResource(Res.string.compose_search_placeholder),
+            recentSearches = recentSearches,
+            onRecentSearchClick = submit,
+            onRemoveRecentSearch = SearchHistoryRepository::removeSearch,
+            modifier = Modifier.widthIn(max = SearchBoxMaxWidth),
+            onSearch = submit,
+        )
     }
 }
