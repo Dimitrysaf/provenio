@@ -231,6 +231,8 @@ internal fun appEntryProvider(
     onStreamLandscapeLoadingChanged: (StreamRoute, Boolean) -> Unit,
     openPosterActions: (PosterActionTarget) -> Unit,
     onCatalogClick: (HomeCatalogSection) -> Unit,
+    onSwitchProfile: (() -> Unit)?,
+    onProfileSelected: ((Profile) -> Unit)?,
     tabs: @Composable () -> Unit,
 ): (NavKey) -> NavEntry<NavKey> = entryProvider<NavKey> {
     entry<TabsRoute> { tabs() }
@@ -343,6 +345,8 @@ internal fun appEntryProvider(
             onTestUpdateBanner = if (
                 AppFeaturePolicy.inAppUpdaterEnabled && AppUpdaterPlatform.isDebugBuild
             ) appUpdaterController::showDebugTestUpdate else null,
+            onSwitchProfile = onSwitchProfile,
+            onProfileSelected = onProfileSelected,
         )
     }
     entry<DownloadsSettingsRoute> { route ->

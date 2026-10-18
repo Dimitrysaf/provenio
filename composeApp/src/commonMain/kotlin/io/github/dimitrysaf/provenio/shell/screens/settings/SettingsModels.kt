@@ -2,7 +2,6 @@ package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.material.icons.rounded.Dns
@@ -16,6 +15,7 @@ import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.ui.graphics.vector.ImageVector
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.settings_category_subtitles_audio
 import provenio.composeapp.generated.resources.addons_guide_title
 import provenio.composeapp.generated.resources.collections_header
 import provenio.composeapp.generated.resources.compose_settings_category_about
@@ -43,8 +43,6 @@ import provenio.composeapp.generated.resources.settings_category_about_descripti
 import provenio.composeapp.generated.resources.settings_category_accounts
 import provenio.composeapp.generated.resources.settings_category_accounts_description
 import provenio.composeapp.generated.resources.settings_category_advanced_description
-import provenio.composeapp.generated.resources.settings_category_audio
-import provenio.composeapp.generated.resources.settings_category_audio_description
 import provenio.composeapp.generated.resources.settings_category_interface
 import provenio.composeapp.generated.resources.settings_category_interface_description
 import provenio.composeapp.generated.resources.settings_category_playback
@@ -70,8 +68,7 @@ internal enum class SettingsCategory(
 ) {
     Accounts(Res.string.settings_category_accounts, Res.string.settings_category_accounts_description, Icons.Rounded.AccountCircle),
     Interface(Res.string.settings_category_interface, Res.string.settings_category_interface_description, Icons.Rounded.Palette),
-    Subtitles(Res.string.compose_settings_page_subtitles, Res.string.settings_category_subtitles_description, Icons.Rounded.Subtitles),
-    Audio(Res.string.settings_category_audio, Res.string.settings_category_audio_description, Icons.Rounded.Audiotrack),
+    Subtitles(Res.string.settings_category_subtitles_audio, Res.string.settings_category_subtitles_description, Icons.Rounded.Subtitles),
     Playback(Res.string.settings_category_playback, Res.string.settings_category_playback_description, Icons.Rounded.PlayArrow),
     Addons(Res.string.compose_settings_page_addons, Res.string.settings_content_discovery_addons_description, Icons.Rounded.Extension),
     Plugins(Res.string.compose_settings_page_plugins, Res.string.settings_content_discovery_plugins_description, Icons.Rounded.Hub),
@@ -89,7 +86,6 @@ internal val SettingsCategory.iconHue: SettingsIconHue
         SettingsCategory.Accounts -> SettingsIconHue.Blue
         SettingsCategory.Interface -> SettingsIconHue.Purple
         SettingsCategory.Subtitles -> SettingsIconHue.Lime
-        SettingsCategory.Audio -> SettingsIconHue.Pink
         SettingsCategory.Playback -> SettingsIconHue.Red
         SettingsCategory.Addons -> SettingsIconHue.Orange
         SettingsCategory.Plugins -> SettingsIconHue.Indigo
@@ -107,7 +103,6 @@ internal val SettingsCategory.page: SettingsPage?
         SettingsCategory.Accounts -> SettingsPage.Accounts
         SettingsCategory.Interface -> SettingsPage.Appearance
         SettingsCategory.Subtitles -> SettingsPage.Subtitles
-        SettingsCategory.Audio -> SettingsPage.Audio
         SettingsCategory.Playback -> SettingsPage.Playback
         SettingsCategory.Addons -> SettingsPage.Addons
         SettingsCategory.Plugins -> SettingsPage.Plugins
@@ -195,13 +190,8 @@ internal enum class SettingsPage(
         parentPage = Appearance,
     ),
     Subtitles(
-        titleRes = Res.string.compose_settings_page_subtitles,
+        titleRes = Res.string.settings_category_subtitles_audio,
         category = SettingsCategory.Subtitles,
-        parentPage = Root,
-    ),
-    Audio(
-        titleRes = Res.string.settings_category_audio,
-        category = SettingsCategory.Audio,
         parentPage = Root,
     ),
     Playback(

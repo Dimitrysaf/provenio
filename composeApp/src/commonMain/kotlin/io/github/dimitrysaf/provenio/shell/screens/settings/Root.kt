@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Keyboard
+import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.Policy
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,6 +38,8 @@ import provenio.composeapp.generated.resources.compose_settings_page_privacy_pol
 import provenio.composeapp.generated.resources.compose_settings_root_check_updates_description
 import provenio.composeapp.generated.resources.compose_settings_root_check_updates_title
 import provenio.composeapp.generated.resources.compose_settings_root_privacy_policy_description
+import provenio.composeapp.generated.resources.compose_settings_root_switch_profile_description
+import provenio.composeapp.generated.resources.compose_settings_root_switch_profile_title
 import provenio.composeapp.generated.resources.compose_settings_root_about_section
 import provenio.composeapp.generated.resources.compose_settings_root_advanced_section
 import provenio.composeapp.generated.resources.compose_settings_page_tracking
@@ -98,7 +101,22 @@ internal fun LazyListScope.accountsSettingsContent(
     onMdbListClick: () -> Unit,
     onStreamingAvailabilityClick: () -> Unit,
     onDebridClick: () -> Unit,
+    onSwitchProfile: (() -> Unit)? = null,
 ) {
+    if (onSwitchProfile != null) {
+        item(key = "accounts-switch-profiles") {
+            SettingsSection(title = "", isTablet = isTablet, showTitle = false) {
+                SettingsList {
+                    navigationRow(
+                        title = stringResource(Res.string.compose_settings_root_switch_profile_title),
+                        description = stringResource(Res.string.compose_settings_root_switch_profile_description),
+                        icon = Icons.Rounded.People,
+                        onClick = onSwitchProfile,
+                    )
+                }
+            }
+        }
+    }
     item(key = "accounts-tracking-heading") {
         AccountsSectionHeading(stringResource(Res.string.compose_settings_page_tracking))
     }

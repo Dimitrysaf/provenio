@@ -999,8 +999,8 @@ internal fun LazyListScope.settingsPageContent(
             onMdbListClick = { links.openSubPage(SettingsPage.MdbListRatings) },
             onStreamingAvailabilityClick = { links.openSubPage(SettingsPage.StreamingAvailability) },
             onDebridClick = { links.openSubPage(SettingsPage.Debrid) },
+            onSwitchProfile = links.onSwitchProfile,
         )
-        SettingsPage.Audio -> audioSettingsContent(isTablet = isTablet)
         SettingsPage.About -> aboutSettingsContent(
             isTablet = isTablet,
             onLicensesAttributionsClick = links.onLicensesAttributionsClick,
@@ -1022,7 +1022,10 @@ internal fun LazyListScope.settingsPageContent(
             mapDV7ToHevc = player.mapDV7ToHevc,
             tunnelingEnabled = player.tunnelingEnabled,
         )
-        SettingsPage.Subtitles -> subtitlesSettingsContent(isTablet = isTablet)
+        SettingsPage.Subtitles -> {
+            subtitlesSettingsContent(isTablet = isTablet)
+            audioSettingsContent(isTablet = isTablet)
+        }
         SettingsPage.P2pStreaming -> p2pStreamingSettingsContent(isTablet = isTablet)
         SettingsPage.Streams -> streamsSettingsContent(isTablet = isTablet)
         SettingsPage.Appearance -> {

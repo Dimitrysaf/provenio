@@ -437,6 +437,7 @@ private fun BoxScope.RenderPlaybackOverlays(
             blurUnwatchedEpisodes = metaScreenSettingsUiState.blurUnwatchedEpisodes,
             onPlayNextEpisode = {
                 nextEpisodeAutoPlayJob?.cancel()
+                markCurrentEpisodeWatched()
                 playNextEpisode()
             },
             onDismissNextEpisode = {

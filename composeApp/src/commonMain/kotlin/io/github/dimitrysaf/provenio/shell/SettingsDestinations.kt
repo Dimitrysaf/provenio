@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.core.profiles.Profile
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +47,8 @@ internal fun SettingsRootDestination(
     collectionsTitle: String,
     onCheckForUpdates: (() -> Unit)?,
     onTestUpdateBanner: (() -> Unit)?,
+    onSwitchProfile: (() -> Unit)? = null,
+    onProfileSelected: ((Profile) -> Unit)? = null,
 ) {
     val onBack = rememberGuardedPopBackStack(navController, route)
     SettingsScreen(
@@ -65,6 +68,8 @@ internal fun SettingsRootDestination(
         },
         onCheckForUpdatesClick = onCheckForUpdates,
         onTestUpdateBannerClick = onTestUpdateBanner,
+        onSwitchProfile = onSwitchProfile,
+        onProfileSelected = onProfileSelected,
     )
 }
 

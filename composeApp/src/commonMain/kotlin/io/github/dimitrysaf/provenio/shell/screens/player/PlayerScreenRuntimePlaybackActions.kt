@@ -177,7 +177,7 @@ private fun PlayerScreenRuntime.emitTrackingScrobbleTerminal(
 }
 
 internal fun PlayerScreenRuntime.playbackCompletionReached(): Boolean =
-    PlayerNextEpisodeRules.isWatchedThresholdReached(
+    playNextWatchedKey == currentWatchedMarkKey || PlayerNextEpisodeRules.isWatchedThresholdReached(
         positionMs = playbackSnapshot.positionMs,
         durationMs = playbackSnapshot.durationMs,
         skipIntervals = skipIntervals,
@@ -185,6 +185,29 @@ internal fun PlayerScreenRuntime.playbackCompletionReached(): Boolean =
         thresholdPercent = playerSettingsUiState.nextEpisodeThresholdPercent,
         thresholdMinutesBeforeEnd = playerSettingsUiState.nextEpisodeThresholdMinutesBeforeEnd,
     )
+
+/** The episode playing, as Play next marks it: what is playing and which video it is. */
+private val PlayerScreenRuntime.currentWatchedMarkKey: String
+    get() = "$activePlaybackIdentity|${activeVideoId.orEmpty()}"
+
+/**
+ * Marks the episode playing as watched, for when Play next leaves it before it ends: its
+ * progress is saved as complete, trackers are told it finished, and it stays complete while it
+ * keeps playing as the next one loads.
+ */
+internal fun PlayerScreenRuntime.markCurrentEpisodeWatched() {
+    if (activeSeasonNumber == null || activeEpisodeNumber == null) return
+    playNextWatchedKey = currentWatchedMarkKey
+    if (!hasSentCompletionScrobbleForCurrentItem) {
+        hasSentCompletionScrobbleForCurrentItem = true
+        emitTrackingScrobbleStop(100f)
+    }
+    WatchProgressRepository.upsertPlaybackProgress(
+        session = playbackSession,
+        snapshot = playbackSnapshot,
+        completionReached = true,
+    )
+}
 
 internal fun PlayerScreenRuntime.emitStopScrobbleForCurrentProgress() {
     val progressPercent = currentPlaybackProgressPercent()

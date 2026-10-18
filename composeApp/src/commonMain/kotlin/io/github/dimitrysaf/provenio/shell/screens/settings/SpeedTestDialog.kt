@@ -10,9 +10,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.HourglassEmpty
+import androidx.compose.material.icons.rounded.NetworkPing
+import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,6 +35,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
@@ -103,11 +113,13 @@ internal fun SpeedTestDialog(onDismiss: () -> Unit) {
                 ) {
                     SpeedResult(
                         label = stringResource(Res.string.settings_network_speed_ping),
+                        icon = Icons.Rounded.NetworkPing,
                         value = result.latencyMs?.let { stringResource(Res.string.settings_network_ms_value, it) },
                         modifier = Modifier.weight(1f),
                     )
                     SpeedResult(
                         label = stringResource(Res.string.settings_network_jitter),
+                        icon = Icons.Rounded.GraphicEq,
                         value = result.jitterMs?.let { stringResource(Res.string.settings_network_ms_value, it) },
                         modifier = Modifier.weight(1f),
                     )
@@ -118,11 +130,13 @@ internal fun SpeedTestDialog(onDismiss: () -> Unit) {
                 ) {
                     SpeedResult(
                         label = stringResource(Res.string.settings_network_download),
+                        icon = Icons.Rounded.ArrowDownward,
                         value = result.downloadMbps?.let { stringResource(Res.string.settings_network_mbps_value, formatMbps(it)) },
                         modifier = Modifier.weight(1f),
                     )
                     SpeedResult(
                         label = stringResource(Res.string.settings_network_upload),
+                        icon = Icons.Rounded.ArrowUpward,
                         value = result.uploadMbps?.let { stringResource(Res.string.settings_network_mbps_value, formatMbps(it)) },
                         modifier = Modifier.weight(1f),
                     )
@@ -216,17 +230,26 @@ private fun SpeedGauge(mbps: Double, color: Color, showValue: Boolean, label: St
             }
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = if (showValue) formatMbps(mbps) else "—",
-                style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "Mbit/s",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (showValue) {
+                Text(
+                    text = formatMbps(mbps),
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = "Mbit/s",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Rounded.Speed,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(48.dp),
+                )
+            }
             Text(
                 text = label,
                 modifier = Modifier.padding(top = 8.dp, start = 24.dp, end = 24.dp),
@@ -239,23 +262,46 @@ private fun SpeedGauge(mbps: Double, color: Color, showValue: Boolean, label: St
 }
 
 @Composable
-private fun SpeedResult(label: String, value: String?, modifier: Modifier = Modifier) {
+private fun SpeedResult(label: String, icon: ImageVector, value: String?, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
-        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = value ?: "—",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (value != null) {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Rounded.HourglassEmpty,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
         }
     }
 }

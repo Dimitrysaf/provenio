@@ -121,11 +121,10 @@ private fun speedTestSummary(state: SpeedTestState): String {
                 SpeedTestPhase.Upload -> Res.string.settings_network_speed_running_upload
             },
         )
-        download != null || upload != null -> stringResource(
-            Res.string.settings_network_speed_summary,
-            download?.let(::formatMbps) ?: "—",
-            upload?.let(::formatMbps) ?: "—",
-        )
+        download != null || upload != null -> listOfNotNull(
+            download?.let { stringResource(Res.string.settings_network_speed_summary_download, formatMbps(it)) },
+            upload?.let { stringResource(Res.string.settings_network_speed_summary_upload, formatMbps(it)) },
+        ).joinToString(" · ")
         state is SpeedTestState.Failed -> state.reason?.let {
             stringResource(Res.string.settings_network_speed_failed_reason, it)
         } ?: stringResource(Res.string.settings_network_speed_failed)

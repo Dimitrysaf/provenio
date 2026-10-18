@@ -117,10 +117,9 @@ internal fun settingsSearchEntries(
     val advancedPage = stringResource(Res.string.compose_settings_page_advanced)
     val downloadsPage = stringResource(Res.string.compose_settings_root_downloads_title)
     val playbackPage = stringResource(Res.string.settings_category_playback)
-    val subtitlesPage = stringResource(Res.string.compose_settings_page_subtitles)
+    val subtitlesPage = stringResource(Res.string.settings_category_subtitles_audio)
     val streamsPage = stringResource(Res.string.compose_settings_page_streams)
     val accountsPage = stringResource(Res.string.settings_category_accounts)
-    val audioPage = stringResource(Res.string.settings_category_audio)
     val serverPage = stringResource(Res.string.settings_category_server)
     val notificationsPage = stringResource(Res.string.compose_settings_page_notifications)
     val licensesPage = stringResource(Res.string.compose_settings_page_licenses_attributions)
@@ -562,19 +561,12 @@ internal fun settingsSearchEntries(
             PlaybackSearchRow("seek-forward", stringResource(Res.string.settings_playback_seek_forward)),
         ),
     )
-    addPage(
-        page = SettingsPage.Audio,
-        key = "audio",
-        title = audioPage,
-        description = stringResource(Res.string.settings_category_audio_description),
-        icon = Icons.Rounded.Audiotrack,
-    )
     addPlaybackRows(
         addRow = ::addRow,
-        pageLabel = audioPage,
+        pageLabel = subtitlesPage,
         section = stringResource(Res.string.settings_playback_section_audio_languages),
         icon = Icons.Rounded.Audiotrack,
-        page = SettingsPage.Audio,
+        page = SettingsPage.Subtitles,
         rows = listOf(
             PlaybackSearchRow("preferred-audio", stringResource(Res.string.settings_playback_preferred_audio_language)),
             PlaybackSearchRow("secondary-audio", stringResource(Res.string.settings_playback_secondary_audio_language)),

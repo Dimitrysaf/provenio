@@ -496,9 +496,8 @@
     <string name="settings_category_accounts_description">Profiles, Trakt, SIMKL and connected services</string>
     <string name="settings_category_interface">Interface</string>
     <string name="settings_category_interface_description">Theme, language, home screen, cards and detail pages</string>
-    <string name="settings_category_subtitles_description">Languages, style and rendering</string>
-    <string name="settings_category_audio">Audio</string>
-    <string name="settings_category_audio_description">Preferred audio languages</string>
+    <string name="settings_category_subtitles_description">Subtitle and audio languages, style and rendering</string>
+    <string name="settings_category_subtitles_audio">Subtitles &amp; Audio</string>
     <string name="settings_playback_section_audio_languages">Languages</string>
     <string name="settings_category_playback">Playback</string>
     <string name="settings_category_playback_description">Player, stream selection, decoder and skipping</string>
@@ -551,7 +550,7 @@
     <string name="compose_settings_root_privacy_policy_description">Learn how Provenio handles your data</string>
     <string name="compose_settings_root_streams_description">Stream result display and badge URL rules.</string>
     <string name="compose_settings_root_switch_profile_description">Change to a different profile.</string>
-    <string name="compose_settings_root_switch_profile_title">Profiles</string>
+    <string name="compose_settings_root_switch_profile_title">Switch profiles</string>
     <string name="compose_settings_root_tracking_description">Connect tracking providers and choose which one powers your Library and Continue Watching.</string>
     <string name="settings_search_empty">No settings found.</string>
     <string name="settings_search_placeholder">Search settings...</string>
@@ -2184,7 +2183,8 @@
     <string name="settings_network_upload">Upload</string>
     <string name="settings_network_ms_value">%1$d ms</string>
     <string name="settings_network_mbps_value">%1$s Mbit/s</string>
-    <string name="settings_network_speed_summary">↓ %1$s · ↑ %2$s Mbit/s</string>
+    <string name="settings_network_speed_summary_download">Download %1$s Mbit/s</string>
+    <string name="settings_network_speed_summary_upload">Upload %1$s Mbit/s</string>
     <string name="settings_network_speed_ping">Ping</string>
     <string name="settings_p2p_section_options">Options</string>
     <string name="settings_p2p_status_off">P2P streaming is off</string>

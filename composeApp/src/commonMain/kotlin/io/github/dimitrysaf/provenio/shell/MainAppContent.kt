@@ -529,6 +529,8 @@ internal fun MainAppContent(
                         },
                         openPosterActions = openPosterActions,
                         onCatalogClick = onCatalogClick,
+                        onSwitchProfile = onSwitchProfile,
+                        onProfileSelected = ::switchToProfile,
                     ) {
                     MainTabsDestination(
                         selectedTab = selectedTab,
