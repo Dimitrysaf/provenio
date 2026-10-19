@@ -184,7 +184,7 @@ private class DlnaChannel(private val controlUrl: String) : CastChannel {
     private suspend fun load(json: JsonObject) {
         val media = json["media"]?.jsonObject
         val url = media?.text("contentUrl") ?: media?.text("contentId") ?: return
-        val mimeType = media.text("contentType") ?: "video/mp4"
+        val mimeType = media?.text("contentType") ?: "video/mp4"
         val startMs = ((json["currentTime"]?.jsonPrimitive?.doubleOrNull ?: 0.0) * 1000).toLong()
         try {
             runCatching { action("Stop") }

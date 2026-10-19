@@ -2648,7 +2648,6 @@ private class ExoVolumeStabilizer(private val player: ExoPlayer) {
             0,
             DynamicsProcessing.MbcBand(
                 true,
-                true,
                 20_000f,
                 StabilizerAttackMs,
                 StabilizerReleaseMs,
