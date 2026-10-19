@@ -1,10 +1,14 @@
 package io.github.dimitrysaf.provenio.core.playback
 
 /**
- * The volume stabilizer as an mpv audio filter: FFmpeg's dynamic audio normalizer, tuned to react
- * within a fraction of a second, so quiet dialogue is lifted and loud scenes are held back.
+ * The volume stabilizer as an mpv audio filter, the same as ExoPlayer's: a gentle compressor that
+ * holds back loud scenes and lifts the rest a little, then a limiter that only catches peaks. Its
+ * attack and release are slow enough to follow scenes, not each wave of the sound, which is what
+ * distorts it.
  */
-private const val MpvVolumeStabilizerFilter = "@provenio_stabilizer:lavfi=[dynaudnorm=f=150:g=15:p=0.9:m=10]"
+private const val MpvVolumeStabilizerFilter =
+    "@provenio_stabilizer:lavfi=[acompressor=threshold=-28dB:ratio=3:attack=25:release=400:knee=6dB:makeup=6dB," +
+        "alimiter=limit=-1dB:level=0]"
 
 /**
  * Measures loudness for subtitle sync without changing the sound: FFmpeg's audio statistics,

@@ -745,20 +745,21 @@ private fun ProfileIdentityPreview(
             )
             // The pencil sits on the avatar it edits, so what it changes needs no label, and no
             // container either: a filled button over the face would hide what it is pointing at.
-            WithTooltip(
-                label = stringResource(Res.string.profile_edit_avatar),
-                modifier = Modifier.align(Alignment.Center),
-            ) {
-                IconButton(
-                    onClick = onEditAvatar,
-                    modifier = Modifier.size(AvatarEditBadgeSize),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Edit,
-                        contentDescription = stringResource(Res.string.profile_edit_avatar),
-                        tint = LetterTile.FontColor,
-                        modifier = Modifier.size(AvatarEditBadgeIconSize),
-                    )
+            // Centred by a box the avatar's size: the tooltip wraps the button in a layout of its
+            // own, which drops an alignment set on it.
+            Box(modifier = Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
+                WithTooltip(label = stringResource(Res.string.profile_edit_avatar)) {
+                    IconButton(
+                        onClick = onEditAvatar,
+                        modifier = Modifier.size(AvatarEditBadgeSize),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Edit,
+                            contentDescription = stringResource(Res.string.profile_edit_avatar),
+                            tint = LetterTile.FontColor,
+                            modifier = Modifier.size(AvatarEditBadgeIconSize),
+                        )
+                    }
                 }
             }
         }

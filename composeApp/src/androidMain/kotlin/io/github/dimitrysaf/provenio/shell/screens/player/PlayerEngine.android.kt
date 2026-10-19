@@ -2700,14 +2700,16 @@ private class ExoVolumeStabilizer(private val player: ExoPlayer) {
     }
 }
 
-private const val StabilizerAttackMs = 5f
-private const val StabilizerReleaseMs = 200f
-private const val StabilizerRatio = 4f
-private const val StabilizerThresholdDb = -30f
-private const val StabilizerKneeDb = 8f
+// Slow enough to follow scenes rather than each wave of the sound, and with little enough makeup
+// gain that the limiter only catches peaks: faster or louder, the compressor distorts.
+private const val StabilizerAttackMs = 25f
+private const val StabilizerReleaseMs = 400f
+private const val StabilizerRatio = 3f
+private const val StabilizerThresholdDb = -28f
+private const val StabilizerKneeDb = 6f
 private const val StabilizerNoiseGateDb = -90f
-private const val StabilizerMakeupGainDb = 10f
-private const val StabilizerLimiterThresholdDb = -2f
+private const val StabilizerMakeupGainDb = 6f
+private const val StabilizerLimiterThresholdDb = -1f
 
 /**
  * Measures how loud ExoPlayer's decoded sound is, for subtitle sync. It sees the sound as it

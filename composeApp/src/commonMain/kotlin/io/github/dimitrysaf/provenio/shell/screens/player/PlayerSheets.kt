@@ -3,7 +3,6 @@ package io.github.dimitrysaf.provenio.shell.screens.player
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.animation.Crossfade
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,12 +14,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CloudDownload
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,7 +42,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -72,7 +68,6 @@ import io.github.dimitrysaf.provenio.core.metadata.groupedEpisodesForDisplay
 import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
-import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
 import io.github.dimitrysaf.provenio.shell.screens.settings.segmentShape
 import io.github.dimitrysaf.provenio.shell.screens.streams.ActiveStreamStore
 import io.github.dimitrysaf.provenio.shell.screens.streams.LocalStreamSizeLabelFormat
@@ -109,6 +104,10 @@ import io.github.dimitrysaf.provenio.core.playback.buildSubtitleLanguageItems
 import io.github.dimitrysaf.provenio.core.playback.buildSubtitleSelectionOptions
 import io.github.dimitrysaf.provenio.core.playback.findSelectedAddon
 import io.github.dimitrysaf.provenio.core.playback.labelRes
+import io.github.dimitrysaf.provenio.shell.components.ExpandableListHeader
+import io.github.dimitrysaf.provenio.shell.components.SelectedCheck
+import io.github.dimitrysaf.provenio.shell.components.selectableListRowColors
+import io.github.dimitrysaf.provenio.shell.components.selectableListRowShapes
 
 @Composable
 internal fun PlayerAudioSheet(
@@ -722,14 +721,22 @@ internal fun PlayerSubtitlesSheet(
                     .fillMaxWidth()
                     .padding(bottom = if (index == entries.lastIndex) 0.dp else ListItemBetweenSpace)
                 when (entry) {
-                    SubtitleSheetEntry.Off -> SegmentedListItem(
-                        selected = playbackLanguageKey == SubtitleOffLanguageKey,
-                        onClick = { onBuiltInTrackSelected(-1) },
-                        shapes = shapes,
-                        modifier = rowModifier,
-                        colors = playerSheetRowColors(),
-                    ) {
-                        Text(stringResource(Res.string.compose_player_none))
+                    SubtitleSheetEntry.Off -> {
+                        val selected = playbackLanguageKey == SubtitleOffLanguageKey
+                        SegmentedListItem(
+                            selected = selected,
+                            onClick = { onBuiltInTrackSelected(-1) },
+                            shapes = shapes,
+                            modifier = rowModifier,
+                            colors = selectableListRowColors(MaterialTheme.colorScheme.surfaceContainer),
+                            trailingContent = if (selected) {
+                                { SelectedCheck() }
+                            } else {
+                                null
+                            },
+                        ) {
+                            Text(stringResource(Res.string.compose_player_none))
+                        }
                     }
                     is SubtitleSheetEntry.Language -> SubtitleLanguageHeader(
                         item = entry.item,
@@ -779,7 +786,6 @@ private sealed interface SubtitleSheetEntry {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SubtitleLanguageHeader(
     item: SubtitleLanguageItem,
@@ -788,41 +794,18 @@ private fun SubtitleLanguageHeader(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val chevronRotation by animateFloatAsState(if (expanded) 180f else 0f, label = "subtitle_language_chevron")
-    SegmentedListItem(
-        onClick = onClick,
-        shapes = shapes,
-        modifier = modifier,
-        colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        trailingContent = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    text = item.count.toString(),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Icon(
-                    imageVector = Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.rotate(chevronRotation),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+    ExpandableListHeader(
+        title = if (item.key == SubtitleUnknownLanguageKey) {
+            stringResource(Res.string.subtitle_language_unknown)
+        } else {
+            languageLabelForCode(item.key)
         },
-    ) {
-        Text(
-            text = if (item.key == SubtitleUnknownLanguageKey) {
-                stringResource(Res.string.subtitle_language_unknown)
-            } else {
-                languageLabelForCode(item.key)
-            },
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
+        expanded = expanded,
+        shapes = shapes,
+        onClick = onClick,
+        modifier = modifier,
+        count = item.count,
+    )
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -854,9 +837,14 @@ private fun SubtitleOptionItem(
         onClick = onClick,
         shapes = shapes,
         modifier = modifier,
-        colors = playerSheetRowColors(),
+        colors = selectableListRowColors(MaterialTheme.colorScheme.surfaceContainer),
         overlineContent = { Text(source, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = detail?.let { { Text(it, maxLines = 2, overflow = TextOverflow.Ellipsis) } },
+        trailingContent = if (selected) {
+            { SelectedCheck() }
+        } else {
+            null
+        },
     ) {
         Text(title, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
@@ -926,14 +914,7 @@ internal fun formatSubtitleDelay(delayMs: Int): String {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun playerSegmentShapes(index: Int, count: Int): ListItemShapes {
-    val shape = segmentShape(index = index, count = count)
-    return ListItemDefaults.shapes(
-        shape = shape,
-        selectedShape = RoundedCornerShape(OuterCorner),
-        pressedShape = shape,
-        focusedShape = shape,
-        hoveredShape = shape,
-    )
+    return selectableListRowShapes(segmentShape(index = index, count = count))
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

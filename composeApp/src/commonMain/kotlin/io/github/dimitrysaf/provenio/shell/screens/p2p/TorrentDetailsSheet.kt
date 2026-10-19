@@ -246,14 +246,12 @@ private fun TorrentDetailsContent(
                     value = percent(fileProgress ?: details.progress),
                 )
                 detailRow(
-                    icon = Icons.Rounded.ArrowDownward,
                     title = stringResource(Res.string.torrent_details_downloaded),
                     supporting = downloaded,
                     value = formatP2pSpeed(details.downloadSpeed),
                 )
                 if (seedingEnabled) {
                     detailRow(
-                        icon = Icons.Rounded.ArrowUpward,
                         title = stringResource(Res.string.torrent_details_uploaded),
                         supporting = uploaded,
                         value = formatP2pSpeed(details.uploadSpeed),

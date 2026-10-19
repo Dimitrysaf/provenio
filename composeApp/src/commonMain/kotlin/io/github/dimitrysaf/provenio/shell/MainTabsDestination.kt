@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
@@ -40,6 +41,7 @@ import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
 import io.github.dimitrysaf.provenio.shell.components.WindowBreakpoint
 import io.github.dimitrysaf.provenio.core.profiles.Profile
 import io.github.dimitrysaf.provenio.shell.screens.profiles.ProfileSwitcherTab
+import io.github.dimitrysaf.provenio.shell.screens.settings.AppBrandSymbol
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.compose_nav_home
 import provenio.composeapp.generated.resources.compose_nav_library
@@ -164,7 +166,11 @@ internal fun MainTabsDestination(
                         .fillMaxSize()
                         .alpha(if (initialHomeReady) 1f else 0f),
                 ) {
-                    WideNavigationRail {
+                    WideNavigationRail(
+                        header = {
+                            AppBrandSymbol(modifier = Modifier.height(RailLogoHeight))
+                        },
+                    ) {
                         // On tablets, centre the destinations so they are easier to reach.
                         Spacer(modifier = Modifier.weight(1f))
                         destinations.forEach { destination ->
@@ -226,3 +232,5 @@ private fun NavIcon(
     )
 }
 
+/** The app's symbol at the top of the rail, the height of a destination's icon and label. */
+private val RailLogoHeight = 32.dp

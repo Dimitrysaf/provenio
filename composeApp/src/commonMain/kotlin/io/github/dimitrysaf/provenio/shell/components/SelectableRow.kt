@@ -1,15 +1,23 @@
 package io.github.dimitrysaf.provenio.shell.components
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.stringResource
+import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.cd_selected
 
 /** The corner a row shows when it is not the chosen one: the spec's 4dp inner corner. */
 val ChoiceUnselectedCorner = 4.dp
@@ -55,22 +63,42 @@ fun SelectableListRow(
         leadingContent = leadingContent,
         supportingContent = supporting?.takeIf { it.isNotBlank() }?.let { { Text(it) } },
         trailingContent = trailingContent,
-        colors = ListItemDefaults.colors(
-            containerColor = containerColor,
-            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-            selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            selectedTrailingContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            selectedLeadingContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            selectedSupportingContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        ),
-        shapes = ListItemDefaults.shapes(
-            shape = unselectedShape,
-            selectedShape = RoundedCornerShape(ChoiceSelectedCorner),
-            pressedShape = unselectedShape,
-            focusedShape = unselectedShape,
-            hoveredShape = unselectedShape,
-        ),
+        colors = selectableListRowColors(containerColor),
+        shapes = selectableListRowShapes(unselectedShape),
     ) {
         Text(text = headline)
     }
+}
+
+/**
+ * The colours of a row that can be chosen: [containerColor] until it is, then the primary
+ * container pair, as [SelectableListRow] shows it. For rows built on another list item, such as a
+ * segmented one, so they read as chosen the same way.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun selectableListRowColors(containerColor: Color = Color.Transparent): ListItemColors = ListItemDefaults.colors(
+    containerColor = containerColor,
+    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+    selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+    selectedTrailingContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+    selectedLeadingContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+    selectedSupportingContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+)
+
+/** [unselectedShape] in every state but being chosen, which morphs the row to the full corner. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun selectableListRowShapes(unselectedShape: RoundedCornerShape): ListItemShapes = ListItemDefaults.shapes(
+    shape = unselectedShape,
+    selectedShape = RoundedCornerShape(ChoiceSelectedCorner),
+    pressedShape = unselectedShape,
+    focusedShape = unselectedShape,
+    hoveredShape = unselectedShape,
+)
+
+/** The tick at the end of a chosen row. */
+@Composable
+fun SelectedCheck() {
+    Icon(imageVector = Icons.Default.Check, contentDescription = stringResource(Res.string.cd_selected))
 }

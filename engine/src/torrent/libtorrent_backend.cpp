@@ -935,6 +935,14 @@ public:
 
     void set_telemetry_interval(const std::chrono::milliseconds interval) override {
         telemetry_interval_ = interval;
+        // Rates are only worked out on the session's tick, 500 ms by default, so a faster
+        // refresh needs a faster tick for the speeds to follow it too.
+        lt::settings_pack settings;
+        settings.set_int(
+            lt::settings_pack::tick_interval,
+            static_cast<int>(std::clamp<std::chrono::milliseconds::rep>(interval.count(), 100, 500))
+        );
+        session_.apply_settings(std::move(settings));
     }
 
     [[nodiscard]] std::uint64_t telemetry_revision() const override {
