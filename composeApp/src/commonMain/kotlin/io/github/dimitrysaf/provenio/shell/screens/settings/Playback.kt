@@ -91,14 +91,46 @@ internal fun LazyListScope.playbackSettingsContent(
     }
 }
 
-/** The Audio page: the languages the player picks audio tracks in. */
+/** The audio part of Subtitles & Audio: the languages the player picks audio tracks in, and how it treats the sound. */
 internal fun LazyListScope.audioSettingsContent(isTablet: Boolean) {
     item {
         val settings = remember {
             PlayerSettingsRepository.ensureLoaded()
             PlayerSettingsRepository.uiState
         }.collectAsStateWithLifecycle().value
-        AudioLanguageGroup(isTablet = isTablet, settings = settings)
+        Column(verticalArrangement = Arrangement.spacedBy(if (isTablet) 18.dp else 12.dp)) {
+            AudioLanguageGroup(isTablet = isTablet, settings = settings)
+            AudioProcessingGroup(isTablet = isTablet, settings = settings)
+        }
+    }
+}
+
+/** How the player treats the sound itself. */
+@Composable
+private fun AudioProcessingGroup(
+    isTablet: Boolean,
+    settings: PlayerSettingsUiState,
+) {
+    val title = stringResource(Res.string.player_volume_stabilizer_title)
+    val block = volumeStabilizerBlock(settings)
+    var showBlock by remember { mutableStateOf(false) }
+    SettingsSection(
+        title = stringResource(Res.string.settings_audio_section_sound),
+        isTablet = isTablet,
+    ) {
+        SettingsList {
+            switchRow(
+                title = title,
+                description = stringResource(Res.string.player_volume_stabilizer_description),
+                checked = { settings.volumeStabilizerEnabled && block == null },
+                enabled = block == null,
+                onDisabledClick = { showBlock = true },
+                onCheckedChange = PlayerSettingsRepository::setVolumeStabilizerEnabled,
+            )
+        }
+    }
+    if (showBlock && block != null) {
+        PlayerFeatureBlockDialog(feature = title, block = block, onDismiss = { showBlock = false })
     }
 }
 

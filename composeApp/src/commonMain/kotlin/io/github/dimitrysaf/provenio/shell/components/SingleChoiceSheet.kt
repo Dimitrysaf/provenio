@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,6 +42,9 @@ class SingleChoiceOption<T>(
  * Selection is shown by [SelectableListRow], which carries the expressive list spec's treatment
  * for a chosen row, so the rows need no dividers or containers of their own.
  *
+ * [headerActions] sit beside the title. They are given `closeThen`, which closes the sheet and
+ * then runs what it is passed, for an action that leads somewhere else.
+ *
  * m3.material.io/components/bottom-sheets/specs, m3.material.io/components/lists/specs
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,6 +59,7 @@ fun <T> SingleChoiceBottomSheet(
     footnote: String? = null,
     navigation: SheetNavigation = SheetNavigation.Close,
     header: (@Composable () -> Unit)? = null,
+    headerActions: @Composable RowScope.(closeThen: (() -> Unit) -> Unit) -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -73,6 +78,11 @@ fun <T> SingleChoiceBottomSheet(
             onNavigate = {
                 scope.launch {
                     dismissBottomSheet(sheetState = sheetState, onDismiss = onDismiss)
+                }
+            },
+            actions = {
+                headerActions { next ->
+                    scope.launch { dismissBottomSheet(sheetState = sheetState, onDismiss = next) }
                 }
             },
         )

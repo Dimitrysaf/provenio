@@ -67,6 +67,8 @@ actual object PlayerSettingsStorage {
     private const val introDbApiKeyKey = "introdb_api_key"
     private const val introSubmitEnabledKey = "intro_submit_enabled"
     private const val streamAutoPlayNextEpisodeEnabledKey = "stream_auto_play_next_episode_enabled"
+    private const val volumeStabilizerEnabledKey = "volume_stabilizer_enabled"
+    private const val subtitleAutoSyncEnabledKey = "subtitle_auto_sync_enabled"
     private const val streamAutoPlayNextEpisodeFallbackEnabledKey = "stream_auto_play_next_episode_fallback_enabled"
     private const val streamAutoPlayPreferBingeGroupKey = "stream_auto_play_prefer_binge_group"
     private const val streamAutoPlayReuseBingeGroupKey = "stream_auto_play_reuse_binge_group"
@@ -137,6 +139,8 @@ actual object PlayerSettingsStorage {
         animeSkipEnabledKey,
         animeSkipClientIdKey,
         streamAutoPlayNextEpisodeEnabledKey,
+        volumeStabilizerEnabledKey,
+        subtitleAutoSyncEnabledKey,
         streamAutoPlayNextEpisodeFallbackEnabledKey,
         streamAutoPlayPreferBingeGroupKey,
         streamAutoPlayReuseBingeGroupKey,
@@ -869,6 +873,40 @@ actual object PlayerSettingsStorage {
             ?.apply()
     }
 
+    actual fun loadVolumeStabilizerEnabled(): Boolean? =
+        preferences?.let { sharedPreferences ->
+            val key = ProfileScopedKey.of(volumeStabilizerEnabledKey)
+            if (sharedPreferences.contains(key)) {
+                sharedPreferences.getBoolean(key, false)
+            } else {
+                null
+            }
+        }
+
+    actual fun saveVolumeStabilizerEnabled(enabled: Boolean) {
+        preferences
+            ?.edit()
+            ?.putBoolean(ProfileScopedKey.of(volumeStabilizerEnabledKey), enabled)
+            ?.apply()
+    }
+
+    actual fun loadSubtitleAutoSyncEnabled(): Boolean? =
+        preferences?.let { sharedPreferences ->
+            val key = ProfileScopedKey.of(subtitleAutoSyncEnabledKey)
+            if (sharedPreferences.contains(key)) {
+                sharedPreferences.getBoolean(key, false)
+            } else {
+                null
+            }
+        }
+
+    actual fun saveSubtitleAutoSyncEnabled(enabled: Boolean) {
+        preferences
+            ?.edit()
+            ?.putBoolean(ProfileScopedKey.of(subtitleAutoSyncEnabledKey), enabled)
+            ?.apply()
+    }
+
     actual fun loadStreamAutoPlayNextEpisodeFallbackEnabled(): Boolean? =
         preferences?.let { sharedPreferences ->
             val key = ProfileScopedKey.of(streamAutoPlayNextEpisodeFallbackEnabledKey)
@@ -1161,6 +1199,8 @@ actual object PlayerSettingsStorage {
         loadAnimeSkipEnabled()?.let { put(animeSkipEnabledKey, encodeSyncBoolean(it)) }
         loadAnimeSkipClientId()?.let { put(animeSkipClientIdKey, encodeSyncString(it)) }
         loadStreamAutoPlayNextEpisodeEnabled()?.let { put(streamAutoPlayNextEpisodeEnabledKey, encodeSyncBoolean(it)) }
+        loadVolumeStabilizerEnabled()?.let { put(volumeStabilizerEnabledKey, encodeSyncBoolean(it)) }
+        loadSubtitleAutoSyncEnabled()?.let { put(subtitleAutoSyncEnabledKey, encodeSyncBoolean(it)) }
         loadStreamAutoPlayNextEpisodeFallbackEnabled()?.let { put(streamAutoPlayNextEpisodeFallbackEnabledKey, encodeSyncBoolean(it)) }
         loadStreamAutoPlayPreferBingeGroup()?.let { put(streamAutoPlayPreferBingeGroupKey, encodeSyncBoolean(it)) }
         loadStreamAutoPlayReuseBingeGroup()?.let { put(streamAutoPlayReuseBingeGroupKey, encodeSyncBoolean(it)) }
@@ -1240,6 +1280,8 @@ actual object PlayerSettingsStorage {
         payload.decodeSyncString(introDbApiKeyKey)?.let(::saveIntroDbApiKey)
         payload.decodeSyncBoolean(introSubmitEnabledKey)?.let(::saveIntroSubmitEnabled)
         payload.decodeSyncBoolean(streamAutoPlayNextEpisodeEnabledKey)?.let(::saveStreamAutoPlayNextEpisodeEnabled)
+        payload.decodeSyncBoolean(volumeStabilizerEnabledKey)?.let(::saveVolumeStabilizerEnabled)
+        payload.decodeSyncBoolean(subtitleAutoSyncEnabledKey)?.let(::saveSubtitleAutoSyncEnabled)
         payload.decodeSyncBoolean(streamAutoPlayNextEpisodeFallbackEnabledKey)?.let(::saveStreamAutoPlayNextEpisodeFallbackEnabled)
         payload.decodeSyncBoolean(streamAutoPlayPreferBingeGroupKey)?.let(::saveStreamAutoPlayPreferBingeGroup)
         payload.decodeSyncBoolean(streamAutoPlayReuseBingeGroupKey)?.let(::saveStreamAutoPlayReuseBingeGroup)

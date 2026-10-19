@@ -7,3 +7,9 @@ internal actual val supportsPosterNavigationMotion: Boolean = false
 internal actual val isDesktop: Boolean = false
 
 internal actual val isMacOs: Boolean = false
+
+internal actual val supportsVolumeStabilizer: Boolean = false
+
+internal actual val volumeStabilizerNeedsMpv: Boolean = false
+
+internal actual val supportsSubtitleAutoSync: Boolean = false

@@ -56,6 +56,7 @@ internal fun LazyListScope.subtitlesSettingsContent(isTablet: Boolean) {
         Column(verticalArrangement = Arrangement.spacedBy(if (isTablet) 18.dp else 12.dp)) {
             SubtitlePreview(style = settings.subtitleStyle)
             SubtitleLanguageGroup(isTablet = isTablet, settings = settings)
+            SubtitleTimingGroup(isTablet = isTablet, settings = settings)
             SubtitleRenderingGroup(
                 isTablet = isTablet,
                 settings = settings,
@@ -64,6 +65,35 @@ internal fun LazyListScope.subtitlesSettingsContent(isTablet: Boolean) {
                 libassRenderType = settings.libassRenderType,
             )
         }
+    }
+}
+
+/** Whether add-on subtitles are matched to the speech in the video on their own. */
+@Composable
+private fun SubtitleTimingGroup(
+    isTablet: Boolean,
+    settings: PlayerSettingsUiState,
+) {
+    val title = stringResource(Res.string.settings_subtitles_auto_sync)
+    val block = subtitleAutoSyncBlock(settings)
+    var showBlock by remember { mutableStateOf(false) }
+    SettingsSection(
+        title = stringResource(Res.string.settings_subtitles_section_timing),
+        isTablet = isTablet,
+    ) {
+        SettingsList {
+            switchRow(
+                title = title,
+                description = stringResource(Res.string.settings_subtitles_auto_sync_description),
+                checked = { settings.subtitleAutoSyncEnabled && block == null },
+                enabled = block == null,
+                onDisabledClick = { showBlock = true },
+                onCheckedChange = PlayerSettingsRepository::setSubtitleAutoSyncEnabled,
+            )
+        }
+    }
+    if (showBlock && block != null) {
+        PlayerFeatureBlockDialog(feature = title, block = block, onDismiss = { showBlock = false })
     }
 }
 

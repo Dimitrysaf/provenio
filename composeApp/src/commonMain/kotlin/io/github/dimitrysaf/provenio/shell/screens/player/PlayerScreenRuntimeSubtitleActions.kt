@@ -4,6 +4,10 @@ import io.github.dimitrysaf.provenio.core.i18n.localizedNoSubtitleLinesFound
 import io.github.dimitrysaf.provenio.core.i18n.localizedSubtitleLinesLoadError
 import io.github.dimitrysaf.provenio.core.addons.httpGetTextWithHeaders
 import kotlinx.coroutines.launch
+import io.github.dimitrysaf.provenio.shell.components.ToastController
+import org.jetbrains.compose.resources.getString
+import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.player_subtitles_auto_sync_paused
 import io.github.dimitrysaf.provenio.core.playback.PlayerSubtitleCueParser
 import io.github.dimitrysaf.provenio.core.playback.PlayerTrackPreferenceStorage
 import io.github.dimitrysaf.provenio.core.playback.SUBTITLE_DELAY_MAX_MS
@@ -21,7 +25,17 @@ internal fun PlayerScreenRuntime.fetchAddonSubtitlesForActiveItem() {
     SubtitleRepository.fetchAddonSubtitles(type, videoId)
 }
 
+/** Sets the subtitle delay by hand, which stops automatic sync from changing it for these subtitles. */
 internal fun PlayerScreenRuntime.setSubtitleDelay(delayMs: Int) {
+    if (subtitleSpeechSyncActive && !subtitleDelaySetByHand) {
+        scope.launch { ToastController.show(getString(Res.string.player_subtitles_auto_sync_paused)) }
+    }
+    subtitleDelaySetByHand = true
+    applySubtitleDelay(delayMs)
+}
+
+/** Sets the subtitle delay that automatic sync found, leaving it free to adjust it again later. */
+internal fun PlayerScreenRuntime.applySubtitleDelay(delayMs: Int) {
     val clamped = delayMs.coerceIn(SUBTITLE_DELAY_MIN_MS, SUBTITLE_DELAY_MAX_MS)
     subtitleDelayMs = clamped
     PlayerTrackPreferenceStorage.saveSubtitleDelayMs(playbackSession.videoId, clamped)

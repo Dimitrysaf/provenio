@@ -595,6 +595,26 @@ internal fun settingsSearchEntries(
     addPlaybackRows(
         addRow = ::addRow,
         pageLabel = subtitlesPage,
+        section = stringResource(Res.string.settings_subtitles_section_timing),
+        icon = Icons.Rounded.PlayArrow,
+        page = SettingsPage.Subtitles,
+        rows = listOf(
+            PlaybackSearchRow("subtitle-auto-sync", stringResource(Res.string.settings_subtitles_auto_sync), stringResource(Res.string.settings_subtitles_auto_sync_description)),
+        ),
+    )
+    addPlaybackRows(
+        addRow = ::addRow,
+        pageLabel = subtitlesPage,
+        section = stringResource(Res.string.settings_audio_section_sound),
+        icon = Icons.Rounded.Audiotrack,
+        page = SettingsPage.Subtitles,
+        rows = listOf(
+            PlaybackSearchRow("volume-stabilizer", stringResource(Res.string.player_volume_stabilizer_title), stringResource(Res.string.player_volume_stabilizer_description)),
+        ),
+    )
+    addPlaybackRows(
+        addRow = ::addRow,
+        pageLabel = subtitlesPage,
         section = stringResource(Res.string.settings_subtitles_section_style),
         icon = Icons.Rounded.PlayArrow,
         page = SettingsPage.Subtitles,

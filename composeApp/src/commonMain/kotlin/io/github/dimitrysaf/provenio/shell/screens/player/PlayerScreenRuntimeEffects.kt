@@ -28,7 +28,16 @@ import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressRepository
 import io.github.dimitrysaf.provenio.core.watch.progress.buildPlaybackVideoId
 import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingState
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import kotlin.math.abs
+import io.github.dimitrysaf.provenio.core.addons.httpGetText
+import io.github.dimitrysaf.provenio.shell.screens.settings.volumeStabilizerBlock
+import io.github.dimitrysaf.provenio.shell.screens.settings.subtitleAutoSyncBlock
+import io.github.dimitrysaf.provenio.shell.components.ToastController
+import io.github.dimitrysaf.provenio.core.playback.PlayerSubtitleCueParser
+import io.github.dimitrysaf.provenio.core.playback.SubtitleSpeechSync
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
@@ -62,6 +71,37 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
                 volumeBoost.dropGain()
                 break
             }
+        }
+    }
+
+    val stabilizerEnabled = playerSettingsUiState.volumeStabilizerEnabled &&
+        volumeStabilizerBlock(playerSettingsUiState) == null
+    LaunchedEffect(playerController, stabilizerEnabled, activePlaybackIdentity, playbackSnapshot.isPlaying) {
+        playerController?.setVolumeStabilizer(stabilizerEnabled)
+    }
+
+    val sleepDeadline = sleepTimer.deadline
+    LaunchedEffect(sleepDeadline) {
+        if (sleepDeadline == null) return@LaunchedEffect
+        try {
+            while (true) {
+                val remaining = sleepTimer.tick()
+                if (remaining <= 0L) break
+                playerController?.setFadeVolume((remaining.toFloat() / SleepTimerFadeMs).coerceAtMost(1f))
+                delay(
+                    if (remaining <= SleepTimerFadeMs) {
+                        SleepTimerFadeStepMs
+                    } else {
+                        minOf(SleepTimerTickMs, remaining - SleepTimerFadeMs)
+                    },
+                )
+            }
+            shouldPlay = false
+            playerController?.pause()
+            controlsVisible = true
+            sleepTimer.clear()
+        } finally {
+            playerController?.setFadeVolume(1f)
         }
     }
 
@@ -220,6 +260,46 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
 
     LaunchedEffect(selectedAddonSubtitleId, useCustomSubtitles, activeSourceUrl) {
         subtitleAutoSyncState = SubtitleAutoSyncUiState()
+        subtitleDelaySetByHand = false
+    }
+
+    val speechSyncSubtitle = selectedAddonSubtitle?.takeIf {
+        playerSettingsUiState.subtitleAutoSyncEnabled &&
+            subtitleAutoSyncBlock(playerSettingsUiState) == null &&
+            useCustomSubtitles &&
+            !castingToDevice
+    }
+    LaunchedEffect(speechSyncSubtitle?.url, playerController) {
+        subtitleSpeechSync.clear()
+        subtitleSpeechSyncActive = false
+        val subtitle = speechSyncSubtitle ?: return@LaunchedEffect
+        val cues = runCatching {
+            PlayerSubtitleCueParser.parse(httpGetText(subtitle.url), subtitle.url)
+        }.getOrNull().orEmpty()
+        if (cues.isEmpty()) return@LaunchedEffect
+        subtitleSpeechSyncActive = true
+        var checked = false
+        var samplesSinceCheck = 0
+        while (!subtitleDelaySetByHand) {
+            delay(SubtitleSpeechSync.BinMs)
+            playerController?.sampleAudioLevel()?.let { sample ->
+                subtitleSpeechSync.add(sample)
+                samplesSinceCheck += 1
+            }
+            val due = if (checked) {
+                samplesSinceCheck * SubtitleSpeechSync.BinMs >= SpeechSyncRecheckMs
+            } else {
+                subtitleSpeechSync.heardMs >= SubtitleSpeechSync.MinHeardMs
+            }
+            if (!due) continue
+            checked = true
+            samplesSinceCheck = 0
+            val delayMs = withContext(Dispatchers.Default) { subtitleSpeechSync.estimateDelayMs(cues) } ?: continue
+            if (!subtitleDelaySetByHand && abs(delayMs - subtitleDelayMs) >= SpeechSyncMinChangeMs) {
+                applySubtitleDelay(delayMs)
+                ToastController.show(getString(Res.string.player_subtitles_auto_synced, formatSubtitleDelay(delayMs)))
+            }
+        }
     }
 
     LaunchedEffect(playerController, subtitleStyle) {
@@ -591,7 +671,11 @@ private fun PlayerScreenRuntime.BindPlayerMetadataAndSkipEffects() {
         )
         if (shouldShow && !showNextEpisodeCard && !nextEpisodeCardDismissed) {
             showNextEpisodeCard = true
-            if (playerSettingsUiState.streamAutoPlayNextEpisodeEnabled && nextEpisodeInfo?.hasAired == true) {
+            if (
+                playerSettingsUiState.streamAutoPlayNextEpisodeEnabled &&
+                nextEpisodeInfo?.hasAired == true &&
+                !sleepTimer.stopsAtEndOfVideo
+            ) {
                 playNextEpisode(autoPlay = true)
             }
         } else if (!shouldShow) {
@@ -600,6 +684,15 @@ private fun PlayerScreenRuntime.BindPlayerMetadataAndSkipEffects() {
     }
 
     LaunchedEffect(playbackSnapshot.isEnded, nextEpisodeInfo, nextEpisodeCardDismissed) {
+        if (playbackSnapshot.isEnded && sleepTimer.stopsAtEndOfVideo) {
+            sleepTimer.clear()
+            nextEpisodeAutoPlayJob?.cancel()
+            nextEpisodeAutoPlaySearching = false
+            nextEpisodeAutoPlayCountdown = null
+            showNextEpisodeCard = false
+            nextEpisodeCardDismissed = true
+            return@LaunchedEffect
+        }
         if (
             playbackSnapshot.isEnded &&
             nextEpisodeInfo != null &&
@@ -805,3 +898,14 @@ private const val CREDENTIAL_REFRESH_POLL_COUNT = 30
 private const val CREDENTIAL_REFRESH_POLL_INTERVAL_MS = 500L
 
 private const val VolumeBoostDeviceCheckMs = 500L
+private const val SleepTimerTickMs = 1_000L
+
+/** How often automatic subtitle sync checks again once it has made its first check. */
+private const val SpeechSyncRecheckMs = 120_000L
+
+/**
+ * The smallest change automatic subtitle sync makes. Smaller ones are within how precisely the
+ * players report when the sound is heard, so subtitles already in sync are left alone.
+ */
+private const val SpeechSyncMinChangeMs = 600
+private const val SleepTimerFadeStepMs = 100L

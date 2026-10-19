@@ -216,6 +216,10 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
         )
         RenderPlaybackOverlays(runtime = runtime)
         RenderPlayerModals(displayedPositionMs = displayedPositionMs)
+        PlayerSubtitleAudioSettings(
+            visible = showSubtitleAudioSettings,
+            onDismiss = { showSubtitleAudioSettings = false },
+        )
         if (showTorrentDetailsSheet) {
             TorrentDetailsSheet(
                 infoHash = activeTorrentInfoHash,
@@ -491,9 +495,27 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
             }
         },
         onAudioModalDismissed = { showAudioModal = false },
+        onAudioMoreSettings = {
+            showAudioModal = false
+            showSubtitleAudioSettings = true
+        },
         volumeBoostEnabled = volumeBoost.enabled,
         onVolumeBoostChanged = volumeBoost::switchOn,
+        sleepTimer = sleepTimer,
+        onSleepTimerClick = {
+            showAudioModal = false
+            showSleepTimerSheet = true
+        },
+        showSleepTimerSheet = showSleepTimerSheet,
+        onSleepTimerSheetDismissed = {
+            showSleepTimerSheet = false
+            showAudioModal = true
+        },
         showSubtitleModal = showSubtitleModal,
+        onSubtitleMoreSettings = {
+            showSubtitleModal = false
+            showSubtitleAudioSettings = true
+        },
         subtitleTracks = subtitleTracks,
         selectedSubtitleIndex = selectedSubtitleIndex,
         addonSubtitles = visibleAddonSubtitles,

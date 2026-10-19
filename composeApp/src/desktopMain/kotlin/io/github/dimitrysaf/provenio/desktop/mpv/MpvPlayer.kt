@@ -8,6 +8,11 @@ import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.ptr.PointerByReference
 import io.github.dimitrysaf.provenio.core.playback.AudioTrack
+import io.github.dimitrysaf.provenio.core.playback.MpvAudioLeadMs
+import io.github.dimitrysaf.provenio.core.playback.MpvAudioLevelProperty
+import io.github.dimitrysaf.provenio.core.playback.PlayerAudioLevelSample
+import io.github.dimitrysaf.provenio.core.playback.mpvAudioFilterChain
+import io.github.dimitrysaf.provenio.core.playback.parseMpvAudioLevelDb
 import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
 import io.github.dimitrysaf.provenio.core.playback.PlayerResizeMode
 import io.github.dimitrysaf.provenio.core.playback.SubtitleTrack
@@ -142,10 +147,63 @@ internal class MpvPlayer private constructor(
 
     fun setMuted(muted: Boolean) = enqueue { setProperty("mute", if (muted) "yes" else "no") }
 
+    @Volatile
+    private var boostGain = 1f
+
+    @Volatile
+    private var fadeVolume = 1f
+
     /** Amplifies mpv's output above full volume, up to twice as loud, for the player's volume boost. */
-    fun setVolumeBoost(gain: Float) = enqueue {
+    fun setVolumeBoost(gain: Float) {
+        boostGain = gain.coerceIn(1f, 2f)
+        enqueue { applyVolume() }
+    }
+
+    /** Scales mpv's output down, from 1 to silent, for the sleep timer's fade. */
+    fun setFadeVolume(fraction: Float) {
+        fadeVolume = fraction.coerceIn(0f, 1f)
+        enqueue { applyVolume() }
+    }
+
+    @Volatile
+    private var stabilizerEnabled = false
+
+    @Volatile
+    private var levelProbeEnabled = false
+
+    /** Evens out loudness with mpv's dynamic audio normalizer: dialogue up, explosions down. */
+    fun setVolumeStabilizer(enabled: Boolean) {
+        if (stabilizerEnabled == enabled) return
+        stabilizerEnabled = enabled
+        enqueue { applyAudioFilters() }
+    }
+
+    /**
+     * How loud the sound is now and where in the video, for subtitle sync. The first call starts
+     * measuring, so it and any call while paused return null.
+     */
+    fun sampleAudioLevel(): PlayerAudioLevelSample? {
+        if (!levelProbeEnabled) {
+            levelProbeEnabled = true
+            enqueue { applyAudioFilters() }
+            return null
+        }
+        if (stringProperty("pause") == "yes") return null
+        val levelDb = parseMpvAudioLevelDb(stringProperty(MpvAudioLevelProperty)) ?: return null
+        val seconds = stringProperty("time-pos")?.toDoubleOrNull() ?: return null
+        return PlayerAudioLevelSample(
+            positionMs = (seconds * 1000).toLong() + MpvAudioLeadMs,
+            levelDb = levelDb,
+        )
+    }
+
+    private fun applyAudioFilters() {
+        setProperty("af", mpvAudioFilterChain(stabilizer = stabilizerEnabled, levelProbe = levelProbeEnabled))
+    }
+
+    private fun applyVolume() {
         setProperty("volume-max", "200")
-        setProperty("volume", (gain.coerceIn(1f, 2f) * 100f).roundToInt().toString())
+        setProperty("volume", (boostGain * fadeVolume * 100f).roundToInt().toString())
     }
 
     fun setSubtitleDelayMs(delayMs: Int) = enqueue { setProperty("sub-delay", (delayMs / 1000.0).toString()) }

@@ -15,6 +15,7 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsUiState
 import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsUiState
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingState
+import io.github.dimitrysaf.provenio.core.playback.SubtitleSpeechSync
 import io.github.dimitrysaf.provenio.core.playback.skip.NextEpisodeInfo
 import io.github.dimitrysaf.provenio.core.playback.skip.SkipInterval
 import io.github.dimitrysaf.provenio.core.streams.StreamsUiState
@@ -99,6 +100,7 @@ internal class PlayerScreenRuntime(
 
     var gestureController: PlayerGestureController? = null
     val volumeBoost = PlayerVolumeBoost()
+    val sleepTimer = PlayerSleepTimer()
 
     var controlsVisible by mutableStateOf(false)
     // Bumped by pointer movement, so the controls' hide timer starts over while the mouse moves.
@@ -188,6 +190,8 @@ internal class PlayerScreenRuntime(
     var credentialRefreshAttemptedSourceUrl by mutableStateOf<String?>(null)
 
     var showAudioModal by mutableStateOf(false)
+    var showSleepTimerSheet by mutableStateOf(false)
+    var showSubtitleAudioSettings by mutableStateOf(false)
     var showSubtitleModal by mutableStateOf(false)
     var showSpeedSheet by mutableStateOf(false)
     var showResizeSheet by mutableStateOf(false)
@@ -214,6 +218,9 @@ internal class PlayerScreenRuntime(
     var autoFetchedAddonSubtitlesForKey by mutableStateOf<String?>(null)
     var trackPreferenceRestoreApplied by mutableStateOf(false)
     var subtitleDelayMs by mutableStateOf(0)
+    var subtitleDelaySetByHand by mutableStateOf(false)
+    var subtitleSpeechSyncActive by mutableStateOf(false)
+    val subtitleSpeechSync = SubtitleSpeechSync()
     var subtitleAutoSyncState by mutableStateOf(SubtitleAutoSyncUiState())
 
     var lastSyncedSettingsResizeMode: PlayerResizeMode? = null

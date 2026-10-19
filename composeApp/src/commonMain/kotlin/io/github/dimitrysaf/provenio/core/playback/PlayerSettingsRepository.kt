@@ -70,6 +70,8 @@ data class PlayerSettingsUiState(
     val iosContrast: Int = 0,
     val iosSaturation: Int = 0,
     val iosGamma: Int = 0,
+    val volumeStabilizerEnabled: Boolean = false,
+    val subtitleAutoSyncEnabled: Boolean = true,
 )
 
 object PlayerSettingsRepository {
@@ -138,6 +140,8 @@ object PlayerSettingsRepository {
     private var iosContrast = 0
     private var iosSaturation = 0
     private var iosGamma = 0
+    private var volumeStabilizerEnabled = false
+    private var subtitleAutoSyncEnabled = true
 
     fun ensureLoaded() {
         if (hasLoaded) return
@@ -211,6 +215,8 @@ object PlayerSettingsRepository {
         iosContrast = 0
         iosSaturation = 0
         iosGamma = 0
+        volumeStabilizerEnabled = false
+        subtitleAutoSyncEnabled = true
         publish()
     }
 
@@ -323,6 +329,8 @@ object PlayerSettingsRepository {
         nextEpisodeThresholdMinutesBeforeEnd = PlayerSettingsStorage.loadNextEpisodeThresholdMinutesBeforeEnd() ?: 2f
         useLibass = PlayerSettingsStorage.loadUseLibass() ?: false
         libassRenderType = PlayerSettingsStorage.loadLibassRenderType() ?: "CUES"
+        volumeStabilizerEnabled = PlayerSettingsStorage.loadVolumeStabilizerEnabled() ?: false
+        subtitleAutoSyncEnabled = PlayerSettingsStorage.loadSubtitleAutoSyncEnabled() ?: true
         iosVideoOutputPreset = PlayerSettingsStorage.loadIosVideoOutputPreset()
             ?.let { runCatching { IosVideoOutputPreset.valueOf(it) }.getOrNull() }
             ?: IosVideoOutputPreset.NativeEdr
@@ -679,6 +687,22 @@ object PlayerSettingsRepository {
         PlayerSettingsStorage.saveIntroSubmitEnabled(enabled)
     }
 
+    fun setVolumeStabilizerEnabled(enabled: Boolean) {
+        ensureLoaded()
+        if (volumeStabilizerEnabled == enabled) return
+        volumeStabilizerEnabled = enabled
+        publish()
+        PlayerSettingsStorage.saveVolumeStabilizerEnabled(enabled)
+    }
+
+    fun setSubtitleAutoSyncEnabled(enabled: Boolean) {
+        ensureLoaded()
+        if (subtitleAutoSyncEnabled == enabled) return
+        subtitleAutoSyncEnabled = enabled
+        publish()
+        PlayerSettingsStorage.saveSubtitleAutoSyncEnabled(enabled)
+    }
+
     fun setStreamAutoPlayNextEpisodeEnabled(enabled: Boolean) {
         ensureLoaded()
         if (streamAutoPlayNextEpisodeEnabled == enabled) return
@@ -979,6 +1003,8 @@ object PlayerSettingsRepository {
             iosContrast = iosContrast,
             iosSaturation = iosSaturation,
             iosGamma = iosGamma,
+            volumeStabilizerEnabled = volumeStabilizerEnabled,
+            subtitleAutoSyncEnabled = subtitleAutoSyncEnabled,
         )
     }
 

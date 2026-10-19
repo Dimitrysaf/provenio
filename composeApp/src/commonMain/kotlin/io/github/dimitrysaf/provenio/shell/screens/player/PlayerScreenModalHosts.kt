@@ -34,9 +34,15 @@ internal fun PlayerScreenModalHosts(
     selectedAudioIndex: Int,
     onAudioTrackSelected: (Int) -> Unit,
     onAudioModalDismissed: () -> Unit,
+    onAudioMoreSettings: () -> Unit,
     volumeBoostEnabled: Boolean,
     onVolumeBoostChanged: (Boolean) -> Unit,
+    sleepTimer: PlayerSleepTimer,
+    onSleepTimerClick: () -> Unit,
+    showSleepTimerSheet: Boolean,
+    onSleepTimerSheetDismissed: () -> Unit,
     showSubtitleModal: Boolean,
+    onSubtitleMoreSettings: () -> Unit,
     subtitleTracks: List<SubtitleTrack>,
     selectedSubtitleIndex: Int,
     addonSubtitles: List<AddonSubtitle>,
@@ -139,7 +145,19 @@ internal fun PlayerScreenModalHosts(
             onTrackSelected = onAudioTrackSelected,
             volumeBoostEnabled = volumeBoostEnabled,
             onVolumeBoostChanged = onVolumeBoostChanged,
+            sleepTimerSummary = sleepTimerSummary(sleepTimer, isSeries),
+            onSleepTimerClick = onSleepTimerClick,
+            onMoreSettings = onAudioMoreSettings,
             onDismiss = onAudioModalDismissed,
+        )
+    }
+
+    if (showSleepTimerSheet) {
+        PlayerSleepTimerSheet(
+            selected = sleepTimer.choice,
+            isSeries = isSeries,
+            onSelected = sleepTimer::set,
+            onDismiss = onSleepTimerSheetDismissed,
         )
     }
 
@@ -159,6 +177,7 @@ internal fun PlayerScreenModalHosts(
             onAddonSubtitleSelected = onAddonSubtitleSelected,
             onFetchAddonSubtitles = onFetchAddonSubtitles,
             onSubtitleDelayChanged = onSubtitleDelayChanged,
+            onMoreSettings = onSubtitleMoreSettings,
             onDismiss = onSubtitleModalDismissed,
         )
     }

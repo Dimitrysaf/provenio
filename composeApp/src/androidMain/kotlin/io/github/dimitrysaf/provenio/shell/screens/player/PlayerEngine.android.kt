@@ -34,6 +34,8 @@ import org.jetbrains.compose.resources.getString
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.AudioAttributes
+import android.media.audiofx.DynamicsProcessing
+import androidx.annotation.RequiresApi
 import android.media.audiofx.LoudnessEnhancer
 import androidx.media3.common.C
 import androidx.media3.common.Format
@@ -53,6 +55,9 @@ import androidx.media3.datasource.TransferListener
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
+import androidx.media3.exoplayer.audio.TeeAudioProcessor
 import androidx.media3.exoplayer.ForwardingRenderer
 import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
@@ -70,6 +75,13 @@ import androidx.media3.ui.PlayerView
 import androidx.media3.ui.SubtitleView
 import androidx.media3.ui.CaptionStyleCompat
 import io.github.dimitrysaf.provenio.R
+import io.github.dimitrysaf.provenio.core.playback.MpvAudioLeadMs
+import io.github.dimitrysaf.provenio.core.playback.MpvAudioLevelProperty
+import io.github.dimitrysaf.provenio.core.playback.mpvAudioFilterChain
+import io.github.dimitrysaf.provenio.core.playback.parseMpvAudioLevelDb
+import io.github.dimitrysaf.provenio.core.playback.PlayerAudioLevelSample
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import io.github.dimitrysaf.provenio.core.streams.normalizeStreamType
 import `is`.xyz.mpv.BaseMPVView
 import `is`.xyz.mpv.MPV
@@ -364,6 +376,7 @@ private fun ExoPlayerSurface(
         }
     }
 
+    val audioLevelMeter = remember { ExoAudioLevelMeter() }
     val exoPlayer = remember(
         sourceUrl,
         sourceAudioUrl,
@@ -376,6 +389,7 @@ private fun ExoPlayerSurface(
     ) {
         val renderersFactory = SubtitleOffsetRenderersFactory(
             context = context,
+            audioLevelMeter = audioLevelMeter,
             subtitleDelayUsProvider = { latestSubtitleDelayMs.value.toLong() * 1_000L },
             shouldNormalizeCuePositionProvider = {
                 latestExternalSubtitleMimeType.value == MimeTypes.TEXT_VTT
@@ -551,6 +565,10 @@ private fun ExoPlayerSurface(
     val loudnessBoost = remember(exoPlayer) { ExoLoudnessBoost(exoPlayer) }
     DisposableEffect(loudnessBoost) {
         onDispose { loudnessBoost.release() }
+    }
+    val volumeStabilizer = remember(exoPlayer) { ExoVolumeStabilizer(exoPlayer) }
+    DisposableEffect(volumeStabilizer) {
+        onDispose { volumeStabilizer.release() }
     }
 
     DisposableEffect(exoPlayer) {
@@ -760,6 +778,9 @@ private fun ExoPlayerSurface(
     LaunchedEffect(exoPlayer) {
         onControllerReady(
             object : PlayerEngineController {
+                private var muted = false
+                private var fadeVolume = 1f
+
                 override fun play() {
                     exoPlayer.playWhenReady = true
                     exoPlayer.play()
@@ -787,11 +808,30 @@ private fun ExoPlayerSurface(
                 }
 
                 override fun setMuted(muted: Boolean) {
-                    exoPlayer.volume = if (muted) 0f else 1f
+                    this.muted = muted
+                    exoPlayer.volume = if (muted) 0f else fadeVolume
                 }
 
                 override fun setVolumeBoost(gain: Float) {
                     loudnessBoost.setGain(gain)
+                }
+
+                override fun setVolumeStabilizer(enabled: Boolean) {
+                    volumeStabilizer.setEnabled(enabled)
+                }
+
+                override fun setFadeVolume(fraction: Float) {
+                    fadeVolume = fraction.coerceIn(0f, 1f)
+                    if (!muted) exoPlayer.volume = fadeVolume
+                }
+
+                override fun sampleAudioLevel(): PlayerAudioLevelSample? {
+                    val levelDb = audioLevelMeter.latestLevelDb() ?: return null
+                    if (!exoPlayer.isPlaying) return null
+                    return PlayerAudioLevelSample(
+                        positionMs = exoPlayer.currentPosition + ExoAudioLeadMs,
+                        levelDb = levelDb,
+                    )
                 }
 
                 override fun updateNowPlayingMetadata(info: PlayerNowPlayingInfo) {
@@ -1543,11 +1583,22 @@ private class LibmpvView(
             }
 
             override fun setVolumeBoost(gain: Float) {
-                executeMpv {
-                    mpv.setPropertyString("volume-max", "$MpvVolumeBoostMaxPercent")
-                    mpv.setPropertyInt("volume", (gain.coerceIn(1f, 2f) * 100f).roundToInt())
-                }
+                mpvBoostGain = gain.coerceIn(1f, 2f)
+                applyMpvVolume()
             }
+
+            override fun setFadeVolume(fraction: Float) {
+                mpvFadeVolume = fraction.coerceIn(0f, 1f)
+                applyMpvVolume()
+            }
+
+            override fun setVolumeStabilizer(enabled: Boolean) {
+                if (mpvStabilizerEnabled == enabled) return
+                mpvStabilizerEnabled = enabled
+                applyMpvAudioFilters()
+            }
+
+            override fun sampleAudioLevel(): PlayerAudioLevelSample? = this@LibmpvView.sampleAudioLevel()
 
             override fun getAudioTracks(): List<AudioTrack> =
                 latestAudioTracks.mapIndexed { index, track ->
@@ -1692,6 +1743,67 @@ private class LibmpvView(
 
     private fun setPausedNow(paused: Boolean) {
         runCatching { mpv.setPropertyBoolean("pause", paused) }
+    }
+
+    @Volatile
+    private var mpvBoostGain = 1f
+
+    @Volatile
+    private var mpvFadeVolume = 1f
+
+    @Volatile
+    private var mpvStabilizerEnabled = false
+
+    @Volatile
+    private var mpvLevelProbeEnabled = false
+
+    @Volatile
+    private var latestAudioLevel: PlayerAudioLevelSample? = null
+
+    private fun applyMpvAudioFilters() {
+        executeMpv {
+            mpv.setPropertyString(
+                "af",
+                mpvAudioFilterChain(stabilizer = mpvStabilizerEnabled, levelProbe = mpvLevelProbeEnabled),
+            )
+        }
+    }
+
+    /**
+     * How loud the sound is and where in the video, for subtitle sync. mpv is read off the main
+     * thread, so each call hands back what the previous one read; the first starts measuring.
+     */
+    fun sampleAudioLevel(): PlayerAudioLevelSample? {
+        if (!mpvLevelProbeEnabled) {
+            mpvLevelProbeEnabled = true
+            applyMpvAudioFilters()
+            return null
+        }
+        val previous = latestAudioLevel
+        executeMpv {
+            latestAudioLevel = if (mpv.getPropertyBoolean("pause") == true) {
+                null
+            } else {
+                val levelDb = parseMpvAudioLevelDb(mpv.getPropertyString(MpvAudioLevelProperty))
+                val seconds = mpv.getPropertyDouble("time-pos")
+                if (levelDb == null || seconds == null) {
+                    null
+                } else {
+                    PlayerAudioLevelSample(
+                        positionMs = (seconds * 1000).toLong() + MpvAudioLeadMs,
+                        levelDb = levelDb,
+                    )
+                }
+            }
+        }
+        return previous
+    }
+
+    private fun applyMpvVolume() {
+        executeMpv {
+            mpv.setPropertyString("volume-max", "$MpvVolumeBoostMaxPercent")
+            mpv.setPropertyInt("volume", (mpvBoostGain * mpvFadeVolume * 100f).roundToInt())
+        }
     }
 
     private fun executeMpv(block: () -> Unit) {
@@ -2222,11 +2334,23 @@ private fun PlayerView.videoBoundsFraction(aspectRatio: Float): RectF? {
 @androidx.annotation.OptIn(UnstableApi::class)
 private class SubtitleOffsetRenderersFactory(
     context: Context,
+    private val audioLevelMeter: ExoAudioLevelMeter,
     private val subtitleDelayUsProvider: () -> Long,
     private val shouldNormalizeCuePositionProvider: () -> Boolean,
     private val shouldStripSdhProvider: () -> Boolean,
     private val videoBoundsFractionProvider: () -> RectF?,
 ) : DefaultRenderersFactory(context) {
+    override fun buildAudioSink(
+        context: Context,
+        enableFloatOutput: Boolean,
+        enableAudioTrackPlaybackParams: Boolean,
+    ): AudioSink =
+        DefaultAudioSink.Builder(context)
+            .setEnableFloatOutput(enableFloatOutput)
+            .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+            .setAudioProcessors(arrayOf(TeeAudioProcessor(audioLevelMeter)))
+            .build()
+
     override fun buildVideoRenderers(
         context: Context,
         extensionRendererMode: Int,
@@ -2476,3 +2600,154 @@ private class ExoLoudnessBoost(private val player: ExoPlayer) {
         sessionId = C.AUDIO_SESSION_ID_UNSET
     }
 }
+
+/**
+ * The volume stabilizer for ExoPlayer: the platform's dynamics processing on the player's audio
+ * session, one compressor band over the whole range that lifts quiet dialogue and holds back loud
+ * scenes, with a limiter after it to catch peaks. Dynamics processing came in Android 9, so on
+ * older versions the stabilizer does nothing.
+ */
+@androidx.annotation.OptIn(UnstableApi::class)
+private class ExoVolumeStabilizer(private val player: ExoPlayer) {
+    private var processing: DynamicsProcessing? = null
+    private var sessionId = C.AUDIO_SESSION_ID_UNSET
+
+    fun setEnabled(enabled: Boolean) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return
+        if (!enabled) {
+            processing?.let { runCatching { it.enabled = false } }
+            return
+        }
+        val session = player.audioSessionId
+        if (session == C.AUDIO_SESSION_ID_UNSET) return
+        val active = processing?.takeIf { sessionId == session } ?: runCatching {
+            processing?.release()
+            createProcessing(session).also {
+                processing = it
+                sessionId = session
+            }
+        }.getOrNull() ?: return
+        runCatching { active.enabled = true }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.P)
+    private fun createProcessing(session: Int): DynamicsProcessing {
+        val channels = (player.audioFormat?.channelCount ?: 2).coerceIn(2, 8)
+        val config = DynamicsProcessing.Config.Builder(
+            DynamicsProcessing.VARIANT_FAVOR_FREQUENCY_RESOLUTION,
+            channels,
+            false,
+            0,
+            true,
+            1,
+            false,
+            0,
+            true,
+        ).build()
+        config.setMbcBandAllChannelsTo(
+            0,
+            DynamicsProcessing.MbcBand(
+                true,
+                true,
+                20_000f,
+                StabilizerAttackMs,
+                StabilizerReleaseMs,
+                StabilizerRatio,
+                StabilizerThresholdDb,
+                StabilizerKneeDb,
+                StabilizerNoiseGateDb,
+                1f,
+                0f,
+                StabilizerMakeupGainDb,
+            ),
+        )
+        config.setLimiterAllChannelsTo(
+            DynamicsProcessing.Limiter(true, true, 0, 1f, 60f, 10f, StabilizerLimiterThresholdDb, 0f),
+        )
+        return DynamicsProcessing(0, session, config)
+    }
+
+    fun release() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            processing?.let { runCatching { it.release() } }
+        }
+        processing = null
+        sessionId = C.AUDIO_SESSION_ID_UNSET
+    }
+}
+
+private const val StabilizerAttackMs = 5f
+private const val StabilizerReleaseMs = 200f
+private const val StabilizerRatio = 4f
+private const val StabilizerThresholdDb = -30f
+private const val StabilizerKneeDb = 8f
+private const val StabilizerNoiseGateDb = -90f
+private const val StabilizerMakeupGainDb = 10f
+private const val StabilizerLimiterThresholdDb = -2f
+
+/**
+ * Measures how loud ExoPlayer's decoded sound is, for subtitle sync. It sees the sound as it
+ * enters the audio sink, before the platform's effects, and keeps the loudness of the last tenth
+ * of a second. Sound the device decodes itself, passed through as it is, cannot be measured.
+ */
+@androidx.annotation.OptIn(UnstableApi::class)
+private class ExoAudioLevelMeter : TeeAudioProcessor.AudioBufferSink {
+    @Volatile
+    private var levelDb = Float.NaN
+
+    @Volatile
+    private var measuredAtNanos = 0L
+
+    private var sampleRateHz = 0
+    private var channelCount = 0
+    private var encoding = C.ENCODING_INVALID
+    private var sumOfSquares = 0.0
+    private var sampleCount = 0
+
+    override fun flush(sampleRateHz: Int, channelCount: Int, encoding: Int) {
+        this.sampleRateHz = sampleRateHz
+        this.channelCount = channelCount
+        this.encoding = encoding
+        sumOfSquares = 0.0
+        sampleCount = 0
+    }
+
+    override fun handleBuffer(buffer: ByteBuffer) {
+        if (sampleRateHz <= 0 || channelCount <= 0) return
+        val data = buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN)
+        when (encoding) {
+            C.ENCODING_PCM_16BIT -> while (data.remaining() >= 2) {
+                val sample = data.short / 32768.0
+                sumOfSquares += sample * sample
+                sampleCount += 1
+            }
+            C.ENCODING_PCM_FLOAT -> while (data.remaining() >= 4) {
+                val sample = data.float.toDouble()
+                sumOfSquares += sample * sample
+                sampleCount += 1
+            }
+            else -> return
+        }
+        if (sampleCount >= sampleRateHz * channelCount / LevelWindowsPerSecond) {
+            val meanSquare = sumOfSquares / sampleCount
+            levelDb = if (meanSquare > 0.0) (10.0 * log10(meanSquare)).toFloat() else SilenceDb
+            measuredAtNanos = System.nanoTime()
+            sumOfSquares = 0.0
+            sampleCount = 0
+        }
+    }
+
+    /** The latest loudness in dB, or null when nothing has been measured lately. */
+    fun latestLevelDb(): Float? {
+        val level = levelDb
+        if (level.isNaN() || System.nanoTime() - measuredAtNanos > StaleLevelNanos) return null
+        return level
+    }
+}
+
+private const val LevelWindowsPerSecond = 10
+private const val SilenceDb = -100f
+private const val StaleLevelNanos = 1_000_000_000L
+
+/** How far ahead of what is heard ExoPlayer's sink takes in sound, roughly its track buffer. */
+private const val ExoAudioLeadMs = 300L

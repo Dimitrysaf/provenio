@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 
@@ -245,6 +246,8 @@ internal class SettingsListScope internal constructor() {
      * [checked] is a lambda, not a value, so the state read happens inside the row's own
      * composition. Read here in the builder instead, it would register against the builder
      * lambda's scope, and the rendered Switch would never see the change.
+     *
+     * A disabled row with [onDisabledClick] still answers a tap, so it can say why it is off.
      */
     fun switchRow(
         title: String,
@@ -252,6 +255,7 @@ internal class SettingsListScope internal constructor() {
         checked: () -> Boolean,
         enabled: Boolean = true,
         icon: ImageVector? = null,
+        onDisabledClick: (() -> Unit)? = null,
         onCheckedChange: (Boolean) -> Unit,
     ) {
         rows += SettingsListRow.Toggle(
@@ -260,6 +264,7 @@ internal class SettingsListScope internal constructor() {
             icon = icon,
             enabled = enabled,
             checked = checked,
+            onDisabledClick = onDisabledClick,
             onCheckedChange = onCheckedChange,
         )
     }
@@ -382,12 +387,29 @@ internal sealed interface SettingsListRow {
         private val icon: ImageVector?,
         private val enabled: Boolean,
         private val checked: () -> Boolean,
+        private val onDisabledClick: (() -> Unit)?,
         private val onCheckedChange: (Boolean) -> Unit,
     ) : SettingsListRow {
         @OptIn(ExperimentalMaterial3ExpressiveApi::class)
         @Composable
         override fun Render(shape: RoundedCornerShape, shapes: ListItemShapes) {
             val isChecked = checked()
+            Box {
+                ToggleItem(isChecked, shapes)
+                if (!enabled && onDisabledClick != null) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clip(shape)
+                            .clickable(onClick = onDisabledClick),
+                    )
+                }
+            }
+        }
+
+        @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+        @Composable
+        private fun ToggleItem(isChecked: Boolean, shapes: ListItemShapes) {
             SegmentedListItem(
                 // Tapping anywhere on the row flips the switch, which keeps the row to the
                 // spec's one selection interaction per item.

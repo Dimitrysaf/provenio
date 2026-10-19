@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -28,6 +27,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ListItemShapes
@@ -72,6 +72,8 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.rememberEp
 import io.github.dimitrysaf.provenio.shell.screens.details.components.summarizeEpisodeSeasons
 import io.github.dimitrysaf.provenio.core.metadata.groupedEpisodesForDisplay
 import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
+import io.github.dimitrysaf.provenio.shell.components.ListSubheader
+import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
 import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
 import io.github.dimitrysaf.provenio.shell.screens.settings.segmentShape
 import io.github.dimitrysaf.provenio.shell.screens.streams.ActiveStreamStore
@@ -117,12 +119,31 @@ internal fun PlayerAudioSheet(
     onTrackSelected: (Int) -> Unit,
     volumeBoostEnabled: Boolean,
     onVolumeBoostChanged: (Boolean) -> Unit,
+    sleepTimerSummary: String,
+    onSleepTimerClick: () -> Unit,
+    onMoreSettings: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     SingleChoiceBottomSheet(
-        title = stringResource(Res.string.compose_player_audio_tracks),
+        title = stringResource(Res.string.compose_player_audio),
+        headerActions = { closeThen ->
+            MoreSettingsButton(onClick = { closeThen(onMoreSettings) })
+        },
         header = {
-            VolumeBoostSwitch(checked = volumeBoostEnabled, onCheckedChange = onVolumeBoostChanged)
+            Column {
+                VolumeBoostSwitch(checked = volumeBoostEnabled, onCheckedChange = onVolumeBoostChanged)
+                SettingsList(modifier = Modifier.padding(bottom = 8.dp)) {
+                    navigationRow(
+                        title = stringResource(Res.string.player_sleep_timer_title),
+                        description = sleepTimerSummary,
+                        onClick = onSleepTimerClick,
+                    )
+                }
+                ListSubheader(
+                    text = stringResource(Res.string.compose_player_audio_tracks),
+                    modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+                )
+            }
         },
         options = audioTracks.map { track ->
             SingleChoiceOption(
@@ -175,7 +196,6 @@ private fun VolumeBoostSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Un
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Icon(imageVector = Icons.AutoMirrored.Rounded.VolumeUp, contentDescription = null)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(Res.string.player_volume_boost_title),
@@ -190,6 +210,59 @@ private fun VolumeBoostSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Un
             Switch(checked = checked, onCheckedChange = null)
         }
     }
+}
+
+/** Opens the Subtitles & Audio settings page from a player sheet's header. */
+@Composable
+internal fun MoreSettingsButton(onClick: () -> Unit) {
+    TextButton(onClick = onClick) {
+        Text(stringResource(Res.string.player_more_settings))
+    }
+}
+
+/** What the sleep timer is set to, as the audio sheet's row states it. */
+@Composable
+internal fun sleepTimerSummary(timer: PlayerSleepTimer, isSeries: Boolean): String = when (timer.choice) {
+    PlayerSleepTimerChoice.Off -> stringResource(Res.string.player_sleep_timer_off)
+    PlayerSleepTimerChoice.EndOfVideo -> sleepTimerEndLabel(isSeries)
+    else -> stringResource(
+        Res.string.player_sleep_timer_remaining,
+        ((timer.remainingMs + 59_999L) / 60_000L).toInt().coerceAtLeast(1),
+    )
+}
+
+@Composable
+private fun sleepTimerEndLabel(isSeries: Boolean): String = stringResource(
+    if (isSeries) Res.string.player_sleep_timer_end_of_episode else Res.string.player_sleep_timer_end_of_movie,
+)
+
+/** Picks when the sleep timer pauses playback; going back returns to the audio sheet. */
+@Composable
+internal fun PlayerSleepTimerSheet(
+    selected: PlayerSleepTimerChoice,
+    isSeries: Boolean,
+    onSelected: (PlayerSleepTimerChoice) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val endLabel = sleepTimerEndLabel(isSeries)
+    SingleChoiceBottomSheet(
+        title = stringResource(Res.string.player_sleep_timer_title),
+        description = stringResource(Res.string.player_sleep_timer_description),
+        navigation = SheetNavigation.Back,
+        options = PlayerSleepTimerChoice.entries.map { choice ->
+            SingleChoiceOption(
+                value = choice,
+                label = when (choice) {
+                    PlayerSleepTimerChoice.Off -> stringResource(Res.string.player_sleep_timer_off)
+                    PlayerSleepTimerChoice.EndOfVideo -> endLabel
+                    else -> stringResource(Res.string.player_sleep_timer_minutes, choice.minutes ?: 0)
+                },
+            )
+        },
+        isSelected = { it == selected },
+        onSelected = onSelected,
+        onDismiss = onDismiss,
+    )
 }
 
 internal val PlayerPlaybackSpeeds = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f)
@@ -514,6 +587,7 @@ private fun PlayerSheetHeader(
     reloadEnabled: Boolean = true,
     onFetch: (() -> Unit)? = null,
     fetching: Boolean = false,
+    onMoreSettings: (() -> Unit)? = null,
     onClose: (() -> Unit)? = null,
 ) {
     Row(
@@ -581,6 +655,9 @@ private fun PlayerSheetHeader(
                 }
             }
         }
+        if (onMoreSettings != null) {
+            MoreSettingsButton(onClick = onMoreSettings)
+        }
         if (onClose != null) {
             SheetNavigationButton(navigation = SheetNavigation.Close, onClick = onClose)
         }
@@ -612,6 +689,7 @@ internal fun PlayerSubtitlesSheet(
     onAddonSubtitleSelected: (AddonSubtitle) -> Unit,
     onFetchAddonSubtitles: () -> Unit,
     onSubtitleDelayChanged: (Int) -> Unit,
+    onMoreSettings: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -659,6 +737,7 @@ internal fun PlayerSubtitlesSheet(
             subtitle = null,
             onFetch = onFetchAddonSubtitles,
             fetching = isLoadingAddonSubtitles,
+            onMoreSettings = { scope.launch { dismissBottomSheet(sheetState = sheetState, onDismiss = onMoreSettings) } },
             onClose = { scope.launch { dismissBottomSheet(sheetState = sheetState, onDismiss = onDismiss) } },
         )
         LazyColumn(
@@ -878,7 +957,7 @@ private fun SubtitleDelayRow(
     }
 }
 
-private fun formatSubtitleDelay(delayMs: Int): String {
+internal fun formatSubtitleDelay(delayMs: Int): String {
     val sign = when {
         delayMs > 0 -> "+"
         delayMs < 0 -> "-"

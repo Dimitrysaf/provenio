@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.shell.screens.player
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import io.github.dimitrysaf.provenio.core.playback.PlayerAudioLevelSample
 import io.github.dimitrysaf.provenio.core.playback.AudioTrack
 import io.github.dimitrysaf.provenio.core.playback.PlayerResizeMode
 import io.github.dimitrysaf.provenio.core.playback.SubtitleTrack
@@ -23,6 +24,25 @@ interface PlayerEngineController {
      * Engines that cannot amplify ignore it.
      */
     fun setVolumeBoost(gain: Float) {}
+
+    /**
+     * Evens out loudness, lifting quiet dialogue and holding back loud scenes. Engines that cannot
+     * ignore it.
+     */
+    fun setVolumeStabilizer(enabled: Boolean) {}
+
+    /**
+     * Scales the player's own output from 1, as it is, down to 0, silent, for the sleep timer's
+     * fade. It is separate from the boost and from the device volume.
+     */
+    fun setFadeVolume(fraction: Float) {}
+
+    /**
+     * How loud the sound is now and where in the video, for automatic subtitle sync. The first
+     * call starts measuring. Null while paused, before anything is measured, or where the engine
+     * cannot measure.
+     */
+    fun sampleAudioLevel(): PlayerAudioLevelSample? = null
     fun getAudioTracks(): List<AudioTrack>
     fun getSubtitleTracks(): List<SubtitleTrack>
     fun applyAudioLanguagePreferences(languages: List<String>)
