@@ -920,7 +920,6 @@
     <string name="person_latest">Terbaru</string>
     <string name="person_popular">Populer</string>
     <string name="person_upcoming">Mendatang</string>
-    <string name="pin_backspace">Hapus</string>
     <string name="pin_enter">Masukkan PIN</string>
     <string name="pin_forgot">Lupa PIN?</string>
     <string name="pin_incorrect">PIN salah</string>

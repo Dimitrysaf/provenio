@@ -1131,7 +1131,6 @@
     <string name="person_latest">Mới nhất</string>
     <string name="person_popular">Phổ biến</string>
     <string name="person_upcoming">Sắp chiếu</string>
-    <string name="pin_backspace">Xóa ký tự trước</string>
     <string name="pin_enter">Nhập mã PIN</string>
     <string name="pin_forgot">Quên mã PIN?</string>
     <string name="pin_incorrect">Sai mã PIN</string>

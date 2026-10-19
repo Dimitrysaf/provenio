@@ -1015,7 +1015,6 @@
     <string name="person_latest">最新作</string>
     <string name="person_popular">人気作</string>
     <string name="person_upcoming">公開予定</string>
-    <string name="pin_backspace">削除</string>
     <string name="pin_enter">PINを入力</string>
     <string name="pin_forgot">PINを忘れた場合</string>
     <string name="pin_incorrect">PINが正しくありません</string>

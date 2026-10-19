@@ -773,7 +773,6 @@
     <string name="person_latest">Neueste</string>
     <string name="person_popular">Beliebt</string>
     <string name="person_upcoming">Demnächst</string>
-    <string name="pin_backspace">Rücktaste</string>
     <string name="pin_enter">PIN eingeben</string>
     <string name="pin_forgot">PIN vergessen?</string>
     <string name="pin_incorrect">Falsche PIN</string>

@@ -975,7 +975,6 @@
     <string name="person_latest">Πιο πρόσφατο</string>
     <string name="person_popular">Δημοφιλές</string>
     <string name="person_upcoming">Επερχόμενο</string>
-    <string name="pin_backspace">Διαγραφή</string>
     <string name="pin_enter">Εισάγετε PIN</string>
     <string name="pin_forgot">Ξεχάσατε το PIN;</string>
     <string name="pin_incorrect">Λανθασμένο PIN</string>

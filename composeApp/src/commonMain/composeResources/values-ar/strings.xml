@@ -1118,7 +1118,6 @@
     <string name="person_latest">الأحدث</string>
     <string name="person_popular">رائج</string>
     <string name="person_upcoming">يعرض قريباً</string>
-    <string name="pin_backspace">حذف</string>
     <string name="pin_enter">أدخل رمز حماية</string>
     <string name="pin_forgot">نسيت رمز PIN؟</string>
     <string name="pin_incorrect">رمز PIN غير صحيح.</string>

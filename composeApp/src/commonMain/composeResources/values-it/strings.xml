@@ -664,7 +664,6 @@
   <string name="person_latest">Ultimi lavori</string>
   <string name="person_popular">Popolare</string>
   <string name="person_upcoming">In uscita</string>
-  <string name="pin_backspace">Cancella</string>
   <string name="pin_enter">Inserisci PIN</string>
   <string name="pin_forgot">PIN dimenticato?</string>
   <string name="pin_incorrect">PIN errato</string>

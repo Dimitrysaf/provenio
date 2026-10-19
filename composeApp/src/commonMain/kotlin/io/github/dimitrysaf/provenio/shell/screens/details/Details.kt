@@ -46,6 +46,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import io.github.dimitrysaf.provenio.shell.components.EmptyState
+import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbMetadataService
+import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
+import io.github.dimitrysaf.provenio.core.profiles.ProfileAgeLimits
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -146,6 +152,24 @@ fun MetaDetailsScreen(
     val homeSections = HomeRepository.uiState.collectAsStateWithLifecycle().value.sections
     val displayedMeta = uiState.meta?.takeIf { it.type == type && it.id == id }
         ?: MetaDetailsRepository.peek(type, id)
+    val ageLimit = ProfileRepository.state.collectAsStateWithLifecycle().value.activeProfile?.ageLimit
+    val ageAllowed by produceState<Boolean?>(
+        initialValue = if (ageLimit == null) true else null,
+        displayedMeta?.id,
+        displayedMeta?.ageRating,
+        ageLimit,
+    ) {
+        val meta = displayedMeta ?: return@produceState
+        value = if (ageLimit == null) {
+            true
+        } else {
+            ProfileAgeLimits.allows(
+                limit = ageLimit,
+                certifications = TmdbMetadataService.fetchCertifications(meta.type, meta.id),
+                fallbackRating = meta.ageRating,
+            )
+        }
+    }
     var imageViewerRequest by remember(type, id) { mutableStateOf<ImageViewerRequest?>(null) }
     val metaScreenSettingsUiState by remember {
         MetaScreenSettingsRepository.ensureLoaded()
@@ -270,6 +294,25 @@ fun MetaDetailsScreen(
             displayedMeta == null -> {
                 LoadingSpinner(
                     modifier = Modifier.align(Alignment.Center),
+                )
+            }
+
+            ageAllowed == null -> {
+                LoadingSpinner(
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
+
+            ageAllowed == false -> {
+                EmptyState(
+                    icon = Icons.Rounded.Lock,
+                    title = stringResource(Res.string.details_age_limit_blocked_title),
+                    message = stringResource(Res.string.details_age_limit_blocked_message),
+                    actionLabel = stringResource(Res.string.action_back),
+                    onActionClick = onBack,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = 24.dp),
                 )
             }
 

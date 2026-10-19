@@ -1025,7 +1025,6 @@
     <string name="person_latest">Cele mai recente</string>
     <string name="person_popular">Populare</string>
     <string name="person_upcoming">Viitoare</string>
-    <string name="pin_backspace">Șterge</string>
     <string name="pin_enter">Introdu codul PIN</string>
     <string name="pin_forgot">Ai uitat codul PIN?</string>
     <string name="pin_incorrect">Cod PIN incorect</string>

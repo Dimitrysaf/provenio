@@ -148,6 +148,7 @@ object ProfileRepository {
         avatarId: String? = null,
         avatarUrl: String? = null,
         usesPrimaryAddons: Boolean = false,
+        ageLimit: ProfileAgeLimit? = null,
     ) {
         val existing = _state.value.profiles
         val nextIndex = ((1..MAX_PROFILES).toSet() - existing.map { it.profileIndex }.toSet()).minOrNull() ?: return
@@ -163,6 +164,7 @@ object ProfileRepository {
                 avatarUrl = profile.avatarUrl,
                 profileBackgroundId = profile.profileBackgroundId,
                 profileBackgroundUrl = profile.profileBackgroundUrl,
+                ageLimit = profile.ageLimit,
             )
         } + ProfilePushPayload(
             profileIndex = nextIndex,
@@ -171,6 +173,7 @@ object ProfileRepository {
             usesPrimaryAddons = usesPrimaryAddons,
             avatarId = avatarId,
             avatarUrl = avatarUrl,
+            ageLimit = ageLimit,
         )
 
         pushProfiles(allPayloads)
@@ -185,6 +188,7 @@ object ProfileRepository {
         profileBackgroundId: String? = null,
         profileBackgroundUrl: String? = null,
         usesPrimaryAddons: Boolean = false,
+        ageLimit: ProfileAgeLimit? = null,
     ) {
         val allPayloads = _state.value.profiles.map { profile ->
             if (profile.profileIndex == profileIndex) {
@@ -197,6 +201,7 @@ object ProfileRepository {
                     avatarUrl = avatarUrl,
                     profileBackgroundId = profileBackgroundId,
                     profileBackgroundUrl = profileBackgroundUrl,
+                    ageLimit = ageLimit,
                 )
             } else {
                 ProfilePushPayload(
@@ -209,6 +214,7 @@ object ProfileRepository {
                     avatarUrl = profile.avatarUrl,
                     profileBackgroundId = profile.profileBackgroundId,
                     profileBackgroundUrl = profile.profileBackgroundUrl,
+                    ageLimit = profile.ageLimit,
                 )
             }
         }
@@ -284,6 +290,7 @@ object ProfileRepository {
         avatarUrl = avatarUrl,
         profileBackgroundId = profileBackgroundId,
         profileBackgroundUrl = profileBackgroundUrl,
+        ageLimit = ageLimit,
     )
 
     private fun applyPayloadsLocally(payloads: List<ProfilePushPayload>) {
@@ -303,6 +310,7 @@ object ProfileRepository {
                 usesPrimaryAddons = p.usesPrimaryAddons,
                 usesPrimaryPlugins = p.usesPrimaryPlugins,
                 pinEnabled = existing[p.profileIndex]?.pinEnabled == true,
+                ageLimit = p.ageLimit,
             )
         }.sortedBy { it.profileIndex }
         _state.value = _state.value.copy(

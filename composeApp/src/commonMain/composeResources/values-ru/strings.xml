@@ -1128,7 +1128,6 @@
     <string name="person_latest">Последние</string>
     <string name="person_popular">Популярный</string>
     <string name="person_upcoming">Предстоящие</string>
-    <string name="pin_backspace">Backspace</string>
     <string name="pin_enter">Введите PIN</string>
     <string name="pin_forgot">Забыли PIN?</string>
     <string name="pin_incorrect">Неправильный PIN</string>

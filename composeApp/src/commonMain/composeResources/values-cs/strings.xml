@@ -1017,7 +1017,6 @@
     <string name="person_latest">Nejnovější</string>
     <string name="person_popular">Populární</string>
     <string name="person_upcoming">Nadcházející</string>
-    <string name="pin_backspace">Zpět</string>
     <string name="pin_enter">Zadejte PIN</string>
     <string name="pin_forgot">Zapomněli jste PIN?</string>
     <string name="pin_incorrect">Nesprávný PIN</string>

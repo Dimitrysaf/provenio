@@ -22,6 +22,7 @@ data class Profile(
     @SerialName("uses_primary_plugins") val usesPrimaryPlugins: Boolean = false,
     @SerialName("pin_enabled") val pinEnabled: Boolean = false,
     @SerialName("pin_locked_until") val pinLockedUntil: String? = null,
+    @SerialName("age_limit") val ageLimit: ProfileAgeLimit? = null,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
 )
@@ -56,6 +57,7 @@ data class ProfilePushPayload(
     @SerialName("avatar_url") val avatarUrl: String? = null,
     @SerialName("profile_background_id") val profileBackgroundId: String? = null,
     @SerialName("profile_background_url") val profileBackgroundUrl: String? = null,
+    @SerialName("age_limit") val ageLimit: ProfileAgeLimit? = null,
 )
 
 @Serializable

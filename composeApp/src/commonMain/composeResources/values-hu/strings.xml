@@ -877,7 +877,6 @@
     <string name="person_latest">Legutóbbi</string>
     <string name="person_popular">Népszerű</string>
     <string name="person_upcoming">Közelgő</string>
-    <string name="pin_backspace">Törlés (Backspace)</string>
     <string name="pin_enter">PIN-kód megadása</string>
     <string name="pin_forgot">Elfelejtetted a PIN-kódot?</string>
     <string name="pin_incorrect">Helytelen PIN-kód</string>

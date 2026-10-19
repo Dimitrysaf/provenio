@@ -882,7 +882,6 @@
     <string name="person_latest">Mais Recentes</string>
     <string name="person_popular">Populares</string>
     <string name="person_upcoming">Próximos</string>
-    <string name="pin_backspace">Apagar</string>
     <string name="pin_enter">Insira o PIN</string>
     <string name="pin_forgot">Esqueceu o PIN?</string>
     <string name="pin_incorrect">PIN incorreto</string>

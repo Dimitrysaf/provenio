@@ -1105,7 +1105,6 @@
     <string name="person_latest">En yeni</string>
     <string name="person_popular">Popüler</string>
     <string name="person_upcoming">Yakında</string>
-    <string name="pin_backspace">Sil</string>
     <string name="pin_enter">PIN gir</string>
     <string name="pin_forgot">PIN'i mi unuttun?</string>
     <string name="pin_incorrect">PIN hatalı</string>

@@ -33,6 +33,7 @@ object TmdbMetadataService {
     private val json = Json { ignoreUnknownKeys = true }
 
     private val enrichmentCache = mutableMapOf<String, TmdbEnrichment>()
+    private val certificationsCache = mutableMapOf<String, Map<String, Set<String>>>()
     private val episodeCache = mutableMapOf<String, Map<Pair<Int, Int>, TmdbEpisodeEnrichment>>()
     private val moreLikeThisCache = mutableMapOf<String, List<MetaPreview>>()
     private val collectionCache = mutableMapOf<String, Pair<String?, List<MetaPreview>>>()
@@ -698,6 +699,39 @@ object TmdbMetadataService {
             else -> "tv"
         }
     }
+
+    /**
+     * Every age rating TMDB has for a title, by country code, for the age limit of a profile;
+     * null when TMDB cannot be asked or does not know the title.
+     */
+    suspend fun fetchCertifications(type: String, id: String): Map<String, Set<String>>? =
+        withContext(Dispatchers.Default) {
+            val tmdbType = normalizeMetaType(type)
+            val tmdbId = TmdbService.ensureTmdbId(id, tmdbType) ?: return@withContext null
+            val cacheKey = "$tmdbType:$tmdbId"
+            certificationsCache[cacheKey]?.let { return@withContext it }
+            val numericId = tmdbId.toIntOrNull() ?: return@withContext null
+            val pairs = if (tmdbType == "tv") {
+                fetch<TmdbTvContentRatingsResponse>(endpoint = "tv/$numericId/content_ratings")
+                    ?.results
+                    ?.mapNotNull { rating ->
+                        val country = rating.iso31661?.uppercase() ?: return@mapNotNull null
+                        rating.rating?.trim()?.takeIf(String::isNotBlank)?.let { country to it }
+                    }
+            } else {
+                fetch<TmdbMovieReleaseDatesResponse>(endpoint = "movie/$numericId/release_dates")
+                    ?.results
+                    ?.flatMap { country ->
+                        val code = country.iso31661?.uppercase() ?: return@flatMap emptyList()
+                        country.releaseDates.mapNotNull { date ->
+                            date.certification?.trim()?.takeIf(String::isNotBlank)?.let { code to it }
+                        }
+                    }
+            } ?: return@withContext null
+            pairs.groupBy({ it.first }, { it.second })
+                .mapValues { (_, ratings) -> ratings.toSet() }
+                .also { certificationsCache[cacheKey] = it }
+        }
 
     suspend fun enrichMeta(
         meta: MetaDetails,

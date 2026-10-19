@@ -1001,7 +1001,6 @@
     <string name="person_latest">Najnovšie</string>
     <string name="person_popular">Populárne</string>
     <string name="person_upcoming">Nadchádzajúce</string>
-    <string name="pin_backspace">Vymazať</string>
     <string name="pin_enter">Zadať PIN</string>
     <string name="pin_forgot">Zabudli ste PIN?</string>
     <string name="pin_incorrect">Nesprávny PIN</string>

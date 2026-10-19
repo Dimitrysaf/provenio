@@ -995,7 +995,6 @@
     <string name="person_latest">Mais recente</string>
     <string name="person_popular">Popular</string>
     <string name="person_upcoming">Brevemente</string>
-    <string name="pin_backspace">Apagar</string>
     <string name="pin_enter">Introduzir PIN</string>
     <string name="pin_forgot">Esqueceste-te do PIN?</string>
     <string name="pin_incorrect">PIN incorreto</string>

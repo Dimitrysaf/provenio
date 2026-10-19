@@ -893,7 +893,6 @@
     <string name="person_latest">Nyeste</string>
     <string name="person_popular">Populær</string>
     <string name="person_upcoming">Kommende</string>
-    <string name="pin_backspace">Slett</string>
     <string name="pin_enter">Skriv PIN</string>
     <string name="pin_forgot">Glemt PIN?</string>
     <string name="pin_incorrect">Feil PIN</string>

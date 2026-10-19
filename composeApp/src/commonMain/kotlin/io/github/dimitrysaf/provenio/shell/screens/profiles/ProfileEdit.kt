@@ -29,6 +29,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
+import androidx.compose.material.icons.rounded.Explicit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -109,6 +110,11 @@ fun ProfileEditScreen(
     var selectedBackgroundId by rememberSaveable { mutableStateOf(currentProfile?.profileBackgroundId) }
     var selectedBackgroundUrl by rememberSaveable { mutableStateOf(currentProfile?.profileBackgroundUrl) }
     var usesPrimaryAddons by rememberSaveable { mutableStateOf(currentProfile?.usesPrimaryAddons ?: false) }
+    var ageLimit by remember { mutableStateOf(currentProfile?.ageLimit) }
+    var showAgeLimit by remember { mutableStateOf(false) }
+    var showAgeLimitPin by remember { mutableStateOf(false) }
+    val primaryProfile = profileState.profiles.find { it.profileIndex == 1 }
+    val ageLimitNeedsPin = primaryProfile?.pinEnabled == true && currentProfile?.profileIndex != 1
     var isSaving by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showPinSetup by remember { mutableStateOf(false) }
@@ -168,6 +174,17 @@ fun ProfileEditScreen(
                     onCheckedChange = { usesPrimaryAddons = it },
                 )
 
+                navigationRow(
+                    title = stringResource(Res.string.profile_age_limit_title),
+                    description = ageLimit?.let { limit ->
+                        stringResource(Res.string.profile_age_limit_count, limit.allowedRatings.size)
+                    } ?: stringResource(Res.string.profile_age_limit_none),
+                    icon = Icons.Rounded.Explicit,
+                    onClick = {
+                        if (ageLimitNeedsPin) showAgeLimitPin = true else showAgeLimit = true
+                    },
+                )
+
                 if (!isNew) {
                     val pinEnabled = currentProfile?.pinEnabled == true
                     navigationRow(
@@ -205,6 +222,7 @@ fun ProfileEditScreen(
                     avatarId = if (customAvatarUrl == null) selectedAvatarId else null,
                     avatarUrl = customAvatarUrl,
                     usesPrimaryAddons = usesPrimaryAddons,
+                    ageLimit = ageLimit,
                 )
             } else {
                 ProfileRepository.updateProfile(
@@ -216,11 +234,31 @@ fun ProfileEditScreen(
                     profileBackgroundId = selectedBackgroundId,
                     profileBackgroundUrl = selectedBackgroundUrl,
                     usesPrimaryAddons = usesPrimaryAddons,
+                    ageLimit = ageLimit,
                 )
             }
             isSaving = false
             onSaved()
         }
+    }
+
+    if (showAgeLimitPin && primaryProfile != null) {
+        PinEntrySheet(
+            profileName = primaryProfile.name,
+            onVerify = { pin -> ProfileRepository.verifyPin(primaryProfile.profileIndex, pin) },
+            onVerified = {
+                showAgeLimitPin = false
+                showAgeLimit = true
+            },
+            onDismiss = { showAgeLimitPin = false },
+        )
+    }
+    if (showAgeLimit) {
+        AgeLimitSheet(
+            limit = ageLimit,
+            onDone = { ageLimit = it },
+            onDismiss = { showAgeLimit = false },
+        )
     }
 
     if (embedded) {

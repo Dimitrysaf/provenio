@@ -1017,7 +1017,6 @@
     <string name="person_latest">Récent</string>
     <string name="person_popular">Populaire</string>
     <string name="person_upcoming">À venir</string>
-    <string name="pin_backspace">Effacer</string>
     <string name="pin_enter">Saisir le code PIN</string>
     <string name="pin_forgot">Code PIN oublié ?</string>
     <string name="pin_incorrect">Code PIN incorrect</string>
