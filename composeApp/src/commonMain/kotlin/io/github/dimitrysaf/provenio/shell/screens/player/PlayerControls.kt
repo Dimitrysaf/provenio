@@ -37,6 +37,7 @@ import androidx.compose.material.icons.automirrored.rounded.Input
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Cast
+import androidx.compose.material.icons.rounded.CastConnected
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
@@ -138,6 +139,7 @@ internal fun PlayerControlsShell(
     onSubtitleClick: () -> Unit,
     onAudioClick: () -> Unit,
     showCastButton: Boolean = false,
+    casting: Boolean = false,
     onCastClick: (() -> Unit)? = null,
     onVideoSettingsClick: (() -> Unit)? = null,
     onSourcesClick: (() -> Unit)? = null,
@@ -261,6 +263,7 @@ internal fun PlayerControlsShell(
                     onSubtitleClick = onSubtitleClick,
                     onAudioClick = onAudioClick,
                     showCastButton = showCastButton,
+                    casting = casting,
                     onCastClick = onCastClick,
                     onLockToggle = onLockToggle,
                     onVideoSettingsClick = onVideoSettingsClick,
@@ -721,6 +724,7 @@ private fun BottomControls(
     onSubtitleClick: () -> Unit,
     onAudioClick: () -> Unit,
     showCastButton: Boolean,
+    casting: Boolean,
     onCastClick: (() -> Unit)?,
     onLockToggle: () -> Unit,
     onVideoSettingsClick: (() -> Unit)?,
@@ -749,7 +753,11 @@ private fun BottomControls(
             icon = Icons.Rounded.Audiotrack,
         ),
         if (showCastButton) {
-            PlayerGroupAction(stringResource(Res.string.player_cast), onCastClick?.takeIf { controlsReady }, icon = Icons.Rounded.Cast)
+            PlayerGroupAction(
+                stringResource(if (casting) Res.string.cast_stop else Res.string.player_cast),
+                onCastClick?.takeIf { controlsReady || casting },
+                icon = if (casting) Icons.Rounded.CastConnected else Icons.Rounded.Cast,
+            )
         } else {
             null
         },

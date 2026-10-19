@@ -30,7 +30,12 @@ import kotlinx.coroutines.withContext
 internal actual object CastPlatform {
     actual val isSupported: Boolean = true
 
-    actual suspend fun discover(onDevice: (CastDevice) -> Unit) = withContext(Dispatchers.IO) {
+    actual suspend fun discover(onDevice: (CastDevice) -> Unit) = coroutineScope {
+        launch { DlnaCast.discover(onDevice) }
+        discoverGoogleCast(onDevice)
+    }
+
+    private suspend fun discoverGoogleCast(onDevice: (CastDevice) -> Unit) = withContext(Dispatchers.IO) {
         val sockets = openDiscoverySockets()
         if (sockets.isEmpty()) return@withContext
         val query = buildMdnsQuery()
@@ -51,6 +56,7 @@ internal actual object CastPlatform {
     }
 
     actual suspend fun open(device: CastDevice): CastChannel = withContext(Dispatchers.IO) {
+        if (DlnaCast.handles(device)) return@withContext DlnaCast.open(device)
         val context = SSLContext.getInstance("TLS").apply {
             init(null, arrayOf(CastCertificateTrust), SecureRandom())
         }

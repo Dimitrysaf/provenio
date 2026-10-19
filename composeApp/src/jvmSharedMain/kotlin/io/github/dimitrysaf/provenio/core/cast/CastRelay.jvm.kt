@@ -244,7 +244,8 @@ internal actual object CastRelay {
 
     private val VpnPrefixes = listOf("tun", "tap", "wg", "ppp", "ipsec", "utun", "nordlynx", "proton")
     private val LanPrefixes = listOf("wlan", "wl", "eth", "en", "ap", "swlan")
-    private const val CorsHeaders = "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Range\r\nAccess-Control-Expose-Headers: Content-Length, Content-Range\r\n"
+    private const val CorsHeaders = "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Range\r\nAccess-Control-Expose-Headers: Content-Length, Content-Range\r\n" +
+        "transferMode.dlna.org: Streaming\r\ncontentFeatures.dlna.org: DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01700000000000000000000000000000\r\n"
     private const val Backlog = 16
     private const val CopyBufferBytes = 64 * 1024
     private const val MaxHeaderLineChars = 8 * 1024

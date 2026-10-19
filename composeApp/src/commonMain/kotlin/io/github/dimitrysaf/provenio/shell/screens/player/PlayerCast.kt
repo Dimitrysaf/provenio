@@ -92,7 +92,9 @@ internal fun PlayerScreenRuntime.castBlock(networkAvailable: Boolean?): CastBloc
  * device, so it goes through the cast relay; anything else is sent as it is. Null when it cannot
  * be cast, the relay included.
  */
-private fun PlayerScreenRuntime.castMediaOrNull(): CastMedia? {
+private fun PlayerScreenRuntime.castMediaOrNull(
+    startPositionMs: Long = playbackSnapshot.positionMs.coerceAtLeast(0L),
+): CastMedia? {
     val torrent = activeTorrentInfoHash != null
     val source = (if (torrent) p2pResolvedSourceUrl else activeSourceUrl)?.trim()?.takeIf(String::isNotEmpty) ?: return null
     val url = when {
@@ -110,9 +112,13 @@ private fun PlayerScreenRuntime.castMediaOrNull(): CastMedia? {
         title = title,
         subtitle = episodeLabel,
         imageUrl = background ?: poster,
-        startPositionMs = playbackSnapshot.positionMs.coerceAtLeast(0L),
+        startPositionMs = startPositionMs,
     )
 }
+
+/** What is playing, as far as the cast device is concerned: the source, the episode, and the torrent's local address once it has one. */
+private val PlayerScreenRuntime.castSourceKey: String
+    get() = "$activePlaybackIdentity|${activeVideoId.orEmpty()}|${p2pResolvedSourceUrl.orEmpty()}"
 
 /** Whether what is playing would reach the cast device through the relay: a torrent from the built-in engine, or a download. */
 internal val PlayerScreenRuntime.castUsesRelay: Boolean
@@ -138,24 +144,125 @@ internal fun PlayerScreenRuntime.startCasting(device: CastDevice, onUnreachable:
         showCastSheet = false
         shouldPlay = false
         playerController?.pause()
+        castedSourceKey = castSourceKey
+        castedVideoId = activeVideoId
         CastController.cast(device, media)
     }
 }
 
+/**
+ * Sends the new source or episode to the device being cast to. The same episode carries on from
+ * where the device had got to; another one starts from its own resume point.
+ */
+private suspend fun PlayerScreenRuntime.switchCastMedia() {
+    val sameEpisode = activeVideoId == castedVideoId
+    val castPositionMs = (CastController.state.value as? CastState.Active)?.playback?.positionMs
+    val startPositionMs = if (sameEpisode) {
+        castPositionMs ?: playbackSnapshot.positionMs
+    } else {
+        activeInitialPositionMs
+    }.coerceAtLeast(0L)
+    val media = withContext(Dispatchers.Default) { castMediaOrNull(startPositionMs) } ?: return
+    castedSourceKey = castSourceKey
+    castedVideoId = activeVideoId
+    localPlayerController?.pause()
+    CastController.switchMedia(media)
+}
+
 internal fun PlayerScreenRuntime.stopCasting() {
+    castedSourceKey = null
+    castedVideoId = null
     val positionMs = (CastController.state.value as? CastState.Active)?.playback?.positionMs
     CastController.stop()
     CastRelay.stop()
-    positionMs?.let { playerController?.seekTo(it) }
+    endCastControl()
+    positionMs?.let { localPlayerController?.seekTo(it) }
     shouldPlay = true
-    playerController?.play()
+    localPlayerController?.play()
 }
 
 internal fun PlayerScreenRuntime.resumeAfterCastFailure() {
+    castedSourceKey = null
+    castedVideoId = null
     CastController.dismissFailure()
     CastRelay.stop()
+    endCastControl()
     shouldPlay = true
-    playerController?.play()
+    localPlayerController?.play()
+}
+
+/** Hands the controls back to the player on this device. */
+private fun PlayerScreenRuntime.endCastControl() {
+    castingToDevice = false
+    localPlayerController?.let { playerController = it }
+}
+
+/**
+ * The player's controls while casting: play, pause and seeking act on the cast device, and the
+ * tracks still come from the stream on this device, which stays paused behind them.
+ */
+internal class CastPlayerController(private val local: PlayerEngineController) : PlayerEngineController by local {
+    override fun play() {
+        CastController.play()
+    }
+
+    override fun pause() {
+        CastController.pause()
+    }
+
+    override fun seekTo(positionMs: Long) {
+        CastController.seekTo(positionMs.coerceAtLeast(0L))
+    }
+
+    override fun seekBy(offsetMs: Long) {
+        val positionMs = (CastController.state.value as? CastState.Active)?.playback?.positionMs ?: return
+        CastController.seekTo((positionMs + offsetMs).coerceAtLeast(0L))
+    }
+
+    override fun retry() = Unit
+
+    override fun setPlaybackSpeed(speed: Float) = Unit
+}
+
+/** What fills the video area while casting: the title's artwork, dimmed, and the device it plays on. */
+@Composable
+internal fun PlayerScreenRuntime.RenderCastBackdrop() {
+    if (!castingToDevice) return
+    val castState by CastController.state.collectAsState()
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.Center,
+    ) {
+        (background ?: poster)?.let { artwork ->
+            AsyncImage(
+                model = artwork,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                alpha = 0.3f,
+            )
+        }
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.CastConnected,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(48.dp),
+            )
+            Text(
+                text = castStatusText(castState),
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
 }
 
 @Composable
@@ -175,14 +282,49 @@ internal fun PlayerScreenRuntime.RenderCastLayer() {
     val castState by CastController.state.collectAsState()
     val casting = castState !is CastState.Idle
 
-    LaunchedEffect(casting, playerController) {
-        if (casting) {
-            shouldPlay = false
-            playerController?.pause()
+    val controlling = castState is CastState.Active || castState is CastState.Connecting
+    LaunchedEffect(controlling) {
+        if (controlling) {
+            val local = localPlayerController ?: playerController
+            local?.pause()
+            castingToDevice = true
+            if (local != null) {
+                localPlayerController = local
+                playerController = CastPlayerController(local)
+            }
+        } else if (castingToDevice) {
+            endCastControl()
+        }
+    }
+    LaunchedEffect(castState) {
+        when (val state = castState) {
+            is CastState.Active -> {
+                val playback = state.playback
+                initialLoadCompleted = true
+                shouldPlay = playback.isPlaying
+                playbackSnapshot = playbackSnapshot.copy(
+                    isLoading = playback.isBuffering,
+                    isPlaying = playback.isPlaying,
+                    isEnded = playback.isEnded,
+                    durationMs = playback.durationMs.takeIf { it > 0L } ?: playbackSnapshot.durationMs,
+                    positionMs = playback.positionMs,
+                    bufferedPositionMs = playback.positionMs,
+                    playbackSpeed = 1f,
+                )
+            }
+            is CastState.Connecting -> playbackSnapshot = playbackSnapshot.copy(isLoading = true, isPlaying = false)
+            else -> Unit
         }
     }
     LaunchedEffect(casting) {
         if (!casting) CastRelay.stop()
+    }
+    val sourceKey = castSourceKey
+    LaunchedEffect(sourceKey, casting) {
+        val castedKey = castedSourceKey
+        if (casting && castState !is CastState.Failed && castedKey != null && castedKey != sourceKey) {
+            switchCastMedia()
+        }
     }
     DisposableEffect(Unit) {
         onDispose {
@@ -191,7 +333,7 @@ internal fun PlayerScreenRuntime.RenderCastLayer() {
         }
     }
 
-    if (casting) {
+    if (castState is CastState.Failed) {
         CastRemote(
             state = castState,
             title = title,

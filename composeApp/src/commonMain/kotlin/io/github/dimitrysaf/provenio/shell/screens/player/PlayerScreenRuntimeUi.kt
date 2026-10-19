@@ -132,7 +132,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                 streamType = activeStreamType,
                 useYoutubeChunkedPlayback = surfaceSource.isYouTube,
                 modifier = Modifier.fillMaxSize(),
-                playWhenReady = shouldPlay,
+                playWhenReady = shouldPlay && !castingToDevice,
                 initialPositionMs = activeInitialPositionMs.takeIf { it > 0L },
                 initialPositionRequestKey = initialPositionRequestKey,
                 resizeMode = resizeMode,
@@ -142,10 +142,12 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                     }
                 },
                 onControllerReady = { controller ->
-                    playerController = controller
+                    localPlayerController = controller
+                    playerController = if (castingToDevice) CastPlayerController(controller) else controller
                     playerControllerSourceUrl = activeSourceUrl
                 },
                 onSnapshot = { snapshot ->
+                    if (castingToDevice) return@PlatformPlayerSurface
                     playbackSnapshot = snapshot
                     refreshAudioTracksIfChanged()
                     if (!snapshot.isLoading) initialLoadCompleted = true
@@ -166,6 +168,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                 },
             )
         }
+        RenderCastBackdrop()
 
         // The artwork sits under the controls, which stay usable while the stream loads.
         AnimatedVisibility(
@@ -323,8 +326,13 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 showAudioModal = true
             },
             showCastButton = CastController.isSupported,
+            casting = castingToDevice,
             onCastClick = {
-                showCastSheet = true
+                if (castingToDevice) {
+                    stopCasting()
+                } else {
+                    showCastSheet = true
+                }
                 controlsVisible = true
             },
             onVideoSettingsClick = if (isIos) {

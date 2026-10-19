@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.core.cast
 
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -15,10 +16,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
-import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
@@ -41,6 +42,7 @@ data class CastPlayback(
     val isBuffering: Boolean,
     val positionMs: Long,
     val durationMs: Long,
+    val isEnded: Boolean = false,
 )
 
 enum class CastFailure { Unreachable, Unsupported, Disconnected }
@@ -61,6 +63,7 @@ object CastController {
     private var discoveryJob: Job? = null
     private var sessionJob: Job? = null
     private var session: CastSession? = null
+    private var device: CastDevice? = null
 
     val isSupported: Boolean get() = CastPlatform.isSupported
 
@@ -95,9 +98,28 @@ object CastController {
         scope.launch {
             sessionJob?.cancel()
             session?.close()
+            this@CastController.device = device
             _state.value = CastState.Connecting(device)
             sessionJob = scope.launch { runSession(device, media) }
         }
+    }
+
+    /**
+     * Plays [media] on the device being cast to, for a new source or episode. It is loaded into
+     * the open session first, so the receiver only changes what it plays; when that fails, the
+     * receiver is stopped and the same device connected to again with it.
+     */
+    fun switchMedia(media: CastMedia) = scope.launch {
+        val target = device ?: return@launch
+        val current = session
+        _state.value = CastState.Connecting(target)
+        if (current != null && current.load(media)) return@launch
+        log.i { "Loading into the open session failed, reconnecting to ${target.name}" }
+        sessionJob?.cancel()
+        runCatching { current?.stopReceiverApp() }
+        current?.close()
+        session = null
+        sessionJob = scope.launch { runSession(target, media) }
     }
 
     fun play() = scope.launch { session?.play() }
@@ -113,6 +135,7 @@ object CastController {
         runCatching { current?.stopReceiverApp() }
         current?.close()
         session = null
+        device = null
         _state.value = CastState.Idle
     }
 
@@ -121,6 +144,7 @@ object CastController {
         sessionJob?.cancel()
         session?.close()
         session = null
+        device = null
         _state.value = CastState.Idle
     }
 
@@ -161,7 +185,7 @@ private class CastLoadException : Exception()
 
 private class CastSession(
     private val channel: CastChannel,
-    private val media: CastMedia,
+    private var media: CastMedia,
 ) {
     private var requestId = 0
     private var transportId: String? = null
@@ -169,6 +193,8 @@ private class CastSession(
     private var mediaSessionId: Int? = null
     private var mediaStarted = false
     private var durationMs = 0L
+    private var pendingLoad: CompletableDeferred<Boolean>? = null
+    private var replacedMediaSessionId: Int? = null
 
     suspend fun run(onPlayback: (CastPlayback) -> Unit) = coroutineScope {
         send(NS_CONNECTION, RECEIVER_ID) { put("type", "CONNECT") }
@@ -206,6 +232,26 @@ private class CastSession(
         }
     }
 
+    /**
+     * Loads [next] in place of what the receiver plays, without relaunching it. True once it
+     * starts playing; false when the receiver refuses it, or does not start it in time.
+     */
+    suspend fun load(next: CastMedia): Boolean {
+        val transport = transportId ?: return false
+        val result = CompletableDeferred<Boolean>()
+        pendingLoad = result
+        media = next
+        replacedMediaSessionId = mediaSessionId
+        mediaStarted = false
+        mediaSessionId = null
+        durationMs = 0L
+        sendLoad(transport)
+        val loaded = withTimeoutOrNull(SWITCH_TIMEOUT_MS) { result.await() } ?: false
+        if (pendingLoad === result) pendingLoad = null
+        replacedMediaSessionId = null
+        return loaded
+    }
+
     suspend fun play() = mediaCommand("PLAY")
 
     suspend fun pause() = mediaCommand("PAUSE")
@@ -236,7 +282,10 @@ private class CastSession(
             }
             NS_MEDIA -> when (type) {
                 "MEDIA_STATUS" -> return onMediaStatus(json, onPlayback)
-                "LOAD_FAILED", "LOAD_CANCELLED", "INVALID_REQUEST" -> throw CastLoadException()
+                "LOAD_FAILED", "LOAD_CANCELLED", "INVALID_REQUEST" -> {
+                    val pending = pendingLoad ?: throw CastLoadException()
+                    pending.complete(false)
+                }
             }
         }
         return true
@@ -252,6 +301,11 @@ private class CastSession(
         transportId = transport
         appSessionId = app.string("sessionId")
         send(NS_CONNECTION, transport) { put("type", "CONNECT") }
+        sendLoad(transport)
+        return true
+    }
+
+    private suspend fun sendLoad(transport: String) {
         request(NS_MEDIA, transport) {
             put("type", "LOAD")
             appSessionId?.let { put("sessionId", it) }
@@ -264,38 +318,43 @@ private class CastSession(
                     put("contentUrl", media.url)
                     put("streamType", "BUFFERED")
                     put("contentType", castContentType(media.url))
-                    put(
-                        "metadata",
-                        buildJsonObject {
-                            put("metadataType", 0)
-                            put("title", media.title)
-                            media.subtitle?.let { put("subtitle", it) }
-                            media.imageUrl?.let { image ->
-                                put("images", buildJsonArray { add(buildJsonObject { put("url", image) }) })
-                            }
-                        },
-                    )
                 },
             )
         }
-        return true
     }
 
     private fun onMediaStatus(json: JsonObject, onPlayback: (CastPlayback) -> Unit): Boolean {
         val status = json["status"]?.jsonArray?.firstOrNull()?.jsonObject ?: return true
-        status["mediaSessionId"]?.jsonPrimitive?.intOrNull?.let { mediaSessionId = it }
+        val statusSessionId = status["mediaSessionId"]?.jsonPrimitive?.intOrNull
+        if (pendingLoad != null && statusSessionId != null && statusSessionId == replacedMediaSessionId) return true
+        statusSessionId?.let { mediaSessionId = it }
         status["media"]?.jsonObject?.get("duration")?.jsonPrimitive?.doubleOrNull?.let { seconds ->
             if (seconds > 0) durationMs = (seconds * 1000).toLong()
         }
         val playerState = status.string("playerState")
         if (playerState == "IDLE") {
             when (status.string("idleReason")) {
-                "ERROR" -> throw CastLoadException()
-                "FINISHED", "CANCELLED", "INTERRUPTED" -> if (mediaStarted) return false
+                "ERROR" -> {
+                    val pending = pendingLoad ?: throw CastLoadException()
+                    pending.complete(false)
+                }
+                "FINISHED" -> if (mediaStarted) {
+                    onPlayback(
+                        CastPlayback(
+                            isPlaying = false,
+                            isBuffering = false,
+                            positionMs = durationMs,
+                            durationMs = durationMs,
+                            isEnded = true,
+                        ),
+                    )
+                }
+                "CANCELLED", "INTERRUPTED" -> if (mediaStarted) return false
             }
             return true
         }
         mediaStarted = true
+        pendingLoad?.complete(true)
         val positionMs = ((status["currentTime"]?.jsonPrimitive?.doubleOrNull ?: 0.0) * 1000).toLong()
         onPlayback(
             CastPlayback(
@@ -355,3 +414,4 @@ private const val NS_MEDIA = "urn:x-cast:com.google.cast.media"
 private const val HEARTBEAT_INTERVAL_MS = 5_000L
 private const val STATUS_INTERVAL_MS = 1_000L
 private const val START_TIMEOUT_MS = 30_000L
+private const val SWITCH_TIMEOUT_MS = 20_000L
