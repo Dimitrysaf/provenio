@@ -6,7 +6,8 @@ import java.io.File
  * The part of Android's Context the platform storage relies on, for the desktop app.
  *
  * Directories follow the XDG base directory spec, so under Flatpak they land in the app's own
- * ~/.var/app/<id> tree and are removed with it.
+ * ~/.var/app/<id> tree and are removed with it. On Windows the cache goes to
+ * %LOCALAPPDATA%\Provenio\Cache instead, where the system's own cleanup tools look for it.
  */
 class Context private constructor(
     val filesDir: File,
@@ -28,15 +29,37 @@ class Context private constructor(
             val home = System.getProperty("user.home")
             fun xdg(variable: String, fallback: String): File =
                 File(System.getenv(variable)?.takeIf { it.isNotBlank() } ?: "$home/$fallback", APP_DIRECTORY)
+            val linuxStyleCache = xdg("XDG_CACHE_HOME", ".cache")
+            val cacheDir = windowsCacheDirectory() ?: linuxStyleCache
             Context(
                 filesDir = xdg("XDG_DATA_HOME", ".local/share"),
-                cacheDir = xdg("XDG_CACHE_HOME", ".cache"),
+                cacheDir = cacheDir,
                 configDir = xdg("XDG_CONFIG_HOME", ".config"),
             ).also { context ->
                 listOf(context.filesDir, context.cacheDir, context.configDir).forEach { it.mkdirs() }
+                if (cacheDir != linuxStyleCache) removeOldCache(linuxStyleCache)
+            }
+        }
+
+        /** Windows' own place for an app's cache, unless XDG_CACHE_HOME asks for another; null elsewhere. */
+        private fun windowsCacheDirectory(): File? {
+            if (!System.getProperty("os.name").orEmpty().lowercase().startsWith("windows")) return null
+            if (!System.getenv("XDG_CACHE_HOME").isNullOrBlank()) return null
+            val localAppData = System.getenv("LOCALAPPDATA")?.takeIf { it.isNotBlank() }
+                ?: "${System.getProperty("user.home")}\\AppData\\Local"
+            return File(File(localAppData, WINDOWS_APP_DIRECTORY), "Cache")
+        }
+
+        /** Deletes the cache older versions kept in ~/.cache on Windows, in the background since it can be large. */
+        private fun removeOldCache(directory: File) {
+            if (!directory.isDirectory) return
+            Thread({ runCatching { directory.deleteRecursively() } }, "old-cache-cleanup").apply {
+                isDaemon = true
+                start()
             }
         }
 
         private const val APP_DIRECTORY = "provenio"
+        private const val WINDOWS_APP_DIRECTORY = "Provenio"
     }
 }

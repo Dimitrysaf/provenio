@@ -1546,9 +1546,17 @@ private:
     void enforce_disk_cache(std::vector<BackendEvent>& events) {
         try {
             const auto stats = disk_cache_.enforce(protected_torrents());
-            last_disk_cache_error_.clear();
+            if (stats.eviction_error.empty()) {
+                last_disk_cache_error_.clear();
+            } else {
+                report_disk_cache_error(stats.eviction_error, events);
+            }
             if (stats.over_budget) {
                 request_cache_unloads(events, false);
+                next_disk_cache_check_ = std::min<std::chrono::steady_clock::time_point>(
+                    next_disk_cache_check_,
+                    std::chrono::steady_clock::now() + std::chrono::seconds(5)
+                );
             }
         } catch (const std::exception& error) {
             report_disk_cache_error(error.what(), events);
@@ -1614,11 +1622,6 @@ private:
         }
         const auto now = std::chrono::steady_clock::now();
         if (now < next_disk_cache_check_) {
-            return;
-        }
-        const auto stream = stream_bridge_->statistics();
-        if (stream.active_http_requests > 0 || stream.active_demands > 0) {
-            next_disk_cache_check_ = now + std::chrono::seconds(1);
             return;
         }
         next_disk_cache_check_ = now + std::chrono::seconds(30);
@@ -2133,13 +2136,7 @@ private:
             retired_.push_back(std::move(active->second));
             active_.erase(active);
         }
-        const auto stream = stream_bridge_->statistics();
-        if (stream.active_http_requests == 0 && stream.active_demands == 0) {
-            enforce_disk_cache(events);
-        } else {
-            next_disk_cache_check_ = std::chrono::steady_clock::now() +
-                std::chrono::seconds(1);
-        }
+        enforce_disk_cache(events);
     }
 
     std::filesystem::path state_root_;

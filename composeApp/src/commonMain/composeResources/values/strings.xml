@@ -2232,6 +2232,7 @@
     <string name="settings_p2p_profile_balanced_description">Recommended balance of startup speed and connection stability</string>
     <string name="settings_p2p_profile_fast_description">Uses more peer connections for difficult or high-bitrate torrents</string>
     <string name="settings_p2p_cache_size_title">Torrent cache size</string>
+    <string name="settings_p2p_cache_size_description">%1$s. The torrent that is playing can use more until it stops.</string>
     <string name="settings_p2p_cache_none">No persistent cache</string>
     <string name="settings_p2p_cache_2_gb">2 GB</string>
     <string name="settings_p2p_cache_5_gb">5 GB</string>

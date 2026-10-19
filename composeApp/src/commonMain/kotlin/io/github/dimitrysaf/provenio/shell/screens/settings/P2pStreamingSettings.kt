@@ -141,7 +141,11 @@ private fun P2pGroup(
             )
             navigationRow(
                 title = stringResource(Res.string.settings_p2p_cache_size_title),
-                description = p2pCacheSizeLabel(p2pSettings.cacheSize),
+                description = if (p2pSettings.cacheSize == P2pCacheSize.NONE) {
+                    p2pCacheSizeLabel(p2pSettings.cacheSize)
+                } else {
+                    stringResource(Res.string.settings_p2p_cache_size_description, p2pCacheSizeLabel(p2pSettings.cacheSize))
+                },
                 enabled = p2pSettings.p2pEnabled,
                 onClick = { showP2pCacheSizeDialog = true },
             )

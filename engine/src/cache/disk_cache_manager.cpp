@@ -129,24 +129,43 @@ std::uint64_t directory_size(
         }
         const auto status = entry.symlink_status(error);
         if (error) {
-            throw std::system_error(error, "inspect torrent payload entry");
+            error.clear();
+            continue;
         }
         if (status.type() != std::filesystem::file_type::regular) {
             continue;
         }
         const auto logical_size = entry.file_size(error);
         if (error) {
-            throw std::system_error(error, "measure torrent payload entry");
+            error.clear();
+            continue;
+        }
+        std::uint64_t allocated = static_cast<std::uint64_t>(logical_size);
+        try {
+            allocated = allocated_file_size(entry.path());
+        } catch (const std::exception&) {
         }
         saturating_add(
             size,
-            std::min(
-                static_cast<std::uint64_t>(logical_size),
-                allocated_file_size(entry.path())
-            )
+            std::min(static_cast<std::uint64_t>(logical_size), allocated)
         );
     }
     return size;
+}
+
+// The size left in a directory an eviction only partly removed: 0 when it is gone, and
+// [fallback] when it cannot be measured.
+std::uint64_t remaining_size(const std::filesystem::path& path, const std::uint64_t fallback) {
+    std::error_code error;
+    if (!std::filesystem::exists(path, error) && !error) {
+        return 0;
+    }
+    std::size_t inspected_entries = 0;
+    try {
+        return directory_size(path, inspected_entries);
+    } catch (const std::exception&) {
+        return fallback;
+    }
 }
 
 }
@@ -257,6 +276,7 @@ DiskCacheStats DiskCacheManager::enforce(
         }
         return left.torrent_id < right.torrent_id;
     });
+    stats_.eviction_error.clear();
     for (const auto& candidate : candidates) {
         if (used <= target_bytes) {
             break;
@@ -264,7 +284,14 @@ DiskCacheStats DiskCacheManager::enforce(
         error.clear();
         const auto removed = std::filesystem::remove_all(candidate.path, error);
         if (error) {
-            throw std::system_error(error, "evict disk cache directory");
+            if (stats_.eviction_error.empty()) {
+                stats_.eviction_error = error.message();
+            }
+            const auto remaining = remaining_size(candidate.path, candidate.size);
+            const auto freed = remaining < candidate.size ? candidate.size - remaining : 0;
+            used = freed > used ? 0 : used - freed;
+            saturating_add(stats_.reclaimed_bytes, freed);
+            continue;
         }
         if (removed == 0) {
             continue;

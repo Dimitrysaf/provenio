@@ -15,6 +15,8 @@ struct DiskCacheStats {
     std::uint64_t evictions = 0;
     std::uint64_t reclaimed_bytes = 0;
     bool over_budget = false;
+    // The first reason an inactive torrent could not be evicted in the last pass, or empty.
+    std::string eviction_error;
 };
 
 class DiskCacheManager {
