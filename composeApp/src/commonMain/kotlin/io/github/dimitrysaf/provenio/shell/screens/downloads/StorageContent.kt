@@ -120,7 +120,8 @@ internal fun StorageUsageCard(usage: StorageUsage?) {
         if (otherAppsBytes != null && otherAppsBytes > 0L) add(MaterialTheme.colorScheme.outline to otherAppsBytes)
     }
     val totalBytes = space?.totalBytes?.takeIf { it > 0L } ?: usage?.appBytes ?: 0L
-    val barDescription = categories.joinToString { "${it.label()} ${formatBytes(usage?.get(it) ?: 0L)}" }
+    val labels = categories.associateWith { it.label() }
+    val barDescription = categories.joinToString { "${labels.getValue(it)} ${formatBytes(usage?.get(it) ?: 0L)}" }
     Column(
         modifier = Modifier
             .fillMaxWidth()
