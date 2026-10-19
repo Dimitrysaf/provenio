@@ -786,6 +786,7 @@ private sealed interface SubtitleSheetEntry {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SubtitleLanguageHeader(
     item: SubtitleLanguageItem,
