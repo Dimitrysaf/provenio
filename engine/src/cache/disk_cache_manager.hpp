@@ -8,6 +8,9 @@
 
 namespace cache {
 
+/** The bytes [file] takes on disk: its size, or less while it is sparse and partly written. */
+[[nodiscard]] std::uint64_t disk_usage(const std::filesystem::path& file);
+
 struct DiskCacheStats {
     std::uint64_t capacity_bytes = 0;
     std::uint64_t used_bytes = 0;

@@ -1,6 +1,7 @@
 #include "engine/engine.h"
 #include "core/engine_runtime.hpp"
 #include "torrent/protocol_backend.hpp"
+#include "cache/disk_cache_manager.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -9,7 +10,9 @@
 #include <memory>
 #include <new>
 #include <optional>
+#include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #if defined(ENGINE_HAS_LIBTORRENT)
@@ -613,6 +616,37 @@ engine_status engine_stop_stream(
             return ENGINE_STATUS_INVALID_ARGUMENT;
         }
         return engine->runtime->stop_stream(*normalized, *request_id);
+    } catch (const std::bad_alloc&) {
+        return ENGINE_STATUS_ALLOCATION_FAILED;
+    } catch (...) {
+        return ENGINE_STATUS_INITIALIZATION_FAILED;
+    }
+}
+
+engine_status engine_file_disk_usage(const char* const path, std::uint64_t* const bytes) {
+    if (path == nullptr || path[0] == '\0' || bytes == nullptr) {
+        return ENGINE_STATUS_INVALID_ARGUMENT;
+    }
+    try {
+        const std::string_view text(path);
+        *bytes = cache::disk_usage(std::filesystem::path(std::u8string(text.begin(), text.end())));
+        return ENGINE_STATUS_OK;
+    } catch (const std::bad_alloc&) {
+        return ENGINE_STATUS_ALLOCATION_FAILED;
+    } catch (...) {
+        return ENGINE_STATUS_INVALID_ARGUMENT;
+    }
+}
+
+engine_status engine_set_details_interval(
+    engine* const engine,
+    const std::uint32_t interval_milliseconds
+) {
+    if (engine == nullptr || interval_milliseconds < 100 || interval_milliseconds > 10'000) {
+        return ENGINE_STATUS_INVALID_ARGUMENT;
+    }
+    try {
+        return engine->runtime->set_details_interval(interval_milliseconds);
     } catch (const std::bad_alloc&) {
         return ENGINE_STATUS_ALLOCATION_FAILED;
     } catch (...) {

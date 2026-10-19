@@ -48,6 +48,11 @@ object DownloadsRepository {
         loadFromDisk()
     }
 
+    /** Looks at the downloads folder again, so videos put there or left from before are listed. */
+    fun rescanFolder() {
+        loadFromDisk()
+    }
+
     fun clearLocalState() {
         activeHandles.values.forEach(DownloadsTaskHandle::cancel)
         activeHandles.clear()

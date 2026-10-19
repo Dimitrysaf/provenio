@@ -7,8 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,22 +23,17 @@ import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.CloudOff
-import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.HourglassTop
-import androidx.compose.material.icons.rounded.Hub
 import androidx.compose.material.icons.rounded.NetworkCheck
 import androidx.compose.material.icons.rounded.PersonOff
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Speed
-import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.SyncProblem
-import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -84,6 +77,7 @@ import io.github.dimitrysaf.provenio.core.p2p.P2pPieceState
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
 import io.github.dimitrysaf.provenio.core.p2p.P2pSpeedSample
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
+import io.github.dimitrysaf.provenio.core.p2p.P2pStreams
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingState
 import io.github.dimitrysaf.provenio.core.p2p.P2pTorrentDetails
 import io.github.dimitrysaf.provenio.core.p2p.P2pTorrentHealthIssue
@@ -133,6 +127,7 @@ fun TorrentDetailsSheet(
     val details by P2pStreamingEngine.torrentDetails.collectAsStateWithLifecycle()
     val streamingState by P2pStreamingEngine.state.collectAsStateWithLifecycle()
     val downloadStreamCount by P2pStreamingEngine.downloadStreamCount.collectAsStateWithLifecycle()
+    val playbackPosition by P2pStreams.playbackPosition.collectAsStateWithLifecycle()
     val settings by remember {
         P2pSettingsRepository.ensureLoaded()
         P2pSettingsRepository.uiState
@@ -183,7 +178,10 @@ fun TorrentDetailsSheet(
             return@ModalSheet
         }
 
-        TorrentDetailsContent(shown, health, seedingEnabled = settings.enableUpload)
+        val playhead = playbackPosition
+            ?.takeIf { it.infoHash.trim().equals(shown.infoHash.trim(), ignoreCase = true) }
+            ?.fraction
+        TorrentDetailsContent(shown, health, seedingEnabled = settings.enableUpload, playhead = playhead)
     }
 }
 
@@ -192,6 +190,7 @@ private fun TorrentDetailsContent(
     details: P2pTorrentDetails,
     health: P2pTorrentHealthReport?,
     seedingEnabled: Boolean,
+    playhead: Float?,
 ) {
     val unknown = stringResource(Res.string.torrent_details_unknown)
     LazyColumn(
@@ -212,7 +211,7 @@ private fun TorrentDetailsContent(
             item { Subheader(stringResource(Res.string.torrent_details_section_pieces)) }
             item {
                 Section {
-                    shapedRow { shape -> PieceMapCard(pieces, shape) }
+                    shapedRow { shape -> PieceMapCard(pieces, playhead, shape) }
                 }
             }
         }
@@ -234,19 +233,14 @@ private fun TorrentDetailsContent(
                 formatBytes(details.sessionDownloaded),
                 formatBytes(details.allTimeDownloaded),
             )
-            val uploaded = if (seedingEnabled) {
-                stringResource(
-                    Res.string.torrent_details_session_total,
-                    formatBytes(details.sessionUploaded),
-                    formatBytes(details.allTimeUploaded),
-                )
-            } else {
-                stringResource(Res.string.torrent_details_seeding_off)
-            }
+            val uploaded = stringResource(
+                Res.string.torrent_details_session_total,
+                formatBytes(details.sessionUploaded),
+                formatBytes(details.allTimeUploaded),
+            )
             val etaSeconds = rememberTickingSeconds(details.etaSeconds, countDown = true)
             Section {
                 detailRow(
-                    icon = Icons.Rounded.DataUsage,
                     title = stringResource(Res.string.torrent_details_progress),
                     supporting = progressDescription,
                     value = percent(fileProgress ?: details.progress),
@@ -257,24 +251,25 @@ private fun TorrentDetailsContent(
                     supporting = downloaded,
                     value = formatP2pSpeed(details.downloadSpeed),
                 )
+                if (seedingEnabled) {
+                    detailRow(
+                        icon = Icons.Rounded.ArrowUpward,
+                        title = stringResource(Res.string.torrent_details_uploaded),
+                        supporting = uploaded,
+                        value = formatP2pSpeed(details.uploadSpeed),
+                    )
+                }
                 detailRow(
-                    icon = if (seedingEnabled) Icons.Rounded.ArrowUpward else Icons.Rounded.CloudOff,
-                    title = stringResource(Res.string.torrent_details_uploaded),
-                    supporting = uploaded,
-                    value = if (seedingEnabled) formatP2pSpeed(details.uploadSpeed) else null,
-                )
-                detailRow(
-                    icon = Icons.Rounded.Schedule,
                     title = stringResource(Res.string.torrent_details_eta),
                     value = etaSeconds?.let(::formatDuration) ?: "∞",
                 )
+                if (seedingEnabled) {
+                    detailRow(
+                        title = stringResource(Res.string.torrent_details_ratio),
+                        value = details.shareRatio?.let { formatDecimal(it, 2) } ?: unknown,
+                    )
+                }
                 detailRow(
-                    icon = Icons.Rounded.SwapVert,
-                    title = stringResource(Res.string.torrent_details_ratio),
-                    value = details.shareRatio?.let { formatDecimal(it, 2) } ?: unknown,
-                )
-                detailRow(
-                    icon = Icons.Rounded.WarningAmber,
                     title = stringResource(Res.string.torrent_details_wasted),
                     supporting = stringResource(
                         Res.string.torrent_details_wasted_value,
@@ -307,16 +302,8 @@ private fun TorrentDetailsContent(
                 stringResource(Res.string.torrent_details_availability_value, formatDecimal(it, 2))
             } ?: unknown
             Section {
-                detailRow(
-                    icon = Icons.Rounded.Groups,
-                    title = stringResource(Res.string.torrent_details_connected),
-                    value = connected,
-                )
-                detailRow(
-                    icon = Icons.Rounded.Hub,
-                    title = stringResource(Res.string.torrent_details_swarm_size),
-                    value = swarm,
-                )
+                detailRow(title = stringResource(Res.string.torrent_details_connected), value = connected)
+                detailRow(title = stringResource(Res.string.torrent_details_swarm_size), value = swarm)
                 detailRow(title = stringResource(Res.string.torrent_details_known), value = known)
                 detailRow(title = stringResource(Res.string.torrent_details_availability), value = availability)
             }
@@ -371,7 +358,7 @@ private fun TorrentDetailsContent(
             } else {
                 Section {
                     details.peers.forEach { peer ->
-                        shapedRow { shape -> PeerRow(peer, shape) }
+                        shapedRow { shape -> PeerRow(peer, seedingEnabled, shape) }
                     }
                 }
             }
@@ -595,16 +582,16 @@ private fun SpeedCard(details: P2pTorrentDetails, seedingEnabled: Boolean, shape
                     label = stringResource(Res.string.torrent_details_download),
                     modifier = Modifier.weight(1f),
                 )
-                SpeedStat(
-                    icon = if (seedingEnabled) Icons.Rounded.ArrowUpward else Icons.Rounded.CloudOff,
-                    container = colors.tertiaryContainer,
-                    content = colors.onTertiaryContainer,
-                    value = if (seedingEnabled) formatP2pSpeed(details.uploadSpeed) else "—",
-                    label = stringResource(
-                        if (seedingEnabled) Res.string.torrent_details_upload else Res.string.torrent_details_seeding_off,
-                    ),
-                    modifier = Modifier.weight(1f),
-                )
+                if (seedingEnabled) {
+                    SpeedStat(
+                        icon = Icons.Rounded.ArrowUpward,
+                        container = colors.tertiaryContainer,
+                        content = colors.onTertiaryContainer,
+                        value = formatP2pSpeed(details.uploadSpeed),
+                        label = stringResource(Res.string.torrent_details_upload),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
             SpeedGraph(
                 history = history,
@@ -726,12 +713,12 @@ private fun SpeedGraph(
 }
 
 /**
- * The file's pieces, first on the left. The marker stands where the file stops being ready to
- * play from its start; the strip beneath shades each piece by how many peers have it.
+ * The file's pieces, first on the left. The marker stands at the [playhead], where the player is
+ * in the video, and is left out when nothing plays it; the strip beneath shades each piece by how
+ * many peers have it.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun PieceMapCard(pieces: P2pPieceMap, shape: RoundedCornerShape) {
+private fun PieceMapCard(pieces: P2pPieceMap, playhead: Float?, shape: RoundedCornerShape) {
     val colors = MaterialTheme.colorScheme
     val cachedColor = colors.primary
     val seededColor = colors.tertiary
@@ -771,16 +758,24 @@ private fun PieceMapCard(pieces: P2pPieceMap, shape: RoundedCornerShape) {
                     size = Size(size.width, barHeight),
                     cornerRadius = CornerRadius(8.dp.toPx()),
                 )
+                // A piece in more than one state is striped, one band per state, top to bottom.
+                fun drawPiece(index: Int, pieceWidth: Float) {
+                    val states = pieces.states(index)
+                    if (states.isEmpty()) return
+                    val bandHeight = barHeight / states.size
+                    states.forEachIndexed { band, state ->
+                        val color = when (state) {
+                            P2pPieceState.BLOCKING -> neededColor
+                            P2pPieceState.DOWNLOADING -> downloadingColor
+                            P2pPieceState.HAVE -> cachedColor
+                            P2pPieceState.SEEDED -> seededColor
+                            P2pPieceState.MISSING -> missingColor
+                        }
+                        drawRect(color, Offset(index * width, band * bandHeight), Size(pieceWidth, bandHeight + 0.5f))
+                    }
+                }
                 for (index in 0 until pieces.size) {
-                    val color = when (pieces.state(index)) {
-                        P2pPieceState.HAVE -> cachedColor
-                        P2pPieceState.SEEDED -> seededColor
-                        P2pPieceState.DOWNLOADING -> downloadingColor
-                        P2pPieceState.BLOCKING, P2pPieceState.MISSING -> null
-                    }
-                    if (color != null) {
-                        drawRect(color, Offset(index * width, 0f), Size(width + 0.5f, barHeight))
-                    }
+                    drawPiece(index, width + 0.5f)
                     val available = pieces.availability(index)
                     if (available > 0) {
                         drawRect(
@@ -794,24 +789,21 @@ private fun PieceMapCard(pieces: P2pPieceMap, shape: RoundedCornerShape) {
                 // neighbours on a long file.
                 val minimumWidth = 2.dp.toPx()
                 for (index in 0 until pieces.size) {
-                    if (pieces.state(index) == P2pPieceState.BLOCKING) {
-                        drawRect(neededColor, Offset(index * width, 0f), Size(maxOf(width, minimumWidth), barHeight))
-                    }
+                    if (P2pPieceState.BLOCKING in pieces.states(index)) drawPiece(index, maxOf(width, minimumWidth))
                 }
-                val readyX = (size.width * pieces.readyFraction.coerceIn(0f, 1f))
-                    .coerceIn(minimumWidth, size.width - minimumWidth)
-                drawLine(
-                    color = markerColor,
-                    start = Offset(readyX, 0f),
-                    end = Offset(readyX, barHeight),
-                    strokeWidth = 2.dp.toPx(),
-                    cap = StrokeCap.Round,
-                )
+                if (playhead != null) {
+                    val playheadX = (size.width * playhead.coerceIn(0f, 1f))
+                        .coerceIn(minimumWidth, size.width - minimumWidth)
+                    drawLine(
+                        color = markerColor,
+                        start = Offset(playheadX, 0f),
+                        end = Offset(playheadX, barHeight),
+                        strokeWidth = 2.dp.toPx(),
+                        cap = StrokeCap.Round,
+                    )
+                }
             }
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 LegendDot(cachedColor, stringResource(Res.string.torrent_details_legend_cached))
                 LegendDot(seededColor, stringResource(Res.string.torrent_details_legend_seeded))
                 LegendDot(downloadingColor, stringResource(Res.string.torrent_details_legend_downloading))
@@ -839,7 +831,7 @@ private fun LegendDot(color: Color, label: String) {
 
 /** A peer: how much of the torrent it has, who it is, and what it is sending us. */
 @Composable
-private fun PeerRow(peer: P2pPeerDetails, shape: RoundedCornerShape) {
+private fun PeerRow(peer: P2pPeerDetails, seedingEnabled: Boolean, shape: RoundedCornerShape) {
     val colors = MaterialTheme.colorScheme
     RowSurface(shape) {
         Box(modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center) {
@@ -872,7 +864,7 @@ private fun PeerRow(peer: P2pPeerDetails, shape: RoundedCornerShape) {
         }
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             RateLabel(Icons.Rounded.ArrowDownward, formatP2pSpeed(peer.downloadSpeed), colors.primary)
-            if (peer.uploadSpeed > 0) {
+            if (seedingEnabled && peer.uploadSpeed > 0) {
                 RateLabel(Icons.Rounded.ArrowUpward, formatP2pSpeed(peer.uploadSpeed), colors.tertiary)
             }
         }

@@ -13,6 +13,7 @@ data class P2pSettingsUiState(
     val prefetchTorrentInfo: Boolean = true,
     val torrentProfile: P2pTorrentProfile = P2pTorrentProfile.BALANCED,
     val cacheSize: P2pCacheSize = P2pCacheSize.GB_2,
+    val detailsRefresh: P2pDetailsRefresh = P2pDetailsRefresh.DEFAULT,
     /**
      * A torrent streaming server on another machine, such as Stremio's, as its base address; null
      * streams with Provenio's own engine.
@@ -31,6 +32,20 @@ enum class P2pCacheSize(val bytes: Long) {
     GB_2(2L * 1024L * 1024L * 1024L),
     GB_5(5L * 1024L * 1024L * 1024L),
     GB_10(10L * 1024L * 1024L * 1024L),
+}
+
+/** How often the torrent details refresh while they are on screen. */
+enum class P2pDetailsRefresh(val milliseconds: Int) {
+    MS_100(100),
+    MS_250(250),
+    MS_500(500),
+    S_1(1_000),
+    S_2(2_000),
+    S_5(5_000);
+
+    companion object {
+        val DEFAULT = S_1
+    }
 }
 
 data class P2pCacheUiState(
@@ -60,6 +75,7 @@ object P2pSettingsRepository {
     private var prefetchTorrentInfo = true
     private var torrentProfile = P2pTorrentProfile.BALANCED
     private var cacheSize = P2pCacheSize.GB_2
+    private var detailsRefresh = P2pDetailsRefresh.DEFAULT
     private var externalServer: String? = null
 
     fun ensureLoaded() {
@@ -79,6 +95,7 @@ object P2pSettingsRepository {
         prefetchTorrentInfo = true
         torrentProfile = P2pTorrentProfile.BALANCED
         cacheSize = P2pCacheSize.GB_2
+        detailsRefresh = P2pDetailsRefresh.DEFAULT
         externalServer = null
         publish()
     }
@@ -145,6 +162,14 @@ object P2pSettingsRepository {
         publish()
     }
 
+    fun setDetailsRefresh(refresh: P2pDetailsRefresh) {
+        ensureLoaded()
+        if (detailsRefresh == refresh) return
+        detailsRefresh = refresh
+        P2pSettingsStorage.saveDetailsRefresh(refresh.name)
+        publish()
+    }
+
     private fun loadFromDisk() {
         hasLoaded = true
         p2pEnabled = P2pSettingsStorage.loadP2pEnabled() ?: false
@@ -157,6 +182,9 @@ object P2pSettingsRepository {
         cacheSize = P2pSettingsStorage.loadCacheSize()
             ?.let { stored -> P2pCacheSize.entries.firstOrNull { it.name == stored } }
             ?: P2pCacheSize.GB_2
+        detailsRefresh = P2pSettingsStorage.loadDetailsRefresh()
+            ?.let { stored -> P2pDetailsRefresh.entries.firstOrNull { it.name == stored } }
+            ?: P2pDetailsRefresh.DEFAULT
         externalServer = P2pSettingsStorage.loadExternalServer()?.takeIf(String::isNotBlank)
         publish()
     }
@@ -169,6 +197,7 @@ object P2pSettingsRepository {
             prefetchTorrentInfo = prefetchTorrentInfo,
             torrentProfile = torrentProfile,
             cacheSize = cacheSize,
+            detailsRefresh = detailsRefresh,
             externalServer = externalServer,
         )
     }
@@ -187,6 +216,8 @@ internal expect object P2pSettingsStorage {
     fun saveTorrentProfile(profile: String)
     fun loadCacheSize(): String?
     fun saveCacheSize(size: String)
+    fun loadDetailsRefresh(): String?
+    fun saveDetailsRefresh(refresh: String)
     fun loadExternalServer(): String?
     fun saveExternalServer(address: String?)
 }

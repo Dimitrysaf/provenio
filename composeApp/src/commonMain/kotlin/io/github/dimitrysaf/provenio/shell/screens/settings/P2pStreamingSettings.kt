@@ -20,6 +20,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.shell.screens.p2p.P2pConsentDialog
 import io.github.dimitrysaf.provenio.core.p2p.P2pCacheSize
+import io.github.dimitrysaf.provenio.core.p2p.P2pDetailsRefresh
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
 import io.github.dimitrysaf.provenio.core.p2p.P2pTorrentProfile
 import provenio.composeapp.generated.resources.*
@@ -81,6 +82,7 @@ private fun P2pGroup(
 ) {
     var showP2pProfileDialog by remember { mutableStateOf(false) }
     var showP2pCacheSizeDialog by remember { mutableStateOf(false) }
+    var showDetailsRefreshDialog by remember { mutableStateOf(false) }
     var showExternalServerDialog by remember { mutableStateOf(false) }
     // Read as values here, not through delegates inside the list's builder: a state read in the
     // builder re-runs only the builder, so the rows' labels would keep their old values.
@@ -137,6 +139,15 @@ private fun P2pGroup(
                 enabled = p2pSettings.p2pEnabled,
                 onClick = { showP2pCacheSizeDialog = true },
             )
+            navigationRow(
+                title = stringResource(Res.string.settings_p2p_details_refresh_title),
+                description = stringResource(
+                    Res.string.settings_p2p_details_refresh_description,
+                    p2pDetailsRefreshLabel(p2pSettings.detailsRefresh),
+                ),
+                enabled = p2pSettings.p2pEnabled,
+                onClick = { showDetailsRefreshDialog = true },
+            )
         }
     }
 
@@ -184,6 +195,20 @@ private fun P2pGroup(
             onDismiss = { showP2pCacheSizeDialog = false },
         )
     }
+
+    if (showDetailsRefreshDialog) {
+        IosEnumSelectionDialog(
+            title = stringResource(Res.string.settings_p2p_details_refresh_title),
+            options = P2pDetailsRefresh.entries,
+            selected = p2pSettings.detailsRefresh,
+            label = { p2pDetailsRefreshLabel(it) },
+            onSelect = { refresh ->
+                P2pSettingsRepository.setDetailsRefresh(refresh)
+                showDetailsRefreshDialog = false
+            },
+            onDismiss = { showDetailsRefreshDialog = false },
+        )
+    }
 }
 
 @Composable
@@ -191,6 +216,16 @@ private fun p2pProfileLabel(profile: P2pTorrentProfile): String = when (profile)
     P2pTorrentProfile.SOFT -> stringResource(Res.string.settings_p2p_profile_soft)
     P2pTorrentProfile.BALANCED -> stringResource(Res.string.settings_p2p_profile_balanced)
     P2pTorrentProfile.FAST -> stringResource(Res.string.settings_p2p_profile_fast)
+}
+
+@Composable
+private fun p2pDetailsRefreshLabel(refresh: P2pDetailsRefresh): String = when (refresh) {
+    P2pDetailsRefresh.MS_100 -> stringResource(Res.string.settings_p2p_details_refresh_100_ms)
+    P2pDetailsRefresh.MS_250 -> stringResource(Res.string.settings_p2p_details_refresh_250_ms)
+    P2pDetailsRefresh.MS_500 -> stringResource(Res.string.settings_p2p_details_refresh_500_ms)
+    P2pDetailsRefresh.S_1 -> stringResource(Res.string.settings_p2p_details_refresh_1_s)
+    P2pDetailsRefresh.S_2 -> stringResource(Res.string.settings_p2p_details_refresh_2_s)
+    P2pDetailsRefresh.S_5 -> stringResource(Res.string.settings_p2p_details_refresh_5_s)
 }
 
 @Composable

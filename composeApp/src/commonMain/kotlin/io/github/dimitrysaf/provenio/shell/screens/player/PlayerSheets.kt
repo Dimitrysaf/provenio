@@ -33,8 +33,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -131,8 +129,13 @@ internal fun PlayerAudioSheet(
         },
         header = {
             Column {
-                VolumeBoostSwitch(checked = volumeBoostEnabled, onCheckedChange = onVolumeBoostChanged)
                 SettingsList(modifier = Modifier.padding(bottom = 8.dp)) {
+                    switchRow(
+                        title = stringResource(Res.string.player_volume_boost_title),
+                        description = stringResource(Res.string.player_volume_boost_description),
+                        checked = { volumeBoostEnabled },
+                        onCheckedChange = onVolumeBoostChanged,
+                    )
                     navigationRow(
                         title = stringResource(Res.string.player_sleep_timer_title),
                         description = sleepTimerSummary,
@@ -163,53 +166,6 @@ internal fun PlayerAudioSheet(
             null
         },
     )
-}
-
-/**
- * Turns the volume boost on for this playback. It is never on by itself, and turning it off puts
- * the volume straight back to full.
- */
-@Composable
-private fun VolumeBoostSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    val containerColor = if (checked) {
-        MaterialTheme.colorScheme.errorContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerHighest
-    }
-    val contentColor = if (checked) {
-        MaterialTheme.colorScheme.onErrorContainer
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-    Surface(
-        checked = checked,
-        onCheckedChange = onCheckedChange,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 12.dp),
-        shape = RoundedCornerShape(24.dp),
-        color = containerColor,
-        contentColor = contentColor,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(Res.string.player_volume_boost_title),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = stringResource(Res.string.player_volume_boost_description),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = contentColor.copy(alpha = 0.8f),
-                )
-            }
-            Switch(checked = checked, onCheckedChange = null)
-        }
-    }
 }
 
 /** Opens the Subtitles & Audio settings page from a player sheet's header. */

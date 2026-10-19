@@ -229,6 +229,19 @@ public class Engine private constructor(
     }
 
     /**
+     * How often [currentTorrentDetails] gets a fresh snapshot, from 100 to 10000 ms. Faster
+     * refreshes cost the engine more work, so set it back once nothing shows the details.
+     */
+    public fun setDetailsInterval(intervalMilliseconds: Int) {
+        require(intervalMilliseconds in 100..10_000) { "details interval must be between 100 and 10000 ms" }
+        val status = synchronized(nativeLock) {
+            ensureOpen()
+            NativeBridge.nativeSetDetailsInterval(nativeHandle, intervalMilliseconds)
+        }
+        checkStatus(status)
+    }
+
+    /**
      * The latest snapshot the engine holds for [torrentId], or null when the torrent is not
      * loaded or has not reported yet.
      */
@@ -481,6 +494,13 @@ public class Engine private constructor(
     }
 
     public companion object {
+        /**
+         * The bytes the file at [path] takes on disk, or null when it cannot be read. Torrent
+         * files are sparse, so this is what has been downloaded into one, not its full size.
+         */
+        public fun fileDiskUsage(path: String): Long? =
+            NativeBridge.nativeFileDiskUsage(path).takeIf { it >= 0L }
+
         private const val STATUS_OK = 0
         private const val STATUS_NOT_FOUND = 8
         private const val NATIVE_TORRENT_DETAILS_VALUE_COUNT = 32

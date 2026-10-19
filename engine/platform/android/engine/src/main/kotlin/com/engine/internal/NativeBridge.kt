@@ -45,6 +45,8 @@ internal object NativeBridge {
     external fun nativeReclaimDiskCache(handle: Long, targetBytes: Long): LongArray
     external fun nativeSetUploadMode(handle: Long, uploadMode: Int, uploadLimitBytesPerSecond: Long): Int
     external fun nativeSetStreamDuration(handle: Long, streamId: String, durationMilliseconds: Long): Int
+    external fun nativeSetDetailsInterval(handle: Long, intervalMilliseconds: Int): Int
+    external fun nativeFileDiskUsage(path: String): Long
     external fun nativeGetTorrentDetails(handle: Long, torrentId: String): NativeTorrentDetailsPayload?
     external fun nativeStatusMessage(status: Int): String
     external fun nativeEngineVersion(): String

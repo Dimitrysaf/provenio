@@ -980,42 +980,66 @@ actual object P2pStreamingEngine {
         torrentDetailsJob?.cancel()
         torrentDetailsJob = scope.launch {
             var streamedFile: StreamedFile? = null
-            while (isActive) {
-                val activeEngine = engine
-                val torrentId = detailsTorrentId()
-                val stream = detailsStream(torrentId)
-                _torrentDetails.value = if (activeEngine == null || torrentId == null) {
-                    null
-                } else {
-                    try {
-                        val details = activeEngine.currentTorrentDetails(torrentId)
-                        if (stream != null && streamedFile?.streamId != stream.id) {
-                            streamedFile = activeEngine.files(stream.torrentId)
-                                .firstOrNull { it.index == stream.fileIndex }
-                                ?.let { StreamedFile(stream.id, it.path, it.offset, it.size) }
-                        }
-                        // A stopped stream no longer has stats, while its torrent still does.
-                        val route = stream?.let {
-                            try {
-                                activeEngine.currentStreamStats(it.id)
-                            } catch (_: com.engine.EngineException) {
-                                null
-                            }
-                        }
-                        details?.toP2pTorrentDetails(
-                            file = streamedFile?.takeIf { it.streamId == stream?.id },
-                            route = route,
-                            history = synchronized(speedHistory) { speedHistory.toList() },
-                        )
-                    } catch (cancellation: CancellationException) {
-                        throw cancellation
-                    } catch (error: Exception) {
-                        Log.w(TAG, "Error sampling torrent details", error)
-                        _torrentDetails.value
+            var tunedEngine: Engine? = null
+            var tunedInterval = 0
+            try {
+                while (isActive) {
+                    val activeEngine = engine
+                    val interval = P2pSettingsRepository.uiState.value.detailsRefresh.milliseconds
+                    if (activeEngine != null && (activeEngine !== tunedEngine || interval != tunedInterval)) {
+                        applyDetailsInterval(activeEngine, interval)
+                        tunedEngine = activeEngine
+                        tunedInterval = interval
                     }
+                    val torrentId = detailsTorrentId()
+                    val stream = detailsStream(torrentId)
+                    _torrentDetails.value = if (activeEngine == null || torrentId == null) {
+                        null
+                    } else {
+                        try {
+                            val details = activeEngine.currentTorrentDetails(torrentId)
+                            if (stream != null && streamedFile?.streamId != stream.id) {
+                                streamedFile = activeEngine.files(stream.torrentId)
+                                    .firstOrNull { it.index == stream.fileIndex }
+                                    ?.let { StreamedFile(stream.id, it.path, it.offset, it.size) }
+                            }
+                            // A stopped stream no longer has stats, while its torrent still does.
+                            val route = stream?.let {
+                                try {
+                                    activeEngine.currentStreamStats(it.id)
+                                } catch (_: com.engine.EngineException) {
+                                    null
+                                }
+                            }
+                            details?.toP2pTorrentDetails(
+                                file = streamedFile?.takeIf { it.streamId == stream?.id },
+                                route = route,
+                                history = synchronized(speedHistory) { speedHistory.toList() },
+                            )
+                        } catch (cancellation: CancellationException) {
+                            throw cancellation
+                        } catch (error: Exception) {
+                            Log.w(TAG, "Error sampling torrent details", error)
+                            _torrentDetails.value
+                        }
+                    }
+                    // Twice per engine refresh, so no snapshot is missed when the two drift apart.
+                    delay((interval / 2L).coerceAtLeast(50L))
                 }
-                delay(1_000L)
+            } finally {
+                // Back to the engine's own pace once nothing shows the details.
+                if (torrentDetailsObservers.get() == 0) {
+                    tunedEngine?.takeIf { it === engine }?.let { applyDetailsInterval(it, P2pDetailsRefresh.DEFAULT.milliseconds) }
+                }
             }
+        }
+    }
+
+    private fun applyDetailsInterval(target: Engine, intervalMs: Int) {
+        try {
+            target.setDetailsInterval(intervalMs)
+        } catch (error: Exception) {
+            Log.w(TAG, "Could not change the details refresh", error)
         }
     }
 
@@ -1150,14 +1174,20 @@ actual object P2pStreamingEngine {
             last = pieceMapSize - 1
         }
         val count = last - first + 1
+        // The engine names one state per piece, and a piece the player waits on hides that a
+        // peer is sending it; the peers say which pieces they are sending.
+        val downloading = peers.mapNotNullTo(HashSet()) { it.downloadingPiece }
         val states = ByteArray(count) { index ->
-            when (pieceState(first + index)) {
+            val piece = first + index
+            val flags = when (pieceState(piece)) {
                 PieceState.Missing -> 0
-                PieceState.Have -> 1
-                PieceState.Downloading -> 2
-                PieceState.Blocking -> 3
-                PieceState.Seeded -> 4
-            }.toByte()
+                PieceState.Have -> P2pPieceMap.HaveFlag
+                PieceState.Downloading -> P2pPieceMap.DownloadingFlag
+                PieceState.Blocking -> P2pPieceMap.BlockingFlag
+                PieceState.Seeded -> P2pPieceMap.HaveFlag or P2pPieceMap.SeededFlag
+            }
+            val sending = piece in downloading && flags and P2pPieceMap.HaveFlag == 0
+            (if (sending) flags or P2pPieceMap.DownloadingFlag else flags).toByte()
         }
         val availability = ByteArray(count) { index -> pieceAvailability(first + index).toByte() }
         val readyFraction = if (route != null && route.fileSize > 0L) route.bufferProgress else 0f

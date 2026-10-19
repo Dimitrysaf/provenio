@@ -560,8 +560,6 @@
     <string name="player_more_settings">More settings</string>
     <string name="player_mobile_data_warning">You're on mobile data, not Wi-Fi. Streaming can use up your data plan very quickly.</string>
     <string name="player_mobile_data_wait">Wait for Wi-Fi</string>
-    <string name="player_subtitles_auto_synced">Subtitles synced to the speech (%1$s)</string>
-    <string name="player_subtitles_auto_sync_paused">Automatic sync is off for these subtitles</string>
     <string name="settings_subtitles_preview_sample">This is how subtitles\nwill look in the player.</string>
     <string name="compose_settings_page_tmdb_enrichment">TMDB Enrichment</string>
     <string name="compose_settings_page_trakt">Trakt</string>
@@ -578,9 +576,8 @@
     <string name="compose_settings_root_downloads_description">See what uses space, clear caches and manage downloads.</string>
     <string name="compose_settings_root_downloads_title">Storage</string>
     <string name="storage_used_by_app">Used by Provenio</string>
-    <string name="storage_used_by_app_with_space">Used by Provenio · %1$s free of %2$s</string>
-    <string name="storage_other_apps">Other apps and system</string>
-    <string name="storage_free">Free</string>
+    <string name="storage_free_on_device">Free on this device</string>
+    <string name="storage_no_downloads">No downloads yet. Downloads you start from a stream, and videos in the downloads folder, appear here.</string>
     <string name="storage_category_downloads">Downloads</string>
     <string name="storage_category_torrent_cache">Torrent cache</string>
     <string name="storage_category_images">Images</string>
@@ -2320,6 +2317,14 @@
     <string name="settings_p2p_cache_2_gb">2 GB</string>
     <string name="settings_p2p_cache_5_gb">5 GB</string>
     <string name="settings_p2p_cache_10_gb">10 GB</string>
+    <string name="settings_p2p_details_refresh_title">Torrent details refresh</string>
+    <string name="settings_p2p_details_refresh_description">Every %1$s. Faster refreshes use more battery.</string>
+    <string name="settings_p2p_details_refresh_100_ms">100 ms</string>
+    <string name="settings_p2p_details_refresh_250_ms">250 ms</string>
+    <string name="settings_p2p_details_refresh_500_ms">500 ms</string>
+    <string name="settings_p2p_details_refresh_1_s">1 second</string>
+    <string name="settings_p2p_details_refresh_2_s">2 seconds</string>
+    <string name="settings_p2p_details_refresh_5_s">5 seconds</string>
     <string name="settings_p2p_clear_cache_title">Clear torrent cache</string>
     <string name="settings_p2p_clear_cache_usage">%1$s currently used</string>
     <string name="settings_p2p_clear_cache_usage_pending">Usage is measured after P2P starts; tap to clear cached torrent data</string>
@@ -2512,7 +2517,6 @@
     <string name="torrent_details_legend_cached">Cached on this device</string>
     <string name="torrent_details_legend_seeded">Seeded from this device</string>
     <string name="torrent_details_ready">%1$s ready to play</string>
-    <string name="torrent_details_seeding_off">Seeding off</string>
     <string name="torrent_details_of">%1$s of %2$s</string>
     <string name="torrent_details_rtt">%1$d ms</string>
     <string name="torrent_details_unknown_client">Unknown client</string>

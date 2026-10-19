@@ -38,6 +38,7 @@ import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +63,7 @@ import io.github.dimitrysaf.provenio.shell.components.StatusModal
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.screens.p2p.TorrentDetailsSheet
 import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
+import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
 import io.github.dimitrysaf.provenio.shell.screens.settings.segmentShape
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -88,7 +90,8 @@ fun DownloadsScreen(
     var selectedShowId by rememberSaveable(initialShowId) { mutableStateOf(initialShowId) }
     var downloadPendingDeletionId by rememberSaveable { mutableStateOf<String?>(null) }
     var storageRefresh by remember { mutableIntStateOf(0) }
-    val storageUsage = rememberStorageUsage(uiState.items.storageBytes(), storageRefresh)
+    val storageUsage = rememberStorageUsage(uiState.items, storageRefresh)
+    LaunchedEffect(Unit) { DownloadsRepository.rescanFolder() }
     val openDownloadsDirectoryFailedText = stringResource(Res.string.downloads_open_directory_failed)
 
     val completedEpisodes = remember(uiState.items) {
@@ -140,7 +143,10 @@ fun DownloadsScreen(
             downloadsRootContent(
                 uiState = uiState,
                 storageUsage = storageUsage,
-                onStorageChanged = { storageRefresh++ },
+                onStorageChanged = {
+                    DownloadsRepository.rescanFolder()
+                    storageRefresh++
+                },
                 onOpenDownload = onOpenDownload,
                 onOpenShow = { showId, title ->
                     onNavigateToShow?.invoke(showId, title) ?: run { selectedShowId = showId }
@@ -199,6 +205,15 @@ private fun LazyListScope.downloadsRootContent(
         .sortedBy { (item, _) -> item.title.lowercase() }
 
     item { StorageUsageCard(storageUsage) }
+    item { StorageFreeSpaceRow(storageUsage?.space) }
+    if (uiState.items.isEmpty()) {
+        item { ListSubheader(text = stringResource(Res.string.storage_section_downloads)) }
+        item {
+            SettingsList {
+                infoRow(title = stringResource(Res.string.storage_no_downloads))
+            }
+        }
+    }
 
     if (activeItems.isNotEmpty()) {
         item { DownloadsSubheader(stringResource(Res.string.downloads_section_active), activeItems.size) }
@@ -363,7 +378,7 @@ private fun DownloadRow(
         supportingContent = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(displaySubtitle)
-                Text(downloadProgressText(item))
+                downloadProgressText(item).takeIf { it.isNotEmpty() }?.let { Text(it) }
                 if (item.status == DownloadStatus.Downloading) {
                     if (item.totalBytes != null && item.totalBytes > 0L) {
                         LinearProgressIndicator(
@@ -624,7 +639,8 @@ private fun downloadDisplaySubtitle(
 private fun downloadProgressText(item: DownloadItem): String {
     val total = item.totalBytes?.takeIf { it > 0L }
     return when {
-        item.status == DownloadStatus.Completed -> formatBytes(total ?: item.downloadedBytes)
+        item.status == DownloadStatus.Completed ->
+            (total ?: item.downloadedBytes.takeIf { it > 0L })?.let(::formatBytes).orEmpty()
         total != null -> stringResource(
             Res.string.downloads_progress_format,
             (item.progressFraction * 100f).toInt().coerceIn(0, 100),

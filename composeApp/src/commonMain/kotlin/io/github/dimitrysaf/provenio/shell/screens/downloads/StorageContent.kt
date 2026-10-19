@@ -87,13 +87,21 @@ internal fun List<DownloadItem>.storageBytes(): Long = sumOf { item ->
     if (item.status == DownloadStatus.Completed) item.totalBytes ?: item.downloadedBytes else item.downloadedBytes
 }
 
-/** Measures storage again whenever [refreshKey] or the downloads' size changes. */
+/**
+ * Measures storage again whenever [refreshKey] or the downloads change. Finished downloads are
+ * measured by their files on disk, so videos found in the folder count even without a known size.
+ */
 @Composable
-internal fun rememberStorageUsage(downloadsBytes: Long, refreshKey: Int): StorageUsage? {
+internal fun rememberStorageUsage(downloads: List<DownloadItem>, refreshKey: Int): StorageUsage? {
     val imageLoader = SingletonImageLoader.get(LocalPlatformContext.current)
     var usage by remember { mutableStateOf<StorageUsage?>(null) }
-    LaunchedEffect(refreshKey, downloadsBytes) {
+    LaunchedEffect(refreshKey, downloads) {
         val measured = StoragePlatform.measure()
+        val finished = downloads.filter { it.status == DownloadStatus.Completed }
+        val finishedBytes = StoragePlatform.filesSize(finished.mapNotNull { it.localFileUri })
+            .takeIf { it > 0L }
+            ?: finished.storageBytes()
+        val downloadsBytes = finishedBytes + downloads.filterNot { it.status == DownloadStatus.Completed }.storageBytes()
         usage = StorageUsage(
             bytes = measured +
                 (StorageCategory.Downloads to downloadsBytes) +
@@ -106,20 +114,15 @@ internal fun rememberStorageUsage(downloadsBytes: Long, refreshKey: Int): Storag
 }
 
 /**
- * The page's headline: how much Provenio takes, a tall bar of the disk split by what takes it,
- * and a legend naming each part with its size. The bar is the whole disk when its size is known,
- * so other apps and free space are part of it; otherwise it is only Provenio's share.
+ * The page's headline: how much Provenio takes, a tall bar of only that split by what takes it,
+ * and a legend naming each part with its size.
  */
 @Composable
 internal fun StorageUsageCard(usage: StorageUsage?) {
     val categories = StorageCategory.entries.filter { (usage?.get(it) ?: 0L) > 0L }
-    val space = usage?.space
-    val otherAppsBytes = space?.let { (it.totalBytes - it.freeBytes - (usage.appBytes)).coerceAtLeast(0L) }
     val segments = buildList {
         categories.forEach { add(it.color() to (usage?.get(it) ?: 0L)) }
-        if (otherAppsBytes != null && otherAppsBytes > 0L) add(MaterialTheme.colorScheme.outline to otherAppsBytes)
     }
-    val totalBytes = space?.totalBytes?.takeIf { it > 0L } ?: usage?.appBytes ?: 0L
     val labels = categories.associateWith { it.label() }
     val barDescription = categories.joinToString { "${labels.getValue(it)} ${formatBytes(usage?.get(it) ?: 0L)}" }
     Column(
@@ -135,50 +138,46 @@ internal fun StorageUsageCard(usage: StorageUsage?) {
             color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
-            text = if (space != null) {
-                stringResource(
-                    Res.string.storage_used_by_app_with_space,
-                    formatBytes(space.freeBytes),
-                    formatBytes(space.totalBytes),
-                )
-            } else {
-                stringResource(Res.string.storage_used_by_app)
-            },
+            text = stringResource(Res.string.storage_used_by_app),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(16.dp))
         StorageBar(
             segments = segments,
-            totalBytes = totalBytes,
+            totalBytes = usage?.appBytes ?: 0L,
             modifier = Modifier.semantics { contentDescription = barDescription },
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            categories.forEach { category ->
-                StorageLegendRow(color = category.color(), label = category.label(), bytes = usage?.get(category) ?: 0L)
-            }
-            if (otherAppsBytes != null && otherAppsBytes > 0L) {
-                StorageLegendRow(
-                    color = MaterialTheme.colorScheme.outline,
-                    label = stringResource(Res.string.storage_other_apps),
-                    bytes = otherAppsBytes,
-                )
-            }
-            if (space != null) {
-                StorageLegendRow(
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    label = stringResource(Res.string.storage_free),
-                    bytes = space.freeBytes,
-                )
+        if (categories.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                categories.forEach { category ->
+                    StorageLegendRow(color = category.color(), label = labels.getValue(category), bytes = usage?.get(category) ?: 0L)
+                }
             }
         }
     }
 }
 
+/** How much space the device has left, as one list item under the usage card. */
+@Composable
+internal fun StorageFreeSpaceRow(space: StorageSpace?) {
+    if (space == null) return
+    SettingsList {
+        infoRow(
+            title = stringResource(Res.string.storage_free_on_device),
+            value = stringResource(
+                Res.string.storage_space_free_of,
+                formatBytes(space.freeBytes),
+                formatBytes(space.totalBytes),
+            ),
+        )
+    }
+}
+
 /**
- * One tall rounded bar, filled from the start with each part's share of [totalBytes] in its
- * colour, a 2dp gap of the card's colour between parts, and the rest left as the empty track.
+ * One tall rounded bar split into each part's share of [totalBytes] in its colour, with a 2dp
+ * gap of the card's colour between parts. Before anything is measured it is the empty track.
  */
 @Composable
 private fun StorageBar(
@@ -380,7 +379,7 @@ internal fun StorageCleanupGroup(
                 description = if (downloads.isNotEmpty()) {
                     stringResource(
                         Res.string.storage_delete_all_downloads_description,
-                        formatBytes(downloads.storageBytes()),
+                        formatBytes(usage?.get(StorageCategory.Downloads) ?: downloads.storageBytes()),
                         downloads.size,
                     )
                 } else {
@@ -456,7 +455,10 @@ internal fun StorageLocationsGroup(onChanged: () -> Unit) {
             }
             if (showDownloads) {
                 val change = {
-                    if (DownloadsLocationPlatform.choose()) downloadsPath = DownloadsLocationPlatform.currentPath().orEmpty()
+                    if (DownloadsLocationPlatform.choose()) {
+                        downloadsPath = DownloadsLocationPlatform.currentPath().orEmpty()
+                        onChanged()
+                    }
                 }
                 navigationRow(
                     title = stringResource(Res.string.downloads_location_title),

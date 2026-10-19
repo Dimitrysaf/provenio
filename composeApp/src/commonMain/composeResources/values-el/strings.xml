@@ -2172,7 +2172,6 @@
     <string name="torrent_details_legend_cached">Αποθηκευμένα σε αυτή τη συσκευή</string>
     <string name="torrent_details_legend_seeded">Seeded από αυτή τη συσκευή</string>
     <string name="torrent_details_ready">%1$s έτοιμα για αναπαραγωγή</string>
-    <string name="torrent_details_seeding_off">Seeding ανενεργό</string>
     <string name="torrent_details_of">%1$s από %2$s</string>
     <string name="torrent_details_rtt">%1$d ms</string>
     <string name="torrent_details_unknown_client">Άγνωστο πρόγραμμα</string>

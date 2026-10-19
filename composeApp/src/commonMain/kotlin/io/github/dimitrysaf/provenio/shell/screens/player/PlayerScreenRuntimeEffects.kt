@@ -5,6 +5,7 @@ import io.github.dimitrysaf.provenio.core.format.formatReleaseDay
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -15,6 +16,7 @@ import io.github.dimitrysaf.provenio.core.p2p.P2pStreamRequest
 import io.github.dimitrysaf.provenio.core.p2p.P2pPlaybackOwner
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreams
+import io.github.dimitrysaf.provenio.core.p2p.P2pPlaybackPosition
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingState
 import io.github.dimitrysaf.provenio.core.playback.skip.NextEpisodeInfo
 import io.github.dimitrysaf.provenio.core.playback.skip.PlayerNextEpisodeRules
@@ -271,6 +273,27 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
         }
     }
 
+    LaunchedEffect(p2pResolvedSourceUrl, activeTorrentInfoHash) {
+        val infoHash = activeTorrentInfoHash
+        if (p2pResolvedSourceUrl == null || infoHash == null) {
+            P2pStreams.clearPlaybackPosition(this@BindPlayerRuntimeEffects)
+            return@LaunchedEffect
+        }
+        snapshotFlow { playbackSnapshot.positionMs to playbackSnapshot.durationMs }
+            .collect { (positionMs, durationMs) ->
+                P2pStreams.setPlaybackPosition(
+                    owner = this@BindPlayerRuntimeEffects,
+                    position = durationMs.takeIf { it > 0L }?.let {
+                        P2pPlaybackPosition(infoHash, (positionMs.toFloat() / it).coerceIn(0f, 1f))
+                    },
+                )
+            }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { P2pStreams.clearPlaybackPosition(this@BindPlayerRuntimeEffects) }
+    }
+
     LaunchedEffect(p2pStreamingState, activeTorrentInfoHash) {
         val state = p2pStreamingState
         if (activeTorrentInfoHash != null && state is P2pStreamingState.Error) {
@@ -332,7 +355,6 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
             val delayMs = withContext(Dispatchers.Default) { subtitleSpeechSync.estimateDelayMs(cues) } ?: continue
             if (!subtitleDelaySetByHand && abs(delayMs - subtitleDelayMs) >= SpeechSyncMinChangeMs) {
                 applySubtitleDelay(delayMs)
-                ToastController.show(getString(Res.string.player_subtitles_auto_synced, formatSubtitleDelay(delayMs)))
             }
         }
     }

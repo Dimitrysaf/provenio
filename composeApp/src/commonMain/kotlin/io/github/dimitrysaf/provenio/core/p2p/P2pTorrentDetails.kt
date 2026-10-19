@@ -81,6 +81,7 @@ data class P2pTrackerDetails(
  * files in the torrent are left out, since nothing here asks for them.
  */
 class P2pPieceMap(
+    /** Each piece's [HaveFlag], [DownloadingFlag], [BlockingFlag] and [SeededFlag], as many as apply. */
     private val states: ByteArray,
     private val availability: ByteArray,
     /** Index of the first piece in the torrent. */
@@ -90,12 +91,27 @@ class P2pPieceMap(
 ) {
     val size: Int get() = states.size
 
-    fun state(index: Int): P2pPieceState = when (states[index].toInt()) {
-        1 -> P2pPieceState.HAVE
-        2 -> P2pPieceState.DOWNLOADING
-        3 -> P2pPieceState.BLOCKING
-        4 -> P2pPieceState.SEEDED
-        else -> P2pPieceState.MISSING
+    /** The piece's main state, when it has more than one: seeded, cached, needed, then downloading. */
+    fun state(index: Int): P2pPieceState {
+        val flags = states[index].toInt()
+        return when {
+            flags and SeededFlag != 0 -> P2pPieceState.SEEDED
+            flags and HaveFlag != 0 -> P2pPieceState.HAVE
+            flags and BlockingFlag != 0 -> P2pPieceState.BLOCKING
+            flags and DownloadingFlag != 0 -> P2pPieceState.DOWNLOADING
+            else -> P2pPieceState.MISSING
+        }
+    }
+
+    /** Every state the piece is in, in the order the piece map stripes them. */
+    fun states(index: Int): List<P2pPieceState> {
+        val flags = states[index].toInt()
+        return buildList {
+            if (flags and BlockingFlag != 0) add(P2pPieceState.BLOCKING)
+            if (flags and DownloadingFlag != 0) add(P2pPieceState.DOWNLOADING)
+            if (flags and HaveFlag != 0) add(P2pPieceState.HAVE)
+            if (flags and SeededFlag != 0) add(P2pPieceState.SEEDED)
+        }
     }
 
     /** How many connected peers have the piece. */
@@ -103,6 +119,13 @@ class P2pPieceMap(
         if (index < availability.size) availability[index].toInt() and 0xff else 0
 
     fun count(state: P2pPieceState): Int = (0 until size).count { state(it) == state }
+
+    companion object {
+        const val HaveFlag = 1
+        const val DownloadingFlag = 2
+        const val BlockingFlag = 4
+        const val SeededFlag = 8
+    }
 }
 
 /** Everything the engine reports about the torrent it is serving, as a BitTorrent client shows it. */

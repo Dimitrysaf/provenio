@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -720,6 +721,37 @@ Java_com_engine_internal_NativeBridge_nativeSetUploadMode(
         engine_from_handle(handle),
         static_cast<engine_upload_mode>(upload_mode),
         static_cast<std::uint64_t>(upload_limit)
+    ));
+}
+
+extern "C" JNIEXPORT jlong JNICALL
+Java_com_engine_internal_NativeBridge_nativeFileDiskUsage(
+    JNIEnv* const env,
+    jobject,
+    jstring path_value
+) {
+    std::string path;
+    std::uint64_t bytes = 0;
+    if (!read_utf8(env, path_value, path) ||
+        engine_file_disk_usage(path.c_str(), &bytes) != ENGINE_STATUS_OK) {
+        return -1;
+    }
+    return static_cast<jlong>(std::min<std::uint64_t>(bytes, std::numeric_limits<jlong>::max()));
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_engine_internal_NativeBridge_nativeSetDetailsInterval(
+    JNIEnv*,
+    jobject,
+    const jlong handle,
+    const jint interval_milliseconds
+) {
+    if (interval_milliseconds < 0) {
+        return static_cast<jint>(ENGINE_STATUS_INVALID_ARGUMENT);
+    }
+    return static_cast<jint>(engine_set_details_interval(
+        engine_from_handle(handle),
+        static_cast<std::uint32_t>(interval_milliseconds)
     ));
 }
 

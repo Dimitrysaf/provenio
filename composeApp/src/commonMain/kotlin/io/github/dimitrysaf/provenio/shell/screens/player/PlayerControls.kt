@@ -90,9 +90,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.geometry.Offset
 import io.github.dimitrysaf.provenio.core.playback.chapterAt
 import io.github.dimitrysaf.provenio.core.playback.PlayerChapter
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -100,6 +99,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -1202,8 +1202,7 @@ private fun WavyProgressTrack(
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
-            .height(TrackCanvasHeight)
-            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen },
+            .height(TrackCanvasHeight),
     ) {
         val strokeWidth = TrackStrokeWidth.toPx()
         val centerY = size.height / 2f
@@ -1216,49 +1215,55 @@ private fun WavyProgressTrack(
         val playedEndX = playedX
         val restStartX = minOf(playedX + gapPx, size.width)
         val bufferedStartX = maxOf(bufferedX, restStartX)
-
-        if (bufferedStartX < size.width) {
-            drawLine(
-                color = Color.White.copy(alpha = 0.24f),
-                start = Offset(bufferedStartX, centerY),
-                end = Offset(size.width, centerY),
-                strokeWidth = strokeWidth,
-                cap = StrokeCap.Round,
-            )
-        }
-        if (bufferedStartX > restStartX) {
-            drawLine(
-                color = Color.White.copy(alpha = 0.55f),
-                start = Offset(restStartX, centerY),
-                end = Offset(bufferedStartX, centerY),
-                strokeWidth = strokeWidth,
-                cap = StrokeCap.Round,
-            )
-        }
-        if (playedEndX > 0f) {
-            val waveY = { x: Float -> centerY + amplitudePx * sin(2f * PI.toFloat() * x / wavelengthPx - phase) }
-            val path = Path().apply {
-                moveTo(0f, waveY(0f))
-                var x = 0f
-                while (x < playedEndX) {
-                    x = minOf(x + 1f, playedEndX)
-                    lineTo(x, waveY(x))
-                }
-            }
-            drawPath(
-                path = path,
-                color = activeColor,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
-            )
-        }
+        // Chapter gaps are clipped out of the track rather than erased in a layer of its own,
+        // since such a layer would also crop the thumb and the round caps at either end.
         val chapterGapPx = ChapterGapWidth.toPx()
-        chapterGaps.forEach { fraction ->
-            drawRect(
-                color = Color.Black,
-                topLeft = Offset(size.width * fraction - chapterGapPx / 2f, 0f),
-                size = Size(chapterGapPx, size.height),
-                blendMode = BlendMode.Clear,
-            )
+        val gaps = Path().apply {
+            chapterGaps.forEach { fraction ->
+                addRect(
+                    Rect(
+                        offset = Offset(size.width * fraction - chapterGapPx / 2f, 0f),
+                        size = Size(chapterGapPx, size.height),
+                    ),
+                )
+            }
+        }
+
+        clipPath(gaps, clipOp = ClipOp.Difference) {
+            if (bufferedStartX < size.width) {
+                drawLine(
+                    color = Color.White.copy(alpha = 0.24f),
+                    start = Offset(bufferedStartX, centerY),
+                    end = Offset(size.width, centerY),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round,
+                )
+            }
+            if (bufferedStartX > restStartX) {
+                drawLine(
+                    color = Color.White.copy(alpha = 0.55f),
+                    start = Offset(restStartX, centerY),
+                    end = Offset(bufferedStartX, centerY),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round,
+                )
+            }
+            if (playedEndX > 0f) {
+                val waveY = { x: Float -> centerY + amplitudePx * sin(2f * PI.toFloat() * x / wavelengthPx - phase) }
+                val path = Path().apply {
+                    moveTo(0f, waveY(0f))
+                    var x = 0f
+                    while (x < playedEndX) {
+                        x = minOf(x + 1f, playedEndX)
+                        lineTo(x, waveY(x))
+                    }
+                }
+                drawPath(
+                    path = path,
+                    color = activeColor,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
+                )
+            }
         }
         drawCircle(
             color = activeColor,

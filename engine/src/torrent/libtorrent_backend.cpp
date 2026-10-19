@@ -933,6 +933,14 @@ public:
         session_.apply_settings(std::move(settings));
     }
 
+    void set_telemetry_interval(const std::chrono::milliseconds interval) override {
+        telemetry_interval_ = interval;
+    }
+
+    [[nodiscard]] std::uint64_t telemetry_revision() const override {
+        return telemetry_revision_;
+    }
+
     std::vector<TorrentDetails> torrent_details() override {
         std::vector<TorrentDetails> result;
         result.reserve(telemetry_.size());
@@ -1425,7 +1433,7 @@ private:
             return;
         }
         const auto now = std::chrono::steady_clock::now();
-        if (now - last_telemetry_request_ < std::chrono::seconds(1)) {
+        if (now - last_telemetry_request_ < telemetry_interval_) {
             return;
         }
         session_.post_torrent_updates(
@@ -1677,6 +1685,7 @@ private:
     }
 
     void handle_state_update(const lt::state_update_alert& alert) {
+        ++telemetry_revision_;
         for (const auto& status : alert.status) {
             const auto id = torrent_id(status.info_hashes);
             if (!handles_.contains(id)) {
@@ -1703,6 +1712,7 @@ private:
         if (!handles_.contains(id)) {
             return;
         }
+        ++telemetry_revision_;
         std::uint64_t interested = 0;
         std::uint64_t unchoked = 0;
         std::uint64_t downloading = 0;
@@ -2165,6 +2175,8 @@ private:
         std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point last_telemetry_request_ =
         std::chrono::steady_clock::now() - std::chrono::seconds(1);
+    std::chrono::milliseconds telemetry_interval_{1'000};
+    std::uint64_t telemetry_revision_ = 0;
     std::chrono::steady_clock::time_point next_warm_check_{};
     std::chrono::steady_clock::time_point next_disk_cache_check_{};
     std::string last_disk_cache_error_;

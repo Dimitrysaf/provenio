@@ -77,6 +77,7 @@ public:
         std::string stream_id,
         std::uint64_t duration_milliseconds
     );
+    [[nodiscard]] engine_status set_details_interval(std::uint32_t interval_milliseconds);
     [[nodiscard]] engine_status get_torrent_details(
         const std::string& torrent_id,
         engine_torrent_details& details
@@ -104,6 +105,7 @@ private:
         remove_torrent,
         set_upload_mode,
         set_stream_duration,
+        set_details_interval,
     };
 
     struct Command {
@@ -141,6 +143,8 @@ private:
     std::mutex details_mutex_;
     std::unordered_map<std::string, torrent::TorrentDetails> torrent_details_;
     std::chrono::steady_clock::time_point next_details_refresh_{};
+    std::chrono::milliseconds details_interval_{1'000};
+    std::uint64_t details_revision_ = 0;
     std::thread worker_;
     bool stopping_ = false;
     std::uint64_t next_request_id_ = 1;

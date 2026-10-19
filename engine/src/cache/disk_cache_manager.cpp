@@ -170,6 +170,15 @@ std::uint64_t remaining_size(const std::filesystem::path& path, const std::uint6
 
 }
 
+std::uint64_t disk_usage(const std::filesystem::path& file) {
+    const auto logical_size = static_cast<std::uint64_t>(std::filesystem::file_size(file));
+    try {
+        return std::min(logical_size, allocated_file_size(file));
+    } catch (const std::exception&) {
+        return logical_size;
+    }
+}
+
 DiskCacheManager::DiskCacheManager(
     std::filesystem::path payload_root,
     const std::uint64_t capacity_bytes

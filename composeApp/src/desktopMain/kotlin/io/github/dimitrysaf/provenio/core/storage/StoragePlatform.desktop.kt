@@ -33,6 +33,10 @@ internal actual object StoragePlatform {
         )
     }
 
+    actual suspend fun filesSize(uris: List<String>): Long = withContext(Dispatchers.IO) {
+        uris.sumOf { fileUriLength(it) ?: 0L }
+    }
+
     actual suspend fun space(): StorageSpace? = withContext(Dispatchers.IO) {
         val root = Context.app.cacheDir
         runCatching { StorageSpace(totalBytes = root.totalSpace, freeBytes = root.usableSpace) }

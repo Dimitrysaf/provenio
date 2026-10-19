@@ -2,20 +2,19 @@ package io.github.dimitrysaf.provenio.shell.screens.profiles
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Explicit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,17 +40,20 @@ import io.github.dimitrysaf.provenio.shell.components.SheetHeader
 import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
 import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
+import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
+import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
+import io.github.dimitrysaf.provenio.shell.screens.settings.segmentShape
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
 /**
- * Picks a profile's age limit: the ratings it may watch, as chips under each rating board, from
+ * Picks a profile's age limit: the ratings it may watch, as a list under each rating board, from
  * as many boards as wanted, and whether titles without a rating are allowed. Done with nothing
  * checked leaves the profile without a limit.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun AgeLimitSheet(
     limit: ProfileAgeLimit?,
@@ -118,25 +120,28 @@ internal fun AgeLimitSheet(
             AgeRatingSystems.forEach { system ->
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     ListSubheader(text = stringResource(system.labelRes))
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        system.ratings.forEach { rating ->
+                    Column(verticalArrangement = Arrangement.spacedBy(ListItemBetweenSpace)) {
+                        system.ratings.forEachIndexed { index, rating ->
                             val key = ageRatingKey(system.country, rating)
                             val selected = key in allowed
-                            FilterChip(
+                            val shape = segmentShape(index = index, count = system.ratings.size)
+                            SegmentedListItem(
                                 selected = selected,
                                 onClick = { allowed = if (selected) allowed - key else allowed + key },
-                                label = { Text(rating) },
-                                leadingIcon = if (selected) {
-                                    {
-                                        Icon(imageVector = Icons.Rounded.Check, contentDescription = null)
-                                    }
-                                } else {
-                                    null
-                                },
-                            )
+                                shapes = ListItemDefaults.shapes(
+                                    shape = shape,
+                                    selectedShape = RoundedCornerShape(OuterCorner),
+                                    pressedShape = shape,
+                                    focusedShape = shape,
+                                    hoveredShape = shape,
+                                ),
+                                colors = ListItemDefaults.segmentedColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(rating)
+                            }
                         }
                     }
                 }

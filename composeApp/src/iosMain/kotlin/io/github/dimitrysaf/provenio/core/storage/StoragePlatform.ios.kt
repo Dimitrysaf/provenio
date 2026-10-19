@@ -5,6 +5,8 @@ import platform.Foundation.NSUserDefaults
 internal actual object StoragePlatform {
     actual suspend fun measure(): Map<StorageCategory, Long> = emptyMap()
 
+    actual suspend fun filesSize(uris: List<String>): Long = 0L
+
     actual suspend fun space(): StorageSpace? = null
 
     actual suspend fun cachedTorrents(): List<CachedTorrent> = emptyList()

@@ -433,6 +433,18 @@ ENGINE_API engine_status engine_set_stream_duration(
     const char* stream_id,
     uint64_t duration_milliseconds
 );
+/* The bytes the file at the UTF-8 [path] takes on disk. Torrent files are sparse, so this is what
+ * has been downloaded into one, not its full size. Needs no engine. */
+ENGINE_API engine_status engine_file_disk_usage(
+    const char* path,
+    uint64_t* bytes
+);
+/* Sets how often torrent details, peers and piece maps refresh, from 100 to 10000 ms. The default
+ * is 1000 ms; faster refreshes cost more work in the engine. */
+ENGINE_API engine_status engine_set_details_interval(
+    engine* engine,
+    uint32_t interval_milliseconds
+);
 ENGINE_API void engine_torrent_details_init_sized(
     engine_torrent_details* details,
     uint32_t struct_size

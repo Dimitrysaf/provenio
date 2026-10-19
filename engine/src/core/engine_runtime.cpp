@@ -234,6 +234,14 @@ engine_status EngineRuntime::set_stream_duration(
     return enqueue(std::move(command), request_id);
 }
 
+engine_status EngineRuntime::set_details_interval(const std::uint32_t interval_milliseconds) {
+    Command command{};
+    command.type = CommandType::set_details_interval;
+    command.target_bytes = interval_milliseconds;
+    std::uint64_t request_id = 0;
+    return enqueue(std::move(command), request_id);
+}
+
 engine_status EngineRuntime::get_torrent_details(
     const std::string& torrent_id,
     engine_torrent_details& details
@@ -399,6 +407,11 @@ void EngineRuntime::process_command(Command command) {
         case CommandType::set_stream_duration:
             backend_->set_stream_duration(command.stream_id, command.target_bytes);
             break;
+        case CommandType::set_details_interval:
+            details_interval_ = std::chrono::milliseconds(command.target_bytes);
+            next_details_refresh_ = {};
+            backend_->set_telemetry_interval(details_interval_);
+            break;
         }
     } catch (const std::exception& error) {
         push_event({
@@ -426,11 +439,14 @@ void EngineRuntime::collect_backend_events() {
     for (auto& event : backend_->pop_events()) {
         push_event(std::move(event));
     }
-    // Details carry peer lists and piece maps, so they refresh at the backend's
-    // telemetry cadence rather than on every 25 ms pass.
+    // Details carry peer lists and piece maps, so they are rebuilt when the backend has new
+    // telemetry rather than on every 25 ms pass. Rebuilding on arrival, not on a timer of its
+    // own, keeps a reader polling at the same cadence from seeing one snapshot twice.
     const auto now = std::chrono::steady_clock::now();
-    if (now >= next_details_refresh_) {
-        next_details_refresh_ = now + std::chrono::milliseconds(500);
+    const auto revision = backend_->telemetry_revision();
+    if (revision != details_revision_ || now >= next_details_refresh_) {
+        details_revision_ = revision;
+        next_details_refresh_ = now + details_interval_;
         std::unordered_map<std::string, torrent::TorrentDetails> details;
         for (auto& torrent : backend_->torrent_details()) {
             auto id = torrent.torrent_id;

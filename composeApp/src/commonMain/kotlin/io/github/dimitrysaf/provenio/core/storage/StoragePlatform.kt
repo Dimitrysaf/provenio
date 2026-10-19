@@ -39,6 +39,9 @@ internal expect object StoragePlatform {
      */
     suspend fun measure(): Map<StorageCategory, Long>
 
+    /** The bytes the files at [uris] take on disk, together; files that cannot be read count as nothing. */
+    suspend fun filesSize(uris: List<String>): Long
+
     /** The size of the disk the app keeps most of its data on, and its free space. */
     suspend fun space(): StorageSpace?
 
@@ -53,7 +56,7 @@ internal expect object StoragePlatform {
     /** Deletes logs, cached subtitles and old update files. */
     suspend fun clearOther()
 
-    /** The volumes downloads and the torrent cache can go on; empty when there is only one. */
+    /** The volumes downloads and the torrent cache can go on; empty where the platform offers no choice. */
     fun volumes(): List<StorageVolume>
 
     fun selectedVolumeId(): String?

@@ -1,7 +1,9 @@
 package io.github.dimitrysaf.provenio.core.storage
 
 import android.content.Context
+import android.net.Uri
 import android.os.StatFs
+import android.provider.OpenableColumns
 import io.github.dimitrysaf.provenio.core.addons.AddonHttpClientProvider
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +33,16 @@ internal actual object StoragePlatform {
             StorageCategory.Other to otherCache + logs,
             StorageCategory.AppData to appData.coerceAtLeast(0L),
         )
+    }
+
+    actual suspend fun filesSize(uris: List<String>): Long = withContext(Dispatchers.IO) {
+        val context = appContext ?: return@withContext 0L
+        uris.sumOf { uri ->
+            fileUriLength(uri) ?: runCatching {
+                context.contentResolver.query(Uri.parse(uri), arrayOf(OpenableColumns.SIZE), null, null, null)
+                    ?.use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
+            }.getOrNull() ?: 0L
+        }
     }
 
     actual suspend fun space(): StorageSpace? = withContext(Dispatchers.IO) {
@@ -71,9 +83,7 @@ internal actual object StoragePlatform {
 
     actual fun volumes(): List<StorageVolume> {
         val context = appContext ?: return emptyList()
-        val volumes = AndroidStorageVolumes.volumes(context)
-        if (volumes.size < 2) return emptyList()
-        return volumes.map { volume ->
+        return AndroidStorageVolumes.volumes(context).map { volume ->
             val stats = runCatching { StatFs(volume.filesRoot.absolutePath) }.getOrNull()
             StorageVolume(
                 id = volume.id,

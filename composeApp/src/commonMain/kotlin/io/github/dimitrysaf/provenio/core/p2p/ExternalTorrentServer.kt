@@ -227,6 +227,9 @@ internal object ExternalTorrentServer {
     private val VideoExtensions = listOf(".mkv", ".mp4", ".avi", ".mov", ".webm", ".m4v", ".ts", ".wmv", ".flv")
 }
 
+/** How far into the torrent's video the player is, 0..1. */
+data class P2pPlaybackPosition(val infoHash: String, val fraction: Float)
+
 /**
  * Where playback's torrent streams go: the external server when one is set in P2P settings,
  * otherwise Provenio's own engine. Playback asks here, never the engine directly.
@@ -234,6 +237,23 @@ internal object ExternalTorrentServer {
 object P2pStreams {
     private val usingExternal = MutableStateFlow(false)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val _playbackPosition = MutableStateFlow<P2pPlaybackPosition?>(null)
+    private var playbackPositionOwner: Any? = null
+
+    /** Where the player is in the torrent it plays, for the torrent details to mark. */
+    val playbackPosition: StateFlow<P2pPlaybackPosition?> = _playbackPosition.asStateFlow()
+
+    fun setPlaybackPosition(owner: Any, position: P2pPlaybackPosition?) {
+        playbackPositionOwner = owner
+        _playbackPosition.value = position
+    }
+
+    /** Forgets [owner]'s position, unless another player has reported one since. */
+    fun clearPlaybackPosition(owner: Any) {
+        if (playbackPositionOwner !== owner) return
+        playbackPositionOwner = null
+        _playbackPosition.value = null
+    }
 
     /** The state of whichever one is streaming now. */
     val state: StateFlow<P2pStreamingState> = combine(

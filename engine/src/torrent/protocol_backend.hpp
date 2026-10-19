@@ -1,6 +1,7 @@
 #ifndef ENGINE_PROTOCOL_BACKEND_HPP
 #define ENGINE_PROTOCOL_BACKEND_HPP
 
+#include <chrono>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -250,6 +251,13 @@ public:
     }
     [[nodiscard]] virtual std::vector<TorrentDetails> torrent_details() {
         return {};
+    }
+    /** How often the backend asks its torrents for fresh status, peers and pieces. */
+    virtual void set_telemetry_interval(std::chrono::milliseconds /*interval*/) {
+    }
+    /** Changes whenever new telemetry has arrived, so readers know to rebuild their details. */
+    [[nodiscard]] virtual std::uint64_t telemetry_revision() const {
+        return 0;
     }
 };
 

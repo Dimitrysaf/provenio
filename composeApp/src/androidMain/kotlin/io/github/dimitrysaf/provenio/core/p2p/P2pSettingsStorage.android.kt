@@ -14,6 +14,7 @@ internal actual object P2pSettingsStorage {
     private const val prefetchTorrentInfoKey = "prefetch_torrent_info"
     private const val torrentProfileKey = "torrent_profile"
     private const val cacheSizeKey = "cache_size"
+    private const val detailsRefreshKey = "details_refresh"
     private const val externalServerKey = "external_server"
 
     private var preferences: SharedPreferences? = null
@@ -66,6 +67,12 @@ internal actual object P2pSettingsStorage {
 
     actual fun saveCacheSize(size: String) {
         saveString(cacheSizeKey, size)
+    }
+
+    actual fun loadDetailsRefresh(): String? = loadString(detailsRefreshKey)
+
+    actual fun saveDetailsRefresh(refresh: String) {
+        saveString(detailsRefreshKey, refresh)
     }
 
     private fun loadBoolean(keyBase: String): Boolean? =
