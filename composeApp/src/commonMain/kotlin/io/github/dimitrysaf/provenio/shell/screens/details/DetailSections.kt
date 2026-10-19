@@ -29,12 +29,8 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.CastCell
 import io.github.dimitrysaf.provenio.shell.screens.details.components.CastGridPreviewRows
 import io.github.dimitrysaf.provenio.shell.screens.details.components.CommentCard
 import io.github.dimitrysaf.provenio.shell.screens.details.components.LoadingCommentCard
-import io.github.dimitrysaf.provenio.shell.screens.details.components.TrailerCard
-import io.github.dimitrysaf.provenio.shell.screens.details.components.TrailerCategories
-import io.github.dimitrysaf.provenio.shell.screens.details.components.TrailerCategoryPicker
 import io.github.dimitrysaf.provenio.shell.screens.details.components.castSectionSizing
 import io.github.dimitrysaf.provenio.shell.screens.details.components.commentCardSize
-import io.github.dimitrysaf.provenio.shell.screens.details.components.trailerSectionSizing
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
 import androidx.compose.foundation.layout.Arrangement
@@ -123,7 +119,6 @@ internal fun LazyListScope.configuredMetaSectionItems(
     pendingSections: Set<MetaScreenSectionKey> = emptySet(),
     shelfGrid: DetailShelfGridContext? = null,
     resolvedCast: List<MetaPerson> = meta.cast,
-    trailerCategories: TrailerCategories? = null,
 ) {
     val enabledItems = settings.items.filter { it.enabled }
     fun sectionHasContent(key: MetaScreenSectionKey): Boolean =
@@ -282,26 +277,7 @@ internal fun LazyListScope.configuredMetaSectionItems(
                     )
                 }
             }
-            MetaScreenSectionKey.TRAILERS -> {
-                val categories = trailerCategories ?: return false
-                val sizing = trailerSectionSizing(grid.contentWidth.value)
-                detailShelfGrid(
-                    key = key,
-                    title = { stringResource(Res.string.detail_trailers_title) },
-                    entries = categories.selectedTrailers,
-                    cellWidth = sizing.cardWidth,
-                    spacing = sizing.cardSpacing,
-                    context = grid,
-                    headerLeading = { TrailerCategoryPicker(categories) },
-                ) { _, trailer ->
-                    TrailerCard(
-                        trailer = trailer,
-                        cardWidth = sizing.cardWidth,
-                        cornerRadius = rememberPosterCardStyleUiState().cornerRadiusDp.dp,
-                        onClick = { onTrailerClick(trailer) },
-                    )
-                }
-            }
+            MetaScreenSectionKey.TRAILERS -> return false
             MetaScreenSectionKey.COLLECTION -> detailPosterShelfGrid(
                 key = key,
                 title = { meta.collectionName.orEmpty() },

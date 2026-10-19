@@ -190,8 +190,6 @@
     <string name="compose_settings_root_check_updates_description">הורד את הגרסה האחרונה</string>
     <string name="compose_settings_root_check_updates_title">בדיקת עדכונים</string>
     <string name="compose_settings_root_content_discovery_description">נהל תוספים ומקורות גילוי.</string>
-    <string name="compose_settings_root_downloads_description">נהל את הסרטים והפרקים שהורדת.</string>
-    <string name="compose_settings_root_downloads_title">הורדות</string>
     <string name="compose_settings_root_general_section">כללי</string>
     <string name="cw_action_go_to_details">עבור לפרטים</string>
     <string name="cw_action_remove">הסר</string>

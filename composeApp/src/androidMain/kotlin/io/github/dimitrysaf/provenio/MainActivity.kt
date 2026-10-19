@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio
 
+import io.github.dimitrysaf.provenio.core.network.MobileDataMonitor
+import io.github.dimitrysaf.provenio.core.storage.StoragePlatform
 import io.github.dimitrysaf.provenio.core.cast.CastNetwork
 import android.content.Intent
 import android.content.res.Configuration
@@ -114,6 +116,8 @@ open class MainActivity : AppCompatActivity() {
         SyncClientIdentityStorage.initialize(applicationContext)
         LocalSyncStorage.initialize(applicationContext)
         LocalSyncWifiLock.initialize(applicationContext)
+        MobileDataMonitor.initialize(applicationContext)
+        StoragePlatform.initialize(applicationContext)
         CastNetwork.initialize(applicationContext)
         AddonHttpClientProvider.initialize(applicationContext)
         AddonStorage.initialize(applicationContext)

@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import io.github.dimitrysaf.provenio.core.playback.AudioTrack
 import io.github.dimitrysaf.provenio.core.playback.PlayerAudioLevelSample
+import io.github.dimitrysaf.provenio.core.playback.PlayerChapter
 import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
 import io.github.dimitrysaf.provenio.core.playback.PlayerResizeMode
 import io.github.dimitrysaf.provenio.core.playback.SubtitleTrack
@@ -157,6 +158,7 @@ private class MpvPlayerController(private val player: MpvPlayer) : PlayerEngineC
     override fun setVolumeStabilizer(enabled: Boolean) = player.setVolumeStabilizer(enabled)
     override fun setFadeVolume(fraction: Float) = player.setFadeVolume(fraction)
     override fun sampleAudioLevel(): PlayerAudioLevelSample? = player.sampleAudioLevel()
+    override fun chapters(): List<PlayerChapter> = player.chapters()
     override fun getAudioTracks(): List<AudioTrack> = player.audioTracks()
     override fun getSubtitleTracks(): List<SubtitleTrack> = player.subtitleTracks()
     override fun applyAudioLanguagePreferences(languages: List<String>) = player.setPreferredAudioLanguages(languages)

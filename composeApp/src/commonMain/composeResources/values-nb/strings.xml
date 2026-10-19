@@ -330,8 +330,6 @@
     <string name="compose_settings_root_check_updates_description">Last ned nyeste versjon</string>
     <string name="compose_settings_root_check_updates_title">Se etter oppdateringer</string>
     <string name="compose_settings_root_content_discovery_description">Administrer tillegg og oppdagelseskilder.</string>
-    <string name="compose_settings_root_downloads_description">Administrer nedlastede filmer og episoder.</string>
-    <string name="compose_settings_root_downloads_title">Nedlastinger</string>
     <string name="compose_settings_root_general_section">GENERELT</string>
     <string name="compose_settings_root_integrations_description">Administrer tilgjengelige integrasjoner</string>
     <string name="compose_settings_root_notifications_description">Administrer episodevarsler og send testvarsel.</string>

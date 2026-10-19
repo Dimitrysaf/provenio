@@ -368,8 +368,6 @@
     <string name="compose_settings_root_check_updates_description">تحميل أحدث إصدار</string>
     <string name="compose_settings_root_check_updates_title">التحقق من التحديثات</string>
     <string name="compose_settings_root_content_discovery_description">إدارة الإضافات ومصادر الاستكشاف.</string>
-    <string name="compose_settings_root_downloads_description">إدارة الأفلام والحلقات التي نزّلتها.</string>
-    <string name="compose_settings_root_downloads_title">التنزيلات</string>
     <string name="compose_settings_root_general_section">عام</string>
     <string name="compose_settings_root_integrations_description">إدارة التكاملات المتاحة</string>
     <string name="compose_settings_root_notifications_description">إدارة تنبيهات صدور الحلقات وإرسال إشعار تجريبي.</string>

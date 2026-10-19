@@ -351,8 +351,6 @@
     <string name="compose_settings_root_check_updates_description">Stiahnuť najnovšie vydanie</string>
     <string name="compose_settings_root_check_updates_title">Skontrolovať aktualizácie</string>
     <string name="compose_settings_root_content_discovery_description">Spravovať doplnky a zdroje objavovania.</string>
-    <string name="compose_settings_root_downloads_description">Spravovať stiahnuté filmy a epizódy.</string>
-    <string name="compose_settings_root_downloads_title">Stiahnuté</string>
     <string name="compose_settings_root_general_section">VŠEOBECNÉ</string>
     <string name="compose_settings_root_integrations_description">Spravovať dostupné integrácie</string>
     <string name="compose_settings_root_notifications_description">Spravovať upozornenia na vydanie epizód a odoslať testovacie oznámenie.</string>

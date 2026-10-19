@@ -371,8 +371,6 @@
     <string name="compose_settings_root_check_updates_description">Download de laatste versie</string>
     <string name="compose_settings_root_check_updates_title">Controleren op updates</string>
     <string name="compose_settings_root_content_discovery_description">Beheer add-ons en ontdekkingsbronnen.</string>
-    <string name="compose_settings_root_downloads_description">Beheer je gedownloade films en afleveringen.</string>
-    <string name="compose_settings_root_downloads_title">Downloads</string>
     <string name="compose_settings_root_general_section">ALGEMEEN</string>
     <string name="compose_settings_root_integrations_description">Beheer beschikbare integraties</string>
     <string name="compose_settings_root_notifications_description">Beheer meldingen voor nieuwe afleveringen en verstuur een testmelding.</string>

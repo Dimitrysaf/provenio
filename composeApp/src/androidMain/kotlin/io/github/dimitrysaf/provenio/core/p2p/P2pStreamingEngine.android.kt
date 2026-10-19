@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.p2p
 
+import io.github.dimitrysaf.provenio.core.storage.AndroidStorageVolumes
 import android.content.Context
 import android.os.SystemClock
 import android.util.Log
@@ -112,6 +113,7 @@ actual object P2pStreamingEngine {
     private data class EngineConfigurationKey(
         val torrentProfile: P2pTorrentProfile,
         val diskCacheCapacityBytes: Long,
+        val cacheDirectory: String,
     )
 
     private data class DetachedStream(
@@ -717,6 +719,7 @@ actual object P2pStreamingEngine {
         val configurationKey = EngineConfigurationKey(
             torrentProfile = settings.torrentProfile,
             diskCacheCapacityBytes = settings.cacheSize.bytes,
+            cacheDirectory = AndroidStorageVolumes.torrentCacheDirectory(requireContext()).absolutePath,
         )
         engine?.takeIf { engineConfigurationKey == configurationKey || keepRunning }?.let {
             Log.i(
@@ -734,7 +737,7 @@ actual object P2pStreamingEngine {
         currentCoroutineContext().ensureActive()
         val context = requireContext()
         val stateDirectory = File(context.noBackupFilesDir, "engine/state")
-        val cacheDirectory = File(context.cacheDir, "engine/payload")
+        val cacheDirectory = File(configurationKey.cacheDirectory)
         check(stateDirectory.mkdirs() || stateDirectory.isDirectory) {
             "Could not create the Engine state directory"
         }

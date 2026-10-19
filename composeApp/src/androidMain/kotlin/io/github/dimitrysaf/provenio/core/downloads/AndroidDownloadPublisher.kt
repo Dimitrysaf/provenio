@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.core.downloads
 import android.content.Context
 import android.os.Build
 import android.os.Environment
+import io.github.dimitrysaf.provenio.core.storage.AndroidStorageVolumes
 import java.io.File
 import java.io.IOException
 
@@ -10,8 +11,17 @@ import java.io.IOException
 internal object AndroidDownloadPublisher {
     private const val FolderName = "Provenio"
 
-    // Movies/Provenio from Android 11, where apps may add videos there without a permission; before that, the app's own Movies folder.
+    // An SD card's Movies/Provenio when the user picked one in Storage. Otherwise Movies/Provenio from Android 11, where apps may
+    // add videos there without a permission; before that, the app's own Movies folder.
     fun directory(context: Context): File =
+        AndroidStorageVolumes.downloadsDirectory(context) ?: sharedDirectory(context)
+
+    // Every folder finished downloads can be in, so ones saved before a change of volume are still found.
+    fun allDirectories(context: Context): List<File> =
+        (listOf(sharedDirectory(context)) + AndroidStorageVolumes.secondaryDownloadsDirectories(context))
+            .distinctBy { it.absolutePath }
+
+    private fun sharedDirectory(context: Context): File =
         if (Build.VERSION.SDK_INT >= 30) {
             File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), FolderName)
         } else {
@@ -20,7 +30,7 @@ internal object AndroidDownloadPublisher {
 
     // The folder as the system file browser addresses it.
     fun documentId(context: Context): String =
-        if (Build.VERSION.SDK_INT >= 30) {
+        AndroidStorageVolumes.downloadsDocumentId(context) ?: if (Build.VERSION.SDK_INT >= 30) {
             "primary:${Environment.DIRECTORY_MOVIES}/$FolderName"
         } else {
             "primary:Android/data/${context.packageName}/files/${Environment.DIRECTORY_MOVIES}/$FolderName"

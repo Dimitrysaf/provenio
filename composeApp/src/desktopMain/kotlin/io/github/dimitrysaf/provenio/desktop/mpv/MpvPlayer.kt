@@ -11,6 +11,7 @@ import io.github.dimitrysaf.provenio.core.playback.AudioTrack
 import io.github.dimitrysaf.provenio.core.playback.MpvAudioLeadMs
 import io.github.dimitrysaf.provenio.core.playback.MpvAudioLevelProperty
 import io.github.dimitrysaf.provenio.core.playback.PlayerAudioLevelSample
+import io.github.dimitrysaf.provenio.core.playback.PlayerChapter
 import io.github.dimitrysaf.provenio.core.playback.mpvAudioFilterChain
 import io.github.dimitrysaf.provenio.core.playback.parseMpvAudioLevelDb
 import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
@@ -195,6 +196,18 @@ internal class MpvPlayer private constructor(
             positionMs = (seconds * 1000).toLong() + MpvAudioLeadMs,
             levelDb = levelDb,
         )
+    }
+
+    /** The file's chapters from mpv's chapter list, with their start times and titles. */
+    fun chapters(): List<PlayerChapter> {
+        val count = stringProperty("chapter-list/count")?.toIntOrNull() ?: return emptyList()
+        return (0 until count).mapNotNull { index ->
+            val seconds = stringProperty("chapter-list/$index/time")?.toDoubleOrNull() ?: return@mapNotNull null
+            PlayerChapter(
+                startMs = (seconds * 1000).toLong(),
+                title = stringProperty("chapter-list/$index/title").orEmpty(),
+            )
+        }
     }
 
     private fun applyAudioFilters() {

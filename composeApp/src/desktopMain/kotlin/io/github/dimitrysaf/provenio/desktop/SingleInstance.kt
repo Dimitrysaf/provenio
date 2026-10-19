@@ -77,6 +77,17 @@ object SingleInstance {
     private val portFile: File
         get() = File(directory, "instance.port")
 
+    /** Lets go of this launch's claim, so a new launch can take over before this one has exited. */
+    fun release() {
+        runCatching { server?.close() }
+        server = null
+        runCatching { portFile.delete() }
+        runCatching { lock?.release() }
+        lock = null
+        runCatching { channel?.close() }
+        channel = null
+    }
+
     fun listen(onUrl: (String) -> Unit) {
         if (lock == null || server != null) return
         val socket = runCatching {

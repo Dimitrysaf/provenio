@@ -331,8 +331,6 @@
     <string name="compose_settings_root_check_updates_description">Baixar a versão mais recente</string>
     <string name="compose_settings_root_check_updates_title">Verificar atualizações</string>
     <string name="compose_settings_root_content_discovery_description">Gerenciar addons e fontes de descoberta.</string>
-    <string name="compose_settings_root_downloads_description">Gerencie seus filmes e episódios baixados.</string>
-    <string name="compose_settings_root_downloads_title">Downloads</string>
     <string name="compose_settings_root_general_section">GERAL</string>
     <string name="compose_settings_root_integrations_description">Gerenciar integrações disponíveis</string>
     <string name="compose_settings_root_notifications_description">Gerencie alertas de lançamento de episódios e envie uma notificação de teste.</string>

@@ -349,8 +349,6 @@
     <string name="compose_settings_root_check_updates_description">Transferir a versão mais recente</string>
     <string name="compose_settings_root_check_updates_title">Procurar atualizações</string>
     <string name="compose_settings_root_content_discovery_description">Gere addons e fontes de descoberta.</string>
-    <string name="compose_settings_root_downloads_description">Gere os teus filmes e episódios transferidos.</string>
-    <string name="compose_settings_root_downloads_title">Transferências</string>
     <string name="compose_settings_root_general_section">GERAL</string>
     <string name="compose_settings_root_integrations_description">Gere as integrações disponíveis</string>
     <string name="compose_settings_root_notifications_description">Gere alertas de novos episódios e envia uma notificação de teste.</string>

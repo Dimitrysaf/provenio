@@ -35,7 +35,6 @@ import io.github.dimitrysaf.provenio.shell.components.LoadErrorDialog
 import io.github.dimitrysaf.provenio.shell.components.PageScrollbar
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCellWidth
 import io.github.dimitrysaf.provenio.shell.screens.details.components.rememberResolvedCast
-import io.github.dimitrysaf.provenio.shell.screens.details.components.rememberTrailerCategories
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
 import io.github.dimitrysaf.provenio.core.home.HomeShelfLayout
 import io.github.dimitrysaf.provenio.shell.components.loadErrorIcon
@@ -739,7 +738,6 @@ private fun MetaDetailsContent(
         HomeCatalogSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
     val resolvedCast = rememberResolvedCast(meta.cast, meta.id, meta.type)
-    val trailerCategories = rememberTrailerCategories(meta.trailers)
     val posterCellWidth = rememberPosterCellWidth()
     val posterCardStyle = rememberPosterCardStyleUiState()
 
@@ -861,7 +859,6 @@ private fun MetaDetailsContent(
                         null
                     },
                     resolvedCast = resolvedCast,
-                    trailerCategories = trailerCategories,
                 )
             }
         val backdropUrl = (listOf(meta.background) + meta.extraArtwork + listOf(meta.poster))

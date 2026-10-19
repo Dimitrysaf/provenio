@@ -351,8 +351,6 @@
     <string name="compose_settings_root_check_updates_description">Stáhnout nejnovější verzi</string>
     <string name="compose_settings_root_check_updates_title">Zkontrolovat aktualizace</string>
     <string name="compose_settings_root_content_discovery_description">Správa doplňků a zdrojů objevování.</string>
-    <string name="compose_settings_root_downloads_description">Spravujte své stažené filmy a epizody.</string>
-    <string name="compose_settings_root_downloads_title">Stažené položky</string>
     <string name="compose_settings_root_general_section">OBECNÉ</string>
     <string name="compose_settings_root_integrations_description">Spravovat dostupné integrace</string>
     <string name="compose_settings_root_notifications_description">Správa upozornění na vydání epizod a odeslání zkušebního oznámení.</string>

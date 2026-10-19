@@ -48,10 +48,7 @@ import io.github.dimitrysaf.provenio.core.metadata.youtubeThumbnailUrl
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
-/**
- * The trailers grouped by kind, and which kind is showing. Held above the section so a grid
- * shelf's header, which picks the kind, and its rows, which show it, share one choice.
- */
+/** The trailers grouped by kind, and which kind is showing. */
 @Stable
 internal class TrailerCategories(
     val grouped: Map<String, List<MetaTrailer>>,

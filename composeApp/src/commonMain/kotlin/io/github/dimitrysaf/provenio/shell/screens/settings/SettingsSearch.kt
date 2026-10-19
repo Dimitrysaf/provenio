@@ -24,6 +24,7 @@ import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.CloudDownload
+import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Hub
@@ -249,7 +250,7 @@ internal fun settingsSearchEntries(
         title = downloadsPage,
         description = stringResource(Res.string.compose_settings_root_downloads_description),
         category = generalCategory,
-        icon = Icons.Rounded.CloudDownload,
+        icon = Icons.Rounded.DataUsage,
         target = SettingsSearchTarget.Downloads,
     )
     addPage(
@@ -398,15 +399,13 @@ internal fun settingsSearchEntries(
         category = advancedCategory,
         icon = Icons.Rounded.Tune,
     )
-    addRow(
-        page = SettingsPage.Advanced,
+    add(
         key = "clear-cw-cache",
         title = stringResource(Res.string.settings_advanced_clear_cw_cache),
         description = stringResource(Res.string.settings_advanced_clear_cw_cache_subtitle),
-        pageLabel = advancedPage,
-        section = stringResource(Res.string.settings_advanced_section_cache),
-        category = advancedCategory,
-        icon = Icons.Rounded.Tune,
+        category = generalCategory,
+        icon = Icons.Rounded.DataUsage,
+        target = SettingsSearchTarget.Downloads,
     )
     addPage(
         page = SettingsPage.ContinueWatching,

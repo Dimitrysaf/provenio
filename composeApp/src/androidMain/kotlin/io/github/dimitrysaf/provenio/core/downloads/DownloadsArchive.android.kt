@@ -42,7 +42,8 @@ internal actual object DownloadsArchive {
 
     actual fun mediaFileUris(): List<String> {
         val context = appContext ?: return emptyList()
-        return AndroidDownloadPublisher.directory(context).listFiles().orEmpty()
+        return AndroidDownloadPublisher.allDirectories(context)
+            .flatMap { it.listFiles().orEmpty().toList() }
             .filter { it.isFile && it.extension.lowercase() in VideoExtensions }
             .map { it.toURI().toString() }
     }

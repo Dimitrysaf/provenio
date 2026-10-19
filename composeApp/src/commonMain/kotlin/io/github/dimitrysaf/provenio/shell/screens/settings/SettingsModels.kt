@@ -2,7 +2,7 @@ package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.CloudDownload
+import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.Extension
@@ -76,7 +76,7 @@ internal enum class SettingsCategory(
     Playback(Res.string.settings_category_playback, Res.string.settings_category_playback_description, Icons.Rounded.PlayArrow),
     Addons(Res.string.compose_settings_page_addons, Res.string.settings_content_discovery_addons_description, Icons.Rounded.Extension),
     Plugins(Res.string.compose_settings_page_plugins, Res.string.settings_content_discovery_plugins_description, Icons.Rounded.Hub),
-    Downloads(Res.string.compose_settings_root_downloads_title, Res.string.compose_settings_root_downloads_description, Icons.Rounded.CloudDownload),
+    Downloads(Res.string.compose_settings_root_downloads_title, Res.string.compose_settings_root_downloads_description, Icons.Rounded.DataUsage),
     Collections(Res.string.collections_header, Res.string.settings_content_discovery_collections_description, Icons.Rounded.CollectionsBookmark),
     Notifications(Res.string.compose_settings_page_notifications, Res.string.compose_settings_root_notifications_description, Icons.Rounded.Notifications),
     Advanced(Res.string.compose_settings_page_advanced, Res.string.settings_category_advanced_description, Icons.Rounded.Tune),

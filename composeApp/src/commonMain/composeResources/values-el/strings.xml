@@ -317,8 +317,6 @@
     <string name="compose_settings_root_check_updates_description">Ελέγξτε για νέες εκδόσεις της εφαρμογής.</string>
     <string name="compose_settings_root_check_updates_title">Έλεγχος για ενημερώσεις</string>
     <string name="compose_settings_root_content_discovery_description">Διαχείριση πρόσθετων και πηγών ανακάλυψης.</string>
-    <string name="compose_settings_root_downloads_description">Διαχειριστείτε τις κατεβασμένες ταινίες και επεισόδιά σας.</string>
-    <string name="compose_settings_root_downloads_title">Λήψεις</string>
     <string name="compose_settings_root_general_section">ΓΕΝΙΚΑ</string>
     <string name="compose_settings_root_integrations_description">Σύνδεση υπηρεσιών TMDB και MDBList.</string>
     <string name="compose_settings_root_notifications_description">Διαχείριση ειδοποιήσεων κυκλοφορίας επεισοδίων και αποστολή δοκιμαστικής ειδοποίησης.</string>

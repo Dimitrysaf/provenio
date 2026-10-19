@@ -331,8 +331,6 @@
     <string name="compose_settings_root_check_updates_description">A legújabb verzió letöltése</string>
     <string name="compose_settings_root_check_updates_title">Frissítések keresése</string>
     <string name="compose_settings_root_content_discovery_description">Kiegészítők és tartalomforrások kezelése</string>
-    <string name="compose_settings_root_downloads_description">A letöltött filmek és epizódok kezelése</string>
-    <string name="compose_settings_root_downloads_title">Letöltések</string>
     <string name="compose_settings_root_general_section">ÁLTALÁNOS</string>
     <string name="compose_settings_root_integrations_description">Elérhető integrációk kezelése</string>
     <string name="compose_settings_root_notifications_description">Epizódok megjelenési értesítéseinek kezelése és teszt értesítés küldése</string>

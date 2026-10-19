@@ -7,7 +7,8 @@ import java.io.File
  *
  * Directories follow the XDG base directory spec, so under Flatpak they land in the app's own
  * ~/.var/app/<id> tree and are removed with it. On Windows the cache goes to
- * %LOCALAPPDATA%\Provenio\Cache instead, where the system's own cleanup tools look for it.
+ * %LOCALAPPDATA%\Provenio\Cache instead, where the system's own cleanup tools look for it. The cache
+ * and the data can also be moved to folders the user picks, see [DesktopStorageLocations].
  */
 class Context private constructor(
     val filesDir: File,
@@ -30,14 +31,19 @@ class Context private constructor(
             fun xdg(variable: String, fallback: String): File =
                 File(System.getenv(variable)?.takeIf { it.isNotBlank() } ?: "$home/$fallback", APP_DIRECTORY)
             val linuxStyleCache = xdg("XDG_CACHE_HOME", ".cache")
-            val cacheDir = windowsCacheDirectory() ?: linuxStyleCache
+            val defaultCache = windowsCacheDirectory() ?: linuxStyleCache
+            val folders = DesktopStorageLocations.resolve(
+                defaultFiles = xdg("XDG_DATA_HOME", ".local/share"),
+                defaultConfig = xdg("XDG_CONFIG_HOME", ".config"),
+                defaultCache = defaultCache,
+            )
             Context(
-                filesDir = xdg("XDG_DATA_HOME", ".local/share"),
-                cacheDir = cacheDir,
-                configDir = xdg("XDG_CONFIG_HOME", ".config"),
+                filesDir = folders.filesDir,
+                cacheDir = folders.cacheDir,
+                configDir = folders.configDir,
             ).also { context ->
                 listOf(context.filesDir, context.cacheDir, context.configDir).forEach { it.mkdirs() }
-                if (cacheDir != linuxStyleCache) removeOldCache(linuxStyleCache)
+                if (defaultCache != linuxStyleCache && folders.cacheDir != linuxStyleCache) removeOldCache(linuxStyleCache)
             }
         }
 

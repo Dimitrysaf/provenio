@@ -15,6 +15,7 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsUiState
 import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsUiState
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingState
+import io.github.dimitrysaf.provenio.core.playback.PlayerChapter
 import io.github.dimitrysaf.provenio.core.playback.SubtitleSpeechSync
 import io.github.dimitrysaf.provenio.core.playback.skip.NextEpisodeInfo
 import io.github.dimitrysaf.provenio.core.playback.skip.SkipInterval
@@ -220,6 +221,8 @@ internal class PlayerScreenRuntime(
     var subtitleDelayMs by mutableStateOf(0)
     var subtitleDelaySetByHand by mutableStateOf(false)
     var subtitleSpeechSyncActive by mutableStateOf(false)
+    var mobileDataWarned by mutableStateOf(false)
+    var chapters by mutableStateOf(emptyList<PlayerChapter>())
     val subtitleSpeechSync = SubtitleSpeechSync()
     var subtitleAutoSyncState by mutableStateOf(SubtitleAutoSyncUiState())
 

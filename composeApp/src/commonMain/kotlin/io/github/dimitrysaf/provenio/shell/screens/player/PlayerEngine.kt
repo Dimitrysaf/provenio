@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.shell.screens.player
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import io.github.dimitrysaf.provenio.core.playback.PlayerAudioLevelSample
+import io.github.dimitrysaf.provenio.core.playback.PlayerChapter
 import io.github.dimitrysaf.provenio.core.playback.AudioTrack
 import io.github.dimitrysaf.provenio.core.playback.PlayerResizeMode
 import io.github.dimitrysaf.provenio.core.playback.SubtitleTrack
@@ -43,6 +44,9 @@ interface PlayerEngineController {
      * cannot measure.
      */
     fun sampleAudioLevel(): PlayerAudioLevelSample? = null
+
+    /** The video's own chapters, in order; empty when it has none or the engine cannot read them. */
+    fun chapters(): List<PlayerChapter> = emptyList()
     fun getAudioTracks(): List<AudioTrack>
     fun getSubtitleTracks(): List<SubtitleTrack>
     fun applyAudioLanguagePreferences(languages: List<String>)

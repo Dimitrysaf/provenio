@@ -351,8 +351,6 @@
     <string name="compose_settings_root_check_updates_description">最新リリースをダウンロード</string>
     <string name="compose_settings_root_check_updates_title">アップデートを確認</string>
     <string name="compose_settings_root_content_discovery_description">アドオンと探索ソースを管理</string>
-    <string name="compose_settings_root_downloads_description">ダウンロードした映画とエピソードを管理</string>
-    <string name="compose_settings_root_downloads_title">ダウンロード</string>
     <string name="compose_settings_root_general_section">一般</string>
     <string name="compose_settings_root_integrations_description">利用可能な連携を管理</string>
     <string name="compose_settings_root_notifications_description">エピソード公開アラートの管理とテスト通知の送信</string>

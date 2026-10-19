@@ -39,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -66,7 +67,6 @@ import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.downloads.DownloadItem
 import io.github.dimitrysaf.provenio.core.downloads.DownloadStatus
-import io.github.dimitrysaf.provenio.core.downloads.DownloadsLocationPlatform
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsPlatformDownloader
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsRepository
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsUiState
@@ -87,6 +87,8 @@ fun DownloadsScreen(
 
     var selectedShowId by rememberSaveable(initialShowId) { mutableStateOf(initialShowId) }
     var downloadPendingDeletionId by rememberSaveable { mutableStateOf<String?>(null) }
+    var storageRefresh by remember { mutableIntStateOf(0) }
+    val storageUsage = rememberStorageUsage(uiState.items.storageBytes(), storageRefresh)
     val openDownloadsDirectoryFailedText = stringResource(Res.string.downloads_open_directory_failed)
 
     val completedEpisodes = remember(uiState.items) {
@@ -137,6 +139,8 @@ fun DownloadsScreen(
         if (selectedShowId == null) {
             downloadsRootContent(
                 uiState = uiState,
+                storageUsage = storageUsage,
+                onStorageChanged = { storageRefresh++ },
                 onOpenDownload = onOpenDownload,
                 onOpenShow = { showId, title ->
                     onNavigateToShow?.invoke(showId, title) ?: run { selectedShowId = showId }
@@ -170,8 +174,14 @@ fun DownloadsScreen(
     }
 }
 
+/**
+ * The Storage page: what takes space, then the downloads, what the torrent cache holds, what can
+ * be cleared and where things are kept.
+ */
 private fun LazyListScope.downloadsRootContent(
     uiState: DownloadsUiState,
+    storageUsage: StorageUsage?,
+    onStorageChanged: () -> Unit,
     onOpenDownload: (DownloadItem) -> Unit,
     onOpenShow: (showId: String, title: String) -> Unit,
     onDeleteDownload: (String) -> Unit,
@@ -188,9 +198,7 @@ private fun LazyListScope.downloadsRootContent(
         }
         .sortedBy { (item, _) -> item.title.lowercase() }
 
-    if (DownloadsLocationPlatform.isConfigurable) {
-        item { DownloadLocationRow() }
-    }
+    item { StorageUsageCard(storageUsage) }
 
     if (activeItems.isNotEmpty()) {
         item { DownloadsSubheader(stringResource(Res.string.downloads_section_active), activeItems.size) }
@@ -221,15 +229,9 @@ private fun LazyListScope.downloadsRootContent(
         }
     }
 
-    if (uiState.items.isEmpty()) {
-        item {
-            EmptyState(
-                icon = Icons.Rounded.Download,
-                title = stringResource(Res.string.downloads_empty_title),
-                message = stringResource(Res.string.downloads_empty_subtitle),
-            )
-        }
-    }
+    item { CachedTorrentsGroup(storageUsage?.torrents.orEmpty()) }
+    item { StorageCleanupGroup(usage = storageUsage, downloads = uiState.items, onCleared = onStorageChanged) }
+    item { StorageLocationsGroup(onChanged = onStorageChanged) }
 }
 
 private fun LazyListScope.downloadsShowContent(
@@ -574,39 +576,6 @@ private fun DownloadShowRow(
 
 // The folder new downloads are saved to, which opens the system folder picker to change.
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun DownloadLocationRow() {
-    var path by remember { mutableStateOf(DownloadsLocationPlatform.currentPath().orEmpty()) }
-    val shape = segmentShape(index = 0, count = 1)
-    val change = {
-        if (DownloadsLocationPlatform.choose()) path = DownloadsLocationPlatform.currentPath().orEmpty()
-    }
-    SegmentedListItem(
-        onClick = change,
-        shapes = ListItemDefaults.shapes(
-            shape = shape,
-            selectedShape = shape,
-            pressedShape = shape,
-            focusedShape = shape,
-            hoveredShape = shape,
-        ),
-        colors = ListItemDefaults.segmentedColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
-        leadingContent = {
-            Icon(imageVector = Icons.Rounded.Folder, contentDescription = null)
-        },
-        supportingContent = { Text(path) },
-        trailingContent = {
-            TextButton(onClick = change) {
-                Text(stringResource(Res.string.downloads_location_change))
-            }
-        },
-    ) {
-        Text(stringResource(Res.string.downloads_location_title))
-    }
-}
-
 /** What each download state looks like at a glance. */
 private fun DownloadStatus.icon(): ImageVector = when (this) {
     DownloadStatus.Downloading -> Icons.Rounded.Download
@@ -666,7 +635,7 @@ private fun downloadProgressText(item: DownloadItem): String {
     }
 }
 
-private fun formatBytes(bytes: Long): String {
+internal fun formatBytes(bytes: Long): String {
     if (bytes <= 0L) return "0 ${localizedByteUnit("B")}"
     val kib = 1024.0
     val mib = kib * 1024.0

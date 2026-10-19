@@ -96,7 +96,7 @@ internal actual object DownloadsPlatformDownloader {
                 ?.name
                 ?.takeIf { it.isNotBlank() }
             ?: return null
-        return listOf(AndroidDownloadPublisher.directory(context), File(context.filesDir, "downloads"))
+        return (AndroidDownloadPublisher.allDirectories(context) + File(context.filesDir, "downloads"))
             .map { File(it, fileName) }
             .firstOrNull { it.exists() }
             ?.toURI()

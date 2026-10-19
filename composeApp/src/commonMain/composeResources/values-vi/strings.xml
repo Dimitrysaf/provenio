@@ -371,8 +371,6 @@
     <string name="compose_settings_root_check_updates_description">Tải xuống phiên bản mới nhất</string>
     <string name="compose_settings_root_check_updates_title">Kiểm tra cập nhật</string>
     <string name="compose_settings_root_content_discovery_description">Quản lý các tiện ích và nguồn khám phá.</string>
-    <string name="compose_settings_root_downloads_description">Quản lý các phim điện ảnh và tập phim đã tải xuống của bạn.</string>
-    <string name="compose_settings_root_downloads_title">Tải xuống</string>
     <string name="compose_settings_root_general_section">CHUNG</string>
     <string name="compose_settings_root_integrations_description">Quản lý tích hợp có sẵn</string>
     <string name="compose_settings_root_notifications_description">Quản lý nhắc nhở tập phim mới phát hành và gửi thông báo kiểm tra</string>

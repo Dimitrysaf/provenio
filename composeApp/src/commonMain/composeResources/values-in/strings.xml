@@ -332,8 +332,6 @@
     <string name="compose_settings_root_check_updates_description">Unduh versi terbaru</string>
     <string name="compose_settings_root_check_updates_title">Periksa pembaruan</string>
     <string name="compose_settings_root_content_discovery_description">Kelola addon dan sumber penemuan.</string>
-    <string name="compose_settings_root_downloads_description">Kelola film dan episode yang telah diunduh.</string>
-    <string name="compose_settings_root_downloads_title">Unduhan</string>
     <string name="compose_settings_root_general_section">UMUM</string>
     <string name="compose_settings_root_integrations_description">Kelola integrasi yang tersedia</string>
     <string name="compose_settings_root_notifications_description">Kelola peringatan rilis episode dan kirim notifikasi uji coba.</string>

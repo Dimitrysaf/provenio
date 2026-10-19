@@ -69,6 +69,20 @@ object SearchHistoryRepository {
         persist()
     }
 
+    fun clearAll() {
+        ensureLoaded()
+        if (recentSearches.isEmpty()) return
+        recentSearches = emptyList()
+        publish()
+        persist()
+    }
+
+    /** How many searches are remembered, whether or not history is shown. */
+    fun storedCount(): Int {
+        ensureLoaded()
+        return recentSearches.size
+    }
+
     private fun loadFromDisk() {
         hasLoaded = true
         _enabled.value = SearchHistoryStorage.loadEnabled() ?: true

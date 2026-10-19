@@ -80,6 +80,7 @@ import io.github.dimitrysaf.provenio.core.playback.MpvAudioLevelProperty
 import io.github.dimitrysaf.provenio.core.playback.mpvAudioFilterChain
 import io.github.dimitrysaf.provenio.core.playback.parseMpvAudioLevelDb
 import io.github.dimitrysaf.provenio.core.playback.PlayerAudioLevelSample
+import io.github.dimitrysaf.provenio.core.playback.PlayerChapter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import io.github.dimitrysaf.provenio.core.streams.normalizeStreamType
@@ -1600,6 +1601,8 @@ private class LibmpvView(
 
             override fun sampleAudioLevel(): PlayerAudioLevelSample? = this@LibmpvView.sampleAudioLevel()
 
+            override fun chapters(): List<PlayerChapter> = this@LibmpvView.chapters()
+
             override fun getAudioTracks(): List<AudioTrack> =
                 latestAudioTracks.mapIndexed { index, track ->
                     AudioTrack(
@@ -1759,6 +1762,28 @@ private class LibmpvView(
 
     @Volatile
     private var latestAudioLevel: PlayerAudioLevelSample? = null
+
+    @Volatile
+    private var latestChapters: List<PlayerChapter> = emptyList()
+
+    /**
+     * The file's chapters from mpv's chapter list. mpv is read off the main thread, so each call
+     * hands back what the previous one read.
+     */
+    fun chapters(): List<PlayerChapter> {
+        val previous = latestChapters
+        executeMpv {
+            val count = mpv.getPropertyInt("chapter-list/count") ?: 0
+            latestChapters = (0 until count).mapNotNull { index ->
+                val seconds = mpv.getPropertyDouble("chapter-list/$index/time") ?: return@mapNotNull null
+                PlayerChapter(
+                    startMs = (seconds * 1000).toLong(),
+                    title = mpv.getPropertyString("chapter-list/$index/title").orEmpty(),
+                )
+            }
+        }
+        return previous
+    }
 
     private fun applyMpvAudioFilters() {
         executeMpv {

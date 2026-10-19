@@ -88,6 +88,12 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.geometry.Offset
+import io.github.dimitrysaf.provenio.core.playback.chapterAt
+import io.github.dimitrysaf.provenio.core.playback.PlayerChapter
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -155,6 +161,7 @@ internal fun PlayerControlsShell(
     onTitleClick: (() -> Unit)? = null,
     onScrubChange: (Long) -> Unit,
     onScrubFinished: (Long) -> Unit,
+    chapters: List<PlayerChapter> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -253,6 +260,7 @@ internal fun PlayerControlsShell(
                     },
                     playbackSnapshot = playbackSnapshot,
                     displayedPositionMs = displayedPositionMs,
+                    chapters = chapters,
                     metrics = metrics,
                     resizeMode = resizeMode,
                     controlsReady = controlsReady,
@@ -714,6 +722,7 @@ private fun BottomControls(
     transport: (@Composable () -> Unit)?,
     playbackSnapshot: PlayerPlaybackSnapshot,
     displayedPositionMs: Long,
+    chapters: List<PlayerChapter>,
     metrics: PlayerLayoutMetrics,
     resizeMode: PlayerResizeMode,
     controlsReady: Boolean,
@@ -837,7 +846,16 @@ private fun BottomControls(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            PlayerTimeLabel(text = formatPlaybackTime(displayedPositionMs), metrics = metrics)
+            val chapterTitle = chapters.chapterAt(displayedPositionMs)?.title?.takeIf { it.isNotBlank() }
+            PlayerTimeLabel(
+                text = if (chapterTitle != null) {
+                    "${formatPlaybackTime(displayedPositionMs)}$ChapterSeparator$chapterTitle"
+                } else {
+                    formatPlaybackTime(displayedPositionMs)
+                },
+                metrics = metrics,
+                modifier = Modifier.weight(1f, fill = false).padding(end = 12.dp),
+            )
             PlayerTimeLabel(
                 text = if (durationSettled) formatPlaybackTime(shownDurationMs) else UnknownPlaybackTime,
                 metrics = metrics,
@@ -848,6 +866,7 @@ private fun BottomControls(
             displayedPositionMs = displayedPositionMs,
             bufferedPositionMs = playbackSnapshot.bufferedPositionMs,
             isPlaying = playbackSnapshot.isPlaying,
+            chapters = chapters,
             metrics = metrics,
             onScrubChange = onScrubChange,
             onScrubFinished = onScrubFinished,
@@ -905,9 +924,12 @@ private fun PlayerButtonGroupsRow(
 }
 
 @Composable
-private fun PlayerTimeLabel(text: String, metrics: PlayerLayoutMetrics) {
+private fun PlayerTimeLabel(text: String, metrics: PlayerLayoutMetrics, modifier: Modifier = Modifier) {
     Text(
         text = text,
+        modifier = modifier,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
         style = MaterialTheme.typeScale.labelSm.copy(
             fontSize = metrics.timeSize,
             lineHeight = metrics.timeSize * 1.25f,
@@ -1015,6 +1037,7 @@ internal fun PlayerSeekBar(
     onScrubChange: (Long) -> Unit,
     onScrubFinished: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    chapters: List<PlayerChapter> = emptyList(),
 ) {
     val durationKnown = durationMs > 0L
     val seekDurationMs = durationMs.coerceAtLeast(1L)
@@ -1023,6 +1046,13 @@ internal fun PlayerSeekBar(
         (bufferedPositionMs.toFloat() / seekDurationMs).coerceIn(0f, 1f)
     } else {
         0f
+    }
+    val chapterGaps = remember(chapters, seekDurationMs, durationKnown) {
+        if (!durationKnown) {
+            emptyList()
+        } else {
+            chapters.map { it.startMs.toFloat() / seekDurationMs }.filter { it > ChapterEdgeFraction && it < 1f - ChapterEdgeFraction }
+        }
     }
     val activeColor = MaterialTheme.colorScheme.primary
     val interactionSource = remember { MutableInteractionSource() }
@@ -1083,12 +1113,15 @@ internal fun PlayerSeekBar(
                     isPlaying = isPlaying,
                     activeColor = activeColor,
                     thumbSize = thumbSize,
+                    chapterGaps = chapterGaps,
                 )
             },
         )
         if (labelFraction != null) {
+            val labelPositionMs = (labelFraction * seekDurationMs).toLong()
             SeekTimeLabel(
-                text = formatPlaybackTime((labelFraction * seekDurationMs).toLong()),
+                text = formatPlaybackTime(labelPositionMs),
+                chapterTitle = chapters.chapterAt(labelPositionMs)?.title?.takeIf { it.isNotBlank() },
                 fraction = labelFraction,
                 thumbSizePx = thumbSizePx,
             )
@@ -1099,18 +1132,19 @@ internal fun PlayerSeekBar(
 @Composable
 private fun SeekTimeLabel(
     text: String,
+    chapterTitle: String?,
     fraction: Float,
     thumbSizePx: Float,
 ) {
     val spacingPx = with(LocalDensity.current) { SeekLabelSpacing.roundToPx() }
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.inverseOnSurface,
-        maxLines = 1,
+    val maxWidthPx = with(LocalDensity.current) { SeekLabelMaxWidth.roundToPx() }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .layout { measurable, constraints ->
-                val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
+                val placeable = measurable.measure(
+                    constraints.copy(minWidth = 0, minHeight = 0, maxWidth = minOf(constraints.maxWidth, maxWidthPx)),
+                )
                 val width = constraints.maxWidth
                 val centerX = thumbSizePx / 2f + (width - thumbSizePx) * fraction
                 val x = (centerX - placeable.width / 2f).roundToInt().coerceIn(0, maxOf(0, width - placeable.width))
@@ -1121,7 +1155,23 @@ private fun SeekTimeLabel(
             .clip(MaterialTheme.shapes.extraSmall)
             .background(MaterialTheme.colorScheme.inverseSurface)
             .padding(horizontal = 8.dp, vertical = 4.dp),
-    )
+    ) {
+        if (chapterTitle != null) {
+            Text(
+                text = chapterTitle,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.inverseOnSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.inverseOnSurface,
+            maxLines = 1,
+        )
+    }
 }
 
 // Played part waves gently while playing and flattens when paused; cached part runs ahead of it.
@@ -1132,6 +1182,7 @@ private fun WavyProgressTrack(
     isPlaying: Boolean,
     activeColor: Color,
     thumbSize: Dp,
+    chapterGaps: List<Float> = emptyList(),
 ) {
     val amplitude by animateDpAsState(
         targetValue = if (isPlaying) WaveAmplitude else 0.dp,
@@ -1151,7 +1202,8 @@ private fun WavyProgressTrack(
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
-            .height(TrackCanvasHeight),
+            .height(TrackCanvasHeight)
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen },
     ) {
         val strokeWidth = TrackStrokeWidth.toPx()
         val centerY = size.height / 2f
@@ -1197,6 +1249,15 @@ private fun WavyProgressTrack(
                 path = path,
                 color = activeColor,
                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
+            )
+        }
+        val chapterGapPx = ChapterGapWidth.toPx()
+        chapterGaps.forEach { fraction ->
+            drawRect(
+                color = Color.Black,
+                topLeft = Offset(size.width * fraction - chapterGapPx / 2f, 0f),
+                size = Size(chapterGapPx, size.height),
+                blendMode = BlendMode.Clear,
             )
         }
         drawCircle(
@@ -1258,6 +1319,12 @@ private val TransportIconSize = 28.dp
 private val SeekThumbSize = 12.dp
 private val SeekThumbActiveSize = 18.dp
 private val SeekLabelSpacing = 4.dp
+private val SeekLabelMaxWidth = 240.dp
+private val ChapterGapWidth = 3.dp
+
+/** Chapters that start this close to either end leave no gap there. */
+private const val ChapterEdgeFraction = 0.002f
+private const val ChapterSeparator = " • "
 private val TrackCanvasHeight = 12.dp
 private val TrackStrokeWidth = 4.dp
 private val TrackThumbGap = 4.dp

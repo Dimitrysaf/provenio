@@ -33,6 +33,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import io.github.dimitrysaf.provenio.core.addons.httpGetText
+import io.github.dimitrysaf.provenio.core.storage.StorageTitles
+import androidx.compose.runtime.collectAsState
+import io.github.dimitrysaf.provenio.shell.components.ToastMessage
+import io.github.dimitrysaf.provenio.core.network.MobileDataMonitor
 import io.github.dimitrysaf.provenio.shell.screens.settings.volumeStabilizerBlock
 import io.github.dimitrysaf.provenio.shell.screens.settings.subtitleAutoSyncBlock
 import io.github.dimitrysaf.provenio.shell.components.ToastController
@@ -71,6 +75,36 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
                 volumeBoost.dropGain()
                 break
             }
+        }
+    }
+
+    val onMobileData by MobileDataMonitor.onMobileData.collectAsState()
+    LaunchedEffect(onMobileData, activeSourceUrl) {
+        if (!onMobileData || mobileDataWarned || activeSourceUrl.startsWith("file:")) return@LaunchedEffect
+        mobileDataWarned = true
+        shouldPlay = false
+        playerController?.pause()
+        controlsVisible = true
+        ToastController.show(
+            ToastMessage(
+                text = getString(Res.string.player_mobile_data_warning),
+                actionLabel = getString(Res.string.player_mobile_data_wait),
+                onAction = {
+                    shouldPlay = false
+                    playerController?.pause()
+                    flushWatchProgress()
+                    args.onBack()
+                },
+            ),
+        )
+    }
+
+    LaunchedEffect(playerController, activePlaybackIdentity) {
+        chapters = emptyList()
+        while (true) {
+            delay(ChapterRefreshMs)
+            val latest = playerController?.chapters().orEmpty()
+            if (latest != chapters) chapters = latest
         }
     }
 
@@ -202,6 +236,7 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
         playbackSnapshot = PlayerPlaybackSnapshot()
         initialLoadCompleted = false
 
+        StorageTitles.record(infoHash, torrentCacheTitle())
         try {
             val localUrl = P2pStreams.startStream(
                 P2pStreamRequest(
@@ -718,6 +753,15 @@ private fun PlayerScreenRuntime.BindPlayerMetadataAndSkipEffects() {
     }
 }
 
+/** What the Storage page calls this torrent: the title, and the episode for a series. */
+private fun PlayerScreenRuntime.torrentCacheTitle(): String {
+    val season = activeSeasonNumber
+    val episode = activeEpisodeNumber
+    val name = title.ifBlank { activeStreamTitle }
+    if (season == null || episode == null) return name
+    return "$name S${season.toString().padStart(2, '0')}E${episode.toString().padStart(2, '0')}"
+}
+
 private fun PlayerScreenRuntime.buildNowPlayingInfo(): PlayerNowPlayingInfo {
     val isEpisode = activeSeasonNumber != null && activeEpisodeNumber != null
     return PlayerNowPlayingInfo(
@@ -899,6 +943,7 @@ private const val CREDENTIAL_REFRESH_POLL_INTERVAL_MS = 500L
 
 private const val VolumeBoostDeviceCheckMs = 500L
 private const val SleepTimerTickMs = 1_000L
+private const val ChapterRefreshMs = 2_000L
 
 /** How often automatic subtitle sync checks again once it has made its first check. */
 private const val SpeechSyncRecheckMs = 120_000L

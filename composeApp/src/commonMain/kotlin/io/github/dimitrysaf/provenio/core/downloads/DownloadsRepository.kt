@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.downloads
 
+import io.github.dimitrysaf.provenio.core.storage.StorageTitles
 import io.github.dimitrysaf.provenio.core.playback.addonSubtitleRequests
 import io.github.dimitrysaf.provenio.core.streams.StreamItem
 import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
@@ -415,6 +416,14 @@ object DownloadsRepository {
      */
     private fun startTorrentDownload(item: DownloadItem) {
         val infoHash = item.torrentInfoHash ?: return
+        StorageTitles.record(
+            infoHash,
+            if (item.isEpisode) {
+                "${item.title} S${item.seasonNumber.toString().padStart(2, '0')}E${item.episodeNumber.toString().padStart(2, '0')}"
+            } else {
+                item.title
+            },
+        )
         val job = repositoryScope.launch {
             val localUrl = try {
                 P2pStreamingEngine.startDownloadStream(

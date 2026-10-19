@@ -371,8 +371,6 @@
     <string name="compose_settings_root_check_updates_description">Buscar nuevas versiones de la app.</string>
     <string name="compose_settings_root_check_updates_title">Buscar actualizaciones</string>
     <string name="compose_settings_root_content_discovery_description">Administra complementos y fuentes de descubrimiento.</string>
-    <string name="compose_settings_root_downloads_description">Administra tus películas y episodios descargados.</string>
-    <string name="compose_settings_root_downloads_title">Descargas</string>
     <string name="compose_settings_root_general_section">GENERAL</string>
     <string name="compose_settings_root_integrations_description">Conecta los servicios TMDB y MDBList.</string>
     <string name="compose_settings_root_notifications_description">Administra alertas de estreno de episodios y envía una notificación de prueba.</string>

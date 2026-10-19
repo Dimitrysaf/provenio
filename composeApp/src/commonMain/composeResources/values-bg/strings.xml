@@ -371,8 +371,6 @@
     <string name="compose_settings_root_check_updates_description">Изтегли последна версия</string>
     <string name="compose_settings_root_check_updates_title">Провери за актуализации</string>
     <string name="compose_settings_root_content_discovery_description">Управлявай добавки и източници за откриване.</string>
-    <string name="compose_settings_root_downloads_description">Управлявай изтеглените филми и епизоди.</string>
-    <string name="compose_settings_root_downloads_title">Изтегляния</string>
     <string name="compose_settings_root_general_section">ОБЩИ</string>
     <string name="compose_settings_root_integrations_description">Управлявай наличните интеграции</string>
     <string name="compose_settings_root_notifications_description">Управлявай известия за излизане на епизоди и изпрати тестово известие.</string>

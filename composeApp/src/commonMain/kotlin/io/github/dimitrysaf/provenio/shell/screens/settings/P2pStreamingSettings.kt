@@ -13,21 +13,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.shell.screens.p2p.P2pConsentDialog
-import io.github.dimitrysaf.provenio.core.p2p.P2pCacheClearResult
 import io.github.dimitrysaf.provenio.core.p2p.P2pCacheSize
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
-import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
-import io.github.dimitrysaf.provenio.core.p2p.P2pStreams
-import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingState
 import io.github.dimitrysaf.provenio.core.p2p.P2pTorrentProfile
-import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
@@ -80,7 +74,7 @@ private fun P2pMainSwitch() {
     }
 }
 
-/** P2P streaming's options and its cache. */
+/** P2P streaming's options. */
 @Composable
 private fun P2pGroup(
     isTablet: Boolean,
@@ -88,18 +82,12 @@ private fun P2pGroup(
     var showP2pProfileDialog by remember { mutableStateOf(false) }
     var showP2pCacheSizeDialog by remember { mutableStateOf(false) }
     var showExternalServerDialog by remember { mutableStateOf(false) }
-    var p2pCacheClearResult by remember { mutableStateOf<P2pCacheClearResult?>(null) }
-    var p2pCacheClearFailed by remember { mutableStateOf(false) }
     // Read as values here, not through delegates inside the list's builder: a state read in the
     // builder re-runs only the builder, so the rows' labels would keep their old values.
     val p2pSettings = remember {
         P2pSettingsRepository.ensureLoaded()
         P2pSettingsRepository.uiState
     }.collectAsStateWithLifecycle().value
-    val p2pCacheState = P2pStreamingEngine.cacheState.collectAsStateWithLifecycle().value
-    val p2pStreamingState = P2pStreams.state.collectAsStateWithLifecycle().value
-    val p2pDownloadStreams = P2pStreamingEngine.downloadStreamCount.collectAsStateWithLifecycle().value
-    val coroutineScope = rememberCoroutineScope()
     SettingsSection(
         title = stringResource(Res.string.settings_p2p_section_options),
         isTablet = isTablet,
@@ -149,41 +137,6 @@ private fun P2pGroup(
                 enabled = p2pSettings.p2pEnabled,
                 onClick = { showP2pCacheSizeDialog = true },
             )
-            val cacheClearAvailable = p2pStreamingState !is P2pStreamingState.Connecting &&
-                p2pStreamingState !is P2pStreamingState.Streaming &&
-                p2pDownloadStreams == 0 &&
-                !p2pCacheState.isClearing
-            navigationRow(
-                title = stringResource(Res.string.settings_p2p_clear_cache_title),
-                description = when {
-                    p2pCacheState.isClearing ->
-                        stringResource(Res.string.settings_p2p_clear_cache_clearing)
-                    !cacheClearAvailable ->
-                        stringResource(Res.string.settings_p2p_clear_cache_playback_active)
-                    p2pCacheClearFailed ->
-                        stringResource(Res.string.settings_p2p_clear_cache_failed)
-                    p2pCacheClearResult != null -> stringResource(
-                        Res.string.settings_p2p_clear_cache_done,
-                        formatP2pCacheBytes(p2pCacheClearResult!!.reclaimedBytes),
-                    )
-                    !p2pCacheState.hasMeasurement ->
-                        stringResource(Res.string.settings_p2p_clear_cache_usage_pending)
-                    else -> stringResource(
-                        Res.string.settings_p2p_clear_cache_usage,
-                        formatP2pCacheBytes(p2pCacheState.usedBytes),
-                    )
-                },
-                enabled = cacheClearAvailable,
-                onClick = {
-                    p2pCacheClearResult = null
-                    p2pCacheClearFailed = false
-                    coroutineScope.launch {
-                        runCatching { P2pStreamingEngine.clearCache() }
-                            .onSuccess { p2pCacheClearResult = it }
-                            .onFailure { p2pCacheClearFailed = true }
-                    }
-                },
-            )
         }
     }
 
@@ -226,7 +179,6 @@ private fun P2pGroup(
             label = { p2pCacheSizeLabel(it) },
             onSelect = { size ->
                 P2pSettingsRepository.setCacheSize(size)
-                p2pCacheClearResult = null
                 showP2pCacheSizeDialog = false
             },
             onDismiss = { showP2pCacheSizeDialog = false },
@@ -247,16 +199,6 @@ private fun p2pCacheSizeLabel(size: P2pCacheSize): String = when (size) {
     P2pCacheSize.GB_2 -> stringResource(Res.string.settings_p2p_cache_2_gb)
     P2pCacheSize.GB_5 -> stringResource(Res.string.settings_p2p_cache_5_gb)
     P2pCacheSize.GB_10 -> stringResource(Res.string.settings_p2p_cache_10_gb)
-}
-
-private fun formatP2pCacheBytes(bytes: Long): String {
-    val gibibyte = 1024.0 * 1024.0 * 1024.0
-    val mebibyte = 1024.0 * 1024.0
-    return if (bytes >= gibibyte) {
-        "${kotlin.math.round(bytes / gibibyte * 10.0) / 10.0} GB"
-    } else {
-        "${kotlin.math.round(bytes / mebibyte * 10.0) / 10.0} MB"
-    }
 }
 
 /**
