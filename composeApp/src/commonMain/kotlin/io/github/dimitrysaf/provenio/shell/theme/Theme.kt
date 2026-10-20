@@ -12,7 +12,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
+import com.materialkolor.ktx.toHct
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -213,17 +213,31 @@ internal fun Theme(
     }
 }
 
-// Pure black behind everything, with every surface container darkened by the same step so cards, sheets and bars keep their order.
+/**
+ * Pure black behind everything, with the containers rebuilt on Material's tone scale so cards,
+ * sheets and rows still stand apart from it and from each other.
+ *
+ * The dark scheme sets its containers at fixed tones of the neutral palette, 4 to 22 above a 6
+ * surface. With the surface at 0 they move down to start just above black and keep steps of about
+ * five tones, the least that still reads as a layer on an OLED panel, where the shades nearest
+ * black run together. Each keeps its own hue and chroma, so a tinted scheme stays tinted.
+ */
 private fun ColorScheme.toAmoled(): ColorScheme = copy(
     background = Color.Black,
     surface = Color.Black,
     surfaceDim = Color.Black,
     surfaceContainerLowest = Color.Black,
-    surfaceContainerLow = lerp(surfaceContainerLow, Color.Black, AmoledContainerDarkening),
-    surfaceContainer = lerp(surfaceContainer, Color.Black, AmoledContainerDarkening),
-    surfaceContainerHigh = lerp(surfaceContainerHigh, Color.Black, AmoledContainerDarkening),
-    surfaceContainerHighest = lerp(surfaceContainerHighest, Color.Black, AmoledContainerDarkening),
-    surfaceBright = lerp(surfaceBright, Color.Black, AmoledContainerDarkening),
+    surfaceContainerLow = surfaceContainerLow.atTone(AmoledToneLow),
+    surfaceContainer = surfaceContainer.atTone(AmoledToneContainer),
+    surfaceContainerHigh = surfaceContainerHigh.atTone(AmoledToneHigh),
+    surfaceContainerHighest = surfaceContainerHighest.atTone(AmoledToneHighest),
+    surfaceBright = surfaceBright.atTone(AmoledToneBright),
 )
 
-private const val AmoledContainerDarkening = 0.5f
+private fun Color.atTone(tone: Double): Color = Color(toHct().withTone(tone).toInt())
+
+private const val AmoledToneLow = 6.0
+private const val AmoledToneContainer = 10.0
+private const val AmoledToneHigh = 15.0
+private const val AmoledToneHighest = 20.0
+private const val AmoledToneBright = 24.0
