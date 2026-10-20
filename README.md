@@ -32,6 +32,17 @@ flatpak install --user https://dimitrysaf.github.io/provenio/provenio.flatpakref
 
 For the beta channel, use `provenio-beta.flatpakref` instead.
 
+### Android TV
+
+To install Provenio on an Android TV device, download the Android APK from [GitHub releases](https://github.com/Dimitrysaf/provenio/releases/latest) and sideload it using an app like *Send Files to TV* or via `adb`:
+
+```bash
+adb install Provenio.apk
+```
+
+> [!WARNING]
+> The current user interface does **not** support D-Pad navigation. Using a **mouse** is strongly recommended to navigate the app.
+
 ## Build from source
 
 ```bash
