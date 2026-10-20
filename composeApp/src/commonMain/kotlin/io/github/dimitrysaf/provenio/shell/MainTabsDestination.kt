@@ -17,6 +17,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
@@ -168,7 +172,20 @@ internal fun MainTabsDestination(
                 ) {
                     WideNavigationRail(
                         header = {
-                            AppBrandSymbol(modifier = Modifier.height(RailLogoHeight))
+                            // The rail sets its header at the start, not the middle, so the symbol
+                            // is centred in a box as wide as the rail and given its own size.
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                AppBrandSymbol(
+                                    modifier = Modifier
+                                        .height(RailLogoHeight)
+                                        .aspectRatio(RailLogoAspectRatio),
+                                )
+                            }
                         },
                     ) {
                         // On tablets, centre the destinations so they are easier to reach.
@@ -234,3 +251,6 @@ private fun NavIcon(
 
 /** The app's symbol at the top of the rail, the height of a destination's icon and label. */
 private val RailLogoHeight = 32.dp
+
+/** The symbol's own width over its height. */
+private const val RailLogoAspectRatio = 160f / 222f
