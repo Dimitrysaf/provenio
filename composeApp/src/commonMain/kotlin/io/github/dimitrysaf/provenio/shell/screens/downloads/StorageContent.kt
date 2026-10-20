@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.downloads
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,6 +61,7 @@ import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressRepository
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
+import io.github.dimitrysaf.provenio.shell.components.SkeletonBlock
 import io.github.dimitrysaf.provenio.shell.components.StatusModal
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
@@ -130,10 +132,15 @@ internal fun StorageUsageCard(usage: StorageUsage?) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(OuterCorner))
             .background(MaterialTheme.colorScheme.surfaceContainer)
+            .animateContentSize()
             .padding(20.dp),
     ) {
+        if (usage == null) {
+            StorageUsageSkeleton()
+            return@Column
+        }
         Text(
-            text = usage?.let { formatBytes(it.appBytes) } ?: "…",
+            text = formatBytes(usage.appBytes),
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -159,9 +166,50 @@ internal fun StorageUsageCard(usage: StorageUsage?) {
     }
 }
 
-/** How much space the device has left, as one list item under the usage card. */
+/**
+ * The usage card while storage is first measured: the shapes of the total, the bar and a few
+ * legend rows, so the card keeps its place and size instead of showing a placeholder number.
+ */
 @Composable
-internal fun StorageFreeSpaceRow(space: StorageSpace?) {
+private fun StorageUsageSkeleton() {
+    Column {
+        SkeletonBlock(width = 120.dp, height = 32.dp, cornerRadius = 8.dp)
+        Spacer(modifier = Modifier.height(8.dp))
+        SkeletonBlock(width = 96.dp, height = 14.dp)
+        Spacer(modifier = Modifier.height(16.dp))
+        SkeletonBlock(
+            modifier = Modifier.fillMaxWidth(),
+            height = StorageBarHeight,
+            cornerRadius = StorageBarHeight / 2,
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            listOf(88.dp, 120.dp, 72.dp).forEach { labelWidth ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    SkeletonBlock(width = 12.dp, height = 12.dp, cornerRadius = 6.dp)
+                    SkeletonBlock(width = labelWidth, height = 14.dp)
+                    Spacer(modifier = Modifier.weight(1f))
+                    SkeletonBlock(width = 56.dp, height = 14.dp)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * How much space the device has left, as one list item under the usage card; while storage is
+ * first measured, the shape of that item.
+ */
+@Composable
+internal fun StorageFreeSpaceRow(space: StorageSpace?, loading: Boolean = false) {
+    if (loading) {
+        SkeletonBlock(modifier = Modifier.fillMaxWidth(), height = 56.dp, cornerRadius = OuterCorner)
+        return
+    }
     if (space == null) return
     SettingsList {
         infoRow(

@@ -205,7 +205,7 @@ private fun LazyListScope.downloadsRootContent(
         .sortedBy { (item, _) -> item.title.lowercase() }
 
     item { StorageUsageCard(storageUsage) }
-    item { StorageFreeSpaceRow(storageUsage?.space) }
+    item { StorageFreeSpaceRow(storageUsage?.space, loading = storageUsage == null) }
     if (uiState.items.isEmpty()) {
         item { ListSubheader(text = stringResource(Res.string.storage_section_downloads)) }
         item {
