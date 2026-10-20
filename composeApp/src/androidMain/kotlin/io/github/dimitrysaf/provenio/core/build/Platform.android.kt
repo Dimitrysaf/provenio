@@ -15,3 +15,12 @@ internal actual val supportsVolumeStabilizer: Boolean = true
 internal actual val volumeStabilizerNeedsMpv: Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.P
 
 internal actual val supportsSubtitleAutoSync: Boolean = true
+
+internal actual val supportsSubtitleFonts: Boolean = true
+
+internal actual val supportsSubtitleShadow: Boolean = true
+
+internal actual val supportsSubtitleShadowAngle: Boolean = true
+
+// Softening the shadow uses render effects, which came in Android 12.
+internal actual val supportsSubtitleShadowSoftness: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S

@@ -56,6 +56,13 @@ interface PlayerEngineController {
     fun clearExternalSubtitle()
     fun clearExternalSubtitleAndSelect(trackIndex: Int)
     fun applySubtitleStyle(style: SubtitleStyleState) {}
+
+    /**
+     * The subtitle line on screen now, in ASS markup, when Provenio draws subtitles itself for this
+     * engine: "" while none is showing. Null when the engine draws them, as for styled or picture
+     * subtitles, whose looks are their own.
+     */
+    fun appDrawnSubtitleText(): String? = null
     fun applySubtitlePreferences(
         preferredLanguage: String,
         secondaryPreferredLanguage: String? = null,

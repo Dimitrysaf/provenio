@@ -59,6 +59,18 @@ internal expect object PlayerSettingsStorage {
     fun saveSubtitleUseForcedSubtitles(enabled: Boolean)
     fun loadSubtitleShowOnlyPreferredLanguages(): Boolean?
     fun saveSubtitleShowOnlyPreferredLanguages(enabled: Boolean)
+    fun loadSubtitleFontFamily(): String?
+    fun saveSubtitleFontFamily(family: String)
+    fun loadSubtitleShadowEnabled(): Boolean?
+    fun saveSubtitleShadowEnabled(enabled: Boolean)
+    fun loadSubtitleShadowColor(): String?
+    fun saveSubtitleShadowColor(colorHex: String)
+    fun loadSubtitleShadowDistance(): Int?
+    fun saveSubtitleShadowDistance(distance: Int)
+    fun loadSubtitleShadowAngle(): Int?
+    fun saveSubtitleShadowAngle(degrees: Int)
+    fun loadSubtitleShadowSoftness(): Int?
+    fun saveSubtitleShadowSoftness(softness: Int)
     fun loadStreamReuseLastLinkEnabled(): Boolean?
     fun saveStreamReuseLastLinkEnabled(enabled: Boolean)
     fun loadAndroidPlaybackEngine(): String?

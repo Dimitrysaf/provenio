@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -75,17 +77,21 @@ fun ValueBox(
 internal fun SettingsListScope.SettingsSliderRow(
     title: String,
     value: Int,
-    valueText: String,
+    /** The label for a value, shown for the one under the thumb while it is dragged. */
+    valueText: @Composable (Int) -> String,
     valueRange: IntRange,
     step: Int,
     isTablet: Boolean,
     enabled: Boolean = true,
+    /** Answers a tap on the row while it is off, so it can say why. */
+    onDisabledClick: (() -> Unit)? = null,
     onValueChange: (Int) -> Unit,
 ) = shapedRow { shape ->
     val horizontalPadding = if (isTablet) 20.dp else 16.dp
     var sliderValue by remember(value) { mutableFloatStateOf(value.toFloat()) }
+    val current = sliderValue.roundToInt().coerceIn(valueRange.first, valueRange.last)
 
-    SettingsSliderContainer(shape = shape, enabled = enabled) {
+    SettingsSliderContainer(shape = shape, enabled = enabled, onDisabledClick = onDisabledClick) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -103,13 +109,21 @@ internal fun SettingsListScope.SettingsSliderRow(
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f),
             )
-            ValueBox(text = valueText, modifier = Modifier.wrapContentWidth())
+            ValueBox(text = valueText(current), modifier = Modifier.wrapContentWidth())
         }
         Slider(
             value = sliderValue.coerceIn(valueRange.first.toFloat(), valueRange.last.toFloat()),
-            onValueChange = { if (enabled) sliderValue = snapToStep(it, step.toFloat()) },
+            // Applied on each new step while dragging, so what it changes follows the thumb; the
+            // steps keep that to a few changes a drag.
+            onValueChange = {
+                if (enabled) {
+                    sliderValue = snapToStep(it, step.toFloat())
+                    val stepped = sliderValue.roundToInt().coerceIn(valueRange.first, valueRange.last)
+                    if (stepped != value) onValueChange(stepped)
+                }
+            },
             onValueChangeFinished = {
-                if (enabled) onValueChange(sliderValue.roundToInt().coerceIn(valueRange.first, valueRange.last))
+                if (enabled && current != value) onValueChange(current)
             },
             enabled = enabled,
             valueRange = valueRange.first.toFloat()..valueRange.last.toFloat(),
@@ -134,12 +148,20 @@ internal fun SettingsListScope.SettingsSliderRow(
 internal fun SettingsSliderContainer(
     shape: RoundedCornerShape,
     enabled: Boolean,
+    onDisabledClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(if (enabled) 1f else 0.55f),
+            .alpha(if (enabled) 1f else 0.55f)
+            .then(
+                if (!enabled && onDisabledClick != null) {
+                    Modifier.clip(shape).clickable(onClick = onDisabledClick)
+                } else {
+                    Modifier
+                },
+            ),
         shape = shape,
         color = MaterialTheme.colorScheme.surfaceContainer,
     ) {

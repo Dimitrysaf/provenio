@@ -44,6 +44,17 @@ val SubtitleBackgroundColorSwatches: List<Long> = listOf(
     0xAD1E3A8A,
 )
 
+/** Shadows read best dark and partly see-through, so these are dark shades at a few strengths. */
+val SubtitleShadowColorSwatches: List<Long> = listOf(
+    0xCC000000,
+    0xFF000000,
+    0x80000000,
+    0xCC111827,
+    0xCC1E3A8A,
+    0xCC7F1D1D,
+    0xCC064E3B,
+)
+
 fun Long.isTransparentArgb(): Boolean = ((this ushr 24) and 0xFFL) == 0L
 
 data class SubtitleAudioUiState(

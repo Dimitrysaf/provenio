@@ -13,3 +13,11 @@ internal actual val supportsVolumeStabilizer: Boolean = false
 internal actual val volumeStabilizerNeedsMpv: Boolean = false
 
 internal actual val supportsSubtitleAutoSync: Boolean = false
+
+internal actual val supportsSubtitleFonts: Boolean = false
+
+internal actual val supportsSubtitleShadow: Boolean = false
+
+internal actual val supportsSubtitleShadowAngle: Boolean = false
+
+internal actual val supportsSubtitleShadowSoftness: Boolean = false

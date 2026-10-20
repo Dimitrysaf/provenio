@@ -7,3 +7,12 @@ internal actual val isMacOs: Boolean = System.getProperty("os.name").orEmpty().l
 internal actual val supportsVolumeStabilizer: Boolean = true
 internal actual val volumeStabilizerNeedsMpv: Boolean = false
 internal actual val supportsSubtitleAutoSync: Boolean = true
+
+internal actual val supportsSubtitleFonts: Boolean = true
+
+internal actual val supportsSubtitleShadow: Boolean = true
+
+// Plain-text subtitles are drawn by Provenio over mpv's picture, so the shadow can do all it can.
+internal actual val supportsSubtitleShadowAngle: Boolean = true
+
+internal actual val supportsSubtitleShadowSoftness: Boolean = true

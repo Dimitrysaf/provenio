@@ -78,6 +78,9 @@ import io.github.dimitrysaf.provenio.R
 import io.github.dimitrysaf.provenio.core.playback.MpvAudioLeadMs
 import io.github.dimitrysaf.provenio.core.playback.MpvAudioLevelProperty
 import io.github.dimitrysaf.provenio.core.playback.mpvAudioFilterChain
+import io.github.dimitrysaf.provenio.core.playback.MpvAppDrawnSubtitleState
+import io.github.dimitrysaf.provenio.core.playback.mpvAppDrawnSubtitleText
+import io.github.dimitrysaf.provenio.core.playback.mpvSubtitleProperties
 import io.github.dimitrysaf.provenio.core.playback.parseMpvAudioLevelDb
 import io.github.dimitrysaf.provenio.core.playback.PlayerAudioLevelSample
 import io.github.dimitrysaf.provenio.core.playback.PlayerChapter
@@ -94,7 +97,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlin.math.cos
 import kotlin.math.log10
+import kotlin.math.sin
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
@@ -131,7 +136,10 @@ import io.github.dimitrysaf.provenio.core.playback.AndroidPlayerNowPlayingContro
 import io.github.dimitrysaf.provenio.core.playback.PlayerNowPlayingInfo
 import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
+import io.github.dimitrysaf.provenio.core.playback.SubtitleFontFamily
 import io.github.dimitrysaf.provenio.core.playback.SubtitleStyleState
+import io.github.dimitrysaf.provenio.core.playback.shadowBlurFraction
+import io.github.dimitrysaf.provenio.core.playback.shadowOffsetFraction
 
 private const val TAG = "ProvenioPlayer"
 
@@ -1603,6 +1611,8 @@ private class LibmpvView(
 
             override fun chapters(): List<PlayerChapter> = this@LibmpvView.chapters()
 
+            override fun appDrawnSubtitleText(): String? = this@LibmpvView.appDrawnSubtitleText()
+
             override fun getAudioTracks(): List<AudioTrack> =
                 latestAudioTracks.mapIndexed { index, track ->
                     AudioTrack(
@@ -1702,19 +1712,11 @@ private class LibmpvView(
 
             override fun applySubtitleStyle(style: SubtitleStyleState) {
                 executeMpv {
-                    mpv.setPropertyString("sub-ass-override", "no")
-                    mpv.setPropertyString("sub-color", style.textColor.toMpvColor())
-                    mpv.setPropertyString("sub-back-color", style.backgroundColor.toMpvColor())
-                    mpv.setPropertyString("sub-outline-color", style.outlineColor.toMpvColor())
-                    mpv.setPropertyString("sub-border-color", style.outlineColor.toMpvColor())
-                    mpv.setPropertyString("sub-border-style", style.toMpvSubtitleBorderStyle())
-                    mpv.setPropertyString("sub-bold", if (style.bold) "yes" else "no")
-                    mpv.setPropertyInt("sub-font-size", style.toMpvSubtitleFontSize())
-                    mpv.setPropertyInt("sub-outline-size", style.toMpvSubtitleOutlineSize())
-                    mpv.setPropertyInt("sub-border-size", style.toMpvSubtitleOutlineSize())
-                    mpv.setPropertyInt("sub-pos", (100 - style.bottomOffset / 10).coerceIn(0, 100))
-                    mpv.setPropertyBoolean("sub-filter-sdh", style.stripSdh)
-                    mpv.setPropertyBoolean("sub-filter-sdh-harder", style.stripSdh)
+                    // Plain-text subtitles are drawn by Provenio; mpv keeps only styled ones, in
+                    // their own fonts, so it is given none.
+                    style.mpvSubtitleProperties(font = null).forEach { (name, value) ->
+                        mpv.setPropertyString(name, value)
+                    }
                 }
             }
 
@@ -1766,6 +1768,11 @@ private class LibmpvView(
     @Volatile
     private var latestChapters: List<PlayerChapter> = emptyList()
 
+    @Volatile
+    private var latestAppDrawnSubtitle: String? = null
+
+    private val appDrawnSubtitleState = MpvAppDrawnSubtitleState()
+
     /**
      * The file's chapters from mpv's chapter list. mpv is read off the main thread, so each call
      * hands back what the previous one read.
@@ -1781,6 +1788,22 @@ private class LibmpvView(
                     title = mpv.getPropertyString("chapter-list/$index/title").orEmpty(),
                 )
             }
+        }
+        return previous
+    }
+
+    /**
+     * The plain-text subtitle line Provenio draws itself in place of mpv. mpv is read off the main
+     * thread, so each call hands back what the previous one read.
+     */
+    fun appDrawnSubtitleText(): String? {
+        val previous = latestAppDrawnSubtitle
+        executeMpv {
+            latestAppDrawnSubtitle = mpvAppDrawnSubtitleText(
+                state = appDrawnSubtitleState,
+                readProperty = { mpv.getPropertyString(it) },
+                setVisible = { visible -> mpv.setPropertyString("sub-visibility", if (visible) "yes" else "no") },
+            )
         }
         return previous
     }
@@ -1908,44 +1931,6 @@ private fun MPVNode.nodeInt(key: String): Int? =
 private fun MPVNode.nodeBoolean(key: String): Boolean? =
     runCatching { this[key]?.asBoolean() }.getOrNull()
 
-private fun Long.toMpvColor(): String = androidx.compose.ui.graphics.Color(this).toMpvColor()
-
-private fun androidx.compose.ui.graphics.Color.toMpvColor(): String {
-    val argb = toArgb()
-    val alpha = (argb ushr 24) and 0xff
-    val red = (argb shr 16) and 0xff
-    val green = (argb shr 8) and 0xff
-    val blue = argb and 0xff
-    return "#%02X%02X%02X%02X".format(alpha, red, green, blue)
-}
-
-private fun Long.alphaByte(): Int = ((this ushr 24) and 0xFF).toInt()
-
-private fun SubtitleStyleState.toMpvSubtitleFontSize(): Int =
-    (fontSizeSp * MPV_SUBTITLE_FONT_SIZE_SCALE).toInt().coerceIn(
-        MPV_SUBTITLE_FONT_SIZE_MIN,
-        MPV_SUBTITLE_FONT_SIZE_MAX,
-    )
-
-private fun SubtitleStyleState.toMpvSubtitleOutlineSize(): Int =
-    if (!outlineEnabled) 0 else (outlineWidth * MPV_SUBTITLE_OUTLINE_SIZE_SCALE).toInt().coerceAtLeast(1)
-
-private fun SubtitleStyleState.toMpvSubtitleBorderStyle(): String =
-    if (outlineEnabled) {
-        "outline-and-shadow"
-    } else if (backgroundColor.alphaByte() > 0) {
-        "opaque-box"
-    } else {
-        "outline-and-shadow"
-    }
-
-private const val MPV_SUBTITLE_FONT_SIZE_SCALE = 55.0 / 18.0
-
-private const val MPV_SUBTITLE_FONT_SIZE_MIN = 36
-
-private const val MPV_SUBTITLE_FONT_SIZE_MAX = 122
-
-private const val MPV_SUBTITLE_OUTLINE_SIZE_SCALE = 1.5
 
 private fun ExoPlayer.snapshot(): PlayerPlaybackSnapshot {
     val (videoWidth, videoHeight) = videoDimensions()
@@ -2158,11 +2143,35 @@ private fun PlayerView.applySubtitleStyle(style: SubtitleStyleState, pipScale: F
                 android.graphics.Color.TRANSPARENT,
                 if (style.outlineEnabled) CaptionStyleCompat.EDGE_TYPE_OUTLINE else CaptionStyleCompat.EDGE_TYPE_NONE,
                 style.outlineColor.toInt(),
-                if (style.bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT,
+                Typeface.create(style.fontFamily.toTypeface(), if (style.bold) Typeface.BOLD else Typeface.NORMAL),
             )
         )
         setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, style.fontSizeSp.toFloat() * pipScale)
+        val textSizePx = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_SP,
+            style.fontSizeSp.toFloat() * pipScale,
+            resources.displayMetrics,
+        )
+        shadowFrame()?.shadow = if (style.shadowEnabled) {
+            val offset = textSizePx * style.shadowOffsetFraction
+            val radians = Math.toRadians(style.shadowAngle.toDouble())
+            SubtitleShadow(
+                dx = (offset * cos(radians)).toFloat(),
+                dy = (offset * sin(radians)).toFloat(),
+                blurRadius = textSizePx * style.shadowBlurFraction,
+                color = style.shadowColor.toInt(),
+            )
+        } else {
+            null
+        }
     }
+}
+
+private fun SubtitleFontFamily.toTypeface(): Typeface = when (this) {
+    SubtitleFontFamily.Default -> Typeface.DEFAULT
+    SubtitleFontFamily.Serif -> Typeface.SERIF
+    SubtitleFontFamily.Monospace -> Typeface.MONOSPACE
+    SubtitleFontFamily.Condensed -> Typeface.create("sans-serif-condensed", Typeface.NORMAL)
 }
 
 private fun ExoPlayer.extractAudioTracks(context: Context): List<AudioTrack> {

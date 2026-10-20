@@ -495,22 +495,22 @@ private fun AutoPlayGroup(
                     onClick = { showAutoPlayRegexDialog = true },
                 )
             }
-            val timeoutSec = settings.streamAutoPlayTimeoutSeconds
-            val timeoutLabel = when (timeoutSec) {
-                0 -> stringResource(Res.string.settings_playback_timeout_instant)
-                Int.MAX_VALUE -> stringResource(Res.string.settings_playback_timeout_unlimited)
-                else -> stringResource(Res.string.settings_playback_timeout_seconds, timeoutSec)
-            }
-            val timeoutIndex = STREAM_AUTO_PLAY_TIMEOUT_VALUES.indexOf(timeoutSec).coerceAtLeast(0)
+            val timeoutIndex = STREAM_AUTO_PLAY_TIMEOUT_VALUES.indexOf(settings.streamAutoPlayTimeoutSeconds).coerceAtLeast(0)
             SteppedSliderRow(
                 title = stringResource(Res.string.settings_playback_stream_timeout),
                 description = stringResource(Res.string.settings_playback_stream_timeout_description),
-                valueText = timeoutLabel,
+                valueText = { value ->
+                    when (val seconds = STREAM_AUTO_PLAY_TIMEOUT_VALUES[value.toInt().coerceIn(0, STREAM_AUTO_PLAY_TIMEOUT_VALUES.size - 1)]) {
+                        0 -> stringResource(Res.string.settings_playback_timeout_instant)
+                        Int.MAX_VALUE -> stringResource(Res.string.settings_playback_timeout_unlimited)
+                        else -> stringResource(Res.string.settings_playback_timeout_seconds, seconds)
+                    }
+                },
                 value = timeoutIndex.toFloat(),
                 valueRange = 0f..(STREAM_AUTO_PLAY_TIMEOUT_VALUES.size - 1).toFloat(),
                 step = 1f,
                 isTablet = isTablet,
-                onValueChangeFinished = { value ->
+                onValueChange = { value ->
                     val index = value.toInt().coerceIn(0, STREAM_AUTO_PLAY_TIMEOUT_VALUES.size - 1)
                     PlayerSettingsRepository.setStreamAutoPlayTimeoutSeconds(STREAM_AUTO_PLAY_TIMEOUT_VALUES[index])
                 },
@@ -979,47 +979,43 @@ private fun NextEpisodeGroup(
                 NextEpisodeThresholdMode.PERCENTAGE -> SteppedSliderRow(
                     title = stringResource(Res.string.settings_playback_threshold_percentage),
                     description = stringResource(Res.string.settings_playback_threshold_percentage_description),
-                    valueText = stringResource(
-                        Res.string.settings_playback_threshold_percentage_value,
-                        formatStep(settings.nextEpisodeThresholdPercent),
-                    ),
+                    valueText = { stringResource(Res.string.settings_playback_threshold_percentage_value, formatStep(it)) },
                     value = settings.nextEpisodeThresholdPercent,
                     valueRange = 97f..100f,
                     step = 0.5f,
                     isTablet = isTablet,
-                    onValueChangeFinished = PlayerSettingsRepository::setNextEpisodeThresholdPercent,
+                    onValueChange = PlayerSettingsRepository::setNextEpisodeThresholdPercent,
                 )
                 NextEpisodeThresholdMode.MINUTES_BEFORE_END -> SteppedSliderRow(
                     title = stringResource(Res.string.settings_playback_minutes_before_end),
                     description = stringResource(Res.string.settings_playback_minutes_before_end_description),
-                    valueText = stringResource(
-                        Res.string.settings_playback_minutes_value,
-                        formatStep(settings.nextEpisodeThresholdMinutesBeforeEnd),
-                    ),
+                    valueText = { stringResource(Res.string.settings_playback_minutes_value, formatStep(it)) },
                     value = settings.nextEpisodeThresholdMinutesBeforeEnd,
                     valueRange = 0f..3.5f,
                     step = 0.5f,
                     isTablet = isTablet,
-                    onValueChangeFinished = PlayerSettingsRepository::setNextEpisodeThresholdMinutesBeforeEnd,
+                    onValueChange = PlayerSettingsRepository::setNextEpisodeThresholdMinutesBeforeEnd,
                 )
             }
         }
     }
 }
 
-// A slider row with a description, snapping to steps with a haptic tick on each one.
+// A slider row with a description, snapping to steps with a haptic tick on each one, and applying
+// each step as it is reached.
 // Declares rows, so it must not be skippable: see SettingsListScope.
 @Composable
 @NonRestartableComposable
 private fun SettingsListScope.SteppedSliderRow(
     title: String,
     description: String,
-    valueText: String,
+    /** The label for a value, shown for the one under the thumb while it is dragged. */
+    valueText: @Composable (Float) -> String,
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
     step: Float,
     isTablet: Boolean,
-    onValueChangeFinished: (Float) -> Unit,
+    onValueChange: (Float) -> Unit,
 ) = shapedRow { shape ->
     val hapticFeedback = LocalHapticFeedback.current
     var sliderValue by remember(value) { mutableFloatStateOf(value) }
@@ -1046,19 +1042,21 @@ private fun SettingsListScope.SteppedSliderRow(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                ValueBox(text = valueText, modifier = Modifier.wrapContentWidth())
+                ValueBox(text = valueText(sliderValue), modifier = Modifier.wrapContentWidth())
             }
             Slider(
                 value = sliderValue,
+                // Applied on each new step while dragging, so the setting follows the thumb.
                 onValueChange = {
                     val snapped = snapToStep(it, step)
                     sliderValue = snapped
                     if (snapped != lastHapticValue) {
                         lastHapticValue = snapped
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        if (snapped != value) onValueChange(snapped)
                     }
                 },
-                onValueChangeFinished = { onValueChangeFinished(sliderValue) },
+                onValueChangeFinished = { if (sliderValue != value) onValueChange(sliderValue) },
                 valueRange = valueRange,
                 steps = calculateSteps(valueRange.start, valueRange.endInclusive, step),
                 colors = SliderDefaults.colors(

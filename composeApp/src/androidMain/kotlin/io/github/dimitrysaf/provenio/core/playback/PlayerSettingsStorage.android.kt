@@ -47,6 +47,12 @@ actual object PlayerSettingsStorage {
     private const val subtitleStripSdhKey = "subtitle_strip_sdh"
     private const val subtitleUseForcedSubtitlesKey = "subtitle_use_forced_subtitles"
     private const val subtitleShowOnlyPreferredLanguagesKey = "subtitle_show_only_preferred_languages"
+    private const val subtitleFontFamilyKey = "subtitle_font_family"
+    private const val subtitleShadowEnabledKey = "subtitle_shadow_enabled"
+    private const val subtitleShadowColorKey = "subtitle_shadow_color"
+    private const val subtitleShadowDistanceKey = "subtitle_shadow_distance"
+    private const val subtitleShadowAngleKey = "subtitle_shadow_angle"
+    private const val subtitleShadowSoftnessKey = "subtitle_shadow_softness"
     private const val streamReuseLastLinkEnabledKey = "stream_reuse_last_link_enabled"
     private const val androidPlaybackEngineKey = "android_playback_engine"
     private const val androidLibmpvVideoOutputKey = "android_libmpv_video_output"
@@ -121,6 +127,12 @@ actual object PlayerSettingsStorage {
         subtitleStripSdhKey,
         subtitleUseForcedSubtitlesKey,
         subtitleShowOnlyPreferredLanguagesKey,
+        subtitleFontFamilyKey,
+        subtitleShadowEnabledKey,
+        subtitleShadowColorKey,
+        subtitleShadowDistanceKey,
+        subtitleShadowAngleKey,
+        subtitleShadowSoftnessKey,
         streamReuseLastLinkEnabledKey,
         androidPlaybackEngineKey,
         androidLibmpvVideoOutputKey,
@@ -555,6 +567,78 @@ actual object PlayerSettingsStorage {
         preferences
             ?.edit()
             ?.putBoolean(ProfileScopedKey.of(subtitleShowOnlyPreferredLanguagesKey), enabled)
+            ?.apply()
+    }
+
+    actual fun loadSubtitleFontFamily(): String? =
+        preferences?.getString(ProfileScopedKey.of(subtitleFontFamilyKey), null)
+
+    actual fun saveSubtitleFontFamily(family: String) {
+        preferences
+            ?.edit()
+            ?.putString(ProfileScopedKey.of(subtitleFontFamilyKey), family)
+            ?.apply()
+    }
+
+    actual fun loadSubtitleShadowEnabled(): Boolean? =
+        preferences?.let { sharedPreferences ->
+            val key = ProfileScopedKey.of(subtitleShadowEnabledKey)
+            if (sharedPreferences.contains(key)) sharedPreferences.getBoolean(key, false) else null
+        }
+
+    actual fun saveSubtitleShadowEnabled(enabled: Boolean) {
+        preferences
+            ?.edit()
+            ?.putBoolean(ProfileScopedKey.of(subtitleShadowEnabledKey), enabled)
+            ?.apply()
+    }
+
+    actual fun loadSubtitleShadowColor(): String? =
+        preferences?.getString(ProfileScopedKey.of(subtitleShadowColorKey), null)
+
+    actual fun saveSubtitleShadowColor(colorHex: String) {
+        preferences
+            ?.edit()
+            ?.putString(ProfileScopedKey.of(subtitleShadowColorKey), colorHex)
+            ?.apply()
+    }
+
+    actual fun loadSubtitleShadowDistance(): Int? =
+        preferences?.let { sharedPreferences ->
+            val key = ProfileScopedKey.of(subtitleShadowDistanceKey)
+            if (sharedPreferences.contains(key)) sharedPreferences.getInt(key, 0) else null
+        }
+
+    actual fun saveSubtitleShadowDistance(distance: Int) {
+        preferences
+            ?.edit()
+            ?.putInt(ProfileScopedKey.of(subtitleShadowDistanceKey), distance)
+            ?.apply()
+    }
+
+    actual fun loadSubtitleShadowAngle(): Int? =
+        preferences?.let { sharedPreferences ->
+            val key = ProfileScopedKey.of(subtitleShadowAngleKey)
+            if (sharedPreferences.contains(key)) sharedPreferences.getInt(key, 0) else null
+        }
+
+    actual fun saveSubtitleShadowAngle(degrees: Int) {
+        preferences
+            ?.edit()
+            ?.putInt(ProfileScopedKey.of(subtitleShadowAngleKey), degrees)
+            ?.apply()
+    }
+
+    actual fun loadSubtitleShadowSoftness(): Int? =
+        preferences?.let { sharedPreferences ->
+            val key = ProfileScopedKey.of(subtitleShadowSoftnessKey)
+            if (sharedPreferences.contains(key)) sharedPreferences.getInt(key, 0) else null
+        }
+
+    actual fun saveSubtitleShadowSoftness(softness: Int) {
+        preferences
+            ?.edit()
+            ?.putInt(ProfileScopedKey.of(subtitleShadowSoftnessKey), softness)
             ?.apply()
     }
 
@@ -1179,6 +1263,12 @@ actual object PlayerSettingsStorage {
         loadSubtitleStripSdh()?.let { put(subtitleStripSdhKey, encodeSyncBoolean(it)) }
         loadSubtitleUseForcedSubtitles()?.let { put(subtitleUseForcedSubtitlesKey, encodeSyncBoolean(it)) }
         loadSubtitleShowOnlyPreferredLanguages()?.let { put(subtitleShowOnlyPreferredLanguagesKey, encodeSyncBoolean(it)) }
+        loadSubtitleFontFamily()?.let { put(subtitleFontFamilyKey, encodeSyncString(it)) }
+        loadSubtitleShadowEnabled()?.let { put(subtitleShadowEnabledKey, encodeSyncBoolean(it)) }
+        loadSubtitleShadowColor()?.let { put(subtitleShadowColorKey, encodeSyncString(it)) }
+        loadSubtitleShadowDistance()?.let { put(subtitleShadowDistanceKey, encodeSyncInt(it)) }
+        loadSubtitleShadowAngle()?.let { put(subtitleShadowAngleKey, encodeSyncInt(it)) }
+        loadSubtitleShadowSoftness()?.let { put(subtitleShadowSoftnessKey, encodeSyncInt(it)) }
         loadStreamReuseLastLinkEnabled()?.let { put(streamReuseLastLinkEnabledKey, encodeSyncBoolean(it)) }
         loadAndroidPlaybackEngine()?.let { put(androidPlaybackEngineKey, encodeSyncString(it)) }
         loadAndroidLibmpvVideoOutput()?.let { put(androidLibmpvVideoOutputKey, encodeSyncString(it)) }
@@ -1259,6 +1349,12 @@ actual object PlayerSettingsStorage {
         payload.decodeSyncBoolean(subtitleStripSdhKey)?.let(::saveSubtitleStripSdh)
         payload.decodeSyncBoolean(subtitleUseForcedSubtitlesKey)?.let(::saveSubtitleUseForcedSubtitles)
         payload.decodeSyncBoolean(subtitleShowOnlyPreferredLanguagesKey)?.let(::saveSubtitleShowOnlyPreferredLanguages)
+        payload.decodeSyncString(subtitleFontFamilyKey)?.let(::saveSubtitleFontFamily)
+        payload.decodeSyncBoolean(subtitleShadowEnabledKey)?.let(::saveSubtitleShadowEnabled)
+        payload.decodeSyncString(subtitleShadowColorKey)?.let(::saveSubtitleShadowColor)
+        payload.decodeSyncInt(subtitleShadowDistanceKey)?.let(::saveSubtitleShadowDistance)
+        payload.decodeSyncInt(subtitleShadowAngleKey)?.let(::saveSubtitleShadowAngle)
+        payload.decodeSyncInt(subtitleShadowSoftnessKey)?.let(::saveSubtitleShadowSoftness)
         payload.decodeSyncBoolean(streamReuseLastLinkEnabledKey)?.let(::saveStreamReuseLastLinkEnabled)
         payload.decodeSyncString(androidPlaybackEngineKey)?.let(::saveAndroidPlaybackEngine)
         payload.decodeSyncString(androidLibmpvVideoOutputKey)?.let(::saveAndroidLibmpvVideoOutput)

@@ -623,6 +623,12 @@ internal fun settingsSearchEntries(
             PlaybackSearchRow("subtitle-text-color", stringResource(Res.string.settings_playback_subtitle_text_color)),
             PlaybackSearchRow("subtitle-background", stringResource(Res.string.settings_playback_subtitle_background_color)),
             PlaybackSearchRow("subtitle-outline", stringResource(Res.string.settings_playback_subtitle_outline)),
+            PlaybackSearchRow("subtitle-font", stringResource(Res.string.settings_subtitles_font)),
+            PlaybackSearchRow(
+                "subtitle-shadow",
+                stringResource(Res.string.settings_subtitles_shadow),
+                stringResource(Res.string.settings_subtitles_shadow_description),
+            ),
         ),
     )
     addPlaybackRows(

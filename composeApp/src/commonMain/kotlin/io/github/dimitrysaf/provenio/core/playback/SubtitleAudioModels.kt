@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.core.playback
 
 import io.github.dimitrysaf.provenio.core.build.isIos
+import kotlin.math.roundToInt
 
 data class AudioTrack(
     val index: Int,
@@ -53,11 +54,47 @@ data class SubtitleStyleState(
     val stripSdh: Boolean = false,
     val useForcedSubtitles: Boolean = false,
     val showOnlyPreferredLanguages: Boolean = false,
+    val fontFamily: SubtitleFontFamily = SubtitleFontFamily.Default,
+    val shadowEnabled: Boolean = false,
+    val shadowColor: Long = 0xCC000000,
+    /** How far the shadow falls from the text, in fortieths of the text's size. */
+    val shadowDistance: Int = 3,
+    /**
+     * Which way the shadow falls, in degrees clockwise from straight right, so 90 is straight
+     * down; 45, down and to the right, is where most players put it.
+     */
+    val shadowAngle: Int = 45,
+    /** How soft the shadow's edge is, from 0, sharp, to the top of [SUBTITLE_SHADOW_SOFTNESS_RANGE]. */
+    val shadowSoftness: Int = 2,
 ) {
     companion object {
         val DEFAULT = SubtitleStyleState()
     }
 }
+
+/** The kind of typeface subtitles are set in; each player picks its own font of that kind. */
+enum class SubtitleFontFamily {
+    Default,
+    Serif,
+    Monospace,
+    Condensed,
+}
+
+val SUBTITLE_SHADOW_DISTANCE_RANGE: IntRange = 1..10
+val SUBTITLE_SHADOW_SOFTNESS_RANGE: IntRange = 0..10
+const val SUBTITLE_SHADOW_ANGLE_STEP = 15
+
+/** [degrees] as an angle the shadow can take: within a turn, on a step of [SUBTITLE_SHADOW_ANGLE_STEP]. */
+fun normalizeSubtitleShadowAngle(degrees: Int): Int =
+    ((degrees.toFloat() / SUBTITLE_SHADOW_ANGLE_STEP).roundToInt() * SUBTITLE_SHADOW_ANGLE_STEP).mod(360)
+
+/** How far the shadow falls, as a share of the text's size. */
+val SubtitleStyleState.shadowOffsetFraction: Float
+    get() = shadowDistance.coerceIn(SUBTITLE_SHADOW_DISTANCE_RANGE) / 40f
+
+/** How far the shadow's edge is blurred, as a share of the text's size. */
+val SubtitleStyleState.shadowBlurFraction: Float
+    get() = shadowSoftness.coerceIn(SUBTITLE_SHADOW_SOFTNESS_RANGE) * 0.015f
 
 // Subtitle colours are stored and passed around as ARGB values, never as Compose colours.
 fun Long.toStorageHexString(): String =

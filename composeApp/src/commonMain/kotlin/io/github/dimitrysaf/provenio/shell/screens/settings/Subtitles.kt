@@ -3,11 +3,9 @@ package io.github.dimitrysaf.provenio.shell.screens.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,23 +13,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.build.isIos
 import io.github.dimitrysaf.provenio.core.playback.AndroidPlaybackEngine
@@ -40,6 +31,14 @@ import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsUiState
 import io.github.dimitrysaf.provenio.core.playback.SubtitleLanguageOption
 import io.github.dimitrysaf.provenio.core.playback.SubtitleStyleState
+import io.github.dimitrysaf.provenio.core.playback.SUBTITLE_SHADOW_DISTANCE_RANGE
+import io.github.dimitrysaf.provenio.core.playback.SUBTITLE_SHADOW_SOFTNESS_RANGE
+import io.github.dimitrysaf.provenio.core.playback.SubtitleFontFamily
+import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
+import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
+import io.github.dimitrysaf.provenio.shell.screens.player.SubtitleFrame
+import io.github.dimitrysaf.provenio.shell.screens.player.SubtitleShadowColorSwatches
+import androidx.compose.ui.text.AnnotatedString
 import io.github.dimitrysaf.provenio.core.playback.subtitleFontSizeRangeSp
 import io.github.dimitrysaf.provenio.shell.screens.player.SubtitleBackgroundColorSwatches
 import io.github.dimitrysaf.provenio.shell.screens.player.SubtitleColorSwatches
@@ -54,7 +53,7 @@ internal fun LazyListScope.subtitlesSettingsContent(isTablet: Boolean) {
             PlayerSettingsRepository.uiState
         }.collectAsStateWithLifecycle().value
         Column(verticalArrangement = Arrangement.spacedBy(if (isTablet) 18.dp else 12.dp)) {
-            SubtitlePreview(style = settings.subtitleStyle)
+            SubtitlePreview(style = settings.drawnSubtitleStyle())
             SubtitleLanguageGroup(isTablet = isTablet, settings = settings)
             SubtitleTimingGroup(isTablet = isTablet, settings = settings)
             SubtitleRenderingGroup(
@@ -108,17 +107,13 @@ internal fun preferredSubtitleLanguageLabel(code: String): String = when (code) 
 
 /**
  * A frame of video with a line of subtitles on it, drawn the way the player draws them: the
- * same colours, outline, weight and background, at the size and height the player would use.
- *
- * The player sets text at a fixed size in sp over a full-screen landscape frame, so the preview
- * scales that size by how much smaller its frame is than [PlayerReferenceHeight]. The line's
- * height follows ExoPlayer's: a base bottom padding of two-thirds of its default, plus the offset
- * in thousandths of the frame.
+ * same font, colours, outline, shadow, weight and background, at the size and height the player
+ * would use.
  */
 @Composable
 private fun SubtitlePreview(style: SubtitleStyleState) {
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        BoxWithConstraints(
+        Box(
             modifier = Modifier
                 .widthIn(max = SubtitlePreviewMaxWidth)
                 .fillMaxWidth()
@@ -126,63 +121,17 @@ private fun SubtitlePreview(style: SubtitleStyleState) {
                 .clip(RoundedCornerShape(OuterCorner + 8.dp))
                 .background(PreviewSceneBrush),
         ) {
-            val scale = maxHeight / PlayerReferenceHeight
-            val bottomPadding = maxHeight * (
-                SubtitleBaseBottomFraction + (style.bottomOffset / 1000f).coerceIn(0f, 0.2f)
+            SubtitleFrame(
+                text = AnnotatedString(stringResource(Res.string.settings_subtitles_preview_sample)),
+                style = style,
+                modifier = Modifier.matchParentSize(),
             )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(start = 12.dp, end = 12.dp, bottom = bottomPadding),
-            ) {
-                PreviewSubtitleText(style = style, fontScale = scale)
-            }
         }
     }
 }
-
-@Composable
-private fun PreviewSubtitleText(style: SubtitleStyleState, fontScale: Float) {
-    val text = stringResource(Res.string.settings_subtitles_preview_sample)
-    val fontSize = (style.fontSizeSp * fontScale).sp
-    val baseStyle = TextStyle(
-        fontSize = fontSize,
-        lineHeight = fontSize * 1.2f,
-        fontWeight = if (style.bold) FontWeight.Bold else FontWeight.Normal,
-        textAlign = TextAlign.Center,
-    )
-    val background = Color(style.backgroundColor)
-    Box(
-        modifier = Modifier
-            .background(background)
-            .padding(horizontal = 4.dp),
-    ) {
-        if (style.outlineEnabled) {
-            // The outline is the text stroked behind the fill, the way an outline edge is drawn.
-            val strokeWidth = with(LocalDensity.current) { fontSize.toPx() } * OutlineFraction
-            Text(
-                text = text,
-                style = baseStyle.copy(
-                    color = Color(style.outlineColor),
-                    drawStyle = Stroke(width = strokeWidth, join = StrokeJoin.Round),
-                ),
-            )
-        }
-        Text(text = text, style = baseStyle.copy(color = Color(style.textColor)))
-    }
-}
-
-/** A full-screen landscape frame on a phone is about this tall. */
-private val PlayerReferenceHeight: Dp = 412.dp
 
 /** Wide enough to read on a tablet without the frame dwarfing the settings under it. */
 private val SubtitlePreviewMaxWidth: Dp = 640.dp
-
-/** `SubtitleView.DEFAULT_BOTTOM_PADDING_FRACTION` (0.08) times two-thirds, as the player sets it. */
-private const val SubtitleBaseBottomFraction = 0.08f * 2f / 3f
-
-/** How thick an outline edge is relative to the text. */
-private const val OutlineFraction = 0.12f
 
 /**
  * A dusky scene in place of a real frame. Fixed colours, not the theme's: it stands for video,
@@ -308,7 +257,18 @@ private fun SubtitleRenderingGroup(
     var showSubtitleTextColorDialog by remember { mutableStateOf(false) }
     var showSubtitleBackgroundColorDialog by remember { mutableStateOf(false) }
     var showSubtitleOutlineColorDialog by remember { mutableStateOf(false) }
+    var showSubtitleFontSheet by remember { mutableStateOf(false) }
+    var showSubtitleShadowColorDialog by remember { mutableStateOf(false) }
+    var blockedFeature by remember { mutableStateOf<Pair<String, PlayerFeatureBlock>?>(null) }
     var showLibassRenderTypeDialog by remember { mutableStateOf(false) }
+    val fontTitle = stringResource(Res.string.settings_subtitles_font)
+    val shadowTitle = stringResource(Res.string.settings_subtitles_shadow)
+    val shadowDirectionTitle = stringResource(Res.string.settings_subtitles_shadow_direction)
+    val shadowSoftnessTitle = stringResource(Res.string.settings_subtitles_shadow_softness)
+    val fontBlock = subtitleFontBlock(settings)
+    val shadowBlock = subtitleShadowBlock(settings)
+    val shadowAngleBlock = subtitleShadowAngleBlock(settings)
+    val shadowSoftnessBlock = subtitleShadowSoftnessBlock(settings)
     SettingsSection(
         title = stringResource(Res.string.settings_subtitles_section_style),
         isTablet = isTablet,
@@ -319,7 +279,7 @@ private fun SubtitleRenderingGroup(
             SettingsSliderRow(
                 title = stringResource(Res.string.settings_playback_subtitle_size),
                 value = subtitleStyle.fontSizeSp,
-                valueText = stringResource(Res.string.compose_player_font_size_value, subtitleStyle.fontSizeSp),
+                valueText = { stringResource(Res.string.compose_player_font_size_value, it) },
                 valueRange = subtitleFontSizeRangeSp,
                 step = 2,
                 isTablet = isTablet,
@@ -331,7 +291,7 @@ private fun SubtitleRenderingGroup(
             SettingsSliderRow(
                 title = stringResource(Res.string.settings_playback_subtitle_vertical_offset),
                 value = subtitleStyle.bottomOffset,
-                valueText = subtitleStyle.bottomOffset.toString(),
+                valueText = { it.toString() },
                 valueRange = 0..200,
                 step = 5,
                 isTablet = isTablet,
@@ -347,6 +307,16 @@ private fun SubtitleRenderingGroup(
                 enabled = subtitleRenderingEnabled,
                 onCheckedChange = { enabled ->
                     PlayerSettingsRepository.setSubtitleStyle(subtitleStyle.copy(bold = enabled))
+                },
+            )
+            navigationRow(
+                title = fontTitle,
+                description = subtitleFontLabel(
+                    if (fontBlock == null) subtitleStyle.fontFamily else SubtitleFontFamily.Default,
+                ),
+                enabled = subtitleRenderingEnabled,
+                onClick = {
+                    if (fontBlock == null) showSubtitleFontSheet = true else blockedFeature = fontTitle to fontBlock
                 },
             )
             navigationRow(
@@ -376,6 +346,58 @@ private fun SubtitleRenderingGroup(
                     description = subtitleColorLabel(subtitleStyle.outlineColor),
                     enabled = subtitleRenderingEnabled,
                     onClick = { showSubtitleOutlineColorDialog = true },
+                )
+            }
+            switchRow(
+                title = shadowTitle,
+                description = stringResource(Res.string.settings_subtitles_shadow_description),
+                checked = { subtitleStyle.shadowEnabled && shadowBlock == null },
+                enabled = shadowBlock == null,
+                onDisabledClick = { shadowBlock?.let { blockedFeature = shadowTitle to it } },
+                onCheckedChange = { enabled ->
+                    PlayerSettingsRepository.setSubtitleStyle(subtitleStyle.copy(shadowEnabled = enabled))
+                },
+            )
+            expandableRows(expanded = subtitleStyle.shadowEnabled && shadowBlock == null) {
+                navigationRow(
+                    title = stringResource(Res.string.settings_subtitles_shadow_color),
+                    description = subtitleColorLabel(subtitleStyle.shadowColor),
+                    onClick = { showSubtitleShadowColorDialog = true },
+                )
+                SettingsSliderRow(
+                    title = stringResource(Res.string.settings_subtitles_shadow_distance),
+                    value = subtitleStyle.shadowDistance,
+                    valueText = { it.toString() },
+                    valueRange = SUBTITLE_SHADOW_DISTANCE_RANGE,
+                    step = 1,
+                    isTablet = isTablet,
+                    onValueChange = { value ->
+                        PlayerSettingsRepository.setSubtitleStyle(subtitleStyle.copy(shadowDistance = value))
+                    },
+                )
+                ShadowDirectionRow(
+                    title = shadowDirectionTitle,
+                    degrees = if (shadowAngleBlock == null) subtitleStyle.shadowAngle else SubtitleStyleState.DEFAULT.shadowAngle,
+                    isTablet = isTablet,
+                    enabled = shadowAngleBlock == null,
+                    onDisabledClick = { shadowAngleBlock?.let { blockedFeature = shadowDirectionTitle to it } },
+                    onDegreesChange = { degrees ->
+                        PlayerSettingsRepository.setSubtitleStyle(subtitleStyle.copy(shadowAngle = degrees))
+                    },
+                )
+                val sharpLabel = stringResource(Res.string.settings_subtitles_shadow_softness_sharp)
+                SettingsSliderRow(
+                    title = shadowSoftnessTitle,
+                    value = if (shadowSoftnessBlock == null) subtitleStyle.shadowSoftness else 0,
+                    valueText = { if (it == 0) sharpLabel else it.toString() },
+                    valueRange = SUBTITLE_SHADOW_SOFTNESS_RANGE,
+                    step = 1,
+                    isTablet = isTablet,
+                    enabled = shadowSoftnessBlock == null,
+                    onDisabledClick = { shadowSoftnessBlock?.let { blockedFeature = shadowSoftnessTitle to it } },
+                    onValueChange = { value ->
+                        PlayerSettingsRepository.setSubtitleStyle(subtitleStyle.copy(shadowSoftness = value))
+                    },
                 )
             }
             val showLibassSettings = !isIos && androidPlaybackEngine != AndroidPlaybackEngine.Libmpv
@@ -435,6 +457,46 @@ private fun SubtitleRenderingGroup(
         )
     }
 
+    if (showSubtitleFontSheet) {
+        SingleChoiceBottomSheet(
+            title = fontTitle,
+            options = SubtitleFontFamily.entries.map { family ->
+                SingleChoiceOption(
+                    value = family,
+                    label = subtitleFontLabel(family),
+                    leadingContent = {
+                        Text(
+                            text = stringResource(Res.string.settings_subtitles_font_sample),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontFamily = subtitleTextFontFamily(family),
+                        )
+                    },
+                )
+            },
+            isSelected = { it == settings.subtitleStyle.fontFamily },
+            onSelected = { family ->
+                PlayerSettingsRepository.setSubtitleStyle(settings.subtitleStyle.copy(fontFamily = family))
+            },
+            onDismiss = { showSubtitleFontSheet = false },
+        )
+    }
+
+    if (showSubtitleShadowColorDialog) {
+        SubtitleColorDialog(
+            title = stringResource(Res.string.settings_subtitles_shadow_color),
+            colors = SubtitleShadowColorSwatches,
+            selectedColor = settings.subtitleStyle.shadowColor,
+            onColorSelected = { color ->
+                PlayerSettingsRepository.setSubtitleStyle(settings.subtitleStyle.copy(shadowColor = color))
+            },
+            onDismiss = { showSubtitleShadowColorDialog = false },
+        )
+    }
+
+    blockedFeature?.let { (feature, block) ->
+        PlayerFeatureBlockDialog(feature = feature, block = block, onDismiss = { blockedFeature = null })
+    }
+
     if (showLibassRenderTypeDialog) {
         LibassRenderTypeDialog(
             selectedRenderType = libassRenderType,
@@ -445,3 +507,13 @@ private fun SubtitleRenderingGroup(
         )
     }
 }
+
+@Composable
+private fun subtitleFontLabel(family: SubtitleFontFamily): String = stringResource(
+    when (family) {
+        SubtitleFontFamily.Default -> Res.string.settings_subtitles_font_default
+        SubtitleFontFamily.Serif -> Res.string.settings_subtitles_font_serif
+        SubtitleFontFamily.Monospace -> Res.string.settings_subtitles_font_monospace
+        SubtitleFontFamily.Condensed -> Res.string.settings_subtitles_font_condensed
+    },
+)

@@ -167,6 +167,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                     }
                 },
             )
+            RenderAppDrawnSubtitles()
         }
         RenderCastBackdrop()
 

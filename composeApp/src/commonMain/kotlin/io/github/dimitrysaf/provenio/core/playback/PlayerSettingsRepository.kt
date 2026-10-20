@@ -271,6 +271,20 @@ object PlayerSettingsRepository {
                 ?: SubtitleStyleState.DEFAULT.useForcedSubtitles,
             showOnlyPreferredLanguages = PlayerSettingsStorage.loadSubtitleShowOnlyPreferredLanguages()
                 ?: SubtitleStyleState.DEFAULT.showOnlyPreferredLanguages,
+            fontFamily = PlayerSettingsStorage.loadSubtitleFontFamily()
+                ?.let { stored -> SubtitleFontFamily.entries.firstOrNull { it.name == stored } }
+                ?: SubtitleStyleState.DEFAULT.fontFamily,
+            shadowEnabled = PlayerSettingsStorage.loadSubtitleShadowEnabled()
+                ?: SubtitleStyleState.DEFAULT.shadowEnabled,
+            shadowColor = subtitleColorFromStorage(PlayerSettingsStorage.loadSubtitleShadowColor())
+                ?: SubtitleStyleState.DEFAULT.shadowColor,
+            shadowDistance = (PlayerSettingsStorage.loadSubtitleShadowDistance()
+                ?: SubtitleStyleState.DEFAULT.shadowDistance).coerceIn(SUBTITLE_SHADOW_DISTANCE_RANGE),
+            shadowAngle = normalizeSubtitleShadowAngle(
+                PlayerSettingsStorage.loadSubtitleShadowAngle() ?: SubtitleStyleState.DEFAULT.shadowAngle,
+            ),
+            shadowSoftness = (PlayerSettingsStorage.loadSubtitleShadowSoftness()
+                ?: SubtitleStyleState.DEFAULT.shadowSoftness).coerceIn(SUBTITLE_SHADOW_SOFTNESS_RANGE),
         )
         streamReuseLastLinkEnabled = PlayerSettingsStorage.loadStreamReuseLastLinkEnabled() ?: false
         androidPlaybackEngine = PlayerSettingsStorage.loadAndroidPlaybackEngine()
@@ -516,7 +530,12 @@ object PlayerSettingsRepository {
 
     fun setSubtitleStyle(style: SubtitleStyleState) {
         ensureLoaded()
-        val normalized = style.copy(fontSizeSp = style.fontSizeSp.coerceIn(subtitleFontSizeRangeSp))
+        val normalized = style.copy(
+            fontSizeSp = style.fontSizeSp.coerceIn(subtitleFontSizeRangeSp),
+            shadowDistance = style.shadowDistance.coerceIn(SUBTITLE_SHADOW_DISTANCE_RANGE),
+            shadowAngle = normalizeSubtitleShadowAngle(style.shadowAngle),
+            shadowSoftness = style.shadowSoftness.coerceIn(SUBTITLE_SHADOW_SOFTNESS_RANGE),
+        )
         if (subtitleStyle == normalized) return
         subtitleStyle = normalized
         publish()
@@ -531,6 +550,12 @@ object PlayerSettingsRepository {
         PlayerSettingsStorage.saveSubtitleStripSdh(normalized.stripSdh)
         PlayerSettingsStorage.saveSubtitleUseForcedSubtitles(normalized.useForcedSubtitles)
         PlayerSettingsStorage.saveSubtitleShowOnlyPreferredLanguages(normalized.showOnlyPreferredLanguages)
+        PlayerSettingsStorage.saveSubtitleFontFamily(normalized.fontFamily.name)
+        PlayerSettingsStorage.saveSubtitleShadowEnabled(normalized.shadowEnabled)
+        PlayerSettingsStorage.saveSubtitleShadowColor(normalized.shadowColor.toStorageHexString())
+        PlayerSettingsStorage.saveSubtitleShadowDistance(normalized.shadowDistance)
+        PlayerSettingsStorage.saveSubtitleShadowAngle(normalized.shadowAngle)
+        PlayerSettingsStorage.saveSubtitleShadowSoftness(normalized.shadowSoftness)
     }
 
     fun setStreamReuseLastLinkEnabled(enabled: Boolean) {

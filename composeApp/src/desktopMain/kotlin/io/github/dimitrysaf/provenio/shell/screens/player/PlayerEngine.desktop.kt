@@ -23,6 +23,7 @@ import io.github.dimitrysaf.provenio.core.playback.PlayerAudioLevelSample
 import io.github.dimitrysaf.provenio.core.playback.PlayerChapter
 import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
 import io.github.dimitrysaf.provenio.core.playback.PlayerResizeMode
+import io.github.dimitrysaf.provenio.core.playback.SubtitleStyleState
 import io.github.dimitrysaf.provenio.core.playback.SubtitleTrack
 import io.github.dimitrysaf.provenio.core.streams.StreamSubtitle
 import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
@@ -184,4 +185,6 @@ private class MpvPlayerController(private val player: MpvPlayer) : PlayerEngineC
     }
 
     override fun setSubtitleDelayMs(delayMs: Int) = player.setSubtitleDelayMs(delayMs)
+    override fun applySubtitleStyle(style: SubtitleStyleState) = player.setSubtitleStyle(style)
+    override fun appDrawnSubtitleText(): String? = player.appDrawnSubtitleText()
 }

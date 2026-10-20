@@ -16,7 +16,12 @@ import io.github.dimitrysaf.provenio.core.playback.mpvAudioFilterChain
 import io.github.dimitrysaf.provenio.core.playback.parseMpvAudioLevelDb
 import io.github.dimitrysaf.provenio.core.playback.PlayerPlaybackSnapshot
 import io.github.dimitrysaf.provenio.core.playback.PlayerResizeMode
+import io.github.dimitrysaf.provenio.core.playback.desktopSubtitleFont
+import io.github.dimitrysaf.provenio.core.playback.SubtitleStyleState
 import io.github.dimitrysaf.provenio.core.playback.SubtitleTrack
+import io.github.dimitrysaf.provenio.core.playback.MpvAppDrawnSubtitleState
+import io.github.dimitrysaf.provenio.core.playback.mpvAppDrawnSubtitleText
+import io.github.dimitrysaf.provenio.core.playback.mpvSubtitleProperties
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
@@ -220,6 +225,21 @@ internal class MpvPlayer private constructor(
     }
 
     fun setSubtitleDelayMs(delayMs: Int) = enqueue { setProperty("sub-delay", (delayMs / 1000.0).toString()) }
+
+    private val appDrawnSubtitleState = MpvAppDrawnSubtitleState()
+
+    /** The plain-text subtitle line Provenio draws itself in place of mpv. */
+    fun appDrawnSubtitleText(): String? = mpvAppDrawnSubtitleText(
+        state = appDrawnSubtitleState,
+        readProperty = ::stringProperty,
+        setVisible = { visible -> enqueue { setProperty("sub-visibility", if (visible) "yes" else "no") } },
+    )
+
+    fun setSubtitleStyle(style: SubtitleStyleState) = enqueue {
+        style.mpvSubtitleProperties(font = style.fontFamily.desktopSubtitleFont()).forEach { (name, value) ->
+            setProperty(name, value)
+        }
+    }
 
     fun setResizeMode(mode: PlayerResizeMode) = enqueue {
         when (mode) {
