@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
+import io.github.dimitrysaf.provenio.shell.components.sheetHeaderFocus
+import io.github.dimitrysaf.provenio.shell.components.LocalSheetFocus
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.background
@@ -556,6 +558,7 @@ private fun ProfileEditPaneHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .sheetHeaderFocus(LocalSheetFocus.current)
             .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,

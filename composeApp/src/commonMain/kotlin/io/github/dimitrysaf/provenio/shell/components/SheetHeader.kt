@@ -41,7 +41,7 @@ fun SheetNavigationButton(
 ) {
     if (!sheetNavigationVisible()) return
     WithTooltip(stringResource(Res.string.action_close)) {
-        IconButton(onClick = onClick, modifier = modifier) {
+        IconButton(onClick = onClick, modifier = modifier.sheetHeaderFocus(LocalSheetFocus.current)) {
             when (navigation) {
                 SheetNavigation.Close -> Icon(
                     imageVector = Icons.Rounded.Close,
@@ -70,6 +70,7 @@ fun SheetHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .sheetHeaderFocus(LocalSheetFocus.current)
             .padding(
                 start = if (showNavigation && navigation == SheetNavigation.Back) SheetIconEdge else horizontalPadding,
                 end = if (showNavigation && navigation == SheetNavigation.Close) SheetIconEdge else horizontalPadding,

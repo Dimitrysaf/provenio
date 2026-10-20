@@ -11,8 +11,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -73,6 +71,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import io.github.dimitrysaf.provenio.shell.components.BackButton
 import io.github.dimitrysaf.provenio.shell.components.M3Motion
 import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
+import io.github.dimitrysaf.provenio.shell.components.SheetFocusScope
+import io.github.dimitrysaf.provenio.shell.components.dismissScrim
 import io.github.dimitrysaf.provenio.shell.components.WindowBreakpoint
 import io.github.dimitrysaf.provenio.shell.screens.settings.AppBrandWordmark
 import kotlinx.coroutines.delay
@@ -257,10 +257,7 @@ fun ProfileSelectionScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                ) { editorTarget = null },
+                                .dismissScrim { editorTarget = null },
                         )
                     }
 
@@ -285,13 +282,15 @@ fun ProfileSelectionScreen(
                             shape = ShapeDefaults.ExtraLarge,
                             color = MaterialTheme.colorScheme.surfaceContainerLow,
                         ) {
-                            ProfileEditScreen(
-                                profile = (editorTarget as? ProfileEditorTarget.Edit)?.profile,
-                                onBack = { editorTarget = null },
-                                onSaved = { editorTarget = null },
-                                embedded = true,
-                                modifier = Modifier.fillMaxSize(),
-                            )
+                            SheetFocusScope { focus ->
+                                ProfileEditScreen(
+                                    profile = (editorTarget as? ProfileEditorTarget.Edit)?.profile,
+                                    onBack = { editorTarget = null },
+                                    onSaved = { editorTarget = null },
+                                    embedded = true,
+                                    modifier = focus.fillMaxSize(),
+                                )
+                            }
                         }
                     }
                 }

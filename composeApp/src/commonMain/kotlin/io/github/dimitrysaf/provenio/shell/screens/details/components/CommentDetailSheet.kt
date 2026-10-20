@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.sheetHeaderFocus
+import io.github.dimitrysaf.provenio.shell.components.LocalSheetFocus
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import io.github.dimitrysaf.provenio.shell.components.SheetNavigationButton
 import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
@@ -108,6 +110,7 @@ fun CommentDetailSheet(
                 }
 
                 Row(
+                    modifier = Modifier.sheetHeaderFocus(LocalSheetFocus.current),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

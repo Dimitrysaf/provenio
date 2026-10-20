@@ -4,8 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -36,6 +34,7 @@ internal fun ModalSideSheet(
     contentColor: Color,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val startFocused = openedWithKeys()
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -43,15 +42,7 @@ internal fun ModalSideSheet(
         val visibleState = remember { MutableTransitionState(false) }.apply { targetState = true }
         Box(modifier = Modifier.fillMaxSize().recordPressPositions(LocalWindowToken.current)) {
             // The scrim sits behind the sheet, so only a tap outside the sheet dismisses it.
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onDismissRequest,
-                    ),
-            )
+            Box(modifier = Modifier.fillMaxSize().dismissScrim(onDismissRequest))
             AnimatedVisibility(
                 visibleState = visibleState,
                 enter = slideInHorizontally(tween(SideSheetEnterMillis, easing = M3Motion.EmphasizedDecelerate)) { it },
@@ -68,10 +59,12 @@ internal fun ModalSideSheet(
                     color = containerColor,
                     contentColor = contentColor,
                 ) {
-                    Column(
-                        modifier = Modifier.padding(top = 24.dp),
-                        content = content,
-                    )
+                    SheetFocusScope(startFocused) { focus ->
+                        Column(
+                            modifier = focus.padding(top = 24.dp),
+                            content = content,
+                        )
+                    }
                 }
             }
         }

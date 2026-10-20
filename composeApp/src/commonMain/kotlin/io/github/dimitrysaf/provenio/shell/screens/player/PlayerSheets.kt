@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.shell.components.sheetHeaderFocus
+import io.github.dimitrysaf.provenio.shell.components.LocalSheetFocus
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.animation.Crossfade
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
@@ -548,6 +550,7 @@ private fun PlayerSheetHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .sheetHeaderFocus(LocalSheetFocus.current)
             .padding(start = if (onBack == null) StreamsHorizontalPadding else 4.dp, end = 4.dp)
             .padding(bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
