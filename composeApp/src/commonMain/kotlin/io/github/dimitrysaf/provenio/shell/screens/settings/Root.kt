@@ -1,6 +1,32 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.Feedback
+import androidx.compose.material.icons.rounded.Mail
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import io.github.dimitrysaf.provenio.core.diagnostics.deviceDescription
+import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
+import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
+import io.ktor.http.encodeURLParameter
+import provenio.composeapp.generated.resources.about_feedback_title
+import provenio.composeapp.generated.resources.about_feedback_description
+import provenio.composeapp.generated.resources.about_feedback_sheet_description
+import provenio.composeapp.generated.resources.about_feedback_bug
+import provenio.composeapp.generated.resources.about_feedback_bug_description
+import provenio.composeapp.generated.resources.about_feedback_suggestion
+import provenio.composeapp.generated.resources.about_feedback_suggestion_description
+import provenio.composeapp.generated.resources.about_source_code
+import provenio.composeapp.generated.resources.about_contact
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
@@ -52,6 +78,10 @@ import provenio.composeapp.generated.resources.keyboard_shortcuts_title
 import org.jetbrains.compose.resources.stringResource
 
 private const val PRIVACY_POLICY_URL = "https://github.com/Dimitrysaf/provenio#privacy"
+private const val REPOSITORY_URL = "https://github.com/Dimitrysaf/provenio"
+private const val NEW_ISSUE_URL = "$REPOSITORY_URL/issues/new"
+// The plus is escaped so every mail app reads it as part of the address.
+private const val CONTACT_MAIL_URI = "mailto:demetresmeliates%2Bcontact@gmail.com"
 
 /** The categories this build shows: Plugins only where plugins are on, Server only where P2P streaming exists. */
 internal fun visibleSettingsCategories(pluginsEnabled: Boolean): List<SettingsCategory> =
@@ -185,7 +215,10 @@ internal fun LazyListScope.advancedLinksContent(
     }
 }
 
-/** The About page: privacy, licenses and updates, with the app's name and version under them. */
+/**
+ * The About page: privacy, licenses, updates and a way to report a problem, with the app's name,
+ * version, its source code and a way to write in under them.
+ */
 internal fun LazyListScope.aboutSettingsContent(
     isTablet: Boolean,
     onLicensesAttributionsClick: () -> Unit,
@@ -194,6 +227,7 @@ internal fun LazyListScope.aboutSettingsContent(
     item {
         val uriHandler = LocalUriHandler.current
         val updater = AppUpdaterStatus.uiState.collectAsStateWithLifecycle().value
+        var showFeedbackSheet by remember { mutableStateOf(false) }
         SettingsSection(
             title = stringResource(Res.string.compose_settings_root_about_section),
             isTablet = isTablet,
@@ -208,6 +242,12 @@ internal fun LazyListScope.aboutSettingsContent(
                         Icon(imageVector = Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = null)
                     },
                     onClick = { uriHandler.openUri(PRIVACY_POLICY_URL) },
+                )
+                navigationRow(
+                    title = stringResource(Res.string.about_feedback_title),
+                    description = stringResource(Res.string.about_feedback_description),
+                    icon = Icons.Rounded.Feedback,
+                    onClick = { showFeedbackSheet = true },
                 )
                 navigationRow(
                     title = stringResource(Res.string.compose_settings_page_licenses_attributions),
@@ -238,6 +278,36 @@ internal fun LazyListScope.aboutSettingsContent(
                     )
                 }
             }
+        }
+        if (showFeedbackSheet) {
+            val bugReportBody = bugReportBody()
+            SingleChoiceBottomSheet(
+                title = stringResource(Res.string.about_feedback_title),
+                description = stringResource(Res.string.about_feedback_sheet_description),
+                options = listOf(
+                    SingleChoiceOption(
+                        value = FeedbackKind.Bug,
+                        label = stringResource(Res.string.about_feedback_bug),
+                        supportingText = stringResource(Res.string.about_feedback_bug_description),
+                    ),
+                    SingleChoiceOption(
+                        value = FeedbackKind.Suggestion,
+                        label = stringResource(Res.string.about_feedback_suggestion),
+                        supportingText = stringResource(Res.string.about_feedback_suggestion_description),
+                    ),
+                ),
+                isSelected = { false },
+                onSelected = { kind ->
+                    uriHandler.openUri(
+                        when (kind) {
+                            FeedbackKind.Bug ->
+                                "$NEW_ISSUE_URL?template=bug_report.md&body=${bugReportBody.encodeURLParameter()}"
+                            FeedbackKind.Suggestion -> "$NEW_ISSUE_URL?template=suggestion.md"
+                        },
+                    )
+                },
+                onDismiss = { showFeedbackSheet = false },
+            )
         }
     }
     item {
@@ -273,6 +343,50 @@ internal fun LazyListScope.aboutSettingsContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
+            val uriHandler = LocalUriHandler.current
+            Row(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = if (isTablet) 16.dp else 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilledTonalButton(onClick = { uriHandler.openUri(REPOSITORY_URL) }) {
+                    Icon(
+                        imageVector = Icons.Rounded.Code,
+                        contentDescription = null,
+                        modifier = Modifier.size(ButtonDefaults.IconSize),
+                    )
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Text(stringResource(Res.string.about_source_code))
+                }
+                FilledTonalButton(onClick = { uriHandler.openUri(CONTACT_MAIL_URI) }) {
+                    Icon(
+                        imageVector = Icons.Rounded.Mail,
+                        contentDescription = null,
+                        modifier = Modifier.size(ButtonDefaults.IconSize),
+                    )
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Text(stringResource(Res.string.about_contact))
+                }
+            }
         }
     }
+}
+
+private enum class FeedbackKind { Bug, Suggestion }
+
+/**
+ * The bug report template's text with the version and device already filled in. GitHub takes
+ * the template's labels either way; whether it shows this or the template's own text, the
+ * sections are the same.
+ */
+@Composable
+private fun bugReportBody(): String {
+    val version = stringResource(
+        Res.string.compose_about_version_format,
+        AppVersionConfig.VERSION_NAME,
+        AppVersionConfig.VERSION_CODE,
+    )
+    return "**What happened?**\n\n\n**Steps to reproduce**\n\n\n**App version and device**\n" +
+        "Provenio $version, ${deviceDescription()}\n"
 }

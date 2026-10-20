@@ -1,4 +1,13 @@
 <resources>
+    <string name="about_feedback_title">Report a bug or suggest a feature</string>
+    <string name="about_feedback_description">Opens GitHub, where you sign in to send it</string>
+    <string name="about_feedback_sheet_description">Both open a form on GitHub. You need a GitHub account to send it.</string>
+    <string name="about_feedback_bug">Report a bug</string>
+    <string name="about_feedback_bug_description">Something doesn't work right. The app version and device are filled in for you.</string>
+    <string name="about_feedback_suggestion">Suggest a feature</string>
+    <string name="about_feedback_suggestion_description">An idea or something you'd like changed</string>
+    <string name="about_source_code">Source code</string>
+    <string name="about_contact">Contact</string>
     <string name="about_licenses_attributions_subtitle">Data sources, acknowledgements, and platform licenses</string>
     <string name="action_back">Back</string>
     <string name="action_cancel">Cancel</string>
