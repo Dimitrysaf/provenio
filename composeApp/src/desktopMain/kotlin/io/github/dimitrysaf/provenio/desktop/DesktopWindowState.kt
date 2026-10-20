@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.desktop
 
+import io.github.dimitrysaf.provenio.shell.components.AppFullscreen
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -7,7 +8,6 @@ import kotlinx.coroutines.flow.asStateFlow
 /** What the app's windows are doing, for code that on Android would ask the activity. */
 object DesktopWindowState {
     private val mainVisible = MutableStateFlow(true)
-    private val fullscreen = MutableStateFlow(false)
     private val playerWindowOpen = MutableStateFlow(false)
     private val playerWindowVisible = MutableStateFlow(true)
     private val playerFullscreen = MutableStateFlow(false)
@@ -20,8 +20,12 @@ object DesktopWindowState {
     /** False while the window the player is drawn in is minimized or hidden. */
     val isPlayerVisible: StateFlow<Boolean> = playerVisible.asStateFlow()
 
-    /** Asked for by the player when it is in the main window; Main applies it to the window. */
-    val isFullscreen: StateFlow<Boolean> = fullscreen.asStateFlow()
+    /**
+     * Whether the main window is fullscreen, asked for by F11, the fullscreen button or the player
+     * when it is in that window; Main applies it to the window. It is [AppFullscreen]'s state, so
+     * there is one value for all of them to change.
+     */
+    val isFullscreen: StateFlow<Boolean> = AppFullscreen.isFullscreen
 
     /** Asked for by the player in its own window; that window applies it. */
     val isPlayerFullscreen: StateFlow<Boolean> = playerFullscreen.asStateFlow()
@@ -35,7 +39,7 @@ object DesktopWindowState {
     }
 
     fun setFullscreen(value: Boolean) {
-        fullscreen.value = value
+        AppFullscreen.set(value)
     }
 
     fun setPlayerWindowOpen(value: Boolean) {
@@ -57,7 +61,7 @@ object DesktopWindowState {
         if (playerWindowOpen.value) {
             playerFullscreen.value = !playerFullscreen.value
         } else {
-            fullscreen.value = !fullscreen.value
+            AppFullscreen.toggle()
         }
     }
 

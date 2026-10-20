@@ -85,7 +85,6 @@ import java.awt.SystemTray
 import java.io.File
 import kotlin.system.exitProcess
 import io.github.dimitrysaf.provenio.shell.App
-import io.github.dimitrysaf.provenio.shell.components.AppFullscreen
 import io.github.dimitrysaf.provenio.shell.components.AppKeyboardShortcuts
 import org.jetbrains.compose.resources.painterResource
 import provenio.composeapp.generated.resources.Res
@@ -118,13 +117,6 @@ fun main(args: Array<String>) {
         }
         LaunchedEffect(fullscreen) {
             windowState.placement = if (fullscreen) WindowPlacement.Fullscreen else WindowPlacement.Floating
-        }
-        val appFullscreen by AppFullscreen.isFullscreen.collectAsState()
-        LaunchedEffect(appFullscreen) {
-            DesktopWindowState.setFullscreen(appFullscreen)
-        }
-        LaunchedEffect(fullscreen) {
-            AppFullscreen.set(fullscreen)
         }
         LaunchedEffect(windowState.isMinimized, windowVisible) {
             DesktopWindowState.setVisible(windowVisible && !windowState.isMinimized)

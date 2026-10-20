@@ -20,7 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
@@ -172,11 +172,12 @@ internal fun MainTabsDestination(
                 ) {
                     WideNavigationRail(
                         header = {
-                            // The rail sets its header at the start, not the middle, so the symbol
-                            // is centred in a box as wide as the rail and given its own size.
+                            // The rail sets its header at the start, not the middle, and lets it be
+                            // as wide as an expanded rail, so the symbol is centred in a box as wide
+                            // as the collapsed rail and given its own size.
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
+                                    .width(RailCollapsedWidth)
                                     .padding(vertical = 8.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
@@ -251,6 +252,9 @@ private fun NavIcon(
 
 /** The app's symbol at the top of the rail, the height of a destination's icon and label. */
 private val RailLogoHeight = 32.dp
+
+/** The width of a collapsed rail, which Material keeps to itself. */
+private val RailCollapsedWidth = 96.dp
 
 /** The symbol's own width over its height. */
 private const val RailLogoAspectRatio = 160f / 222f
