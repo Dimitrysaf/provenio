@@ -9,9 +9,15 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <!-- Televisions have no touchscreen and may be wired, so none of these is required. -->
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.hardware.wifi" android:required="false" />
+
     <application
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true"
+        android:banner="@drawable/tv_banner_arctic_blue"
         android:icon="@mipmap/ic_launcher_arctic_blue"
         android:label="@string/app_name"
         android:usesCleartextTraffic="true"
@@ -68,6 +74,7 @@
 
         <activity
             android:name="io.github.dimitrysaf.provenio.launcher.AppIconDefault"
+            android:banner="@drawable/tv_banner_arctic_blue"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:enabled="true"
             android:exported="true"
@@ -78,11 +85,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
 
         <activity
             android:name="io.github.dimitrysaf.provenio.launcher.AppIconArcticBlue"
+            android:banner="@drawable/tv_banner_arctic_blue"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:enabled="false"
             android:exported="true"
@@ -93,11 +102,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
 
         <activity
             android:name="io.github.dimitrysaf.provenio.launcher.AppIconOriginal"
+            android:banner="@drawable/tv_banner_original"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:enabled="false"
             android:exported="true"
@@ -108,11 +119,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
 
         <activity
             android:name="io.github.dimitrysaf.provenio.launcher.AppIconEmerald"
+            android:banner="@drawable/tv_banner_emerald"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:enabled="false"
             android:exported="true"
@@ -123,11 +136,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
 
         <activity
             android:name="io.github.dimitrysaf.provenio.launcher.AppIconRoseGold"
+            android:banner="@drawable/tv_banner_rose_gold"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:enabled="false"
             android:exported="true"
@@ -138,11 +153,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
 
         <activity
             android:name="io.github.dimitrysaf.provenio.launcher.AppIconCopper"
+            android:banner="@drawable/tv_banner_copper"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:enabled="false"
             android:exported="true"
@@ -153,11 +170,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
 
         <activity
             android:name="io.github.dimitrysaf.provenio.launcher.AppIconGraphite"
+            android:banner="@drawable/tv_banner_graphite"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:enabled="false"
             android:exported="true"
@@ -168,6 +187,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
 
