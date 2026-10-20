@@ -2517,6 +2517,7 @@
     <string name="torrent_details_legend_cached">Cached on this device</string>
     <string name="torrent_details_legend_seeded">Seeded from this device</string>
     <string name="torrent_details_ready">%1$s ready to play</string>
+    <string name="torrent_details_ready_ahead">%1$s ready ahead</string>
     <string name="torrent_details_of">%1$s of %2$s</string>
     <string name="torrent_details_rtt">%1$d ms</string>
     <string name="torrent_details_unknown_client">Unknown client</string>

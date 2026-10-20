@@ -4,7 +4,6 @@ import io.github.dimitrysaf.provenio.shell.components.SheetNavigationButton
 import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Row
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,14 +16,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.GridView
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -33,9 +29,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.shell.components.EmptyState
+import io.github.dimitrysaf.provenio.shell.components.ExpandableListHeader
 import io.github.dimitrysaf.provenio.shell.components.ModalSheet
 import io.github.dimitrysaf.provenio.shell.components.SelectableListRow
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
@@ -224,10 +220,8 @@ internal fun CatalogPickerSheet(
 }
 
 /**
- * An addon's group header in the catalog picker. Material has no accordion, so this is the
- * disclosure pattern built from a list item: a row with a chevron that turns to point at what it
- * reveals. It is a row of the same group as the catalogs it reveals, so its corners come from its
- * place in that group; only its container tone sets it apart as a header.
+ * An addon's group header in the catalog picker. It is a row of the same group as the catalogs it
+ * reveals, so its corners come from its place in that group.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -238,12 +232,9 @@ private fun CatalogPickerAddonHeader(
     shape: RoundedCornerShape,
     onToggleExpanded: () -> Unit,
 ) {
-    val chevronRotation by animateFloatAsState(
-        targetValue = if (expanded) 180f else 0f,
-        label = "catalogPickerChevron",
-    )
-    SegmentedListItem(
-        onClick = onToggleExpanded,
+    ExpandableListHeader(
+        title = addonName,
+        expanded = expanded,
         shapes = ListItemDefaults.shapes(
             shape = shape,
             selectedShape = shape,
@@ -251,18 +242,8 @@ private fun CatalogPickerAddonHeader(
             focusedShape = shape,
             hoveredShape = shape,
         ),
-        colors = ListItemDefaults.segmentedColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ),
-        supportingContent = { Text(subtitle) },
-        trailingContent = {
-            Icon(
-                imageVector = Icons.Rounded.KeyboardArrowDown,
-                contentDescription = null,
-                modifier = Modifier.rotate(chevronRotation),
-            )
-        },
-    ) {
-        Text(addonName)
-    }
+        onClick = onToggleExpanded,
+        supporting = subtitle,
+        titleMaxLines = Int.MAX_VALUE,
+    )
 }

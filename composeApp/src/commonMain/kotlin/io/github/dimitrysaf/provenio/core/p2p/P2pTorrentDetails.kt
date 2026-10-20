@@ -120,6 +120,15 @@ class P2pPieceMap(
 
     fun count(state: P2pPieceState): Int = (0 until size).count { state(it) == state }
 
+    /** How much of the file is ready to play on from [fraction] of it without a gap, 0..1. */
+    fun readyFractionFrom(fraction: Float): Float {
+        if (size == 0) return 0f
+        val position = fraction.coerceIn(0f, 1f) * size
+        var index = position.toInt().coerceAtMost(size - 1)
+        while (index < size && states[index].toInt() and HaveFlag != 0) index++
+        return ((index - position) / size).coerceIn(0f, 1f)
+    }
+
     companion object {
         const val HaveFlag = 1
         const val DownloadingFlag = 2

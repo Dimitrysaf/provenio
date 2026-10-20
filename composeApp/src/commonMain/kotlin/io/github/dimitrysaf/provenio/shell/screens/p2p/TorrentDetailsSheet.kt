@@ -211,7 +211,7 @@ private fun TorrentDetailsContent(
             item { Subheader(stringResource(Res.string.torrent_details_section_pieces)) }
             item {
                 Section {
-                    shapedRow { shape -> PieceMapCard(pieces, playhead, shape) }
+                    shapedRow { shape -> PieceMapCard(pieces, playhead, details.streamDurationMs, shape) }
                 }
             }
         }
@@ -716,7 +716,7 @@ private fun SpeedGraph(
  * many peers have it.
  */
 @Composable
-private fun PieceMapCard(pieces: P2pPieceMap, playhead: Float?, shape: RoundedCornerShape) {
+private fun PieceMapCard(pieces: P2pPieceMap, playhead: Float?, durationMs: Long?, shape: RoundedCornerShape) {
     val colors = MaterialTheme.colorScheme
     val cachedColor = colors.primary
     val seededColor = colors.tertiary
@@ -734,8 +734,18 @@ private fun PieceMapCard(pieces: P2pPieceMap, playhead: Float?, shape: RoundedCo
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.weight(1f),
                 )
+                // Ready from where the player is when something plays it, so it keeps meaning
+                // something after a seek; from the start of the file otherwise.
+                val readyAhead = playhead?.let(pieces::readyFractionFrom)
                 Text(
-                    text = stringResource(Res.string.torrent_details_ready, percent(pieces.readyFraction)),
+                    text = when {
+                        readyAhead == null -> stringResource(Res.string.torrent_details_ready, percent(pieces.readyFraction))
+                        durationMs != null && durationMs > 0L -> stringResource(
+                            Res.string.torrent_details_ready_ahead,
+                            formatDuration((readyAhead * durationMs / 1000f).toLong()),
+                        )
+                        else -> stringResource(Res.string.torrent_details_ready_ahead, percent(readyAhead))
+                    },
                     style = MaterialTheme.typography.labelLarge,
                     color = colors.primary,
                 )

@@ -1,12 +1,10 @@
 package io.github.dimitrysaf.provenio.shell.screens.streams
 
-import androidx.compose.animation.core.animateFloatAsState
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.Extension
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.LiveTv
@@ -30,7 +27,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
@@ -49,6 +44,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
+import io.github.dimitrysaf.provenio.shell.components.ExpandableListHeader
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
@@ -277,57 +273,30 @@ private fun StreamGroupRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val chevronRotation by animateFloatAsState(
-        targetValue = if (expanded) 180f else 0f,
-        label = "stream_group_chevron",
-    )
-
-    SegmentedListItem(
-        onClick = onClick,
+    ExpandableListHeader(
+        title = group.addonName,
+        expanded = expanded,
         shapes = shapes,
+        onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        colors = ListItemDefaults.segmentedColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ),
+        count = group.streams.size.takeIf { it > 0 },
         leadingContent = if (showAddonLogo) {
             { StreamAddonIcon(logo = group.addonLogo, addonName = group.addonName, fallbackIcon = group.sourceIcon()) }
         } else {
             null
         },
-        trailingContent = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                if (group.isLoading) {
-                    // Indeterminate: an add-on reports no progress, only that it is still asked.
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(GroupLoadingIndicatorSize),
-                        strokeWidth = GroupLoadingIndicatorStroke,
-                    )
-                } else if (group.streams.isNotEmpty()) {
-                    Text(
-                        text = group.streams.size.toString(),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Icon(
-                    imageVector = Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.rotate(chevronRotation),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        status = if (group.isLoading) {
+            {
+                // Indeterminate: an add-on reports no progress, only that it is still asked.
+                CircularProgressIndicator(
+                    modifier = Modifier.size(GroupLoadingIndicatorSize),
+                    strokeWidth = GroupLoadingIndicatorStroke,
                 )
             }
+        } else {
+            null
         },
-    ) {
-        Text(
-            text = group.addonName,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
+    )
 }
 
 /** The add-on's own icon, or a stand-in for the add-ons that ship without one. */
