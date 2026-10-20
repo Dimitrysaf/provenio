@@ -3,12 +3,6 @@ package io.github.dimitrysaf.provenio.shell.screens.settings
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.rounded.Code
-import androidx.compose.material.icons.rounded.Feedback
-import androidx.compose.material.icons.rounded.Mail
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +27,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Keyboard
@@ -246,7 +241,7 @@ internal fun LazyListScope.aboutSettingsContent(
                 navigationRow(
                     title = stringResource(Res.string.about_feedback_title),
                     description = stringResource(Res.string.about_feedback_description),
-                    icon = Icons.Rounded.Feedback,
+                    icon = Icons.Rounded.BugReport,
                     onClick = { showFeedbackSheet = true },
                 )
                 navigationRow(
@@ -351,21 +346,9 @@ internal fun LazyListScope.aboutSettingsContent(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 FilledTonalButton(onClick = { uriHandler.openUri(REPOSITORY_URL) }) {
-                    Icon(
-                        imageVector = Icons.Rounded.Code,
-                        contentDescription = null,
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
-                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                     Text(stringResource(Res.string.about_source_code))
                 }
                 FilledTonalButton(onClick = { uriHandler.openUri(CONTACT_MAIL_URI) }) {
-                    Icon(
-                        imageVector = Icons.Rounded.Mail,
-                        contentDescription = null,
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
-                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                     Text(stringResource(Res.string.about_contact))
                 }
             }
