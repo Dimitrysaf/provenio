@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Search
@@ -388,6 +389,15 @@ internal fun settingsSearchEntries(
         pageLabel = layoutPage,
         section = stringResource(Res.string.settings_appearance_section_display),
         icon = Icons.Rounded.Language,
+    )
+    addRow(
+        page = SettingsPage.Appearance,
+        key = "tv-layout",
+        title = stringResource(Res.string.settings_appearance_tv_layout),
+        description = stringResource(Res.string.settings_appearance_tv_layout_description),
+        pageLabel = layoutPage,
+        section = stringResource(Res.string.settings_appearance_section_display),
+        icon = Icons.Rounded.Tv,
     )
     addRow(
         page = SettingsPage.Advanced,

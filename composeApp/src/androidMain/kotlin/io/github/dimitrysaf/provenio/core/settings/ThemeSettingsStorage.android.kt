@@ -1,6 +1,9 @@
 package io.github.dimitrysaf.provenio.core.settings
 
+import android.app.UiModeManager
 import android.content.Context
+import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
@@ -20,14 +23,19 @@ actual object ThemeSettingsStorage {
     private const val themeModeKey = "theme_mode"
     private const val colorPaletteKey = "color_palette"
     private const val displayScaleKey = "display_scale"
+    private const val tvLayoutKey = "tv_layout"
     private val profileScopedSyncKeys = listOf(
         amoledEnabledKey,
     )
 
     private var preferences: SharedPreferences? = null
+    private var television = false
 
     fun initialize(context: Context) {
         preferences = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
+        val uiMode = context.getSystemService(UiModeManager::class.java)?.currentModeType
+        television = uiMode == Configuration.UI_MODE_TYPE_TELEVISION ||
+            context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
         applySelectedAppLanguage(loadSelectedAppLanguage() ?: AppLanguage.DEVICE.code)
     }
 
@@ -60,6 +68,16 @@ actual object ThemeSettingsStorage {
 
     actual fun saveDisplayScale(key: String) {
         preferences?.edit()?.putString(displayScaleKey, key)?.apply()
+    }
+
+    actual val isTelevision: Boolean
+        get() = television
+
+    actual fun loadTvLayout(): Boolean? =
+        preferences?.let { prefs -> if (prefs.contains(tvLayoutKey)) prefs.getBoolean(tvLayoutKey, false) else null }
+
+    actual fun saveTvLayout(enabled: Boolean) {
+        preferences?.edit()?.putBoolean(tvLayoutKey, enabled)?.apply()
     }
 
     actual fun loadSelectedAppLanguage(): String? {

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
+import androidx.compose.ui.focus.focusProperties
 import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
@@ -65,6 +66,9 @@ fun ProfileSwitcherTab(
             .onSecondaryClick {
                 if (profiles.isNotEmpty()) showSheet = true
             }
+            // The rail or bar item around it takes focus and the click; a second, unmarked stop
+            // here would leave a remote or a keyboard on nothing it can see.
+            .focusProperties { canFocus = false }
             .combinedClickable(
             interactionSource = remember { MutableInteractionSource() },
             indication = null,

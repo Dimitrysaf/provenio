@@ -831,6 +831,7 @@ internal data class SettingsData(
     val colorPalette: ColorPalette,
     val dynamicColorAvailable: Boolean,
     val displayScale: DisplayScaleOption,
+    val tvLayout: Boolean,
     val appIconState: AppIconSettingsState,
     val onAppIconSelected: (AppIconOption) -> Unit,
     val selectedAppLanguage: AppLanguage,
@@ -865,6 +866,7 @@ internal fun rememberSettingsData(): SettingsData {
     val themeMode by remember { ThemeSettingsRepository.themeMode }.collectAsStateWithLifecycle()
     val colorPalette by remember { ThemeSettingsRepository.colorPalette }.collectAsStateWithLifecycle()
     val displayScale by remember { ThemeSettingsRepository.displayScale }.collectAsStateWithLifecycle()
+    val tvLayout by remember { ThemeSettingsRepository.tvLayout }.collectAsStateWithLifecycle()
     val dynamicColorAvailable = remember { isDynamicColorAvailable() }
     val appIconState by remember {
         AppIconRepository.ensureLoaded()
@@ -958,6 +960,7 @@ internal fun rememberSettingsData(): SettingsData {
         colorPalette = colorPalette,
         dynamicColorAvailable = dynamicColorAvailable,
         displayScale = displayScale,
+        tvLayout = tvLayout,
         appIconState = appIconState,
         onAppIconSelected = { icon -> appIconScope.launch { AppIconRepository.select(icon) } },
         selectedAppLanguage = selectedAppLanguage,
@@ -1052,6 +1055,8 @@ internal fun LazyListScope.settingsPageContent(
                 onColorPaletteSelected = ThemeSettingsRepository::setColorPalette,
                 displayScale = data.displayScale,
                 onDisplayScaleSelected = ThemeSettingsRepository::setDisplayScale,
+                tvLayout = data.tvLayout,
+                onTvLayoutToggle = ThemeSettingsRepository::setTvLayout,
                 appIconState = data.appIconState,
                 onAppIconSelected = data.onAppIconSelected,
                 onAppIconFailureDismissed = AppIconRepository::clearFailure,

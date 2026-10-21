@@ -13,7 +13,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -34,7 +33,15 @@ import androidx.compose.material3.NavigationItemIconPosition
 import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.WideNavigationRail
+import androidx.compose.material3.WideNavigationRailDefaults
+import androidx.compose.material3.rememberWideNavigationRailState
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
+import io.github.dimitrysaf.provenio.shell.components.openedWithKeys
 import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -161,16 +168,35 @@ internal fun MainTabsDestination(
             useNativeBottomTabs -> content()
 
             useRail -> {
-                // Collapsed only. The menu is optional in the rail's anatomy, and the expanded
-                // variant exists to reveal secondary destinations — with four items and nothing
-                // hidden behind them there is nothing for it to reveal, and the collapsed rail
-                // already sits inside the 3–7 item range it is specified for.
-                Row(
+                // Collapsed, until a remote or a keyboard moves focus into it: then it expands to
+                // name its destinations, as there is no hovering over an icon to learn what it
+                // is. A mouse or a touch never expands it, as the mouse sets the input mode to
+                // touch and neither ever focuses a destination. It expands over the page rather
+                // than pushing it aside, so the page does not reflow each time focus passes
+                // through.
+                val railState = rememberWideNavigationRailState()
+                var railHasFocus by remember { mutableStateOf(false) }
+                val railExpanded = railHasFocus && openedWithKeys()
+                LaunchedEffect(railExpanded) {
+                    if (railExpanded) railState.expand() else railState.collapse()
+                }
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .alpha(if (initialHomeReady) 1f else 0f),
                 ) {
+                    ProvidePosterAreaWidth(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .windowInsetsPadding(WideNavigationRailDefaults.windowInsets.only(WindowInsetsSides.Start))
+                            .padding(start = RailCollapsedWidth),
+                    ) { content() }
+
                     WideNavigationRail(
+                        state = railState,
+                        modifier = Modifier
+                            .shadow(if (railExpanded) ExpandedRailElevation else 0.dp)
+                            .onFocusChanged { railHasFocus = it.hasFocus },
                         header = {
                             // The rail sets its header at the start, not the middle, and lets it be
                             // as wide as an expanded rail, so the symbol is centred in a box as wide
@@ -189,21 +215,20 @@ internal fun MainTabsDestination(
                             }
                         },
                     ) {
-                        // On tablets, centre the destinations so they are easier to reach.
-                        Spacer(modifier = Modifier.weight(1f))
+                        // The rail gives each of its children a destination's height, so these
+                        // leave a destination's space before and after them.
+                        Spacer(modifier = Modifier)
                         destinations.forEach { destination ->
                             WideNavigationRailItem(
                                 selected = selectedTab == destination.tab,
                                 onClick = { onTabSelected(destination.tab) },
                                 icon = destination.icon,
                                 label = { Text(destination.label) },
-                                railExpanded = false,
+                                railExpanded = railExpanded,
                             )
                         }
-                        Spacer(modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier)
                     }
-
-                    ProvidePosterAreaWidth(modifier = Modifier.weight(1f)) { content() }
                 }
             }
 
@@ -255,6 +280,9 @@ private val RailLogoHeight = 32.dp
 
 /** The width of a collapsed rail, which Material keeps to itself. */
 private val RailCollapsedWidth = 96.dp
+
+/** An expanded rail lies over the page, so it takes the second elevation level to stand apart. */
+private val ExpandedRailElevation = 3.dp
 
 /** The symbol's own width over its height. */
 private const val RailLogoAspectRatio = 160f / 222f

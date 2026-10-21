@@ -15,6 +15,8 @@ import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.settings_appearance_tv_layout
+import provenio.composeapp.generated.resources.settings_appearance_tv_layout_description
 import provenio.composeapp.generated.resources.settings_content_discovery_meta_screen_description
 import provenio.composeapp.generated.resources.compose_settings_page_meta_screen
 import provenio.composeapp.generated.resources.compose_settings_page_continue_watching
@@ -61,6 +63,8 @@ internal fun LazyListScope.appearanceSettingsContent(
     onColorPaletteSelected: (ColorPalette) -> Unit,
     displayScale: DisplayScaleOption,
     onDisplayScaleSelected: (DisplayScaleOption) -> Unit,
+    tvLayout: Boolean,
+    onTvLayoutToggle: (Boolean) -> Unit,
     appIconState: AppIconSettingsState,
     onAppIconSelected: (AppIconOption) -> Unit,
     onAppIconFailureDismissed: () -> Unit,
@@ -133,6 +137,12 @@ internal fun LazyListScope.appearanceSettingsContent(
                     title = stringResource(Res.string.settings_appearance_app_language),
                     description = stringResource(selectedAppLanguage.labelRes),
                     onClick = { showLanguageSheet = true },
+                )
+                switchRow(
+                    title = stringResource(Res.string.settings_appearance_tv_layout),
+                    description = stringResource(Res.string.settings_appearance_tv_layout_description),
+                    checked = { tvLayout },
+                    onCheckedChange = onTvLayoutToggle,
                 )
             }
         }

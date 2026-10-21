@@ -741,6 +741,8 @@
     <string name="poster_logo_content_description">%1$s logo</string>
     <string name="settings_appearance_amoled_black">AMOLED Black</string>
     <string name="settings_appearance_amoled_description">Use pure black backgrounds for OLED screens.</string>
+    <string name="settings_appearance_tv_layout">TV layout</string>
+    <string name="settings_appearance_tv_layout_description">Lay out the app for a TV and its remote. On by default on TVs.</string>
     <string name="settings_appearance_theme">Theme</string>
     <string name="settings_appearance_theme_system">Automatic</string>
     <string name="settings_appearance_theme_system_description">Match your device's light or dark setting</string>
