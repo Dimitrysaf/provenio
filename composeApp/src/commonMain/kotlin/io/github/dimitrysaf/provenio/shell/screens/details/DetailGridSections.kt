@@ -40,7 +40,7 @@ internal class DetailShelfGridContext(
  * A details page shelf as a grid: its title, which opens and closes it, then each row of items as
  * a list item of its own, so only the rows on screen are composed and only their images load.
  * Items keep their own width ([cellWidth]); spare width goes into the gaps. [footer] follows the
- * rows, for a source credit or the next page of comments, and shows even with no rows.
+ * rows, for a source credit, and shows even with no rows.
  * With [previewRows] above 0, only that many rows show until Show All next to the title opens the rest.
  */
 internal fun <T> LazyListScope.detailShelfGrid(
