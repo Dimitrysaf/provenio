@@ -15,8 +15,6 @@ import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import provenio.composeapp.generated.resources.Res
-import provenio.composeapp.generated.resources.settings_appearance_tv_layout
-import provenio.composeapp.generated.resources.settings_appearance_tv_layout_description
 import provenio.composeapp.generated.resources.settings_appearance_scrollbar_focus
 import provenio.composeapp.generated.resources.settings_appearance_scrollbar_focus_description
 import provenio.composeapp.generated.resources.settings_content_discovery_meta_screen_description
@@ -65,8 +63,6 @@ internal fun LazyListScope.appearanceSettingsContent(
     onColorPaletteSelected: (ColorPalette) -> Unit,
     displayScale: DisplayScaleOption,
     onDisplayScaleSelected: (DisplayScaleOption) -> Unit,
-    tvLayout: Boolean,
-    onTvLayoutToggle: (Boolean) -> Unit,
     scrollbarFocus: Boolean,
     onScrollbarFocusToggle: (Boolean) -> Unit,
     appIconState: AppIconSettingsState,
@@ -141,12 +137,6 @@ internal fun LazyListScope.appearanceSettingsContent(
                     title = stringResource(Res.string.settings_appearance_app_language),
                     description = stringResource(selectedAppLanguage.labelRes),
                     onClick = { showLanguageSheet = true },
-                )
-                switchRow(
-                    title = stringResource(Res.string.settings_appearance_tv_layout),
-                    description = stringResource(Res.string.settings_appearance_tv_layout_description),
-                    checked = { tvLayout },
-                    onCheckedChange = onTvLayoutToggle,
                 )
                 switchRow(
                     title = stringResource(Res.string.settings_appearance_scrollbar_focus),

@@ -846,7 +846,6 @@ internal data class SettingsData(
     val colorPalette: ColorPalette,
     val dynamicColorAvailable: Boolean,
     val displayScale: DisplayScaleOption,
-    val tvLayout: Boolean,
     val scrollbarFocus: Boolean,
     val appIconState: AppIconSettingsState,
     val onAppIconSelected: (AppIconOption) -> Unit,
@@ -882,7 +881,6 @@ internal fun rememberSettingsData(): SettingsData {
     val themeMode by remember { ThemeSettingsRepository.themeMode }.collectAsStateWithLifecycle()
     val colorPalette by remember { ThemeSettingsRepository.colorPalette }.collectAsStateWithLifecycle()
     val displayScale by remember { ThemeSettingsRepository.displayScale }.collectAsStateWithLifecycle()
-    val tvLayout by remember { ThemeSettingsRepository.tvLayout }.collectAsStateWithLifecycle()
     val scrollbarFocus by remember { ThemeSettingsRepository.scrollbarFocus }.collectAsStateWithLifecycle()
     val dynamicColorAvailable = remember { isDynamicColorAvailable() }
     val appIconState by remember {
@@ -977,7 +975,6 @@ internal fun rememberSettingsData(): SettingsData {
         colorPalette = colorPalette,
         dynamicColorAvailable = dynamicColorAvailable,
         displayScale = displayScale,
-        tvLayout = tvLayout,
         scrollbarFocus = scrollbarFocus,
         appIconState = appIconState,
         onAppIconSelected = { icon -> appIconScope.launch { AppIconRepository.select(icon) } },
@@ -1073,8 +1070,6 @@ internal fun LazyListScope.settingsPageContent(
                 onColorPaletteSelected = ThemeSettingsRepository::setColorPalette,
                 displayScale = data.displayScale,
                 onDisplayScaleSelected = ThemeSettingsRepository::setDisplayScale,
-                tvLayout = data.tvLayout,
-                onTvLayoutToggle = ThemeSettingsRepository::setTvLayout,
                 scrollbarFocus = data.scrollbarFocus,
                 onScrollbarFocusToggle = ThemeSettingsRepository::setScrollbarFocus,
                 appIconState = data.appIconState,

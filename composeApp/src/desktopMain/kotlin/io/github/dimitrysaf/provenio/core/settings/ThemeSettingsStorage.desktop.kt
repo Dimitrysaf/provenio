@@ -19,7 +19,6 @@ actual object ThemeSettingsStorage {
     private const val themeModeKey = "theme_mode"
     private const val colorPaletteKey = "color_palette"
     private const val displayScaleKey = "display_scale"
-    private const val tvLayoutKey = "tv_layout"
     private const val scrollbarFocusKey = "scrollbar_focus"
     private val profileScopedSyncKeys = listOf(
         amoledEnabledKey,
@@ -55,15 +54,6 @@ actual object ThemeSettingsStorage {
 
     actual fun saveColorPalette(key: String) {
         preferences?.edit()?.putString(colorPaletteKey, key)?.apply()
-    }
-
-    actual val isTelevision: Boolean = false
-
-    actual fun loadTvLayout(): Boolean? =
-        preferences?.let { prefs -> if (prefs.contains(tvLayoutKey)) prefs.getBoolean(tvLayoutKey, false) else null }
-
-    actual fun saveTvLayout(enabled: Boolean) {
-        preferences?.edit()?.putBoolean(tvLayoutKey, enabled)?.apply()
     }
 
     actual fun loadScrollbarFocus(): Boolean? =

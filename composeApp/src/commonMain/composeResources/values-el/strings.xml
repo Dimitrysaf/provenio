@@ -771,8 +771,6 @@
     <string name="poster_logo_content_description">Λογότυπο %1$s</string>
     <string name="settings_appearance_amoled_black">AMOLED Μαύρο</string>
     <string name="settings_appearance_amoled_description">Χρήση καθαρού μαύρου φόντου για οθόνες OLED.</string>
-    <string name="settings_appearance_tv_layout">Διάταξη τηλεόρασης</string>
-    <string name="settings_appearance_tv_layout_description">Προσαρμογή της εφαρμογής για τηλεόραση και τηλεχειριστήριο. Ενεργή από προεπιλογή στις τηλεοράσεις.</string>
     <string name="settings_appearance_scrollbar_focus">Εστίαση γραμμής κύλισης</string>
     <string name="settings_appearance_scrollbar_focus_description">Πατήστε δεξιά τρεις φορές γρήγορα για να μεταβείτε στη γραμμή κύλισης της σελίδας και, στη συνέχεια, κάντε κύλιση με πάνω και κάτω. Μια σελίδα χωρίς στοιχεία προς επιλογή κάνει κύλιση με αυτόν τον τρόπο από μόνη της.</string>
     <string name="settings_appearance_theme">Θέμα</string>

@@ -16,7 +16,6 @@ actual object ThemeSettingsStorage {
     private const val themeModeKey = "theme_mode"
     private const val colorPaletteKey = "color_palette"
     private const val displayScaleKey = "display_scale"
-    private const val tvLayoutKey = "tv_layout"
     private const val scrollbarFocusKey = "scrollbar_focus"
     private val profileScopedSyncKeys = listOf(
         amoledEnabledKey,
@@ -52,17 +51,6 @@ actual object ThemeSettingsStorage {
 
     actual fun saveDisplayScale(key: String) {
         NSUserDefaults.standardUserDefaults.setObject(key, forKey = displayScaleKey)
-    }
-
-    actual val isTelevision: Boolean = false
-
-    actual fun loadTvLayout(): Boolean? {
-        val defaults = NSUserDefaults.standardUserDefaults
-        return if (defaults.objectForKey(tvLayoutKey) != null) defaults.boolForKey(tvLayoutKey) else null
-    }
-
-    actual fun saveTvLayout(enabled: Boolean) {
-        NSUserDefaults.standardUserDefaults.setBool(enabled, forKey = tvLayoutKey)
     }
 
     actual fun loadScrollbarFocus(): Boolean? {

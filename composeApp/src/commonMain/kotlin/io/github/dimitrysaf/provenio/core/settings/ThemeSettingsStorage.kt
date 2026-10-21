@@ -12,10 +12,6 @@ internal expect object ThemeSettingsStorage {
     fun loadDisplayScale(): String?
     fun saveDisplayScale(key: String)
 
-    /** Whether this device is a television, which takes the TV layout until it is set. */
-    val isTelevision: Boolean
-    fun loadTvLayout(): Boolean?
-    fun saveTvLayout(enabled: Boolean)
     fun loadScrollbarFocus(): Boolean?
     fun saveScrollbarFocus(enabled: Boolean)
     fun loadSelectedAppLanguage(): String?

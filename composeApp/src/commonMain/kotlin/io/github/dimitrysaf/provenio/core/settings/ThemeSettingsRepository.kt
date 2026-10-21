@@ -17,11 +17,6 @@ object ThemeSettingsRepository {
     private val _displayScale = MutableStateFlow(DisplayScaleOption.AUTOMATIC)
     internal val displayScale: StateFlow<DisplayScaleOption> = _displayScale.asStateFlow()
 
-    private val _tvLayout = MutableStateFlow(false)
-
-    /** Whether the app is laid out for a TV and its remote, on a TV or anywhere it is turned on. */
-    val tvLayout: StateFlow<Boolean> = _tvLayout.asStateFlow()
-
     private val _scrollbarFocus = MutableStateFlow(false)
 
     /** Whether three quick presses of the right arrow move focus to a page's scrollbar. */
@@ -47,7 +42,6 @@ object ThemeSettingsRepository {
         _themeMode.value = ThemeMode.SYSTEM
         _colorPalette.value = ColorPalette.Dynamic
         _displayScale.value = DisplayScaleOption.AUTOMATIC
-        _tvLayout.value = ThemeSettingsStorage.isTelevision
         _scrollbarFocus.value = false
         _selectedAppLanguage.value = AppLanguage.DEVICE
     }
@@ -58,7 +52,6 @@ object ThemeSettingsRepository {
         _themeMode.value = ThemeMode.fromCode(ThemeSettingsStorage.loadThemeMode())
         _colorPalette.value = ColorPalette.fromKey(ThemeSettingsStorage.loadColorPalette())
         _displayScale.value = DisplayScaleOption.fromKey(ThemeSettingsStorage.loadDisplayScale())
-        _tvLayout.value = ThemeSettingsStorage.loadTvLayout() ?: ThemeSettingsStorage.isTelevision
         _scrollbarFocus.value = ThemeSettingsStorage.loadScrollbarFocus() ?: false
         val appLanguage = AppLanguage.fromCode(ThemeSettingsStorage.loadSelectedAppLanguage())
         ThemeSettingsStorage.applySelectedAppLanguage(appLanguage.code)
@@ -91,13 +84,6 @@ object ThemeSettingsRepository {
         if (_displayScale.value == option) return
         _displayScale.value = option
         ThemeSettingsStorage.saveDisplayScale(option.key)
-    }
-
-    fun setTvLayout(enabled: Boolean) {
-        ensureLoaded()
-        if (_tvLayout.value == enabled) return
-        _tvLayout.value = enabled
-        ThemeSettingsStorage.saveTvLayout(enabled)
     }
 
     fun setScrollbarFocus(enabled: Boolean) {
