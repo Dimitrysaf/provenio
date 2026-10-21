@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -137,7 +138,11 @@ fun ScreenScaffold(
                 navigationIcon = {
                     if (onBack != null) {
                         WithTooltip(stringResource(Res.string.action_back)) {
-                            IconButton(onClick = onBack) {
+                            // Down goes into the content, to the first item shown.
+                            IconButton(
+                                onClick = onBack,
+                                modifier = Modifier.focusProperties { down = arrowKeyScroll.content },
+                            ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                                     contentDescription = stringResource(Res.string.action_back),

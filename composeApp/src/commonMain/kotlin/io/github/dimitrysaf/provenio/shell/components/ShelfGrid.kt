@@ -138,7 +138,7 @@ fun <T> ShelfGridRow(
 ) {
     androidx.compose.ui.layout.Layout(
         content = { items.forEach { item -> cell(item) } },
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().leftLeavesToRail(),
     ) { measurables, constraints ->
         val width = constraints.maxWidth
         val spacingPx = spacing.roundToPx()

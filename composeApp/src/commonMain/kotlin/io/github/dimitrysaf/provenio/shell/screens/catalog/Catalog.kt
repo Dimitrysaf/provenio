@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.catalog
 
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.FocusRequester
 import io.github.dimitrysaf.provenio.shell.components.PosterLandscapeAspectRatio
 import io.github.dimitrysaf.provenio.shell.components.PosterPortraitAspectRatio
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
@@ -171,6 +174,8 @@ fun CatalogScreen(
     // title as the grid scrolls instead of holding a third of the screen for good.
     val nativeNavigation = LocalUseNativeNavigation.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    // Down from the back button goes into the grid, to the first title shown.
+    val gridFocus = remember { FocusRequester() }
 
     Scaffold(
         modifier = modifier
@@ -198,7 +203,10 @@ fun CatalogScreen(
                     },
                     navigationIcon = {
                         WithTooltip(stringResource(Res.string.action_back)) {
-                            IconButton(onClick = onBack) {
+                            IconButton(
+                                onClick = onBack,
+                                modifier = Modifier.focusProperties { down = gridFocus },
+                            ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                                     contentDescription = stringResource(Res.string.action_back),
@@ -221,7 +229,7 @@ fun CatalogScreen(
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
                 state = gridState,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().focusRequester(gridFocus),
                 contentPadding = PaddingValues(
                     start = 16.dp,
                     top = innerPadding.calculateTopPadding() +

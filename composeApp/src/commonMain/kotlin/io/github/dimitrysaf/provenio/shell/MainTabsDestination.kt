@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.shell.components.LocalRailFocus
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawOutline
@@ -75,6 +76,9 @@ import io.github.dimitrysaf.provenio.shell.screens.settings.AppBrandSymbol
 import io.github.dimitrysaf.provenio.shell.screens.settings.AppBrandWordmark
 import io.github.dimitrysaf.provenio.core.build.AppVersionConfig
 import androidx.compose.animation.Crossfade
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.material3.MaterialTheme
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.compose_nav_home
@@ -229,12 +233,33 @@ internal fun MainTabsDestination(
                             .fillMaxSize()
                             .windowInsetsPadding(WideNavigationRailDefaults.windowInsets.only(WindowInsetsSides.Start))
                             .padding(start = RailCollapsedWidth),
-                    ) { content() }
+                    ) {
+                        CompositionLocalProvider(LocalRailFocus provides destinationFocus.getValue(selectedTab)) {
+                            content()
+                        }
+                    }
 
+                    // Expanded, the rail is over the page, which a scrim dims beneath it; the
+                    // page stays where it is, and only draws dimmer.
+                    val scrimAlpha by animateFloatAsState(
+                        targetValue = if (railExpanded) ExpandedRailScrimAlpha else 0f,
+                        label = "rail_scrim",
+                    )
+                    if (scrimAlpha > 0f) {
+                        val scrim = MaterialTheme.colorScheme.scrim
+                        Box(modifier = Modifier.fillMaxSize().drawBehind { drawRect(scrim.copy(alpha = scrimAlpha)) })
+                    }
+
+                    val railCorner by animateDpAsState(
+                        targetValue = if (railExpanded) ExpandedRailCorner else 0.dp,
+                        label = "rail_corner",
+                    )
+                    val railShape = RoundedCornerShape(topEnd = railCorner, bottomEnd = railCorner)
                     WideNavigationRail(
                         state = railState,
+                        shape = railShape,
                         modifier = Modifier
-                            .shadow(if (railExpanded) ExpandedRailElevation else 0.dp)
+                            .shadow(if (railExpanded) ExpandedRailElevation else 0.dp, railShape)
                             .onFocusChanged { railHasFocus = it.hasFocus },
                         header = {
                             // The rail sets its header at the start, not the middle, and lets it be
@@ -411,6 +436,12 @@ private val RailCollapsedWidth = 96.dp
 
 /** An expanded rail lies over the page, so it takes the second elevation level to stand apart. */
 private val ExpandedRailElevation = 3.dp
+
+/** The spec's scrim opacity behind a modal rail. */
+private const val ExpandedRailScrimAlpha = 0.32f
+
+/** The corners at the end of an expanded rail, as the spec rounds a modal one's. */
+private val ExpandedRailCorner = 16.dp
 
 /** The symbol's own width over its height. */
 private const val RailLogoAspectRatio = 160f / 222f
