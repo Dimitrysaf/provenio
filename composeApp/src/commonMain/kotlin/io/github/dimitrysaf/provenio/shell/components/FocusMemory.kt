@@ -100,7 +100,9 @@ internal object FocusMemory {
     internal fun restore(): Boolean {
         val lost = lostAt
         val afterSheet = sheetClosedRecently()
-        for (key in history.reversed()) {
+        // Not history.reversed(): built against a newer Java, that is a method of the set itself,
+        // which Android before 15 does not have, and calling it crashes the app.
+        for (key in history.toList().asReversed()) {
             val item = shown[key] ?: continue
             // Shown again around when focus was lost, as a page come back to is.
             val shownAgain = lost != null && item.since.elapsedNow() < lost.elapsedNow() + RecentWindow
