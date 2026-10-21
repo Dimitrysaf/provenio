@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.LocalContentColor
 import io.github.dimitrysaf.provenio.shell.components.textActionsMenu
 import io.github.dimitrysaf.provenio.shell.components.rememberTextActionsMenu
 import io.github.dimitrysaf.provenio.shell.components.TextActionsMenu
@@ -381,7 +383,11 @@ fun LibraryScreen(
                             .widthIn(max = SearchBoxMaxWidth),
                         actions = filtersButton,
                     )
-                    viewButtons()
+                    // Beside the box there is no surface to give them a colour, which left an
+                    // unchecked icon button black.
+                    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
+                        viewButtons()
+                    }
                 }
             }
         } else {
