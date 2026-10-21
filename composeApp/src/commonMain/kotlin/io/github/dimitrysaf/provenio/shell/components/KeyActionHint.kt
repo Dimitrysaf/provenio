@@ -18,6 +18,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.build.isDesktop
@@ -30,8 +32,7 @@ import provenio.composeapp.generated.resources.key_hint_more_options_remote
 /**
  * Whether what has focus has more actions than a press. With a finger or a mouse they are a long
  * press or a right-click away, and need no telling; with a remote or a keyboard the item says how
- * to reach them while it has focus. Only something focused with keys shows it, as nothing takes
- * focus from a touch or a click.
+ * to reach them while it has focus. Only something focused while keys are in use shows it.
  */
 internal object KeyActionHint {
     private var owner by mutableStateOf<Any?>(null)
@@ -54,8 +55,12 @@ internal object KeyActionHint {
  */
 @Composable
 fun KeyActionHintHost(modifier: Modifier = Modifier) {
-    // A menu or sheet opened over the item takes the window's focus, and the hint gives way.
-    val focused = KeyActionHint.visible && LocalWindowInfo.current.isWindowFocused
+    // A menu or sheet opened over the item takes the window's focus, and the hint gives way. The
+    // app also moves focus itself, to the first item of a page or back to an item after a sheet,
+    // so focus alone does not mean keys are in use: a finger or a mouse never sees the hint.
+    val focused = KeyActionHint.visible &&
+        LocalWindowInfo.current.isWindowFocused &&
+        LocalInputModeManager.current.inputMode == InputMode.Keyboard
     var shown by remember { mutableStateOf(false) }
     LaunchedEffect(focused) {
         if (focused) {
