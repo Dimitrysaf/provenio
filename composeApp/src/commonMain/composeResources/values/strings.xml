@@ -1264,7 +1264,9 @@
     <string name="settings_trakt_failed_open_browser">Failed to open browser</string>
     <string name="settings_trakt_finish_sign_in">Finish connection approval</string>
     <string name="settings_trakt_intro_description">Sync your watchlist, watch progress, continue watching, scrobbles, and personal lists with Trakt.</string>
-    <string name="settings_trakt_missing_credentials">Missing TRAKT_CLIENT_ID / TRAKT_CLIENT_SECRET in local.properties.</string>
+    <string name="settings_trakt_sync_now">Fetch</string>
+    <string name="settings_trakt_visit">Visit Trakt</string>
+    <string name="settings_trakt_missing_credentials">Trakt isn't available in this build of Provenio.</string>
     <string name="settings_trakt_open_login">Open Trakt Login</string>
     <string name="settings_trakt_save_actions_description">Sync your watchlist, watch progress, continue watching, scrobbles, and personal lists with Trakt.</string>
     <string name="settings_trakt_sign_in_description">Sync your watchlist, watch progress, continue watching, scrobbles, and personal lists with Trakt.</string>
@@ -1283,6 +1285,12 @@
     <string name="tracking_feature_recommendations">Recommendations</string>
     <string name="settings_tracking_approval_redirect">After approval, you will be redirected back automatically.</string>
     <string name="settings_tracking_connect_first">Connect %1$s first</string>
+    <string name="settings_tracking_push">Push</string>
+    <string name="settings_tracking_push_title">Push to %1$s?</string>
+    <string name="settings_tracking_push_message">The watched history and library on this device are added to %1$s. Only what %1$s doesn't have yet is sent, and nothing there is changed or removed. Progress on titles you're partway through stays on this device.</string>
+    <string name="settings_tracking_push_done">Sent to %1$s: %2$d watched, %3$d saved</string>
+    <string name="settings_tracking_push_nothing">%1$s already has everything on this device</string>
+    <string name="settings_tracking_push_failed">%1$d items couldn't be sent to %2$s. Try again later.</string>
     <string name="settings_tracking_disconnect_title">Disconnect %1$s?</string>
     <string name="settings_tracking_disconnect_description">This removes the connection from Provenio. Your data on %1$s stays intact, and unavailable library or progress sources temporarily fall back to Provenio.</string>
     <string name="settings_trakt_disconnect_description">This will disconnect your Trakt account from Provenio.</string>
@@ -1323,12 +1331,12 @@
     <string name="settings_simkl_invalid_callback">Simkl did not accept the sign-in callback. Please try again.</string>
     <string name="settings_simkl_authorization_expired">Simkl code expired. Start again.</string>
     <string name="settings_simkl_sign_in_failed">Could not complete Simkl sign in. Please try again.</string>
-    <string name="settings_simkl_sync_now">Sync now</string>
+    <string name="settings_simkl_sync_now">Fetch</string>
     <string name="settings_simkl_sync_info_action">How syncing works</string>
     <string name="settings_simkl_sync_info_title">How Simkl syncing works</string>
     <string name="settings_simkl_sync_info_description">Provenio automatically checks Simkl at most once every %1$d minutes. Changes made through another app or the Simkl website may take that long to appear.</string>
     <string name="settings_simkl_sync_info_activity">Each refresh first checks whether Simkl reports any changes and downloads only the updates. This follows Simkl’s API rules, reduces unnecessary data use, and helps keep the service stable.</string>
-    <string name="settings_simkl_sync_info_manual">Changes made in Provenio are sent to Simkl immediately. Use Sync now whenever you want Provenio to check for remote changes sooner.</string>
+    <string name="settings_simkl_sync_info_manual">Changes made in Provenio are sent to Simkl immediately. Use Fetch whenever you want Provenio to check for remote changes sooner.</string>
     <string name="settings_simkl_sync_info_library_statuses">Shows placed in Simkl’s On Hold or Dropped lists are hidden from Continue Watching. They remain hidden for as long as they stay in either list.</string>
     <string name="settings_simkl_sync_info_docs">Read the Simkl sync guide</string>
     <string name="settings_simkl_authorization_revoked">Simkl authorization was revoked. Connect again.</string>
@@ -1849,7 +1857,7 @@
     <string name="trakt_library_load_failed">Failed to load Trakt library</string>
     <string name="trakt_list_fallback_title">List %1$d</string>
     <string name="trakt_missing_auth_code">Trakt did not return an authorization code</string>
-    <string name="trakt_missing_credentials">Missing Trakt credentials</string>
+    <string name="trakt_missing_credentials">Trakt isn't available in this build of Provenio.</string>
     <string name="trakt_progress_load_failed">Failed to load Trakt progress</string>
     <string name="trakt_sign_in_complete_failed">Failed to complete Trakt sign in</string>
     <string name="trakt_user_fallback">Trakt user</string>

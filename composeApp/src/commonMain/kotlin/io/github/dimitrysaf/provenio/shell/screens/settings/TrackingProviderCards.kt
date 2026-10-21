@@ -1,5 +1,21 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import provenio.composeapp.generated.resources.settings_tracking_push_failed
+import provenio.composeapp.generated.resources.settings_tracking_push_nothing
+import provenio.composeapp.generated.resources.settings_tracking_push_done
+import provenio.composeapp.generated.resources.settings_tracking_push_message
+import provenio.composeapp.generated.resources.settings_tracking_push_title
+import provenio.composeapp.generated.resources.settings_tracking_push
+import org.jetbrains.compose.resources.getString
+import io.github.dimitrysaf.provenio.shell.components.ToastController
+import io.github.dimitrysaf.provenio.core.tracking.TrackingPushResult
+import io.github.dimitrysaf.provenio.core.tracking.TrackingPush
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.ArrowDownward
+import provenio.composeapp.generated.resources.settings_trakt_visit
+import provenio.composeapp.generated.resources.settings_trakt_sync_now
+import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktProgressRepository
+import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktLibraryRepository
 import androidx.compose.foundation.Image
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.background
@@ -172,8 +188,29 @@ internal fun TraktTrackerCard(
     uiState: TraktAuthUiState,
     connectedRows: (SettingsListScope.() -> Unit)? = null,
 ) {
+    val libraryState by TraktLibraryRepository.uiState.collectAsStateWithLifecycle()
+    val progressState by TraktProgressRepository.uiState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+
     TraktProviderCard(
         uiState = uiState,
+        isSyncing = libraryState.isLoading || progressState.isLoading,
+        syncErrorMessage = libraryState.errorMessage,
+        // The library and lists, and watch progress, fetched again now rather than at the next
+        // automatic refresh.
+        onSyncRequested = {
+            scope.launch {
+                WatchProgressSourceCoordinator.refreshProviderAndActiveSource(
+                    profileId = ProfileRepository.activeProfileId,
+                    providerId = TrackingProviderId.TRAKT,
+                    refreshProvider = {
+                        TraktLibraryRepository.refreshNow()
+                        TraktProgressRepository.refreshNow()
+                        TraktLibraryRepository.uiState.value.errorMessage == null
+                    },
+                )
+            }
+        },
         connectedRows = connectedRows,
         modifier = Modifier.fillMaxWidth(),
     )
@@ -182,6 +219,9 @@ internal fun TraktTrackerCard(
 @Composable
 private fun TraktProviderCard(
     uiState: TraktAuthUiState,
+    isSyncing: Boolean,
+    syncErrorMessage: String?,
+    onSyncRequested: () -> Unit,
     connectedRows: (SettingsListScope.() -> Unit)?,
     modifier: Modifier,
 ) {
@@ -202,17 +242,23 @@ private fun TraktProviderCard(
         connectLabel = stringResource(Res.string.settings_trakt_connect),
         openLoginLabel = stringResource(Res.string.settings_trakt_open_login),
         disconnectLabel = stringResource(Res.string.settings_trakt_disconnect),
+        syncLabel = stringResource(Res.string.settings_trakt_sync_now),
+        isSyncing = isSyncing,
         missingCredentialsMessage = stringResource(Res.string.settings_trakt_missing_credentials),
         statusMessage = uiState.statusMessage.takeUnless {
             uiState.mode == TraktConnectionMode.CONNECTED
         },
-        errorMessage = uiState.errorMessage,
+        errorMessage = uiState.errorMessage ?: syncErrorMessage,
+        websiteLabel = stringResource(Res.string.settings_trakt_visit),
+        websiteUrl = TRAKT_WEBSITE_URL,
         onConnectRequested = TraktAuthRepository::onConnectRequested,
         onResumeAuthorization = {
             TraktAuthRepository.pendingAuthorizationUrl()
                 ?: TraktAuthRepository.onConnectRequested()
         },
         onCancelAuthorization = TraktAuthRepository::onCancelAuthorization,
+        onSyncRequested = onSyncRequested,
+        pushProviderId = TrackingProviderId.TRAKT,
         onDisconnect = TraktAuthRepository::onDisconnectRequested,
         connectedRows = connectedRows,
         modifier = modifier,
@@ -261,6 +307,7 @@ private fun SimklProviderCard(
         onCancelAuthorization = SimklAuthRepository::onCancelAuthorization,
         onSyncRequested = onSyncRequested,
         onInfoRequested = onInfoRequested,
+        pushProviderId = TrackingProviderId.SIMKL,
         onDisconnect = SimklAuthRepository::onDisconnectRequested,
         connectedRows = connectedRows,
         modifier = modifier,
@@ -303,6 +350,7 @@ private fun TrackingProviderCard(
     onCancelAuthorization: () -> Unit,
     onSyncRequested: (() -> Unit)? = null,
     onInfoRequested: (() -> Unit)? = null,
+    pushProviderId: TrackingProviderId? = null,
     onDisconnect: () -> Unit,
     connectedRows: (SettingsListScope.() -> Unit)? = null,
 ) {
@@ -311,6 +359,11 @@ private fun TrackingProviderCard(
     var noticeMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var awaitingResult by rememberSaveable { mutableStateOf(false) }
     var showDisconnectDialog by rememberSaveable { mutableStateOf(false) }
+    var showPushDialog by rememberSaveable { mutableStateOf(false) }
+    val pushingProviders by TrackingPush.pushing.collectAsStateWithLifecycle()
+    val isPushing = pushProviderId != null && pushProviderId in pushingProviders
+    val busy = isSyncing || isPushing
+    val pushLabel = stringResource(Res.string.settings_tracking_push)
 
     // What the service has to say is a reply to pressing something, so it is held until the work
     // settles and then said once, rather than sitting under the button forever.
@@ -335,7 +388,10 @@ private fun TrackingProviderCard(
     val connected = mode == TrackingConnectionCardMode.CONNECTED
     val actions = buildList {
         if (connected && syncLabel != null && onSyncRequested != null) {
-            add(CardMenuAction(syncLabel, Icons.Rounded.Sync, enabled = !isLoading && !isSyncing, onClick = onSyncRequested))
+            add(CardMenuAction(syncLabel, Icons.Rounded.ArrowDownward, enabled = !isLoading && !busy, onClick = onSyncRequested))
+        }
+        if (connected && pushProviderId != null) {
+            add(CardMenuAction(pushLabel, Icons.Rounded.ArrowUpward, enabled = !isLoading && !busy) { showPushDialog = true })
         }
         if (connected && infoLabel != null && onInfoRequested != null) {
             add(CardMenuAction(infoLabel, Icons.Rounded.Info, onClick = onInfoRequested))
@@ -348,7 +404,7 @@ private fun TrackingProviderCard(
                 CardMenuAction(
                     disconnectLabel,
                     Icons.Rounded.LinkOff,
-                    enabled = !isLoading && !isSyncing,
+                    enabled = !isLoading && !busy,
                     destructive = true,
                 ) { showDisconnectDialog = true },
             )
@@ -357,7 +413,7 @@ private fun TrackingProviderCard(
 
     SettingsList(modifier = modifier) {
         shapedRow { shape ->
-            TrackingBrandBanner(brand = brand, shape = shape, actions = actions, busy = isSyncing)
+            TrackingBrandBanner(brand = brand, shape = shape, actions = actions, busy = busy)
         }
         shapedRow { shape ->
             TrackingFeaturesRow(
@@ -396,17 +452,13 @@ private fun TrackingProviderCard(
             TrackingConnectionCardMode.DISCONNECTED -> {
                 navigationRow(
                     title = connectLabel,
-                    description = signInDescription,
+                    // A build without the service's keys cannot connect at all; it says so here
+                    // rather than offering what would only fail.
+                    description = if (credentialsConfigured) signInDescription else missingCredentialsMessage,
                     icon = Icons.Rounded.Link,
-                    enabled = !isLoading,
+                    enabled = !isLoading && credentialsConfigured,
                     trailingContent = { OpensInBrowserIcon() },
                     onClick = {
-                        // Missing keys are a reason connecting cannot run, not a state of the
-                        // service, so they are said when connecting is asked for and not before.
-                        if (!credentialsConfigured) {
-                            noticeMessage = missingCredentialsMessage
-                            return@navigationRow
-                        }
                         awaitingResult = true
                         openUrl(onConnectRequested())
                     },
@@ -425,6 +477,19 @@ private fun TrackingProviderCard(
                     Text(stringResource(Res.string.action_close))
                 }
             },
+        )
+    }
+
+    if (showPushDialog && pushProviderId != null) {
+        TrackingPushDialog(
+            brand = brand,
+            onConfirm = {
+                showPushDialog = false
+                TrackingPush.start(ProfileRepository.activeProfileId, pushProviderId) { result ->
+                    ToastController.show(pushResultMessage(brand, result))
+                }
+            },
+            onDismiss = { showPushDialog = false },
         )
     }
 
@@ -626,6 +691,41 @@ internal fun BoxScope.CardMenu(
 }
 
 @Composable
+private fun TrackingPushDialog(
+    brand: TrackingBrand,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.ArrowUpward, contentDescription = null) },
+        title = { Text(stringResource(Res.string.settings_tracking_push_title, brand.displayName)) },
+        text = { Text(stringResource(Res.string.settings_tracking_push_message, brand.displayName)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(Res.string.settings_tracking_push))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(Res.string.action_cancel))
+            }
+        },
+    )
+}
+
+private suspend fun pushResultMessage(brand: TrackingBrand, result: TrackingPushResult): String = when {
+    result.failed > 0 -> getString(Res.string.settings_tracking_push_failed, result.failed, brand.displayName)
+    result.sentNothing -> getString(Res.string.settings_tracking_push_nothing, brand.displayName)
+    else -> getString(
+        Res.string.settings_tracking_push_done,
+        brand.displayName,
+        result.watchedSent,
+        result.savedSent,
+    )
+}
+
+@Composable
 private fun TrackingDisconnectDialog(
     brand: TrackingBrand,
     onConfirm: () -> Unit,
@@ -771,3 +871,4 @@ private val TrackingBannerHeight = 104.dp
 private val TrackingBannerGlyphSize = 132.dp
 
 private const val SIMKL_WEBSITE_URL = "https://simkl.com"
+private const val TRAKT_WEBSITE_URL = "https://trakt.tv"

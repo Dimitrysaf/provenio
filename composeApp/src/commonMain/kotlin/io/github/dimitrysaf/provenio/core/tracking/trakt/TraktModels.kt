@@ -13,6 +13,8 @@ data class TraktAuthState(
     val userSlug: String? = null,
     val pendingAuthorizationState: String? = null,
     val pendingAuthorizationStartedAtMillis: Long? = null,
+    /** The PKCE secret behind a sign-in under way, which only the code's real recipient has. */
+    val pendingCodeVerifier: String? = null,
 ) {
     val isAuthenticated: Boolean
         get() = !accessToken.isNullOrBlank() && !refreshToken.isNullOrBlank()

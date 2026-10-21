@@ -161,6 +161,7 @@ jobs:
           local-properties-base64: ${{ secrets.PROVENIO_LOCAL_PROPERTIES_BASE64 }}
           keystore-base64: ${{ inputs.channel == 'stable' && secrets.PROVENIO_RELEASE_KEYSTORE_BASE64 || '' }}
           simkl-client-id: ${{ secrets.SIMKL_CLIENT_ID }}
+          trakt-client-id: ${{ secrets.TRAKT_CLIENT_ID }}
 
       - name: Building app
         uses: ./.github/actions/build-app
@@ -255,6 +256,7 @@ jobs:
         with:
           local-properties-base64: ${{ secrets.PROVENIO_LOCAL_PROPERTIES_BASE64 }}
           simkl-client-id: ${{ secrets.SIMKL_CLIENT_ID }}
+          trakt-client-id: ${{ secrets.TRAKT_CLIENT_ID }}
 
       - name: Packaging Flatpak
         uses: ./.github/actions/flatpak
@@ -338,6 +340,7 @@ jobs:
         with:
           local-properties-base64: ${{ secrets.PROVENIO_LOCAL_PROPERTIES_BASE64 }}
           simkl-client-id: ${{ secrets.SIMKL_CLIENT_ID }}
+          trakt-client-id: ${{ secrets.TRAKT_CLIENT_ID }}
 
       - uses: actions/download-artifact@v8
         with:

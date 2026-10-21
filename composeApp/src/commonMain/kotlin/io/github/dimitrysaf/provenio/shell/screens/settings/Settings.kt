@@ -1097,8 +1097,6 @@ internal fun LazyListScope.settingsPageContent(
             advancedSettingsContent(
                 isTablet = isTablet,
                 rememberLastProfileEnabled = data.rememberLastProfileEnabled,
-                traktConnected = data.traktAuth.mode == TraktConnectionMode.CONNECTED,
-                traktEnabled = data.trackingSettings.traktEnabled,
                 onTestUpdateBannerClick = links.onTestUpdateBannerClick,
             )
         }

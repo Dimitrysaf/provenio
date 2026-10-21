@@ -63,7 +63,7 @@ enum class TrackingRefreshIntent {
     /** Lifecycle, startup, reconnect, or other application-driven refresh. */
     AUTOMATIC,
 
-    /** An explicit user action, such as Sync now or pull-to-refresh. */
+    /** An explicit user action, such as Fetch or pull-to-refresh. */
     USER_INITIATED,
 
     /** A successful write or authentication change made the local snapshot stale. */
