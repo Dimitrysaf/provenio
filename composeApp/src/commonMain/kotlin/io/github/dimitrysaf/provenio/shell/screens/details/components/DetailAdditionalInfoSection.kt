@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import androidx.compose.foundation.layout.Arrangement
 import io.github.dimitrysaf.provenio.shell.components.SelectableText
+import io.github.dimitrysaf.provenio.shell.components.TextCopy
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,9 +40,23 @@ fun DetailAdditionalInfoSection(
         modifier = modifier,
         showHeader = showHeader,
     ) {
-        SelectableText(copyText = rows.joinToString("\n") { (label, value) -> "$label: $value" }) {
-            DetailInfoRows(rows = rows)
-        }
+        CopyableDetailInfoRows(meta = meta, rows = rows)
+    }
+}
+
+/** The details table, which copies whole, or just the title. */
+@Composable
+internal fun CopyableDetailInfoRows(
+    meta: MetaDetails,
+    rows: List<Pair<String, String>>,
+    modifier: Modifier = Modifier,
+) {
+    SelectableText(
+        modifier = modifier,
+        copyText = rows.joinToString("\n") { (label, value) -> "$label: $value" },
+        moreCopies = listOf(TextCopy(stringResource(Res.string.action_copy_title), meta.name)),
+    ) {
+        DetailInfoRows(rows = rows)
     }
 }
 
@@ -54,6 +69,7 @@ internal fun detailInfoRows(meta: MetaDetails): List<Pair<String, String>> {
 
     // Every label resolves on every pass, so the composition keeps one shape; missing values drop after.
     val candidates = listOf(
+        stringResource(Res.string.details_title) to meta.name,
         stringResource(Res.string.details_status) to meta.status,
         stringResource(Res.string.details_release_info) to meta.releaseInfo?.let(::formatReleaseDateForDisplay),
         stringResource(Res.string.details_last_aired) to meta.lastAirDate?.let(::formatReleaseDateForDisplay),

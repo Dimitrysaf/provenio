@@ -36,7 +36,7 @@ fun P2pConsentDialog(
                 text = stringResource(Res.string.p2p_consent_body),
                 modifier = Modifier
                     .heightIn(max = 360.dp)
-                    .arrowKeyScrollContent(arrowKeyScroll, bodyScroll)
+                    .arrowKeyScrollContent(arrowKeyScroll, bodyScroll, textOnly = true)
                     .verticalScroll(bodyScroll),
             )
         },

@@ -59,6 +59,7 @@ import androidx.compose.material3.WideNavigationRailDefaults
 import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
+import io.github.dimitrysaf.provenio.shell.components.OpenSheets
 import io.github.dimitrysaf.provenio.shell.components.openedWithKeys
 import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.runtime.Composable
@@ -198,7 +199,8 @@ internal fun MainTabsDestination(
                 // through.
                 val railState = rememberWideNavigationRailState()
                 var railHasFocus by remember { mutableStateOf(false) }
-                val railExpanded = railHasFocus && openedWithKeys()
+                // Not behind a sheet, where focus can be left on it with nothing to see there.
+                val railExpanded = railHasFocus && openedWithKeys() && OpenSheets.count == 0
                 LaunchedEffect(railExpanded) {
                     if (railExpanded) railState.expand() else railState.collapse()
                 }

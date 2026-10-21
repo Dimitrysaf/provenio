@@ -45,39 +45,33 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
- * The scrolling content of a page or a sheet, for a remote or a keyboard. Up and down move focus
- * as usual. Where there is nothing to focus, as on a page of only text, focus goes to the
- * content's scrollbar instead, which up and down then scroll, so none of it is out of reach; left
- * leaves it for the content. Past the last item of a page that has some, they scroll the rest
- * of it without moving focus off that item.
+ * The scrolling content of a page or a sheet, for a remote or a keyboard.
  *
- * With the scrollbar setting on, three quick presses of right reach the scrollbar on any page.
+ * Content with nothing to focus in it, as a page of only text, is a stop of its own: focused, it
+ * shows its scrollbar, which up and down then scroll, and past either end they move on as usual.
+ * In content with items, up and down move between them, and past the last one they scroll the
+ * rest of it without moving focus off that item. With the scrollbar setting on, three quick
+ * presses of right give the keys to the scrollbar there too while focus stays where it is; left,
+ * right, OK or Back hand them back, to the first item shown.
  */
 @Stable
 internal class ArrowKeyScroll {
     internal var state: ScrollableState? = null
     internal var viewportHeight = 0
     internal var running: Job? = null
+    internal val content = FocusRequester()
 
-    internal val scrollbar = FocusRequester()
+    /** The content has nothing to focus in it, so it is focused itself. */
+    internal var textOnly = false
+    internal var contentFocused by mutableStateOf(false)
+    internal var itemFocused = false
 
-    // The content takes focus itself, as its scrollbar, only once that is asked for: otherwise
-    // the arrow keys would find it rather than the items in it.
-    internal var scrollbarFocusable by mutableStateOf(false)
-    internal var scrollbarFocused by mutableStateOf(false)
-    internal var contentHasFocus = false
-    internal var hasContent = false
+    /** The keys are the scrollbar's, from three presses of right. */
+    internal var scrollbarHasKeys by mutableStateOf(false)
+    internal val scrollbarShown: Boolean get() = contentFocused || scrollbarHasKeys
 
     private var rightPresses = 0
     private var lastRightAt = TimeSource.Monotonic.markNow()
-
-    internal fun focusScrollbar(): Boolean {
-        if (!hasContent) return false
-        scrollbarFocusable = true
-        if (scrollbar.requestFocus(FocusDirection.Enter)) return true
-        scrollbarFocusable = false
-        return false
-    }
 
     internal fun scrollBy(scope: CoroutineScope, forward: Boolean): Boolean {
         val state = state ?: return false
@@ -86,6 +80,12 @@ internal class ArrowKeyScroll {
         running?.cancel()
         running = scope.launch { state.animateScrollBy(if (forward) step else -step) }
         return true
+    }
+
+    /** Gives the keys back from the scrollbar, to the first item shown. */
+    internal fun leaveScrollbar() {
+        scrollbarHasKeys = false
+        runCatching { content.requestFocus(FocusDirection.Enter) }
     }
 
     /** Whether this press of right is the third in quick succession. */
@@ -123,13 +123,27 @@ internal fun ArrowKeyScrollHost(content: @Composable (Modifier) -> Unit) {
 internal fun Modifier.arrowKeyScrollHost(scroll: ArrowKeyScroll): Modifier = composed {
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
+    PlatformBackHandler(enabled = scroll.scrollbarHasKeys) { scroll.leaveScrollbar() }
     Modifier
+        .onFocusChanged { if (!it.hasFocus) scroll.scrollbarHasKeys = false }
         .onPreviewKeyEvent { event ->
+            if (scroll.scrollbarHasKeys) {
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent event.key in ScrollbarKeys
+                when (event.key) {
+                    Key.DirectionDown -> scroll.scrollBy(scope, forward = true)
+                    Key.DirectionUp -> scroll.scrollBy(scope, forward = false)
+                    in ScrollbarKeys -> scroll.leaveScrollbar()
+                    else -> return@onPreviewKeyEvent false
+                }
+                return@onPreviewKeyEvent true
+            }
             if (event.key != Key.DirectionRight || event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-            if (!ThemeSettingsRepository.scrollbarFocus.value || scroll.scrollbarFocused) return@onPreviewKeyEvent false
+            if (!ThemeSettingsRepository.scrollbarFocus.value || scroll.textOnly) return@onPreviewKeyEvent false
             val state = scroll.state ?: return@onPreviewKeyEvent false
             if (!state.canScrollForward && !state.canScrollBackward) return@onPreviewKeyEvent false
-            scroll.thirdQuickRight() && scroll.focusScrollbar()
+            if (!scroll.thirdQuickRight()) return@onPreviewKeyEvent false
+            scroll.scrollbarHasKeys = true
+            true
         }
         .onKeyEvent { event ->
             if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
@@ -138,46 +152,41 @@ internal fun Modifier.arrowKeyScrollHost(scroll: ArrowKeyScroll): Modifier = com
                 Key.DirectionUp -> false
                 else -> return@onKeyEvent false
             }
-            if (scroll.state == null) return@onKeyEvent false
-            if (focusManager.moveFocus(if (forward) FocusDirection.Down else FocusDirection.Up)) {
-                return@onKeyEvent true
-            }
-            // On an item of the content, the content has things to focus, and focus stays on it.
-            if (!scroll.contentHasFocus && !scroll.scrollbarFocused && scroll.scrollBy(scope, forward)) {
-                scroll.focusScrollbar()
-                return@onKeyEvent true
-            }
+            if (!scroll.itemFocused) return@onKeyEvent false
+            if (focusManager.moveFocus(if (forward) FocusDirection.Down else FocusDirection.Up)) return@onKeyEvent true
+            // Past the last item there is nothing more to move to; the rest of the content scrolls.
             scroll.scrollBy(scope, forward)
         }
 }
 
 /** Marks the scrolling content of the [ArrowKeyScrollHost] it is in. */
-internal fun Modifier.arrowKeyScrollContent(state: ScrollableState): Modifier = composed {
+internal fun Modifier.arrowKeyScrollContent(state: ScrollableState, textOnly: Boolean = false): Modifier = composed {
     val scroll = LocalArrowKeyScroll.current
-    if (scroll == null) Modifier else Modifier.arrowKeyScrollContent(scroll, state)
+    if (scroll == null) Modifier else Modifier.arrowKeyScrollContent(scroll, state, textOnly)
 }
 
-/** Marks the content of a page or a dialog that scrolls with [state], and draws its scrollbar. */
-internal fun Modifier.arrowKeyScrollContent(scroll: ArrowKeyScroll, state: ScrollableState): Modifier = composed {
-    val focusManager = LocalFocusManager.current
+/**
+ * Marks the content of a page or a dialog that scrolls with [state], and draws its scrollbar.
+ * [textOnly] is for content with nothing to focus in it, which is then focused itself.
+ */
+internal fun Modifier.arrowKeyScrollContent(
+    scroll: ArrowKeyScroll,
+    state: ScrollableState,
+    textOnly: Boolean = false,
+): Modifier = composed {
     val scope = rememberCoroutineScope()
     val trackColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.24f)
     val thumbColor = MaterialTheme.colorScheme.secondary
+    scroll.textOnly = textOnly
     DisposableEffect(scroll, state) {
         scroll.state = state
-        scroll.hasContent = true
-        onDispose {
-            if (scroll.state === state) {
-                scroll.state = null
-                scroll.hasContent = false
-            }
-        }
+        onDispose { if (scroll.state === state) scroll.state = null }
     }
     Modifier
         .onSizeChanged { scroll.viewportHeight = it.height }
         .drawWithContent {
             drawContent()
-            if (!scroll.scrollbarFocused) return@drawWithContent
+            if (!scroll.scrollbarShown) return@drawWithContent
             val (start, length) = state.scrollbarThumb() ?: (0f to 1f)
             val width = ScrollbarWidth.toPx()
             val inset = ScrollbarInset.toPx()
@@ -196,25 +205,32 @@ internal fun Modifier.arrowKeyScrollContent(scroll: ArrowKeyScroll, state: Scrol
                 style = Stroke(width = ring),
             )
         }
-        .focusProperties { canFocus = scroll.scrollbarFocusable }
-        .focusRequester(scroll.scrollbar)
+        .focusProperties { canFocus = scroll.textOnly }
+        .focusRequester(scroll.content)
         .onFocusChanged {
-            scroll.scrollbarFocused = it.isFocused
-            scroll.contentHasFocus = it.hasFocus && !it.isFocused
-            if (!it.isFocused) scroll.scrollbarFocusable = false
+            scroll.contentFocused = it.isFocused
+            scroll.itemFocused = it.hasFocus && !it.isFocused
         }
         .onKeyEvent { event ->
-            if (!scroll.scrollbarFocused || event.type != KeyEventType.KeyDown) return@onKeyEvent false
+            if (!scroll.contentFocused || event.type != KeyEventType.KeyDown) return@onKeyEvent false
             when (event.key) {
                 Key.DirectionDown -> scroll.scrollBy(scope, forward = true)
                 Key.DirectionUp -> scroll.scrollBy(scope, forward = false)
-                // Back to the items shown, if there are any.
-                Key.DirectionLeft -> focusManager.moveFocus(FocusDirection.Enter)
                 else -> false
             }
         }
         .focusTarget()
 }
+
+/** The keys that give the keys back from the scrollbar, besides Back. */
+private val ScrollbarKeys = setOf(
+    Key.DirectionLeft,
+    Key.DirectionRight,
+    Key.DirectionCenter,
+    Key.Enter,
+    Key.NumPadEnter,
+    Key.Escape,
+)
 
 /** Where the thumb starts and how long it is, as parts of the track; null if it cannot be told. */
 private fun ScrollableState.scrollbarThumb(): Pair<Float, Float>? = when (this) {

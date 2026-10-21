@@ -454,6 +454,7 @@ private fun MobileSettingsScreen(
             listState = listState,
             onBack = previousPage?.let { { onNavigateBack() } },
             contentMaxWidth = SettingsContentMaxWidth,
+            textOnly = page == SettingsPage.KeyboardShortcuts,
         ) {
             if (!showInternalHeader) {
                 item { Spacer(modifier = Modifier.height(44.dp)) }
@@ -790,7 +791,13 @@ private fun TabletSettingsScreen(
                     val contentSidePadding = max(32.dp, (maxWidth - SettingsContentMaxWidth) / 2)
                     LazyColumn(
                         state = listState,
-                        modifier = Modifier.fillMaxSize().arrowKeyScrollContent(arrowKeyScroll, listState),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .arrowKeyScrollContent(
+                                scroll = arrowKeyScroll,
+                                state = listState,
+                                textOnly = shownPage == SettingsPage.KeyboardShortcuts && !searching,
+                            ),
                         contentPadding = PaddingValues(
                             start = contentSidePadding,
                             top = if (showInternalHeader) innerPadding.calculateTopPadding() else topOffset,

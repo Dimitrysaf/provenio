@@ -27,14 +27,16 @@ import kotlin.time.TimeSource
 
 /**
  * Where focus has been, for a remote or a keyboard. When focus is lost, because the menu, sheet
- * or page it was on has closed, it goes back to the item focused most recently of those still
- * shown: the one the menu was opened from, or the one the page was left from. With touch nothing
- * is focused, so nothing goes back.
+ * or page it was on has closed, or because the item it was on went away, it goes back to the
+ * item focused most recently of those still shown: the one the menu was opened from, or the one
+ * the page was left from. It does so even when something else took focus in the meantime, as the
+ * rail does whenever the focused item goes. With touch nothing is focused, so nothing goes back.
  *
  * An item is known by where it is composed, which stays the same when its page is composed again
- * on the way back to it. After a page, only the page come back to counts, the items that have
- * just been shown again: going on to a new page loses focus too, and that is not for an item left
- * behind beside it to take.
+ * on the way back to it. After a page, only the page come back to counts, the items shown again
+ * about when focus was lost: going on to a new page loses focus too, and that is not for an item
+ * left behind beside it to take. While a sheet is open, focus is its own, and goes back once it
+ * closes.
  */
 internal object FocusMemory {
     /** The items focused, the most recent last. */
@@ -43,9 +45,18 @@ internal object FocusMemory {
     /** The items shown now that focus can go back to. */
     private val shown = mutableMapOf<Long, Shown>()
 
+    /** The item focused now, if it is one of [shown]. */
+    private var focusedKey: Long? = null
+
+    /** When focus was lost, if it has not gone back yet. */
+    private var lostAt: TimeSource.Monotonic.ValueTimeMark? = null
+
     private var sheetClosedAt: TimeSource.Monotonic.ValueTimeMark? = null
 
     internal var appHasFocus = false
+
+    /** Counts the times focus was lost or a sheet closed, which the app's root answers. */
+    internal var restoreRequests by mutableIntStateOf(0)
 
     /** A menu or a sheet closed: focus goes back to what it was opened from. */
     internal fun sheetClosed() {
@@ -53,13 +64,20 @@ internal object FocusMemory {
         restoreRequests++
     }
 
-    /** Counts the times focus was lost or a sheet closed, which the app's root answers. */
-    internal var restoreRequests by mutableIntStateOf(0)
+    internal fun lost() {
+        if (lostAt == null) lostAt = TimeSource.Monotonic.markNow()
+        restoreRequests++
+    }
 
     internal fun focused(key: Long) {
+        focusedKey = key
         history.remove(key)
         history.add(key)
         if (history.size > HistoryLimit) history.remove(history.first())
+    }
+
+    internal fun unfocused(key: Long) {
+        if (focusedKey == key) focusedKey = null
     }
 
     internal fun shown(key: Long, requester: FocusRequester) {
@@ -67,19 +85,40 @@ internal object FocusMemory {
     }
 
     internal fun hidden(key: Long, requester: FocusRequester) {
-        if (shown[key]?.requester === requester) shown.remove(key)
+        if (shown[key]?.requester !== requester) return
+        shown.remove(key)
+        if (focusedKey == key) {
+            focusedKey = null
+            lost()
+        }
     }
+
+    /** Whether focus has somewhere to go back to: it was lost, or a sheet closed with it nowhere. */
+    internal fun wantsRestore(): Boolean = lostAt != null || (!appHasFocus && sheetClosedRecently())
 
     /** Focuses the item focused most recently of those shown; false if none can be. */
     internal fun restore(): Boolean {
-        val afterSheet = sheetClosedAt?.let { it.elapsedNow() < RecentWindow } == true
+        val lost = lostAt
+        val afterSheet = sheetClosedRecently()
         for (key in history.reversed()) {
             val item = shown[key] ?: continue
-            if (!afterSheet && item.since.elapsedNow() > RecentWindow) continue
-            if (item.requester.requestFocus(FocusDirection.Enter)) return true
+            // Shown again around when focus was lost, as a page come back to is.
+            val shownAgain = lost != null && item.since.elapsedNow() < lost.elapsedNow() + RecentWindow
+            if (!afterSheet && !shownAgain) continue
+            if (key == focusedKey || item.requester.requestFocus(FocusDirection.Enter)) {
+                lostAt = null
+                return true
+            }
         }
         return false
     }
+
+    /** Stops trying: nothing shown is to have focus back. */
+    internal fun giveUp() {
+        lostAt = null
+    }
+
+    private fun sheetClosedRecently(): Boolean = sheetClosedAt?.let { it.elapsedNow() < RecentWindow } == true
 
     private class Shown(val requester: FocusRequester, val since: TimeSource.Monotonic.ValueTimeMark)
 }
@@ -94,7 +133,7 @@ fun Modifier.restoresFocus(): Modifier = composed {
     }
     Modifier
         .focusRequester(requester)
-        .onFocusChanged { if (it.isFocused) FocusMemory.focused(key) }
+        .onFocusChanged { if (it.isFocused) FocusMemory.focused(key) else FocusMemory.unfocused(key) }
 }
 
 /**
@@ -112,7 +151,7 @@ internal fun FocusMemoryRoot(content: @Composable (Modifier) -> Unit) {
         Modifier.singleKeyPresses().onFocusChanged {
             val hadFocus = FocusMemory.appHasFocus
             FocusMemory.appHasFocus = it.hasFocus
-            if (hadFocus && !it.hasFocus) FocusMemory.restoreRequests++
+            if (hadFocus && !it.hasFocus) FocusMemory.lost()
         }
     }
     FocusRestoreEffect(inputModeManager)
@@ -130,9 +169,15 @@ private fun FocusRestoreEffect(inputModeManager: InputModeManager) {
         // The page being gone back to can take a few frames to be composed and placed.
         repeat(RestoreFrames) {
             withFrameNanos {}
-            if (FocusMemory.appHasFocus || inputModeManager.inputMode != InputMode.Keyboard) return@LaunchedEffect
+            if (inputModeManager.inputMode != InputMode.Keyboard) {
+                FocusMemory.giveUp()
+                return@LaunchedEffect
+            }
+            // A sheet open now has focus; its closing asks again.
+            if (OpenSheets.count > 0 || !FocusMemory.wantsRestore()) return@LaunchedEffect
             if (FocusMemory.restore()) return@LaunchedEffect
         }
+        FocusMemory.giveUp()
     }
 }
 

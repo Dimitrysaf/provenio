@@ -198,7 +198,7 @@ private fun TorrentDetailsContent(
     val listState = rememberLazyListState()
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxWidth().arrowKeyScrollContent(listState),
+        modifier = Modifier.fillMaxWidth().arrowKeyScrollContent(listState, textOnly = true),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         health?.let { report ->

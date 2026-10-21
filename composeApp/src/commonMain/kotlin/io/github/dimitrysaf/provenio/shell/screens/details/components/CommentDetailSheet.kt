@@ -154,7 +154,8 @@ fun CommentDetailSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f, fill = false)
-                    .arrowKeyScrollContent(scrollState)
+                    // A hidden spoiler is tapped to reveal; otherwise the comment is only text.
+                    .arrowKeyScrollContent(scrollState, textOnly = !isSpoilerHidden)
                     .verticalScroll(scrollState),
             ) {
                 Text(

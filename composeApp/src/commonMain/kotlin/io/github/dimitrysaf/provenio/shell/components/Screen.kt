@@ -62,6 +62,8 @@ fun ScreenScaffold(
     topPadding: Dp? = null,
     listState: LazyListState = rememberLazyListState(),
     contentMaxWidth: Dp = Dp.Unspecified,
+    /** The page has nothing to focus, only text: the content is focused itself, to scroll it. */
+    textOnly: Boolean = false,
     content: LazyListScope.() -> Unit,
 ) {
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -85,7 +87,7 @@ fun ScreenScaffold(
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 state = listState,
-                modifier = Modifier.fillMaxSize().arrowKeyScrollContent(arrowKeyScroll, listState),
+                modifier = Modifier.fillMaxSize().arrowKeyScrollContent(arrowKeyScroll, listState, textOnly),
                 contentPadding = PaddingValues(
                     start = sidePadding,
                     top = topPadding

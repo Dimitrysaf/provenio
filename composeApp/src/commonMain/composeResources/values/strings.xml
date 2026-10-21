@@ -625,6 +625,7 @@
     <string name="storage_section_locations">Locations</string>
     <string name="action_copy">Copy</string>
     <string name="action_paste">Paste</string>
+    <string name="action_copy_title">Copy title</string>
     <string name="text_copied">Copied</string>
     <string name="storage_cleared">Cleared %1$s</string>
     <string name="storage_clear_images">Clear image cache</string>
@@ -1913,6 +1914,7 @@
     <string name="details_release_info">Release Info</string>
     <string name="details_runtime">Runtime</string>
     <string name="details_show_details">Show Details</string>
+    <string name="details_title">Title</string>
     <string name="details_status">Status</string>
     <string name="details_website">Website</string>
     <string name="details_videos">Videos</string>

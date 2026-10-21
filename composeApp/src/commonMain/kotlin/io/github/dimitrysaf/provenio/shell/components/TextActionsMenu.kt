@@ -86,15 +86,19 @@ internal fun Modifier.textActionsMenu(menu: TextActionsMenuState, openOnOk: Bool
         }
 }
 
+/** A part of the text the menu copies on its own, such as a title out of a table. */
+class TextCopy(val label: String, val text: String)
+
 /**
  * The menu [textActionsMenu] opens: Copy for [text] unless it is not to be copied, as a password
- * is not, and Paste when there is [onPaste].
+ * is not, [moreCopies] for parts of it, and Paste when there is [onPaste].
  */
 @Composable
 internal fun TextActionsMenu(
     menu: TextActionsMenuState,
     text: String,
     canCopy: Boolean = true,
+    moreCopies: List<TextCopy> = emptyList(),
     onPaste: ((String) -> Unit)? = null,
 ) {
     if (!menu.open) return
@@ -130,6 +134,17 @@ internal fun TextActionsMenu(
                             ToastController.show(copied)
                         },
                         modifier = Modifier.focusRequester(firstItem),
+                    )
+                }
+                moreCopies.forEach { copy ->
+                    DropdownMenuItem(
+                        text = { Text(copy.label) },
+                        enabled = copy.text.isNotEmpty(),
+                        onClick = {
+                            close()
+                            clipboard.setText(AnnotatedString(copy.text))
+                            ToastController.show(copied)
+                        },
                     )
                 }
                 if (onPaste != null) {

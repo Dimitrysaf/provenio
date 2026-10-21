@@ -157,7 +157,7 @@ fun DetailMetaInfo(
                         enter = fadeIn() + expandVertically(),
                         exit = fadeOut() + shrinkVertically(),
                     ) {
-                        DetailInfoRows(rows = infoRows, modifier = Modifier.padding(top = 8.dp))
+                        CopyableDetailInfoRows(meta = meta, rows = infoRows, modifier = Modifier.padding(top = 8.dp))
                     }
                 }
 
