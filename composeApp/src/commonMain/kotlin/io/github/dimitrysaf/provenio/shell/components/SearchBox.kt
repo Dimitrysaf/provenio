@@ -1,5 +1,16 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.expandVertically
@@ -71,12 +82,57 @@ fun SearchBox(
     var fieldSize by remember { mutableStateOf(IntSize.Zero) }
     val showHistory = focused && query.isBlank() && recentSearches.isNotEmpty()
     val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    // The recent searches are a popup that does not take focus, so the arrow keys move a
+    // highlight through them while focus stays in the field, as a combo box does.
+    var highlighted by remember { mutableIntStateOf(-1) }
+    val activeHighlight = if (showHistory && highlighted <= recentSearches.lastIndex) highlighted else -1
+    val scrimToken = remember { Any() }
+    var bounds by remember { mutableStateOf<Rect?>(null) }
+    DisposableEffect(scrimToken) {
+        onDispose { SearchFocusScrim.hide(scrimToken) }
+    }
+    SideEffect {
+        val shown = bounds
+        if (focused && shown != null) {
+            SearchFocusScrim.show(scrimToken, shown, openBelow = showHistory)
+        } else {
+            SearchFocusScrim.hide(scrimToken)
+        }
+    }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .onSizeChanged { fieldSize = it }
-            .onFocusChanged { focused = it.hasFocus },
+            .onGloballyPositioned { bounds = it.boundsInRoot() }
+            .onFocusChanged { focused = it.hasFocus }
+            .onPreviewKeyEvent { event ->
+                if (!showHistory || event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when (event.key) {
+                    Key.DirectionDown -> {
+                        highlighted = (activeHighlight + 1).coerceAtMost(recentSearches.lastIndex)
+                        true
+                    }
+                    Key.DirectionUp -> {
+                        if (activeHighlight < 0) return@onPreviewKeyEvent false
+                        highlighted = activeHighlight - 1
+                        true
+                    }
+                    Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
+                        val picked = recentSearches.getOrNull(activeHighlight) ?: return@onPreviewKeyEvent false
+                        highlighted = -1
+                        onRecentSearchClick(picked)
+                        focusManager.clearFocus()
+                        true
+                    }
+                    Key.Delete, Key.Backspace -> {
+                        val picked = recentSearches.getOrNull(activeHighlight) ?: return@onPreviewKeyEvent false
+                        onRemoveRecentSearch(picked)
+                        true
+                    }
+                    else -> false
+                }
+            },
     ) {
         Surface(
             shape = if (showHistory) {
@@ -125,9 +181,10 @@ fun SearchBox(
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            recentSearches.forEach { recentQuery ->
+                            recentSearches.forEachIndexed { index, recentQuery ->
                                 SearchBoxRecentRow(
                                     query = recentQuery,
+                                    highlighted = index == activeHighlight,
                                     onClick = {
                                         onRecentSearchClick(recentQuery)
                                         focusManager.clearFocus()
@@ -146,6 +203,7 @@ fun SearchBox(
 @Composable
 private fun SearchBoxRecentRow(
     query: String,
+    highlighted: Boolean,
     onClick: () -> Unit,
     onRemove: () -> Unit,
 ) {
@@ -167,7 +225,9 @@ private fun SearchBoxRecentRow(
                 }
             }
         },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        colors = ListItemDefaults.colors(
+            containerColor = if (highlighted) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+        ),
     )
 }
 

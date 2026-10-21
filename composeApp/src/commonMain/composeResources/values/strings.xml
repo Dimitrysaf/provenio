@@ -31,8 +31,8 @@
     <string name="action_retry">Retry</string>
     <string name="action_move_up">Move up</string>
     <string name="action_move_down">Move down</string>
-    <string name="key_hint_more_options_remote">Hold OK for more options</string>
-    <string name="key_hint_more_options_keyboard">Hold Enter or press Menu for more options</string>
+    <string name="key_hint_more_options_remote">Press Menu for more options</string>
+    <string name="key_hint_more_options_keyboard">Press Menu or Shift+F10 for more options</string>
     <string name="action_save">Save</string>
     <string name="action_saving">Saving…</string>
     <string name="addon_installing">Installing</string>

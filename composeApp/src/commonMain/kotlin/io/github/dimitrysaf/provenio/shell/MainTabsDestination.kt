@@ -1,5 +1,19 @@
 package io.github.dimitrysaf.provenio.shell
 
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.RippleConfiguration
+import androidx.compose.material3.LocalRippleConfiguration
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.FocusDirection
@@ -251,17 +265,32 @@ internal fun MainTabsDestination(
                         // leave a destination's space before and after them.
                         Spacer(modifier = Modifier)
                         destinations.forEach { destination ->
-                            WideNavigationRailItem(
-                                selected = selectedTab == destination.tab,
-                                onClick = {
-                                    refocusSelectedDestination = railHasFocus
-                                    onTabSelected(destination.tab)
-                                },
-                                modifier = Modifier.focusRequester(destinationFocus.getValue(destination.tab)),
-                                icon = destination.icon,
-                                label = { Text(destination.label) },
-                                railExpanded = railExpanded,
-                            )
+                            // Material draws an item's focus ring from a part of the item it
+                            // remakes as the item changes, which forgets that it has focus, so
+                            // the ring comes and goes while focus stays. The rail draws its own
+                            // from the item's focus, and hides Material's.
+                            val interactionSource = remember { MutableInteractionSource() }
+                            val focused by interactionSource.collectIsFocusedAsState()
+                            CompositionLocalProvider(LocalRippleConfiguration provides RailRippleConfiguration) {
+                                WideNavigationRailItem(
+                                    selected = selectedTab == destination.tab,
+                                    onClick = {
+                                        refocusSelectedDestination = railHasFocus
+                                        onTabSelected(destination.tab)
+                                    },
+                                    modifier = Modifier
+                                        .focusRequester(destinationFocus.getValue(destination.tab))
+                                        .railFocusRing(
+                                            focused = focused,
+                                            shape = if (railExpanded) CircleShape else RailItemFocusShape,
+                                            color = MaterialTheme.colorScheme.secondary,
+                                        ),
+                                    icon = destination.icon,
+                                    label = { Text(destination.label) },
+                                    railExpanded = railExpanded,
+                                    interactionSource = interactionSource,
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier)
                     }
@@ -339,6 +368,33 @@ private fun NavIcon(
         contentDescription = null,
     )
 }
+
+/** A ring around a rail destination while it has focus, inset so the rail does not clip it. */
+private fun Modifier.railFocusRing(focused: Boolean, shape: Shape, color: Color): Modifier =
+    drawWithContent {
+        drawContent()
+        if (!focused) return@drawWithContent
+        val inset = RailFocusRingWidth.toPx() / 2
+        val outline = shape.createOutline(
+            Size(size.width - inset * 2, size.height - inset * 2),
+            layoutDirection,
+            this,
+        )
+        translate(inset, inset) {
+            drawOutline(outline, color = color, style = Stroke(width = RailFocusRingWidth.toPx()))
+        }
+    }
+
+/** Material's press ripple for the rail's items, without its focus ring, which the rail draws. */
+private val RailRippleConfiguration = RippleConfiguration(
+    focus = RippleConfiguration.Focus.InsetRing(
+        outerStrokeColor = Color.Transparent,
+        innerStrokeColor = Color.Transparent,
+    ),
+)
+
+private val RailItemFocusShape = RoundedCornerShape(16.dp)
+private val RailFocusRingWidth = 3.dp
 
 /** The app's symbol at the top of the rail, the height of a destination's icon and label. */
 private val RailLogoHeight = 32.dp

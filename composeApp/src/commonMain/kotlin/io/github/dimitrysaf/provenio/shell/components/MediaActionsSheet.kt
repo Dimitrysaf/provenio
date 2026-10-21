@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -191,8 +192,12 @@ private fun MediaActionsMenu(
     onDismiss: () -> Unit,
 ) {
     val press = remember { LastPressPosition.recent() }
+    val anchor = remember { LastPressPosition.recentAnchor() }
+    val startFocused = openedWithKeys()
     Popup(
-        popupPositionProvider = remember(press) { PressPositionProvider(press) },
+        popupPositionProvider = remember(press, anchor) {
+            if (anchor != null) ItemSidePositionProvider(anchor) else PressPositionProvider(press)
+        },
         onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true),
     ) {
@@ -202,35 +207,38 @@ private fun MediaActionsMenu(
             tonalElevation = MenuDefaults.TonalElevation,
             shadowElevation = MenuDefaults.ShadowElevation,
         ) {
-            Column(
-                modifier = Modifier
-                    .width(IntrinsicSize.Max)
-                    .widthIn(min = 200.dp, max = 320.dp)
-                    .padding(vertical = 8.dp),
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                )
-                actions.forEach { action ->
-                    val color = if (action.isDestructive) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    }
-                    DropdownMenuItem(
-                        text = { Text(action.label) },
-                        leadingIcon = { Icon(imageVector = action.icon, contentDescription = null) },
-                        colors = MenuDefaults.itemColors(textColor = color, leadingIconColor = color),
-                        onClick = {
-                            onDismiss()
-                            action.onSelected()
-                        },
+            // Focus starts on the first action when keys opened the menu, and stays in it.
+            SheetFocusScope(startFocused) { focus ->
+                Column(
+                    modifier = focus
+                        .width(IntrinsicSize.Max)
+                        .widthIn(min = 200.dp, max = 320.dp)
+                        .padding(vertical = 8.dp),
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                     )
+                    actions.forEach { action ->
+                        val color = if (action.isDestructive) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                        DropdownMenuItem(
+                            text = { Text(action.label) },
+                            leadingIcon = { Icon(imageVector = action.icon, contentDescription = null) },
+                            colors = MenuDefaults.itemColors(textColor = color, leadingIconColor = color),
+                            onClick = {
+                                onDismiss()
+                                action.onSelected()
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -255,6 +263,34 @@ private class PressPositionProvider(private val press: Offset?) : PopupPositionP
         )
     }
 }
+
+/**
+ * Opens the menu beside the item it is for, as from keys there is no press to open it at: at the
+ * item's top, on its right where it fits and on its left where it does not, kept in the window.
+ */
+private class ItemSidePositionProvider(private val item: Rect) : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize,
+    ): IntOffset {
+        val gap = ItemMenuGapPx
+        val right = item.right.roundToInt() + gap
+        val left = item.left.roundToInt() - gap - popupContentSize.width
+        val x = when {
+            right + popupContentSize.width <= windowSize.width -> right
+            left >= 0 -> left
+            else -> right
+        }
+        return IntOffset(
+            x = x.coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0)),
+            y = item.top.roundToInt().coerceIn(0, (windowSize.height - popupContentSize.height).coerceAtLeast(0)),
+        )
+    }
+}
+
+private const val ItemMenuGapPx = 8
 
 /** One thing that can be done with the title the sheet is about. */
 class MediaSheetAction(

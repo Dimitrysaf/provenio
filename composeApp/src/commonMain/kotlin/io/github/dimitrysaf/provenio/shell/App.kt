@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.shell.components.SearchFocusScrimHost
 import io.github.dimitrysaf.provenio.shell.components.KeyActionHintHost
 import io.github.dimitrysaf.provenio.core.settings.ThemeMode
 import io.github.dimitrysaf.provenio.shell.theme.systemPrefersDarkTheme
@@ -80,6 +81,7 @@ fun App(
                 nativeProfileSwitcherController = nativeProfileSwitcherController,
                 appGateController = appGateController,
             )
+            SearchFocusScrimHost()
             AppSnackbarHost(modifier = Modifier.align(Alignment.BottomCenter))
             KeyActionHintHost(modifier = Modifier.align(Alignment.BottomCenter))
         }

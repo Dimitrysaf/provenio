@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.build.isDesktop
 import kotlinx.coroutines.delay
@@ -53,7 +54,8 @@ internal object KeyActionHint {
  */
 @Composable
 fun KeyActionHintHost(modifier: Modifier = Modifier) {
-    val focused = KeyActionHint.visible
+    // A menu or sheet opened over the item takes the window's focus, and the hint gives way.
+    val focused = KeyActionHint.visible && LocalWindowInfo.current.isWindowFocused
     var shown by remember { mutableStateOf(false) }
     LaunchedEffect(focused) {
         if (focused) {

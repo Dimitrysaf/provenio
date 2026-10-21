@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.runtime.Composable
@@ -48,6 +51,9 @@ internal fun SheetFocusScope(
 ) {
     val sheetFocus = remember { SheetFocus(headerFocusable = !startFocused) }
     val requester = remember { FocusRequester() }
+    // Opened by holding OK: that hold is still going, and its repeats and release are not for
+    // the row focus starts on.
+    var ignoringHeldOk by remember { mutableStateOf(startFocused && OkKeyHold.held) }
     LaunchedEffect(sheetFocus) {
         if (sheetFocus.headerFocusable) return@LaunchedEffect
         // A sheet's rows can arrive a few frames after the sheet does, as its lists fill in.
@@ -69,6 +75,14 @@ internal fun SheetFocusScope(
     CompositionLocalProvider(LocalSheetFocus provides sheetFocus) {
         content(
             Modifier
+                .onPreviewKeyEvent { event ->
+                    if (!ignoringHeldOk || !event.isOkKey) return@onPreviewKeyEvent false
+                    if (event.type == KeyEventType.KeyUp) {
+                        ignoringHeldOk = false
+                        OkKeyHold.held = false
+                    }
+                    true
+                }
                 .focusRequester(requester)
                 .focusProperties {
                     // The arrow and tab keys stay in the sheet; focus can still be cleared or

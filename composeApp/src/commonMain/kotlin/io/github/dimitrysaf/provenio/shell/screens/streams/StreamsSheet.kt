@@ -350,74 +350,75 @@ fun StreamsSheet(
                 }
             }
         }
-    }
 
-    streamActionsTarget?.let { stream ->
-        MediaActionsSheet(
-            imageUrl = if (seasonNumber != null) episodeThumbnail ?: background else background ?: poster,
-            title = stream.streamLabel,
-            subtitle = stream.streamSubtitle?.takeIf { it.isNotBlank() } ?: stream.addonName,
-            landscapeThumbnail = true,
-            onDismiss = { streamActionsTarget = null },
-            navigation = SheetNavigation.Back,
-            actions = listOf(
-                MediaSheetAction(
-                    icon = Icons.Rounded.ContentCopy,
-                    label = stringResource(Res.string.streams_copy_link),
-                    onSelected = {
-                        copyStreamLink(
-                            stream = stream,
-                            seasonNumber = seasonNumber,
-                            episodeNumber = episodeNumber,
-                            copiedText = streamLinkCopiedText,
-                            noLinkText = noDirectStreamLinkText,
-                            setClipboard = { url -> clipboardManager.setText(AnnotatedString(url)) },
-                            scope = actionScope,
-                        )
-                    },
-                ),
-                MediaSheetAction(
-                    icon = Icons.AutoMirrored.Rounded.OpenInNew,
-                    label = stringResource(
-                        if (playerSettings.externalPlayerEnabled) {
-                            Res.string.streams_open_internal_player
-                        } else {
-                            Res.string.streams_open_external_player
+        // Inside the sheet, so on a large screen the actions open over it, not behind it.
+        streamActionsTarget?.let { stream ->
+            MediaActionsSheet(
+                imageUrl = if (seasonNumber != null) episodeThumbnail ?: background else background ?: poster,
+                title = stream.streamLabel,
+                subtitle = stream.streamSubtitle?.takeIf { it.isNotBlank() } ?: stream.addonName,
+                landscapeThumbnail = true,
+                onDismiss = { streamActionsTarget = null },
+                navigation = SheetNavigation.Back,
+                actions = listOf(
+                    MediaSheetAction(
+                        icon = Icons.Rounded.ContentCopy,
+                        label = stringResource(Res.string.streams_copy_link),
+                        onSelected = {
+                            copyStreamLink(
+                                stream = stream,
+                                seasonNumber = seasonNumber,
+                                episodeNumber = episodeNumber,
+                                copiedText = streamLinkCopiedText,
+                                noLinkText = noDirectStreamLinkText,
+                                setClipboard = { url -> clipboardManager.setText(AnnotatedString(url)) },
+                                scope = actionScope,
+                            )
                         },
                     ),
-                    onSelected = {
-                        onStreamActionOpen(
-                            stream,
-                            !playerSettings.externalPlayerEnabled,
-                            effectiveResumePositionMs,
-                            effectiveResumeProgressFraction,
-                        )
-                    },
+                    MediaSheetAction(
+                        icon = Icons.AutoMirrored.Rounded.OpenInNew,
+                        label = stringResource(
+                            if (playerSettings.externalPlayerEnabled) {
+                                Res.string.streams_open_internal_player
+                            } else {
+                                Res.string.streams_open_external_player
+                            },
+                        ),
+                        onSelected = {
+                            onStreamActionOpen(
+                                stream,
+                                !playerSettings.externalPlayerEnabled,
+                                effectiveResumePositionMs,
+                                effectiveResumeProgressFraction,
+                            )
+                        },
+                    ),
+                    MediaSheetAction(
+                        icon = Icons.Rounded.Download,
+                        label = stringResource(Res.string.streams_download_file),
+                        onSelected = {
+                            downloadStream(
+                                stream = stream,
+                                type = type,
+                                videoId = videoId,
+                                parentMetaId = parentMetaId,
+                                parentMetaType = parentMetaType,
+                                title = title,
+                                logo = logo,
+                                poster = poster,
+                                background = background,
+                                seasonNumber = seasonNumber,
+                                episodeNumber = episodeNumber,
+                                episodeTitle = episodeTitle,
+                                episodeThumbnail = episodeThumbnail,
+                                scope = actionScope,
+                            )
+                        },
+                    ),
                 ),
-                MediaSheetAction(
-                    icon = Icons.Rounded.Download,
-                    label = stringResource(Res.string.streams_download_file),
-                    onSelected = {
-                        downloadStream(
-                            stream = stream,
-                            type = type,
-                            videoId = videoId,
-                            parentMetaId = parentMetaId,
-                            parentMetaType = parentMetaType,
-                            title = title,
-                            logo = logo,
-                            poster = poster,
-                            background = background,
-                            seasonNumber = seasonNumber,
-                            episodeNumber = episodeNumber,
-                            episodeTitle = episodeTitle,
-                            episodeThumbnail = episodeThumbnail,
-                            scope = actionScope,
-                        )
-                    },
-                ),
-            ),
-        )
+            )
+        }
     }
 }
 

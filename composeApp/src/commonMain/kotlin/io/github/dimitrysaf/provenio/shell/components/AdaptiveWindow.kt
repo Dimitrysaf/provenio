@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -24,18 +25,33 @@ import kotlin.time.TimeSource
 // The window's breakpoint for the whole app, so a sheet or a menu can adapt without measuring itself.
 val LocalWindowBreakpoint = compositionLocalOf { WindowBreakpoint.Compact }
 
-// Where the last press landed in the window, so a long-press menu can open right under it.
+// Where the last press landed in the window, so a long-press menu can open right under it. A
+// menu opened from keys, the Menu key or a held OK, has no press; it opens beside the item that
+// had focus, which is recorded as its bounds instead.
 internal object LastPressPosition {
     private var position: Offset? = null
+    private var anchor: Rect? = null
     private var pressedAt: TimeMark? = null
 
     fun record(offset: Offset) {
         position = offset
+        anchor = null
+        pressedAt = TimeSource.Monotonic.markNow()
+    }
+
+    fun recordAnchor(bounds: Rect) {
+        anchor = bounds
+        position = null
         pressedAt = TimeSource.Monotonic.markNow()
     }
 
     // Only a press from the last moment counts, so an old one never places a menu somewhere unrelated.
-    fun recent(): Offset? = position?.takeIf { pressedAt?.elapsedNow()?.inWholeMilliseconds?.let { it < RECENT_PRESS_MS } == true }
+    fun recent(): Offset? = position?.takeIf { isRecent() }
+
+    fun recentAnchor(): Rect? = anchor?.takeIf { isRecent() }
+
+    private fun isRecent(): Boolean =
+        pressedAt?.elapsedNow()?.inWholeMilliseconds?.let { it < RECENT_PRESS_MS } == true
 
     private const val RECENT_PRESS_MS = 3_000L
 }
