@@ -56,6 +56,68 @@ internal val PlayerScreenRuntime.selectedAddonSubtitle: AddonSubtitle?
             ?: visibleAddonSubtitles.findSelectedAddon(selectedId)
     }
 
+/** A subtitle chosen: one of the video's own tracks, or one an addon provides. */
+internal sealed interface SubtitleChoice {
+    data class BuiltIn(val index: Int) : SubtitleChoice
+    data class Addon(val subtitle: AddonSubtitle) : SubtitleChoice
+}
+
+/** Shows the video's own subtitle track at [index], or none for -1. */
+internal fun PlayerScreenRuntime.selectBuiltInSubtitle(index: Int) {
+    val wasCustom = useCustomSubtitles
+    isUserExplicitSubtitleSelection = true
+    preferredSubtitleSelectionApplied = true
+    selectedSubtitleIndex = index
+    selectedAddonSubtitleId = null
+    useCustomSubtitles = false
+    persistInternalSubtitlePreference(subtitleTracks.firstOrNull { it.index == index })
+    if (wasCustom) {
+        playerController?.clearExternalSubtitleAndSelect(index)
+    } else {
+        playerController?.selectSubtitleTrack(index)
+    }
+}
+
+internal fun PlayerScreenRuntime.selectAddonSubtitle(addon: AddonSubtitle) {
+    isUserExplicitSubtitleSelection = true
+    selectedAddonSubtitleId = addon.selectionKey
+    selectedSubtitleIndex = -1
+    useCustomSubtitles = true
+    preferredSubtitleSelectionApplied = true
+    persistAddonSubtitlePreference(addon)
+    playerController?.setSubtitleUri(addon.url)
+}
+
+/**
+ * A remote's Captions key: turns the subtitles off, and back on to the ones it turned off. With
+ * none to go back to, it opens the subtitles to choose from.
+ */
+internal fun PlayerScreenRuntime.toggleCaptions() {
+    val current = when {
+        useCustomSubtitles -> selectedAddonSubtitle?.let(SubtitleChoice::Addon)
+        selectedSubtitleIndex >= 0 -> SubtitleChoice.BuiltIn(selectedSubtitleIndex)
+        else -> null
+    }
+    if (current != null) {
+        subtitlesBeforeCaptionsOff = current
+        selectBuiltInSubtitle(-1)
+        return
+    }
+    when (val previous = subtitlesBeforeCaptionsOff) {
+        is SubtitleChoice.BuiltIn -> if (subtitleTracks.any { it.index == previous.index }) {
+            selectBuiltInSubtitle(previous.index)
+            return
+        }
+        is SubtitleChoice.Addon -> {
+            selectAddonSubtitle(previous.subtitle)
+            return
+        }
+        null -> Unit
+    }
+    refreshTracks()
+    showSubtitleModal = true
+}
+
 internal fun PlayerScreenRuntime.updateTrackPreference(
     update: (PersistedPlayerTrackPreference) -> PersistedPlayerTrackPreference,
 ) {

@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.p2p
 
+import io.github.dimitrysaf.provenio.shell.components.arrowKeyScrollContent
+import io.github.dimitrysaf.provenio.shell.components.arrowKeyScrollHost
+import io.github.dimitrysaf.provenio.shell.components.rememberArrowKeyScroll
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -21,15 +24,20 @@ fun P2pConsentDialog(
     onEnableP2p: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val bodyScroll = rememberScrollState()
+    val arrowKeyScroll = rememberArrowKeyScroll()
     AlertDialog(
         onDismissRequest = onDismiss,
+        // The buttons are all focus can be on; up and down past them scroll the text.
+        modifier = Modifier.arrowKeyScrollHost(arrowKeyScroll),
         title = { Text(stringResource(Res.string.p2p_consent_title)) },
         text = {
             Text(
                 text = stringResource(Res.string.p2p_consent_body),
                 modifier = Modifier
                     .heightIn(max = 360.dp)
-                    .verticalScroll(rememberScrollState()),
+                    .arrowKeyScrollContent(arrowKeyScroll, bodyScroll)
+                    .verticalScroll(bodyScroll),
             )
         },
         confirmButton = {

@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.FocusDirection
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
 import io.github.dimitrysaf.provenio.shell.components.LocalPosterAreaWidth
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -921,7 +924,15 @@ private fun MetaDetailsContent(
                             state = sidePaneListState,
                             modifier = Modifier
                                 .weight(1f - primaryPaneWeight)
-                                .fillMaxHeight(),
+                                .fillMaxHeight()
+                                // The side pane is reached with the right arrow only: up and
+                                // down keep to the main column, which is gone through first.
+                                .focusProperties {
+                                    onEnter = {
+                                        if (requestedFocusDirection in SidePaneBlockedDirections) cancelFocusChange()
+                                    }
+                                }
+                                .focusGroup(),
                             contentPadding = PaddingValues(
                                 top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
                                     TopAppBarDefaults.TopAppBarExpandedHeight,
@@ -1057,3 +1068,5 @@ private fun detailTabletContentMaxWidth(maxWidth: Dp, isTablet: Boolean): Dp =
     } else {
         (maxWidth * 0.6f).coerceIn(520.dp, 680.dp)
     }
+
+private val SidePaneBlockedDirections = setOf(FocusDirection.Up, FocusDirection.Down)

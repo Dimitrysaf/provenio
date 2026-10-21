@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.textActionsMenu
+import io.github.dimitrysaf.provenio.shell.components.rememberTextActionsMenu
+import io.github.dimitrysaf.provenio.shell.components.TextActionsMenu
 import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -259,13 +262,18 @@ private fun ExternalServerDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(Res.string.settings_p2p_external_server_title)) },
         text = {
+            val textMenu = rememberTextActionsMenu()
+            TextActionsMenu(textMenu, text = draft) { pasted ->
+                draft += pasted
+                invalid = false
+            }
             OutlinedTextField(
                 value = draft,
                 onValueChange = {
                     draft = it
                     invalid = false
                 },
-                modifier = Modifier.fillMaxWidth().arrowKeysLeaveField { draft.isEmpty() },
+                modifier = Modifier.fillMaxWidth().arrowKeysLeaveField { draft.isEmpty() }.textActionsMenu(textMenu),
                 singleLine = true,
                 label = { Text(stringResource(Res.string.settings_p2p_external_server_label)) },
                 placeholder = { Text("192.168.1.20") },

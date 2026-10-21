@@ -7,9 +7,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,6 +38,14 @@ internal class SheetFocus(headerFocusable: Boolean) {
 }
 
 internal val LocalSheetFocus = staticCompositionLocalOf<SheetFocus?> { null }
+
+/**
+ * How many sheets and menus are open. A screen that keeps focus for itself, as the player does,
+ * leaves it to them meanwhile, and does not answer keys that are theirs.
+ */
+internal object OpenSheets {
+    var count by mutableIntStateOf(0)
+}
 
 /**
  * Makes [content] a sheet's body for focus: it is given the modifier to put on the sheet's own
@@ -72,25 +82,37 @@ internal fun SheetFocusScope(
             requester.requestFocus(FocusDirection.Enter)
         }
     }
+    DisposableEffect(sheetFocus) {
+        OpenSheets.count++
+        onDispose {
+            OpenSheets.count--
+            FocusMemory.sheetClosed()
+        }
+    }
     CompositionLocalProvider(LocalSheetFocus provides sheetFocus) {
-        content(
-            Modifier
-                .onPreviewKeyEvent { event ->
-                    if (!ignoringHeldOk || !event.isOkKey) return@onPreviewKeyEvent false
-                    if (event.type == KeyEventType.KeyUp) {
-                        ignoringHeldOk = false
-                        OkKeyHold.held = false
+        // Up and down scroll a sheet of only text, where there is nothing for focus to move to.
+        ArrowKeyScrollHost { arrowKeyScroll ->
+            content(
+                arrowKeyScroll
+                    // A sheet can be a window of its own, which the app's root does not see into.
+                    .singleKeyPresses()
+                    .onPreviewKeyEvent { event ->
+                        if (!ignoringHeldOk || !event.isOkKey) return@onPreviewKeyEvent false
+                        if (event.type == KeyEventType.KeyUp) {
+                            ignoringHeldOk = false
+                            OkKeyHold.held = false
+                        }
+                        true
                     }
-                    true
-                }
-                .focusRequester(requester)
-                .focusProperties {
-                    // The arrow and tab keys stay in the sheet; focus can still be cleared or
-                    // asked for elsewhere, as when a text field closes its keyboard.
-                    onExit = { if (requestedFocusDirection in TrappedDirections) cancelFocusChange() }
-                }
-                .focusGroup(),
-        )
+                    .focusRequester(requester)
+                    .focusProperties {
+                        // The arrow and tab keys stay in the sheet; focus can still be cleared or
+                        // asked for elsewhere, as when a text field closes its keyboard.
+                        onExit = { if (requestedFocusDirection in TrappedDirections) cancelFocusChange() }
+                    }
+                    .focusGroup(),
+            )
+        }
     }
 }
 
@@ -100,7 +122,8 @@ internal fun openedWithKeys(): Boolean = LocalInputModeManager.current.inputMode
 
 /**
  * For a sheet's header row, or a header button outside one: its controls are reached with the
- * arrow keys, but focus never starts on them while the body has something to focus.
+ * arrow keys, but focus never starts on them while the body has something to focus. The same
+ * goes for a text field and the buttons inside it.
  */
 internal fun Modifier.sheetHeaderFocus(sheetFocus: SheetFocus?): Modifier =
     if (sheetFocus == null) this else focusProperties { canFocus = sheetFocus.headerFocusable }

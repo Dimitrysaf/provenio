@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.animation.AnimatedVisibility
+import io.github.dimitrysaf.provenio.shell.components.restoresFocus
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
@@ -354,13 +355,14 @@ internal sealed interface SettingsListRow {
                 enabled = enabled,
                 modifier = if (progress != null) {
                     Modifier
+                        .restoresFocus()
                         .clip(shape)
                         .drawBehind {
                             drawRect(containerColor)
                             drawRect(fillColor, size = Size(size.width * fill, size.height))
                         }
                 } else {
-                    Modifier
+                    Modifier.restoresFocus()
                 },
                 colors = if (progress != null) {
                     ListItemDefaults.segmentedColors(
@@ -416,6 +418,7 @@ internal sealed interface SettingsListRow {
                 onClick = { if (enabled) onCheckedChange(!isChecked) },
                 shapes = shapes,
                 enabled = enabled,
+                modifier = Modifier.restoresFocus(),
                 colors = settingsListItemColors,
                 // Centred at any height: by default a tall row pins its controls to the top.
                 verticalAlignment = Alignment.CenterVertically,

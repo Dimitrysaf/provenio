@@ -91,7 +91,7 @@ fun <T> ShelfSection(
         }
         LazyRow(
             // The mouse wheel scrolls the page; only a row that asks for it takes the wheel.
-            modifier = if (wheelScrollsRow) rowModifier.horizontalWheelScroll(state) else rowModifier,
+            modifier = (if (wheelScrollsRow) rowModifier.horizontalWheelScroll(state) else rowModifier).rowFocusEntry(),
             state = state,
             contentPadding = rowContentPadding,
             horizontalArrangement = Arrangement.spacedBy(itemSpacing),

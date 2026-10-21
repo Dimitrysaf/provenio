@@ -12,7 +12,7 @@ fun Modifier.shapedClickable(
     onClickLabel: String? = null,
     role: Role? = null,
     onClick: () -> Unit,
-): Modifier = clickable(
+): Modifier = restoresFocus().clickable(
     interactionSource = null,
     indication = ripple(focusRingShape = shape),
     enabled = enabled,

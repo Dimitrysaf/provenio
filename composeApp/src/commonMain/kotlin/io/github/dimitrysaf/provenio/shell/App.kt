@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.shell
 
 import io.github.dimitrysaf.provenio.shell.components.SearchFocusScrimHost
 import io.github.dimitrysaf.provenio.shell.components.KeyActionHintHost
+import io.github.dimitrysaf.provenio.shell.components.FocusMemoryRoot
 import io.github.dimitrysaf.provenio.core.settings.ThemeMode
 import io.github.dimitrysaf.provenio.shell.theme.systemPrefersDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
@@ -60,30 +61,32 @@ fun App(
     appGateController: AppGateController? = null,
 ) {
     AppEnvironment {
-        PointerCursorHost(modifier = Modifier.fillMaxSize()) {
-            AppGate(
-                initialTab = initialTab,
-                initialRoute = initialRoute,
-                useNativeNavigation = useNativeNavigation,
-                useNativeTabBar = useNativeTabBar,
-                useTabletFloatingTabBar = useTabletFloatingTabBar,
-                ownsAppRuntime = ownsAppRuntime,
-                bypassAppGate = bypassAppGate,
-                renderMainContent = true,
-                onNavigate = onNavigate,
-                onGoBack = onGoBack,
-                onReplace = onReplace,
-                onActivate = onActivate,
-                onAppReady = onAppReady,
-                onMainContentMountChanged = null,
-                onMainContentVisibleChanged = null,
-                onTabTitles = onTabTitles,
-                nativeProfileSwitcherController = nativeProfileSwitcherController,
-                appGateController = appGateController,
-            )
-            SearchFocusScrimHost()
-            AppSnackbarHost(modifier = Modifier.align(Alignment.BottomCenter))
-            KeyActionHintHost(modifier = Modifier.align(Alignment.BottomCenter))
+        FocusMemoryRoot { focusMemory ->
+            PointerCursorHost(modifier = Modifier.fillMaxSize().then(focusMemory)) {
+                AppGate(
+                    initialTab = initialTab,
+                    initialRoute = initialRoute,
+                    useNativeNavigation = useNativeNavigation,
+                    useNativeTabBar = useNativeTabBar,
+                    useTabletFloatingTabBar = useTabletFloatingTabBar,
+                    ownsAppRuntime = ownsAppRuntime,
+                    bypassAppGate = bypassAppGate,
+                    renderMainContent = true,
+                    onNavigate = onNavigate,
+                    onGoBack = onGoBack,
+                    onReplace = onReplace,
+                    onActivate = onActivate,
+                    onAppReady = onAppReady,
+                    onMainContentMountChanged = null,
+                    onMainContentVisibleChanged = null,
+                    onTabTitles = onTabTitles,
+                    nativeProfileSwitcherController = nativeProfileSwitcherController,
+                    appGateController = appGateController,
+                )
+                SearchFocusScrimHost()
+                AppSnackbarHost(modifier = Modifier.align(Alignment.BottomCenter))
+                KeyActionHintHost(modifier = Modifier.align(Alignment.BottomCenter))
+            }
         }
     }
 }

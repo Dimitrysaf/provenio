@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.shell.components.arrowKeyScrollContent
 import androidx.compose.foundation.layout.Arrangement
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.foundation.layout.Box
@@ -97,6 +98,8 @@ internal fun PlayerInfoSheet(
     val sectionMeta = remember(meta, episode) { meta?.let { show -> episode?.let(show::asEpisode) ?: show } }
     val sections = settings.items.filter { it.enabled && it.key in PlayerInfoSectionKeys }
 
+    val scrollState = rememberScrollState()
+
     ModalSheet(
         onDismissRequest = close,
         sheetState = sheetState,
@@ -109,7 +112,8 @@ internal fun PlayerInfoSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .arrowKeyScrollContent(scrollState)
+                .verticalScroll(scrollState)
                 .padding(bottom = safeBottomPadding(24.dp)),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
@@ -117,7 +121,7 @@ internal fun PlayerInfoSheet(
                 if (images.isNotEmpty()) {
                     PlayerInfoCarousel(images = images, contentDescription = heading)
                 }
-                SelectableText {
+                SelectableText(copyText = listOfNotNull(heading, subtitle?.takeIf { it.isNotBlank() }).joinToString("\n")) {
                     Column(
                         modifier = Modifier.padding(horizontal = BottomSheetBodyMargin),
                         verticalArrangement = Arrangement.spacedBy(4.dp),

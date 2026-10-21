@@ -29,7 +29,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -42,6 +47,7 @@ import io.github.dimitrysaf.provenio.shell.components.AppIconResource
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import io.github.dimitrysaf.provenio.shell.components.appIconPainter
+import io.github.dimitrysaf.provenio.shell.components.openedWithKeys
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import provenio.composeapp.generated.resources.Res
@@ -76,6 +82,21 @@ fun DetailActionButtons(
         label = "detail_actions_chevron",
     )
     val playInteractionSource = remember { MutableInteractionSource() }
+    // A page opened with keys starts on Play, rather than on the back button above it. Only
+    // once: scrolled away and back, or come back to, it keeps the focus it has.
+    val playFocus = remember { FocusRequester() }
+    val usingKeys = openedWithKeys()
+    var focusedOnOpen by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (focusedOnOpen) return@LaunchedEffect
+        focusedOnOpen = true
+        if (!usingKeys) return@LaunchedEffect
+        // The page fills in over a few frames.
+        repeat(PlayFocusFrames) {
+            withFrameNanos {}
+            if (playFocus.requestFocus(FocusDirection.Enter)) return@LaunchedEffect
+        }
+    }
     val playLongPress = rememberLongPressGate(
         interactionSource = playInteractionSource,
         onLongClick = onPlayLongClick,
@@ -106,6 +127,7 @@ fun DetailActionButtons(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(buttonHeight)
+                    .focusRequester(playFocus)
                     .onSecondaryClick(onPlayLongClick.takeIf { playEnabled }),
                 enabled = playEnabled,
                 contentPadding = ButtonDefaults.contentPaddingFor(buttonHeight, hasStartIcon = true),
@@ -121,6 +143,7 @@ fun DetailActionButtons(
                         modifier = Modifier
                             .width(maxWidth - buttonHeight - SplitButtonDefaults.Spacing)
                             .height(buttonHeight)
+                            .focusRequester(playFocus)
                             .onSecondaryClick(onPlayLongClick.takeIf { playEnabled }),
                         enabled = playEnabled,
                         shapes = SplitButtonDefaults.leadingButtonShapesFor(buttonHeight),
@@ -218,3 +241,6 @@ private fun rememberLongPressGate(
     }
     return gate
 }
+
+/** About half a second at 60 frames a second. */
+private const val PlayFocusFrames = 30

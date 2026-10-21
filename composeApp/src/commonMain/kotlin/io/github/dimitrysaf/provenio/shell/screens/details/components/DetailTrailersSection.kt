@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.rowFocusEntry
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -108,7 +109,8 @@ fun DetailTrailersSection(
             LazyRow(
                 modifier = Modifier
                     .horizontalScrollBleed(horizontalScrollPadding)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .rowFocusEntry(),
                 state = trailerRowState,
                 contentPadding = PaddingValues(horizontal = horizontalScrollPadding),
                 horizontalArrangement = Arrangement.spacedBy(sizing.cardSpacing),

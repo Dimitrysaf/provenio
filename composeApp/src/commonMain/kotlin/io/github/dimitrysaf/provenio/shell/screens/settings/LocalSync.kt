@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.textActionsMenu
+import io.github.dimitrysaf.provenio.shell.components.rememberTextActionsMenu
+import io.github.dimitrysaf.provenio.shell.components.TextActionsMenu
 import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.Canvas
@@ -463,12 +466,14 @@ internal fun LocalSyncCodeDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(Res.string.local_sync_enter_code)) },
         text = {
+            val textMenu = rememberTextActionsMenu()
+            TextActionsMenu(textMenu, text = code) { pasted -> code += pasted }
             OutlinedTextField(
                 value = code,
                 onValueChange = { code = it },
                 label = { Text(stringResource(Res.string.local_sync_code_label)) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth().arrowKeysLeaveField { code.isEmpty() },
+                modifier = Modifier.fillMaxWidth().arrowKeysLeaveField { code.isEmpty() }.textActionsMenu(textMenu),
             )
         },
         confirmButton = {

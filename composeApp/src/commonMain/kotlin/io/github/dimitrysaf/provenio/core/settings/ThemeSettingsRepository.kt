@@ -22,6 +22,11 @@ object ThemeSettingsRepository {
     /** Whether the app is laid out for a TV and its remote, on a TV or anywhere it is turned on. */
     val tvLayout: StateFlow<Boolean> = _tvLayout.asStateFlow()
 
+    private val _scrollbarFocus = MutableStateFlow(false)
+
+    /** Whether three quick presses of the right arrow move focus to a page's scrollbar. */
+    val scrollbarFocus: StateFlow<Boolean> = _scrollbarFocus.asStateFlow()
+
     private val _selectedAppLanguage = MutableStateFlow(AppLanguage.DEVICE)
     val selectedAppLanguage: StateFlow<AppLanguage> = _selectedAppLanguage.asStateFlow()
 
@@ -43,6 +48,7 @@ object ThemeSettingsRepository {
         _colorPalette.value = ColorPalette.Dynamic
         _displayScale.value = DisplayScaleOption.AUTOMATIC
         _tvLayout.value = ThemeSettingsStorage.isTelevision
+        _scrollbarFocus.value = false
         _selectedAppLanguage.value = AppLanguage.DEVICE
     }
 
@@ -53,6 +59,7 @@ object ThemeSettingsRepository {
         _colorPalette.value = ColorPalette.fromKey(ThemeSettingsStorage.loadColorPalette())
         _displayScale.value = DisplayScaleOption.fromKey(ThemeSettingsStorage.loadDisplayScale())
         _tvLayout.value = ThemeSettingsStorage.loadTvLayout() ?: ThemeSettingsStorage.isTelevision
+        _scrollbarFocus.value = ThemeSettingsStorage.loadScrollbarFocus() ?: false
         val appLanguage = AppLanguage.fromCode(ThemeSettingsStorage.loadSelectedAppLanguage())
         ThemeSettingsStorage.applySelectedAppLanguage(appLanguage.code)
         _selectedAppLanguage.value = appLanguage
@@ -91,6 +98,13 @@ object ThemeSettingsRepository {
         if (_tvLayout.value == enabled) return
         _tvLayout.value = enabled
         ThemeSettingsStorage.saveTvLayout(enabled)
+    }
+
+    fun setScrollbarFocus(enabled: Boolean) {
+        ensureLoaded()
+        if (_scrollbarFocus.value == enabled) return
+        _scrollbarFocus.value = enabled
+        ThemeSettingsStorage.saveScrollbarFocus(enabled)
     }
 
     fun setAppLanguage(language: AppLanguage) {

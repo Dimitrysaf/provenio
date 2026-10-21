@@ -212,6 +212,8 @@ internal class PlayerScreenRuntime(
     var selectedSubtitleIndex by mutableStateOf(-1)
     var selectedAddonSubtitleId by mutableStateOf<String?>(null)
     var useCustomSubtitles by mutableStateOf(false)
+    /** The subtitles a remote's Captions key turned off, which it turns back on. */
+    var subtitlesBeforeCaptionsOff: SubtitleChoice? = null
     var preferredAudioSelectionApplied by mutableStateOf(false)
     var appliedAudioPreferences: AppliedAudioPreferences? = null
     var preferredSubtitleSelectionApplied by mutableStateOf(false)

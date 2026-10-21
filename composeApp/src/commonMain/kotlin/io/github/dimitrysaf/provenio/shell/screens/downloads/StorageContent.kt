@@ -306,6 +306,9 @@ internal fun CachedTorrentsGroup(torrents: List<CachedTorrent>) {
     }
 }
 
+/** A clean-up waiting to be confirmed: what it asks, and what it does once confirmed. */
+private class PendingCleanup(val title: String, val message: String, val run: () -> Unit)
+
 /** Everything that frees space or forgets something, each with what it would free. */
 @Composable
 internal fun StorageCleanupGroup(
@@ -324,6 +327,8 @@ internal fun StorageCleanupGroup(
     var continueWatchingCleared by remember { mutableStateOf(false) }
     var confirmDeleteDownloads by remember { mutableStateOf(false) }
     var confirmClearSearches by remember { mutableStateOf(false) }
+    // Each clean-up asks first, so a stray press of OK frees nothing.
+    var pendingCleanup by remember { mutableStateOf<PendingCleanup?>(null) }
     val torrentClearAvailable = streamingState !is P2pStreamingState.Connecting &&
         streamingState !is P2pStreamingState.Streaming &&
         downloadStreams == 0 &&
@@ -337,6 +342,59 @@ internal fun StorageCleanupGroup(
         }
     }
     val torrentBytes = usage?.get(StorageCategory.TorrentCache) ?: 0L
+    val torrentConfirm = PendingCleanup(
+        title = stringResource(Res.string.storage_clear_torrent_cache_confirm_title),
+        message = stringResource(Res.string.storage_clear_torrent_cache_confirm_message, formatBytes(torrentBytes)),
+    ) {
+        torrentClearResult = null
+        torrentClearFailed = false
+        scope.launch {
+            runCatching { P2pStreamingEngine.clearCache() }
+                .onSuccess { torrentClearResult = it }
+                .onFailure { torrentClearFailed = true }
+            runCatching { StoragePlatform.clearStaleTorrentCaches() }
+            onCleared()
+        }
+    }
+    val imagesConfirm = PendingCleanup(
+        title = stringResource(Res.string.storage_clear_images_confirm_title),
+        message = stringResource(
+            Res.string.storage_clear_images_confirm_message,
+            formatBytes(usage?.get(StorageCategory.Images) ?: 0L),
+        ),
+    ) {
+        clear(StorageCategory.Images) {
+            imageLoader.memoryCache?.clear()
+            imageLoader.diskCache?.clear()
+        }
+    }
+    val addonCacheConfirm = PendingCleanup(
+        title = stringResource(Res.string.storage_clear_addon_cache_confirm_title),
+        message = stringResource(
+            Res.string.storage_clear_addon_cache_confirm_message,
+            formatBytes(usage?.get(StorageCategory.AddonCache) ?: 0L),
+        ),
+    ) {
+        clear(StorageCategory.AddonCache) { StoragePlatform.clearAddonCache() }
+    }
+    val otherConfirm = PendingCleanup(
+        title = stringResource(Res.string.storage_clear_other_confirm_title),
+        message = stringResource(
+            Res.string.storage_clear_other_confirm_message,
+            formatBytes(usage?.get(StorageCategory.Other) ?: 0L),
+        ),
+    ) {
+        clear(StorageCategory.Other) { StoragePlatform.clearOther() }
+    }
+    val continueWatchingConfirm = PendingCleanup(
+        title = stringResource(Res.string.storage_clear_cw_cache_confirm_title),
+        message = stringResource(Res.string.storage_clear_cw_cache_confirm_message),
+    ) {
+        val profileId = ProfileRepository.activeProfileId
+        ContinueWatchingEnrichmentCache.clearAll(profileId)
+        continueWatchingCleared = true
+        scope.launch { WatchProgressRepository.clearLocalAndForceSnapshotRefreshFromServer(profileId) }
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         ListSubheader(text = stringResource(Res.string.storage_section_clean_up))
@@ -354,17 +412,7 @@ internal fun StorageCleanupGroup(
                     else -> stringResource(Res.string.settings_p2p_clear_cache_usage, formatBytes(torrentBytes))
                 },
                 enabled = torrentClearAvailable,
-                onClick = {
-                    torrentClearResult = null
-                    torrentClearFailed = false
-                    scope.launch {
-                        runCatching { P2pStreamingEngine.clearCache() }
-                            .onSuccess { torrentClearResult = it }
-                            .onFailure { torrentClearFailed = true }
-                        runCatching { StoragePlatform.clearStaleTorrentCaches() }
-                        onCleared()
-                    }
-                },
+                onClick = { pendingCleanup = torrentConfirm },
             )
             navigationRow(
                 title = stringResource(Res.string.storage_clear_images),
@@ -372,12 +420,7 @@ internal fun StorageCleanupGroup(
                     Res.string.storage_clear_images_description,
                     formatBytes(usage?.get(StorageCategory.Images) ?: 0L),
                 ),
-                onClick = {
-                    clear(StorageCategory.Images) {
-                        imageLoader.memoryCache?.clear()
-                        imageLoader.diskCache?.clear()
-                    }
-                },
+                onClick = { pendingCleanup = imagesConfirm },
             )
             if (usage?.bytes?.containsKey(StorageCategory.AddonCache) == true) {
                 navigationRow(
@@ -386,7 +429,7 @@ internal fun StorageCleanupGroup(
                         Res.string.storage_clear_addon_cache_description,
                         formatBytes(usage?.get(StorageCategory.AddonCache) ?: 0L),
                     ),
-                    onClick = { clear(StorageCategory.AddonCache) { StoragePlatform.clearAddonCache() } },
+                    onClick = { pendingCleanup = addonCacheConfirm },
                 )
                 navigationRow(
                     title = stringResource(Res.string.storage_clear_other),
@@ -394,7 +437,7 @@ internal fun StorageCleanupGroup(
                         Res.string.storage_clear_other_description,
                         formatBytes(usage?.get(StorageCategory.Other) ?: 0L),
                     ),
-                    onClick = { clear(StorageCategory.Other) { StoragePlatform.clearOther() } },
+                    onClick = { pendingCleanup = otherConfirm },
                 )
             }
             navigationRow(
@@ -415,12 +458,7 @@ internal fun StorageCleanupGroup(
                     stringResource(Res.string.settings_advanced_clear_cw_cache_subtitle)
                 },
                 enabled = !continueWatchingCleared,
-                onClick = {
-                    val profileId = ProfileRepository.activeProfileId
-                    ContinueWatchingEnrichmentCache.clearAll(profileId)
-                    continueWatchingCleared = true
-                    scope.launch { WatchProgressRepository.clearLocalAndForceSnapshotRefreshFromServer(profileId) }
-                },
+                onClick = { pendingCleanup = continueWatchingConfirm },
             )
             navigationRow(
                 title = stringResource(Res.string.storage_delete_all_downloads),
@@ -437,6 +475,21 @@ internal fun StorageCleanupGroup(
                 onClick = { confirmDeleteDownloads = true },
             )
         }
+    }
+
+    pendingCleanup?.let { cleanup ->
+        StatusModal(
+            title = cleanup.title,
+            message = cleanup.message,
+            isVisible = true,
+            confirmText = stringResource(Res.string.action_yes),
+            dismissText = stringResource(Res.string.action_no),
+            onConfirm = {
+                pendingCleanup = null
+                cleanup.run()
+            },
+            onDismiss = { pendingCleanup = null },
+        )
     }
 
     if (confirmClearSearches) {

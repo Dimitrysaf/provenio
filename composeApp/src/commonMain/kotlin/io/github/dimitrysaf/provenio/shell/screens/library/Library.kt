@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
+import io.github.dimitrysaf.provenio.shell.components.textActionsMenu
+import io.github.dimitrysaf.provenio.shell.components.rememberTextActionsMenu
+import io.github.dimitrysaf.provenio.shell.components.TextActionsMenu
 import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.WindowInsets
@@ -690,10 +693,12 @@ private fun CloudLibrarySearchField(
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val textMenu = rememberTextActionsMenu()
+    TextActionsMenu(textMenu, text = query) { pasted -> onQueryChange(query + pasted) }
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = modifier.fillMaxWidth().arrowKeysLeaveField { query.isEmpty() },
+        modifier = modifier.fillMaxWidth().arrowKeysLeaveField { query.isEmpty() }.textActionsMenu(textMenu),
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
         placeholder = { Text(stringResource(Res.string.cloud_library_search_label)) },

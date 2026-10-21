@@ -17,11 +17,14 @@ import androidx.compose.ui.platform.LocalFocusManager
  * instead of being kept by the field. Up and down always leave, as a single line has nowhere to
  * go; left and right leave while the field is empty, and move the cursor once there is text. A
  * remote passing over a field would otherwise stop there, with the arrows seeming to do nothing.
+ *
+ * In a sheet, focus never starts on the field, which would bring up the keyboard, but on what
+ * comes after it; the arrow keys still reach it.
  */
 fun Modifier.arrowKeysLeaveField(isEmpty: () -> Boolean): Modifier = composed {
     val focusManager = LocalFocusManager.current
     val latestIsEmpty by rememberUpdatedState(isEmpty)
-    onPreviewKeyEvent { event ->
+    sheetHeaderFocus(LocalSheetFocus.current).onPreviewKeyEvent { event ->
         if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
         val direction = when (event.key) {
             Key.DirectionUp -> FocusDirection.Up

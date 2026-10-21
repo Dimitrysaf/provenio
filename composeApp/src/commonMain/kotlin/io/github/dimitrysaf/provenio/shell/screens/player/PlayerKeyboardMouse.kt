@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.shell.components.OpenSheets
 import io.github.dimitrysaf.provenio.shell.components.openedWithKeys
 import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
 import io.github.dimitrysaf.provenio.core.build.isDesktop
@@ -42,6 +43,10 @@ import androidx.compose.ui.platform.LocalWindowInfo
 
 private const val KeyboardVolumeStep = 0.05f
 private val KeyRepeatGap = 150.milliseconds
+
+/** How soon a second press of left or right has to follow the first to seek. */
+private val ArrowSeekPressGap = 300.milliseconds
+
 private const val SpaceHoldDelayMs = 400L
 private const val MouseMoveThresholdPx = 1f
 
@@ -59,6 +64,7 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
     val scope = rememberCoroutineScope()
     val spaceHold = remember { SpaceHoldState() }
     val mute = remember { MuteState() }
+    val arrowSeek = remember { ArrowSeekState() }
     val focusState = remember { PlayerFocusState() }
     val windowFocused = LocalWindowInfo.current.isWindowFocused
     val currentWindowFocused by rememberUpdatedState(windowFocused)
@@ -70,8 +76,8 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
     // A focused control is gone once the controls hide, which leaves focus nowhere and the keys
     // with nothing to reach; the player takes it back then.
     LaunchedEffect(focusRequester) {
-        snapshotFlow { focusState.hasFocusWithin }.collect { hasFocus ->
-            if (!hasFocus && currentWindowFocused) focusRequester.claimFocus(focusState)
+        snapshotFlow { focusState.hasFocusWithin to OpenSheets.count }.collect { (hasFocus, sheets) ->
+            if (!hasFocus && sheets == 0 && currentWindowFocused) focusRequester.claimFocus(focusState)
         }
     }
     return Modifier
@@ -86,10 +92,13 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
                 mute.volumeUpHeld = false
                 mute.volumeUpReleasedAt = TimeSource.Monotonic.markNow()
             }
-            if (event.key == Key.Spacebar) {
+            // A sheet over the player has the keys, even one in the player's own window.
+            if (OpenSheets.count > 0) {
+                false
+            } else if (event.key == Key.Spacebar) {
                 handleSpaceKey(event.type, scope, spaceHold)
             } else {
-                event.type == KeyEventType.KeyDown && handlePlayerKey(event, mute, focusState.controlFocused)
+                event.type == KeyEventType.KeyDown && handlePlayerKey(event, mute, arrowSeek, focusState.controlFocused)
             }
         }
         .pointerInput(Unit) {
@@ -125,7 +134,7 @@ private class PlayerFocusState {
 }
 
 private fun FocusRequester.claimFocus(state: PlayerFocusState) {
-    if (!state.hasFocusWithin) runCatching { requestFocus() }
+    if (!state.hasFocusWithin && OpenSheets.count == 0) runCatching { requestFocus() }
 }
 
 private class MuteState {
@@ -137,14 +146,25 @@ private class MuteState {
     var volumeUpReleasedAt: TimeMark? = null
 }
 
-private fun PlayerScreenRuntime.handlePlayerKey(event: KeyEvent, mute: MuteState, controlFocused: Boolean): Boolean {
+/** A remote's left or right last pressed, which a second press of soon after seeks with. */
+private class ArrowSeekState {
+    var key: Key? = null
+    var pressedAt: TimeMark? = null
+}
+
+private fun PlayerScreenRuntime.handlePlayerKey(
+    event: KeyEvent,
+    mute: MuteState,
+    arrowSeek: ArrowSeekState,
+    controlFocused: Boolean,
+): Boolean {
     if (playerControlsLocked) return false
     if (event.isCtrlPressed || event.isMetaPressed || event.isAltPressed) return false
     handleMediaKey(event.key)?.let { handled ->
         controlsActivity++
         return handled
     }
-    if (!isDesktop) handleRemoteKey(event.key, controlFocused)?.let { return it }
+    if (!isDesktop) handleRemoteKey(event.key, arrowSeek, controlFocused)?.let { return it }
     val digit = event.key.digitOrNull()
     when {
         digit != null -> seekToFraction(digit / 10f)
@@ -194,8 +214,12 @@ private fun PlayerScreenRuntime.handleMediaKey(key: Key): Boolean? {
         Key.MediaPlayPause -> togglePlayback()
         Key.MediaPlay -> if (!playbackSnapshot.isPlaying) togglePlayback()
         Key.MediaPause -> if (playbackSnapshot.isPlaying) togglePlayback()
-        Key.MediaFastForward -> seekBy(seekStepMs(PlayerSeekDirection.Forward))
-        Key.MediaRewind -> seekBy(-seekStepMs(PlayerSeekDirection.Backward))
+        // A remote's own seek keys seek at one press, unlike its arrows.
+        Key.MediaFastForward, Key.MediaSkipForward, Key.MediaStepForward ->
+            seekBy(seekStepMs(PlayerSeekDirection.Forward))
+        Key.MediaRewind, Key.MediaSkipBackward, Key.MediaStepBackward ->
+            seekBy(-seekStepMs(PlayerSeekDirection.Backward))
+        Key.Captions -> toggleCaptions()
         Key.MediaNext -> {
             if (nextEpisodeInfo?.hasAired != true) return false
             nextEpisodeAutoPlayJob?.cancel()
@@ -209,18 +233,30 @@ private fun PlayerScreenRuntime.handleMediaKey(key: Key): Boolean? {
 /**
  * A remote's D-pad, where there is no keyboard to fall back on. While a control has focus the
  * arrows move between the controls and OK presses the one focused. With the controls hidden, or
- * none focused, left and right seek, up and down bring the controls up with focus on play, and OK
- * plays or pauses and shows them. A keyboard on desktop keeps its arrows for seeking and volume.
+ * none focused, left or right pressed twice seeks, and once only shows where playback is; up and
+ * down bring the controls up with focus on play, and OK plays or pauses and shows them. A
+ * keyboard on desktop keeps its arrows for seeking and volume.
  */
-private fun PlayerScreenRuntime.handleRemoteKey(key: Key, controlFocused: Boolean): Boolean? {
+private fun PlayerScreenRuntime.handleRemoteKey(key: Key, arrowSeek: ArrowSeekState, controlFocused: Boolean): Boolean? {
     val navigatesControls = controlFocused && controlsVisible
     when (key) {
         Key.DirectionLeft, Key.DirectionRight, Key.DirectionUp, Key.DirectionDown -> {
             controlsActivity++
             if (navigatesControls) return false
             when (key) {
-                Key.DirectionLeft -> seekBy(-seekStepMs(PlayerSeekDirection.Backward))
-                Key.DirectionRight -> seekBy(seekStepMs(PlayerSeekDirection.Forward))
+                Key.DirectionLeft, Key.DirectionRight -> {
+                    // A press soon after one of the same arrow seeks, and so does each that
+                    // follows it as soon; a press on its own is easily made by mistake.
+                    val seeks = arrowSeek.key == key &&
+                        arrowSeek.pressedAt?.let { it.elapsedNow() < ArrowSeekPressGap } == true
+                    arrowSeek.key = key
+                    arrowSeek.pressedAt = TimeSource.Monotonic.markNow()
+                    when {
+                        !seeks -> controlsVisible = true
+                        key == Key.DirectionLeft -> seekBy(-seekStepMs(PlayerSeekDirection.Backward))
+                        else -> seekBy(seekStepMs(PlayerSeekDirection.Forward))
+                    }
+                }
                 else -> showControlsForRemote()
             }
             return true

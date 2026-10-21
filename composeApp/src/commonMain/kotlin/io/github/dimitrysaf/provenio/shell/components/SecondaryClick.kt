@@ -40,7 +40,8 @@ fun Modifier.onSecondaryClick(action: (() -> Unit)?): Modifier {
         DisposableEffect(hintToken) {
             onDispose { KeyActionHint.hide(hintToken) }
         }
-        onGloballyPositioned { coordinates[0] = it }.onFocusChanged { state ->
+        // An item with more actions is one a menu is opened from, which focus goes back to.
+        restoresFocus().onGloballyPositioned { coordinates[0] = it }.onFocusChanged { state ->
             if (state.isFocused) KeyActionHint.show(hintToken) else KeyActionHint.hide(hintToken)
         }.onPreviewKeyEvent { event ->
             // Seen, not taken: the press itself is the clickable's.

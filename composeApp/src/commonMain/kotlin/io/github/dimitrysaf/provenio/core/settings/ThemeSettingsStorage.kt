@@ -16,6 +16,8 @@ internal expect object ThemeSettingsStorage {
     val isTelevision: Boolean
     fun loadTvLayout(): Boolean?
     fun saveTvLayout(enabled: Boolean)
+    fun loadScrollbarFocus(): Boolean?
+    fun saveScrollbarFocus(enabled: Boolean)
     fun loadSelectedAppLanguage(): String?
     fun saveSelectedAppLanguage(languageCode: String)
     fun applySelectedAppLanguage(languageCode: String)

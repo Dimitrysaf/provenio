@@ -191,7 +191,7 @@ fun DetailMetaInfo(
         }
 
         if (!meta.description.isNullOrBlank()) {
-            SelectableText {
+            SelectableText(copyText = meta.description) {
                 FindableText(
                     text = meta.description,
                     style = MaterialTheme.typography.bodyLarge,

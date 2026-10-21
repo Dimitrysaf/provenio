@@ -17,6 +17,7 @@ actual object ThemeSettingsStorage {
     private const val colorPaletteKey = "color_palette"
     private const val displayScaleKey = "display_scale"
     private const val tvLayoutKey = "tv_layout"
+    private const val scrollbarFocusKey = "scrollbar_focus"
     private val profileScopedSyncKeys = listOf(
         amoledEnabledKey,
     )
@@ -62,6 +63,15 @@ actual object ThemeSettingsStorage {
 
     actual fun saveTvLayout(enabled: Boolean) {
         NSUserDefaults.standardUserDefaults.setBool(enabled, forKey = tvLayoutKey)
+    }
+
+    actual fun loadScrollbarFocus(): Boolean? {
+        val defaults = NSUserDefaults.standardUserDefaults
+        return if (defaults.objectForKey(scrollbarFocusKey) != null) defaults.boolForKey(scrollbarFocusKey) else null
+    }
+
+    actual fun saveScrollbarFocus(enabled: Boolean) {
+        NSUserDefaults.standardUserDefaults.setBool(enabled, forKey = scrollbarFocusKey)
     }
 
     actual fun loadSelectedAppLanguage(): String? {

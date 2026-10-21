@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.rowFocusEntry
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -112,7 +113,8 @@ fun DetailCommentsSection(
                 LazyRow(
                     modifier = Modifier
                         .horizontalScrollBleed(horizontalScrollPadding)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .rowFocusEntry(),
                     state = listState,
                     contentPadding = PaddingValues(horizontal = horizontalScrollPadding),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),

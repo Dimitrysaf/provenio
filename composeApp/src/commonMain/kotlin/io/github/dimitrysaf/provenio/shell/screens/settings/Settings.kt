@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.arrowKeyScrollContent
+import io.github.dimitrysaf.provenio.shell.components.arrowKeyScrollHost
+import io.github.dimitrysaf.provenio.shell.components.rememberArrowKeyScroll
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
 import androidx.compose.material.icons.rounded.People
@@ -754,10 +757,12 @@ private fun TabletSettingsScreen(
                 stringResource(shownPage.titleRes)
             }
             val topAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+            val arrowKeyScroll = rememberArrowKeyScroll()
 
             Scaffold(
                 modifier = Modifier
                     .fillMaxSize()
+                    .arrowKeyScrollHost(arrowKeyScroll)
                     .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
                 containerColor = MaterialTheme.colorScheme.surface,
                 topBar = {
@@ -785,7 +790,7 @@ private fun TabletSettingsScreen(
                     val contentSidePadding = max(32.dp, (maxWidth - SettingsContentMaxWidth) / 2)
                     LazyColumn(
                         state = listState,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().arrowKeyScrollContent(arrowKeyScroll, listState),
                         contentPadding = PaddingValues(
                             start = contentSidePadding,
                             top = if (showInternalHeader) innerPadding.calculateTopPadding() else topOffset,
@@ -835,6 +840,7 @@ internal data class SettingsData(
     val dynamicColorAvailable: Boolean,
     val displayScale: DisplayScaleOption,
     val tvLayout: Boolean,
+    val scrollbarFocus: Boolean,
     val appIconState: AppIconSettingsState,
     val onAppIconSelected: (AppIconOption) -> Unit,
     val selectedAppLanguage: AppLanguage,
@@ -870,6 +876,7 @@ internal fun rememberSettingsData(): SettingsData {
     val colorPalette by remember { ThemeSettingsRepository.colorPalette }.collectAsStateWithLifecycle()
     val displayScale by remember { ThemeSettingsRepository.displayScale }.collectAsStateWithLifecycle()
     val tvLayout by remember { ThemeSettingsRepository.tvLayout }.collectAsStateWithLifecycle()
+    val scrollbarFocus by remember { ThemeSettingsRepository.scrollbarFocus }.collectAsStateWithLifecycle()
     val dynamicColorAvailable = remember { isDynamicColorAvailable() }
     val appIconState by remember {
         AppIconRepository.ensureLoaded()
@@ -964,6 +971,7 @@ internal fun rememberSettingsData(): SettingsData {
         dynamicColorAvailable = dynamicColorAvailable,
         displayScale = displayScale,
         tvLayout = tvLayout,
+        scrollbarFocus = scrollbarFocus,
         appIconState = appIconState,
         onAppIconSelected = { icon -> appIconScope.launch { AppIconRepository.select(icon) } },
         selectedAppLanguage = selectedAppLanguage,
@@ -1060,6 +1068,8 @@ internal fun LazyListScope.settingsPageContent(
                 onDisplayScaleSelected = ThemeSettingsRepository::setDisplayScale,
                 tvLayout = data.tvLayout,
                 onTvLayoutToggle = ThemeSettingsRepository::setTvLayout,
+                scrollbarFocus = data.scrollbarFocus,
+                onScrollbarFocusToggle = ThemeSettingsRepository::setScrollbarFocus,
                 appIconState = data.appIconState,
                 onAppIconSelected = data.onAppIconSelected,
                 onAppIconFailureDismissed = AppIconRepository::clearFailure,

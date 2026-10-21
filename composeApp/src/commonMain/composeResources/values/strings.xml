@@ -623,6 +623,9 @@
     <string name="storage_section_torrent_cache">In the torrent cache (%1$d)</string>
     <string name="storage_section_clean_up">Clean up</string>
     <string name="storage_section_locations">Locations</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_paste">Paste</string>
+    <string name="text_copied">Copied</string>
     <string name="storage_cleared">Cleared %1$s</string>
     <string name="storage_clear_images">Clear image cache</string>
     <string name="storage_clear_images_description">%1$s of posters and artwork</string>
@@ -638,6 +641,16 @@
     <string name="storage_delete_all_downloads">Delete all downloads</string>
     <string name="storage_delete_all_downloads_description">%1$s in %2$d downloads</string>
     <string name="storage_delete_all_downloads_confirm_title">Delete all downloads?</string>
+    <string name="storage_clear_torrent_cache_confirm_title">Clear torrent cache?</string>
+    <string name="storage_clear_torrent_cache_confirm_message">%1$s of inactive torrent data is removed from this device. Torrents load from their peers again the next time they play.</string>
+    <string name="storage_clear_images_confirm_title">Clear image cache?</string>
+    <string name="storage_clear_images_confirm_message">%1$s of posters and artwork is removed from this device. They download again as they are shown.</string>
+    <string name="storage_clear_addon_cache_confirm_title">Clear add-on cache?</string>
+    <string name="storage_clear_addon_cache_confirm_message">%1$s of saved add-on responses is removed from this device. Add-ons are asked again the next time.</string>
+    <string name="storage_clear_other_confirm_title">Clear logs and temporary files?</string>
+    <string name="storage_clear_other_confirm_message">%1$s of logs, subtitles and old updates is removed from this device.</string>
+    <string name="storage_clear_cw_cache_confirm_title">Clear Continue Watching cache?</string>
+    <string name="storage_clear_cw_cache_confirm_message">Cached Continue Watching data is removed, and watch progress is fetched again.</string>
     <string name="storage_delete_all_downloads_confirm_message">Every downloaded movie and episode, and every download in progress, is removed from this device.</string>
     <string name="storage_location_volume">Storage location</string>
     <string name="storage_location_volume_description">Where downloads and the torrent cache are kept</string>
@@ -747,6 +760,8 @@
     <string name="settings_appearance_amoled_description">Use pure black backgrounds for OLED screens.</string>
     <string name="settings_appearance_tv_layout">TV layout</string>
     <string name="settings_appearance_tv_layout_description">Lay out the app for a TV and its remote. On by default on TVs.</string>
+    <string name="settings_appearance_scrollbar_focus">Scrollbar focus</string>
+    <string name="settings_appearance_scrollbar_focus_description">Press right three times quickly to move to a page’s scrollbar, then scroll with up and down. A page with nothing to select scrolls this way on its own.</string>
     <string name="settings_appearance_theme">Theme</string>
     <string name="settings_appearance_theme_system">Automatic</string>
     <string name="settings_appearance_theme_system_description">Match your device's light or dark setting</string>

@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.textActionsMenu
+import io.github.dimitrysaf.provenio.shell.components.rememberTextActionsMenu
+import io.github.dimitrysaf.provenio.shell.components.TextActionsMenu
 import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -1526,13 +1529,18 @@ private fun DebridApiKeyDialog(
         },
     ) {
         Text(subtitle)
+        val textMenu = rememberTextActionsMenu()
+        TextActionsMenu(textMenu, text = draft) { pasted ->
+            draft += pasted
+            validationMessage = null
+        }
         OutlinedTextField(
             value = draft,
             onValueChange = {
                 draft = it
                 validationMessage = null
             },
-            modifier = Modifier.fillMaxWidth().arrowKeysLeaveField { draft.isEmpty() },
+            modifier = Modifier.fillMaxWidth().arrowKeysLeaveField { draft.isEmpty() }.textActionsMenu(textMenu),
             singleLine = true,
             placeholder = { Text(placeholder) },
             isError = validationMessage != null,

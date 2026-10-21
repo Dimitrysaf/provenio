@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.p2p
 
+import androidx.compose.foundation.lazy.rememberLazyListState
+import io.github.dimitrysaf.provenio.shell.components.arrowKeyScrollContent
 import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
 import io.github.dimitrysaf.provenio.shell.components.SheetHeader
 import androidx.compose.foundation.Canvas
@@ -193,8 +195,10 @@ private fun TorrentDetailsContent(
     playhead: Float?,
 ) {
     val unknown = stringResource(Res.string.torrent_details_unknown)
+    val listState = rememberLazyListState()
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        state = listState,
+        modifier = Modifier.fillMaxWidth().arrowKeyScrollContent(listState),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         health?.let { report ->

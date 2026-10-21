@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.rowFocusEntry
 import androidx.compose.foundation.lazy.rememberLazyListState
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -83,7 +84,8 @@ fun DetailCastSection(
             LazyRow(
                 modifier = Modifier
                     .horizontalScrollBleed(horizontalScrollPadding)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .rowFocusEntry(),
                 state = castRowState,
                 contentPadding = PaddingValues(horizontal = horizontalScrollPadding),
                 horizontalArrangement = Arrangement.spacedBy(sizing.avatarGap),

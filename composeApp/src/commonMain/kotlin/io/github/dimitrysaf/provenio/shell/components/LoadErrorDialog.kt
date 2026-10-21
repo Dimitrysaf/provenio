@@ -111,15 +111,19 @@ fun ErrorDialog(
         failures.mapNotNull { it.details }.joinToString(separator = "\n\n────────\n\n")
     }
     var showVerbose by rememberSaveable { mutableStateOf(false) }
+    val messageScroll = rememberScrollState()
+    val arrowKeyScroll = rememberArrowKeyScroll()
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        // The buttons are all focus can be on; up and down past them scroll the message.
+        modifier = Modifier.arrowKeyScrollHost(arrowKeyScroll),
         properties = DialogProperties(dismissOnClickOutside = false),
         icon = { Icon(imageVector = icon, contentDescription = null) },
         title = { Text(text = title, textAlign = TextAlign.Center) },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier.arrowKeyScrollContent(arrowKeyScroll, messageScroll).verticalScroll(messageScroll),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(message)
@@ -171,7 +175,7 @@ private fun VerboseDetails(text: String) {
             shape = MaterialTheme.shapes.medium,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            SelectableText {
+            SelectableText(copyText = text) {
                 Text(
                     text = text,
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),

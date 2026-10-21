@@ -365,6 +365,8 @@ fun FindInPageBar(modifier: Modifier = Modifier) {
                             maxLines = 1,
                         )
                     }
+                    val textMenu = rememberTextActionsMenu()
+                    TextActionsMenu(textMenu, text = query) { pasted -> FindInPage.query = query + pasted }
                     BasicTextField(
                         value = query,
                         onValueChange = { FindInPage.query = it },
@@ -376,6 +378,7 @@ fun FindInPageBar(modifier: Modifier = Modifier) {
                         modifier = Modifier
                             .focusRequester(focusRequester)
                             .arrowKeysLeaveField { query.isEmpty() }
+                            .textActionsMenu(textMenu)
                             .onPreviewKeyEvent { event ->
                                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                                 when (event.key) {

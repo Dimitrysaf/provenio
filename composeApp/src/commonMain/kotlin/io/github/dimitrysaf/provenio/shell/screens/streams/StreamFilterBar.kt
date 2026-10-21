@@ -1,18 +1,14 @@
 package io.github.dimitrysaf.provenio.shell.screens.streams
 
-import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
+import io.github.dimitrysaf.provenio.shell.components.SearchField
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FilterList
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.DropdownMenu
@@ -24,8 +20,6 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -35,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.streams.AddonStreamGroup
 import io.github.dimitrysaf.provenio.core.streams.StreamQuality
@@ -92,50 +85,30 @@ internal class StreamFilterState {
 @Composable
 internal fun rememberStreamFilterState(key: Any?): StreamFilterState = remember(key) { StreamFilterState() }
 
-// A fill-less search field over a full-width divider; it filters by regular expression, and its menu by resolution.
+// The app's search field over a divider; it filters by regular expression, and its menu by resolution.
 @Composable
 internal fun StreamFilterBar(state: StreamFilterState, groups: List<AddonStreamGroup>) {
     val qualities = remember(groups) {
         groups.flatMap { it.streams }.map { it.quality() }.toSet().sorted()
     }
     val hasSizes = remember(groups) { groups.any { group -> group.streams.any { it.sizeBytes() != null } } }
-    Column(modifier = Modifier.fillMaxWidth()) {
-        TextField(
-            value = state.query,
-            onValueChange = { state.query = it },
-            singleLine = true,
-            placeholder = { Text(stringResource(Res.string.streams_search_placeholder)) },
-            leadingIcon = { Icon(imageVector = Icons.Rounded.Search, contentDescription = null) },
-            trailingIcon = {
-                Row {
-                    if (state.query.isNotEmpty()) {
-                        WithTooltip(stringResource(Res.string.action_clear)) {
-                            IconButton(onClick = { state.query = "" }) {
-                                Icon(imageVector = Icons.Rounded.Close, contentDescription = stringResource(Res.string.action_clear))
-                            }
-                        }
-                    }
-                    if (hasSizes || qualities.size > 1) {
-                        StreamFilterMenuButton(
-                            state = state,
-                            qualities = qualities.takeIf { it.size > 1 }.orEmpty(),
-                            showSizeOrder = hasSizes,
-                        )
-                    }
-                }
-            },
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-            ),
-            modifier = Modifier.fillMaxWidth().arrowKeysLeaveField { state.query.isEmpty() },
-        )
-        HorizontalDivider()
-    }
+    SearchField(
+        query = state.query,
+        onQueryChange = { state.query = it },
+        placeholder = stringResource(Res.string.streams_search_placeholder),
+        divided = true,
+        actions = if (hasSizes || qualities.size > 1) {
+            {
+                StreamFilterMenuButton(
+                    state = state,
+                    qualities = qualities.takeIf { it.size > 1 }.orEmpty(),
+                    showSizeOrder = hasSizes,
+                )
+            }
+        } else {
+            null
+        },
+    )
 }
 
 // Shown in place of the list when streams exist but none match the search or qualities.

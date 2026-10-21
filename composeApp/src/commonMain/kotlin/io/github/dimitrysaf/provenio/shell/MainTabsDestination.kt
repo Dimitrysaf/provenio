@@ -212,6 +212,11 @@ internal fun MainTabsDestination(
                     runCatching { destinationFocus.getValue(selectedTab).requestFocus(FocusDirection.Enter) }
                     refocusSelectedDestination = false
                 }
+                // With a remote, Back on a tab's own page goes to the rail first, as on a TV,
+                // rather than a long way of pressing left; from the rail it leaves as before.
+                PlatformBackHandler(enabled = rootRouteActive && !railHasFocus && openedWithKeys()) {
+                    runCatching { destinationFocus.getValue(selectedTab).requestFocus(FocusDirection.Enter) }
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

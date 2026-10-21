@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -398,6 +399,15 @@ internal fun settingsSearchEntries(
         pageLabel = layoutPage,
         section = stringResource(Res.string.settings_appearance_section_display),
         icon = Icons.Rounded.Tv,
+    )
+    addRow(
+        page = SettingsPage.Appearance,
+        key = "scrollbar-focus",
+        title = stringResource(Res.string.settings_appearance_scrollbar_focus),
+        description = stringResource(Res.string.settings_appearance_scrollbar_focus_description),
+        pageLabel = layoutPage,
+        section = stringResource(Res.string.settings_appearance_section_display),
+        icon = Icons.Rounded.SwapVert,
     )
     addRow(
         page = SettingsPage.Advanced,

@@ -17,6 +17,8 @@ import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.settings_appearance_tv_layout
 import provenio.composeapp.generated.resources.settings_appearance_tv_layout_description
+import provenio.composeapp.generated.resources.settings_appearance_scrollbar_focus
+import provenio.composeapp.generated.resources.settings_appearance_scrollbar_focus_description
 import provenio.composeapp.generated.resources.settings_content_discovery_meta_screen_description
 import provenio.composeapp.generated.resources.compose_settings_page_meta_screen
 import provenio.composeapp.generated.resources.compose_settings_page_continue_watching
@@ -65,6 +67,8 @@ internal fun LazyListScope.appearanceSettingsContent(
     onDisplayScaleSelected: (DisplayScaleOption) -> Unit,
     tvLayout: Boolean,
     onTvLayoutToggle: (Boolean) -> Unit,
+    scrollbarFocus: Boolean,
+    onScrollbarFocusToggle: (Boolean) -> Unit,
     appIconState: AppIconSettingsState,
     onAppIconSelected: (AppIconOption) -> Unit,
     onAppIconFailureDismissed: () -> Unit,
@@ -143,6 +147,12 @@ internal fun LazyListScope.appearanceSettingsContent(
                     description = stringResource(Res.string.settings_appearance_tv_layout_description),
                     checked = { tvLayout },
                     onCheckedChange = onTvLayoutToggle,
+                )
+                switchRow(
+                    title = stringResource(Res.string.settings_appearance_scrollbar_focus),
+                    description = stringResource(Res.string.settings_appearance_scrollbar_focus_description),
+                    checked = { scrollbarFocus },
+                    onCheckedChange = onScrollbarFocusToggle,
                 )
             }
         }

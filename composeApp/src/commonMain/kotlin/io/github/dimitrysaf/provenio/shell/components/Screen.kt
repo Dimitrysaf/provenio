@@ -80,11 +80,12 @@ fun ScreenScaffold(
         null
     }
 
+    val arrowKeyScroll = rememberArrowKeyScroll()
     val list: @Composable (Dp, PaddingValues) -> Unit = { sidePadding, innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 state = listState,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().arrowKeyScrollContent(arrowKeyScroll, listState),
                 contentPadding = PaddingValues(
                     start = sidePadding,
                     top = topPadding
@@ -118,6 +119,8 @@ fun ScreenScaffold(
     Scaffold(
         modifier = modifier
             .fillMaxSize()
+            // Up and down scroll a page of only text, where there is nothing for focus to move to.
+            .arrowKeyScrollHost(arrowKeyScroll)
             .then(
                 scrollBehavior
                     ?.let { Modifier.nestedScroll(it.nestedScrollConnection) }

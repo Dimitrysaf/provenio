@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.textActionsMenu
+import io.github.dimitrysaf.provenio.shell.components.rememberTextActionsMenu
+import io.github.dimitrysaf.provenio.shell.components.TextActionsMenu
 import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.text.KeyboardOptions
@@ -34,11 +37,13 @@ internal fun SettingsSecretTextField(
     isError: Boolean = false,
 ) {
     var visible by rememberSaveable { mutableStateOf(false) }
+    val textMenu = rememberTextActionsMenu()
+    TextActionsMenu(textMenu, text = value, canCopy = false) { pasted -> onValueChange(value + pasted) }
 
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.arrowKeysLeaveField { value.isEmpty() },
+        modifier = modifier.arrowKeysLeaveField { value.isEmpty() }.textActionsMenu(textMenu),
         isError = isError,
         singleLine = true,
         label = { Text(label) },

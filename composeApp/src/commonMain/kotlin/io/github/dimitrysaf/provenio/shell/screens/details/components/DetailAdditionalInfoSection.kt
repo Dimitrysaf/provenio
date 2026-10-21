@@ -39,7 +39,7 @@ fun DetailAdditionalInfoSection(
         modifier = modifier,
         showHeader = showHeader,
     ) {
-        SelectableText {
+        SelectableText(copyText = rows.joinToString("\n") { (label, value) -> "$label: $value" }) {
             DetailInfoRows(rows = rows)
         }
     }

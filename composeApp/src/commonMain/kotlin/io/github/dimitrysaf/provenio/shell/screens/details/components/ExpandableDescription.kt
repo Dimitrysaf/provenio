@@ -53,7 +53,7 @@ internal fun ExpandableDescription(
     ) {
         val findHit = rememberFindHit(text)
         val showAll = expanded || findHit
-        SelectableText {
+        SelectableText(copyText = text) {
             FindableText(
                 text = text,
                 style = style,

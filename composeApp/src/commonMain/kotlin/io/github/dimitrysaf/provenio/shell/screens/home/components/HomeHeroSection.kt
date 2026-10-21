@@ -1,6 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import io.github.dimitrysaf.provenio.shell.components.rememberShapedArtwork
 import io.github.dimitrysaf.provenio.shell.components.horizontalWheelPaging
@@ -33,6 +35,7 @@ import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +53,9 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,8 +68,11 @@ import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
 
 private const val HERO_AUTO_SCROLL_INTERVAL_MS = 8_000L
+private const val HERO_AUTO_SCROLL_TICK_MS = 100L
 private const val MOBILE_HERO_VIEWPORT_RATIO = 0.82f
 private const val MOBILE_HERO_MIN_HEIGHT_DP = 360f
 private const val MOBILE_HERO_MAX_HEIGHT_DP = 760f
@@ -166,15 +175,22 @@ private fun HomeHeroCarousel(
 ) {
     val carouselState = rememberCarouselState(itemCount = { items.size })
     val coroutineScope = rememberCoroutineScope()
-    // While a remote or a keyboard is on a title, the carousel holds still under it.
+    // While a remote or a keyboard moves through the titles the carousel holds still, and it
+    // goes on by itself only once they have been left alone for a full interval.
     var carouselHasFocus by remember { mutableStateOf(false) }
+    var lastNavigation by remember { mutableStateOf<TimeSource.Monotonic.ValueTimeMark?>(null) }
+    // The title the carousel moved on to by itself while focus was on it, for focus to follow.
+    var advancedUnderFocus by remember { mutableStateOf<Int?>(null) }
 
     HeroAutoAdvance(
         itemCount = items.size,
         currentItem = carouselState.currentItem,
         isScrollInProgress = { carouselState.isScrollInProgress },
-        isPaused = { carouselHasFocus },
-        onAdvance = { page -> carouselState.animateScrollToItem(page) },
+        lastNavigation = { lastNavigation },
+        onAdvance = { page ->
+            carouselState.animateScrollToItem(page)
+            if (carouselHasFocus) advancedUnderFocus = page
+        },
     )
 
     Column(
@@ -188,7 +204,14 @@ private fun HomeHeroCarousel(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(layout.heroHeight)
-                .onFocusChanged { carouselHasFocus = it.hasFocus }
+                .onFocusChanged {
+                    if (it.hasFocus != carouselHasFocus) lastNavigation = TimeSource.Monotonic.markNow()
+                    carouselHasFocus = it.hasFocus
+                }
+                .onPreviewKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyDown) lastNavigation = TimeSource.Monotonic.markNow()
+                    false
+                }
                 .horizontalWheelPaging(
                     key = carouselState,
                     canStep = { forward -> if (forward) carouselState.canScrollForward else carouselState.canScrollBackward },
@@ -201,10 +224,16 @@ private fun HomeHeroCarousel(
         ) { index ->
             val item = items[index]
             val drawInfo = carouselItemDrawInfo
+            val focusRequester = remember { FocusRequester() }
+            // Focus moves along with the carousel, so OK opens the title that is in front.
+            LaunchedEffect(advancedUnderFocus) {
+                if (advancedUnderFocus == index && carouselHasFocus) focusRequester.requestFocus()
+            }
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .maskClip(MaterialTheme.shapes.extraLarge)
+                    .focusRequester(focusRequester)
                     // Moving onto a sliver with the arrow keys brings it to the centre, so OK
                     // then opens the title that is in front.
                     .onFocusChanged { state ->
@@ -391,12 +420,12 @@ private fun HeroAutoAdvance(
     itemCount: Int,
     currentItem: Int,
     isScrollInProgress: () -> Boolean,
-    isPaused: () -> Boolean,
+    lastNavigation: () -> TimeSource.Monotonic.ValueTimeMark?,
     onAdvance: suspend (Int) -> Unit,
 ) {
     val latestItem = rememberUpdatedState(currentItem)
     val latestIsScrollInProgress = rememberUpdatedState(isScrollInProgress)
-    val latestIsPaused = rememberUpdatedState(isPaused)
+    val latestLastNavigation = rememberUpdatedState(lastNavigation)
 
     // Keyed only on the item count (and the screen's active state) - never on the current item.
     // The carousel's "current item" ticks continuously while it scrolls, including while this
@@ -405,12 +434,19 @@ private fun HeroAutoAdvance(
     // carousel visibly stalled partway to the next title.
     ScreenActivityEffect(itemCount) { active ->
         if (!active || itemCount <= 1) return@ScreenActivityEffect
+        // The interval counts from whichever came last: a scroll, a key press on the carousel,
+        // or the last move this made.
+        var quietSince = TimeSource.Monotonic.markNow()
         while (true) {
-            delay(HERO_AUTO_SCROLL_INTERVAL_MS)
-            while (latestIsScrollInProgress.value() || latestIsPaused.value()) {
-                delay(100L)
+            delay(HERO_AUTO_SCROLL_TICK_MS)
+            if (latestIsScrollInProgress.value()) {
+                quietSince = TimeSource.Monotonic.markNow()
+                continue
             }
+            latestLastNavigation.value()?.let { if (it > quietSince) quietSince = it }
+            if (quietSince.elapsedNow() < HERO_AUTO_SCROLL_INTERVAL_MS.milliseconds) continue
             onAdvance((latestItem.value + 1) % itemCount)
+            quietSince = TimeSource.Monotonic.markNow()
         }
     }
 }

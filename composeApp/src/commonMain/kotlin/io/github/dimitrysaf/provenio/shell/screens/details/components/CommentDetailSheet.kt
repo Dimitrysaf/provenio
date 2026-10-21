@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.arrowKeyScrollContent
 import io.github.dimitrysaf.provenio.shell.components.sheetHeaderFocus
 import io.github.dimitrysaf.provenio.shell.components.LocalSheetFocus
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
@@ -153,6 +154,7 @@ fun CommentDetailSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f, fill = false)
+                    .arrowKeyScrollContent(scrollState)
                     .verticalScroll(scrollState),
             ) {
                 Text(

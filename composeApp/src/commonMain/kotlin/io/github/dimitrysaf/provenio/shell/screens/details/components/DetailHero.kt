@@ -501,7 +501,7 @@ private fun HeroTitleBlock(
                 onError = { logoLoadError = true },
             )
         } else {
-            SelectableText {
+            SelectableText(copyText = meta.name) {
                 FindableText(
                     text = meta.name,
                     modifier = Modifier.fillMaxWidth(),
