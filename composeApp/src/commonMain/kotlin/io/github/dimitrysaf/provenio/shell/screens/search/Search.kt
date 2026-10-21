@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.search
 
+import io.github.dimitrysaf.provenio.shell.components.TextFieldEntry
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -129,7 +130,7 @@ fun SearchScreen(
 
     ScreenActivityEffect(searchFocusRequestCount) { screenActive ->
         if (screenActive && searchFocusRequestCount > 0) {
-            focusRequester.requestFocus()
+            TextFieldEntry.asking { runCatching { focusRequester.requestFocus() } }
         }
     }
 

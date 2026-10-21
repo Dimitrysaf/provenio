@@ -132,7 +132,7 @@ fun SearchField(
                                     onClick = {
                                         onQueryChange("")
                                         // The button goes with the text; focus would go with it.
-                                        if (fieldFocused) textRequester.requestFocus()
+                                        if (fieldFocused) TextFieldEntry.asking { textRequester.requestFocus() }
                                     },
                                 ) {
                                     Icon(
@@ -179,7 +179,7 @@ fun SearchField(
                             if (textFocused || !fieldFocused) return@onPreviewKeyEvent false
                             leftButtons = false
                             if (!focusManager.moveFocus(FocusDirection.Left) || leftButtons) {
-                                textRequester.requestFocus()
+                                TextFieldEntry.asking { textRequester.requestFocus() }
                             }
                             true
                         }

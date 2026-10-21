@@ -34,6 +34,7 @@ internal object KeyPresses {
 
     /** Whether [event] is a held key's repeat, which is not passed on. */
     fun dropsRepeat(event: KeyEvent): Boolean {
+        if (event.type == KeyEventType.KeyDown) TextFieldEntry.pressed(event.key)
         if (event.key !in RepeatlessKeys) return false
         if (event.nativeKeyEvent === lastEvent && lastEventAt.elapsedNow() < SameEventGap) return lastDropped
         lastEvent = event.nativeKeyEvent

@@ -105,7 +105,10 @@ internal object FocusMemory {
             // Shown again around when focus was lost, as a page come back to is.
             val shownAgain = lost != null && item.since.elapsedNow() < lost.elapsedNow() + RecentWindow
             if (!afterSheet && !shownAgain) continue
-            if (key == focusedKey || item.requester.requestFocus(FocusDirection.Enter)) {
+            // An item can be gone from the screen before it is told; asking it for focus then throws.
+            val focused = key == focusedKey ||
+                runCatching { item.requester.requestFocus(FocusDirection.Enter) }.getOrDefault(false)
+            if (focused) {
                 lostAt = null
                 return true
             }

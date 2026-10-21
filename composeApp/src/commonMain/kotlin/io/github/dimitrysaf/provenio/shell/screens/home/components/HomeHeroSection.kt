@@ -227,7 +227,7 @@ private fun HomeHeroCarousel(
             val focusRequester = remember { FocusRequester() }
             // Focus moves along with the carousel, so OK opens the title that is in front.
             LaunchedEffect(advancedUnderFocus) {
-                if (advancedUnderFocus == index && carouselHasFocus) focusRequester.requestFocus()
+                if (advancedUnderFocus == index && carouselHasFocus) runCatching { focusRequester.requestFocus() }
             }
             Box(
                 modifier = Modifier

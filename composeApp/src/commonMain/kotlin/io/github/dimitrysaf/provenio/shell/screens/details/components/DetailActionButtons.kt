@@ -94,7 +94,7 @@ fun DetailActionButtons(
         // The page fills in over a few frames.
         repeat(PlayFocusFrames) {
             withFrameNanos {}
-            if (playFocus.requestFocus(FocusDirection.Enter)) return@LaunchedEffect
+            if (runCatching { playFocus.requestFocus(FocusDirection.Enter) }.getOrDefault(false)) return@LaunchedEffect
         }
     }
     val playLongPress = rememberLongPressGate(
