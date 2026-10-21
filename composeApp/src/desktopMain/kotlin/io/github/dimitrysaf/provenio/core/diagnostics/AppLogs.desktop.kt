@@ -61,6 +61,14 @@ actual object AppLogs {
         bundle(files)
     }
 
+    // An uncaught error on desktop is in the session's log with everything else, rather than in
+    // a record of its own.
+    actual suspend fun latestCrash(): AppCrash? = null
+
+    actual suspend fun unseenCrash(): AppCrash? = null
+
+    actual fun markCrashesSeen() = Unit
+
     private fun sessionName(index: Int): String = "provenio.$index.log"
 
     private fun summary(): String = listOf(

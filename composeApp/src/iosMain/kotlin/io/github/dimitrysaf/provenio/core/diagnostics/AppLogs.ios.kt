@@ -5,4 +5,10 @@ actual object AppLogs {
     actual val isSupported: Boolean = false
 
     actual suspend fun collect(): AppLogBundle? = null
+
+    actual suspend fun latestCrash(): AppCrash? = null
+
+    actual suspend fun unseenCrash(): AppCrash? = null
+
+    actual fun markCrashesSeen() = Unit
 }
