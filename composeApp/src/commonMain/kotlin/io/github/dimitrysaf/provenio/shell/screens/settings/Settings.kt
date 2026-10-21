@@ -31,7 +31,6 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Scaffold
@@ -61,7 +60,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -612,28 +610,33 @@ private fun TabletSettingsScreen(
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
     val categoryPaneWidth = (maxWidth * 0.5f).coerceIn(SettingsSidebarWidth, SettingsCategoryPaneMaxWidth)
     Row(modifier = Modifier.fillMaxSize()) {
-        Surface(
+        // The categories take the same collapsing app bar as the page beside them, so the two
+        // halves read as one screen with a title over each.
+        val categoryAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+        Scaffold(
             modifier = Modifier
                 .width(categoryPaneWidth)
-                .fillMaxHeight(),
-            color = MaterialTheme.colorScheme.surface,
-        ) {
+                .fillMaxHeight()
+                .nestedScroll(categoryAppBarScrollBehavior.nestedScrollConnection),
+            containerColor = MaterialTheme.colorScheme.surface,
+            topBar = {
+                if (showInternalHeader) {
+                    LargeFlexibleTopAppBar(
+                        title = { Text(stringResource(Res.string.compose_settings_page_root)) },
+                        scrollBehavior = categoryAppBarScrollBehavior,
+                    )
+                }
+            },
+        ) { innerPadding ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(top = topOffset, bottom = 24.dp),
+                    .padding(
+                        top = if (showInternalHeader) innerPadding.calculateTopPadding() else topOffset,
+                        bottom = 24.dp,
+                    ),
             ) {
-                Text(
-                    text = stringResource(Res.string.compose_settings_page_root),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .padding(bottom = 20.dp),
-                    style = MaterialTheme.typography.displayLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                )
                 SettingsSearchField(
                     query = settingsSearchQuery,
                     onQueryChange = { settingsSearchQuery = it },

@@ -7,11 +7,13 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URI
-import java.security.MessageDigest
 import java.util.prefs.Preferences
 import kotlin.system.exitProcess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jetbrains.compose.resources.getString
+import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.updates_checksum_mismatch
 
 private const val IgnoredTagKey = "updater_ignored_tag"
 private const val WindowsAssetName = "Provenio-Setup.exe"
@@ -36,15 +38,14 @@ actual object AppUpdaterPlatform {
         assetUrl: String,
         assetName: String,
         sha256: String?,
+        onVerifying: () -> Unit,
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,
     ): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             val target = updateFile(assetName)
             if (target.exists()) {
-                if (target.matchesSha256(sha256)) {
-                    onProgress(target.length(), target.length())
-                    return@runCatching target.absolutePath
-                }
+                onVerifying()
+                if (target.matchesSha256(sha256)) return@runCatching target.absolutePath
                 target.delete()
             }
             clearUpdateFiles(target.name)
@@ -85,17 +86,15 @@ actual object AppUpdaterPlatform {
                 break
             }
 
+            onVerifying()
             if (!partial.matchesSha256(sha256)) {
                 partial.delete()
-                error("The downloaded update does not match its published checksum. Try again.")
+                error(getString(Res.string.updates_checksum_mismatch))
             }
             check(partial.renameTo(target)) { "Could not save ${target.name}" }
             target.absolutePath
         }
     }
-
-    actual fun completedUpdatePath(fileName: String): String? =
-        updateFile(fileName).takeIf { it.exists() }?.absolutePath
 
     actual fun hasPartialUpdate(fileName: String): Boolean {
         val file = updateFile(fileName)
@@ -159,21 +158,6 @@ actual object AppUpdaterPlatform {
             exitProcess(0)
         }
         Desktop.getDesktop().open(file)
-    }
-
-    /** True when [sha256] is unknown or matches the file's SHA-256. */
-    private fun File.matchesSha256(sha256: String?): Boolean {
-        val expected = sha256?.trim()?.lowercase()?.takeIf { it.isNotEmpty() } ?: return true
-        val digest = MessageDigest.getInstance("SHA-256")
-        inputStream().use { input ->
-            val buffer = ByteArray(64 * 1024)
-            while (true) {
-                val read = input.read(buffer)
-                if (read < 0) break
-                digest.update(buffer, 0, read)
-            }
-        }
-        return digest.digest().joinToString("") { "%02x".format(it) } == expected
     }
 
     private const val PartialSuffix = ".part"

@@ -10,14 +10,18 @@ expect object AppUpdaterPlatform {
 
     fun setIgnoredTag(tag: String?)
 
+    /**
+     * Downloads the update, or reuses one already downloaded, and returns its path once it matches
+     * [sha256]. [onVerifying] is called as each check of the file starts, [onProgress] as it
+     * downloads.
+     */
     suspend fun downloadApk(
         assetUrl: String,
         assetName: String,
         sha256: String?,
+        onVerifying: () -> Unit,
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,
     ): Result<String>
-
-    fun completedUpdatePath(fileName: String): String?
 
     fun hasPartialUpdate(fileName: String): Boolean
 

@@ -1735,6 +1735,10 @@
     <string name="updates_not_available">In-app updates are not available on this build.</string>
     <string name="updates_no_release_notes">No release notes were provided.</string>
     <string name="updates_preparing_download">Preparing download</string>
+    <string name="updates_verifying">Checking the download</string>
+    <string name="updates_download_speed">%1$s/s</string>
+    <string name="updates_checksum_mismatch">The download doesn't match the published update. Try again.</string>
+    <string name="updates_error_title">Couldn't update</string>
     <string name="updates_title_allow_installs">Allow installs to continue</string>
     <string name="updates_title_available">Update available</string>
     <string name="updates_action_background">Continue in background</string>

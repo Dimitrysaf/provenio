@@ -46,6 +46,7 @@ import io.github.dimitrysaf.provenio.shell.screens.updater.AppUpdaterStatus
 import provenio.composeapp.generated.resources.updates_downloading_progress
 import provenio.composeapp.generated.resources.updates_message_ready
 import provenio.composeapp.generated.resources.updates_preparing_download
+import provenio.composeapp.generated.resources.updates_verifying
 import provenio.composeapp.generated.resources.updates_title_available
 import io.github.dimitrysaf.provenio.core.build.AppVersionConfig
 import io.github.dimitrysaf.provenio.core.diagnostics.AppLogs
@@ -256,6 +257,7 @@ internal fun LazyListScope.aboutSettingsContent(
                     navigationRow(
                         title = stringResource(Res.string.compose_settings_root_check_updates_title),
                         description = when {
+                            updater.isVerifying -> stringResource(Res.string.updates_verifying)
                             updater.isDownloading && downloadPercent != null ->
                                 stringResource(Res.string.updates_downloading_progress, downloadPercent)
                             updater.isDownloading -> stringResource(Res.string.updates_preparing_download)

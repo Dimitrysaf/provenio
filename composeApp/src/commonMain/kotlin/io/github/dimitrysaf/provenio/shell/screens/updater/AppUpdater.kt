@@ -20,6 +20,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.runBlocking
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.DurationUnit
+import kotlin.time.TimeSource
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 import io.github.dimitrysaf.provenio.core.updater.AppUpdaterPlatform
@@ -59,6 +62,10 @@ data class AppUpdaterUiState(
     val isUpdateAvailable: Boolean = false,
     val isDownloading: Boolean = false,
     val downloadProgress: Float? = null,
+    /** How fast the update is downloading, smoothed over the last few seconds; null until measured. */
+    val downloadBytesPerSecond: Long? = null,
+    /** The download is being checked against its published SHA-256, before it is reused or installed. */
+    val isVerifying: Boolean = false,
     val downloadedApkPath: String? = null,
     val showDialog: Boolean = false,
     val showUnknownSourcesDialog: Boolean = false,
@@ -236,9 +243,9 @@ class AppUpdaterController internal constructor(
                 val remoteNewer = isChannelBuildNewer(update.tag)
                 val ignored = ignoredTag != null && ignoredTag == update.tag
                 val fileName = update.downloadFileName()
-                val completedPath = if (remoteNewer) AppUpdaterPlatform.completedUpdatePath(fileName) else null
+                // A download left from before is not taken as ready: the update button checks it
+                // against its hash first, and downloads it again if it does not match.
                 val resumePartial = remoteNewer &&
-                    completedPath == null &&
                     !ignored &&
                     AppUpdaterPlatform.hasPartialUpdate(fileName)
                 if (!remoteNewer) AppUpdaterPlatform.clearUpdateFiles(null)
@@ -251,7 +258,8 @@ class AppUpdaterController internal constructor(
                         isUpdateAvailable = remoteNewer,
                         isDownloading = false,
                         downloadProgress = null,
-                        downloadedApkPath = completedPath,
+                        isVerifying = false,
+                        downloadedApkPath = null,
                         showDialog = shouldShowDialog,
                         showUnknownSourcesDialog = false,
                         errorMessage = null,
@@ -264,17 +272,19 @@ class AppUpdaterController internal constructor(
                     ToastController.show(getString(Res.string.updates_latest_version))
                 }
             }.onFailure { error ->
+                val showError = force && error !is NoChannelReleaseException
                 _uiState.update { state ->
                     state.copy(
                         isChecking = false,
                         isDownloading = false,
                         downloadProgress = null,
+                        isVerifying = false,
                         downloadedApkPath = null,
                         update = null,
                         isUpdateAvailable = false,
-                        showDialog = force && error !is NoChannelReleaseException,
+                        showDialog = showError,
                         showUnknownSourcesDialog = false,
-                        errorMessage = if (force && error !is NoChannelReleaseException) {
+                        errorMessage = if (showError) {
                             error.message ?: getString(Res.string.updates_check_failed)
                         } else {
                             null
@@ -282,7 +292,8 @@ class AppUpdaterController internal constructor(
                     )
                 }
 
-                if (showNoUpdateFeedback || error is NoChannelReleaseException) {
+                // The error dialog says it already when it shows.
+                if ((showNoUpdateFeedback && !showError) || error is NoChannelReleaseException) {
                     ToastController.show(error.message ?: getString(Res.string.updates_check_failed))
                 }
             }
@@ -296,6 +307,17 @@ class AppUpdaterController internal constructor(
                 showUnknownSourcesDialog = false,
                 errorMessage = null,
             )
+        }
+    }
+
+    /** Tries again from the step that failed: the check, the download or the installation. */
+    fun retry() {
+        val state = _uiState.value
+        _uiState.update { it.copy(errorMessage = null) }
+        when {
+            state.update == null -> checkForUpdates(force = true, showNoUpdateFeedback = false)
+            state.downloadedApkPath != null -> installDownloadedUpdate()
+            else -> downloadUpdate()
         }
     }
 
@@ -325,28 +347,54 @@ class AppUpdaterController internal constructor(
             _uiState.update { state ->
                 state.copy(
                     isDownloading = true,
-                    downloadProgress = 0f,
+                    downloadProgress = null,
+                    downloadBytesPerSecond = null,
+                    isVerifying = false,
                     errorMessage = null,
                 )
             }
 
+            // Bytes are measured over intervals, each blended into the last, so the speed reads
+            // steadily rather than jumping with every chunk.
+            var sampleStart = TimeSource.Monotonic.markNow()
+            var sampleBytes = -1L
+            var bytesPerSecond: Long? = null
             AppUpdaterPlatform.downloadApk(
                 assetUrl = update.assetUrl,
                 assetName = update.downloadFileName(),
                 sha256 = update.assetSha256,
+                onVerifying = { _uiState.update { state -> state.copy(isVerifying = true) } },
             ) { downloadedBytes, totalBytes ->
                 val progress = if (totalBytes != null && totalBytes > 0L) {
                     (downloadedBytes.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
                 } else {
                     null
                 }
-                _uiState.update { state -> state.copy(downloadProgress = progress) }
+                val elapsed = sampleStart.elapsedNow()
+                if (sampleBytes < 0L || downloadedBytes < sampleBytes) {
+                    sampleBytes = downloadedBytes
+                    sampleStart = TimeSource.Monotonic.markNow()
+                } else if (elapsed >= SpeedSampleInterval) {
+                    val rate = ((downloadedBytes - sampleBytes) / elapsed.toDouble(DurationUnit.SECONDS)).toLong()
+                    bytesPerSecond = bytesPerSecond?.let { (it * SpeedSmoothing + rate * (1 - SpeedSmoothing)).toLong() } ?: rate
+                    sampleBytes = downloadedBytes
+                    sampleStart = TimeSource.Monotonic.markNow()
+                }
+                _uiState.update { state ->
+                    state.copy(
+                        downloadProgress = progress,
+                        downloadBytesPerSecond = bytesPerSecond,
+                        isVerifying = false,
+                    )
+                }
             }.onSuccess { path ->
                 val inBackground = !_uiState.value.showDialog
                 _uiState.update { state ->
                     state.copy(
                         isDownloading = false,
                         downloadProgress = null,
+                        downloadBytesPerSecond = null,
+                        isVerifying = false,
                         downloadedApkPath = path,
                         errorMessage = null,
                     )
@@ -361,6 +409,8 @@ class AppUpdaterController internal constructor(
                     state.copy(
                         isDownloading = false,
                         downloadProgress = null,
+                        downloadBytesPerSecond = null,
+                        isVerifying = false,
                         downloadedApkPath = null,
                         errorMessage = error.message ?: getString(Res.string.updates_download_failed),
                         showDialog = true,
@@ -430,19 +480,25 @@ class AppUpdaterController internal constructor(
             _uiState.update { state ->
                 state.copy(
                     isDownloading = true,
-                    downloadProgress = 0f,
+                    downloadProgress = null,
                     errorMessage = null,
                 )
             }
 
+            delay(800)
             for (step in 1..100) {
                 delay(35)
-                _uiState.update { state -> state.copy(downloadProgress = step / 100f) }
+                _uiState.update { state ->
+                    state.copy(downloadProgress = step / 100f, downloadBytesPerSecond = 5L * 1024L * 1024L)
+                }
             }
+            _uiState.update { state -> state.copy(isVerifying = true) }
+            delay(800)
 
             _uiState.update { state ->
                 state.copy(
                     isDownloading = false,
+                    isVerifying = false,
                     isUpdateAvailable = false,
                     downloadProgress = 1f,
                 )
@@ -450,6 +506,11 @@ class AppUpdaterController internal constructor(
         }
     }
 }
+
+private val SpeedSampleInterval = 500.milliseconds
+
+/** How much of the speed shown is kept from before each new measurement. */
+private const val SpeedSmoothing = 0.7
 
 private fun AppUpdate.downloadFileName(): String =
     tag.replace(Regex("[^A-Za-z0-9._-]"), "_") + "-" + assetName

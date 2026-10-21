@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.updates_checksum_mismatch
 import provenio.composeapp.generated.resources.updates_download_failed_http
 import provenio.composeapp.generated.resources.updates_downloaded_file_missing
 import provenio.composeapp.generated.resources.updates_empty_download_body
@@ -94,13 +95,16 @@ object AndroidAppUpdaterPlatform {
     suspend fun downloadApk(
         assetUrl: String,
         assetName: String,
+        sha256: String?,
+        onVerifying: () -> Unit,
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,
     ): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             val destination = updateFile(assetName)
             if (destination.exists()) {
-                onProgress(destination.length(), destination.length())
-                return@runCatching destination.absolutePath
+                onVerifying()
+                if (destination.matchesSha256(sha256)) return@runCatching destination.absolutePath
+                destination.delete()
             }
             clearUpdateFiles(destination.name)
             val partial = File(destination.parentFile, destination.name + PartialSuffix)
@@ -147,13 +151,15 @@ object AndroidAppUpdaterPlatform {
                 if (!restart) break
             }
 
+            onVerifying()
+            if (!partial.matchesSha256(sha256)) {
+                partial.delete()
+                error(getString(Res.string.updates_checksum_mismatch))
+            }
             check(partial.renameTo(destination)) { runBlocking { getString(Res.string.updates_downloaded_file_missing) } }
             destination.absolutePath
         }
     }
-
-    fun completedUpdatePath(fileName: String): String? =
-        updateFile(fileName).takeIf { it.exists() }?.absolutePath
 
     fun hasPartialUpdate(fileName: String): Boolean {
         val file = updateFile(fileName)

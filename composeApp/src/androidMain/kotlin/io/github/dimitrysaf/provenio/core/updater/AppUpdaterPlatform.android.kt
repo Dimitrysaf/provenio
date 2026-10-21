@@ -18,10 +18,9 @@ actual object AppUpdaterPlatform {
         assetUrl: String,
         assetName: String,
         sha256: String?,
+        onVerifying: () -> Unit,
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,
-    ): Result<String> = AndroidAppUpdaterPlatform.downloadApk(assetUrl, assetName, onProgress)
-
-    actual fun completedUpdatePath(fileName: String): String? = AndroidAppUpdaterPlatform.completedUpdatePath(fileName)
+    ): Result<String> = AndroidAppUpdaterPlatform.downloadApk(assetUrl, assetName, sha256, onVerifying, onProgress)
 
     actual fun hasPartialUpdate(fileName: String): Boolean = AndroidAppUpdaterPlatform.hasPartialUpdate(fileName)
 

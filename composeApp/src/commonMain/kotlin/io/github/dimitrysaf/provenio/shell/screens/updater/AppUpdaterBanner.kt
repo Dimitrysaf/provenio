@@ -27,7 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -48,11 +48,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
 import io.github.dimitrysaf.provenio.shell.theme.provenio
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.action_close
 import provenio.composeapp.generated.resources.action_continue
 import provenio.composeapp.generated.resources.action_install
 import provenio.composeapp.generated.resources.action_later
@@ -60,13 +62,16 @@ import provenio.composeapp.generated.resources.action_retry
 import provenio.composeapp.generated.resources.action_update
 import provenio.composeapp.generated.resources.updates_action_background
 import provenio.composeapp.generated.resources.updates_debug_test_complete
+import provenio.composeapp.generated.resources.updates_download_speed
 import provenio.composeapp.generated.resources.updates_downloading_progress
+import provenio.composeapp.generated.resources.updates_error_title
 import provenio.composeapp.generated.resources.updates_message_allow_installs
 import provenio.composeapp.generated.resources.updates_message_ready
 import provenio.composeapp.generated.resources.updates_no_release_notes
 import provenio.composeapp.generated.resources.updates_preparing_download
 import provenio.composeapp.generated.resources.updates_title_allow_installs
 import provenio.composeapp.generated.resources.updates_title_available
+import provenio.composeapp.generated.resources.updates_verifying
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.updater.AppUpdaterPlatform
 
@@ -91,7 +96,14 @@ fun AppUpdaterHost(
 
     Box(modifier = modifier) { content() }
 
-    if (state.showDialog && update != null) {
+    val errorMessage = state.errorMessage
+    if (state.showDialog && errorMessage != null) {
+        UpdateErrorDialog(
+            message = errorMessage,
+            onRetry = controller::retry,
+            onDismiss = controller::dismissDialog,
+        )
+    } else if (state.showDialog && update != null) {
         AppUpdateDialog(
             state = state,
             update = update,
@@ -170,49 +182,70 @@ private fun AppUpdateDialog(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
 
-                state.errorMessage?.let { message ->
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-
                 if (state.isDownloading) {
-                    Text(
-                        text = if (state.downloadProgress != null) {
-                            stringResource(
-                                Res.string.updates_downloading_progress,
-                                (state.downloadProgress * 100).toInt().coerceIn(0, 100),
+                    val downloadProgress = state.downloadProgress
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = when {
+                                state.isVerifying -> stringResource(Res.string.updates_verifying)
+                                downloadProgress != null -> stringResource(
+                                    Res.string.updates_downloading_progress,
+                                    (downloadProgress * 100).toInt().coerceIn(0, 100),
+                                )
+                                else -> stringResource(Res.string.updates_preparing_download)
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        // Determinate while it downloads; indeterminate while it gets ready and
+                        // while it checks the file against its hash, before and after.
+                        if (downloadProgress != null && !state.isVerifying) {
+                            LinearWavyProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         } else {
-                            stringResource(Res.string.updates_preparing_download)
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    if (state.downloadProgress != null) {
-                        LinearProgressIndicator(
-                            progress = { progress },
+                            LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        }
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                        )
-                    } else {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Text(
+                                text = update.assetName,
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            val bytesPerSecond = state.downloadBytesPerSecond
+                            if (bytesPerSecond != null && !state.isVerifying) {
+                                Text(
+                                    text = stringResource(
+                                        Res.string.updates_download_speed,
+                                        formatFileSize(bytesPerSecond),
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                )
+                            }
+                        }
                     }
-                } else {
-                    // The notes were behind an info button on the banner; in a dialog there is
-                    // room to just show them.
-                    Text(
-                        text = update.notes.ifBlank {
-                            stringResource(Res.string.updates_no_release_notes)
-                        },
-                        modifier = Modifier
-                            .heightIn(max = 240.dp)
-                            .verticalScroll(rememberScrollState()),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
+
+                // The notes stay while it downloads: they are what the wait is for.
+                Text(
+                    text = update.notes.ifBlank {
+                        stringResource(Res.string.updates_no_release_notes)
+                    },
+                    modifier = Modifier
+                        .heightIn(max = 240.dp)
+                        .verticalScroll(rememberScrollState()),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         },
         confirmButton = {
@@ -222,10 +255,10 @@ private fun AppUpdateDialog(
                     enabled = isReady || state.isUpdateAvailable,
                 ) {
                     Text(
-                        text = when {
-                            isReady -> stringResource(Res.string.action_install)
-                            state.errorMessage != null -> stringResource(Res.string.action_retry)
-                            else -> stringResource(Res.string.action_update)
+                        text = if (isReady) {
+                            stringResource(Res.string.action_install)
+                        } else {
+                            stringResource(Res.string.action_update)
                         },
                     )
                 }
@@ -240,6 +273,30 @@ private fun AppUpdateDialog(
                 TextButton(onClick = onDismiss) {
                     Text(stringResource(Res.string.action_later))
                 }
+            }
+        },
+    )
+}
+
+/** What went wrong with the update, as its own dialog, with a way to try that step again. */
+@Composable
+private fun UpdateErrorDialog(
+    message: String,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.updates_error_title)) },
+        text = { Text(message) },
+        confirmButton = {
+            TextButton(onClick = onRetry) {
+                Text(stringResource(Res.string.action_retry))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(Res.string.action_close))
             }
         },
     )

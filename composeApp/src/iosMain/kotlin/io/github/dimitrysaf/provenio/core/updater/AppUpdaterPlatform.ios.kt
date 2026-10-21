@@ -19,10 +19,9 @@ actual object AppUpdaterPlatform {
         assetUrl: String,
         assetName: String,
         sha256: String?,
+        onVerifying: () -> Unit,
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,
     ): Result<String> = Result.failure(IllegalStateException(getString(Res.string.updates_not_available)))
-
-    actual fun completedUpdatePath(fileName: String): String? = null
 
     actual fun hasPartialUpdate(fileName: String): Boolean = false
 
