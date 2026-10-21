@@ -1,6 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.addons
 
-import io.github.dimitrysaf.provenio.shell.components.ReorderKeyButtons
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -299,9 +301,10 @@ internal fun AddonsSettingsPageContent(
 /**
  * One installed addon.
  *
- * The row states what the addon is and whether it is on. What you can do to it lives in a menu
- * behind the trailing button, because four labelled actions do not fit across a phone's width and
- * a menu is what the spec offers for a row's overflow. Dragging is the row's one selected state,
+ * The row states what the addon is and whether it is on, and pressing it turns it on or off, as
+ * its switch does. What else you can do to it, moving it included, lives in a menu behind the
+ * trailing button, because the labelled actions do not fit across a phone's width and a menu is
+ * what the spec offers for a row's overflow. Dragging is the row's one selected state,
  * and it starts from a long press rather than a handle, so the row carries no control that is
  * only there to be grabbed.
  */
@@ -343,7 +346,7 @@ private fun AddonListRow(
             )
         },
         selected = selected,
-        onClick = { menuOpen = true },
+        onClick = { onEnabledChange(!addon.enabled) },
         // Only the selected shape differs, so a dragged row takes the group's outer corner
         // while pressing or focusing one leaves it where it sits.
         shapes = ListItemDefaults.shapes(
@@ -379,15 +382,11 @@ private fun AddonListRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    ReorderKeyButtons(
-                        canMoveUp = canMoveUp,
-                        canMoveDown = canMoveDown,
-                        onMoveUp = { onMove(-1) },
-                        onMoveDown = { onMove(1) },
-                    )
                     Switch(
                         checked = addon.enabled,
                         onCheckedChange = onEnabledChange,
+                        // The row is pressed to toggle it; the switch is not a second stop for keys.
+                        modifier = Modifier.focusProperties { canFocus = false },
                     )
                     // The menu anchors to this box, so it opens at the button it belongs to.
                     Box {
@@ -403,6 +402,9 @@ private fun AddonListRow(
                             expanded = menuOpen,
                             isRefreshing = addon.isRefreshing,
                             onDismiss = { menuOpen = false },
+                            canMoveUp = canMoveUp,
+                            canMoveDown = canMoveDown,
+                            onMove = onMove,
                             onConfigure = onConfigure,
                             onCopyUrl = onCopyUrl,
                             onReload = onReload,
@@ -433,12 +435,34 @@ private fun AddonActionsMenu(
     expanded: Boolean,
     isRefreshing: Boolean,
     onDismiss: () -> Unit,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onMove: (Int) -> Unit,
     onConfigure: (() -> Unit)?,
     onCopyUrl: () -> Unit,
     onReload: () -> Unit,
     onDelete: () -> Unit,
 ) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        // The order is also set by dragging a row; here it is for keys, which cannot drag.
+        DropdownMenuItem(
+            text = { Text(stringResource(Res.string.action_move_up)) },
+            leadingIcon = { Icon(Icons.Rounded.ArrowUpward, contentDescription = null) },
+            enabled = canMoveUp,
+            onClick = {
+                onDismiss()
+                onMove(-1)
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(Res.string.action_move_down)) },
+            leadingIcon = { Icon(Icons.Rounded.ArrowDownward, contentDescription = null) },
+            enabled = canMoveDown,
+            onClick = {
+                onDismiss()
+                onMove(1)
+            },
+        )
         // An addon with no configuration page is offered no button, rather than one that can
         // only be dismissed.
         onConfigure?.let { configure ->
