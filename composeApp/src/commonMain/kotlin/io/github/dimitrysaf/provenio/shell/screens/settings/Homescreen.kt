@@ -273,6 +273,9 @@ private fun HomescreenCatalogList(
                         onEnabledChange = { HomeCatalogSettingsRepository.setEnabled(item.key, it) },
                         dragHandleScope = this@ReorderableItem,
                         onPinnedDragAttempt = onPinnedDragAttempt,
+                        canMoveUp = items.getOrNull(index - 1)?.isPinnedToTop == false,
+                        canMoveDown = items.getOrNull(index + 1)?.isPinnedToTop == false,
+                        onMove = { offset -> HomeCatalogSettingsRepository.moveByIndex(index, index + offset) },
                     )
                 }
             }

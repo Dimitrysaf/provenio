@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -37,7 +38,7 @@ internal fun SettingsSecretTextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier,
+        modifier = modifier.arrowKeysLeaveField { value.isEmpty() },
         isError = isError,
         singleLine = true,
         label = { Text(label) },

@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.SelectionContainer
+import io.github.dimitrysaf.provenio.shell.components.SelectableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -117,7 +117,7 @@ internal fun PlayerInfoSheet(
                 if (images.isNotEmpty()) {
                     PlayerInfoCarousel(images = images, contentDescription = heading)
                 }
-                SelectionContainer {
+                SelectableText {
                     Column(
                         modifier = Modifier.padding(horizontal = BottomSheetBodyMargin),
                         verticalArrangement = Arrangement.spacedBy(4.dp),

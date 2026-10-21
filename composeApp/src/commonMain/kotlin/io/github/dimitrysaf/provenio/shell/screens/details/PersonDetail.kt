@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.runtime.CompositionLocalProvider
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.components.LocalPosterAreaWidth
@@ -432,6 +433,12 @@ private fun PersonHero(
                         modifier = Modifier
                             .fillMaxSize()
                             .maskClip(MaterialTheme.shapes.extraLarge)
+                            // Moving onto a sliver with the arrow keys brings it to the centre.
+                            .onFocusChanged { state ->
+                                if (state.isFocused && !isFocal) {
+                                    coroutineScope.launch { carouselState.animateScrollToItem(index) }
+                                }
+                            }
                             .shapedClickable(MaterialTheme.shapes.extraLarge) {
                                 if (isFocal) {
                                     onOpenImage(index)

@@ -1,20 +1,32 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.i18n.localizedMediaTypeLabel
-import io.github.dimitrysaf.provenio.shell.components.DropdownChip
-import io.github.dimitrysaf.provenio.shell.components.DropdownOption
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
+import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
+import provenio.composeapp.generated.resources.discover_filters
+import provenio.composeapp.generated.resources.discover_type
+import provenio.composeapp.generated.resources.library_filter_list_label
+import provenio.composeapp.generated.resources.search_sort
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.shell.screens.home.components.PosterGridRow
 import io.github.dimitrysaf.provenio.shell.screens.home.components.PosterGridSkeletonRow
@@ -40,74 +52,122 @@ import io.github.dimitrysaf.provenio.core.library.availableLibrarySortOptions
 import io.github.dimitrysaf.provenio.core.library.isRemoteTrackingSource
 import io.github.dimitrysaf.provenio.core.library.toMetaPreview
 
+
+private enum class LibraryFilter {
+    List,
+    Type,
+    Sort,
+}
+
+/**
+ * The Library's filters, as a button inside its search field: the list and the type to show, for
+ * the grid layout, and the order. It opens the filters as a sheet, each opening its own choices,
+ * as Search's filters do, and is badged while a type is picked.
+ */
 @Composable
-internal fun LibrarySavedControls(
+internal fun LibraryFiltersButton(
     layoutMode: LibraryLayoutMode,
     sourceMode: LibrarySourceMode,
     sortOption: LibrarySortOption,
     verticalProjection: LibraryVerticalProjection,
+    enabled: Boolean,
     onSectionSelected: (String) -> Unit,
     onTypeSelected: (String?) -> Unit,
     onSortSelected: (LibrarySortOption) -> Unit,
-    modifier: Modifier = Modifier,
 ) {
+    var showFilters by remember { mutableStateOf(false) }
+    var openFilter by remember { mutableStateOf<LibraryFilter?>(null) }
     val sortOptions = availableLibrarySortOptions(sourceMode)
     val allTypesLabel = stringResource(Res.string.library_filter_all_types)
+    val showsList = layoutMode == LibraryLayoutMode.VERTICAL && sourceMode.isRemoteTrackingSource
+    val showsType = layoutMode == LibraryLayoutMode.VERTICAL
+    val selectedSection = verticalProjection.availableSections
+        .firstOrNull { section -> section.type == verticalProjection.selectedSectionKey }
+    val label = stringResource(Res.string.discover_filters)
 
-    Row(
-        modifier = modifier.horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        if (layoutMode == LibraryLayoutMode.VERTICAL && sourceMode.isRemoteTrackingSource) {
-            val selectedSection = verticalProjection.availableSections
-                .firstOrNull { section -> section.type == verticalProjection.selectedSectionKey }
-            DropdownChip(
-                title = stringResource(Res.string.library_filter_list),
-                label = selectedSection?.displayTitle.orEmpty(),
-                selectedKey = verticalProjection.selectedSectionKey,
-                options = verticalProjection.availableSections.map { section ->
-                    DropdownOption(key = section.type, label = section.displayTitle)
-                },
-                enabled = verticalProjection.availableSections.size > 1,
-                onSelected = { option -> onSectionSelected(option.key) },
-            )
-        }
-
-        if (layoutMode == LibraryLayoutMode.VERTICAL) {
-            val typeOptions = buildList {
-                add(DropdownOption(key = "", label = allTypesLabel))
-                addAll(
-                    verticalProjection.availableTypes.map { type ->
-                        DropdownOption(key = type, label = localizedMediaTypeLabel(type))
-                    },
-                )
+    WithTooltip(label) {
+        IconButton(onClick = { showFilters = true }, enabled = enabled) {
+            BadgedBox(badge = { if (verticalProjection.selectedType != null) Badge() }) {
+                Icon(imageVector = Icons.Rounded.Tune, contentDescription = label)
             }
-            DropdownChip(
-                title = stringResource(Res.string.library_filter_type),
-                label = verticalProjection.selectedType
-                    ?.let(::localizedMediaTypeLabel)
-                    ?: allTypesLabel,
-                selectedKey = verticalProjection.selectedType.orEmpty(),
-                options = typeOptions,
-                enabled = typeOptions.size > 1,
-                onSelected = { option -> onTypeSelected(option.key.ifBlank { null }) },
-            )
         }
+    }
 
-        DropdownChip(
-            title = stringResource(Res.string.library_filter_sort),
-            label = librarySortOptionLabel(sortOption),
-            selectedKey = sortOption.name,
-            options = sortOptions.map { option ->
-                DropdownOption(key = option.name, label = librarySortOptionLabel(option))
+    if (showFilters) {
+        SingleChoiceBottomSheet(
+            title = label,
+            options = buildList {
+                if (showsList) {
+                    add(
+                        SingleChoiceOption(
+                            value = LibraryFilter.List,
+                            label = stringResource(Res.string.library_filter_list_label),
+                            supportingText = selectedSection?.displayTitle,
+                            enabled = verticalProjection.availableSections.size > 1,
+                        ),
+                    )
+                }
+                if (showsType) {
+                    add(
+                        SingleChoiceOption(
+                            value = LibraryFilter.Type,
+                            label = stringResource(Res.string.discover_type),
+                            supportingText = verticalProjection.selectedType?.let(::localizedMediaTypeLabel)
+                                ?: allTypesLabel,
+                            enabled = verticalProjection.availableTypes.isNotEmpty(),
+                        ),
+                    )
+                }
+                add(
+                    SingleChoiceOption(
+                        value = LibraryFilter.Sort,
+                        label = stringResource(Res.string.search_sort),
+                        supportingText = librarySortOptionLabel(sortOption),
+                        enabled = sortOptions.size > 1,
+                    ),
+                )
             },
-            enabled = sortOptions.size > 1,
-            onSelected = { option ->
-                LibrarySortOption.entries
-                    .firstOrNull { it.name == option.key }
-                    ?.let(onSortSelected)
-            },
+            isSelected = { false },
+            onSelected = { filter -> openFilter = filter },
+            onDismiss = { showFilters = false },
         )
+    }
+
+    when (openFilter) {
+        LibraryFilter.List -> SingleChoiceBottomSheet(
+            title = stringResource(Res.string.library_filter_list),
+            options = verticalProjection.availableSections.map { section ->
+                SingleChoiceOption(value = section.type, label = section.displayTitle)
+            },
+            isSelected = { it == verticalProjection.selectedSectionKey },
+            onSelected = onSectionSelected,
+            onDismiss = { openFilter = null },
+        )
+
+        LibraryFilter.Type -> SingleChoiceBottomSheet(
+            title = stringResource(Res.string.library_filter_type),
+            options = buildList {
+                add(SingleChoiceOption(value = "", label = allTypesLabel))
+                verticalProjection.availableTypes.forEach { type ->
+                    add(SingleChoiceOption(value = type, label = localizedMediaTypeLabel(type)))
+                }
+            },
+            isSelected = { it == verticalProjection.selectedType.orEmpty() },
+            onSelected = { type -> onTypeSelected(type.ifBlank { null }) },
+            onDismiss = { openFilter = null },
+        )
+
+        LibraryFilter.Sort -> SingleChoiceBottomSheet(
+            title = stringResource(Res.string.library_filter_sort),
+            options = sortOptions.map { option ->
+                SingleChoiceOption(value = option, label = librarySortOptionLabel(option))
+            },
+            isSelected = { it == sortOption },
+            onSelected = onSortSelected,
+            onDismiss = { openFilter = null },
+        )
+
+        null -> Unit
     }
 }
 

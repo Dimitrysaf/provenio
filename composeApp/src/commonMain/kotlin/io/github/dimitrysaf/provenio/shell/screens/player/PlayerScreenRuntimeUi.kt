@@ -1,5 +1,9 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
 import io.github.dimitrysaf.provenio.core.playback.skip.PlayerNextEpisodeRules
 
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
@@ -286,131 +290,146 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
         enter = fadeIn(),
         exit = fadeOut(),
     ) {
-        PlayerControlsShell(
-            title = title,
-            seasonNumber = activeSeasonNumber,
-            episodeNumber = activeEpisodeNumber,
-            episodeTitle = activeEpisodeTitle,
-            playbackSnapshot = playbackSnapshot,
-            displayedPositionMs = displayedPositionMs,
-            chapters = chapters,
-            metrics = metrics,
-            resizeMode = resizeMode,
-            showPlaybackControls = controlsVisible,
-            controlsReady = !loading && playerController != null,
-            playbackRequested = shouldPlay,
-            statusLines = statusLines,
-            onStatusClick = if (activeTorrentInfoHash != null) {
-                { showTorrentDetailsSheet = true }
-            } else {
-                null
-            },
-            onTitleClick = {
-                showInfoSheet = true
-                controlsVisible = false
-            },
-            onLockToggle = {
-                if (playerControlsLocked) unlockPlayerControls() else lockPlayerControls()
-            },
-            onBack = {
-                flushWatchProgress()
-                args.onBack()
-            },
-            onTogglePlayback = { togglePlayback() },
-            onSeekBack = { seekBy(-seekStepMs(PlayerSeekDirection.Backward)) },
-            onSeekForward = { seekBy(seekStepMs(PlayerSeekDirection.Forward)) },
-            seekBackwardSeconds = playerSettingsUiState.seekBackwardSeconds,
-            seekForwardSeconds = playerSettingsUiState.seekForwardSeconds,
-            onResizeModeClick = { showResizeSheet = true },
-            onSpeedClick = { showSpeedSheet = true },
-            onSubtitleClick = {
-                refreshTracks()
-                showSubtitleModal = true
-            },
-            onAudioClick = {
-                refreshTracks()
-                showAudioModal = true
-            },
-            showCastButton = CastController.isSupported,
-            casting = castingToDevice,
-            onCastClick = {
-                if (castingToDevice) {
-                    stopCasting()
+        val primaryControlFocus = remember { FocusRequester() }
+        LaunchedEffect(primaryControlFocusPending) {
+            if (!primaryControlFocusPending) return@LaunchedEffect
+            // The controls take a few frames to arrive as they fade in.
+            repeat(PrimaryControlFocusFrames) {
+                withFrameNanos {}
+                if (runCatching { primaryControlFocus.requestFocus(FocusDirection.Enter) }.getOrDefault(false)) {
+                    primaryControlFocusPending = false
+                    return@LaunchedEffect
+                }
+            }
+            primaryControlFocusPending = false
+        }
+        CompositionLocalProvider(LocalPlayerPrimaryControlFocus provides primaryControlFocus) {
+            PlayerControlsShell(
+                title = title,
+                seasonNumber = activeSeasonNumber,
+                episodeNumber = activeEpisodeNumber,
+                episodeTitle = activeEpisodeTitle,
+                playbackSnapshot = playbackSnapshot,
+                displayedPositionMs = displayedPositionMs,
+                chapters = chapters,
+                metrics = metrics,
+                resizeMode = resizeMode,
+                showPlaybackControls = controlsVisible,
+                controlsReady = !loading && playerController != null,
+                playbackRequested = shouldPlay,
+                statusLines = statusLines,
+                onStatusClick = if (activeTorrentInfoHash != null) {
+                    { showTorrentDetailsSheet = true }
                 } else {
-                    showCastSheet = true
-                }
-                controlsVisible = true
-            },
-            onVideoSettingsClick = if (isIos) {
-                {
-                    showVideoSettingsModal = true
+                    null
+                },
+                onTitleClick = {
+                    showInfoSheet = true
+                    controlsVisible = false
+                },
+                onLockToggle = {
+                    if (playerControlsLocked) unlockPlayerControls() else lockPlayerControls()
+                },
+                onBack = {
+                    flushWatchProgress()
+                    args.onBack()
+                },
+                onTogglePlayback = { togglePlayback() },
+                onSeekBack = { seekBy(-seekStepMs(PlayerSeekDirection.Backward)) },
+                onSeekForward = { seekBy(seekStepMs(PlayerSeekDirection.Forward)) },
+                seekBackwardSeconds = playerSettingsUiState.seekBackwardSeconds,
+                seekForwardSeconds = playerSettingsUiState.seekForwardSeconds,
+                onResizeModeClick = { showResizeSheet = true },
+                onSpeedClick = { showSpeedSheet = true },
+                onSubtitleClick = {
+                    refreshTracks()
+                    showSubtitleModal = true
+                },
+                onAudioClick = {
+                    refreshTracks()
+                    showAudioModal = true
+                },
+                showCastButton = CastController.isSupported,
+                casting = castingToDevice,
+                onCastClick = {
+                    if (castingToDevice) {
+                        stopCasting()
+                    } else {
+                        showCastSheet = true
+                    }
                     controlsVisible = true
-                }
-            } else {
-                null
-            },
-            onSourcesClick = if (activeVideoId != null) { { openSourcesPanel() } } else null,
-            onEpisodesClick = if (isSeries && playerMetaVideos.isNotEmpty()) { { openEpisodesPanel() } } else null,
-            showControlLabels = playerSettingsUiState.showPlayerControlLabels,
-            onNextEpisode = nextEpisodeInfo?.takeIf { it.hasAired }?.let {
-                {
-                    nextEpisodeAutoPlayJob?.cancel()
-                    playNextEpisode()
-                }
-            },
-            onOpenInExternalPlayer = args.onOpenInExternalPlayer?.takeIf { externalPlayerConfigured }?.let { openExternal ->
-                {
-                    val loadedSubtitles = addonSubtitles
-                        .takeIf { it.isNotEmpty() }
-                        ?.map { sub ->
-                            SubtitleInput(
-                                url = sub.url,
-                                name = buildString {
-                                    if (!sub.addonName.isNullOrBlank()) append("[${sub.addonName}] ")
-                                    append(sub.display)
-                                },
-                                lang = sub.language,
-                            )
-                        }
-                    PlayerStreamsRepository.pauseSearchForPlayback()
-                    openExternal(
-                        ExternalPlayerPlaybackRequest(
-                            sourceUrl = externalPlayerSourceUrl(),
-                            title = title,
-                            streamTitle = activeStreamTitle,
-                            sourceHeaders = activeSourceHeaders,
-                            resumePositionMs = playbackSnapshot.positionMs,
-                            subtitles = loadedSubtitles,
-                            season = activeSeasonNumber,
-                            episode = activeEpisodeNumber,
-                            episodeTitle = activeEpisodeTitle,
-                        ),
-                    )
-                }
-            },
-            onMoveWindow = args.onMoveWindow?.let { { moveToOtherWindow() } },
-            inSeparateWindow = args.inSeparateWindow,
-            onSubmitIntroClick = if (
-                isSeries &&
-                playerSettingsUiState.introSubmitEnabled &&
-                playerSettingsUiState.introDbApiKey.isNotBlank()
-            ) {
-                { showSubmitIntroModal = true }
-            } else {
-                null
-            },
-            onScrubChange = { positionMs ->
-                isScrubbingTimeline = true
-                scrubbingPositionMs = positionMs
-            },
-            onScrubFinished = { positionMs ->
-                isScrubbingTimeline = false
-                scrubbingPositionMs = null
-                playerController?.seekTo(positionMs)
-                scheduleProgressSyncAfterSeek()
-            },
-            modifier = Modifier.fillMaxSize(),
-        )
+                },
+                onVideoSettingsClick = if (isIos) {
+                    {
+                        showVideoSettingsModal = true
+                        controlsVisible = true
+                    }
+                } else {
+                    null
+                },
+                onSourcesClick = if (activeVideoId != null) { { openSourcesPanel() } } else null,
+                onEpisodesClick = if (isSeries && playerMetaVideos.isNotEmpty()) { { openEpisodesPanel() } } else null,
+                showControlLabels = playerSettingsUiState.showPlayerControlLabels,
+                onNextEpisode = nextEpisodeInfo?.takeIf { it.hasAired }?.let {
+                    {
+                        nextEpisodeAutoPlayJob?.cancel()
+                        playNextEpisode()
+                    }
+                },
+                onOpenInExternalPlayer = args.onOpenInExternalPlayer?.takeIf { externalPlayerConfigured }?.let { openExternal ->
+                    {
+                        val loadedSubtitles = addonSubtitles
+                            .takeIf { it.isNotEmpty() }
+                            ?.map { sub ->
+                                SubtitleInput(
+                                    url = sub.url,
+                                    name = buildString {
+                                        if (!sub.addonName.isNullOrBlank()) append("[${sub.addonName}] ")
+                                        append(sub.display)
+                                    },
+                                    lang = sub.language,
+                                )
+                            }
+                        PlayerStreamsRepository.pauseSearchForPlayback()
+                        openExternal(
+                            ExternalPlayerPlaybackRequest(
+                                sourceUrl = externalPlayerSourceUrl(),
+                                title = title,
+                                streamTitle = activeStreamTitle,
+                                sourceHeaders = activeSourceHeaders,
+                                resumePositionMs = playbackSnapshot.positionMs,
+                                subtitles = loadedSubtitles,
+                                season = activeSeasonNumber,
+                                episode = activeEpisodeNumber,
+                                episodeTitle = activeEpisodeTitle,
+                            ),
+                        )
+                    }
+                },
+                onMoveWindow = args.onMoveWindow?.let { { moveToOtherWindow() } },
+                inSeparateWindow = args.inSeparateWindow,
+                onSubmitIntroClick = if (
+                    isSeries &&
+                    playerSettingsUiState.introSubmitEnabled &&
+                    playerSettingsUiState.introDbApiKey.isNotBlank()
+                ) {
+                    { showSubmitIntroModal = true }
+                } else {
+                    null
+                },
+                onScrubChange = { positionMs ->
+                    isScrubbingTimeline = true
+                    scrubbingPositionMs = positionMs
+                },
+                onScrubFinished = { positionMs ->
+                    isScrubbingTimeline = false
+                    scrubbingPositionMs = null
+                    playerController?.seekTo(positionMs)
+                    scheduleProgressSyncAfterSeek()
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -675,3 +694,5 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
 }
 
 private const val PlayerStallRevealDelayMs = 500L
+
+private const val PrimaryControlFocusFrames = 20

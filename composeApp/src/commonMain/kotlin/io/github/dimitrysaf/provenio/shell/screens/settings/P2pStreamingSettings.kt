@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyListScope
@@ -264,7 +265,7 @@ private fun ExternalServerDialog(
                     draft = it
                     invalid = false
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().arrowKeysLeaveField { draft.isEmpty() },
                 singleLine = true,
                 label = { Text(stringResource(Res.string.settings_p2p_external_server_label)) },
                 placeholder = { Text("192.168.1.20") },

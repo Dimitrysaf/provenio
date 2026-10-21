@@ -1,7 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.text.selection.SelectionContainer
+import io.github.dimitrysaf.provenio.shell.components.SelectableText
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -191,7 +191,7 @@ fun DetailMetaInfo(
         }
 
         if (!meta.description.isNullOrBlank()) {
-            SelectionContainer {
+            SelectableText {
                 FindableText(
                     text = meta.description,
                     style = MaterialTheme.typography.bodyLarge,

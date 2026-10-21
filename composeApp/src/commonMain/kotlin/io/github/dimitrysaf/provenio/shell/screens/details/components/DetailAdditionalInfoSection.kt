@@ -1,7 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.text.selection.SelectionContainer
+import io.github.dimitrysaf.provenio.shell.components.SelectableText
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,7 +39,7 @@ fun DetailAdditionalInfoSection(
         modifier = modifier,
         showHeader = showHeader,
     ) {
-        SelectionContainer {
+        SelectableText {
             DetailInfoRows(rows = rows)
         }
     }

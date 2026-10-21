@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -140,7 +142,9 @@ private fun ShadowDirectionDial(
     val ring = colors.outlineVariant
     val marks = colors.onSurfaceVariant
     val hand = colors.primary
+    val focusRing = colors.secondary
     val latestTurn by rememberUpdatedState(onTurn)
+    var focused by remember { mutableStateOf(false) }
     val input = if (enabled) {
         Modifier
             .pointerInput(Unit) {
@@ -157,20 +161,23 @@ private fun ShadowDirectionDial(
                     latestTurn((angle * 180f / PI.toFloat()).roundToInt())
                 }
             }
+            // Left and right turn it, like a slider; up and down move on to the rows around it,
+            // so the dial never holds on to a remote's focus.
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
                 when (event.key) {
-                    Key.DirectionRight, Key.DirectionDown -> {
+                    Key.DirectionRight -> {
                         latestTurn(degrees + SUBTITLE_SHADOW_ANGLE_STEP)
                         true
                     }
-                    Key.DirectionLeft, Key.DirectionUp -> {
+                    Key.DirectionLeft -> {
                         latestTurn(degrees - SUBTITLE_SHADOW_ANGLE_STEP)
                         true
                     }
                     else -> false
                 }
             }
+            .onFocusChanged { focused = it.isFocused }
             .focusable()
     } else {
         Modifier
@@ -179,6 +186,15 @@ private fun ShadowDirectionDial(
         val center = Offset(size.width / 2f, size.height / 2f)
         val knobRadius = 7.dp.toPx()
         val radius = size.minDimension / 2f - knobRadius
+        if (focused) {
+            // Material's focus ring, as the other controls draw it, around the dial.
+            drawCircle(
+                color = focusRing,
+                radius = size.minDimension / 2f - 1.5.dp.toPx(),
+                center = center,
+                style = Stroke(width = 3.dp.toPx()),
+            )
+        }
         drawCircle(color = ring, radius = radius, center = center, style = Stroke(width = 2.dp.toPx()))
         for (mark in 0 until 360 step 45) {
             val radians = mark * PI.toFloat() / 180f

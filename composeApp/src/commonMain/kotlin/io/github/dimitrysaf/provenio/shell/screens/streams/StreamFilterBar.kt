@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.streams
 
+import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -131,7 +132,7 @@ internal fun StreamFilterBar(state: StreamFilterState, groups: List<AddonStreamG
                 unfocusedIndicatorColor = Color.Transparent,
                 disabledIndicatorColor = Color.Transparent,
             ),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().arrowKeysLeaveField { state.query.isEmpty() },
         )
         HorizontalDivider()
     }

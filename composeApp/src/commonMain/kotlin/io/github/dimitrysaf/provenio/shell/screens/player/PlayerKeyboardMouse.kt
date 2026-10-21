@@ -1,5 +1,13 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.shell.components.openedWithKeys
+import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
+import io.github.dimitrysaf.provenio.core.build.isDesktop
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeMark
@@ -53,9 +61,24 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
     val mute = remember { MuteState() }
     val focusState = remember { PlayerFocusState() }
     val windowFocused = LocalWindowInfo.current.isWindowFocused
+    val currentWindowFocused by rememberUpdatedState(windowFocused)
     LaunchedEffect(windowFocused) { focusRequester.claimFocus(focusState) }
+    // With a remote, Back puts the controls away before it leaves the player, as on a TV.
+    PlatformBackHandler(enabled = !isDesktop && controlsVisible && !playerControlsLocked && openedWithKeys()) {
+        controlsVisible = false
+    }
+    // A focused control is gone once the controls hide, which leaves focus nowhere and the keys
+    // with nothing to reach; the player takes it back then.
+    LaunchedEffect(focusRequester) {
+        snapshotFlow { focusState.hasFocusWithin }.collect { hasFocus ->
+            if (!hasFocus && currentWindowFocused) focusRequester.claimFocus(focusState)
+        }
+    }
     return Modifier
-        .onFocusChanged { focusState.hasFocusWithin = it.hasFocus }
+        .onFocusChanged {
+            focusState.hasFocusWithin = it.hasFocus
+            focusState.controlFocused = it.hasFocus && !it.isFocused
+        }
         .focusRequester(focusRequester)
         .focusable()
         .onPreviewKeyEvent { event ->
@@ -66,7 +89,7 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
             if (event.key == Key.Spacebar) {
                 handleSpaceKey(event.type, scope, spaceHold)
             } else {
-                event.type == KeyEventType.KeyDown && handlePlayerKey(event, mute)
+                event.type == KeyEventType.KeyDown && handlePlayerKey(event, mute, focusState.controlFocused)
             }
         }
         .pointerInput(Unit) {
@@ -95,7 +118,10 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
 }
 
 private class PlayerFocusState {
-    var hasFocusWithin = false
+    var hasFocusWithin by mutableStateOf(false)
+
+    /** A control has focus, rather than the player itself: a remote's arrows move between them. */
+    var controlFocused = false
 }
 
 private fun FocusRequester.claimFocus(state: PlayerFocusState) {
@@ -111,9 +137,14 @@ private class MuteState {
     var volumeUpReleasedAt: TimeMark? = null
 }
 
-private fun PlayerScreenRuntime.handlePlayerKey(event: KeyEvent, mute: MuteState): Boolean {
+private fun PlayerScreenRuntime.handlePlayerKey(event: KeyEvent, mute: MuteState, controlFocused: Boolean): Boolean {
     if (playerControlsLocked) return false
     if (event.isCtrlPressed || event.isMetaPressed || event.isAltPressed) return false
+    handleMediaKey(event.key)?.let { handled ->
+        controlsActivity++
+        return handled
+    }
+    if (!isDesktop) handleRemoteKey(event.key, controlFocused)?.let { return it }
     val digit = event.key.digitOrNull()
     when {
         digit != null -> seekToFraction(digit / 10f)
@@ -155,6 +186,59 @@ private fun PlayerScreenRuntime.handlePlayerKey(event: KeyEvent, mute: MuteState
     }
     controlsActivity++
     return true
+}
+
+/** The media keys a remote or a keyboard has; null for any other key. */
+private fun PlayerScreenRuntime.handleMediaKey(key: Key): Boolean? {
+    when (key) {
+        Key.MediaPlayPause -> togglePlayback()
+        Key.MediaPlay -> if (!playbackSnapshot.isPlaying) togglePlayback()
+        Key.MediaPause -> if (playbackSnapshot.isPlaying) togglePlayback()
+        Key.MediaFastForward -> seekBy(seekStepMs(PlayerSeekDirection.Forward))
+        Key.MediaRewind -> seekBy(-seekStepMs(PlayerSeekDirection.Backward))
+        Key.MediaNext -> {
+            if (nextEpisodeInfo?.hasAired != true) return false
+            nextEpisodeAutoPlayJob?.cancel()
+            playNextEpisode()
+        }
+        else -> return null
+    }
+    return true
+}
+
+/**
+ * A remote's D-pad, where there is no keyboard to fall back on. While a control has focus the
+ * arrows move between the controls and OK presses the one focused. With the controls hidden, or
+ * none focused, left and right seek, up and down bring the controls up with focus on play, and OK
+ * plays or pauses and shows them. A keyboard on desktop keeps its arrows for seeking and volume.
+ */
+private fun PlayerScreenRuntime.handleRemoteKey(key: Key, controlFocused: Boolean): Boolean? {
+    val navigatesControls = controlFocused && controlsVisible
+    when (key) {
+        Key.DirectionLeft, Key.DirectionRight, Key.DirectionUp, Key.DirectionDown -> {
+            controlsActivity++
+            if (navigatesControls) return false
+            when (key) {
+                Key.DirectionLeft -> seekBy(-seekStepMs(PlayerSeekDirection.Backward))
+                Key.DirectionRight -> seekBy(seekStepMs(PlayerSeekDirection.Forward))
+                else -> showControlsForRemote()
+            }
+            return true
+        }
+        Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+            controlsActivity++
+            if (navigatesControls) return false
+            togglePlayback()
+            showControlsForRemote()
+            return true
+        }
+        else -> return null
+    }
+}
+
+private fun PlayerScreenRuntime.showControlsForRemote() {
+    controlsVisible = true
+    primaryControlFocusPending = true
 }
 
 private fun Key.digitOrNull(): Int? = when (this) {

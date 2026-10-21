@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CloudOff
@@ -172,7 +171,7 @@ private fun VerboseDetails(text: String) {
             shape = MaterialTheme.shapes.medium,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            SelectionContainer {
+            SelectableText {
                 Text(
                     text = text,
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),

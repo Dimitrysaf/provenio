@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import androidx.compose.ui.focus.focusRequester
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import io.github.dimitrysaf.provenio.core.playback.DEFAULT_SEEK_INTERVAL_SECONDS
 import io.github.dimitrysaf.provenio.core.watch.watching.domain.isSettledPlaybackDuration
@@ -569,6 +570,7 @@ private fun PrimaryControlButton(
                     .size(size)
                     .clip(shape)
                     .background(MaterialTheme.colorScheme.primary)
+                    .then(LocalPlayerPrimaryControlFocus.current?.let { Modifier.focusRequester(it) } ?: Modifier)
                     .then(if (onClick != null) Modifier.shapedClickable(shape, onClick = onClick) else Modifier),
                 contentAlignment = Alignment.Center,
             ) {
@@ -703,6 +705,7 @@ private fun TransportPrimaryButton(
                 .widthIn(min = TransportPrimaryButtonWidth)
                 .clip(RoundedCornerShape(corner))
                 .background(MaterialTheme.colorScheme.primary)
+                .then(LocalPlayerPrimaryControlFocus.current?.let { Modifier.focusRequester(it) } ?: Modifier)
                 .shapedClickable(RoundedCornerShape(corner), onClick = onClick)
                 .semantics { this.contentDescription = contentDescription },
             contentAlignment = Alignment.Center,

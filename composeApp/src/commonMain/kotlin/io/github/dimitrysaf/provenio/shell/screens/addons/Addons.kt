@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.addons
 
+import io.github.dimitrysaf.provenio.shell.components.ReorderKeyButtons
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -195,6 +196,9 @@ internal fun AddonsSettingsPageContent(
                                 )
                             },
                             dragHandleScope = this,
+                            canMoveUp = index > 0,
+                            canMoveDown = index < addons.lastIndex,
+                            onMove = { offset -> AddonRepository.moveAddon(index, index + offset) },
                         )
                     }
                 }
@@ -313,6 +317,9 @@ private fun AddonListRow(
     onCopyUrl: () -> Unit,
     onReload: () -> Unit,
     dragHandleScope: ReorderableListItemScope,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onMove: (Int) -> Unit,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val manifest = addon.manifest
@@ -372,6 +379,12 @@ private fun AddonListRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    ReorderKeyButtons(
+                        canMoveUp = canMoveUp,
+                        canMoveDown = canMoveDown,
+                        onMoveUp = { onMove(-1) },
+                        onMoveDown = { onMove(1) },
+                    )
                     Switch(
                         checked = addon.enabled,
                         onCheckedChange = onEnabledChange,

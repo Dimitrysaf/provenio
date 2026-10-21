@@ -29,6 +29,10 @@
     <string name="action_reset">Reset to Default</string>
     <string name="action_resume">Resume</string>
     <string name="action_retry">Retry</string>
+    <string name="action_move_up">Move up</string>
+    <string name="action_move_down">Move down</string>
+    <string name="key_hint_more_options_remote">Hold OK for more options</string>
+    <string name="key_hint_more_options_keyboard">Hold Enter or press Menu for more options</string>
     <string name="action_save">Save</string>
     <string name="action_saving">Saving…</string>
     <string name="addon_installing">Installing</string>
@@ -1910,6 +1914,11 @@
     <string name="library_filter_list">Select list</string>
     <string name="library_filter_sort">Sort library</string>
     <string name="library_filter_type">Select type</string>
+    <string name="library_filter_list_label">List</string>
+    <string name="library_search_placeholder">Search your library</string>
+    <string name="library_search_trakt_placeholder">Search your Trakt library</string>
+    <string name="library_search_simkl_placeholder">Search your Simkl library</string>
+    <string name="library_search_no_results">Nothing in your library matches “%1$s”.</string>
     <string name="library_load_failed">Couldn't load library</string>
     <string name="library_other">Other</string>
     <string name="library_sort_added_asc">Oldest added</string>

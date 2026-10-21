@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -1531,7 +1532,7 @@ private fun DebridApiKeyDialog(
                 draft = it
                 validationMessage = null
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().arrowKeysLeaveField { draft.isEmpty() },
             singleLine = true,
             placeholder = { Text(placeholder) },
             isError = validationMessage != null,

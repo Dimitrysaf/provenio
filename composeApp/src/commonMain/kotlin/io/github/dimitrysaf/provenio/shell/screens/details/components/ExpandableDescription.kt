@@ -6,7 +6,7 @@ import io.github.dimitrysaf.provenio.shell.components.rememberFindHit
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.selection.SelectionContainer
+import io.github.dimitrysaf.provenio.shell.components.SelectableText
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,7 +53,7 @@ internal fun ExpandableDescription(
     ) {
         val findHit = rememberFindHit(text)
         val showAll = expanded || findHit
-        SelectionContainer {
+        SelectableText {
             FindableText(
                 text = text,
                 style = style,

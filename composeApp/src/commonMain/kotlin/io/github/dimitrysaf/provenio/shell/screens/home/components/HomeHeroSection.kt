@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.onFocusChanged
 import io.github.dimitrysaf.provenio.shell.components.rememberShapedArtwork
 import io.github.dimitrysaf.provenio.shell.components.horizontalWheelPaging
 import androidx.compose.animation.core.animateFloatAsState
@@ -164,11 +166,14 @@ private fun HomeHeroCarousel(
 ) {
     val carouselState = rememberCarouselState(itemCount = { items.size })
     val coroutineScope = rememberCoroutineScope()
+    // While a remote or a keyboard is on a title, the carousel holds still under it.
+    var carouselHasFocus by remember { mutableStateOf(false) }
 
     HeroAutoAdvance(
         itemCount = items.size,
         currentItem = carouselState.currentItem,
         isScrollInProgress = { carouselState.isScrollInProgress },
+        isPaused = { carouselHasFocus },
         onAdvance = { page -> carouselState.animateScrollToItem(page) },
     )
 
@@ -183,6 +188,7 @@ private fun HomeHeroCarousel(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(layout.heroHeight)
+                .onFocusChanged { carouselHasFocus = it.hasFocus }
                 .horizontalWheelPaging(
                     key = carouselState,
                     canStep = { forward -> if (forward) carouselState.canScrollForward else carouselState.canScrollBackward },
@@ -199,6 +205,13 @@ private fun HomeHeroCarousel(
                 modifier = Modifier
                     .fillMaxSize()
                     .maskClip(MaterialTheme.shapes.extraLarge)
+                    // Moving onto a sliver with the arrow keys brings it to the centre, so OK
+                    // then opens the title that is in front.
+                    .onFocusChanged { state ->
+                        if (state.isFocused && !heroItemIsFocal(drawInfo)) {
+                            coroutineScope.launch { carouselState.animateScrollToItem(index) }
+                        }
+                    }
                     .shapedClickable(MaterialTheme.shapes.extraLarge) {
                         // A tap on a sliver asks for that title, not for its details: bring it to
                         // the centre first, and open only what is already there.
@@ -378,10 +391,12 @@ private fun HeroAutoAdvance(
     itemCount: Int,
     currentItem: Int,
     isScrollInProgress: () -> Boolean,
+    isPaused: () -> Boolean,
     onAdvance: suspend (Int) -> Unit,
 ) {
     val latestItem = rememberUpdatedState(currentItem)
     val latestIsScrollInProgress = rememberUpdatedState(isScrollInProgress)
+    val latestIsPaused = rememberUpdatedState(isPaused)
 
     // Keyed only on the item count (and the screen's active state) - never on the current item.
     // The carousel's "current item" ticks continuously while it scrolls, including while this
@@ -392,7 +407,7 @@ private fun HeroAutoAdvance(
         if (!active || itemCount <= 1) return@ScreenActivityEffect
         while (true) {
             delay(HERO_AUTO_SCROLL_INTERVAL_MS)
-            while (latestIsScrollInProgress.value()) {
+            while (latestIsScrollInProgress.value() || latestIsPaused.value()) {
                 delay(100L)
             }
             onAdvance((latestItem.value + 1) % itemCount)
@@ -432,6 +447,9 @@ private fun HeroIndicatorRow(
                         .background(lerp(inactiveColor, activeColor, fraction))
                         .width(HeroIndicatorHeight + ((HeroIndicatorActiveWidth - HeroIndicatorHeight) * fraction))
                         .height(HeroIndicatorHeight)
+                        // The arrow keys move along the titles themselves, so the dots are no
+                        // stops of their own; a tap or a click still picks one.
+                        .focusProperties { canFocus = false }
                         .shapedClickable(CircleShape) { onSelect(index) },
                 )
             }

@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.collection
 
+import io.github.dimitrysaf.provenio.shell.components.ReorderKeyButtons
+import androidx.compose.ui.focus.focusProperties
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -127,6 +129,9 @@ internal fun FolderReorderableList(
                     onEdit = { onEdit(folder.id) },
                     onDelete = { onDelete(folder.id) },
                     dragHandleScope = this@ReorderableItem,
+                    canMoveUp = index > 0,
+                    canMoveDown = index < folders.lastIndex,
+                    onMove = { offset -> CollectionEditorRepository.moveFolderByIndex(index, index + offset) },
                 )
             }
         }
@@ -142,6 +147,9 @@ internal fun FolderListItem(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     dragHandleScope: ReorderableCollectionItemScope,
+    canMoveUp: Boolean = false,
+    canMoveDown: Boolean = false,
+    onMove: ((Int) -> Unit)? = null,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val summary = stringResource(
@@ -162,8 +170,10 @@ internal fun FolderListItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 WithTooltip(stringResource(Res.string.action_reorder)) {
                     IconButton(
+                        // The handle is for dragging; a remote or a keyboard reorders with the
+                        // move buttons instead, so it is no stop of its own.
                         modifier = with(dragHandleScope) {
-                            Modifier.draggableHandle(
+                            Modifier.focusProperties { canFocus = false }.draggableHandle(
                                 onDragStarted = {
                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                 },
@@ -195,6 +205,14 @@ internal fun FolderListItem(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (onMove != null) {
+                    ReorderKeyButtons(
+                        canMoveUp = canMoveUp,
+                        canMoveDown = canMoveDown,
+                        onMoveUp = { onMove(-1) },
+                        onMoveDown = { onMove(1) },
+                    )
+                }
                 WithTooltip(stringResource(Res.string.action_edit)) {
                     IconButton(onClick = onEdit) {
                         Icon(

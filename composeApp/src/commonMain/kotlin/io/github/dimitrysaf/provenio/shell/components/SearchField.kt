@@ -85,6 +85,7 @@ fun SearchField(
             ),
             modifier = Modifier
                 .fillMaxWidth()
+                .arrowKeysLeaveField { query.isEmpty() }
                 .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier),
         )
 

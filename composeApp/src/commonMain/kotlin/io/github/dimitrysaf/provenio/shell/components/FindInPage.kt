@@ -375,6 +375,7 @@ fun FindInPageBar(modifier: Modifier = Modifier) {
                         keyboardActions = KeyboardActions(onSearch = { step(forward = true) }),
                         modifier = Modifier
                             .focusRequester(focusRequester)
+                            .arrowKeysLeaveField { query.isEmpty() }
                             .onPreviewKeyEvent { event ->
                                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                                 when (event.key) {

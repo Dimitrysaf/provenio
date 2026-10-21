@@ -104,6 +104,8 @@ internal class PlayerScreenRuntime(
     val sleepTimer = PlayerSleepTimer()
 
     var controlsVisible by mutableStateOf(false)
+    // Set to move focus to the play button once the controls are shown, for a remote.
+    var primaryControlFocusPending by mutableStateOf(false)
     // Bumped by pointer movement, so the controls' hide timer starts over while the mouse moves.
     var controlsActivity by mutableIntStateOf(0)
     var playerControlsLocked by mutableStateOf(false)

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.ReorderKeyButtons
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -162,6 +163,9 @@ internal fun HomescreenCatalogRow(
     onRename: (() -> Unit)? = null,
     selected: Boolean = false,
     onPinnedDragAttempt: () -> Unit = {},
+    canMoveUp: Boolean = false,
+    canMoveDown: Boolean = false,
+    onMove: ((Int) -> Unit)? = null,
 ) {
     val tokens = MaterialTheme.provenio
     val horizontalPadding = if (isTablet) 20.dp else 16.dp
@@ -271,6 +275,14 @@ internal fun HomescreenCatalogRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                if (onMove != null && !item.isPinnedToTop) {
+                    ReorderKeyButtons(
+                        canMoveUp = canMoveUp,
+                        canMoveDown = canMoveDown,
+                        onMoveUp = { onMove(-1) },
+                        onMoveDown = { onMove(1) },
+                    )
+                }
                 Switch(
                     checked = item.enabled,
                     onCheckedChange = onEnabledChange,

@@ -1,5 +1,16 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
+import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material.icons.rounded.SearchOff
+import io.github.dimitrysaf.provenio.shell.components.SearchBox
+import io.github.dimitrysaf.provenio.shell.components.SearchField
+import io.github.dimitrysaf.provenio.shell.components.WindowBreakpoint
+import io.github.dimitrysaf.provenio.shell.screens.search.SearchBoxMaxWidth
 import io.github.dimitrysaf.provenio.shell.components.limitShelfRows
 import io.github.dimitrysaf.provenio.shell.components.horizontalShelfColumns
 import io.github.dimitrysaf.provenio.shell.components.snapsHorizontalShelves
@@ -179,6 +190,12 @@ fun LibraryScreen(
     var selectedCloudItemKey by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedLibrarySectionKey by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedLibraryType by rememberSaveable { mutableStateOf<String?>(null) }
+    var librarySearchQuery by rememberSaveable { mutableStateOf("") }
+    val searchTerm = librarySearchQuery.trim()
+    // The search narrows what is shown, shelves and grid alike; the library itself is unchanged.
+    val searchedSections = remember(uiState.sections, searchTerm) {
+        uiState.sections.matchingSearch(searchTerm)
+    }
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     ScreenActivityEffect(listState) { screenActive ->
@@ -189,10 +206,10 @@ fun LibraryScreen(
         selected = displaySettings.sortOption,
         sourceMode = uiState.sourceMode,
     )
-    val sortedSections = remember(uiState.sections, displaySettings, uiState.sourceMode, sourceMode) {
+    val sortedSections = remember(searchedSections, displaySettings, uiState.sourceMode, sourceMode) {
         if (sourceMode == LibraryViewMode.Saved && displaySettings.layoutMode == LibraryLayoutMode.HORIZONTAL) {
             sortLibrarySections(
-                sections = uiState.sections,
+                sections = searchedSections,
                 selected = displaySettings.sortOption,
                 sourceMode = uiState.sourceMode,
             )
@@ -201,7 +218,7 @@ fun LibraryScreen(
         }
     }
     val verticalProjection = remember(
-        uiState.sections,
+        searchedSections,
         uiState.sourceMode,
         selectedLibrarySectionKey,
         selectedLibraryType,
@@ -210,7 +227,7 @@ fun LibraryScreen(
     ) {
         if (sourceMode == LibraryViewMode.Saved && displaySettings.layoutMode == LibraryLayoutMode.VERTICAL) {
             buildLibraryVerticalProjection(
-                sections = uiState.sections,
+                sections = searchedSections,
                 sourceMode = uiState.sourceMode,
                 selectedSectionKey = selectedLibrarySectionKey,
                 selectedType = selectedLibraryType,
@@ -283,38 +300,107 @@ fun LibraryScreen(
         val libraryCardStyle = rememberPosterCardStyleUiState()
         val shelfGridColumns = posterGridColumns(maxWidth - LibraryShelfHorizontalPadding * 2, libraryCardStyle)
 
-        ScreenScaffold(
-            title = when {
-                sourceMode == LibraryViewMode.Cloud -> stringResource(Res.string.library_title)
-                else -> when (uiState.sourceMode) {
-                    LibrarySourceMode.LOCAL -> stringResource(Res.string.library_title)
-                    LibrarySourceMode.TRAKT -> stringResource(Res.string.library_trakt_title)
-                    LibrarySourceMode.SIMKL -> stringResource(Res.string.library_simkl_title)
-                }
-            },
-            modifier = Modifier.fillMaxSize(),
-            horizontalPadding = 0.dp,
-            listState = listState,
-            actions = {
-                if (sourceMode == LibraryViewMode.Saved) {
-                    LibraryLayoutMenu(displaySettings)
-                }
-                if (sourceMode != LibraryViewMode.Cloud) {
-                    WithTooltip(stringResource(Res.string.library_source_calendar)) {
-                        IconToggleButton(
-                            checked = sourceMode == LibraryViewMode.Calendar,
-                            onCheckedChange = { checked ->
-                                sourceModeName = if (checked) LibraryViewMode.Calendar.name else LibraryViewMode.Saved.name
-                            },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.CalendarMonth,
-                                contentDescription = stringResource(Res.string.library_source_calendar),
-                            )
-                        }
+        val largeScreen = WindowBreakpoint.forWidth(maxWidth) >= WindowBreakpoint.Medium
+        val searchPlaceholder = when (uiState.sourceMode) {
+            LibrarySourceMode.LOCAL -> stringResource(Res.string.library_search_placeholder)
+            LibrarySourceMode.TRAKT -> stringResource(Res.string.library_search_trakt_placeholder)
+            LibrarySourceMode.SIMKL -> stringResource(Res.string.library_search_simkl_placeholder)
+        }
+        val filtersButton: @Composable () -> Unit = {
+            if (sourceMode == LibraryViewMode.Saved) {
+                LibraryFiltersButton(
+                    layoutMode = displaySettings.layoutMode,
+                    sourceMode = uiState.sourceMode,
+                    sortOption = effectiveSortOption,
+                    verticalProjection = verticalProjection,
+                    enabled = uiState.sections.isNotEmpty(),
+                    onSectionSelected = { sectionKey ->
+                        selectedLibrarySectionKey = sectionKey
+                        selectedLibraryType = null
+                    },
+                    onTypeSelected = { type -> selectedLibraryType = type },
+                    onSortSelected = LibraryDisplaySettingsRepository::setSortOption,
+                )
+            }
+        }
+        // The layout and the calendar were the app bar's actions; with the search field as the
+        // heading, as on Search, they sit beside it.
+        val viewButtons: @Composable () -> Unit = {
+            if (sourceMode == LibraryViewMode.Saved) {
+                LibraryLayoutMenu(displaySettings)
+            }
+            if (sourceMode != LibraryViewMode.Cloud) {
+                WithTooltip(stringResource(Res.string.library_source_calendar)) {
+                    IconToggleButton(
+                        checked = sourceMode == LibraryViewMode.Calendar,
+                        onCheckedChange = { checked ->
+                            sourceModeName = if (checked) LibraryViewMode.Calendar.name else LibraryViewMode.Saved.name
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.CalendarMonth,
+                            contentDescription = stringResource(Res.string.library_source_calendar),
+                        )
                     }
                 }
-            },
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface),
+        ) {
+        // Search's design: a rounded box with the layout and calendar buttons beside it on large
+        // screens, and a field over a divider with everything inside it on phones, where there is
+        // no room beside it. The filters are inside either.
+        if (largeScreen) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                contentAlignment = Alignment.TopCenter,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    SearchBox(
+                        query = librarySearchQuery,
+                        onQueryChange = { librarySearchQuery = it },
+                        placeholder = searchPlaceholder,
+                        recentSearches = emptyList(),
+                        onRecentSearchClick = {},
+                        onRemoveRecentSearch = {},
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .widthIn(max = SearchBoxMaxWidth),
+                        actions = filtersButton,
+                    )
+                    viewButtons()
+                }
+            }
+        } else {
+            SearchField(
+                query = librarySearchQuery,
+                onQueryChange = { librarySearchQuery = it },
+                placeholder = searchPlaceholder,
+                modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
+                divided = true,
+                actions = {
+                    filtersButton()
+                    viewButtons()
+                },
+            )
+        }
+
+        ScreenScaffold(
+            title = null,
+            modifier = Modifier.weight(1f),
+            horizontalPadding = 0.dp,
+            topPadding = 8.dp,
+            listState = listState,
         ) {
 
             if (sourceMode == LibraryViewMode.Cloud) {
@@ -351,8 +437,17 @@ fun LibraryScreen(
                 )
             } else {
                 if (sourceMode == LibraryViewMode.Calendar) {
-                    libraryCalendarContent(
-                        state = calendarUiState,
+                    val searchedCalendar = if (searchTerm.isEmpty()) {
+                        calendarUiState
+                    } else {
+                        calendarUiState.copy(
+                            episodes = calendarUiState.episodes.filter { it.showName.contains(searchTerm, ignoreCase = true) },
+                        )
+                    }
+                    if (searchedCalendar.isLoaded && searchedCalendar.episodes.isEmpty() && calendarUiState.episodes.isNotEmpty()) {
+                        item(key = "library-search-no-results") { LibrarySearchNoResults(searchTerm) }
+                    } else libraryCalendarContent(
+                        state = searchedCalendar,
                         columns = gridColumns,
                         todayIsoDate = CurrentDateProvider.todayIsoDate(),
                         onEpisodeClick = { episode ->
@@ -390,26 +485,11 @@ fun LibraryScreen(
                         item { LibraryEmptyState(uiState.sourceMode) }
                     }
 
+                    searchedSections.isEmpty() -> {
+                        item(key = "library-search-no-results") { LibrarySearchNoResults(searchTerm) }
+                    }
+
                     else -> {
-                        item(
-                            key = "library-saved-controls:${uiState.sourceMode}:" +
-                                "${displaySettings.layoutMode}:$effectiveSortOption",
-                        ) {
-                            LibrarySavedControls(
-                                layoutMode = displaySettings.layoutMode,
-                                sourceMode = uiState.sourceMode,
-                                sortOption = effectiveSortOption,
-                                verticalProjection = verticalProjection,
-                                onSectionSelected = { sectionKey ->
-                                    selectedLibrarySectionKey = sectionKey
-                                    selectedLibraryType = null
-                                },
-                                onTypeSelected = { type -> selectedLibraryType = type },
-                                onSortSelected = LibraryDisplaySettingsRepository::setSortOption,
-                                modifier = libraryContentTransitionModifier()
-                                    .padding(horizontal = 16.dp),
-                            )
-                        }
                         when (displaySettings.layoutMode) {
                             LibraryLayoutMode.HORIZONTAL -> librarySections(
                                 displaySections = librarySectionsDisplay,
@@ -443,6 +523,7 @@ fun LibraryScreen(
                     }
                 }
             }
+        }
         }
     }
 }
@@ -612,7 +693,7 @@ private fun CloudLibrarySearchField(
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().arrowKeysLeaveField { query.isEmpty() },
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
         placeholder = { Text(stringResource(Res.string.cloud_library_search_label)) },
@@ -1532,6 +1613,25 @@ private fun LibraryLoadError(
             actionLabel = stringResource(Res.string.action_retry),
             onActionClick = onRetry,
         )
+    }
+}
+
+@Composable
+private fun LibrarySearchNoResults(query: String) {
+    EmptyState(
+        icon = Icons.Rounded.SearchOff,
+        modifier = Modifier.padding(horizontal = 16.dp),
+        title = stringResource(Res.string.compose_search_empty_no_results_title),
+        message = stringResource(Res.string.library_search_no_results, query),
+    )
+}
+
+/** The sections with only the titles whose names hold [term], and none left empty; all of them for no term. */
+private fun List<LibrarySection>.matchingSearch(term: String): List<LibrarySection> {
+    if (term.isEmpty()) return this
+    return mapNotNull { section ->
+        val items = section.items.filter { item -> item.name.contains(term, ignoreCase = true) }
+        if (items.isEmpty()) null else section.copy(items = items)
     }
 }
 

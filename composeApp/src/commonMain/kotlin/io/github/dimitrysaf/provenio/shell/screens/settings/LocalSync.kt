@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -467,7 +468,7 @@ internal fun LocalSyncCodeDialog(
                 onValueChange = { code = it },
                 label = { Text(stringResource(Res.string.local_sync_code_label)) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().arrowKeysLeaveField { code.isEmpty() },
             )
         },
         confirmButton = {

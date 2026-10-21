@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.shell
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -121,7 +122,13 @@ private fun RootTabPane(
                             scaleY = scale
                         }
                     }
-                    .focusProperties { canFocus = active }
+                    // A pane fading out, or kept for later, is no place for focus to go: a remote
+                    // or keyboard moving into it would land on a control nobody can see. As a
+                    // group, the pane turns away every move into it, wherever its controls sit.
+                    .focusProperties {
+                        onEnter = { if (!active) cancelFocusChange() }
+                    }
+                    .focusGroup()
                     .pointerInput(active) {
                         if (!active) {
                             awaitPointerEventScope {

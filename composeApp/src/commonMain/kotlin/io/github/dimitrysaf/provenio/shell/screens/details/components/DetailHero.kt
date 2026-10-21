@@ -1,7 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import androidx.compose.ui.focus.onFocusChanged
 import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
-import androidx.compose.foundation.text.selection.SelectionContainer
+import io.github.dimitrysaf.provenio.shell.components.SelectableText
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.components.horizontalWheelPaging
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
@@ -214,6 +215,12 @@ private fun DetailHeroPages(
                     modifier = Modifier
                         .fillMaxSize()
                         .maskClip(MaterialTheme.shapes.extraLarge)
+                        // Moving onto a sliver with the arrow keys brings it to the centre.
+                        .onFocusChanged { state ->
+                            if (state.isFocused && !isFocal) {
+                                coroutineScope.launch { carouselState.animateScrollToItem(index) }
+                            }
+                        }
                         .shapedClickable(
                             MaterialTheme.shapes.extraLarge,
                             enabled = !isFocal || openableArtworkUrl(index) != null,
@@ -494,7 +501,7 @@ private fun HeroTitleBlock(
                 onError = { logoLoadError = true },
             )
         } else {
-            SelectionContainer {
+            SelectableText {
                 FindableText(
                     text = meta.name,
                     modifier = Modifier.fillMaxWidth(),

@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import androidx.compose.foundation.layout.Row
+import io.github.dimitrysaf.provenio.shell.components.ReorderKeyButtons
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -206,6 +208,9 @@ private fun MetaSectionReorderableList(
                         shape = shape,
                         onEnabledChange = { MetaScreenSettingsRepository.setEnabled(item.key, it) },
                         dragHandleScope = this@ReorderableItem,
+                        canMoveUp = index > 0,
+                        canMoveDown = index < items.lastIndex,
+                        onMove = { offset -> MetaScreenSettingsRepository.moveByIndex(index, index + offset) },
                     )
                 }
             }
@@ -240,6 +245,9 @@ private fun MetaSectionRow(
     shape: RoundedCornerShape,
     onEnabledChange: (Boolean) -> Unit,
     dragHandleScope: ReorderableCollectionItemScope,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onMove: (Int) -> Unit,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
 
@@ -273,19 +281,27 @@ private fun MetaSectionRow(
         verticalAlignment = Alignment.CenterVertically,
         supportingContent = { Text(stringResource(item.key.descriptionRes)) },
         trailingContent = {
-            Icon(
-                imageVector = if (item.enabled) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
-                contentDescription = if (item.enabled) {
-                    stringResource(Res.string.settings_homescreen_visible)
-                } else {
-                    stringResource(Res.string.settings_homescreen_hidden)
-                },
-                tint = if (item.enabled) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ReorderKeyButtons(
+                    canMoveUp = canMoveUp,
+                    canMoveDown = canMoveDown,
+                    onMoveUp = { onMove(-1) },
+                    onMoveDown = { onMove(1) },
+                )
+                Icon(
+                    imageVector = if (item.enabled) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
+                    contentDescription = if (item.enabled) {
+                        stringResource(Res.string.settings_homescreen_visible)
+                    } else {
+                        stringResource(Res.string.settings_homescreen_hidden)
+                    },
+                    tint = if (item.enabled) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+            }
         },
     ) {
         Text(stringResource(item.key.titleRes))
