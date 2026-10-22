@@ -1107,9 +1107,7 @@
     <string name="pin_forgot">PIN'i mi unuttun?</string>
     <string name="pin_incorrect">PIN hatalı</string>
     <string name="pin_locked_try_again">Kilitli. %1$dsn sonra tekrar dene</string>
-    <string name="profile_avatar_url_invalid">Geçerli bir http:// veya https:// görsel URL'si gir.</string>
     <string name="profile_create_profile">Profil oluştur</string>
-    <string name="profile_custom_avatar_url_placeholder">https://ornek.com/avatar.png</string>
     <string name="profile_delete_confirm_message">"%1$s" için tüm veriler kalıcı olarak silinecek.</string>
     <string name="profile_delete_title">Profili sil</string>
     <string name="profile_edit_add_title">Profil ekle</string>

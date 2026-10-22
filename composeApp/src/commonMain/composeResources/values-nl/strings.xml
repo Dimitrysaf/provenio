@@ -1130,9 +1130,7 @@
     <string name="pin_forgot">Pincode vergeten?</string>
     <string name="pin_incorrect">Onjuiste pincode</string>
     <string name="pin_locked_try_again">Vergrendeld. Probeer het opnieuw over %1$ds</string>
-    <string name="profile_avatar_url_invalid">Voer een geldige http:// of https:// afbeeldings-URL in.</string>
     <string name="profile_create_profile">Profiel aanmaken</string>
-    <string name="profile_custom_avatar_url_placeholder">https://example.com/avatar.png</string>
     <string name="profile_delete_confirm_message">Alle gegevens voor "%1$s" worden permanent verwijderd.</string>
     <string name="profile_delete_title">Profiel verwijderen</string>
     <string name="profile_edit_add_title">Profiel toevoegen</string>

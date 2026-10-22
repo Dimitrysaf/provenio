@@ -29,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
+import io.github.dimitrysaf.provenio.shell.screens.profiles.ProfileAvatar
+import io.github.dimitrysaf.provenio.shell.screens.profiles.parseHexColor
 import io.github.dimitrysaf.provenio.shell.screens.settings.AppBrandSymbol
 
 /**
@@ -38,6 +40,7 @@ import io.github.dimitrysaf.provenio.shell.screens.settings.AppBrandSymbol
 @Composable
 internal fun OnboardingHero(
     step: OnboardingStep,
+    state: OnboardingState,
     size: Dp,
     modifier: Modifier = Modifier,
 ) {
@@ -70,8 +73,21 @@ internal fun OnboardingHero(
                 .clip(shape)
                 .background(container),
         )
+        val newProfile = step == OnboardingStep.Profile &&
+            (state.profilePath == OnboardingProfilePath.New || state.createdProfileName != null)
         if (step == OnboardingStep.Welcome) {
             AppBrandSymbol(modifier = Modifier.size(size * 0.46f))
+        } else if (newProfile) {
+            // The profile being made takes the place of the step's picture, and changes with it.
+            val name = state.createdProfileName ?: state.profileName
+            ProfileAvatar(
+                size = size * 0.62f,
+                imageUrl = null,
+                monogram = name.ifBlank { null },
+                identifier = name,
+                contentDescription = null,
+                containerColor = parseHexColor(state.profileColorHex),
+            )
         } else {
             Icon(
                 imageVector = when (step) {

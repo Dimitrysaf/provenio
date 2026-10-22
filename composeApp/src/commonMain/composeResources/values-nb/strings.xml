@@ -895,9 +895,7 @@
     <string name="pin_forgot">Glemt PIN?</string>
     <string name="pin_incorrect">Feil PIN</string>
     <string name="pin_locked_try_again">Låst. Prøv igjen om %1$ds</string>
-    <string name="profile_avatar_url_invalid">Skriv inn en gyldig http:// eller https:// bilde-URL.</string>
     <string name="profile_create_profile">Opprett profil</string>
-    <string name="profile_custom_avatar_url_placeholder">https://example.com/avatar.png</string>
     <string name="profile_delete_confirm_message">All data for «%1$s» vil bli slettet permanent.</string>
     <string name="profile_delete_title">Slett profil</string>
     <string name="profile_edit_add_title">Legg til profil</string>

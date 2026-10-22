@@ -1153,8 +1153,6 @@
   <string name="trakt_all_history">Tutta la cronologia</string>
   <string name="trakt_days_format">%1$d giorni</string>
   <string name="episode_mark_previous_seasons_watched">Segna le stagioni precedenti come viste</string>
-  <string name="profile_avatar_url_invalid">Inserisci un URL immagine http:// o https:// valido.</string>
-  <string name="profile_custom_avatar_url_placeholder">https://esempio.com/avatar.png</string>
   <string name="streams_open_external_player">Apri nel lettore esterno</string>
   <string name="streams_open_internal_player">Apri nel lettore interno</string>
   <string name="streams_torrent_not_supported">Questo tipo di flusso non è supportato</string>

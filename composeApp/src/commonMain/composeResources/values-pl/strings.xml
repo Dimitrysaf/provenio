@@ -934,9 +934,7 @@
     <string name="pin_forgot">Zapomniałeś PIN?</string>
     <string name="pin_incorrect">Nieprawidłowy PIN</string>
     <string name="pin_locked_try_again">Zablokowane. Spróbuj ponownie za %1$ds</string>
-    <string name="profile_avatar_url_invalid">Wprowadź prawidłowy URL obrazu http:// lub https://.</string>
     <string name="profile_create_profile">Utwórz profil</string>
-    <string name="profile_custom_avatar_url_placeholder">https://example.com/avatar.png</string>
     <string name="profile_delete_confirm_message">Wszystkie dane profilu „%1$s" zostaną trwale usunięte.</string>
     <string name="profile_delete_title">Usuń profil</string>
     <string name="profile_edit_add_title">Dodaj profil</string>

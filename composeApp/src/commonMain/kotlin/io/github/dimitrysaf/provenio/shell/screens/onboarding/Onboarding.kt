@@ -257,7 +257,7 @@ private fun SinglePaneOnboarding(
                         else -> 120.dp
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    OnboardingHero(step = step, size = heroSize)
+                    OnboardingHero(step = step, state = state, size = heroSize)
                     Spacer(modifier = Modifier.height(24.dp))
                     StepHeading(step = step, state = state, centered = true)
                     Spacer(modifier = Modifier.height(28.dp))
@@ -307,7 +307,7 @@ private fun TwoPaneOnboarding(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.Start,
                 ) {
-                    OnboardingHero(step = step, size = if (step == OnboardingStep.Welcome) 240.dp else 200.dp)
+                    OnboardingHero(step = step, state = state, size = if (step == OnboardingStep.Welcome) 240.dp else 200.dp)
                     Spacer(modifier = Modifier.height(40.dp))
                     StepHeading(step = step, state = state, centered = false, large = true)
                 }

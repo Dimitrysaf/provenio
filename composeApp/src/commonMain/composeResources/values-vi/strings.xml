@@ -1133,9 +1133,7 @@
     <string name="pin_forgot">Quên mã PIN?</string>
     <string name="pin_incorrect">Sai mã PIN</string>
     <string name="pin_locked_try_again">Đã bị khóa, thử lại sau %1$d giây</string>
-    <string name="profile_avatar_url_invalid">Nhập URL ảnh hợp lệ (http:// hoặc https://)</string>
     <string name="profile_create_profile">Tạo hồ sơ</string>
-    <string name="profile_custom_avatar_url_placeholder">https://example.com/avatar.png</string>
     <string name="profile_delete_confirm_message">Toàn bộ dữ liệu của "%1$s" sẽ bị xóa vĩnh viễn</string>
     <string name="profile_delete_title">Xoá hồ sơ</string>
     <string name="profile_edit_add_title">Thêm hồ sơ</string>

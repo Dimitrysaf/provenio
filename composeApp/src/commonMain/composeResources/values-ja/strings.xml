@@ -1017,9 +1017,7 @@
     <string name="pin_forgot">PINを忘れた場合</string>
     <string name="pin_incorrect">PINが正しくありません</string>
     <string name="pin_locked_try_again">ロックされています。%1$d 秒後に再試行してください</string>
-    <string name="profile_avatar_url_invalid">有効なhttp://またはhttps://の画像URLを入力してください。</string>
     <string name="profile_create_profile">プロフィールを作成</string>
-    <string name="profile_custom_avatar_url_placeholder">https://example.com/avatar.png</string>
     <string name="profile_delete_confirm_message">「%1$s」のすべてのデータが完全に削除されます。</string>
     <string name="profile_delete_title">プロフィールを削除</string>
     <string name="profile_edit_add_title">プロフィールを追加</string>

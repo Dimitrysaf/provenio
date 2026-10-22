@@ -1130,9 +1130,7 @@
     <string name="pin_forgot">Забравен PIN?</string>
     <string name="pin_incorrect">Грешен PIN</string>
     <string name="pin_locked_try_again">Заключен. Опитайте отново след %1$dс</string>
-    <string name="profile_avatar_url_invalid">Въведете валиден http:// или https:// URL на изображение.</string>
     <string name="profile_create_profile">Създай профил</string>
-    <string name="profile_custom_avatar_url_placeholder">https://example.com/avatar.png</string>
     <string name="profile_delete_confirm_message">Всички данни за „%1$s" ще бъдат трайно изтрити.</string>
     <string name="profile_delete_title">Изтрий профила</string>
     <string name="profile_edit_add_title">Добави профил</string>

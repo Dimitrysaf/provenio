@@ -997,9 +997,7 @@
     <string name="pin_forgot">Esqueceste-te do PIN?</string>
     <string name="pin_incorrect">PIN incorreto</string>
     <string name="pin_locked_try_again">Bloqueado. Tenta novamente em %1$ds</string>
-    <string name="profile_avatar_url_invalid">Introduz um URL de imagem http:// ou https:// válido.</string>
     <string name="profile_create_profile">Criar perfil</string>
-    <string name="profile_custom_avatar_url_placeholder">https://exemplo.com/avatar.png</string>
     <string name="profile_delete_confirm_message">Todos os dados de "%1$s" serão eliminados permanentemente.</string>
     <string name="profile_delete_title">Eliminar perfil</string>
     <string name="profile_edit_add_title">Adicionar perfil</string>

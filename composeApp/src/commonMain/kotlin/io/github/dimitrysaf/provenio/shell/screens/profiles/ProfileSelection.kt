@@ -597,7 +597,7 @@ private fun ProfileAvatarCard(
                     // renaming a profile doesn't change the avatar out from under someone.
                     identifier = profile.profileIndex.toString(),
                     contentDescription = avatarItem?.displayName ?: profile.name,
-                    containerColor = avatarItem?.bgColor?.let { parseHexColor(it) },
+                    containerColor = profileTileColor(profile),
                     iconSize = metrics.placeholderIconSize,
                 )
 

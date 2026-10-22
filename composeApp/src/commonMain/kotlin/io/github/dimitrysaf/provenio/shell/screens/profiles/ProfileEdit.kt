@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
+import io.github.dimitrysaf.provenio.shell.components.ToastController
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import io.github.dimitrysaf.provenio.shell.components.sheetHeaderFocus
 import io.github.dimitrysaf.provenio.shell.components.LocalSheetFocus
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
@@ -28,7 +31,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material.icons.rounded.Explicit
@@ -40,9 +42,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.ShapeDefaults
@@ -50,13 +50,12 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,10 +71,7 @@ import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
-import io.github.dimitrysaf.provenio.core.profiles.AvatarCatalogItem
-import io.github.dimitrysaf.provenio.core.profiles.AvatarRepository
 import io.github.dimitrysaf.provenio.core.profiles.Profile
-import io.github.dimitrysaf.provenio.core.profiles.avatarImageUrl
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 
 /**
@@ -107,8 +103,10 @@ fun ProfileEditScreen(
     // by whoever cares to.
     val defaultProfileName = stringResource(Res.string.profile_default_name)
     var name by rememberSaveable { mutableStateOf(currentProfile?.name ?: defaultProfileName) }
-    var selectedAvatarId by rememberSaveable { mutableStateOf(currentProfile?.avatarId) }
     var avatarUrl by rememberSaveable { mutableStateOf(currentProfile?.avatarUrl.orEmpty()) }
+    var colorHex by rememberSaveable { mutableStateOf(fallbackColorHex) }
+    // Until a colour is picked, the letter tile takes the one the profile's name gives it.
+    var colorChosen by rememberSaveable { mutableStateOf(currentProfile?.avatarId == CHOSEN_COLOR_AVATAR_ID) }
     var selectedBackgroundId by rememberSaveable { mutableStateOf(currentProfile?.profileBackgroundId) }
     var selectedBackgroundUrl by rememberSaveable { mutableStateOf(currentProfile?.profileBackgroundUrl) }
     var usesPrimaryAddons by rememberSaveable { mutableStateOf(currentProfile?.usesPrimaryAddons ?: false) }
@@ -124,25 +122,8 @@ fun ProfileEditScreen(
     var showNameDialog by rememberSaveable { mutableStateOf(false) }
     var showAvatarDialog by rememberSaveable { mutableStateOf(false) }
 
-    val avatars by AvatarRepository.avatars.collectAsStateWithLifecycle()
-    LaunchedEffect(Unit) {
-        AvatarRepository.refreshAvatars()
-    }
-    LaunchedEffect(isNew, avatars, selectedAvatarId, avatarUrl) {
-        if (isNew && avatarUrl.isBlank() && selectedAvatarId == null && avatars.isNotEmpty()) {
-            selectedAvatarId = avatars.first().id
-        }
-    }
-
     val customAvatarUrl = remember(avatarUrl) { normalizedAvatarUrl(avatarUrl) }
-    val avatarUrlIsInvalid = avatarUrl.isNotBlank() && customAvatarUrl == null
-    val selectedAvatarItem = remember(selectedAvatarId, avatars) {
-        selectedAvatarId?.let { id -> avatars.find { it.id == id } }
-    }
-    val visibleAvatarItem = if (customAvatarUrl == null) selectedAvatarItem else null
-    val previewAccent = remember(visibleAvatarItem, fallbackColorHex) {
-        parseHexColor(visibleAvatarItem?.bgColor ?: fallbackColorHex)
-    }
+    val tileColor = if (colorChosen) parseHexColor(colorHex) else null
 
     val title = if (isNew) {
         stringResource(Res.string.profile_edit_add_title)
@@ -155,9 +136,8 @@ fun ProfileEditScreen(
             ProfileIdentityPreview(
                 name = name,
                 isNew = isNew,
-                selectedAvatar = visibleAvatarItem,
-                customAvatarUrl = customAvatarUrl,
-                accentColor = previewAccent,
+                imageUrl = customAvatarUrl,
+                tileColor = tileColor,
                 identifier = (currentProfile?.profileIndex ?: 0).toString(),
                 onEditName = { showNameDialog = true },
                 onEditAvatar = { showAvatarDialog = true },
@@ -211,17 +191,17 @@ fun ProfileEditScreen(
 
     }
 
-    val canSave = name.isNotBlank() && !avatarUrlIsInvalid && !isSaving
+    val canSave = name.isNotBlank() && !isSaving
     val canDelete = !isNew && (currentProfile?.profileIndex ?: 0) > 1
     val onSave: () -> Unit = {
         isSaving = true
         scope.launch {
-            val avatarColorHex = visibleAvatarItem?.bgColor ?: fallbackColorHex
+            val avatarId = CHOSEN_COLOR_AVATAR_ID.takeIf { colorChosen }
             if (isNew) {
                 ProfileRepository.createProfile(
                     name = name,
-                    avatarColorHex = avatarColorHex,
-                    avatarId = if (customAvatarUrl == null) selectedAvatarId else null,
+                    avatarColorHex = colorHex,
+                    avatarId = avatarId,
                     avatarUrl = customAvatarUrl,
                     usesPrimaryAddons = usesPrimaryAddons,
                     ageLimit = ageLimit,
@@ -230,8 +210,8 @@ fun ProfileEditScreen(
                 ProfileRepository.updateProfile(
                     profileIndex = currentProfile!!.profileIndex,
                     name = name,
-                    avatarColorHex = avatarColorHex,
-                    avatarId = if (customAvatarUrl == null) selectedAvatarId else null,
+                    avatarColorHex = colorHex,
+                    avatarId = avatarId,
                     avatarUrl = customAvatarUrl,
                     profileBackgroundId = selectedBackgroundId,
                     profileBackgroundUrl = selectedBackgroundUrl,
@@ -380,20 +360,17 @@ fun ProfileEditScreen(
 
     if (showAvatarDialog) {
         ProfileAvatarDialog(
-            avatars = avatars,
-            selectedAvatarId = selectedAvatarId.takeIf { customAvatarUrl == null },
-            avatarUrl = avatarUrl,
-            urlIsInvalid = avatarUrlIsInvalid,
-            onAvatarSelected = { avatar ->
+            name = name,
+            identifier = (currentProfile?.profileIndex ?: 0).toString(),
+            pictureUrl = customAvatarUrl,
+            selectedColorHex = colorHex.takeIf { colorChosen },
+            onColorSelected = { hex ->
+                // A colour shows only where there is no picture over it.
+                colorHex = hex
+                colorChosen = true
                 avatarUrl = ""
-                selectedAvatarId = avatar.id
             },
-            onAvatarUrlChange = { value ->
-                avatarUrl = value
-                if (value.isNotBlank()) {
-                    selectedAvatarId = null
-                }
-            },
+            onPictureChange = { url -> avatarUrl = url.orEmpty() },
             onDismiss = { showAvatarDialog = false },
         )
     }
@@ -584,10 +561,10 @@ private fun ProfileEditPaneHeader(
     }
 }
 
-/** Where an avatar comes from: the catalog, or a link the person supplies. */
+/** Where a profile's face comes from: a colour behind its letter, or a picture. */
 private enum class ProfileAvatarSource {
-    CATALOG,
-    URL,
+    COLOR,
+    PICTURE,
 }
 
 /**
@@ -595,26 +572,34 @@ private enum class ProfileAvatarSource {
  *
  * Choosing an avatar is a short, self-contained task with one way out, so it is a dialog rather
  * than a block of the form: the editor stays about the profile, and the two places an avatar can
- * come from are one choice between them rather than two stacked sections.
+ * come from are one choice between them rather than two stacked sections. A picture comes from a
+ * file, shrunk and kept in the profile; where no file can be picked, only colours are offered.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ProfileAvatarDialog(
-    avatars: List<AvatarCatalogItem>,
-    selectedAvatarId: String?,
-    avatarUrl: String,
-    urlIsInvalid: Boolean,
-    onAvatarSelected: (AvatarCatalogItem) -> Unit,
-    onAvatarUrlChange: (String) -> Unit,
+    name: String,
+    identifier: String,
+    pictureUrl: String?,
+    selectedColorHex: String?,
+    onColorSelected: (String) -> Unit,
+    onPictureChange: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val sources = ProfileAvatarSource.entries
-    // A link already in hand is the state the dialog opens in; otherwise the catalog, which is
-    // what most people want and what the editor defaults to.
+    val scope = rememberCoroutineScope()
+    var processing by remember { mutableStateOf(false) }
+    val unreadableMessage = stringResource(Res.string.profile_avatar_picture_unreadable)
+    val pickPicture = rememberAvatarPicturePicker { bytes ->
+        if (bytes == null) return@rememberAvatarPicturePicker
+        processing = true
+        scope.launch {
+            val url = withContext(Dispatchers.Default) { avatarPictureDataUri(bytes) }
+            processing = false
+            if (url == null) ToastController.show(unreadableMessage) else onPictureChange(url)
+        }
+    }
+    val sources = if (pickPicture == null) listOf(ProfileAvatarSource.COLOR) else ProfileAvatarSource.entries
     var source by rememberSaveable {
-        mutableStateOf(
-            if (avatarUrl.isNotBlank()) ProfileAvatarSource.URL else ProfileAvatarSource.CATALOG,
-        )
+        mutableStateOf(if (pictureUrl != null && pickPicture != null) ProfileAvatarSource.PICTURE else ProfileAvatarSource.COLOR)
     }
 
     AlertDialog(
@@ -625,50 +610,53 @@ private fun ProfileAvatarDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    sources.forEachIndexed { index, entry ->
-                        SegmentedButton(
-                            selected = entry == source,
-                            onClick = { source = entry },
-                            shape = SegmentedButtonDefaults.itemShape(
-                                index = index,
-                                count = sources.size,
-                            ),
-                        ) {
-                            Text(profileAvatarSourceLabel(entry))
+                if (sources.size > 1) {
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        sources.forEachIndexed { index, entry ->
+                            SegmentedButton(
+                                selected = entry == source,
+                                onClick = { source = entry },
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = sources.size),
+                            ) {
+                                Text(profileAvatarSourceLabel(entry))
+                            }
                         }
                     }
                 }
 
                 when (source) {
-                    ProfileAvatarSource.URL -> OutlinedTextField(
-                        value = avatarUrl,
-                        onValueChange = onAvatarUrlChange,
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(Res.string.profile_custom_avatar_url_placeholder)) },
-                        leadingIcon = { Icon(Icons.Outlined.Link, contentDescription = null) },
-                        singleLine = true,
-                        isError = urlIsInvalid,
-                        supportingText = if (urlIsInvalid) {
-                            { Text(stringResource(Res.string.profile_avatar_url_invalid)) }
-                        } else {
-                            null
-                        },
+                    ProfileAvatarSource.COLOR -> ProfileColorPicker(
+                        selectedHex = selectedColorHex.takeIf { pictureUrl == null },
+                        onSelected = onColorSelected,
                     )
 
-                    ProfileAvatarSource.CATALOG -> if (avatars.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            LoadingIndicator()
+                    ProfileAvatarSource.PICTURE -> Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            ProfileAvatar(
+                                size = AvatarPreviewSize,
+                                imageUrl = pictureUrl,
+                                monogram = name,
+                                identifier = identifier,
+                                contentDescription = null,
+                                containerColor = selectedColorHex?.let(::parseHexColor),
+                            )
+                            if (processing) SmallLoadingSpinner(size = 32.dp)
                         }
-                    } else {
-                        AvatarPicker(
-                            avatars = avatars,
-                            selectedAvatarId = selectedAvatarId,
-                            onAvatarSelected = onAvatarSelected,
-                        )
+                        Button(
+                            onClick = { pickPicture?.invoke() },
+                            enabled = !processing,
+                        ) {
+                            Text(stringResource(Res.string.profile_avatar_choose_picture))
+                        }
+                        if (pictureUrl != null) {
+                            TextButton(onClick = { onPictureChange(null) }) {
+                                Text(stringResource(Res.string.profile_avatar_remove_picture))
+                            }
+                        }
                     }
                 }
             }
@@ -683,8 +671,8 @@ private fun ProfileAvatarDialog(
 
 @Composable
 private fun profileAvatarSourceLabel(source: ProfileAvatarSource): String = when (source) {
-    ProfileAvatarSource.CATALOG -> stringResource(Res.string.profile_avatar_source_catalog)
-    ProfileAvatarSource.URL -> stringResource(Res.string.profile_avatar_source_url)
+    ProfileAvatarSource.COLOR -> stringResource(Res.string.profile_avatar_source_color)
+    ProfileAvatarSource.PICTURE -> stringResource(Res.string.profile_avatar_source_picture)
 }
 
 /**
@@ -725,9 +713,8 @@ private fun ProfileEditSection(
 private fun ProfileIdentityPreview(
     name: String,
     isNew: Boolean,
-    selectedAvatar: AvatarCatalogItem?,
-    customAvatarUrl: String?,
-    accentColor: Color,
+    imageUrl: String?,
+    tileColor: Color?,
     identifier: String,
     onEditName: () -> Unit,
     onEditAvatar: () -> Unit,
@@ -740,11 +727,11 @@ private fun ProfileIdentityPreview(
         Box {
             ProfileAvatar(
                 size = AvatarPreviewSize,
-                imageUrl = customAvatarUrl ?: selectedAvatar?.let { avatarImageUrl(it) },
+                imageUrl = imageUrl,
                 monogram = name,
                 identifier = identifier,
-                contentDescription = selectedAvatar?.displayName ?: name,
-                containerColor = selectedAvatar?.let { accentColor },
+                contentDescription = name,
+                containerColor = tileColor,
             )
             // The pencil sits on the avatar it edits, so what it changes needs no label, and no
             // container either: a filled button over the face would hide what it is pointing at.

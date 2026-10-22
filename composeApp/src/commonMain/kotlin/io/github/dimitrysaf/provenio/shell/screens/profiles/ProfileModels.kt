@@ -26,15 +26,30 @@ val PROFILE_COLORS = listOf(
     "#7CB342", "#039BE5", "#FFB300", "#6D4C41",
 )
 
+/**
+ * Marks a profile whose letter tile is in the colour picked for it, [Profile.avatarColorHex],
+ * rather than the one its name gives it. It takes the place of the avatar catalog's ids, which
+ * no longer exist.
+ */
+const val CHOSEN_COLOR_AVATAR_ID = "color"
+
+/** The colour picked for the profile's letter tile, or null when its name gives it one. */
+fun profileTileColor(profile: Profile): Color? =
+    profile.avatarColorHex.takeIf { profile.avatarId == CHOSEN_COLOR_AVATAR_ID }?.let(::parseHexColor)
+
 fun normalizedAvatarUrl(url: String?): String? =
     url?.trim()?.takeIf { it.isValidAvatarUrl() }
 
+/** A link to a picture, or a picture picked from a file, which the profile carries in itself. */
 fun String.isValidAvatarUrl(): Boolean {
     val value = trim()
+    if (value.startsWith(AvatarPictureDataUriPrefix)) return value.length <= MaxAvatarPictureLength
     return value.length <= 2048 &&
         !value.any { it.isWhitespace() } &&
         (value.startsWith("https://") || value.startsWith("http://"))
 }
+
+private const val MaxAvatarPictureLength = 200_000
 
 fun profileAvatarImageUrl(profile: Profile, avatar: AvatarCatalogItem?): String? =
     normalizedAvatarUrl(profile.avatarUrl)

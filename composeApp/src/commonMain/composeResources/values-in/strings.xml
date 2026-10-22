@@ -922,9 +922,7 @@
     <string name="pin_forgot">Lupa PIN?</string>
     <string name="pin_incorrect">PIN salah</string>
     <string name="pin_locked_try_again">Dikunci. Coba lagi dalam %1$dd</string>
-    <string name="profile_avatar_url_invalid">Masukkan URL gambar http:// atau https:// yang valid.</string>
     <string name="profile_create_profile">Buat Profil</string>
-    <string name="profile_custom_avatar_url_placeholder">https://example.com/avatar.png</string>
     <string name="profile_delete_confirm_message">Semua data untuk "%1$s" akan dihapus secara permanen.</string>
     <string name="profile_delete_title">Hapus Profil</string>
     <string name="profile_edit_add_title">Tambah Profil</string>

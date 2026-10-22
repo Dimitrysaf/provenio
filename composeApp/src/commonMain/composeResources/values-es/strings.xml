@@ -1130,9 +1130,7 @@
     <string name="pin_forgot">¿Olvidaste el PIN?</string>
     <string name="pin_incorrect">PIN incorrecto</string>
     <string name="pin_locked_try_again">Bloqueado. Inténtalo de nuevo en %1$ds</string>
-    <string name="profile_avatar_url_invalid">Introduce una URL de imagen http:// o https:// válida.</string>
     <string name="profile_create_profile">Crear perfil</string>
-    <string name="profile_custom_avatar_url_placeholder">https://ejemplo.com/avatar.png</string>
     <string name="profile_delete_confirm_message">Todos los datos de "%1$s" se eliminarán permanentemente.</string>
     <string name="profile_delete_title">Eliminar perfil</string>
     <string name="profile_edit_add_title">Añadir perfil</string>

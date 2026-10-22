@@ -1027,9 +1027,7 @@
     <string name="pin_forgot">Ai uitat codul PIN?</string>
     <string name="pin_incorrect">Cod PIN incorect</string>
     <string name="pin_locked_try_again">Blocat. Încearcă din nou în %1$ds</string>
-    <string name="profile_avatar_url_invalid">Introdu un URL valid de imagine (http:// sau https://).</string>
     <string name="profile_create_profile">Creează profil</string>
-    <string name="profile_custom_avatar_url_placeholder">https://exemplu.com/avatar.png</string>
     <string name="profile_delete_confirm_message">Toate datele pentru „%1$s” vor fi șterse definitiv.</string>
     <string name="profile_delete_title">Șterge profilul</string>
     <string name="profile_edit_add_title">Adaugă profil</string>

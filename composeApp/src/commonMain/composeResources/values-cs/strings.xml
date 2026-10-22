@@ -1019,9 +1019,7 @@
     <string name="pin_forgot">Zapomněli jste PIN?</string>
     <string name="pin_incorrect">Nesprávný PIN</string>
     <string name="pin_locked_try_again">Uzamčeno. Zkuste to znovu za %1$ds</string>
-    <string name="profile_avatar_url_invalid">Zadejte platné URL obrázku začínající http:// nebo https://.</string>
     <string name="profile_create_profile">Vytvořit profil</string>
-    <string name="profile_custom_avatar_url_placeholder">https://example.com/avatar.png</string>
     <string name="profile_delete_confirm_message">Všechna data pro "%1$s" budou trvale smazána.</string>
     <string name="profile_delete_title">Smazat profil</string>
     <string name="profile_edit_add_title">Přidat profil</string>

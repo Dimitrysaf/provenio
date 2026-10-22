@@ -879,9 +879,7 @@
     <string name="pin_forgot">Elfelejtetted a PIN-kódot?</string>
     <string name="pin_incorrect">Helytelen PIN-kód</string>
     <string name="pin_locked_try_again">Zárolva. Próbáld újra %1$ds múlva</string>
-    <string name="profile_avatar_url_invalid">Kérjük, érvényes http:// vagy https:// kép URL-t adj meg.</string>
     <string name="profile_create_profile">Profil létrehozása</string>
-    <string name="profile_custom_avatar_url_placeholder">https://pelda.hu/profilkep.png</string>
     <string name="profile_delete_confirm_message">A(z) &quot;%1$s&quot; profil minden adata véglegesen törlődni fog.</string>
     <string name="profile_delete_title">Profil törlése</string>
     <string name="profile_edit_add_title">Profil hozzáadása</string>

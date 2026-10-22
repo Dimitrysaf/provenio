@@ -1120,9 +1120,7 @@
     <string name="pin_forgot">نسيت رمز PIN؟</string>
     <string name="pin_incorrect">رمز PIN غير صحيح.</string>
     <string name="pin_locked_try_again">مقفل. حاول مرة أخرى بعد %1$d ث</string>
-    <string name="profile_avatar_url_invalid">أدخل رابط صورة صالحًا يبدأ بـ http:// أو https://.</string>
     <string name="profile_create_profile">إنشاء ملف شخصي</string>
-    <string name="profile_custom_avatar_url_placeholder">https://example.com/avatar.png</string>
     <string name="profile_delete_confirm_message">سيتم حذف جميع بيانات "%1$s" نهائيًا.</string>
     <string name="profile_delete_title">حذف الملف الشخصي</string>
     <string name="profile_edit_add_title">إضافة ملف شخصي</string>

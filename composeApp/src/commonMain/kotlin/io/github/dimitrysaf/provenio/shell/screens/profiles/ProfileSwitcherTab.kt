@@ -186,7 +186,7 @@ fun ActiveProfileMiniAvatar(
         monogram = profile.name,
         identifier = profile.profileIndex.toString(),
         contentDescription = profile.name,
-        containerColor = avatarItem?.bgColor?.let { parseHexColor(it) },
+        containerColor = profileTileColor(profile),
     )
 }
 

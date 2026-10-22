@@ -86,9 +86,8 @@ import io.github.dimitrysaf.provenio.shell.screens.addons.OpenSubtitlesName
 import io.github.dimitrysaf.provenio.shell.screens.addons.TorrentioManifestUrl
 import io.github.dimitrysaf.provenio.shell.screens.addons.TorrentioName
 import io.github.dimitrysaf.provenio.shell.screens.addons.manifestKey
-import io.github.dimitrysaf.provenio.shell.screens.profiles.PROFILE_COLORS
-import io.github.dimitrysaf.provenio.shell.screens.profiles.ProfileAvatar
-import io.github.dimitrysaf.provenio.shell.screens.profiles.parseHexColor
+import io.github.dimitrysaf.provenio.shell.screens.profiles.CHOSEN_COLOR_AVATAR_ID
+import io.github.dimitrysaf.provenio.shell.screens.profiles.ProfileColorPicker
 import io.github.dimitrysaf.provenio.shell.screens.settings.ColorPaletteSwatch
 import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncCodeDialog
 import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncFeedbackEffect
@@ -176,7 +175,11 @@ internal fun onboardingActions(state: OnboardingState, onFinish: () -> Unit): On
                             state.creatingProfile = true
                             scope.launch {
                                 runCatching {
-                                    ProfileRepository.createProfile(name = name, avatarColorHex = state.profileColorHex)
+                                    ProfileRepository.createProfile(
+                                        name = name,
+                                        avatarColorHex = state.profileColorHex,
+                                        avatarId = CHOSEN_COLOR_AVATAR_ID,
+                                    )
                                 }
                                 val created = ProfileRepository.state.value.profiles.lastOrNull { it.name == name }
                                 if (created != null) {
@@ -234,7 +237,7 @@ internal fun AppearanceStep() {
     val dynamicColorAvailable = remember { isDynamicColorAvailable() }
     var showLanguages by rememberSaveable { mutableStateOf(false) }
 
-    SectionLabel(stringResource(Res.string.onboarding_language))
+    SectionLabel(stringResource(Res.string.settings_appearance_app_language))
     OnboardingGroup {
         ChoiceRow(
             icon = Icons.Rounded.Language,
@@ -243,7 +246,7 @@ internal fun AppearanceStep() {
         )
     }
 
-    SectionLabel(stringResource(Res.string.onboarding_theme))
+    SectionLabel(stringResource(Res.string.settings_appearance_theme))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         ThemeMode.entries.forEach { mode ->
             ThemeChoice(
@@ -282,7 +285,7 @@ internal fun AppearanceStep() {
         }
     }
 
-    SectionLabel(stringResource(Res.string.onboarding_colors))
+    SectionLabel(stringResource(Res.string.settings_appearance_color_palette))
     val palettes = buildList {
         if (dynamicColorAvailable) add(ColorPalette.Dynamic)
         AppIconOption.entries.forEach { add(ColorPalette.Icon(it)) }
@@ -369,7 +372,7 @@ internal fun ProfileStep(state: OnboardingState) {
         LaunchedEffect(Unit) { state.profilePath = OnboardingProfilePath.New }
     }
     when {
-        state.createdProfileName != null -> ProfileReady(state)
+        state.createdProfileName != null -> Unit
         state.profilePath == OnboardingProfilePath.New -> NewProfile(state)
         state.profilePath == OnboardingProfilePath.Bring -> BringFromDevice()
         else -> {
@@ -391,62 +394,24 @@ internal fun ProfileStep(state: OnboardingState) {
 
 @Composable
 private fun NewProfile(state: OnboardingState) {
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        ProfileAvatar(
-            size = 112.dp,
-            imageUrl = null,
-            monogram = state.profileName.ifBlank { null },
-            identifier = state.profileName,
-            contentDescription = null,
-            containerColor = parseHexColor(state.profileColorHex),
-        )
-    }
     OutlinedTextField(
         value = state.profileName,
         onValueChange = { state.profileName = it.take(ProfileNameMaxLength) },
-        label = { Text(stringResource(Res.string.onboarding_profile_name)) },
+        label = { Text(stringResource(Res.string.profile_name_placeholder)) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         modifier = Modifier.fillMaxWidth(),
     )
-    SectionLabel(stringResource(Res.string.onboarding_profile_color))
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        PROFILE_COLORS.forEach { hex ->
-            SelectableCircle(
-                selected = hex == state.profileColorHex,
-                label = hex,
-                onClick = { state.profileColorHex = hex },
-            ) {
-                Surface(
-                    color = parseHexColor(hex),
-                    shape = CircleShape,
-                    modifier = Modifier.size(SwatchSize),
-                ) {}
-            }
-        }
-    }
+    SectionLabel(stringResource(Res.string.profile_avatar_source_color))
+    ProfileColorPicker(
+        selectedHex = state.profileColorHex,
+        onSelected = { state.profileColorHex = it },
+    )
     if (state.preview) {
         Text(
             text = stringResource(Res.string.onboarding_preview_note),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun ProfileReady(state: OnboardingState) {
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        ProfileAvatar(
-            size = 112.dp,
-            imageUrl = null,
-            monogram = state.createdProfileName,
-            identifier = state.createdProfileName.orEmpty(),
-            contentDescription = null,
-            containerColor = parseHexColor(state.profileColorHex),
         )
     }
 }
