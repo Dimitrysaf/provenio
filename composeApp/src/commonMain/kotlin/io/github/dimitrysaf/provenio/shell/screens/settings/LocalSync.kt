@@ -51,6 +51,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -129,7 +130,10 @@ internal fun LocalSyncCard(modifier: Modifier = Modifier) {
                 enabled = !syncing,
                 trailingContent = {
                     if (syncing) {
-                        LocalSyncProgress()
+                        // Takes the delete button's space, so the spinner sits where its icon was.
+                        Box(modifier = Modifier.minimumInteractiveComponentSize(), contentAlignment = Alignment.Center) {
+                            LocalSyncProgress()
+                        }
                     } else {
                         WithTooltip(forgetLabel) {
                             IconButton(onClick = { peerToForgetId = peer.deviceId }) {
