@@ -56,12 +56,20 @@ internal object LetterTile {
     }
 
     /**
-     * The first character uppercased, but only when it is an English letter — anything else
-     * falls back to the person icon, exactly as `isEnglishLetter` gates it upstream.
+     * The name's first character as it was typed, in any script and in its own case: Greek,
+     * Devanagari, Cyrillic, an emoji. A character made of two code units, or followed by accents
+     * that combine with it, is taken whole.
      */
-    fun letterFor(displayName: String?): String? = displayName
-        ?.firstOrNull()
-        ?.takeIf { it in 'A'..'Z' || it in 'a'..'z' }
-        ?.uppercaseChar()
-        ?.toString()
+    fun letterFor(displayName: String?): String? {
+        val name = displayName?.trimStart()?.takeIf(String::isNotEmpty) ?: return null
+        var end = if (name[0].isHighSurrogate() && name.length > 1) 2 else 1
+        while (end < name.length && name[end].category in CombiningMarks) end++
+        return name.substring(0, end)
+    }
+
+    private val CombiningMarks = setOf(
+        CharCategory.NON_SPACING_MARK,
+        CharCategory.COMBINING_SPACING_MARK,
+        CharCategory.ENCLOSING_MARK,
+    )
 }
