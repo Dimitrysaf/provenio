@@ -2,6 +2,16 @@
 
 package io.github.dimitrysaf.provenio.shell.screens.onboarding
 
+import provenio.composeapp.generated.resources.profile_default_name
+import provenio.composeapp.generated.resources.onboarding_skip
+import provenio.composeapp.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.animation.using
+import androidx.compose.animation.SizeTransform
 import io.github.dimitrysaf.provenio.shell.components.clearFocusOnTap
 import io.github.dimitrysaf.provenio.shell.components.singleKeyPresses
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -218,6 +228,22 @@ internal fun Onboarding(
 
     val actions = onboardingActions(state, onFinish)
 
+    // Skipping the setup leaves everything as it comes, with one profile by the default name.
+    val scope = rememberCoroutineScope()
+    val defaultName = stringResource(Res.string.profile_default_name)
+    val skipSetup: () -> Unit = {
+        if (state.preview || state.createdProfileName != null || profileState.profiles.isNotEmpty()) {
+            onFinish()
+        } else if (!state.creatingProfile) {
+            state.creatingProfile = true
+            scope.launch {
+                runCatching { ProfileRepository.createProfile(name = defaultName, avatarColorHex = PROFILE_COLORS.first()) }
+                state.creatingProfile = false
+                onFinish()
+            }
+        }
+    }
+
     // The window's own height: the keyboard, which the content makes room for, does not shrink it.
     val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
 
@@ -231,15 +257,23 @@ internal fun Onboarding(
         ) {
             val breakpoint = WindowBreakpoint.forWidth(maxWidth)
             val twoPane = breakpoint.isTwoPane && maxHeight >= TwoPaneMinHeight
-            AnimatedContent(
-                targetState = state.step == OnboardingStep.Welcome,
-                transitionSpec = { M3Motion.fadeThrough() },
-                label = "OnboardingWelcome",
-            ) { welcome ->
-                when {
-                    welcome -> WelcomeOnboarding(state, actions, primaryFocus, breakpoint)
-                    twoPane -> TwoPaneOnboarding(state, actions, primaryFocus, breakpoint)
-                    else -> SinglePaneOnboarding(state, actions, primaryFocus, breakpoint, windowHeight)
+            val slide = with(LocalDensity.current) { M3Motion.SharedAxisSlide.roundToPx() }
+            // The welcome and the steps fill the window alike, so the change between them is the
+            // same sideways slide as between steps, not a page growing in from the top.
+            CompositionLocalProvider(LocalSkipSetup provides skipSetup.takeIf { state.step != OnboardingStep.Done }) {
+                AnimatedContent(
+                    targetState = state.step == OnboardingStep.Welcome,
+                    transitionSpec = {
+                        M3Motion.sharedAxisX(forward = state.forward, slidePx = slide) using SizeTransform(clip = false)
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                    label = "OnboardingWelcome",
+                ) { welcome ->
+                    when {
+                        welcome -> WelcomeOnboarding(state, actions, primaryFocus, breakpoint, twoPane)
+                        twoPane -> TwoPaneOnboarding(state, actions, primaryFocus, breakpoint)
+                        else -> SinglePaneOnboarding(state, actions, primaryFocus, breakpoint, windowHeight)
+                    }
                 }
             }
         }
@@ -247,8 +281,9 @@ internal fun Onboarding(
 }
 
 /**
- * The welcome, on a page of its own at every size: the greeting, a slideshow of what Provenio
- * does, and the way in. The slideshow takes the room there is, so nothing has to scroll.
+ * The welcome: the greeting, a slideshow of what Provenio does, and the way in. Wide windows keep
+ * the logo and the greeting in a pane of their own, as every step does, with the slideshow and the
+ * buttons beside it; a phone stacks them. The slideshow takes the room there is, so nothing scrolls.
  */
 @Composable
 private fun WelcomeOnboarding(
@@ -256,19 +291,74 @@ private fun WelcomeOnboarding(
     actions: OnboardingActions,
     primaryFocus: FocusRequester,
     breakpoint: WindowBreakpoint,
+    twoPane: Boolean,
 ) {
+    if (twoPane) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(breakpoint.margin),
+            horizontalArrangement = Arrangement.spacedBy(breakpoint.margin),
+        ) {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                shape = ShapeDefaults.ExtraLarge,
+                modifier = Modifier
+                    .weight(0.44f)
+                    .fillMaxHeight(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 48.dp, vertical = 40.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.Start,
+                ) {
+                    OnboardingHero(step = OnboardingStep.Welcome, state = state, size = 240.dp)
+                    Spacer(modifier = Modifier.height(40.dp))
+                    StepHeading(step = OnboardingStep.Welcome, state = state, centered = false, large = true)
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .weight(0.56f)
+                    .fillMaxHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                SkipSetupButton(modifier = Modifier.align(Alignment.End).padding(8.dp))
+                WelcomeSlideshow(
+                    modifier = Modifier
+                        .weight(1f)
+                        .widthIn(max = WelcomeSlideshowMaxWidth)
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                )
+                OnboardingButtons(
+                    actions = actions,
+                    primaryFocus = primaryFocus,
+                    stacked = false,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                )
+            }
+        }
+        return
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = breakpoint.margin, vertical = 24.dp),
+            .padding(horizontal = breakpoint.margin)
+            .padding(bottom = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        SkipSetupButton(modifier = Modifier.align(Alignment.End).padding(vertical = 8.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            AppBrandSymbol(modifier = Modifier.size(if (breakpoint.isTwoPane) 44.dp else 36.dp))
-            StepHeading(step = OnboardingStep.Welcome, state = state, centered = true, large = breakpoint.isTwoPane)
+            AppBrandSymbol(modifier = Modifier.size(36.dp))
+            StepHeading(step = OnboardingStep.Welcome, state = state, centered = true)
         }
         Spacer(modifier = Modifier.height(24.dp))
         WelcomeSlideshow(
@@ -286,6 +376,21 @@ private fun WelcomeOnboarding(
                 .widthIn(max = WelcomeButtonsMaxWidth)
                 .fillMaxWidth(),
         )
+    }
+}
+
+/** Skips the rest of the setup, where it can be skipped. */
+private val LocalSkipSetup = staticCompositionLocalOf<(() -> Unit)?> { null }
+
+@Composable
+private fun SkipSetupButton(modifier: Modifier = Modifier) {
+    val skip = LocalSkipSetup.current
+    if (skip == null) {
+        Spacer(modifier = modifier.size(40.dp))
+        return
+    }
+    TextButton(onClick = skip, modifier = modifier) {
+        Text(stringResource(Res.string.onboarding_skip))
     }
 }
 
@@ -449,7 +554,7 @@ private fun OnboardingTopBar(state: OnboardingState, modifier: Modifier = Modifi
         } else {
             Spacer(modifier = Modifier.weight(1f))
         }
-        Spacer(modifier = Modifier.size(40.dp))
+        SkipSetupButton()
     }
 }
 

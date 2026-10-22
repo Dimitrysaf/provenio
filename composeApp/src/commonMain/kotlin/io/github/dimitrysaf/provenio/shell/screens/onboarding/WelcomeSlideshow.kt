@@ -3,6 +3,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.onboarding
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.using
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -136,7 +138,11 @@ internal fun WelcomeSlideshow(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(20.dp))
         AnimatedContent(
             targetState = current,
-            transitionSpec = { fadeIn(M3Motion.fadeThroughInSpec()) togetherWith fadeOut(M3Motion.fadeThroughOutSpec()) },
+            transitionSpec = {
+                (fadeIn(M3Motion.fadeThroughInSpec()) togetherWith fadeOut(M3Motion.fadeThroughOutSpec()))
+                    .using(SizeTransform(clip = false))
+            },
+            modifier = Modifier.fillMaxWidth(),
             label = "WelcomeCaption",
         ) { slide ->
             Text(
