@@ -847,6 +847,7 @@ internal data class SettingsData(
     val dynamicColorAvailable: Boolean,
     val displayScale: DisplayScaleOption,
     val scrollbarFocus: Boolean,
+    val showImports: Boolean,
     val appIconState: AppIconSettingsState,
     val onAppIconSelected: (AppIconOption) -> Unit,
     val selectedAppLanguage: AppLanguage,
@@ -882,6 +883,7 @@ internal fun rememberSettingsData(): SettingsData {
     val colorPalette by remember { ThemeSettingsRepository.colorPalette }.collectAsStateWithLifecycle()
     val displayScale by remember { ThemeSettingsRepository.displayScale }.collectAsStateWithLifecycle()
     val scrollbarFocus by remember { ThemeSettingsRepository.scrollbarFocus }.collectAsStateWithLifecycle()
+    val showImports by remember { ThemeSettingsRepository.showImports }.collectAsStateWithLifecycle()
     val dynamicColorAvailable = remember { isDynamicColorAvailable() }
     val appIconState by remember {
         AppIconRepository.ensureLoaded()
@@ -976,6 +978,7 @@ internal fun rememberSettingsData(): SettingsData {
         dynamicColorAvailable = dynamicColorAvailable,
         displayScale = displayScale,
         scrollbarFocus = scrollbarFocus,
+        showImports = showImports,
         appIconState = appIconState,
         onAppIconSelected = { icon -> appIconScope.launch { AppIconRepository.select(icon) } },
         selectedAppLanguage = selectedAppLanguage,
@@ -1092,6 +1095,7 @@ internal fun LazyListScope.settingsPageContent(
             advancedSettingsContent(
                 isTablet = isTablet,
                 rememberLastProfileEnabled = data.rememberLastProfileEnabled,
+                showImports = data.showImports,
                 onTestUpdateBannerClick = links.onTestUpdateBannerClick,
             )
         }

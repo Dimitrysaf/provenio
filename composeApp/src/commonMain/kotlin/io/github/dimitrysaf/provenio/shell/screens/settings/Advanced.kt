@@ -9,6 +9,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BugReport
 import io.github.dimitrysaf.provenio.shell.theme.provenio
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
+import io.github.dimitrysaf.provenio.core.settings.ThemeSettingsRepository
+import provenio.composeapp.generated.resources.settings_advanced_show_imports
+import provenio.composeapp.generated.resources.settings_advanced_show_imports_description
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.settings_advanced_remember_last_profile
 import provenio.composeapp.generated.resources.settings_advanced_remember_last_profile_description
@@ -21,6 +24,7 @@ import org.jetbrains.compose.resources.stringResource
 internal fun LazyListScope.advancedSettingsContent(
     isTablet: Boolean,
     rememberLastProfileEnabled: Boolean,
+    showImports: Boolean,
     onTestUpdateBannerClick: (() -> Unit)?,
 ) {
     item {
@@ -40,6 +44,12 @@ internal fun LazyListScope.advancedSettingsContent(
                     description = stringResource(Res.string.settings_advanced_show_onboarding_description),
                     icon = Icons.Rounded.RocketLaunch,
                     onClick = OnboardingPreview::open,
+                )
+                switchRow(
+                    title = stringResource(Res.string.settings_advanced_show_imports),
+                    description = stringResource(Res.string.settings_advanced_show_imports_description),
+                    checked = { showImports },
+                    onCheckedChange = ThemeSettingsRepository::setShowImports,
                 )
             }
         }

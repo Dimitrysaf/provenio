@@ -17,6 +17,7 @@ actual object ThemeSettingsStorage {
     private const val colorPaletteKey = "color_palette"
     private const val displayScaleKey = "display_scale"
     private const val scrollbarFocusKey = "scrollbar_focus"
+    private const val showImportsKey = "show_imports"
     private val profileScopedSyncKeys = listOf(
         amoledEnabledKey,
     )
@@ -60,6 +61,15 @@ actual object ThemeSettingsStorage {
 
     actual fun saveScrollbarFocus(enabled: Boolean) {
         NSUserDefaults.standardUserDefaults.setBool(enabled, forKey = scrollbarFocusKey)
+    }
+
+    actual fun loadShowImports(): Boolean? {
+        val defaults = NSUserDefaults.standardUserDefaults
+        return if (defaults.objectForKey(showImportsKey) != null) defaults.boolForKey(showImportsKey) else null
+    }
+
+    actual fun saveShowImports(enabled: Boolean) {
+        NSUserDefaults.standardUserDefaults.setBool(enabled, forKey = showImportsKey)
     }
 
     actual fun loadSelectedAppLanguage(): String? {

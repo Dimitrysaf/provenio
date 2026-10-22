@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DoneAll
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.People
@@ -55,13 +56,14 @@ internal fun OnboardingHero(
         OnboardingStep.Welcome -> MaterialShapes.Cookie12Sided
         OnboardingStep.Appearance -> MaterialShapes.Flower
         OnboardingStep.Profile -> MaterialShapes.Cookie9Sided
+        OnboardingStep.Stremio -> MaterialShapes.Clover8Leaf
         OnboardingStep.Addons -> MaterialShapes.SoftBurst
         OnboardingStep.Tracking -> MaterialShapes.Sunny
         OnboardingStep.Done -> MaterialShapes.Cookie12Sided
     }.toShape()
     val colors = MaterialTheme.colorScheme
     val (container, content) = when (step) {
-        OnboardingStep.Welcome, OnboardingStep.Done -> colors.primaryContainer to colors.onPrimaryContainer
+        OnboardingStep.Welcome, OnboardingStep.Stremio, OnboardingStep.Done -> colors.primaryContainer to colors.onPrimaryContainer
         OnboardingStep.Appearance, OnboardingStep.Tracking -> colors.tertiaryContainer to colors.onTertiaryContainer
         OnboardingStep.Profile, OnboardingStep.Addons -> colors.secondaryContainer to colors.onSecondaryContainer
     }
@@ -93,6 +95,7 @@ internal fun OnboardingHero(
                 imageVector = when (step) {
                     OnboardingStep.Appearance -> Icons.Rounded.Palette
                     OnboardingStep.Profile -> Icons.Rounded.People
+                    OnboardingStep.Stremio -> Icons.Rounded.Download
                     OnboardingStep.Addons -> Icons.Rounded.Extension
                     OnboardingStep.Tracking -> Icons.Rounded.Sync
                     else -> Icons.Rounded.DoneAll

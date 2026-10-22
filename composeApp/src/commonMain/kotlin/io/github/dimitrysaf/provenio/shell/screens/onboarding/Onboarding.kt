@@ -79,6 +79,7 @@ internal enum class OnboardingStep {
     Welcome,
     Appearance,
     Profile,
+    Stremio,
     Addons,
     Tracking,
     Done,
@@ -603,6 +604,7 @@ private fun StepContent(step: OnboardingStep, state: OnboardingState) {
             OnboardingStep.Welcome -> Unit
             OnboardingStep.Appearance -> AppearanceStep()
             OnboardingStep.Profile -> ProfileStep(state)
+            OnboardingStep.Stremio -> StremioStep()
             OnboardingStep.Addons -> AddonsStep()
             OnboardingStep.Tracking -> TrackingStep()
             OnboardingStep.Done -> DoneStep(state)

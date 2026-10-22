@@ -22,6 +22,11 @@ object ThemeSettingsRepository {
     /** Whether three quick presses of the right arrow move focus to a page's scrollbar. */
     val scrollbarFocus: StateFlow<Boolean> = _scrollbarFocus.asStateFlow()
 
+    private val _showImports = MutableStateFlow(true)
+
+    /** Whether the Accounts page offers bringing data over from other apps. */
+    val showImports: StateFlow<Boolean> = _showImports.asStateFlow()
+
     private val _selectedAppLanguage = MutableStateFlow(AppLanguage.DEVICE)
     val selectedAppLanguage: StateFlow<AppLanguage> = _selectedAppLanguage.asStateFlow()
 
@@ -43,6 +48,7 @@ object ThemeSettingsRepository {
         _colorPalette.value = ColorPalette.Dynamic
         _displayScale.value = DisplayScaleOption.AUTOMATIC
         _scrollbarFocus.value = false
+        _showImports.value = true
         _selectedAppLanguage.value = AppLanguage.DEVICE
     }
 
@@ -53,6 +59,7 @@ object ThemeSettingsRepository {
         _colorPalette.value = ColorPalette.fromKey(ThemeSettingsStorage.loadColorPalette())
         _displayScale.value = DisplayScaleOption.fromKey(ThemeSettingsStorage.loadDisplayScale())
         _scrollbarFocus.value = ThemeSettingsStorage.loadScrollbarFocus() ?: false
+        _showImports.value = ThemeSettingsStorage.loadShowImports() ?: true
         val appLanguage = AppLanguage.fromCode(ThemeSettingsStorage.loadSelectedAppLanguage())
         ThemeSettingsStorage.applySelectedAppLanguage(appLanguage.code)
         _selectedAppLanguage.value = appLanguage
@@ -91,6 +98,13 @@ object ThemeSettingsRepository {
         if (_scrollbarFocus.value == enabled) return
         _scrollbarFocus.value = enabled
         ThemeSettingsStorage.saveScrollbarFocus(enabled)
+    }
+
+    fun setShowImports(enabled: Boolean) {
+        ensureLoaded()
+        if (_showImports.value == enabled) return
+        _showImports.value = enabled
+        ThemeSettingsStorage.saveShowImports(enabled)
     }
 
     fun setAppLanguage(language: AppLanguage) {

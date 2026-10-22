@@ -14,6 +14,8 @@ internal expect object ThemeSettingsStorage {
 
     fun loadScrollbarFocus(): Boolean?
     fun saveScrollbarFocus(enabled: Boolean)
+    fun loadShowImports(): Boolean?
+    fun saveShowImports(enabled: Boolean)
     fun loadSelectedAppLanguage(): String?
     fun saveSelectedAppLanguage(languageCode: String)
     fun applySelectedAppLanguage(languageCode: String)

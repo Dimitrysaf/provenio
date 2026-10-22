@@ -21,6 +21,7 @@ actual object ThemeSettingsStorage {
     private const val colorPaletteKey = "color_palette"
     private const val displayScaleKey = "display_scale"
     private const val scrollbarFocusKey = "scrollbar_focus"
+    private const val showImportsKey = "show_imports"
     private val profileScopedSyncKeys = listOf(
         amoledEnabledKey,
     )
@@ -68,6 +69,13 @@ actual object ThemeSettingsStorage {
 
     actual fun saveScrollbarFocus(enabled: Boolean) {
         preferences?.edit()?.putBoolean(scrollbarFocusKey, enabled)?.apply()
+    }
+
+    actual fun loadShowImports(): Boolean? =
+        preferences?.let { prefs -> if (prefs.contains(showImportsKey)) prefs.getBoolean(showImportsKey, true) else null }
+
+    actual fun saveShowImports(enabled: Boolean) {
+        preferences?.edit()?.putBoolean(showImportsKey, enabled)?.apply()
     }
 
     actual fun loadSelectedAppLanguage(): String? {

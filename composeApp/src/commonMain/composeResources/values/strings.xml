@@ -2625,4 +2625,20 @@
     <string name="torrent_details_unknown_client">Unknown client</string>
     <string name="tray_show_app">Show app</string>
     <string name="tray_quit">Quit</string>
+    <string name="onboarding_stremio_title">Coming from Stremio?</string>
+    <string name="stremio_import_app">Import from the Stremio app</string>
+    <string name="stremio_import_sign_in">Sign in to Stremio</string>
+    <string name="stremio_import_email">Email</string>
+    <string name="stremio_import_password">Password</string>
+    <string name="stremio_import_action">Import</string>
+    <string name="stremio_import_step_signing_in">Signing in…</string>
+    <string name="stremio_import_step_addons">Importing addons…</string>
+    <string name="stremio_import_step_library">Importing library…</string>
+    <string name="stremio_import_step_watched">Importing watched history…</string>
+    <string name="stremio_import_done">Imported from Stremio</string>
+    <string name="stremio_import_sign_in_failed">Couldn't sign in to Stremio</string>
+    <string name="stremio_import_failed">Couldn't import from Stremio</string>
+    <string name="settings_imports_section_title">Imports</string>
+    <string name="settings_advanced_show_imports">Show imports</string>
+    <string name="settings_advanced_show_imports_description">Bring your data over from other apps, such as Stremio, in Accounts.</string>
 </resources>

@@ -54,6 +54,7 @@ import io.github.dimitrysaf.provenio.core.updater.AppUpdaterPlatform
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktCommentsSettings
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.settings_imports_section_title
 import provenio.composeapp.generated.resources.compose_about_channel_beta
 import provenio.composeapp.generated.resources.compose_about_channel_release
 import provenio.composeapp.generated.resources.compose_about_version_format
@@ -171,9 +172,20 @@ internal fun LazyListScope.accountsSettingsContent(
         onStreamingAvailabilityClick = onStreamingAvailabilityClick,
         onDebridClick = onDebridClick,
     )
+    // Last, so bringing data over from another app, done once, stays out of the way after.
+    if (data.showImports) {
+        item(key = "accounts-imports-heading") {
+            AccountsSectionHeading(stringResource(Res.string.settings_imports_section_title))
+        }
+        item(key = "accounts-imports-stremio") {
+            SettingsSection(title = StremioName, isTablet = isTablet) {
+                StremioImportList()
+            }
+        }
+    }
 }
 
-/** A heading over one of the Accounts page's two sections, a size above the sections inside them. */
+/** A heading over one of the Accounts page's sections, a size above the sections inside them. */
 @Composable
 private fun AccountsSectionHeading(text: String) {
     Text(

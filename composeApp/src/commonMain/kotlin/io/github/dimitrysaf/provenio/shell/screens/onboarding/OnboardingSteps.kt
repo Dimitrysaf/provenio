@@ -64,6 +64,8 @@ import io.github.dimitrysaf.provenio.core.settings.AppLanguage
 import io.github.dimitrysaf.provenio.core.settings.ColorPalette
 import io.github.dimitrysaf.provenio.core.settings.ThemeMode
 import io.github.dimitrysaf.provenio.core.settings.ThemeSettingsRepository
+import io.github.dimitrysaf.provenio.core.stremio.StremioImport
+import io.github.dimitrysaf.provenio.core.stremio.StremioImportState
 import io.github.dimitrysaf.provenio.core.tracking.TrackingProviderRegistry
 import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklAuthRepository
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktAuthRepository
@@ -93,6 +95,7 @@ import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncProgress
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsListScope
 import io.github.dimitrysaf.provenio.shell.screens.settings.SimklTrackerCard
+import io.github.dimitrysaf.provenio.shell.screens.settings.StremioImportList
 import io.github.dimitrysaf.provenio.shell.screens.settings.TraktTrackerCard
 import io.github.dimitrysaf.provenio.shell.screens.settings.effective
 import io.github.dimitrysaf.provenio.shell.screens.settings.label
@@ -115,6 +118,7 @@ internal fun stepTitle(step: OnboardingStep, state: OnboardingState): String = w
         state.profilePath == OnboardingProfilePath.Bring -> stringResource(Res.string.onboarding_profile_bring_title)
         else -> stringResource(Res.string.onboarding_profile_title)
     }
+    OnboardingStep.Stremio -> stringResource(Res.string.onboarding_stremio_title)
     OnboardingStep.Addons -> stringResource(Res.string.onboarding_addons_title)
     OnboardingStep.Tracking -> stringResource(Res.string.onboarding_tracking_title)
     OnboardingStep.Done -> stringResource(Res.string.onboarding_done_title)
@@ -125,6 +129,7 @@ internal fun onboardingActions(state: OnboardingState, onFinish: () -> Unit): On
     val scope = rememberCoroutineScope()
     val next = stringResource(Res.string.onboarding_next)
     val addons by AddonRepository.uiState.collectAsStateWithLifecycle()
+    val stremio by StremioImport.state.collectAsStateWithLifecycle()
     return when (state.step) {
         OnboardingStep.Welcome -> OnboardingActions(
             primaryLabel = stringResource(Res.string.onboarding_get_started),
@@ -143,6 +148,12 @@ internal fun onboardingActions(state: OnboardingState, onFinish: () -> Unit): On
         OnboardingStep.Appearance,
         OnboardingStep.Tracking,
         -> OnboardingActions(primaryLabel = next, primaryEnabled = true, onPrimary = state::next)
+        // Coming from Stremio is a question, so until something is brought over it can be skipped.
+        OnboardingStep.Stremio -> OnboardingActions(
+            primaryLabel = if (stremio is StremioImportState.Done) next else stringResource(Res.string.onboarding_skip),
+            primaryEnabled = true,
+            onPrimary = state::next,
+        )
         // Addons can wait: with none added yet, the step says so by offering to skip it.
         OnboardingStep.Addons -> OnboardingActions(
             primaryLabel = if (addons.addons.isEmpty()) stringResource(Res.string.onboarding_skip) else next,
@@ -488,6 +499,13 @@ private class RecommendedAddon(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val body: String,
 )
+
+@Composable
+internal fun StremioStep() {
+    CompositionLocalProvider(LocalSettingsRowIcons provides true) {
+        StremioImportList()
+    }
+}
 
 @Composable
 internal fun TrackingStep() {

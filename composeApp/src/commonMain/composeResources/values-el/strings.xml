@@ -2593,4 +2593,20 @@
     <string name="torrent_details_unknown_client">Άγνωστο πρόγραμμα</string>
     <string name="tray_show_app">Εμφάνιση εφαρμογής</string>
     <string name="tray_quit">Έξοδος</string>
+    <string name="onboarding_stremio_title">Έρχεστε από το Stremio;</string>
+    <string name="stremio_import_app">Εισαγωγή από την εφαρμογή Stremio</string>
+    <string name="stremio_import_sign_in">Σύνδεση στο Stremio</string>
+    <string name="stremio_import_email">Email</string>
+    <string name="stremio_import_password">Κωδικός πρόσβασης</string>
+    <string name="stremio_import_action">Εισαγωγή</string>
+    <string name="stremio_import_step_signing_in">Σύνδεση…</string>
+    <string name="stremio_import_step_addons">Εισαγωγή πρόσθετων…</string>
+    <string name="stremio_import_step_library">Εισαγωγή βιβλιοθήκης…</string>
+    <string name="stremio_import_step_watched">Εισαγωγή ιστορικού προβολών…</string>
+    <string name="stremio_import_done">Η εισαγωγή από το Stremio ολοκληρώθηκε</string>
+    <string name="stremio_import_sign_in_failed">Δεν ήταν δυνατή η σύνδεση στο Stremio</string>
+    <string name="stremio_import_failed">Δεν ήταν δυνατή η εισαγωγή από το Stremio</string>
+    <string name="settings_imports_section_title">Εισαγωγές</string>
+    <string name="settings_advanced_show_imports">Εμφάνιση εισαγωγών</string>
+    <string name="settings_advanced_show_imports_description">Μεταφέρετε τα δεδομένα σας από άλλες εφαρμογές, όπως το Stremio, στους Λογαριασμούς.</string>
 </resources>

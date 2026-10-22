@@ -289,6 +289,22 @@ object AddonRepository {
         }
     }
 
+    // Adds addons brought over from another app after the installed ones, which stay as they are.
+    internal fun importAddons(rawUrls: List<String>): Int {
+        initialize()
+        if (isUsingPrimaryAddonsFromSecondaryProfile()) return 0
+        val installed = _uiState.value.addons.map(ManagedAddon::manifestUrl).toSet()
+        val added = dedupeManifestUrls(rawUrls.filter(String::isNotBlank).map(::normalizeManifestUrl))
+            .filterNot(installed::contains)
+        if (added.isEmpty()) return 0
+        _uiState.update { current ->
+            current.copy(addons = current.addons + added.map { manifestUrl -> null.toPendingAddon(manifestUrl = manifestUrl) })
+        }
+        persist()
+        added.forEach { manifestUrl -> refreshAddon(manifestUrl) }
+        return added.size
+    }
+
     private fun persist() {
         val addons = _uiState.value.addons
         AddonStorage.saveInstalledAddonUrls(
