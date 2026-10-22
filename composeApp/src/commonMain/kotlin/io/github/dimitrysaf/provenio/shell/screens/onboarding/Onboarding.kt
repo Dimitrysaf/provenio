@@ -2,6 +2,9 @@
 
 package io.github.dimitrysaf.provenio.shell.screens.onboarding
 
+import io.github.dimitrysaf.provenio.shell.components.clearFocusOnTap
+import io.github.dimitrysaf.provenio.shell.components.singleKeyPresses
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -48,6 +51,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -59,6 +63,7 @@ import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
 import io.github.dimitrysaf.provenio.shell.components.WindowBreakpoint
 import io.github.dimitrysaf.provenio.shell.components.openedWithKeys
 import io.github.dimitrysaf.provenio.shell.screens.profiles.PROFILE_COLORS
+import io.github.dimitrysaf.provenio.shell.screens.settings.AppBrandSymbol
 import kotlinx.coroutines.delay
 
 internal enum class OnboardingStep {
@@ -74,6 +79,11 @@ internal enum class OnboardingProfilePath {
     New,
     Bring,
 }
+
+internal data class OnboardingPage(
+    val step: OnboardingStep,
+    val profilePath: OnboardingProfilePath?,
+)
 
 /**
  * Where a device being set up is in the onboarding. It is kept outside the screen, so a change of
@@ -95,6 +105,16 @@ internal class OnboardingState(val preview: Boolean) {
 
     val canGoBack: Boolean
         get() = step != OnboardingStep.Welcome
+
+    /** What is on screen: the step, and on the profile step, which way of getting one was chosen. */
+    val page: OnboardingPage
+        get() = OnboardingPage(step, profilePath.takeIf { step == OnboardingStep.Profile })
+
+    /** Choosing how to get a profile moves on to a page of its own, as moving to a step does. */
+    fun choosePath(path: OnboardingProfilePath) {
+        forward = true
+        profilePath = path
+    }
 
     fun goTo(target: OnboardingStep) {
         if (target == step) return
@@ -198,7 +218,12 @@ internal fun Onboarding(
 
     val actions = onboardingActions(state, onFinish)
 
-    Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier) {
+    // The window's own height: the keyboard, which the content makes room for, does not shrink it.
+    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
+
+    // Its own record of the keys pressed, which lets the arrows into a text field: the preview is a
+    // window of its own, which the app's record does not reach.
+    Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.singleKeyPresses().clearFocusOnTap()) {
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
@@ -206,12 +231,61 @@ internal fun Onboarding(
         ) {
             val breakpoint = WindowBreakpoint.forWidth(maxWidth)
             val twoPane = breakpoint.isTwoPane && maxHeight >= TwoPaneMinHeight
-            if (twoPane) {
-                TwoPaneOnboarding(state, actions, primaryFocus, breakpoint)
-            } else {
-                SinglePaneOnboarding(state, actions, primaryFocus, breakpoint, maxHeight)
+            AnimatedContent(
+                targetState = state.step == OnboardingStep.Welcome,
+                transitionSpec = { M3Motion.fadeThrough() },
+                label = "OnboardingWelcome",
+            ) { welcome ->
+                when {
+                    welcome -> WelcomeOnboarding(state, actions, primaryFocus, breakpoint)
+                    twoPane -> TwoPaneOnboarding(state, actions, primaryFocus, breakpoint)
+                    else -> SinglePaneOnboarding(state, actions, primaryFocus, breakpoint, windowHeight)
+                }
             }
         }
+    }
+}
+
+/**
+ * The welcome, on a page of its own at every size: the greeting, a slideshow of what Provenio
+ * does, and the way in. The slideshow takes the room there is, so nothing has to scroll.
+ */
+@Composable
+private fun WelcomeOnboarding(
+    state: OnboardingState,
+    actions: OnboardingActions,
+    primaryFocus: FocusRequester,
+    breakpoint: WindowBreakpoint,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = breakpoint.margin, vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            AppBrandSymbol(modifier = Modifier.size(if (breakpoint.isTwoPane) 44.dp else 36.dp))
+            StepHeading(step = OnboardingStep.Welcome, state = state, centered = true, large = breakpoint.isTwoPane)
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+        WelcomeSlideshow(
+            modifier = Modifier
+                .weight(1f)
+                .widthIn(max = WelcomeSlideshowMaxWidth)
+                .fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        OnboardingButtons(
+            actions = actions,
+            primaryFocus = primaryFocus,
+            stacked = true,
+            modifier = Modifier
+                .widthIn(max = WelcomeButtonsMaxWidth)
+                .fillMaxWidth(),
+        )
     }
 }
 
@@ -230,14 +304,14 @@ private fun SinglePaneOnboarding(
     actions: OnboardingActions,
     primaryFocus: FocusRequester,
     breakpoint: WindowBreakpoint,
-    maxHeight: Dp,
+    windowHeight: Dp,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         OnboardingTopBar(
             state = state,
             modifier = Modifier.padding(horizontal = breakpoint.margin, vertical = 8.dp),
         )
-        StepTransition(state, modifier = Modifier.weight(1f)) { step ->
+        StepTransition(state, modifier = Modifier.weight(1f)) { page ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -252,16 +326,16 @@ private fun SinglePaneOnboarding(
                 ) {
                     // A short window, a phone on its side, keeps the room for what is chosen.
                     val heroSize = when {
-                        maxHeight < 560.dp -> 96.dp
-                        step == OnboardingStep.Welcome || step == OnboardingStep.Done -> 176.dp
+                        windowHeight < 640.dp -> 96.dp
+                        page.step == OnboardingStep.Done -> 160.dp
                         else -> 120.dp
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    OnboardingHero(step = step, state = state, size = heroSize)
+                    OnboardingHero(step = page.step, state = state, size = heroSize)
+                    Spacer(modifier = Modifier.height(20.dp))
+                    StepHeading(step = page.step, state = state, centered = true)
                     Spacer(modifier = Modifier.height(24.dp))
-                    StepHeading(step = step, state = state, centered = true)
-                    Spacer(modifier = Modifier.height(28.dp))
-                    StepContent(step = step, state = state)
+                    StepContent(step = page.step, state = state)
                 }
             }
         }
@@ -298,7 +372,7 @@ private fun TwoPaneOnboarding(
                 .weight(0.44f)
                 .fillMaxHeight(),
         ) {
-            StepTransition(state, modifier = Modifier.fillMaxSize()) { step ->
+            StepTransition(state, modifier = Modifier.fillMaxSize()) { page ->
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -307,9 +381,9 @@ private fun TwoPaneOnboarding(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.Start,
                 ) {
-                    OnboardingHero(step = step, state = state, size = if (step == OnboardingStep.Welcome) 240.dp else 200.dp)
+                    OnboardingHero(step = page.step, state = state, size = 200.dp)
                     Spacer(modifier = Modifier.height(40.dp))
-                    StepHeading(step = step, state = state, centered = false, large = true)
+                    StepHeading(step = page.step, state = state, centered = false, large = true)
                 }
             }
         }
@@ -319,7 +393,7 @@ private fun TwoPaneOnboarding(
                 .fillMaxHeight(),
         ) {
             OnboardingTopBar(state = state, modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp))
-            StepTransition(state, modifier = Modifier.weight(1f)) { step ->
+            StepTransition(state, modifier = Modifier.weight(1f)) { page ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -332,7 +406,7 @@ private fun TwoPaneOnboarding(
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp, vertical = 24.dp),
                     ) {
-                        StepContent(step = step, state = state)
+                        StepContent(step = page.step, state = state)
                     }
                 }
             }
@@ -383,15 +457,15 @@ private fun OnboardingTopBar(state: OnboardingState, modifier: Modifier = Modifi
 private fun StepTransition(
     state: OnboardingState,
     modifier: Modifier = Modifier,
-    content: @Composable (OnboardingStep) -> Unit,
+    content: @Composable (OnboardingPage) -> Unit,
 ) {
     val slide = with(LocalDensity.current) { M3Motion.SharedAxisSlide.roundToPx() }
     AnimatedContent(
-        targetState = state.step,
+        targetState = state.page,
         transitionSpec = { M3Motion.sharedAxisX(forward = state.forward, slidePx = slide) },
         modifier = modifier,
         label = "OnboardingStep",
-    ) { step -> content(step) }
+    ) { page -> content(page) }
 }
 
 @Composable
@@ -401,30 +475,18 @@ private fun StepHeading(
     centered: Boolean,
     large: Boolean = false,
 ) {
-    val align = if (centered) TextAlign.Center else TextAlign.Start
     val headline = when {
-        step == OnboardingStep.Welcome && large -> MaterialTheme.typography.displayMedium
-        step == OnboardingStep.Welcome || large -> MaterialTheme.typography.displaySmall
+        step == OnboardingStep.Welcome && large -> MaterialTheme.typography.displaySmall
+        step == OnboardingStep.Welcome -> MaterialTheme.typography.headlineMedium
+        large -> MaterialTheme.typography.displaySmall
         else -> MaterialTheme.typography.headlineMedium
     }
-    Column(
-        horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            text = stepTitle(step, state),
-            style = headline,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = align,
-        )
-        Text(
-            text = stepBody(step, state),
-            style = if (large) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = align,
-            modifier = Modifier.widthIn(max = 480.dp),
-        )
-    }
+    Text(
+        text = stepTitle(step, state),
+        style = headline,
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = if (centered) TextAlign.Center else TextAlign.Start,
+    )
 }
 
 @Composable
@@ -434,7 +496,7 @@ private fun StepContent(step: OnboardingStep, state: OnboardingState) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         when (step) {
-            OnboardingStep.Welcome -> WelcomeStep()
+            OnboardingStep.Welcome -> Unit
             OnboardingStep.Appearance -> AppearanceStep()
             OnboardingStep.Profile -> ProfileStep(state)
             OnboardingStep.Addons -> AddonsStep()
@@ -507,6 +569,8 @@ private fun OnboardingButtons(
 }
 
 private val SinglePaneMaxWidth = 560.dp
+private val WelcomeButtonsMaxWidth = 400.dp
+private val WelcomeSlideshowMaxWidth = 720.dp
 private val TwoPaneContentMaxWidth = 600.dp
 private val TwoPaneMinHeight = 480.dp
 private const val StepFocusDelayMillis = 450L

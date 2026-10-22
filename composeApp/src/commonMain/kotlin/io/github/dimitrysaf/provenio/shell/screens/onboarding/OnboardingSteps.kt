@@ -1,53 +1,46 @@
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
 
 package io.github.dimitrysaf.provenio.shell.screens.onboarding
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BrightnessHigh
 import androidx.compose.material.icons.rounded.BrightnessLow
 import androidx.compose.material.icons.rounded.BrightnessMedium
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Devices
-import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Movie
-import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material.icons.rounded.QrCode
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Subtitles
-import androidx.compose.material.icons.rounded.Sync
-import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,9 +50,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.addons.AddAddonResult
@@ -77,6 +70,7 @@ import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktAuthRepository
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
+import io.github.dimitrysaf.provenio.shell.components.SwatchGrid
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import io.github.dimitrysaf.provenio.shell.components.shapedClickable
@@ -90,17 +84,21 @@ import io.github.dimitrysaf.provenio.shell.screens.addons.manifestKey
 import io.github.dimitrysaf.provenio.shell.screens.profiles.CHOSEN_COLOR_AVATAR_ID
 import io.github.dimitrysaf.provenio.shell.screens.profiles.ProfileColorPicker
 import io.github.dimitrysaf.provenio.shell.screens.settings.ColorPaletteSwatch
+import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSettingsRowIcons
 import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncCodeDialog
 import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncFeedbackEffect
 import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncFirewallDialog
-import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncPairingDialog
+import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncPairingSheet
 import io.github.dimitrysaf.provenio.shell.screens.settings.LocalSyncProgress
+import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
+import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsListScope
 import io.github.dimitrysaf.provenio.shell.screens.settings.SimklTrackerCard
 import io.github.dimitrysaf.provenio.shell.screens.settings.TraktTrackerCard
 import io.github.dimitrysaf.provenio.shell.screens.settings.effective
 import io.github.dimitrysaf.provenio.shell.screens.settings.label
 import io.github.dimitrysaf.provenio.shell.screens.settings.rememberLocalSyncScanner
 import io.github.dimitrysaf.provenio.shell.theme.isDynamicColorAvailable
+import io.github.dimitrysaf.provenio.shell.theme.provenio
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
@@ -123,24 +121,10 @@ internal fun stepTitle(step: OnboardingStep, state: OnboardingState): String = w
 }
 
 @Composable
-internal fun stepBody(step: OnboardingStep, state: OnboardingState): String = when (step) {
-    OnboardingStep.Welcome -> stringResource(Res.string.onboarding_welcome_body)
-    OnboardingStep.Appearance -> stringResource(Res.string.onboarding_appearance_body)
-    OnboardingStep.Profile -> when {
-        state.createdProfileName != null -> stringResource(Res.string.onboarding_profile_ready_body)
-        state.profilePath == OnboardingProfilePath.New -> stringResource(Res.string.onboarding_profile_new_body)
-        state.profilePath == OnboardingProfilePath.Bring -> stringResource(Res.string.onboarding_profile_bring_body)
-        else -> stringResource(Res.string.onboarding_profile_body)
-    }
-    OnboardingStep.Addons -> stringResource(Res.string.onboarding_addons_body)
-    OnboardingStep.Tracking -> stringResource(Res.string.onboarding_tracking_body)
-    OnboardingStep.Done -> stringResource(Res.string.onboarding_done_body)
-}
-
-@Composable
 internal fun onboardingActions(state: OnboardingState, onFinish: () -> Unit): OnboardingActions {
     val scope = rememberCoroutineScope()
     val next = stringResource(Res.string.onboarding_next)
+    val addons by AddonRepository.uiState.collectAsStateWithLifecycle()
     return when (state.step) {
         OnboardingStep.Welcome -> OnboardingActions(
             primaryLabel = stringResource(Res.string.onboarding_get_started),
@@ -157,9 +141,14 @@ internal fun onboardingActions(state: OnboardingState, onFinish: () -> Unit): On
             },
         )
         OnboardingStep.Appearance,
-        OnboardingStep.Addons,
         OnboardingStep.Tracking,
         -> OnboardingActions(primaryLabel = next, primaryEnabled = true, onPrimary = state::next)
+        // Addons can wait: with none added yet, the step says so by offering to skip it.
+        OnboardingStep.Addons -> OnboardingActions(
+            primaryLabel = if (addons.addons.isEmpty()) stringResource(Res.string.onboarding_skip) else next,
+            primaryEnabled = true,
+            onPrimary = state::next,
+        )
         OnboardingStep.Profile -> when {
             state.createdProfileName != null ->
                 OnboardingActions(primaryLabel = next, primaryEnabled = true, onPrimary = state::next)
@@ -207,24 +196,11 @@ internal fun onboardingActions(state: OnboardingState, onFinish: () -> Unit): On
     }
 }
 
+/** The rows of a step, as Settings draws them, with their icons. */
 @Composable
-internal fun WelcomeStep() {
-    OnboardingGroup {
-        FeatureRow(
-            icon = Icons.Rounded.Extension,
-            title = stringResource(Res.string.onboarding_feature_addons_title),
-            body = stringResource(Res.string.onboarding_feature_addons_body),
-        )
-        FeatureRow(
-            icon = Icons.Rounded.Devices,
-            title = stringResource(Res.string.onboarding_feature_devices_title),
-            body = stringResource(Res.string.onboarding_feature_devices_body),
-        )
-        FeatureRow(
-            icon = Icons.Rounded.Sync,
-            title = stringResource(Res.string.onboarding_feature_tracking_title),
-            body = stringResource(Res.string.onboarding_feature_tracking_body),
-        )
+private fun OnboardingList(content: @Composable SettingsListScope.() -> Unit) {
+    CompositionLocalProvider(LocalSettingsRowIcons provides true) {
+        SettingsList(content = content)
     }
 }
 
@@ -238,52 +214,27 @@ internal fun AppearanceStep() {
     val dynamicColorAvailable = remember { isDynamicColorAvailable() }
     var showLanguages by rememberSaveable { mutableStateOf(false) }
 
-    SectionLabel(stringResource(Res.string.settings_appearance_app_language))
-    OnboardingGroup {
-        ChoiceRow(
+    val languageTitle = stringResource(Res.string.settings_appearance_app_language)
+    val languageValue = stringResource(language.labelRes)
+    val amoledTitle = stringResource(Res.string.settings_appearance_amoled_black)
+    OnboardingList {
+        navigationRow(
+            title = languageTitle,
+            description = languageValue,
             icon = Icons.Rounded.Language,
-            title = stringResource(language.labelRes),
             onClick = { showLanguages = true },
         )
     }
 
     SectionLabel(stringResource(Res.string.settings_appearance_theme))
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        ThemeMode.entries.forEach { mode ->
-            ThemeChoice(
-                mode = mode,
-                selected = mode == themeMode,
-                onClick = { ThemeSettingsRepository.setThemeMode(mode) },
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-    OnboardingGroup {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 64.dp)
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(Res.string.settings_appearance_amoled_black),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = stringResource(Res.string.settings_appearance_amoled_description),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Switch(
-                checked = amoled,
-                enabled = themeMode != ThemeMode.LIGHT,
-                onCheckedChange = ThemeSettingsRepository::setAmoled,
-            )
-        }
+    ThemeButtonGroup(selected = themeMode, onSelected = ThemeSettingsRepository::setThemeMode)
+    OnboardingList {
+        switchRow(
+            title = amoledTitle,
+            checked = { amoled },
+            enabled = themeMode != ThemeMode.LIGHT,
+            onCheckedChange = ThemeSettingsRepository::setAmoled,
+        )
     }
 
     SectionLabel(stringResource(Res.string.settings_appearance_color_palette))
@@ -292,25 +243,17 @@ internal fun AppearanceStep() {
         AppIconOption.entries.forEach { add(ColorPalette.Icon(it)) }
     }
     val selectedPalette = palette.effective(dynamicColorAvailable)
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        palettes.forEach { option ->
-            val label = option.label()
-            SelectableCircle(
-                selected = option == selectedPalette,
-                label = label,
-                onClick = { ThemeSettingsRepository.setColorPalette(option) },
-            ) {
-                ColorPaletteSwatch(palette = option, size = SwatchSize)
-            }
-        }
+    SwatchGrid(items = palettes, cell = SwatchCell) { option ->
+        SelectableSwatch(
+            selected = option == selectedPalette,
+            label = option.label(),
+            onClick = { ThemeSettingsRepository.setColorPalette(option) },
+        ) { size -> ColorPaletteSwatch(palette = option, size = size) }
     }
 
     if (showLanguages) {
         SingleChoiceBottomSheet(
-            title = stringResource(Res.string.settings_appearance_app_language_sheet_title),
+            title = languageTitle,
             options = AppLanguage.entries.map { option ->
                 SingleChoiceOption(value = option, label = stringResource(option.labelRes))
             },
@@ -321,48 +264,62 @@ internal fun AppearanceStep() {
     }
 }
 
+/**
+ * The theme as one group of connected buttons, as the player's controls are grouped: the chosen
+ * one fills in and rounds out fully, the others keep the group's inner corners.
+ */
 @Composable
-private fun ThemeChoice(
-    mode: ThemeMode,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+private fun ThemeButtonGroup(
+    selected: ThemeMode,
+    onSelected: (ThemeMode) -> Unit,
 ) {
-    // The chosen card rounds out, as expressive selection does, rather than only changing colour.
-    val corner by animateDpAsState(if (selected) 28.dp else 12.dp)
-    val shape = RoundedCornerShape(corner)
-    Surface(
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-        shape = shape,
-        modifier = modifier
-            .heightIn(min = 96.dp)
-            .shapedClickable(shape, onClick = onClick),
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupGap),
     ) {
-        Column(
-            modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
-        ) {
-            Icon(
-                imageVector = when (mode) {
-                    ThemeMode.SYSTEM -> Icons.Rounded.BrightnessMedium
-                    ThemeMode.LIGHT -> Icons.Rounded.BrightnessHigh
-                    ThemeMode.DARK -> Icons.Rounded.BrightnessLow
-                },
-                contentDescription = null,
-                modifier = Modifier.size(28.dp),
-            )
-            Text(
-                text = stringResource(
-                    when (mode) {
-                        ThemeMode.SYSTEM -> Res.string.settings_appearance_theme_system
-                        ThemeMode.LIGHT -> Res.string.settings_appearance_theme_light
-                        ThemeMode.DARK -> Res.string.settings_appearance_theme_dark
+        val modes = ThemeMode.entries
+        modes.forEachIndexed { index, mode ->
+            val isSelected = mode == selected
+            val outer = 28.dp
+            val inner = if (isSelected) outer else 8.dp
+            val start by animateDpAsState(if (index == 0) outer else inner)
+            val end by animateDpAsState(if (index == modes.lastIndex) outer else inner)
+            val shape = RoundedCornerShape(topStart = start, bottomStart = start, topEnd = end, bottomEnd = end)
+            val container = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh
+            val content = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(72.dp)
+                    .clip(shape)
+                    .background(container)
+                    .shapedClickable(shape) { onSelected(mode) },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+            ) {
+                Icon(
+                    imageVector = when (mode) {
+                        ThemeMode.SYSTEM -> Icons.Rounded.BrightnessMedium
+                        ThemeMode.LIGHT -> Icons.Rounded.BrightnessHigh
+                        ThemeMode.DARK -> Icons.Rounded.BrightnessLow
                     },
-                ),
-                style = MaterialTheme.typography.labelLarge,
-            )
+                    contentDescription = null,
+                    tint = content,
+                    modifier = Modifier.size(24.dp),
+                )
+                Text(
+                    text = stringResource(
+                        when (mode) {
+                            ThemeMode.SYSTEM -> Res.string.settings_appearance_theme_system
+                            ThemeMode.LIGHT -> Res.string.settings_appearance_theme_light
+                            ThemeMode.DARK -> Res.string.settings_appearance_theme_dark
+                        },
+                    ),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = content,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
@@ -377,18 +334,22 @@ internal fun ProfileStep(state: OnboardingState) {
         state.profilePath == OnboardingProfilePath.New -> NewProfile(state)
         state.profilePath == OnboardingProfilePath.Bring -> BringFromDevice()
         else -> {
-            BigChoice(
-                icon = Icons.Rounded.PersonAdd,
-                title = stringResource(Res.string.onboarding_profile_new),
-                body = stringResource(Res.string.onboarding_profile_new_choice_body),
-                onClick = { state.profilePath = OnboardingProfilePath.New },
-            )
-            BigChoice(
-                icon = Icons.Rounded.Devices,
-                title = stringResource(Res.string.onboarding_profile_bring),
-                body = stringResource(Res.string.onboarding_profile_bring_choice_body),
-                onClick = { state.profilePath = OnboardingProfilePath.Bring },
-            )
+            val newTitle = stringResource(Res.string.onboarding_profile_new)
+            val bringTitle = stringResource(Res.string.onboarding_profile_bring)
+            OnboardingList {
+                navigationRow(
+                    title = newTitle,
+                    icon = Icons.Rounded.PersonAdd,
+                    opensPage = true,
+                    onClick = { state.choosePath(OnboardingProfilePath.New) },
+                )
+                navigationRow(
+                    title = bringTitle,
+                    icon = Icons.Rounded.Devices,
+                    opensPage = true,
+                    onClick = { state.choosePath(OnboardingProfilePath.Bring) },
+                )
+            }
         }
     }
 }
@@ -410,13 +371,6 @@ private fun NewProfile(state: OnboardingState) {
         selectedHex = state.profileColorHex,
         onSelected = { state.profileColorHex = it },
     )
-    if (state.preview) {
-        Text(
-            text = stringResource(Res.string.onboarding_preview_note),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
 }
 
 /** Pairing with a device already set up, which brings its profiles, library and settings over. */
@@ -427,37 +381,37 @@ private fun BringFromDevice() {
     val scan = rememberLocalSyncScanner { code -> code?.let(LocalSyncRepository::join) }
     LocalSyncFeedbackEffect(syncState.activity)
 
-    Text(
-        text = stringResource(Res.string.welcome_pairing_hint),
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    OnboardingGroup {
+    val scanTitle = stringResource(Res.string.local_sync_scan_code)
+    val showTitle = stringResource(Res.string.local_sync_show_code)
+    val enterTitle = stringResource(Res.string.local_sync_enter_code)
+    val joining = syncState.joining
+    val spinner: @Composable () -> Unit = { LocalSyncProgress(modifier = Modifier.size(24.dp)) }
+    OnboardingList {
         if (scan != null) {
-            ChoiceRow(
+            navigationRow(
+                title = scanTitle,
                 icon = Icons.Rounded.QrCodeScanner,
-                title = stringResource(Res.string.welcome_scan_code),
-                enabled = !syncState.joining,
-                loading = syncState.joining,
+                enabled = !joining,
+                trailingContent = if (joining) spinner else null,
                 onClick = scan,
             )
         }
-        ChoiceRow(
+        navigationRow(
+            title = showTitle,
             icon = Icons.Rounded.QrCode,
-            title = stringResource(Res.string.welcome_show_code),
             onClick = LocalSyncRepository::startPairing,
         )
-        ChoiceRow(
+        navigationRow(
+            title = enterTitle,
             icon = Icons.Rounded.Keyboard,
-            title = stringResource(Res.string.welcome_enter_code),
-            enabled = !syncState.joining,
-            loading = syncState.joining && scan == null,
+            enabled = !joining,
+            trailingContent = if (joining && scan == null) spinner else null,
             onClick = { showCodeEntry = true },
         )
     }
 
     syncState.pairingCode?.let { code ->
-        LocalSyncPairingDialog(code = code, qr = syncState.pairingQr, onDismiss = LocalSyncRepository::stopPairing)
+        LocalSyncPairingSheet(code = code, qr = syncState.pairingQr, onDismiss = LocalSyncRepository::stopPairing)
     }
     LocalSyncFirewallDialog(prompt = syncState.firewall)
     if (showCodeEntry) {
@@ -477,138 +431,63 @@ internal fun AddonsStep() {
     val uiState by AddonRepository.uiState.collectAsStateWithLifecycle()
     val installed = remember(uiState.addons) { uiState.addons.map { it.manifestUrl.manifestKey() }.toSet() }
     var installing by remember { mutableStateOf<String?>(null) }
-    var link by rememberSaveable { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
     fun install(url: String) {
-        if (installing != null || url.isBlank() || url.manifestKey() in installed) return
+        if (installing != null || url.manifestKey() in installed) return
         installing = url
         scope.launch {
             when (val result = AddonRepository.addAddon(url)) {
-                is AddAddonResult.Success -> {
+                is AddAddonResult.Success ->
                     ToastController.show(getString(Res.string.addons_modal_success_message, result.manifest.name))
-                    if (url == link) link = ""
-                }
                 is AddAddonResult.Error -> ToastController.show(result.message)
             }
             installing = null
         }
     }
 
-    OnboardingGroup {
-        RecommendedAddon(
-            icon = Icons.Rounded.Movie,
-            name = CinemetaName,
-            body = stringResource(Res.string.addons_guide_cinemeta_body),
-            installed = CinemetaManifestUrl.manifestKey() in installed,
-            installing = installing == CinemetaManifestUrl,
-            onInstall = { install(CinemetaManifestUrl) },
-        )
-        RecommendedAddon(
-            icon = Icons.Rounded.PlayCircle,
-            name = TorrentioName,
-            body = stringResource(Res.string.addons_guide_torrentio_body).withoutGuideTerms(),
-            installed = TorrentioManifestUrl.manifestKey() in installed,
-            installing = installing == TorrentioManifestUrl,
-            onInstall = { install(TorrentioManifestUrl) },
-        )
-        RecommendedAddon(
-            icon = Icons.Rounded.Subtitles,
-            name = OpenSubtitlesName,
-            body = stringResource(Res.string.addons_guide_opensubtitles_body),
-            installed = OpenSubtitlesManifestUrl.manifestKey() in installed,
-            installing = installing == OpenSubtitlesManifestUrl,
-            onInstall = { install(OpenSubtitlesManifestUrl) },
-        )
-    }
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.WarningAmber,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
-        )
-        Text(
-            text = stringResource(Res.string.addons_guide_torrent_warning).withoutGuideTerms(),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+    val recommended = listOf(
+        RecommendedAddon(CinemetaName, CinemetaManifestUrl, Icons.Rounded.Movie, stringResource(Res.string.addons_guide_cinemeta_body)),
+        RecommendedAddon(TorrentioName, TorrentioManifestUrl, Icons.Rounded.PlayCircle, stringResource(Res.string.addons_guide_torrentio_body).withoutGuideTerms()),
+        RecommendedAddon(OpenSubtitlesName, OpenSubtitlesManifestUrl, Icons.Rounded.Subtitles, stringResource(Res.string.addons_guide_opensubtitles_body)),
+    )
+    val installLabel = stringResource(Res.string.addons_guide_install)
+    val installedLabel = stringResource(Res.string.addons_guide_installed)
 
-    SectionLabel(stringResource(Res.string.onboarding_addons_link_title))
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        OutlinedTextField(
-            value = link,
-            onValueChange = { link = it.trim() },
-            label = { Text(stringResource(Res.string.onboarding_addons_link)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
-            keyboardActions = KeyboardActions(onGo = { install(link) }),
-            modifier = Modifier
-                .weight(1f)
-                .arrowKeysLeaveField { link.isEmpty() },
-        )
-        FilledTonalButton(
-            onClick = { install(link) },
-            enabled = link.isNotBlank() && installing == null,
-            modifier = Modifier.heightIn(min = 56.dp),
-        ) {
-            if (installing == link && link.isNotBlank()) {
-                SmallLoadingSpinner(size = 20.dp)
-            } else {
-                Text(stringResource(Res.string.onboarding_addons_add))
-            }
-        }
-    }
-}
-
-@Composable
-private fun RecommendedAddon(
-    icon: ImageVector,
-    name: String,
-    body: String,
-    installed: Boolean,
-    installing: Boolean,
-    onInstall: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconBadge(icon)
-        Column(modifier = Modifier.weight(1f)) {
-            Text(name, style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = body,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+    WarningNotice(stringResource(Res.string.addons_guide_torrent_warning).withoutGuideTerms())
+    OnboardingList {
+        recommended.forEach { addon ->
+            val isInstalled = addon.url.manifestKey() in installed
+            val isInstalling = installing == addon.url
+            navigationRow(
+                title = addon.name,
+                description = addon.body,
+                icon = addon.icon,
+                enabled = !isInstalled,
+                trailingContent = {
+                    FilledTonalIconButton(
+                        onClick = { install(addon.url) },
+                        enabled = !isInstalled && !isInstalling,
+                    ) {
+                        when {
+                            isInstalling -> SmallLoadingSpinner(size = 20.dp)
+                            isInstalled -> Icon(Icons.Rounded.Check, contentDescription = installedLabel)
+                            else -> Icon(Icons.Rounded.Add, contentDescription = installLabel)
+                        }
+                    }
+                },
+                onClick = { install(addon.url) },
             )
         }
-        FilledTonalButton(
-            onClick = onInstall,
-            enabled = !installed && !installing,
-        ) {
-            when {
-                installing -> SmallLoadingSpinner(size = 18.dp)
-                installed -> {
-                    Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(Res.string.addons_guide_installed))
-                }
-                else -> Text(stringResource(Res.string.addons_guide_install))
-            }
-        }
     }
 }
+
+private class RecommendedAddon(
+    val name: String,
+    val url: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val body: String,
+)
 
 @Composable
 internal fun TrackingStep() {
@@ -625,41 +504,19 @@ internal fun DoneStep(state: OnboardingState) {
     val trackers = connected
         .sortedBy { it.ordinal }
         .mapNotNull { id -> TrackingProviderRegistry.authProvider(id)?.descriptor?.displayName }
-    OnboardingGroup {
-        state.createdProfileName?.let { name ->
-            FeatureRow(
-                icon = Icons.Rounded.People,
-                title = stringResource(Res.string.onboarding_done_profile),
-                body = name,
-            )
-        }
-        FeatureRow(
-            icon = Icons.Rounded.Extension,
-            title = stringResource(Res.string.onboarding_done_addons),
-            body = if (addons.addons.isEmpty()) {
-                stringResource(Res.string.onboarding_done_addons_none)
-            } else {
-                addons.addons.mapNotNull { it.manifest?.name }.joinToString(", ")
-                    .ifBlank { addons.addons.size.toString() }
-            },
-        )
-        FeatureRow(
-            icon = Icons.Rounded.Sync,
-            title = stringResource(Res.string.onboarding_done_tracking),
-            body = trackers.joinToString(", ").ifBlank { stringResource(Res.string.onboarding_done_tracking_none) },
-        )
+    val profileTitle = stringResource(Res.string.onboarding_done_profile)
+    val addonsTitle = stringResource(Res.string.onboarding_done_addons)
+    val addonsValue = if (addons.addons.isEmpty()) {
+        stringResource(Res.string.onboarding_done_addons_none)
+    } else {
+        addons.addons.mapNotNull { it.manifest?.name }.joinToString(", ").ifBlank { addons.addons.size.toString() }
     }
-}
-
-/** Rows that belong together, on one rounded surface. */
-@Composable
-private fun OnboardingGroup(content: @Composable () -> Unit) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(modifier = Modifier.padding(vertical = 8.dp)) { content() }
+    val trackingTitle = stringResource(Res.string.onboarding_done_tracking)
+    val trackingValue = trackers.joinToString(", ").ifBlank { stringResource(Res.string.onboarding_done_tracking_none) }
+    OnboardingList {
+        state.createdProfileName?.let { name -> infoRow(title = profileTitle, description = name) }
+        infoRow(title = addonsTitle, description = addonsValue)
+        infoRow(title = trackingTitle, description = trackingValue)
     }
 }
 
@@ -673,136 +530,60 @@ private fun SectionLabel(text: String) {
     )
 }
 
+/** A caution about everything under it, in the theme's warning colour, as Settings shows one. */
 @Composable
-private fun FeatureRow(icon: ImageVector, title: String, body: String) {
+private fun WarningNotice(text: String) {
+    val warning = MaterialTheme.provenio.colors.warning
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(warning.copy(alpha = 0.12f))
             .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconBadge(icon)
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = body,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ChoiceRow(
-    icon: ImageVector,
-    title: String,
-    onClick: () -> Unit,
-    enabled: Boolean = true,
-    loading: Boolean = false,
-) {
-    val shape = RoundedCornerShape(16.dp)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 2.dp)
-            .shapedClickable(shape, enabled = enabled, onClick = onClick)
-            .heightIn(min = 56.dp)
-            .padding(horizontal = 8.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (loading) {
-            Box(modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-                LocalSyncProgress(modifier = Modifier.size(24.dp))
-            }
-        } else {
-            IconBadge(icon)
-        }
+        Icon(imageVector = Icons.Rounded.Warning, contentDescription = null, tint = warning)
         Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.weight(1f),
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
         )
-    }
-}
-
-/** A choice that leads somewhere, as a tile of its own: large to tap, and large on a TV. */
-@Composable
-private fun BigChoice(
-    icon: ImageVector,
-    title: String,
-    body: String,
-    onClick: () -> Unit,
-) {
-    val shape = RoundedCornerShape(28.dp)
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = shape,
-        modifier = Modifier
-            .fillMaxWidth()
-            .shapedClickable(shape, onClick = onClick),
-    ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconBadge(icon, size = 56.dp)
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(title, style = MaterialTheme.typography.titleLarge)
-                Text(
-                    text = body,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun IconBadge(icon: ImageVector, size: androidx.compose.ui.unit.Dp = 40.dp) {
-    Surface(
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        shape = CircleShape,
-        modifier = Modifier.size(size),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(size * 0.55f))
-        }
     }
 }
 
 /** A round choice, ringed when chosen, with a tick over it. */
 @Composable
-private fun SelectableCircle(
+private fun SelectableSwatch(
     selected: Boolean,
     label: String,
     onClick: () -> Unit,
-    content: @Composable () -> Unit,
+    content: @Composable (Dp) -> Unit,
 ) {
     Box(
         modifier = Modifier
-            .size(SwatchSize + 12.dp)
+            .size(SwatchCell)
+            .aspectRatio(1f)
             .then(if (selected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, CircleShape) else Modifier)
             .padding(6.dp)
             .shapedClickable(CircleShape, onClickLabel = label, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        content()
+        content(SwatchCell - 12.dp)
         if (selected) {
-            Surface(
-                color = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape,
-                modifier = Modifier.size(22.dp),
+            Box(
+                modifier = Modifier
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                }
+                Icon(
+                    Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(16.dp),
+                )
             }
         }
     }
@@ -812,5 +593,6 @@ private fun SelectableCircle(
 private fun String.withoutGuideTerms(): String = replace(GuideTermPattern, "$2")
 
 private val GuideTermPattern = Regex("""\[\[([a-z]+)\|([^\]]+)]]""")
-private val SwatchSize = 44.dp
+private val SwatchCell = 56.dp
+private val ButtonGroupGap = 2.dp
 private const val ProfileNameMaxLength = 30

@@ -1,5 +1,15 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
+import io.github.dimitrysaf.provenio.shell.components.BottomSheetBodyMargin
+import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
+import io.github.dimitrysaf.provenio.shell.components.SheetHeader
+import io.github.dimitrysaf.provenio.shell.components.ModalSheet
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import io.github.dimitrysaf.provenio.shell.components.textActionsMenu
 import io.github.dimitrysaf.provenio.shell.components.rememberTextActionsMenu
 import io.github.dimitrysaf.provenio.shell.components.TextActionsMenu
@@ -140,7 +150,7 @@ internal fun LocalSyncCard(modifier: Modifier = Modifier) {
     }
 
     state.pairingCode?.let { code ->
-        LocalSyncPairingDialog(
+        LocalSyncPairingSheet(
             code = code,
             qr = state.pairingQr,
             onDismiss = LocalSyncRepository::stopPairing,
@@ -266,50 +276,47 @@ private fun lastSyncedLabel(lastSyncedAtEpochMs: Long?, nowEpochMs: Long): Strin
     }
 }
 
+/**
+ * The code another device pairs with, as a sheet: at the bottom on a phone, at the side on a
+ * large screen. The QR code and the code itself, and a way to copy it; the other device knows
+ * what to do with them.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun LocalSyncPairingDialog(
+internal fun LocalSyncPairingSheet(
     code: String,
     qr: List<BooleanArray>?,
     onDismiss: () -> Unit,
 ) {
     val clipboardManager = LocalClipboardManager.current
-    ContentDialog(
-        onDismissRequest = onDismiss,
-        title = stringResource(Res.string.local_sync_pairing_title),
-        buttons = {
-            TextButton(onClick = { clipboardManager.setText(AnnotatedString(code)) }) {
-                Icon(
-                    imageVector = Icons.Rounded.ContentCopy,
-                    contentDescription = null,
-                    modifier = Modifier.size(ButtonDefaults.IconSize),
-                )
-                Text(
-                    text = stringResource(Res.string.local_sync_copy_code),
-                    modifier = Modifier.padding(start = ButtonDefaults.IconSpacing),
-                )
-            }
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(Res.string.action_close))
-            }
-        },
-    ) {
-        Text(stringResource(Res.string.local_sync_pairing_hint))
-        if (qr != null) {
-            LocalSyncQrCode(
-                matrix = qr,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val close: () -> Unit = { scope.launch { dismissBottomSheet(sheetState = sheetState, onDismiss = onDismiss) } }
+    ModalSheet(onDismissRequest = close, sheetState = sheetState) {
+        SheetHeader(
+            title = stringResource(Res.string.local_sync_pairing_title),
+            navigation = SheetNavigation.Close,
+            onNavigate = close,
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = BottomSheetBodyMargin)
+                .padding(top = 8.dp, bottom = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            if (qr != null) LocalSyncQrCode(matrix = qr)
+            Text(
+                text = code,
+                style = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Monospace),
+                color = MaterialTheme.colorScheme.onSurface,
             )
+            FilledTonalButton(onClick = { clipboardManager.setText(AnnotatedString(code)) }) {
+                Text(stringResource(Res.string.local_sync_copy_code))
+            }
         }
-        Text(
-            text = code,
-            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = stringResource(Res.string.local_sync_waiting),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-        )
     }
 }
 

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.shell.components.clearFocusOnTap
 import io.github.dimitrysaf.provenio.shell.components.SearchFocusScrimHost
 import io.github.dimitrysaf.provenio.shell.components.KeyActionHintHost
 import io.github.dimitrysaf.provenio.shell.screens.settings.CrashPrompt
@@ -64,7 +65,7 @@ fun App(
 ) {
     AppEnvironment {
         FocusMemoryRoot { focusMemory ->
-            PointerCursorHost(modifier = Modifier.fillMaxSize().then(focusMemory)) {
+            PointerCursorHost(modifier = Modifier.fillMaxSize().then(focusMemory).clearFocusOnTap()) {
                 AppGate(
                     initialTab = initialTab,
                     initialRoute = initialRoute,
