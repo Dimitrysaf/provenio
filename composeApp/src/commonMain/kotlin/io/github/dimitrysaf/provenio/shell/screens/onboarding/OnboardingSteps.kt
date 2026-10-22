@@ -78,6 +78,7 @@ import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.ToastController
+import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.shell.screens.addons.CinemetaManifestUrl
 import io.github.dimitrysaf.provenio.shell.screens.addons.CinemetaName
@@ -400,7 +401,9 @@ private fun NewProfile(state: OnboardingState) {
         label = { Text(stringResource(Res.string.profile_name_placeholder)) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .arrowKeysLeaveField { state.profileName.isEmpty() },
     )
     SectionLabel(stringResource(Res.string.profile_avatar_source_color))
     ProfileColorPicker(
@@ -547,7 +550,9 @@ internal fun AddonsStep() {
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
             keyboardActions = KeyboardActions(onGo = { install(link) }),
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .arrowKeysLeaveField { link.isEmpty() },
         )
         FilledTonalButton(
             onClick = { install(link) },
