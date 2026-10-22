@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.shell.screens.onboarding.OnboardingSession
 import io.github.dimitrysaf.provenio.core.startup.AppStartupState
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.MutableTransitionState
@@ -233,8 +234,10 @@ internal fun AppGate(
         profileState.rememberLastProfileEnabled,
         profileState.activeProfile?.profileIndex,
         profileState.activeProfile?.pinEnabled,
+        OnboardingSession.running,
     ) {
-        if (gate.autoSkipProfileSelection && gate.isOn(AppGateScreen.ProfileSelection)) {
+        // A profile made during the onboarding waits for its end before the app opens.
+        if (gate.autoSkipProfileSelection && gate.isOn(AppGateScreen.ProfileSelection) && !OnboardingSession.running) {
             gate.tryAutoSelectProfile(profileState.profiles)
         }
     }

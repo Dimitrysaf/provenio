@@ -99,12 +99,12 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
-private const val CinemetaName = "Cinemeta"
-private const val CinemetaManifestUrl = "https://v3-cinemeta.strem.io/manifest.json"
-private const val TorrentioName = "Torrentio"
-private const val TorrentioManifestUrl = "https://torrentio.strem.fun/manifest.json"
-private const val OpenSubtitlesName = "OpenSubtitles"
-private const val OpenSubtitlesManifestUrl = "https://opensubtitles-v3.strem.io/manifest.json"
+internal const val CinemetaName = "Cinemeta"
+internal const val CinemetaManifestUrl = "https://v3-cinemeta.strem.io/manifest.json"
+internal const val TorrentioName = "Torrentio"
+internal const val TorrentioManifestUrl = "https://torrentio.strem.fun/manifest.json"
+internal const val OpenSubtitlesName = "OpenSubtitles"
+internal const val OpenSubtitlesManifestUrl = "https://opensubtitles-v3.strem.io/manifest.json"
 private const val AioStreamsName = "AIOStreams"
 private const val AioStreamsUrl = "https://github.com/Viren070/AIOStreams"
 private const val AioMetadataName = "AIOMetadata"
@@ -415,7 +415,7 @@ private enum class GuideInstallState { Available, Installing, Installed }
 
 private enum class GuideNoticeKind { Info, Warning }
 
-private fun String.manifestKey(): String = substringBefore("?").trimEnd('/').lowercase()
+internal fun String.manifestKey(): String = substringBefore("?").trimEnd('/').lowercase()
 
 @Composable
 private fun GuideSection(

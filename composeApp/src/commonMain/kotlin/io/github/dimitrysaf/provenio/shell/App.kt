@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.shell
 import io.github.dimitrysaf.provenio.shell.components.SearchFocusScrimHost
 import io.github.dimitrysaf.provenio.shell.components.KeyActionHintHost
 import io.github.dimitrysaf.provenio.shell.screens.settings.CrashPrompt
+import io.github.dimitrysaf.provenio.shell.screens.onboarding.OnboardingPreviewHost
 import io.github.dimitrysaf.provenio.shell.components.FocusMemoryRoot
 import io.github.dimitrysaf.provenio.core.settings.ThemeMode
 import io.github.dimitrysaf.provenio.shell.theme.systemPrefersDarkTheme
@@ -88,6 +89,7 @@ fun App(
                 AppSnackbarHost(modifier = Modifier.align(Alignment.BottomCenter))
                 KeyActionHintHost(modifier = Modifier.align(Alignment.BottomCenter))
                 CrashPrompt()
+                OnboardingPreviewHost()
             }
         }
     }

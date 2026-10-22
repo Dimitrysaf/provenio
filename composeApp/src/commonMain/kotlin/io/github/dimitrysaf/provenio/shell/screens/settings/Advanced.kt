@@ -1,5 +1,9 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import provenio.composeapp.generated.resources.settings_advanced_show_onboarding_description
+import provenio.composeapp.generated.resources.settings_advanced_show_onboarding
+import io.github.dimitrysaf.provenio.shell.screens.onboarding.OnboardingPreview
+import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BugReport
@@ -30,6 +34,12 @@ internal fun LazyListScope.advancedSettingsContent(
                     description = stringResource(Res.string.settings_advanced_remember_last_profile_description),
                     checked = { rememberLastProfileEnabled },
                     onCheckedChange = ProfileRepository::setRememberLastProfileEnabled,
+                )
+                navigationRow(
+                    title = stringResource(Res.string.settings_advanced_show_onboarding),
+                    description = stringResource(Res.string.settings_advanced_show_onboarding_description),
+                    icon = Icons.Rounded.RocketLaunch,
+                    onClick = OnboardingPreview::open,
                 )
             }
         }

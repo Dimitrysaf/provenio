@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
+import io.github.dimitrysaf.provenio.shell.screens.onboarding.OnboardingSession
+import io.github.dimitrysaf.provenio.shell.screens.onboarding.Onboarding
 import io.github.dimitrysaf.provenio.shell.components.horizontalScrollWithWheel
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -167,13 +169,15 @@ fun ProfileSelectionScreen(
                 if (usePane) editorTarget = ProfileEditorTarget.Create else onAddProfile()
             }
 
-            // With no profiles there is nothing to choose, so the device is set up here: a new profile, or another device's.
-            if (profileState.isLoaded && profiles.isEmpty() && editorTarget == null) {
-                ProfileWelcome(
-                    onCreateProfile = openCreate,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = statusBarTop, bottom = navigationBarBottom),
+            // With no profiles there is nothing to choose, so the device is set up here, and stays
+            // in the setup until it is done, though a profile is made partway through.
+            if (profileState.isLoaded && (profiles.isEmpty() || OnboardingSession.running) && editorTarget == null) {
+                val onboarding = remember { OnboardingSession.state() }
+                LaunchedEffect(Unit) { OnboardingSession.begin() }
+                Onboarding(
+                    state = onboarding,
+                    onFinish = OnboardingSession::finish,
+                    modifier = Modifier.fillMaxSize(),
                 )
                 return@AnimatedVisibility
             }
