@@ -10,7 +10,6 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.animation.using
 import androidx.compose.animation.SizeTransform
 import io.github.dimitrysaf.provenio.shell.components.clearFocusOnTap
 import io.github.dimitrysaf.provenio.shell.components.singleKeyPresses
