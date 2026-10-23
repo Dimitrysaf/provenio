@@ -27,13 +27,13 @@ object StreamAutoPlaySelector {
         }
         if (installedOrder.isEmpty()) return directDebridEntries + remainingEntries
 
-        val (addonEntries, otherEntries) = remainingEntries.partition { group ->
+        val (addonEntries, unrankedEntries) = remainingEntries.partition { group ->
             group.addonName in addonRankByName
         }
         val orderedAddons = addonEntries.sortedBy { group ->
             addonRankByName.getValue(group.addonName)
         }
-        return directDebridEntries + orderedAddons + otherEntries
+        return directDebridEntries + orderedAddons + unrankedEntries
     }
 
     fun selectAutoPlayStream(
