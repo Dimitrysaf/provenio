@@ -202,7 +202,9 @@ private fun DocsPageOverlay(page: String?, onDismiss: () -> Unit) {
     LaunchedEffect(page) { if (page != null) history = listOf(page) }
     val visible = page != null
     val back: () -> Unit = { if (history.size > 1) history = history.dropLast(1) else onDismiss() }
-    PlatformBackHandler(enabled = visible, onBack = back)
+    // Added only while a page is open, so it is the newest back handler and comes before those of
+    // the screen underneath; one kept from app start would be the oldest, and the last asked.
+    if (visible) PlatformBackHandler(enabled = true, onBack = back)
     AnimatedVisibility(
         visible = visible && history.isNotEmpty(),
         enter = slideInHorizontally { it / 4 } + fadeIn(),
