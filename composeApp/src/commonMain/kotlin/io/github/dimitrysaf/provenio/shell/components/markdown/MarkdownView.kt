@@ -91,6 +91,7 @@ import kotlinx.coroutines.launch
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.CachePolicy
+import kotlin.random.Random
 import io.github.dimitrysaf.provenio.shell.components.ImageViewerHost
 import io.github.dimitrysaf.provenio.shell.components.ImageViewerRequest
 import io.github.dimitrysaf.provenio.shell.components.LocalImageViewerLauncher
@@ -313,6 +314,18 @@ internal object MarkdownPictures {
         fetched.clear()
         generation++
     }
+
+    private val runSeed = Random.nextInt(0, Int.MAX_VALUE)
+
+    /**
+     * Where to fetch [url] from the network: a picture on GitHub gets an address of its own for
+     * each refresh, since GitHub keeps serving the old picture for minutes after it changes.
+     */
+    fun networkUrl(url: String): String {
+        val onGitHub = url.startsWith("https://raw.githubusercontent.com/") || url.startsWith("https://github.com/")
+        if (!onGitHub) return url
+        return url + (if ('?' in url) "&" else "?") + "refresh=$generation-$runSeed"
+    }
 }
 
 @Composable
@@ -324,7 +337,8 @@ private fun MarkdownPicture(image: MarkdownInline.Image, link: String?, modifier
     var failed by remember(image.url, generation) { mutableStateOf(false) }
     val request = remember(image.url, context, generation, fromCache) {
         ImageRequest.Builder(context)
-            .data(image.url)
+            .data(if (fromCache) image.url else MarkdownPictures.networkUrl(image.url))
+            .diskCacheKey(image.url)
             // Loaded at its own size, so a small picture such as a badge keeps it instead of filling the page.
             .size(ImageSize.ORIGINAL)
             .memoryCacheKey("${image.url}#$generation")

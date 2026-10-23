@@ -44,6 +44,14 @@ internal object M3Motion {
         return (enter togetherWith exit).apply { if (!forward) targetContentZIndex = -1f }
     }
 
+    // The parts of the shared axis pattern, for a transition drawn by hand.
+    fun <T> sharedAxisSlideSpec() = tween<T>(SharedAxisMillis, easing = Emphasized)
+
+    fun <T> sharedAxisFadeInSpec() =
+        tween<T>(SharedAxisMillis - SharedAxisFadeOutMillis, delayMillis = SharedAxisFadeOutMillis, easing = EmphasizedDecelerate)
+
+    fun <T> sharedAxisFadeOutSpec() = tween<T>(SharedAxisFadeOutMillis, easing = EmphasizedAccelerate)
+
     // Fade through, for switching between destinations that are not related, like top-level tabs.
     // Only a fade: a scale makes desktop show empty frames around the page while it grows.
     fun fadeThrough(): ContentTransform =

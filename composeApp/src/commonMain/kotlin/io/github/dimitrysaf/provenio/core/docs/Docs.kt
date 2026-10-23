@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 
@@ -74,6 +75,8 @@ object Docs {
     private var loadedSaved = false
     private var lastRefresh: TimeSource.Monotonic.ValueTimeMark? = null
     private var refreshing: Job? = null
+    private var refreshCount = 0
+    private val runSeed = Random.nextInt(0, Int.MAX_VALUE)
 
     /** Shows what was kept from last time, then fetches the latest unless it was fetched moments ago. */
     fun refresh(force: Boolean = false) {
@@ -82,15 +85,20 @@ object Docs {
         if (!force && lastRefresh?.let { it.elapsedNow() < RefreshInterval } == true) return
         refreshing = scope.launch {
             _state.update { it.copy(loading = true) }
-            val sidebar = fetch(SidebarPage)
+            // A refresh asked for by hand gets past every copy on the way: the app's own HTTP
+            // cache, and GitHub's, which keeps a page for minutes after it changes.
+            val fresh = if (force) "?refresh=${++refreshCount}-$runSeed" else ""
+            val sidebar = fetch(SidebarPage, fresh)
             if (sidebar is Fetched.Text) {
                 DocsStorage.save(key(SidebarPage), sidebar.text)
                 _state.update { it.copy(pages = sidebarPages(sidebar.text)) }
             }
             val requests = Semaphore(MaxParallelRequests)
             val fetched = coroutineScope {
-                _state.value.pages.map { page ->
-                    async { requests.withPermit { fetch(page.name).also { store(page.name, it) } } }
+                // The sidebar's pages, and any other page read before, such as one a link led to.
+                val names = (_state.value.pages.map { it.name } + _state.value.texts.keys).distinct()
+                names.map { name ->
+                    async { requests.withPermit { fetch(name, fresh).also { store(name, it) } } }
                 }.awaitAll()
             }
             // An answer, even that a page does not exist, means the wiki was reached.
@@ -160,11 +168,11 @@ object Docs {
         _state.update { it.copy(pages = it.pages.ifEmpty { pages }, texts = texts + it.texts) }
     }
 
-    private suspend fun fetch(name: String): Fetched = runCatching {
+    private suspend fun fetch(name: String, query: String = ""): Fetched = runCatching {
         val response = httpRequestRaw(
             method = "GET",
-            url = "$RawBaseUrl${encodePath(name)}.md",
-            headers = emptyMap(),
+            url = "$RawBaseUrl${encodePath(name)}.md$query",
+            headers = if (query.isEmpty()) emptyMap() else mapOf("Cache-Control" to "no-cache"),
             body = "",
             maxResponseBodyBytes = MaxPageBytes,
         )

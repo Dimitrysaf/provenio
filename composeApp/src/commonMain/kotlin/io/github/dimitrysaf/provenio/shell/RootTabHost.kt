@@ -21,14 +21,18 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.compose.rememberLifecycleOwner
 import io.github.dimitrysaf.provenio.shell.components.LocalScreenActive
 import io.github.dimitrysaf.provenio.shell.components.M3Motion
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun RootTabHost(
@@ -36,6 +40,8 @@ internal fun RootTabHost(
     modifier: Modifier = Modifier,
     active: Boolean = true,
     profileId: Int? = null,
+    /** The tabs are switched from a rail, so they move up and down rather than sideways. */
+    vertical: Boolean = false,
     content: @Composable (AppScreenTab) -> Unit,
 ) {
     val parentLifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
@@ -50,8 +56,15 @@ internal fun RootTabHost(
         val visitedTabs = remember { mutableSetOf<AppScreenTab>() }
         val displayedTabs = remember(selectedTab) { (visitedTabs + selectedTab).toList() }
         SideEffect { visitedTabs += selectedTab }
-        // Tabs switch with the fade through pattern: the old one fades out, then the new one fades and scales in.
+        // Tabs switch with the shared axis pattern, along the bar that switches them: the old one
+        // slides away and fades out, and the new one slides in from the side of the tab chosen.
         val firstTab = remember { selectedTab }
+        val lastTab = remember { arrayOf(selectedTab) }
+        val direction = remember(selectedTab) {
+            (if (selectedTab.ordinal >= lastTab[0].ordinal) 1 else -1).also { lastTab[0] = selectedTab }
+        }
+        val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+        val slidePx = with(LocalDensity.current) { M3Motion.SharedAxisSlide.toPx() } * if (rtl && !vertical) -1 else 1
         val visibilities = remember { HashMap<AppScreenTab, Animatable<Float, AnimationVector1D>>() }
 
         Layout(
@@ -61,19 +74,27 @@ internal fun RootTabHost(
                     key(tab) {
                         val selected = tab == selectedTab
                         val visibility = remember { Animatable(if (tab == firstTab) 1f else 0f) }
+                        // How far the pane is from its place: from all the way, coming in, or to it, going.
+                        val travel = remember { Animatable(0f) }
                         visibilities[tab] = visibility
                         LaunchedEffect(selected) {
                             if (selected) {
-                                visibility.animateTo(1f, M3Motion.fadeThroughInSpec())
+                                if (visibility.value < 1f) {
+                                    travel.snapTo(1f)
+                                    launch { travel.animateTo(0f, M3Motion.sharedAxisSlideSpec()) }
+                                }
+                                visibility.animateTo(1f, M3Motion.sharedAxisFadeInSpec())
                             } else {
-                                visibility.animateTo(0f, M3Motion.fadeThroughOutSpec())
+                                launch { travel.animateTo(1f, M3Motion.sharedAxisSlideSpec()) }
+                                visibility.animateTo(0f, M3Motion.sharedAxisFadeOutSpec())
                             }
                         }
                         RootTabPane(
                             tab = tab,
                             active = hostActive && selected,
-                            selected = selected,
                             visibility = { visibility.value },
+                            offset = { (if (selected) direction else -direction) * slidePx * travel.value },
+                            vertical = vertical,
                             stateHolder = tabStateHolder,
                             content = content,
                         )
@@ -98,8 +119,9 @@ internal fun RootTabHost(
 private fun RootTabPane(
     tab: AppScreenTab,
     active: Boolean,
-    selected: Boolean,
     visibility: () -> Float,
+    offset: () -> Float,
+    vertical: Boolean,
     stateHolder: SaveableStateHolder,
     content: @Composable (AppScreenTab) -> Unit,
 ) {
@@ -114,13 +136,8 @@ private fun RootTabPane(
             Box(
                 Modifier.fillMaxSize()
                     .graphicsLayer {
-                        val progress = visibility()
-                        alpha = progress
-                        if (selected) {
-                            val scale = 0.92f + 0.08f * progress
-                            scaleX = scale
-                            scaleY = scale
-                        }
+                        alpha = visibility()
+                        if (vertical) translationY = offset() else translationX = offset()
                     }
                     // A pane fading out, or kept for later, is no place for focus to go: a remote
                     // or keyboard moving into it would land on a control nobody can see. As a

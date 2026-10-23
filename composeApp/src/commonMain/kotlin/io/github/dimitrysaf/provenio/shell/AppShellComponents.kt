@@ -120,10 +120,12 @@ internal fun AppTabHost(
     state: AppTabState,
     actions: AppTabActions,
     modifier: Modifier = Modifier,
+    vertical: Boolean = false,
 ) {
     RootTabHost(
         selectedTab = selectedTab,
         modifier = modifier,
+        vertical = vertical,
         active = state.rootActionsEnabled,
         profileId = state.profileId,
     ) { tab ->

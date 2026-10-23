@@ -141,7 +141,7 @@ object MetaDetailsRepository {
             var failures = emptyList<LoadFailure>()
             if (manifests.isNotEmpty()) {
                 for (attempt in 1..META_LOAD_ATTEMPTS) {
-                    val attemptResult = fetchFirstAvailableMeta(manifests, type, metaLookupId) { parsed ->
+                    val attemptResult = fetchFirstAvailableMeta(manifests, type, metaLookupId, forceRefresh = force) { parsed ->
                         if (activeRequestKey == requestKey && _uiState.value.meta == null) {
                             _uiState.value = MetaDetailsUiState(
                                 isLoading = true,
@@ -230,11 +230,12 @@ object MetaDetailsRepository {
         manifests: List<AddonManifest>,
         type: String,
         id: String,
+        forceRefresh: Boolean,
         onParsed: (MetaDetails) -> Unit,
     ): MetaAttempt = coroutineScope {
         val requests = manifests.map { manifest ->
             async(Dispatchers.Default) {
-                withTimeoutOrNull(META_REQUEST_TIMEOUT_MS) { tryFetchRawMeta(manifest, type, id) }
+                withTimeoutOrNull(META_REQUEST_TIMEOUT_MS) { tryFetchRawMeta(manifest, type, id, forceRefresh) }
                     ?: MetaFetchOutcome.Failed(
                         loadFailureWithoutException(
                             sourceName = manifest.name,
@@ -366,6 +367,7 @@ object MetaDetailsRepository {
         manifest: AddonManifest,
         type: String,
         id: String,
+        forceRefresh: Boolean = false,
     ): MetaFetchOutcome {
         val url = buildAddonResourceUrl(
             manifestUrl = manifest.transportUrl,
@@ -376,7 +378,7 @@ object MetaDetailsRepository {
 
         return try {
             log.d { "Fetching meta from: $url" }
-            val payload = fetchAddonResponseText(url)
+            val payload = fetchAddonResponseText(url, forceRefresh)
             log.d { "Raw payload length=${payload.length}, first 500 chars: ${payload.take(500)}" }
             MetaFetchOutcome.Loaded(MetaDetailsParser.parse(payload))
         } catch (e: Throwable) {

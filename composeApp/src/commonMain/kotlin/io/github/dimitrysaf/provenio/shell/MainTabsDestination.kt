@@ -130,6 +130,7 @@ internal fun MainTabsDestination(
                 state = state,
                 actions = tabActions,
                 modifier = Modifier.fillMaxSize(),
+                vertical = useRail,
             )
         }
 
