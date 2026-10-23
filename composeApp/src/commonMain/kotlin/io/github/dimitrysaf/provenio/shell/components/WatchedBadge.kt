@@ -130,9 +130,10 @@ fun BoxScope.PosterProgressBar(progress: Float?, modifier: Modifier = Modifier) 
         progress = { progress.coerceIn(0f, 1f) },
         modifier = modifier
             .align(Alignment.BottomCenter)
-            .padding(horizontal = 8.dp, vertical = 8.dp)
+            // Drawn as Continue Watching draws its bar: thin, and close to the card's bottom edge.
+            .padding(horizontal = 8.dp, vertical = 3.dp)
             .fillMaxWidth()
-            .height(4.dp),
+            .height(3.dp),
         color = MaterialTheme.colorScheme.primary,
         trackColor = Color.White.copy(alpha = 0.24f),
         gapSize = 0.dp,
