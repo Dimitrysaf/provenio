@@ -1036,10 +1036,12 @@ internal fun LazyListScope.settingsPageContent(
         )
         SettingsPage.About -> aboutSettingsContent(
             isTablet = isTablet,
+            onDocumentationClick = { links.openSubPage(SettingsPage.Documentation) },
             onLicensesAttributionsClick = links.onLicensesAttributionsClick,
             onCheckForUpdatesClick = links.onCheckForUpdatesClick,
         )
         SettingsPage.LicensesAttributions -> licensesAttributionsContent(isTablet = isTablet)
+        SettingsPage.Documentation -> documentationContent(isTablet = isTablet)
         SettingsPage.Playback -> playbackSettingsContent(
             isTablet = isTablet,
             showLoadingOverlay = player.showLoadingOverlay,

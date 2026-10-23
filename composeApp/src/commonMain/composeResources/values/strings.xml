@@ -2641,4 +2641,22 @@
     <string name="settings_imports_section_title">Imports</string>
     <string name="settings_advanced_show_imports">Show imports</string>
     <string name="settings_advanced_show_imports_description">Bring your data over from other apps, such as Stremio, in Accounts.</string>
+    <string name="markdown_alert_note">Note</string>
+    <string name="markdown_alert_tip">Tip</string>
+    <string name="markdown_alert_important">Important</string>
+    <string name="markdown_alert_warning">Warning</string>
+    <string name="markdown_alert_caution">Caution</string>
+    <string name="settings_documentation">Documentation</string>
+    <string name="docs_search">Search documentation</string>
+    <string name="docs_no_results">No pages found</string>
+    <string name="docs_no_results_message">Nothing in the documentation mentions “%1$s”.</string>
+    <string name="docs_unavailable">Couldn't load the documentation</string>
+    <string name="docs_unavailable_message">Check your connection and try again.</string>
+    <string name="docs_page_unavailable">Couldn't load this page</string>
+    <string name="docs_open_on_github">Open on GitHub</string>
+    <string name="docs_empty">No documentation yet</string>
+    <string name="docs_empty_message">The documentation hasn't been written yet.</string>
+    <string name="docs_offline">You're offline. Showing saved pages.</string>
+    <string name="docs_page_missing">This page doesn't exist yet</string>
+    <string name="docs_page_missing_message">It may have been moved, or not written yet.</string>
 </resources>

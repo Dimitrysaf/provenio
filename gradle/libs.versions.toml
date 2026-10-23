@@ -30,6 +30,7 @@ androidx-camera = "1.4.2"
 mpv-android-lib = "0.1.12"
 quickjsKt = "1.0.5"
 ksoup = "0.2.6"
+jetbrainsMarkdown = "0.7.16"
 reorderable = "3.0.0"
 desugarJdkLibs = "2.1.5"
 
@@ -89,6 +90,7 @@ androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "
 mpv-android-lib = { module = "io.github.abdallahmehiz:mpv-android-lib", version.ref = "mpv-android-lib" }
 quickjs-kt = { module = "io.github.dokar3:quickjs-kt", version.ref = "quickjsKt" }
 ksoup = { module = "com.fleeksoft.ksoup:ksoup", version.ref = "ksoup" }
+jetbrains-markdown = { module = "org.jetbrains:markdown", version.ref = "jetbrainsMarkdown" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 

@@ -2609,4 +2609,22 @@
     <string name="settings_imports_section_title">Εισαγωγές</string>
     <string name="settings_advanced_show_imports">Εμφάνιση εισαγωγών</string>
     <string name="settings_advanced_show_imports_description">Μεταφέρετε τα δεδομένα σας από άλλες εφαρμογές, όπως το Stremio, στους Λογαριασμούς.</string>
+    <string name="markdown_alert_note">Σημείωση</string>
+    <string name="markdown_alert_tip">Συμβουλή</string>
+    <string name="markdown_alert_important">Σημαντικό</string>
+    <string name="markdown_alert_warning">Προειδοποίηση</string>
+    <string name="markdown_alert_caution">Προσοχή</string>
+    <string name="settings_documentation">Τεκμηρίωση</string>
+    <string name="docs_search">Αναζήτηση στην τεκμηρίωση</string>
+    <string name="docs_no_results">Δεν βρέθηκαν σελίδες</string>
+    <string name="docs_no_results_message">Τίποτα στην τεκμηρίωση δεν αναφέρει «%1$s».</string>
+    <string name="docs_unavailable">Δεν ήταν δυνατή η φόρτωση της τεκμηρίωσης</string>
+    <string name="docs_unavailable_message">Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά.</string>
+    <string name="docs_page_unavailable">Δεν ήταν δυνατή η φόρτωση αυτής της σελίδας</string>
+    <string name="docs_open_on_github">Άνοιγμα στο GitHub</string>
+    <string name="docs_empty">Δεν υπάρχει ακόμη τεκμηρίωση</string>
+    <string name="docs_empty_message">Η τεκμηρίωση δεν έχει γραφτεί ακόμη.</string>
+    <string name="docs_offline">Είστε εκτός σύνδεσης. Εμφανίζονται οι αποθηκευμένες σελίδες.</string>
+    <string name="docs_page_missing">Αυτή η σελίδα δεν υπάρχει ακόμη</string>
+    <string name="docs_page_missing_message">Ίσως έχει μετακινηθεί ή δεν έχει γραφτεί ακόμη.</string>
 </resources>

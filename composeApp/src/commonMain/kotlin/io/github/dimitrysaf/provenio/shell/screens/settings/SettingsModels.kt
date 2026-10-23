@@ -30,6 +30,7 @@ import provenio.composeapp.generated.resources.compose_settings_page_debrid
 import provenio.composeapp.generated.resources.compose_settings_page_hero_carousel
 import provenio.composeapp.generated.resources.compose_settings_page_homescreen
 import provenio.composeapp.generated.resources.compose_settings_page_licenses_attributions
+import provenio.composeapp.generated.resources.settings_documentation
 import provenio.composeapp.generated.resources.compose_settings_page_mdblist_ratings
 import provenio.composeapp.generated.resources.compose_settings_page_meta_screen
 import provenio.composeapp.generated.resources.compose_settings_page_notifications
@@ -279,6 +280,11 @@ internal enum class SettingsPage(
     ),
     LicensesAttributions(
         titleRes = Res.string.compose_settings_page_licenses_attributions,
+        category = SettingsCategory.About,
+        parentPage = About,
+    ),
+    Documentation(
+        titleRes = Res.string.settings_documentation,
         category = SettingsCategory.About,
         parentPage = About,
     ),

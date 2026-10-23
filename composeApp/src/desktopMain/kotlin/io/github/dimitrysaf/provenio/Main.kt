@@ -65,6 +65,7 @@ import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktCommentsStorage
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktLibraryStorage
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktSettingsStorage
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingEnrichmentStorage
+import io.github.dimitrysaf.provenio.core.docs.DocsStorage
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPreferencesStorage
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedStorage
@@ -236,6 +237,7 @@ private fun initializePlatform(context: Context) {
     LibraryDisplaySettingsStorage.initialize(context)
     ContinueWatchingPreferencesStorage.initialize(context)
     ContinueWatchingEnrichmentStorage.initialize(context)
+    DocsStorage.initialize(context)
     EpisodeReleaseNotificationsStorage.initialize(context)
     WatchProgressStorage.initialize(context)
     StreamLinkCacheStorage.initialize(context)

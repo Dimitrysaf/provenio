@@ -85,6 +85,7 @@ import io.github.dimitrysaf.provenio.core.streams.StreamLinkCacheStorage
 import io.github.dimitrysaf.provenio.core.streams.StreamBadgeSettingsStorage
 import io.github.dimitrysaf.provenio.core.streams.BingeGroupCacheStorage
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingEnrichmentStorage
+import io.github.dimitrysaf.provenio.core.docs.DocsStorage
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPreferencesStorage
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.shell.App
@@ -152,6 +153,7 @@ open class MainActivity : AppCompatActivity() {
         LibraryDisplaySettingsStorage.initialize(applicationContext)
         ContinueWatchingPreferencesStorage.initialize(applicationContext)
         ContinueWatchingEnrichmentStorage.initialize(applicationContext)
+        DocsStorage.initialize(applicationContext)
         EpisodeReleaseNotificationsStorage.initialize(applicationContext)
         WatchProgressStorage.initialize(applicationContext)
         StreamLinkCacheStorage.initialize(applicationContext)
