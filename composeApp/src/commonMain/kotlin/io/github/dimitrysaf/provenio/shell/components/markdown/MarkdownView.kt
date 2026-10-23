@@ -88,6 +88,7 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
+import io.github.dimitrysaf.provenio.shell.components.ImageViewerHost
 import io.github.dimitrysaf.provenio.shell.components.ImageViewerRequest
 import io.github.dimitrysaf.provenio.shell.components.LocalImageViewerLauncher
 import io.github.dimitrysaf.provenio.shell.components.ToastController
@@ -147,7 +148,16 @@ fun LazyListScope.markdownItems(document: MarkdownDocument, onLinkClick: (String
 private fun MarkdownScope(onLinkClick: (String) -> Unit, content: @Composable () -> Unit) {
     val current by rememberUpdatedState(onLinkClick)
     val handler = remember { { url: String -> current(url) } }
-    CompositionLocalProvider(LocalMarkdownLinkHandler provides handler, content = content)
+    // Pictures open in the screen's image viewer, or in one of their own where the screen has none.
+    val screenViewer = LocalImageViewerLauncher.current
+    var request by remember { mutableStateOf<ImageViewerRequest?>(null) }
+    val viewer = screenViewer ?: remember { { opened: ImageViewerRequest -> request = opened } }
+    CompositionLocalProvider(
+        LocalMarkdownLinkHandler provides handler,
+        LocalImageViewerLauncher provides viewer,
+        content = content,
+    )
+    if (screenViewer == null) ImageViewerHost(request = request, onDismiss = { request = null })
 }
 
 private val LocalMarkdownLinkHandler = staticCompositionLocalOf<(String) -> Unit> { {} }
@@ -199,17 +209,13 @@ private fun HeadingView(block: MarkdownBlock.Heading, modifier: Modifier) {
         4 -> typography.titleMedium
         else -> typography.titleSmall
     }
-    // The two largest headings sit apart from what came before, over a rule, as on GitHub.
-    Column(modifier = modifier.padding(top = if (block.level <= 2) 12.dp else 4.dp)) {
-        Text(
-            text = rememberInlineText(block.content),
-            style = style,
-            color = if (block.level == 6) MaterialTheme.colorScheme.onSurfaceVariant else LocalContentColor.current,
-        )
-        if (block.level <= 2) {
-            HorizontalDivider(modifier = Modifier.padding(top = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
-        }
-    }
+    // The two largest headings sit further apart from what came before.
+    Text(
+        text = rememberInlineText(block.content),
+        style = style,
+        color = if (block.level == 6) MaterialTheme.colorScheme.onSurfaceVariant else LocalContentColor.current,
+        modifier = modifier.padding(top = if (block.level <= 2) 12.dp else 4.dp),
+    )
 }
 
 private sealed interface ParagraphPart {
