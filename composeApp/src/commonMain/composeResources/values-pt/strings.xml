@@ -372,8 +372,6 @@
     <string name="settings_licenses_attributions_upstream_license">Licenciado sob a GNU General Public License v3.0.</string>
     <string name="settings_licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="settings_licenses_attributions_tmdb_body">O Provenio utiliza a API do TMDB para metadados de filmes e séries, imagens, trailers, elenco, detalhes de produção, coleções e recomendações. Este produto utiliza a API do TMDB, mas não é apoiado nem certificado pelo TMDB.</string>
-    <string name="settings_licenses_attributions_imdb_title">Conjuntos de dados não comerciais do IMDb</string>
-    <string name="settings_licenses_attributions_imdb_body">O Provenio utiliza os conjuntos de dados não comerciais do IMDb, incluindo title.ratings.tsv.gz, para classificações e contagem de votos do IMDb. Informação cedida gentilmente pelo IMDb (https://www.imdb.com). Utilizado com permissão. Os dados do IMDb destinam-se a uso pessoal e não comercial sob os termos do IMDb.</string>
     <string name="settings_licenses_attributions_trakt_title">Trakt</string>
     <string name="settings_licenses_attributions_trakt_body">O Provenio liga-se ao Trakt para autenticação de conta, histórico de visualizações, sincronização de progresso, dados da biblioteca, classificações, listas e comentários. O Provenio não é afiliado ao Trakt nem apoiado por ele.</string>
     <string name="settings_licenses_attributions_premiumize_title">Premiumize</string>

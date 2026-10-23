@@ -345,8 +345,6 @@
     <string name="settings_licenses_attributions_upstream_license">Lisensiert under GNU General Public License v3.0.</string>
     <string name="settings_licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="settings_licenses_attributions_tmdb_body">Provenio bruker TMDB API for metadata, bilder, trailere, rollebesetning osv. Dette produktet bruker TMDB API men er ikke godkjent eller sertifisert av TMDB.</string>
-    <string name="settings_licenses_attributions_imdb_title">IMDb Non-Commercial Datasets</string>
-    <string name="settings_licenses_attributions_imdb_body">Provenio bruker IMDb Non-Commercial Datasets for vurderinger. Informasjon fra IMDb[](https://www.imdb.com). Brukt med tillatelse.</string>
     <string name="settings_licenses_attributions_trakt_title">Trakt</string>
     <string name="settings_licenses_attributions_trakt_body">Provenio kobler til Trakt for autentisering, seerhistorikk, synkronisering osv. Provenio er ikke tilknyttet eller godkjent av Trakt.</string>
     <string name="settings_licenses_attributions_mdblist_title">MDBList</string>

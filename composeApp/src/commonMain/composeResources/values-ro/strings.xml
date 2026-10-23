@@ -374,8 +374,6 @@
     <string name="settings_licenses_attributions_upstream_license">Licențiat sub GNU General Public License v3.0.</string>
     <string name="settings_licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="settings_licenses_attributions_tmdb_body">Provenio utilizează API-ul TMDB pentru metadate de filme și seriale, imagini, trailere, distribuție, detalii de producție, colecții și recomandări. Acest produs folosește API-ul TMDB, dar nu este aprobat sau certificat de către TMDB.</string>
-    <string name="settings_licenses_attributions_imdb_title">Seturi de date IMDb non-comerciale</string>
-    <string name="settings_licenses_attributions_imdb_body">Provenio utilizează seturi de date IMDb non-comerciale, inclusiv title.ratings.tsv.gz, pentru evaluări și numărul de voturi IMDb. Informații oferite prin amabilitatea IMDb (https://www.imdb.com). Utilizate cu permisiune. Datele IMDb sunt destinate exclusiv utilizării personale și non-comerciale, conform termenilor IMDb.</string>
     <string name="settings_licenses_attributions_trakt_title">Trakt</string>
     <string name="settings_licenses_attributions_trakt_body">Provenio se conectează la Trakt pentru autentificarea contului, istoricul de vizionare, sincronizarea progresului, datele din bibliotecă, evaluări, liste și comentarii. Provenio nu este afiliat cu și nici aprobat de Trakt.</string>
     <string name="settings_licenses_attributions_premiumize_title">Premiumize</string>

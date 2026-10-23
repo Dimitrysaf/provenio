@@ -393,8 +393,6 @@
     <string name="settings_licenses_attributions_upstream_license">مرخّص بموجب رخصة GNU العامة الإصدار 3.0.</string>
     <string name="settings_licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="settings_licenses_attributions_tmdb_body">يستخدم Provenio واجهة TMDB API للبيانات الوصفية للأفلام والمسلسلات والصور والإعلانات وطاقم التمثيل وتفاصيل الإنتاج والمجموعات والتوصيات. يستخدم هذا المنتج واجهة TMDB API لكنه غير معتمد أو مصدّق من TMDB.</string>
-    <string name="settings_licenses_attributions_imdb_title">مجموعات بيانات IMDb غير التجارية</string>
-    <string name="settings_licenses_attributions_imdb_body">يستخدم Provenio مجموعات بيانات IMDb غير التجارية، بما في ذلك title.ratings.tsv.gz، لتقييمات IMDb وأعداد الأصوات. المعلومات مقدمة من IMDb (https://www.imdb.com) وتُستخدم بإذن. بيانات IMDb مخصصة للاستخدام الشخصي وغير التجارٍ وفق شروط IMDb.</string>
     <string name="settings_licenses_attributions_trakt_title">Trakt</string>
     <string name="settings_licenses_attributions_trakt_body">يتصل Provenio بخدمة Trakt لمصادقة الحساب وسجل المشاهدة ومزامنة التقدم وبيانات المكتبة والتقييمات والقوائم والتعليقات. لا يرتبط Provenio بخدمة Trakt ولا يحظى بتأييدها.</string>
     <string name="settings_licenses_attributions_simkl_title">Simkl</string>

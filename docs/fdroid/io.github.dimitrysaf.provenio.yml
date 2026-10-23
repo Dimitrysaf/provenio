@@ -1,0 +1,81 @@
+# Draft F-Droid metadata for Provenio, to submit to https://gitlab.com/fdroid/fdroiddata as
+# metadata/io.github.dimitrysaf.provenio.yml. Before submitting, set the three values marked
+# CHANGE: the commit to build and the build number of that release. docs/F-DROID.md explains
+# each step.
+Categories:
+  - Multimedia
+License: GPL-3.0-only
+AuthorName: Dimitrysaf
+SourceCode: https://github.com/Dimitrysaf/provenio
+IssueTracker: https://github.com/Dimitrysaf/provenio/issues
+
+AutoName: Provenio
+Summary: Media library for the sources you bring
+AntiFeatures:
+  NonFreeNet:
+    en-US: Uses TMDB, Trakt, Simkl, MDBList, YouTube and debrid services, and the Stremio addons you install.
+
+RepoType: git
+Repo: https://github.com/Dimitrysaf/provenio.git
+
+Builds:
+  # versionCode is 10000000 * major + 100000 * minor + build number, from MARKETING_VERSION in
+  # iosApp/Configuration/Version.xcconfig; 0.40 with build 203 is 4000203.
+  - versionName: 0.40.203 # CHANGE
+    versionCode: 4000203 # CHANGE
+    commit: 0000000000000000000000000000000000000000 # CHANGE
+    subdir: androidApp
+    sudo:
+      - apt-get update
+      - apt-get install -y make ninja-build cmake
+    gradle:
+      - yes
+    srclibs:
+      # moneytoo's media3 fork at its 1.8.0 branch: the exact source of the ExoPlayer and UI AARs
+      # in composeApp/libs, the same fork F-Droid builds for Just Player.
+      - media-moneytoo@9a3eaf3b73128d74aeb7460fcc2b0f9bd11e3f33
+      - FFmpeg@release/6.0
+      - cpu_features@v0.9.0
+      - abseil-cpp@20230802.1
+      - libgav1@v0.20.0
+    scandelete:
+      - composeApp/libs/
+    build:
+      - export FFMPEG_EXT_PATH="$$media-moneytoo$$/libraries/decoder_ffmpeg/src/main"
+      - export HOST_PLATFORM="$(uname -s | tr '[:upper:]' '[:lower:]')-x86_64"
+      - export ANDROID_ABI=21
+      - export ENABLED_DECODERS=(vorbis opus flac alac pcm_mulaw pcm_alaw mp3 amrnb
+        amrwb aac ac3 eac3 dca mlp truehd wmav1 wmav2 wmapro cook atrac3 wavpack)
+      - pushd "${FFMPEG_EXT_PATH}/jni"
+      - ln -s "$$FFmpeg$$" ffmpeg
+      - ./build_ffmpeg.sh "${FFMPEG_EXT_PATH}" "$$NDK$$" "${HOST_PLATFORM}" "${ANDROID_ABI}"
+        "${ENABLED_DECODERS[@]}"
+      - export AV1_EXT_PATH="$$media-moneytoo$$/libraries/decoder_av1/src/main"
+      - cd "${AV1_EXT_PATH}/jni"
+      - ln -s "$$cpu_features$$" cpu_features
+      - ln -s "$$libgav1$$" libgav1
+      - mkdir "${AV1_EXT_PATH}/jni/libgav1/third_party"
+      - cd "${AV1_EXT_PATH}/jni/libgav1/third_party"
+      - ln -s "$$abseil-cpp$$" abseil-cpp
+      - cd "$$media-moneytoo$$"
+      - ./gradlew :lib-decoder-{ffmpeg,av1}:bundleReleaseAar
+      - ./gradlew :lib-{exoplayer,ui}:bundleReleaseAar
+      - popd
+      - mkdir -p ../composeApp/libs
+      - cp $$media-moneytoo$$/libraries/decoder_{ffmpeg,av1}/buildout/outputs/aar/*.aar
+        ../composeApp/libs/
+      - cp $$media-moneytoo$$/libraries/{exoplayer,ui}/buildout/outputs/aar/*.aar
+        ../composeApp/libs/
+    output: build/outputs/apk/release/androidApp-universal-release-unsigned.apk
+    ndk: 29.0.14206865
+    timeout: 10800
+    gradleprops:
+      # The torrent engine is built from engine/ instead of the AAR scandelete removes.
+      - provenio.engine.fromSource=true
+      - provenio.channel=stable
+      - provenio.buildNumber=203 # CHANGE, the build number in versionName
+
+AutoUpdateMode: None
+UpdateCheckMode: None
+CurrentVersion: 0.40.203
+CurrentVersionCode: 4000203

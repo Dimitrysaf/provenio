@@ -240,39 +240,50 @@ internal fun AddonsSettingsPageContent(
         )
     }
 
-    val modalState = installModalState
-    if (modalState != null) {
-        val modalTitle = when (modalState) {
-            AddonInstallModalState.Checking -> stringResource(Res.string.addons_modal_checking_title)
-            is AddonInstallModalState.Success -> stringResource(Res.string.addons_modal_success_title)
-            is AddonInstallModalState.Error -> stringResource(Res.string.addons_modal_failure_title)
-        }
-        val modalMessage = when (modalState) {
-            AddonInstallModalState.Checking -> stringResource(Res.string.addons_modal_checking_message)
-            is AddonInstallModalState.Success -> stringResource(
-                Res.string.addons_modal_success_message,
-                modalState.addonName,
-            )
-            is AddonInstallModalState.Error -> modalState.reason
-        }
-        val modalConfirmText = when (modalState) {
-            AddonInstallModalState.Checking -> stringResource(Res.string.addon_installing)
-            is AddonInstallModalState.Success -> stringResource(Res.string.action_done)
-            is AddonInstallModalState.Error -> stringResource(Res.string.action_close)
-        }
-        StatusModal(
-            title = modalTitle,
-            message = modalMessage,
-            isVisible = true,
-            isBusy = modalState.isBusy,
-            confirmText = modalConfirmText,
-            onConfirm = {
-                if (!modalState.isBusy) {
-                    installModalState = null
-                }
-            },
+    installModalState?.let { modalState ->
+        AddonInstallStatusModal(
+            state = modalState,
+            onClose = { installModalState = null },
         )
     }
+}
+
+/** How an install is going: checking the manifest, then installed or failed. Onboarding shows it too. */
+@Composable
+internal fun AddonInstallStatusModal(
+    state: AddonInstallModalState,
+    onClose: () -> Unit,
+) {
+    val modalTitle = when (state) {
+        AddonInstallModalState.Checking -> stringResource(Res.string.addons_modal_checking_title)
+        is AddonInstallModalState.Success -> stringResource(Res.string.addons_modal_success_title)
+        is AddonInstallModalState.Error -> stringResource(Res.string.addons_modal_failure_title)
+    }
+    val modalMessage = when (state) {
+        AddonInstallModalState.Checking -> stringResource(Res.string.addons_modal_checking_message)
+        is AddonInstallModalState.Success -> stringResource(
+            Res.string.addons_modal_success_message,
+            state.addonName,
+        )
+        is AddonInstallModalState.Error -> state.reason
+    }
+    val modalConfirmText = when (state) {
+        AddonInstallModalState.Checking -> stringResource(Res.string.addon_installing)
+        is AddonInstallModalState.Success -> stringResource(Res.string.action_done)
+        is AddonInstallModalState.Error -> stringResource(Res.string.action_close)
+    }
+    StatusModal(
+        title = modalTitle,
+        message = modalMessage,
+        isVisible = true,
+        isBusy = state.isBusy,
+        confirmText = modalConfirmText,
+        onConfirm = {
+            if (!state.isBusy) {
+                onClose()
+            }
+        },
+    )
 }
 
 /**
@@ -566,7 +577,7 @@ private fun AddonTagsRow(tags: List<AddonTag>, active: Boolean) {
 
 private const val AddonDescriptionMaxLines = 4
 
-private sealed interface AddonInstallModalState {
+internal sealed interface AddonInstallModalState {
     val isBusy: Boolean
 
     data object Checking : AddonInstallModalState {

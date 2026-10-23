@@ -347,8 +347,6 @@
     <string name="settings_licenses_attributions_upstream_license">Dilisensikan di bawah GNU General Public License v3.0.</string>
     <string name="settings_licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="settings_licenses_attributions_tmdb_body">Provenio menggunakan API TMDB untuk metadata film dan TV, karya seni, trailer, pemeran, detail produksi, koleksi, dan rekomendasi. Produk ini menggunakan API TMDB tetapi tidak didukung atau disertifikasi oleh TMDB.</string>
-    <string name="settings_licenses_attributions_imdb_title">Dataset Non-Komersial IMDb</string>
-    <string name="settings_licenses_attributions_imdb_body">Provenio menggunakan Dataset Non-Komersial IMDb, termasuk title.ratings.tsv.gz, untuk rating dan jumlah suara IMDb. Informasi disediakan oleh IMDb (https://www.imdb.com). Digunakan dengan izin. Data IMDb untuk penggunaan pribadi dan non-komersial sesuai ketentuan IMDb.</string>
     <string name="settings_licenses_attributions_trakt_title">Trakt</string>
     <string name="settings_licenses_attributions_trakt_body">Provenio terhubung ke Trakt untuk autentikasi akun, riwayat tontonan, sinkronisasi progres, data pustaka, rating, daftar, dan komentar. Provenio tidak berafiliasi atau didukung oleh Trakt.</string>
     <string name="settings_licenses_attributions_premiumize_title">Premiumize</string>

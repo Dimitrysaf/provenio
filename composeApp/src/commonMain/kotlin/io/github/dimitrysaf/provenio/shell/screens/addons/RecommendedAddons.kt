@@ -2,8 +2,6 @@ package io.github.dimitrysaf.provenio.shell.screens.addons
 
 internal const val CinemetaName = "Cinemeta"
 internal const val CinemetaManifestUrl = "https://v3-cinemeta.strem.io/manifest.json"
-internal const val TorrentioName = "Torrentio"
-internal const val TorrentioManifestUrl = "https://torrentio.strem.fun/manifest.json"
 internal const val OpenSubtitlesName = "OpenSubtitles"
 internal const val OpenSubtitlesManifestUrl = "https://opensubtitles-v3.strem.io/manifest.json"
 

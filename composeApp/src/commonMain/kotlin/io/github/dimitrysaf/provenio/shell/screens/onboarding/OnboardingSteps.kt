@@ -28,7 +28,6 @@ import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.PersonAdd
-import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material.icons.rounded.QrCode
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Subtitles
@@ -72,16 +71,16 @@ import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktAuthRepository
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
+import io.github.dimitrysaf.provenio.shell.components.StatusModal
 import io.github.dimitrysaf.provenio.shell.components.SwatchGrid
-import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import io.github.dimitrysaf.provenio.shell.components.shapedClickable
+import io.github.dimitrysaf.provenio.shell.screens.addons.AddonInstallModalState
+import io.github.dimitrysaf.provenio.shell.screens.addons.AddonInstallStatusModal
 import io.github.dimitrysaf.provenio.shell.screens.addons.CinemetaManifestUrl
 import io.github.dimitrysaf.provenio.shell.screens.addons.CinemetaName
 import io.github.dimitrysaf.provenio.shell.screens.addons.OpenSubtitlesManifestUrl
 import io.github.dimitrysaf.provenio.shell.screens.addons.OpenSubtitlesName
-import io.github.dimitrysaf.provenio.shell.screens.addons.TorrentioManifestUrl
-import io.github.dimitrysaf.provenio.shell.screens.addons.TorrentioName
 import io.github.dimitrysaf.provenio.shell.screens.addons.manifestKey
 import io.github.dimitrysaf.provenio.shell.screens.profiles.CHOSEN_COLOR_AVATAR_ID
 import io.github.dimitrysaf.provenio.shell.screens.profiles.ProfileColorPicker
@@ -103,7 +102,6 @@ import io.github.dimitrysaf.provenio.shell.screens.settings.rememberLocalSyncSca
 import io.github.dimitrysaf.provenio.shell.theme.isDynamicColorAvailable
 import io.github.dimitrysaf.provenio.shell.theme.provenio
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
@@ -442,16 +440,23 @@ internal fun AddonsStep() {
     val uiState by AddonRepository.uiState.collectAsStateWithLifecycle()
     val installed = remember(uiState.addons) { uiState.addons.map { it.manifestUrl.manifestKey() }.toSet() }
     var installing by remember { mutableStateOf<String?>(null) }
+    var pendingInstall by remember { mutableStateOf<RecommendedAddon?>(null) }
+    var installModalState by remember { mutableStateOf<AddonInstallModalState?>(null) }
     val scope = rememberCoroutineScope()
+
+    fun requestInstall(addon: RecommendedAddon) {
+        if (installing != null || addon.url.manifestKey() in installed) return
+        pendingInstall = addon
+    }
 
     fun install(url: String) {
         if (installing != null || url.manifestKey() in installed) return
         installing = url
+        installModalState = AddonInstallModalState.Checking
         scope.launch {
-            when (val result = AddonRepository.addAddon(url)) {
-                is AddAddonResult.Success ->
-                    ToastController.show(getString(Res.string.addons_modal_success_message, result.manifest.name))
-                is AddAddonResult.Error -> ToastController.show(result.message)
+            installModalState = when (val result = AddonRepository.addAddon(url)) {
+                is AddAddonResult.Success -> AddonInstallModalState.Success(result.manifest.name)
+                is AddAddonResult.Error -> AddonInstallModalState.Error(result.message)
             }
             installing = null
         }
@@ -459,7 +464,6 @@ internal fun AddonsStep() {
 
     val recommended = listOf(
         RecommendedAddon(CinemetaName, CinemetaManifestUrl, Icons.Rounded.Movie, stringResource(Res.string.addons_guide_cinemeta_body)),
-        RecommendedAddon(TorrentioName, TorrentioManifestUrl, Icons.Rounded.PlayCircle, stringResource(Res.string.addons_guide_torrentio_body).withoutGuideTerms()),
         RecommendedAddon(OpenSubtitlesName, OpenSubtitlesManifestUrl, Icons.Rounded.Subtitles, stringResource(Res.string.addons_guide_opensubtitles_body)),
     )
     val installLabel = stringResource(Res.string.addons_guide_install)
@@ -477,7 +481,7 @@ internal fun AddonsStep() {
                 enabled = !isInstalled,
                 trailingContent = {
                     FilledTonalIconButton(
-                        onClick = { install(addon.url) },
+                        onClick = { requestInstall(addon) },
                         enabled = !isInstalled && !isInstalling,
                     ) {
                         when {
@@ -487,9 +491,31 @@ internal fun AddonsStep() {
                         }
                     }
                 },
-                onClick = { install(addon.url) },
+                onClick = { requestInstall(addon) },
             )
         }
+    }
+
+    pendingInstall?.let { addon ->
+        StatusModal(
+            title = stringResource(Res.string.addons_install_confirm_title, addon.name),
+            message = stringResource(Res.string.addons_install_confirm_message),
+            isVisible = true,
+            confirmText = stringResource(Res.string.action_yes),
+            dismissText = stringResource(Res.string.action_no),
+            onConfirm = {
+                pendingInstall = null
+                install(addon.url)
+            },
+            onDismiss = { pendingInstall = null },
+        )
+    }
+
+    installModalState?.let { modalState ->
+        AddonInstallStatusModal(
+            state = modalState,
+            onClose = { installModalState = null },
+        )
     }
 }
 

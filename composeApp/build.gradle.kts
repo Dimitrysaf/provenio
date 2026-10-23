@@ -26,6 +26,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
     @get:InputFile
     abstract val localPropertiesFile: RegularFileProperty
 
+    // The committed public keys, which every build falls back to where local.properties has none.
+    @get:Optional
+    @get:InputFile
+    abstract val appKeysFile: RegularFileProperty
+
     @get:Input
     abstract val appVersionName: Property<String>
 
@@ -45,6 +50,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
     fun generate() {
         val props = Properties()
         localPropertiesFile.asFile.orNull?.takeIf { it.exists() }?.inputStream()?.use { props.load(it) }
+        val appKeys = Properties()
+        appKeysFile.asFile.orNull?.takeIf { it.exists() }?.inputStream()?.use { appKeys.load(it) }
+        appKeys.stringPropertyNames().forEach { key ->
+            if (props.getProperty(key).isNullOrBlank()) props.setProperty(key, appKeys.getProperty(key).trim())
+        }
 
         val outDir = outputDir.get().asFile
         outDir.resolve("io/github/dimitrysaf/provenio/core/metadata/tmdb").apply {
@@ -201,7 +211,11 @@ val appBaseVersion = readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION"
     ?.map { it.trim().toIntOrNull() ?: error("MARKETING_VERSION must be <major>.<minor>, like 0.40") }
     ?.takeIf { it.size == 2 }
     ?: error("MARKETING_VERSION must be <major>.<minor>, like 0.40, in ${appVersionConfigFile.path}")
-val releaseAppBuildNumber = (System.getenv("PROVENIO_BUILD_NUMBER") ?: System.getenv("GITHUB_RUN_NUMBER"))
+val releaseAppBuildNumber = (
+    System.getenv("PROVENIO_BUILD_NUMBER")
+        ?: System.getenv("GITHUB_RUN_NUMBER")
+        ?: providers.gradleProperty("provenio.buildNumber").orNull
+    )
     ?.trim()
     ?.toIntOrNull()
     ?.takeIf { it in 0..65535 }
@@ -236,6 +250,12 @@ val runtimeLocalProperties = Properties().apply {
         file.inputStream().use(::load)
     }
 }
+val committedAppKeys = Properties().apply {
+    val file = rootProject.file("app-keys.properties")
+    if (file.exists()) {
+        file.inputStream().use(::load)
+    }
+}
 
 fun runtimeConfigValue(key: String, fallback: String = ""): String =
     runtimeLocalProperties.getProperty(key)?.trim()?.takeIf { it.isNotBlank() }
@@ -252,11 +272,16 @@ fun runtimeConfigBoolean(key: String, default: Boolean): Boolean =
 val generateRuntimeConfigs = tasks.register<GenerateRuntimeConfigsTask>("generateRuntimeConfigs") {
     outputDir.set(generatedRuntimeConfigDir)
     localPropertiesFile.set(rootProject.layout.projectDirectory.file("local.properties"))
+    appKeysFile.set(rootProject.layout.projectDirectory.file("app-keys.properties"))
     appVersionName.set(releaseAppVersionName)
     appVersionCode.set(releaseAppVersionCode)
     appBuildNumber.set(releaseAppBuildNumber)
-    releaseChannel.set(providers.environmentVariable("PROVENIO_CHANNEL").orElse("beta"))
-    tmdbApiKey.set(runtimeConfigValue("TMDB_API_KEY"))
+    releaseChannel.set(
+        providers.environmentVariable("PROVENIO_CHANNEL")
+            .orElse(providers.gradleProperty("provenio.channel"))
+            .orElse("beta"),
+    )
+    tmdbApiKey.set(runtimeConfigValue("TMDB_API_KEY", committedAppKeys.getProperty("TMDB_API_KEY", "").trim()))
 }
 
 val checkCoreBoundary = tasks.register<CheckCoreBoundaryTask>("checkCoreBoundary") {

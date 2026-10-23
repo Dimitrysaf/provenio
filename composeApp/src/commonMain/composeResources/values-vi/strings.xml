@@ -396,8 +396,6 @@
     <string name="settings_licenses_attributions_upstream_license">Cấp phép theo GNU General Public License v3.0</string>
     <string name="settings_licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="settings_licenses_attributions_tmdb_body">Provenio sử dụng API TMDB để lấy dữ liệu phim và TV, ảnh hiển thị, trailer, diễn viên, thông tin sản xuất, bộ sưu tập và đề xuất. Sản phẩm này sử dụng API TMDB nhưng không được TMDB xác thực hoặc chứng nhận.</string>
-    <string name="settings_licenses_attributions_imdb_title">Bộ dữ liệu IMDb phi thương mại</string>
-    <string name="settings_licenses_attributions_imdb_body">Provenio dùng IMDb Non-Commercial Datasets, gồm title.ratings.tsv.gz, để hiển thị điểm đánh giá IMDb và số lượt đánh giá. Dữ liệu do IMDb cung cấp (https://www.imdb.com) và được sử dụng theo điều khoản dành cho mục đích cá nhân, phi thương mại</string>
     <string name="settings_licenses_attributions_trakt_title">Trakt</string>
     <string name="settings_licenses_attributions_trakt_body">Provenio kết nối với Trakt để xác thực tài khoản, đồng bộ lịch sử đã xem, tiến độ xem, dữ liệu thư viện, xếp hạng, danh sách và bình luận. Provenio không có liên kết hoặc được Trakt chứng thực.</string>
     <string name="settings_licenses_attributions_simkl_title">Simkl</string>

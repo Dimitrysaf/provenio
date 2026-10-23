@@ -396,8 +396,6 @@
     <string name="settings_licenses_attributions_upstream_license">Лицензия GNU General Public License v3.0.</string>
     <string name="settings_licenses_attributions_tmdb_title">База данных фильмов (TMDB)</string>
     <string name="settings_licenses_attributions_tmdb_body">Provenio использует TMDB API для метаданных фильмов и телепередач, иллюстраций, трейлеров, актеров, подробностей производства, коллекций и рекомендаций. В этом продукте используется TMDB API, но он не одобрен и не сертифицирован TMDB.</string>
-    <string name="settings_licenses_attributions_imdb_title">IMDb Некоммерческие наборы данных</string>
-    <string name="settings_licenses_attributions_imdb_body">Provenio использует некоммерческие наборы данных IMDb, включая title.ratings.tsv.gz, для рейтингов IMDb и подсчета голосов. Информация предоставлена IMDb (https://www.imdb.com). Используется с разрешения. Данные IMDb предназначены для личного и некоммерческого использования в соответствии с условиями IMDb.</string>
     <string name="settings_licenses_attributions_trakt_title">Trakt</string>
     <string name="settings_licenses_attributions_trakt_body">Provenio подключается к Trakt для аутентификации учетной записи, истории просмотра, синхронизации прогресса, данных библиотеки, рейтингов, списков и комментариев. Provenio не связан с Trakt и не одобрен ею.</string>
     <string name="settings_licenses_attributions_simkl_title">Simkl</string>

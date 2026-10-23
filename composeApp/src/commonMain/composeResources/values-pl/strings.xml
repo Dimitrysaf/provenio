@@ -347,8 +347,6 @@
     <string name="settings_licenses_attributions_upstream_license">Licencjonowany na podstawie GNU General Public License v3.0.</string>
     <string name="settings_licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="settings_licenses_attributions_tmdb_body">Provenio korzysta z API TMDB do metadanych filmów i seriali, grafik, zwiastunów, obsady, szczegółów produkcji, kolekcji i rekomendacji. Ten produkt korzysta z API TMDB, ale nie jest wspierany ani certyfikowany przez TMDB.</string>
-    <string name="settings_licenses_attributions_imdb_title">Niekomercyjne zbiory danych IMDb</string>
-    <string name="settings_licenses_attributions_imdb_body">Provenio korzysta z niekomercyjnych zbiorów danych IMDb, w tym title.ratings.tsv.gz, do ocen i liczby głosów IMDb. Informacje dzięki uprzejmości IMDb (https://www.imdb.com). Wykorzystywane za zgodą. Dane IMDb służą do użytku osobistego i niekomercyjnego zgodnie z warunkami IMDb.</string>
     <string name="settings_licenses_attributions_trakt_title">Trakt</string>
     <string name="settings_licenses_attributions_trakt_body">Provenio łączy się z Trakt w celu uwierzytelniania konta, historii oglądania, synchronizacji postępu, danych biblioteki, ocen, list i komentarzy. Provenio nie jest powiązane z Trakt ani przez nie wspierane.</string>
     <string name="settings_licenses_attributions_premiumize_title">Premiumize</string>

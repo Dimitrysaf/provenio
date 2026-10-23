@@ -346,8 +346,6 @@
     <string name="settings_licenses_attributions_upstream_license">A GNU General Public License v3.0 feltételei szerint licencelve.</string>
     <string name="settings_licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="settings_licenses_attributions_tmdb_body">A Provenio a TMDB API-t használja a filmek és TV-műsorok metaadataihoz, borítóképeihez, előzeteseihez, stáblistáihoz, gyártási adataihoz, gyűjteményeihez és ajánlásaihoz. Ez a termék a TMDB API-t használja, de a TMDB nem támogatja és nem tanúsítja azt.</string>
-    <string name="settings_licenses_attributions_imdb_title">IMDb Nem Kereskedelmi Adatkészletek</string>
-    <string name="settings_licenses_attributions_imdb_body">A Provenio az IMDb nem kereskedelmi adatkészleteit használja – beleértve a title.ratings.tsv.gz fájlt – az IMDb értékelésekhez és szavazatszámokhoz. Az információk az IMDb (https://www.imdb.com) jóvoltából állnak rendelkezésre, engedéllyel felhasználva. Az IMDb adatai kizárólag személyes és nem kereskedelmi célra használhatók fel az IMDb feltételei szerint.</string>
     <string name="settings_licenses_attributions_trakt_title">Trakt</string>
     <string name="settings_licenses_attributions_trakt_body">A Provenio a Trakthoz kapcsolódik a fiókhitelesítés, a megtekintési előzmények, a folyamat-szinkronizálás, a könyvtáradatok, az értékelések, a listák és a hozzászólások kezeléséhez. A Provenio nem áll kapcsolatban a Trakttal, és a Trakt nem támogatja azt.</string>
     <string name="settings_licenses_attributions_mdblist_title">MDBList</string>

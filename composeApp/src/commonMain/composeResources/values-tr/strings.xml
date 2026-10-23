@@ -380,8 +380,6 @@
     <string name="settings_licenses_attributions_upstream_license">GNU Genel Kamu Lisansı v3.0 kapsamında lisanslanmıştır.</string>
     <string name="settings_licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="settings_licenses_attributions_tmdb_body">Provenio; film ve TV meta verileri, görseller, fragmanlar, ekip bilgileri, yapım detayları, koleksiyonlar ve öneriler için TMDB API'sini kullanır. Bu ürün TMDB API'sini kullanmaktadır ancak TMDB tarafından onaylanmamış veya sertifikalandırılmamıştır.</string>
-    <string name="settings_licenses_attributions_imdb_title">IMDb Ticari Olmayan Veri Setleri</string>
-    <string name="settings_licenses_attributions_imdb_body">Provenio; IMDb puanları ve oy sayıları için title.ratings.tsv.gz dahil olmak üzere IMDb Ticari Olmayan Veri Setlerini kullanır. Bilgiler IMDb (https://www.imdb.com) katkılarıyla sağlanmıştır. İzinle kullanılmıştır. IMDb verileri, IMDb koşulları uyarınca kişisel ve ticari olmayan kullanım içindir.</string>
     <string name="settings_licenses_attributions_trakt_title">Trakt</string>
     <string name="settings_licenses_attributions_trakt_body">Provenio; hesap doğrulama, izleme geçmişi, ilerleme eşitleme, kitaplık verileri, puanlar, listeler ve yorumlar için Trakt'a bağlanır. Provenio'nun Trakt ile hiçbir bağı yoktur ve Trakt tarafından onaylanmamıştır.</string>
     <string name="settings_licenses_attributions_simkl_title">Simkl</string>

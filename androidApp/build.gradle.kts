@@ -34,7 +34,11 @@ val appBaseVersion = readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION"
     ?.map { it.trim().toIntOrNull() ?: error("MARKETING_VERSION must be <major>.<minor>, like 0.40") }
     ?.takeIf { it.size == 2 }
     ?: error("MARKETING_VERSION must be <major>.<minor>, like 0.40, in ${appVersionConfigFile.path}")
-val releaseAppBuildNumber = (System.getenv("PROVENIO_BUILD_NUMBER") ?: System.getenv("GITHUB_RUN_NUMBER"))
+val releaseAppBuildNumber = (
+    System.getenv("PROVENIO_BUILD_NUMBER")
+        ?: System.getenv("GITHUB_RUN_NUMBER")
+        ?: providers.gradleProperty("provenio.buildNumber").orNull
+    )
     ?.trim()
     ?.toIntOrNull()
     ?.takeIf { it in 0..65535 }
