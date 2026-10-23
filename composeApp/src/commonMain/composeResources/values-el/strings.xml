@@ -2627,4 +2627,5 @@
     <string name="docs_offline">Είστε εκτός σύνδεσης. Εμφανίζονται οι αποθηκευμένες σελίδες.</string>
     <string name="docs_page_missing">Αυτή η σελίδα δεν υπάρχει ακόμη</string>
     <string name="docs_page_missing_message">Ίσως έχει μετακινηθεί ή δεν έχει γραφτεί ακόμη.</string>
+    <string name="docs_help">Βοήθεια</string>
 </resources>

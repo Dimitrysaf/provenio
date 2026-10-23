@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Description
@@ -53,17 +54,44 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
+/** The wiki pages the app links to from its own screens. */
+internal object DocsPages {
+    const val Torrents = "Torrents"
+}
+
 /** Which documentation page is open over the app, if any, as the "?" buttons open them. */
 internal object DocsViewer {
     private val _page = MutableStateFlow<String?>(null)
     val page: StateFlow<String?> = _page.asStateFlow()
+    private var onClose: (() -> Unit)? = null
 
-    fun open(name: String) {
+    /** Opens [name]; [onClose] runs once it is closed, for whatever stepped aside for it to come back. */
+    fun open(name: String, onClose: (() -> Unit)? = null) {
+        this.onClose = onClose
         _page.value = name
     }
 
     fun close() {
         _page.value = null
+        val closed = onClose
+        onClose = null
+        closed?.invoke()
+    }
+}
+
+/** A "?" that opens [page] of the documentation over the app, as an app bar or a sheet header shows it. */
+@Composable
+internal fun DocsHelpButton(page: String, beforeOpen: (() -> Unit)? = null, onClose: (() -> Unit)? = null) {
+    val label = stringResource(Res.string.docs_help)
+    WithTooltip(label) {
+        IconButton(
+            onClick = {
+                beforeOpen?.invoke()
+                DocsViewer.open(page, onClose)
+            },
+        ) {
+            Icon(Icons.AutoMirrored.Rounded.HelpOutline, contentDescription = label)
+        }
     }
 }
 

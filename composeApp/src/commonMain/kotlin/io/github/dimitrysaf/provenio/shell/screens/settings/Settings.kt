@@ -1021,7 +1021,11 @@ internal class SettingsPageLinks(
 /** Buttons a page adds to its app bar. */
 @Composable
 private fun SettingsPageActions(page: SettingsPage) {
-    if (page == SettingsPage.Documentation) DocumentationAppBarActions()
+    when (page) {
+        SettingsPage.Documentation -> DocumentationAppBarActions()
+        SettingsPage.P2pStreaming -> DocsHelpButton(DocsPages.Torrents)
+        else -> Unit
+    }
 }
 
 // The app bar's back first steps back inside a page that keeps its own trail, as Documentation does.

@@ -50,6 +50,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -96,6 +97,8 @@ import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
 import io.github.dimitrysaf.provenio.shell.components.ModalSheet
 import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
+import io.github.dimitrysaf.provenio.shell.screens.settings.DocsHelpButton
+import io.github.dimitrysaf.provenio.shell.screens.settings.DocsPages
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
 import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsListScope
@@ -140,6 +143,9 @@ fun TorrentDetailsSheet(
     val health = remember(shown) {
         shown?.let { healthMonitor.update(it, healthClock.elapsedNow().inWholeMilliseconds) }
     }
+    // The sheet steps aside while its help page is open over the app, and comes back when it closes.
+    var helpOpen by remember { mutableStateOf(false) }
+    if (helpOpen) return
 
     ModalSheet(
         onDismissRequest = { scope.launch { dismissBottomSheet(sheetState, onDismiss) } },
@@ -151,6 +157,13 @@ fun TorrentDetailsSheet(
                 ?: stringResource(Res.string.torrent_details_title),
             navigation = SheetNavigation.Close,
             onNavigate = { scope.launch { dismissBottomSheet(sheetState, onDismiss) } },
+            actions = {
+                DocsHelpButton(
+                    page = DocsPages.Torrents,
+                    beforeOpen = { helpOpen = true },
+                    onClose = { helpOpen = false },
+                )
+            },
         )
 
         if (shown == null) {

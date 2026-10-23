@@ -2659,4 +2659,5 @@
     <string name="docs_offline">You're offline. Showing saved pages.</string>
     <string name="docs_page_missing">This page doesn't exist yet</string>
     <string name="docs_page_missing_message">It may have been moved, or not written yet.</string>
+    <string name="docs_help">Help</string>
 </resources>
