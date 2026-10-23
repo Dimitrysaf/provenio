@@ -1,6 +1,5 @@
 package io.github.dimitrysaf.provenio.core.playback
 
-import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
 import io.github.dimitrysaf.provenio.core.playback.skip.NextEpisodeThresholdMode
 import io.github.dimitrysaf.provenio.core.streams.StreamAutoPlayMode
 import io.github.dimitrysaf.provenio.core.streams.StreamAutoPlaySource
@@ -38,7 +37,6 @@ data class PlayerSettingsUiState(
     val streamAutoPlayMode: StreamAutoPlayMode = StreamAutoPlayMode.MANUAL,
     val streamAutoPlaySource: StreamAutoPlaySource = StreamAutoPlaySource.ALL_SOURCES,
     val streamAutoPlaySelectedAddons: Set<String> = emptySet(),
-    val streamAutoPlaySelectedPlugins: Set<String> = emptySet(),
     val streamAutoPlayRegex: String = "",
     val streamAutoPlayTimeoutSeconds: Int = 3,
     val skipIntroEnabled: Boolean = true,
@@ -108,7 +106,6 @@ object PlayerSettingsRepository {
     private var streamAutoPlayMode = StreamAutoPlayMode.MANUAL
     private var streamAutoPlaySource = StreamAutoPlaySource.ALL_SOURCES
     private var streamAutoPlaySelectedAddons: Set<String> = emptySet()
-    private var streamAutoPlaySelectedPlugins: Set<String> = emptySet()
     private var streamAutoPlayRegex = ""
     private var streamAutoPlayTimeoutSeconds = 3
     private var skipIntroEnabled = true
@@ -183,7 +180,6 @@ object PlayerSettingsRepository {
         streamAutoPlayMode = StreamAutoPlayMode.MANUAL
         streamAutoPlaySource = StreamAutoPlaySource.ALL_SOURCES
         streamAutoPlaySelectedAddons = emptySet()
-        streamAutoPlaySelectedPlugins = emptySet()
         streamAutoPlayRegex = ""
         streamAutoPlayTimeoutSeconds = 3
         skipIntroEnabled = true
@@ -305,18 +301,6 @@ object PlayerSettingsRepository {
             ?.let { runCatching { StreamAutoPlaySource.valueOf(it) }.getOrNull() }
             ?: StreamAutoPlaySource.ALL_SOURCES
         streamAutoPlaySelectedAddons = PlayerSettingsStorage.loadStreamAutoPlaySelectedAddons() ?: emptySet()
-        streamAutoPlaySelectedPlugins = PlayerSettingsStorage.loadStreamAutoPlaySelectedPlugins() ?: emptySet()
-        if (!AppFeaturePolicy.pluginsEnabled) {
-            val normalizedSource = normalizeStreamAutoPlaySource(streamAutoPlaySource)
-            if (normalizedSource != streamAutoPlaySource) {
-                streamAutoPlaySource = normalizedSource
-                PlayerSettingsStorage.saveStreamAutoPlaySource(normalizedSource.name)
-            }
-            if (streamAutoPlaySelectedPlugins.isNotEmpty()) {
-                streamAutoPlaySelectedPlugins = emptySet()
-                PlayerSettingsStorage.saveStreamAutoPlaySelectedPlugins(emptySet())
-            }
-        }
         streamAutoPlayRegex = PlayerSettingsStorage.loadStreamAutoPlayRegex() ?: ""
         streamAutoPlayTimeoutSeconds = PlayerSettingsStorage.loadStreamAutoPlayTimeoutSeconds() ?: 3
         // Legacy migration: 11 was the old sentinel for "unlimited"
@@ -632,11 +616,10 @@ object PlayerSettingsRepository {
 
     fun setStreamAutoPlaySource(source: StreamAutoPlaySource) {
         ensureLoaded()
-        val normalizedSource = normalizeStreamAutoPlaySource(source)
-        if (streamAutoPlaySource == normalizedSource) return
-        streamAutoPlaySource = normalizedSource
+        if (streamAutoPlaySource == source) return
+        streamAutoPlaySource = source
         publish()
-        PlayerSettingsStorage.saveStreamAutoPlaySource(normalizedSource.name)
+        PlayerSettingsStorage.saveStreamAutoPlaySource(source.name)
     }
 
     fun setStreamAutoPlaySelectedAddons(addons: Set<String>) {
@@ -645,15 +628,6 @@ object PlayerSettingsRepository {
         streamAutoPlaySelectedAddons = addons
         publish()
         PlayerSettingsStorage.saveStreamAutoPlaySelectedAddons(addons)
-    }
-
-    fun setStreamAutoPlaySelectedPlugins(plugins: Set<String>) {
-        ensureLoaded()
-        val normalizedPlugins = if (AppFeaturePolicy.pluginsEnabled) plugins else emptySet()
-        if (streamAutoPlaySelectedPlugins == normalizedPlugins) return
-        streamAutoPlaySelectedPlugins = normalizedPlugins
-        publish()
-        PlayerSettingsStorage.saveStreamAutoPlaySelectedPlugins(normalizedPlugins)
     }
 
     fun setStreamAutoPlayRegex(regex: String) {
@@ -996,7 +970,6 @@ object PlayerSettingsRepository {
             streamAutoPlayMode = streamAutoPlayMode,
             streamAutoPlaySource = streamAutoPlaySource,
             streamAutoPlaySelectedAddons = streamAutoPlaySelectedAddons,
-            streamAutoPlaySelectedPlugins = streamAutoPlaySelectedPlugins,
             streamAutoPlayRegex = streamAutoPlayRegex,
             streamAutoPlayTimeoutSeconds = streamAutoPlayTimeoutSeconds,
             skipIntroEnabled = skipIntroEnabled,
@@ -1031,14 +1004,6 @@ object PlayerSettingsRepository {
             volumeStabilizerEnabled = volumeStabilizerEnabled,
             subtitleAutoSyncEnabled = subtitleAutoSyncEnabled,
         )
-    }
-
-    private fun normalizeStreamAutoPlaySource(source: StreamAutoPlaySource): StreamAutoPlaySource {
-        return if (!AppFeaturePolicy.pluginsEnabled && source == StreamAutoPlaySource.ENABLED_PLUGINS_ONLY) {
-            StreamAutoPlaySource.ALL_SOURCES
-        } else {
-            source
-        }
     }
 }
 

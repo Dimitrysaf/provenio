@@ -1,6 +1,5 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
-import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,8 +47,6 @@ import io.github.dimitrysaf.provenio.shell.screens.player.formatPlaybackSpeedLab
 import io.github.dimitrysaf.provenio.shell.screens.player.languageLabelForCode
 import io.github.dimitrysaf.provenio.shell.screens.player.isTransparentArgb
 import io.github.dimitrysaf.provenio.core.playback.toStorageHexString
-import io.github.dimitrysaf.provenio.core.plugins.PluginsUiState
-import io.github.dimitrysaf.provenio.core.plugins.PluginRepository
 import io.github.dimitrysaf.provenio.core.streams.StreamAutoPlayMode
 import io.github.dimitrysaf.provenio.core.streams.StreamAutoPlaySource
 import io.github.dimitrysaf.provenio.core.build.isIos
@@ -467,16 +464,8 @@ private fun AutoPlayGroup(
     var showAutoPlayModeDialog by remember { mutableStateOf(false) }
     var showAutoPlaySourceDialog by remember { mutableStateOf(false) }
     var showAutoPlayAddonSelectionDialog by remember { mutableStateOf(false) }
-    var showAutoPlayPluginSelectionDialog by remember { mutableStateOf(false) }
     var showAutoPlayRegexDialog by remember { mutableStateOf(false) }
-    val pluginsEnabled = AppFeaturePolicy.pluginsEnabled
     val addonUiState by AddonRepository.uiState.collectAsStateWithLifecycle()
-    val pluginUiState = if (pluginsEnabled) {
-        val state by PluginRepository.uiState.collectAsStateWithLifecycle()
-        state
-    } else {
-        PluginsUiState(pluginsEnabled = false)
-    }
     SettingsSection(
         title = stringResource(Res.string.settings_playback_section_stream_auto_play),
         isTablet = isTablet,
@@ -517,39 +506,22 @@ private fun AutoPlayGroup(
             )
             navigationRow(
                 title = stringResource(Res.string.settings_playback_source_scope),
-                description = stringResource(settings.streamAutoPlaySource.labelRes(pluginsEnabled)),
+                description = stringResource(settings.streamAutoPlaySource.labelRes),
                 onClick = { showAutoPlaySourceDialog = true },
             )
-            if (settings.streamAutoPlaySource != StreamAutoPlaySource.ENABLED_PLUGINS_ONLY) {
-                val addonSubtitle = if (settings.streamAutoPlaySelectedAddons.isEmpty()) {
-                    stringResource(Res.string.settings_playback_all_addons)
-                } else {
-                    stringResource(
-                        Res.string.settings_playback_selected_count,
-                        settings.streamAutoPlaySelectedAddons.size,
-                    )
-                }
-                navigationRow(
-                    title = stringResource(Res.string.settings_playback_allowed_addons),
-                    description = addonSubtitle,
-                    onClick = { showAutoPlayAddonSelectionDialog = true },
+            val addonSubtitle = if (settings.streamAutoPlaySelectedAddons.isEmpty()) {
+                stringResource(Res.string.settings_playback_all_addons)
+            } else {
+                stringResource(
+                    Res.string.settings_playback_selected_count,
+                    settings.streamAutoPlaySelectedAddons.size,
                 )
             }
-            if (pluginsEnabled && settings.streamAutoPlaySource != StreamAutoPlaySource.INSTALLED_ADDONS_ONLY) {
-                val pluginSubtitle = if (settings.streamAutoPlaySelectedPlugins.isEmpty()) {
-                    stringResource(Res.string.settings_playback_all_plugins)
-                } else {
-                    stringResource(
-                        Res.string.settings_playback_selected_count,
-                        settings.streamAutoPlaySelectedPlugins.size,
-                    )
-                }
-                navigationRow(
-                    title = stringResource(Res.string.settings_playback_allowed_plugins),
-                    description = pluginSubtitle,
-                    onClick = { showAutoPlayPluginSelectionDialog = true },
-                )
-            }
+            navigationRow(
+                title = stringResource(Res.string.settings_playback_allowed_addons),
+                description = addonSubtitle,
+                onClick = { showAutoPlayAddonSelectionDialog = true },
+            )
         }
     }
 
@@ -565,7 +537,6 @@ private fun AutoPlayGroup(
 
     if (showAutoPlaySourceDialog) {
         StreamAutoPlaySourceDialog(
-            pluginsEnabled = pluginsEnabled,
             selectedSource = settings.streamAutoPlaySource,
             onSourceSelected = {
                 PlayerSettingsRepository.setStreamAutoPlaySource(it)
@@ -589,22 +560,6 @@ private fun AutoPlayGroup(
             selected = settings.streamAutoPlaySelectedAddons,
             onSelectionChanged = PlayerSettingsRepository::setStreamAutoPlaySelectedAddons,
             onDismiss = { showAutoPlayAddonSelectionDialog = false },
-        )
-    }
-
-    if (pluginsEnabled && showAutoPlayPluginSelectionDialog) {
-        val pluginNames = pluginUiState.scrapers
-            .filter { it.enabled }
-            .map { it.name }
-            .distinct()
-            .sorted()
-        MultiChoiceBottomSheet(
-            title = stringResource(Res.string.settings_playback_allowed_plugins),
-            allLabel = stringResource(Res.string.settings_playback_all_plugins),
-            options = pluginNames.map { name -> SingleChoiceOption(value = name, label = name) },
-            selected = settings.streamAutoPlaySelectedPlugins,
-            onSelectionChanged = PlayerSettingsRepository::setStreamAutoPlaySelectedPlugins,
-            onDismiss = { showAutoPlayPluginSelectionDialog = false },
         )
     }
 
@@ -1079,13 +1034,11 @@ private fun decoderPriorityRes(priority: Int): StringResource = when (priority) 
 @Composable
 private fun decoderPriorityLabel(priority: Int): String = stringResource(decoderPriorityRes(priority))
 
-internal fun StreamAutoPlaySource.labelRes(pluginsEnabled: Boolean): StringResource = when (this) {
-    StreamAutoPlaySource.ALL_SOURCES ->
-        if (pluginsEnabled) Res.string.settings_playback_source_scope_all_sources
-        else Res.string.settings_playback_source_scope_all_addons
-    StreamAutoPlaySource.INSTALLED_ADDONS_ONLY -> Res.string.settings_playback_source_scope_installed_addons_only
-    StreamAutoPlaySource.ENABLED_PLUGINS_ONLY -> Res.string.settings_playback_source_scope_enabled_plugins_only
-}
+internal val StreamAutoPlaySource.labelRes: StringResource
+    get() = when (this) {
+        StreamAutoPlaySource.ALL_SOURCES -> Res.string.settings_playback_source_scope_all_addons
+        StreamAutoPlaySource.INSTALLED_ADDONS_ONLY -> Res.string.settings_playback_source_scope_installed_addons_only
+    }
 
 internal val StreamAutoPlayMode.labelRes: StringResource
     get() = when (this) {

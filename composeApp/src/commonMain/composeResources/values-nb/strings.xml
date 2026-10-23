@@ -318,7 +318,6 @@
     <string name="compose_settings_page_meta_screen">Detaljside</string>
     <string name="compose_settings_page_notifications">Varsler</string>
     <string name="compose_settings_page_playback">Avspilling</string>
-    <string name="compose_settings_page_plugins">Plugins</string>
     <string name="compose_settings_page_poster_customization">Kortstiler</string>
     <string name="compose_settings_page_root">Innstillinger</string>
     <string name="compose_settings_page_tmdb_enrichment">TMDB-berikelse</string>
@@ -466,7 +465,6 @@
     <string name="settings_content_discovery_section_sources">KILDER</string>
     <string name="settings_content_discovery_addons_description">Installer, fjern, oppdater og sorter innholdskilder.</string>
     <string name="settings_content_discovery_addons_description_appstore">Legg til og administrer tilleggene du bruker med Provenio.</string>
-    <string name="settings_content_discovery_plugins_description">Installer JavaScript-scraper-repositories og test providere internt.</string>
     <string name="settings_content_discovery_homescreen_description">Juster hjemmeoppsett, synlighet og plakat-oppførsel.</string>
     <string name="settings_content_discovery_meta_screen_description">Innstillinger for detalj- og episodeskjermer.</string>
     <string name="settings_content_discovery_collections_description">Opprett egne kataloggrupperinger med mapper vist på hjem.</string>
@@ -558,9 +556,7 @@
     <string name="settings_notifications_test_requires_saved_show">Lagre en serie i biblioteket ditt først for å teste varsler.</string>
     <string name="settings_notifications_test_title">Testvarsel</string>
     <string name="settings_playback_all_addons">Alle installerte tillegg</string>
-    <string name="settings_playback_all_plugins">Alle aktiverte plugins</string>
     <string name="settings_playback_allowed_addons">Tillatte tillegg</string>
-    <string name="settings_playback_allowed_plugins">Tillatte plugins</string>
     <string name="settings_playback_anime_skip">Anime Skip</string>
     <string name="settings_playback_anime_skip_client_id">AnimeSkip Client ID</string>
     <string name="settings_playback_anime_skip_client_id_description">Skriv inn din AnimeSkip API client ID. Hent en på anime-skip.com.</string>
@@ -644,10 +640,6 @@
     <string name="settings_playback_source_scope">Auto-play kildeomfang</string>
     <string name="settings_playback_source_scope_all_addons">Alle installerte tillegg</string>
     <string name="settings_playback_source_scope_all_addons_description">Auto-play vurderer kun strømmer fra installerte tillegg.</string>
-    <string name="settings_playback_source_scope_all_sources">Alle kilder</string>
-    <string name="settings_playback_source_scope_all_sources_description">Auto-play kan bruke både installerte tillegg og aktiverte plugins.</string>
-    <string name="settings_playback_source_scope_enabled_plugins_only">Kun aktiverte plugins</string>
-    <string name="settings_playback_source_scope_enabled_plugins_only_description">Auto-play vurderer kun strømmer fra aktiverte plugins.</string>
     <string name="settings_playback_source_scope_installed_addons_only">Kun installerte tillegg</string>
     <string name="settings_playback_source_scope_installed_addons_only_description">Auto-play vurderer kun strømmer fra installerte tillegg.</string>
     <string name="settings_playback_stream_selection_mode">Auto-strømvalg</string>
@@ -976,7 +968,6 @@
     <string name="profile_pin_offline_verification_requires_online">Denne PIN-en kan ikke verifiseres offline på denne enheten ennå. Koble til og lås opp online først.</string>
     <string name="profile_pin_set_failed">Kunne ikke sette PIN. Prøv igjen.</string>
     <string name="profile_primary_addons_required">Denne profilen bruker primære tillegg.</string>
-    <string name="streams_failed_to_load_scraper">Kunne ikke laste %1$s</string>
     <string name="source_embedded">Innebygd</string>
     <string name="trakt_authorization_denied">Autorisasjon nektet</string>
     <string name="trakt_complete_sign_in_browser">Fullfør Trakt-innlogging i nettleseren din</string>

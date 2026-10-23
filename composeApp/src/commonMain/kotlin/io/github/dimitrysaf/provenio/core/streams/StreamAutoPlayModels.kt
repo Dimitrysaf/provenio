@@ -9,5 +9,4 @@ enum class StreamAutoPlayMode {
 enum class StreamAutoPlaySource {
     ALL_SOURCES,
     INSTALLED_ADDONS_ONLY,
-    ENABLED_PLUGINS_ONLY,
 }

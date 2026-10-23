@@ -18,7 +18,6 @@ import io.github.dimitrysaf.provenio.core.streams.availability.StreamingAvailabi
 import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificationsRepository
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
-import io.github.dimitrysaf.provenio.core.plugins.PluginRepository
 import io.github.dimitrysaf.provenio.core.search.SearchHistoryRepository
 import io.github.dimitrysaf.provenio.core.search.SearchRepository
 import io.github.dimitrysaf.provenio.core.settings.ThemeSettingsRepository
@@ -114,9 +113,6 @@ object ProfileRepository {
         LibraryDisplaySettingsRepository.onProfileChanged()
         WatchProgressRepository.onProfileChanged(profileIndex)
         AddonRepository.onProfileChanged(profileIndex)
-        if (io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy.pluginsEnabled) {
-            PluginRepository.onProfileChanged(profileIndex)
-        }
         ThemeSettingsRepository.onProfileChanged()
         PosterCardStyleRepository.onProfileChanged()
         PlayerSettingsRepository.onProfileChanged()
@@ -159,7 +155,6 @@ object ProfileRepository {
                 name = profile.name,
                 avatarColorHex = profile.avatarColorHex,
                 usesPrimaryAddons = profile.usesPrimaryAddons,
-                usesPrimaryPlugins = profile.usesPrimaryPlugins,
                 avatarId = profile.avatarId,
                 avatarUrl = profile.avatarUrl,
                 profileBackgroundId = profile.profileBackgroundId,
@@ -209,7 +204,6 @@ object ProfileRepository {
                     name = profile.name,
                     avatarColorHex = profile.avatarColorHex,
                     usesPrimaryAddons = profile.usesPrimaryAddons,
-                    usesPrimaryPlugins = profile.usesPrimaryPlugins,
                     avatarId = profile.avatarId,
                     avatarUrl = profile.avatarUrl,
                     profileBackgroundId = profile.profileBackgroundId,
@@ -285,7 +279,6 @@ object ProfileRepository {
         name = name,
         avatarColorHex = avatarColorHex,
         usesPrimaryAddons = usesPrimaryAddons,
-        usesPrimaryPlugins = usesPrimaryPlugins,
         avatarId = avatarId,
         avatarUrl = avatarUrl,
         profileBackgroundId = profileBackgroundId,
@@ -308,7 +301,6 @@ object ProfileRepository {
                 profileBackgroundId = p.profileBackgroundId,
                 profileBackgroundUrl = p.profileBackgroundUrl,
                 usesPrimaryAddons = p.usesPrimaryAddons,
-                usesPrimaryPlugins = p.usesPrimaryPlugins,
                 pinEnabled = existing[p.profileIndex]?.pinEnabled == true,
                 ageLimit = p.ageLimit,
             )

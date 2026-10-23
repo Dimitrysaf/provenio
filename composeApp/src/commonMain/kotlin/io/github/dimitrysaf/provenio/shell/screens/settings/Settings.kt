@@ -164,7 +164,6 @@ fun SettingsScreen(
     onMetaScreenClick: () -> Unit = {},
     onContinueWatchingClick: () -> Unit = {},
     onAddonsClick: () -> Unit = {},
-    onPluginsClick: () -> Unit = {},
     onDownloadsClick: () -> Unit = {},
     onOpenDownload: (DownloadItem) -> Unit = {},
     onLicensesAttributionsClick: () -> Unit = {},
@@ -247,11 +246,6 @@ fun SettingsScreen(
         } else {
             onAddonsClick
         }
-        val openPlugins = if (onNavigatePage != null) {
-            { openPage(SettingsPage.Plugins) }
-        } else {
-            onPluginsClick
-        }
         val openLicensesAttributions = if (onNavigatePage != null) {
             { openPage(SettingsPage.LicensesAttributions) }
         } else {
@@ -329,7 +323,6 @@ fun SettingsScreen(
                         onMetaScreenClick = openMetaScreen,
                         onContinueWatchingClick = openContinueWatching,
                         onAddonsClick = openAddons,
-                        onPluginsClick = openPlugins,
                         onDownloadsClick = onDownloadsClick,
                         onLicensesAttributionsClick = openLicensesAttributions,
                         onCheckForUpdatesClick = onCheckForUpdatesClick,
@@ -363,7 +356,6 @@ private fun MobileSettingsScreen(
     onMetaScreenClick: () -> Unit = {},
     onContinueWatchingClick: () -> Unit = {},
     onAddonsClick: () -> Unit = {},
-    onPluginsClick: () -> Unit = {},
     onDownloadsClick: () -> Unit = {},
     onLicensesAttributionsClick: () -> Unit = {},
     onCheckForUpdatesClick: (() -> Unit)? = null,
@@ -401,11 +393,6 @@ private fun MobileSettingsScreen(
                     SettingsPage.LicensesAttributions -> onLicensesAttributionsClick()
                     SettingsPage.ContinueWatching -> onContinueWatchingClick()
                     SettingsPage.Addons -> onAddonsClick()
-                    SettingsPage.Plugins -> {
-                        if (AppFeaturePolicy.pluginsEnabled) {
-                            onPluginsClick()
-                        }
-                    }
                     SettingsPage.Homescreen -> onHomescreenClick()
                     SettingsPage.MetaScreen -> onMetaScreenClick()
                     else -> onPageChange(target.page)
@@ -438,7 +425,6 @@ private fun MobileSettingsScreen(
             onMetaScreenClick = onMetaScreenClick,
             onContinueWatchingClick = onContinueWatchingClick,
             onAddonsClick = onAddonsClick,
-            onPluginsClick = onPluginsClick,
             onTestUpdateBannerClick = onTestUpdateBannerClick,
             onLicensesAttributionsClick = onLicensesAttributionsClick,
             onSwitchProfile = onSwitchProfile,
@@ -478,7 +464,6 @@ private fun MobileSettingsScreen(
                         entries = {
                             settingsSearchEntries(
                                 isTablet = false,
-                                pluginsEnabled = AppFeaturePolicy.pluginsEnabled,
                                 personalMediaAddonCopyEnabled = AppFeaturePolicy.personalMediaAddonCopyEnabled,
                                 switchProfileAvailable = onSwitchProfile != null,
                                 checkForUpdatesAvailable = onCheckForUpdatesClick != null,
@@ -492,14 +477,13 @@ private fun MobileSettingsScreen(
                     )
                     if (settingsSearchQuery.isBlank()) {
                         settingsCategoryListContent(
-                            categories = visibleSettingsCategories(AppFeaturePolicy.pluginsEnabled),
+                            categories = visibleSettingsCategories(),
                             onSwitchProfile = onSwitchProfile,
                             onCategoryClick = { category ->
                                 when (category) {
                                     SettingsCategory.Downloads -> onDownloadsClick()
                                     SettingsCategory.Collections -> onCollectionsClick()
                                     SettingsCategory.Addons -> onAddonsClick()
-                                    SettingsCategory.Plugins -> onPluginsClick()
                                     else -> category.page?.let(onPageChange)
                                 }
                             },
@@ -575,7 +559,7 @@ private fun TabletSettingsScreen(
     onCheckForUpdatesClick: (() -> Unit)? = null,
     onTestUpdateBannerClick: (() -> Unit)? = null,
 ) {
-    val categories = visibleSettingsCategories(AppFeaturePolicy.pluginsEnabled)
+    val categories = visibleSettingsCategories()
     var selectedCategory by rememberSaveable { mutableStateOf(categories.first().name) }
     val activeCategory = categories.firstOrNull { it.name == selectedCategory } ?: categories.first()
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -754,7 +738,6 @@ private fun TabletSettingsScreen(
                 onMetaScreenClick = { openInlinePage(SettingsPage.MetaScreen) },
                 onContinueWatchingClick = { openInlinePage(SettingsPage.ContinueWatching) },
                 onAddonsClick = { openInlinePage(SettingsPage.Addons) },
-                onPluginsClick = { openInlinePage(SettingsPage.Plugins) },
                 onTestUpdateBannerClick = onTestUpdateBannerClick,
                 onLicensesAttributionsClick = { openInlinePage(SettingsPage.LicensesAttributions) },
                 onSwitchProfile = onSwitchProfile,
@@ -835,7 +818,6 @@ private fun TabletSettingsScreen(
                                     entries = {
                                         settingsSearchEntries(
                                             isTablet = true,
-                                            pluginsEnabled = AppFeaturePolicy.pluginsEnabled,
                                             personalMediaAddonCopyEnabled = AppFeaturePolicy.personalMediaAddonCopyEnabled,
                                             switchProfileAvailable = onSwitchProfile != null,
                                             checkForUpdatesAvailable = onCheckForUpdatesClick != null,
@@ -1033,7 +1015,6 @@ internal class SettingsPageLinks(
     val onMetaScreenClick: () -> Unit,
     val onContinueWatchingClick: () -> Unit,
     val onAddonsClick: () -> Unit,
-    val onPluginsClick: () -> Unit,
     val onTestUpdateBannerClick: (() -> Unit)?,
     val onLicensesAttributionsClick: () -> Unit,
     val onSwitchProfile: (() -> Unit)?,
@@ -1160,11 +1141,6 @@ internal fun LazyListScope.settingsPageContent(
             shelvesExpandedByDefault = data.homescreen.shelvesExpandedByDefault,
         )
         SettingsPage.Addons -> addonsSettingsContent()
-        SettingsPage.Plugins -> if (AppFeaturePolicy.pluginsEnabled) {
-            pluginsSettingsContent()
-        } else {
-            addonsSettingsContent()
-        }
         SettingsPage.Homescreen -> homescreenSettingsContent(
             isTablet = isTablet,
             heroEnabled = data.homescreen.heroEnabled,

@@ -134,21 +134,6 @@ class StreamAutoPlayLoadingPolicyTest {
     }
 
     @Test
-    fun `enabled plugins are loaded while addons are still loading`() {
-        val groups = listOf(
-            group(addonId = "addon:torrentio", isLoading = true),
-            group(addonId = "plugin:comet", isLoading = false),
-        )
-
-        assertTrue(
-            groups.areAutoPlaySourcesLoaded(
-                source = StreamAutoPlaySource.ENABLED_PLUGINS_ONLY,
-                installedAddonIds = setOf("addon:torrentio"),
-            ),
-        )
-    }
-
-    @Test
     fun `all sources wait for addons and plugins`() {
         val groups = listOf(
             group(addonId = "addon:torrentio", isLoading = false),

@@ -80,11 +80,10 @@ private const val NEW_ISSUE_URL = "$REPOSITORY_URL/issues/new"
 // The plus is escaped so every mail app reads it as part of the address.
 private const val CONTACT_MAIL_URI = "mailto:demetresmeliates%2Bcontact@gmail.com"
 
-/** The categories this build shows: Plugins only where plugins are on, Server only where P2P streaming exists. */
-internal fun visibleSettingsCategories(pluginsEnabled: Boolean): List<SettingsCategory> =
+/** The categories this build shows: Server only where P2P streaming exists. */
+internal fun visibleSettingsCategories(): List<SettingsCategory> =
     SettingsCategory.entries.filter { category ->
         when (category) {
-            SettingsCategory.Plugins -> pluginsEnabled
             SettingsCategory.Server -> P2pSettingsRepository.isVisible
             else -> true
         }

@@ -3,8 +3,6 @@ package io.github.dimitrysaf.provenio.core.streams
 import io.github.dimitrysaf.provenio.core.addons.AddonManifest
 import io.github.dimitrysaf.provenio.core.addons.AddonResource
 import io.github.dimitrysaf.provenio.core.addons.ManagedAddon
-import io.github.dimitrysaf.provenio.core.plugins.PluginScraper
-import io.github.dimitrysaf.provenio.core.plugins.PluginsUiState
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -18,7 +16,7 @@ class PlaybackAvailabilityTest {
     }
 
     @Test
-    fun `a compatible stream addon enables playback without plugins`() {
+    fun `a compatible stream addon enables playback`() {
         assertTrue(available(addons = listOf(addon())))
         assertFalse(available(addons = listOf(addon().copy(enabled = false))))
         assertFalse(available(addons = listOf(addon().copy(manifest = null))))
@@ -32,34 +30,11 @@ class PlaybackAvailabilityTest {
         assertTrue(available(addons = listOf(addon(prefixes = emptyList())), videoId = "kitsu:123"))
     }
 
-    @Test
-    fun `an enabled compatible plugin enables playback without addons`() {
-        val plugins = PluginsUiState(scrapers = listOf(scraper()))
-        assertTrue(available(plugins = plugins))
-        assertTrue(available(plugins = plugins, type = "series"))
-        assertFalse(available(plugins = plugins, type = "channel"))
-        assertFalse(available(plugins = plugins.copy(pluginsEnabled = false)))
-        assertFalse(available(plugins = plugins.copy(scrapers = listOf(scraper().copy(enabled = false)))))
-    }
-
-    @Test
-    fun `either source can enable playback independently`() {
-        assertTrue(available(
-            addons = listOf(addon(resource = "catalog")),
-            plugins = PluginsUiState(scrapers = listOf(scraper())),
-        ))
-        assertTrue(available(
-            addons = listOf(addon()),
-            plugins = PluginsUiState(pluginsEnabled = false, scrapers = listOf(scraper())),
-        ))
-    }
-
     private fun available(
         addons: List<ManagedAddon> = emptyList(),
-        plugins: PluginsUiState = PluginsUiState(),
         type: String = "movie",
         videoId: String = "tt123",
-    ): Boolean = hasCompatiblePlaybackSource(addons, plugins, type, videoId)
+    ): Boolean = hasCompatiblePlaybackSource(addons, type, videoId)
 
     private fun addon(
         resource: String = "stream",
@@ -75,18 +50,5 @@ class PlaybackAvailabilityTest {
             types = listOf("movie"),
             transportUrl = "https://example.com",
         ),
-    )
-
-    private fun scraper(): PluginScraper = PluginScraper(
-        id = "test",
-        repositoryUrl = "https://example.com/plugins.json",
-        name = "Test",
-        description = "",
-        version = "1.0.0",
-        filename = "test.js",
-        supportedTypes = listOf("movie", "tv"),
-        enabled = true,
-        manifestEnabled = true,
-        code = "",
     )
 }

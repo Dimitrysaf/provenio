@@ -319,7 +319,6 @@
     <string name="compose_settings_page_meta_screen">Página de Detalhes</string>
     <string name="compose_settings_page_notifications">Notificações</string>
     <string name="compose_settings_page_playback">Reprodução</string>
-    <string name="compose_settings_page_plugins">Plugins</string>
     <string name="compose_settings_page_poster_customization">Estilos de cartão</string>
     <string name="compose_settings_page_root">Configurações</string>
     <string name="compose_settings_page_tmdb_enrichment">Enriquecimento do TMDB</string>
@@ -467,7 +466,6 @@
     <string name="settings_content_discovery_section_sources">FONTES</string>
     <string name="settings_content_discovery_addons_description">Instale, remova, atualize e ordene suas fontes de conteúdo.</string>
     <string name="settings_content_discovery_addons_description_appstore">Adicione e gerencie os addons que você usa com o Provenio.</string>
-    <string name="settings_content_discovery_plugins_description">Instale repositórios de scraper JavaScript e teste provedores internamente.</string>
     <string name="settings_content_discovery_homescreen_description">Ajuste layout da página inicial, visibilidade de conteúdo e comportamento de pôsteres</string>
     <string name="settings_content_discovery_meta_screen_description">Configurações para as telas de detalhes e episódios.</string>
     <string name="settings_content_discovery_collections_description">Crie agrupamentos personalizados de catálogos com pastas exibidas na Página Inicial.</string>
@@ -545,9 +543,7 @@
     <string name="settings_notifications_test_requires_saved_show">Salve uma série na sua biblioteca primeiro para testar notificações.</string>
     <string name="settings_notifications_test_title">Notificação de teste</string>
     <string name="settings_playback_all_addons">Todos os addons instalados</string>
-    <string name="settings_playback_all_plugins">Todos os plugins ativados</string>
     <string name="settings_playback_allowed_addons">Addons Permitidos</string>
-    <string name="settings_playback_allowed_plugins">Plugins Permitidos</string>
     <string name="settings_playback_anime_skip">Anime Skip</string>
     <string name="settings_playback_anime_skip_client_id">Client ID do AnimeSkip</string>
     <string name="settings_playback_anime_skip_client_id_description">Insira seu client ID da API do AnimeSkip. Obtenha um em anime-skip.com.</string>
@@ -633,10 +629,6 @@
     <string name="settings_playback_source_scope">Escopo de Fonte para Reprodução Automática</string>
     <string name="settings_playback_source_scope_all_addons">Todos os addons instalados</string>
     <string name="settings_playback_source_scope_all_addons_description">Reprodução automática considera apenas streams vindas de seus addons instalados.</string>
-    <string name="settings_playback_source_scope_all_sources">Todas as fontes</string>
-    <string name="settings_playback_source_scope_all_sources_description">Reprodução automática pode usar tanto addons instalados quanto plugins ativados.</string>
-    <string name="settings_playback_source_scope_enabled_plugins_only">Apenas plugins ativados</string>
-    <string name="settings_playback_source_scope_enabled_plugins_only_description">Reprodução automática considera apenas streams vindas de plugins ativados.</string>
     <string name="settings_playback_source_scope_installed_addons_only">Apenas addons instalados</string>
     <string name="settings_playback_source_scope_installed_addons_only_description">Reprodução automática considera apenas streams vindas de seus addons instalados.</string>
     <string name="settings_playback_stream_selection_mode">Seleção Automática de Stream</string>
@@ -965,7 +957,6 @@
     <string name="profile_pin_offline_verification_requires_online">Este PIN ainda não pode ser verificado offline neste dispositivo. Conecte-se uma vez e desbloqueie online primeiro.</string>
     <string name="profile_pin_set_failed">Não foi possível definir o PIN. Tente novamente.</string>
     <string name="profile_primary_addons_required">Este perfil usa addons primários.</string>
-    <string name="streams_failed_to_load_scraper">Falha ao carregar %1$s</string>
     <string name="source_embedded">Incorporada</string>
     <string name="trakt_authorization_denied">Autorização negada</string>
     <string name="trakt_complete_sign_in_browser">Conclua o login do Trakt no seu navegador</string>

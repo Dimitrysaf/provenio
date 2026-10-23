@@ -322,44 +322,22 @@ internal fun StreamAutoPlayModeDialog(
 
 @Composable
 internal fun StreamAutoPlaySourceDialog(
-    pluginsEnabled: Boolean,
     selectedSource: StreamAutoPlaySource,
     onSourceSelected: (StreamAutoPlaySource) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val options = buildList {
-        add(
-            Triple(
-                StreamAutoPlaySource.ALL_SOURCES,
-                if (pluginsEnabled) {
-                    Res.string.settings_playback_source_scope_all_sources
-                } else {
-                    Res.string.settings_playback_source_scope_all_addons
-                },
-                if (pluginsEnabled) {
-                    Res.string.settings_playback_source_scope_all_sources_description
-                } else {
-                    Res.string.settings_playback_source_scope_all_addons_description
-                },
-            ),
-        )
-        add(
-            Triple(
-                StreamAutoPlaySource.INSTALLED_ADDONS_ONLY,
-                Res.string.settings_playback_source_scope_installed_addons_only,
-                Res.string.settings_playback_source_scope_installed_addons_only_description,
-            ),
-        )
-        if (pluginsEnabled) {
-            add(
-                Triple(
-                    StreamAutoPlaySource.ENABLED_PLUGINS_ONLY,
-                    Res.string.settings_playback_source_scope_enabled_plugins_only,
-                    Res.string.settings_playback_source_scope_enabled_plugins_only_description,
-                ),
-            )
-        }
-    }
+    val options = listOf(
+        Triple(
+            StreamAutoPlaySource.ALL_SOURCES,
+            Res.string.settings_playback_source_scope_all_addons,
+            Res.string.settings_playback_source_scope_all_addons_description,
+        ),
+        Triple(
+            StreamAutoPlaySource.INSTALLED_ADDONS_ONLY,
+            Res.string.settings_playback_source_scope_installed_addons_only,
+            Res.string.settings_playback_source_scope_installed_addons_only_description,
+        ),
+    )
 
     SingleChoiceBottomSheet(
         title = stringResource(Res.string.settings_playback_source_scope),

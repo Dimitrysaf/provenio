@@ -320,7 +320,6 @@
     <string name="compose_settings_page_meta_screen">Halaman Detail</string>
     <string name="compose_settings_page_notifications">Notifikasi</string>
     <string name="compose_settings_page_playback">Pemutaran</string>
-    <string name="compose_settings_page_plugins">Plugin</string>
     <string name="compose_settings_page_poster_customization">Gaya kartu</string>
     <string name="compose_settings_page_root">Pengaturan</string>
     <string name="compose_settings_page_tmdb_enrichment">Pengayaan TMDB</string>
@@ -472,7 +471,6 @@
     <string name="settings_content_discovery_section_sources">SUMBER</string>
     <string name="settings_content_discovery_addons_description">Pasang, hapus, perbarui, dan urutkan sumber konten Anda.</string>
     <string name="settings_content_discovery_addons_description_appstore">Tambahkan dan kelola addon yang Anda gunakan dengan Provenio.</string>
-    <string name="settings_content_discovery_plugins_description">Pasang repositori scraper JavaScript dan uji penyedia secara internal.</string>
     <string name="settings_content_discovery_homescreen_description">Sesuaikan tata letak beranda, visibilitas konten, dan poster</string>
     <string name="settings_content_discovery_meta_screen_description">Pengaturan untuk layar detail dan episode.</string>
     <string name="settings_content_discovery_collections_description">Buat pengelompokan katalog kustom dengan folder yang ditampilkan di Beranda.</string>
@@ -568,9 +566,7 @@
     <string name="settings_notifications_test_requires_saved_show">Simpan serial ke pustaka Anda terlebih dahulu untuk menguji notifikasi.</string>
     <string name="settings_notifications_test_title">Notifikasi uji coba</string>
     <string name="settings_playback_all_addons">Semua addon terpasang</string>
-    <string name="settings_playback_all_plugins">Semua plugin yang diaktifkan</string>
     <string name="settings_playback_allowed_addons">Addon yang Diizinkan</string>
-    <string name="settings_playback_allowed_plugins">Plugin yang Diizinkan</string>
     <string name="settings_playback_anime_skip">Anime Skip</string>
     <string name="settings_playback_anime_skip_client_id">ID Klien AnimeSkip</string>
     <string name="settings_playback_anime_skip_client_id_description">Masukkan ID klien API AnimeSkip Anda. Dapatkan di anime-skip.com.</string>
@@ -670,10 +666,6 @@
     <string name="settings_playback_source_scope">Cakupan Sumber Putar Otomatis</string>
     <string name="settings_playback_source_scope_all_addons">Semua addon terpasang</string>
     <string name="settings_playback_source_scope_all_addons_description">Putar otomatis hanya mempertimbangkan stream dari addon yang terpasang.</string>
-    <string name="settings_playback_source_scope_all_sources">Semua sumber</string>
-    <string name="settings_playback_source_scope_all_sources_description">Putar otomatis dapat menggunakan addon terpasang maupun plugin yang diaktifkan.</string>
-    <string name="settings_playback_source_scope_enabled_plugins_only">Hanya plugin yang diaktifkan</string>
-    <string name="settings_playback_source_scope_enabled_plugins_only_description">Putar otomatis hanya mempertimbangkan stream dari plugin yang diaktifkan.</string>
     <string name="settings_playback_source_scope_installed_addons_only">Hanya addon terpasang</string>
     <string name="settings_playback_source_scope_installed_addons_only_description">Putar otomatis hanya mempertimbangkan stream dari addon yang terpasang.</string>
     <string name="settings_playback_stream_selection_mode">Pemilihan Stream Otomatis</string>
@@ -1004,7 +996,6 @@
     <string name="profile_pin_offline_verification_requires_online">PIN ini belum bisa diverifikasi offline di perangkat ini. Hubungkan sekali dan buka kunci secara online terlebih dahulu.</string>
     <string name="profile_pin_set_failed">Tidak dapat mengatur PIN. Coba lagi.</string>
     <string name="profile_primary_addons_required">Profil ini menggunakan addon utama.</string>
-    <string name="streams_failed_to_load_scraper">Gagal memuat %1$s</string>
     <string name="source_embedded">Tertanam</string>
     <string name="trakt_authorization_denied">Otorisasi ditolak</string>
     <string name="trakt_complete_sign_in_browser">Selesaikan masuk Trakt di browser Anda</string>

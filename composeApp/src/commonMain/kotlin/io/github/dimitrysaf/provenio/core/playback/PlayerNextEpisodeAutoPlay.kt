@@ -88,11 +88,6 @@ internal fun CoroutineScope.launchPlayerNextEpisodeAutoPlay(
     } else {
         settings.streamAutoPlaySelectedAddons
     }
-    val effectiveSelectedPlugins = if (shouldAutoSelectInManualMode) {
-        emptySet()
-    } else {
-        settings.streamAutoPlaySelectedPlugins
-    }
     val effectiveRegex = if (shouldAutoSelectInManualMode) {
         ""
     } else {
@@ -150,7 +145,6 @@ internal fun CoroutineScope.launchPlayerNextEpisodeAutoPlay(
                 source = effectiveSource,
                 installedAddonNames = installedAddonNames,
                 selectedAddons = effectiveSelectedAddons,
-                selectedPlugins = effectiveSelectedPlugins,
                 preferredBingeGroup = preferredBingeGroup,
                 preferBingeGroupInSelection = settings.streamAutoPlayPreferBingeGroup,
                 bingeGroupOnly = bingeGroupOnlyManualMode,
@@ -167,7 +161,6 @@ internal fun CoroutineScope.launchPlayerNextEpisodeAutoPlay(
                 source = effectiveSource,
                 installedAddonNames = installedAddonNames,
                 selectedAddons = effectiveSelectedAddons,
-                selectedPlugins = effectiveSelectedPlugins,
                 preferredBingeGroup = preferredBingeGroup,
                 preferBingeGroupInSelection = true,
                 bingeGroupOnly = true,

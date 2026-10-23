@@ -16,8 +16,8 @@ If you want to work on it, contributions are welcome. Open an issue first so we 
 
 The `PROVENIO_IOS_DISTRIBUTION` environment variable (or the same key in `local.properties`) picks one:
 
-- `appstore` (the default) leaves out the torrent engine and the plugin runtime.
-- `full` adds them. It links the torrent engine from `engine/`, so build its Apple XCFramework first, on macOS:
+- `appstore` (the default) leaves out the torrent engine.
+- `full` adds it. It links the torrent engine from `engine/`, so build its Apple XCFramework first, on macOS:
 
   ```bash
   engine/scripts/build-apple-xcframework.sh

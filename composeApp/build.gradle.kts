@@ -224,7 +224,6 @@ val iosDistributionSourceDir = if (iosDistribution == "full") {
 }
 val iosFrameworkBundleId = "io.github.dimitrysaf.provenio"
 val engineAppleFramework = rootProject.file("engine/platform/apple/Engine.xcframework")
-val fullCommonSourceDir = project.file("src/fullCommonMain/kotlin")
 // The in-app YouTube resolver, shared by Android, desktop and iOS Full.
 val youtubeSourceDir = project.file("src/youtubeMain/kotlin")
 val generatedRuntimeConfigDir = layout.buildDirectory.dir("generated/runtime-config/kotlin")
@@ -287,8 +286,7 @@ kotlin {
         }
     }
     
-    // Linux desktop (the Flatpak). It builds like the Play Store distribution: no plugin
-    // runtime, so the full-distribution sources stay out.
+    // Linux desktop (the Flatpak).
     jvm("desktop") {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
@@ -333,16 +331,11 @@ kotlin {
             }
 
             if (iosDistribution == "full") {
-                defaultSourceSet.kotlin.srcDir(fullCommonSourceDir)
                 defaultSourceSet.kotlin.srcDir(youtubeSourceDir)
             }
             defaultSourceSet.kotlin.srcDir(project.file(iosDistributionSourceDir))
             defaultSourceSet.dependencies {
                 implementation(libs.ktor.client.darwin)
-                if (iosDistribution == "full") {
-                    implementation(libs.quickjs.kt)
-                    implementation(libs.ksoup)
-                }
             }
         }
 
@@ -368,7 +361,6 @@ kotlin {
         androidMain {
             // Code both JVM targets share, such as the local sync sockets and crypto.
             kotlin.srcDir(project.file("src/jvmSharedMain/kotlin"))
-            kotlin.srcDir(fullCommonSourceDir)
             kotlin.srcDir(youtubeSourceDir)
 
             dependencies {
@@ -415,8 +407,6 @@ kotlin {
                 } else {
                     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("lib-*.aar"))))
                 }
-                implementation(files("libs/quickjs-kt-android-1.0.5-nuvio.aar"))
-                implementation(libs.ksoup)
             }
         }
         val androidHostTest by getting {

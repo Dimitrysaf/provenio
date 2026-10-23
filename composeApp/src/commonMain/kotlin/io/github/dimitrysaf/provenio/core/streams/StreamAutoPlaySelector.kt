@@ -27,13 +27,13 @@ object StreamAutoPlaySelector {
         }
         if (installedOrder.isEmpty()) return directDebridEntries + remainingEntries
 
-        val (addonEntries, pluginEntries) = remainingEntries.partition { group ->
+        val (addonEntries, otherEntries) = remainingEntries.partition { group ->
             group.addonName in addonRankByName
         }
         val orderedAddons = addonEntries.sortedBy { group ->
             addonRankByName.getValue(group.addonName)
         }
-        return directDebridEntries + orderedAddons + pluginEntries
+        return directDebridEntries + orderedAddons + otherEntries
     }
 
     fun selectAutoPlayStream(
@@ -43,7 +43,6 @@ object StreamAutoPlaySelector {
         source: StreamAutoPlaySource,
         installedAddonNames: Set<String>,
         selectedAddons: Set<String>,
-        selectedPlugins: Set<String>,
         preferredBingeGroup: String? = null,
         preferBingeGroupInSelection: Boolean = false,
         bingeGroupOnly: Boolean = false,
@@ -57,7 +56,6 @@ object StreamAutoPlaySelector {
             source = source,
             installedAddonNames = installedAddonNames,
             selectedAddons = selectedAddons,
-            selectedPlugins = selectedPlugins,
             preferredBingeGroup = preferredBingeGroup,
             preferBingeGroupInSelection = preferBingeGroupInSelection,
             bingeGroupOnly = bingeGroupOnly,
@@ -72,7 +70,6 @@ object StreamAutoPlaySelector {
         source: StreamAutoPlaySource,
         installedAddonNames: Set<String>,
         selectedAddons: Set<String>,
-        selectedPlugins: Set<String>,
         preferredBingeGroup: String? = null,
         preferBingeGroupInSelection: Boolean = false,
         bingeGroupOnly: Boolean = false,
@@ -84,15 +81,9 @@ object StreamAutoPlaySelector {
         val sourceScopedStreams = when (source) {
             StreamAutoPlaySource.ALL_SOURCES -> streams
             StreamAutoPlaySource.INSTALLED_ADDONS_ONLY -> streams.filter { it.addonName in installedAddonNames }
-            StreamAutoPlaySource.ENABLED_PLUGINS_ONLY -> streams.filter { it.addonName !in installedAddonNames }
         }
         val candidateStreams = sourceScopedStreams.filter { stream ->
-            val isAddonStream = stream.addonName in installedAddonNames
-            if (isAddonStream) {
-                selectedAddons.isEmpty() || stream.addonName in selectedAddons
-            } else {
-                selectedPlugins.isEmpty() || stream.addonName in selectedPlugins
-            }
+            stream.addonName !in installedAddonNames || selectedAddons.isEmpty() || stream.addonName in selectedAddons
         }
         if (candidateStreams.isEmpty()) return StreamAutoPlayEvaluation()
         if (mode == StreamAutoPlayMode.MANUAL && !bingeGroupOnly) {

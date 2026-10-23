@@ -23,7 +23,6 @@ import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.material.icons.rounded.Extension
-import androidx.compose.material.icons.rounded.Hub
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Info
@@ -95,7 +94,6 @@ internal data class SettingsSearchEntry(
 @Composable
 internal fun settingsSearchEntries(
     isTablet: Boolean,
-    pluginsEnabled: Boolean,
     personalMediaAddonCopyEnabled: Boolean,
     switchProfileAvailable: Boolean,
     checkForUpdatesAvailable: Boolean,
@@ -122,7 +120,6 @@ internal fun settingsSearchEntries(
     val continueWatchingPage = stringResource(Res.string.compose_settings_page_continue_watching)
     val posterStylePage = stringResource(Res.string.compose_settings_page_poster_customization)
     val addonsPage = stringResource(Res.string.compose_settings_page_addons)
-    val pluginsPage = stringResource(Res.string.compose_settings_page_plugins)
     val collectionsPage = stringResource(Res.string.collections_header)
     val tmdbPage = stringResource(Res.string.compose_settings_page_tmdb_enrichment)
     val mdbListPage = stringResource(Res.string.compose_settings_page_mdblist_ratings)
@@ -436,15 +433,6 @@ internal fun settingsSearchEntries(
         ),
         icon = Icons.Rounded.Extension,
     )
-    if (pluginsEnabled) {
-        addPage(
-            page = SettingsPage.Plugins,
-            key = "plugins",
-            title = pluginsPage,
-            description = stringResource(Res.string.settings_content_discovery_plugins_description),
-            icon = Icons.Rounded.Hub,
-        )
-    }
     addPage(
         page = SettingsPage.Homescreen,
         key = "home-layout",
@@ -656,7 +644,6 @@ internal fun settingsSearchEntries(
             add(PlaybackSearchRow("stream-timeout", stringResource(Res.string.settings_playback_stream_timeout), stringResource(Res.string.settings_playback_stream_timeout_description)))
             add(PlaybackSearchRow("source-scope", stringResource(Res.string.settings_playback_source_scope)))
             add(PlaybackSearchRow("allowed-addons", stringResource(Res.string.settings_playback_allowed_addons)))
-            if (pluginsEnabled) add(PlaybackSearchRow("allowed-plugins", stringResource(Res.string.settings_playback_allowed_plugins)))
         },
     )
     if (!isIos) {

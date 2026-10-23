@@ -1,7 +1,6 @@
 package io.github.dimitrysaf.provenio.core.build
 
 actual object AppFeaturePolicy {
-    actual val pluginsEnabled: Boolean = false
     actual val personalMediaAddonCopyEnabled: Boolean = true
     actual val p2pEnabled: Boolean = false
     actual val trailerPlaybackMode: TrailerPlaybackMode = TrailerPlaybackMode.EXTERNAL

@@ -302,7 +302,6 @@
     <string name="compose_settings_page_meta_screen">Meta-Bildschirm</string>
     <string name="compose_settings_page_notifications">Benachrichtigungen</string>
     <string name="compose_settings_page_playback">Wiedergabe</string>
-    <string name="compose_settings_page_plugins">Plugins</string>
     <string name="compose_settings_page_poster_customization">Kartenstile</string>
     <string name="compose_settings_page_root">Einstellungen</string>
     <string name="compose_settings_page_tmdb_enrichment">TMDB-Anreicherung</string>
@@ -409,7 +408,6 @@
     <string name="settings_content_discovery_section_sources">QUELLEN</string>
     <string name="settings_content_discovery_addons_description">Installiere, entferne, aktualisiere und sortiere deine Inhaltsquellen.</string>
     <string name="settings_content_discovery_addons_description_appstore">Füge die Addons hinzu, die du mit Provenio nutzt, und verwalte sie.</string>
-    <string name="settings_content_discovery_plugins_description">Installiere JavaScript-Scraper-Repositories und teste Anbieter intern.</string>
     <string name="settings_content_discovery_homescreen_description">Lege fest, welche Kataloge auf der Startseite und in welcher Reihenfolge erscheinen.</string>
     <string name="settings_content_discovery_meta_screen_description">Detail-Abschnitte deaktivieren und alles unterhalb des Hero neu anordnen.</string>
     <string name="settings_content_discovery_collections_description">Erstelle benutzerdefinierte Katalog-Gruppierungen mit Ordnern, die auf der Startseite angezeigt werden.</string>
@@ -459,9 +457,7 @@
     <string name="settings_notifications_test_requires_saved_show">Speichere zuerst eine Serie in deiner Bibliothek, um Benachrichtigungen zu testen.</string>
     <string name="settings_notifications_test_title">Test-Benachrichtigung</string>
     <string name="settings_playback_all_addons">Alle Addons</string>
-    <string name="settings_playback_all_plugins">Alle Plugins</string>
     <string name="settings_playback_allowed_addons">Erlaubte Addons</string>
-    <string name="settings_playback_allowed_plugins">Erlaubte Plugins</string>
     <string name="settings_playback_anime_skip">Anime Skip</string>
     <string name="settings_playback_anime_skip_client_id">AnimeSkip-Client-ID</string>
     <string name="settings_playback_anime_skip_client_id_description">Gib deine AnimeSkip-API-Client-ID ein. Erhältlich unter anime-skip.com.</string>
@@ -541,10 +537,6 @@
     <string name="settings_playback_source_scope">Quellbereich</string>
     <string name="settings_playback_source_scope_all_addons">Alle Addons</string>
     <string name="settings_playback_source_scope_all_addons_description">Streams aus allen installierten Addons berücksichtigen.</string>
-    <string name="settings_playback_source_scope_all_sources">Alle Quellen</string>
-    <string name="settings_playback_source_scope_all_sources_description">Streams aus Addons und Plugins berücksichtigen.</string>
-    <string name="settings_playback_source_scope_enabled_plugins_only">Nur aktivierte Plugins</string>
-    <string name="settings_playback_source_scope_enabled_plugins_only_description">Nur Streams aus aktivierten Plugins berücksichtigen.</string>
     <string name="settings_playback_source_scope_installed_addons_only">Nur installierte Addons</string>
     <string name="settings_playback_source_scope_installed_addons_only_description">Nur Streams aus installierten Addons berücksichtigen.</string>
     <string name="settings_playback_stream_selection_mode">Stream-Auswahlmodus</string>
@@ -848,7 +840,6 @@
     <string name="profile_pin_offline_verification_requires_online">Diese PIN kann auf diesem Gerät noch nicht offline überprüft werden. Verbinde dich einmal und entsperre sie zuerst online.</string>
     <string name="profile_pin_set_failed">PIN konnte nicht gesetzt werden. Versuche es erneut.</string>
     <string name="profile_primary_addons_required">Dieses Profil verwendet primäre Addons.</string>
-    <string name="streams_failed_to_load_scraper">%1$s konnte nicht geladen werden</string>
     <string name="source_embedded">Eingebettet</string>
     <string name="trakt_authorization_denied">Autorisierung verweigert</string>
     <string name="trakt_complete_sign_in_browser">Trakt-Anmeldung in deinem Browser abschließen</string>

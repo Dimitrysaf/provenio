@@ -7,7 +7,6 @@ import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.Extension
-import androidx.compose.material.icons.rounded.Hub
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
@@ -35,7 +34,6 @@ import provenio.composeapp.generated.resources.settings_category_documentation_d
 import provenio.composeapp.generated.resources.compose_settings_page_mdblist_ratings
 import provenio.composeapp.generated.resources.compose_settings_page_meta_screen
 import provenio.composeapp.generated.resources.compose_settings_page_notifications
-import provenio.composeapp.generated.resources.compose_settings_page_plugins
 import provenio.composeapp.generated.resources.compose_settings_page_poster_customization
 import provenio.composeapp.generated.resources.compose_settings_page_root
 import provenio.composeapp.generated.resources.compose_settings_page_streaming_availability
@@ -60,7 +58,6 @@ import provenio.composeapp.generated.resources.compose_settings_root_downloads_d
 import provenio.composeapp.generated.resources.compose_settings_root_notifications_description
 import provenio.composeapp.generated.resources.settings_content_discovery_addons_description
 import provenio.composeapp.generated.resources.settings_content_discovery_collections_description
-import provenio.composeapp.generated.resources.settings_content_discovery_plugins_description
 import org.jetbrains.compose.resources.StringResource
 
 /**
@@ -77,7 +74,6 @@ internal enum class SettingsCategory(
     Subtitles(Res.string.settings_category_subtitles_audio, Res.string.settings_category_subtitles_description, Icons.Rounded.Subtitles),
     Playback(Res.string.settings_category_playback, Res.string.settings_category_playback_description, Icons.Rounded.PlayArrow),
     Addons(Res.string.compose_settings_page_addons, Res.string.settings_content_discovery_addons_description, Icons.Rounded.Extension),
-    Plugins(Res.string.compose_settings_page_plugins, Res.string.settings_content_discovery_plugins_description, Icons.Rounded.Hub),
     Downloads(Res.string.compose_settings_root_downloads_title, Res.string.compose_settings_root_downloads_description, Icons.Rounded.DataUsage),
     Collections(Res.string.collections_header, Res.string.settings_content_discovery_collections_description, Icons.Rounded.CollectionsBookmark),
     Notifications(Res.string.compose_settings_page_notifications, Res.string.compose_settings_root_notifications_description, Icons.Rounded.Notifications),
@@ -105,7 +101,6 @@ internal val SettingsCategory.rootSection: SettingsRootSection
         SettingsCategory.Notifications,
         -> SettingsRootSection.UserInterface
         SettingsCategory.Addons,
-        SettingsCategory.Plugins,
         SettingsCategory.Downloads,
         SettingsCategory.Collections,
         SettingsCategory.Server,
@@ -130,7 +125,6 @@ internal val SettingsCategory.iconHue: SettingsIconHue
         SettingsCategory.Subtitles -> SettingsIconHue.Lime
         SettingsCategory.Playback -> SettingsIconHue.Red
         SettingsCategory.Addons -> SettingsIconHue.Orange
-        SettingsCategory.Plugins -> SettingsIconHue.Indigo
         SettingsCategory.Downloads -> SettingsIconHue.Green
         SettingsCategory.Collections -> SettingsIconHue.Brown
         SettingsCategory.Notifications -> SettingsIconHue.Yellow
@@ -148,7 +142,6 @@ internal val SettingsCategory.page: SettingsPage?
         SettingsCategory.Subtitles -> SettingsPage.Subtitles
         SettingsCategory.Playback -> SettingsPage.Playback
         SettingsCategory.Addons -> SettingsPage.Addons
-        SettingsCategory.Plugins -> SettingsPage.Plugins
         SettingsCategory.Downloads, SettingsCategory.Collections -> null
         SettingsCategory.Notifications -> SettingsPage.Notifications
         SettingsCategory.Documentation -> SettingsPage.Documentation
@@ -246,11 +239,6 @@ internal enum class SettingsPage(
     Addons(
         titleRes = Res.string.compose_settings_page_addons,
         category = SettingsCategory.Addons,
-        parentPage = Root,
-    ),
-    Plugins(
-        titleRes = Res.string.compose_settings_page_plugins,
-        category = SettingsCategory.Plugins,
         parentPage = Root,
     ),
     Notifications(

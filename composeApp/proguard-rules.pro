@@ -31,11 +31,6 @@
 -keep class io.github.dimitrysaf.provenio.shell.screens.player.PlayerKt { *; }
 -keep class io.github.dimitrysaf.provenio.shell.screens.player.PlayerKt$* { *; }
 
-# QuickJS plugin runtime is dynamic; keep runtime and app plugin classes.
--keep class com.dokar.quickjs.** { *; }
--keep class io.github.dimitrysaf.provenio.shell.screens.plugins.** { *; }
--keep class io.github.dimitrysaf.provenio.core.plugins.** { *; }
-
 # P2P runtime and engine JNI bridge. Native libraries are not processed
 # by R8, but their Kotlin/JNI wrapper classes and method names must stay stable.
 -keep class io.github.dimitrysaf.provenio.shell.screens.p2p.** { *; }

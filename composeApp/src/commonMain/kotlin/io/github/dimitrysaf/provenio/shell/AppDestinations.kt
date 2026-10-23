@@ -36,7 +36,6 @@ import io.github.dimitrysaf.provenio.shell.screens.settings.ContinueWatchingSett
 import io.github.dimitrysaf.provenio.shell.screens.settings.HomescreenSettingsScreen
 import io.github.dimitrysaf.provenio.shell.screens.settings.LicensesAttributionsSettingsScreen
 import io.github.dimitrysaf.provenio.shell.screens.settings.MetaScreenSettingsScreen
-import io.github.dimitrysaf.provenio.shell.screens.settings.PluginsSettingsScreen
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsPage
 import io.github.dimitrysaf.provenio.shell.screens.updater.AppUpdaterController
 import kotlinx.coroutines.CoroutineScope
@@ -52,7 +51,6 @@ internal data class AppPageTitles(
     val debrid: String,
     val downloads: String,
     val addons: String,
-    val plugins: String,
     val licenses: String,
     val collections: String,
     val newCollection: String,
@@ -66,7 +64,6 @@ internal fun appPageTitles(): AppPageTitles = AppPageTitles(
     debrid = stringResource(Res.string.compose_settings_page_debrid),
     downloads = stringResource(Res.string.compose_settings_root_downloads_title),
     addons = stringResource(Res.string.compose_settings_page_addons),
-    plugins = stringResource(Res.string.compose_settings_page_plugins),
     licenses = stringResource(Res.string.compose_settings_page_licenses_attributions),
     collections = stringResource(Res.string.collections_header),
     newCollection = stringResource(Res.string.collections_new),
@@ -173,11 +170,6 @@ internal fun buildAppTabActions(
         onDownloadsSettingsClick = { navController.navigate(DownloadsSettingsRoute(titles.downloads)) },
         onOpenDownload = playback::openDownloadedItem,
         onAddonsSettingsClick = { navController.navigate(AddonsSettingsRoute(titles.addons)) },
-        onPluginsSettingsClick = {
-            if (AppFeaturePolicy.pluginsEnabled) {
-                navController.navigate(PluginsSettingsRoute(titles.plugins))
-            }
-        },
         onLicensesAttributionsSettingsClick = {
             navController.navigate(LicensesAttributionsSettingsRoute(titles.licenses))
         },
@@ -372,13 +364,6 @@ internal fun appEntryProvider(
     entry<AddonsSettingsRoute> { route ->
         SettingsDestination(route, navController) { onBack ->
             AddonsSettingsScreen(onBack = onBack)
-        }
-    }
-    if (AppFeaturePolicy.pluginsEnabled) {
-        entry<PluginsSettingsRoute> { route ->
-            SettingsDestination(route, navController) { onBack ->
-                PluginsSettingsScreen(onBack = onBack)
-            }
         }
     }
     entry<LicensesAttributionsSettingsRoute> { route ->

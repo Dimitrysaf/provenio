@@ -1,9 +1,6 @@
 package io.github.dimitrysaf.provenio.core.build
 
-// Desktop has no plugin runtime.
-
 actual object AppFeaturePolicy {
-    actual val pluginsEnabled: Boolean = false
     actual val personalMediaAddonCopyEnabled: Boolean = false
     actual val p2pEnabled: Boolean = true
     actual val trailerPlaybackMode: TrailerPlaybackMode = TrailerPlaybackMode.IN_APP

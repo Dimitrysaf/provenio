@@ -30,7 +30,6 @@ class StreamAutoPlaySelectorTest {
             source = StreamAutoPlaySource.ALL_SOURCES,
             installedAddonNames = setOf("AddonA", "AddonB"),
             selectedAddons = emptySet(),
-            selectedPlugins = emptySet(),
             preferredBingeGroup = "same-group",
             preferBingeGroupInSelection = true,
         )
@@ -60,7 +59,6 @@ class StreamAutoPlaySelectorTest {
             source = StreamAutoPlaySource.ALL_SOURCES,
             installedAddonNames = setOf("AddonA", "AddonB"),
             selectedAddons = emptySet(),
-            selectedPlugins = emptySet(),
             preferredBingeGroup = "missing-group",
             preferBingeGroupInSelection = true,
         )
@@ -69,31 +67,30 @@ class StreamAutoPlaySelectorTest {
     }
 
     @Test
-    fun `bingeGroup-first respects source and addon plugin filters`() {
+    fun `bingeGroup-first respects source and addon filters`() {
         val filteredOutAddonMatch = stream(
             addonName = "AddonFilteredOut",
             url = "https://example.com/addon-match.m3u8",
             bingeGroup = "same-group",
         )
-        val allowedPluginMatch = stream(
-            addonName = "PluginAllowed",
-            url = "https://example.com/plugin-match.m3u8",
+        val allowedAddonMatch = stream(
+            addonName = "AddonAllowed",
+            url = "https://example.com/allowed-match.m3u8",
             bingeGroup = "same-group",
         )
 
         val selected = StreamAutoPlaySelector.selectAutoPlayStream(
-            streams = listOf(filteredOutAddonMatch, allowedPluginMatch),
+            streams = listOf(filteredOutAddonMatch, allowedAddonMatch),
             mode = StreamAutoPlayMode.FIRST_STREAM,
             regexPattern = "",
-            source = StreamAutoPlaySource.ENABLED_PLUGINS_ONLY,
-            installedAddonNames = setOf("AddonFilteredOut"),
-            selectedAddons = emptySet(),
-            selectedPlugins = setOf("PluginAllowed"),
+            source = StreamAutoPlaySource.INSTALLED_ADDONS_ONLY,
+            installedAddonNames = setOf("AddonFilteredOut", "AddonAllowed"),
+            selectedAddons = setOf("AddonAllowed"),
             preferredBingeGroup = "same-group",
             preferBingeGroupInSelection = true,
         )
 
-        assertEquals(allowedPluginMatch, selected)
+        assertEquals(allowedAddonMatch, selected)
     }
 
     @Test
@@ -116,7 +113,6 @@ class StreamAutoPlaySelectorTest {
             source = StreamAutoPlaySource.ALL_SOURCES,
             installedAddonNames = setOf("AddonA", "AddonB"),
             selectedAddons = emptySet(),
-            selectedPlugins = emptySet(),
             preferredBingeGroup = "   ",
             preferBingeGroupInSelection = true,
         )
@@ -139,7 +135,6 @@ class StreamAutoPlaySelectorTest {
             source = StreamAutoPlaySource.ALL_SOURCES,
             installedAddonNames = setOf("AddonA"),
             selectedAddons = emptySet(),
-            selectedPlugins = emptySet(),
             preferredBingeGroup = "same-group",
             preferBingeGroupInSelection = true,
         )
@@ -163,7 +158,6 @@ class StreamAutoPlaySelectorTest {
             source = StreamAutoPlaySource.ALL_SOURCES,
             installedAddonNames = emptySet(),
             selectedAddons = emptySet(),
-            selectedPlugins = emptySet(),
         )
 
         assertEquals(directDebrid, selected)
@@ -184,7 +178,6 @@ class StreamAutoPlaySelectorTest {
             source = StreamAutoPlaySource.ALL_SOURCES,
             installedAddonNames = setOf("External Addon"),
             selectedAddons = emptySet(),
-            selectedPlugins = emptySet(),
         )
 
         assertNull(selected)
@@ -206,7 +199,6 @@ class StreamAutoPlaySelectorTest {
             source = StreamAutoPlaySource.ALL_SOURCES,
             installedAddonNames = setOf("Torrentio"),
             selectedAddons = emptySet(),
-            selectedPlugins = emptySet(),
             debridEnabled = true,
             activeResolverProviderId = "premiumize",
         )
@@ -236,7 +228,6 @@ class StreamAutoPlaySelectorTest {
             source = StreamAutoPlaySource.ALL_SOURCES,
             installedAddonNames = setOf("Torrentio", "Direct Addon"),
             selectedAddons = emptySet(),
-            selectedPlugins = emptySet(),
             debridEnabled = true,
             activeResolverProviderId = "premiumize",
         )
@@ -261,7 +252,6 @@ class StreamAutoPlaySelectorTest {
             source = StreamAutoPlaySource.ALL_SOURCES,
             installedAddonNames = setOf("Comet"),
             selectedAddons = emptySet(),
-            selectedPlugins = emptySet(),
             debridEnabled = true,
             activeResolverProviderId = "premiumize",
         )
@@ -285,7 +275,6 @@ class StreamAutoPlaySelectorTest {
             source = StreamAutoPlaySource.ALL_SOURCES,
             installedAddonNames = setOf("Direct Addon"),
             selectedAddons = emptySet(),
-            selectedPlugins = emptySet(),
         )
 
         assertEquals(stream, selected)

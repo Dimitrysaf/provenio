@@ -1,6 +1,5 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
-import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,7 +15,6 @@ import io.github.dimitrysaf.provenio.core.addons.hasPendingEnabledManifests
 import io.github.dimitrysaf.provenio.core.addons.isWaitingForFirstEnabledManifest
 import io.github.dimitrysaf.provenio.core.collection.CollectionRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
-import io.github.dimitrysaf.provenio.core.plugins.PluginRepository
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
 import io.github.dimitrysaf.provenio.core.home.buildAddonCatalogRefreshSignature
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPreferencesRepository
@@ -26,7 +24,6 @@ import provenio.composeapp.generated.resources.compose_settings_page_addons
 import provenio.composeapp.generated.resources.compose_settings_page_continue_watching
 import provenio.composeapp.generated.resources.compose_settings_page_homescreen
 import provenio.composeapp.generated.resources.compose_settings_page_meta_screen
-import provenio.composeapp.generated.resources.compose_settings_page_plugins
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -147,29 +144,6 @@ fun AddonsSettingsScreen(
         actions = { DocsHelpButton(DocsPages.Addons) },
     ) {
         addonsSettingsContent()
-    }
-}
-
-@Composable
-fun PluginsSettingsScreen(
-    onBack: () -> Unit,
-) {
-    if (!AppFeaturePolicy.pluginsEnabled) {
-        AddonsSettingsScreen(onBack = onBack)
-        return
-    }
-
-    LaunchedEffect(Unit) {
-        PluginRepository.initialize()
-    }
-
-    ScreenScaffold(
-        title = stringResource(Res.string.compose_settings_page_plugins),
-        modifier = Modifier.fillMaxSize(),
-        onBack = onBack,
-        contentMaxWidth = SettingsContentMaxWidth,
-    ) {
-        pluginsSettingsContent()
     }
 }
 

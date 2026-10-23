@@ -62,7 +62,6 @@ import io.github.dimitrysaf.provenio.shell.screens.player.PlayerPictureInPicture
 import io.github.dimitrysaf.provenio.shell.screens.player.PipRemoteActionReceiver
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsStorage
 import io.github.dimitrysaf.provenio.core.p2p.P2pStreamingEngine
-import io.github.dimitrysaf.provenio.core.plugins.PluginStorage
 import io.github.dimitrysaf.provenio.core.profiles.AvatarStorage
 import io.github.dimitrysaf.provenio.core.profiles.ProfilePinCacheStorage
 import io.github.dimitrysaf.provenio.core.profiles.ProfileStorage
@@ -159,7 +158,6 @@ open class MainActivity : AppCompatActivity() {
         StreamLinkCacheStorage.initialize(applicationContext)
         StreamBadgeSettingsStorage.initialize(applicationContext)
         BingeGroupCacheStorage.initialize(applicationContext)
-        PluginStorage.initialize(applicationContext)
         CollectionMobileSettingsStorage.initialize(applicationContext)
         CollectionStorage.initialize(applicationContext)
         AppLogs.initialize(applicationContext)
@@ -171,6 +169,7 @@ open class MainActivity : AppCompatActivity() {
         EpisodeReleaseNotificationPlatform.initialize(applicationContext)
         EpisodeReleaseNotificationPlatform.bindActivity(this)
         handleIncomingAppIntent(intent)
+        deleteLeftoverPluginData()
 
         setContent {
             App()
@@ -187,6 +186,12 @@ open class MainActivity : AppCompatActivity() {
             }
         }
         showLaunchOverlay(launchLogoColor(launchLogo))
+    }
+
+    // Older versions downloaded plugin scrapers; Provenio no longer runs them, so their code and settings go.
+    private fun deleteLeftoverPluginData() {
+        deleteSharedPreferences("provenio_plugins")
+        filesDir.resolve("provenio_plugin_scrapers").deleteRecursively()
     }
 
     private fun showLaunchOverlay(logoColor: Int) {

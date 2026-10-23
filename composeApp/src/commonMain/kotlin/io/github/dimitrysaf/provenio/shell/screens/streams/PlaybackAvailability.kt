@@ -4,22 +4,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
 import io.github.dimitrysaf.provenio.core.addons.AddonManifest
 import io.github.dimitrysaf.provenio.core.addons.AddonRepository
 import io.github.dimitrysaf.provenio.core.addons.ManagedAddon
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsRepository
-import io.github.dimitrysaf.provenio.core.plugins.PluginRepository
-import io.github.dimitrysaf.provenio.core.plugins.PluginsUiState
 import io.github.dimitrysaf.provenio.core.streams.hasCompatiblePlaybackSource
 
 internal class PlaybackAvailability(
     private val addons: List<ManagedAddon>,
-    private val plugins: PluginsUiState,
 ) {
     fun canStream(type: String, videoId: String): Boolean =
-        hasCompatiblePlaybackSource(addons, plugins, type, videoId) ||
+        hasCompatiblePlaybackSource(addons, type, videoId) ||
             MetaDetailsRepository.findEmbeddedStreams(videoId).isNotEmpty()
 
     fun canPlay(
@@ -38,11 +34,6 @@ internal class PlaybackAvailability(
     companion object {
         fun current(): PlaybackAvailability = PlaybackAvailability(
             addons = AddonRepository.uiState.value.addons,
-            plugins = if (AppFeaturePolicy.pluginsEnabled) {
-                PluginRepository.uiState.value
-            } else {
-                PluginsUiState(pluginsEnabled = false)
-            },
         )
     }
 }
@@ -53,20 +44,11 @@ internal fun rememberPlaybackAvailability(): PlaybackAvailability {
         AddonRepository.initialize()
         AddonRepository.uiState
     }.collectAsStateWithLifecycle()
-    val plugins = if (AppFeaturePolicy.pluginsEnabled) {
-        val state by remember {
-            PluginRepository.initialize()
-            PluginRepository.uiState
-        }.collectAsStateWithLifecycle()
-        state
-    } else {
-        PluginsUiState(pluginsEnabled = false)
-    }
     val downloads by remember {
         DownloadsRepository.ensureLoaded()
         DownloadsRepository.uiState
     }.collectAsStateWithLifecycle()
-    return remember(addons, plugins, downloads) {
-        PlaybackAvailability(addons.addons, plugins)
+    return remember(addons, downloads) {
+        PlaybackAvailability(addons.addons)
     }
 }
