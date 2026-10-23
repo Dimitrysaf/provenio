@@ -1686,6 +1686,8 @@
     <string name="streams_sort_size_asc">Size: smallest first</string>
     <string name="streams_sort_seeds_desc">Seeds: most first</string>
     <string name="streams_sort_seeds_asc">Seeds: fewest first</string>
+    <string name="streams_sort_peers_desc">Peers: most first</string>
+    <string name="streams_sort_peers_asc">Peers: fewest first</string>
     <string name="streams_torrent_not_supported">This stream type is not supported</string>
     <string name="debrid_missing_api_key">Connect an account in Settings.</string>
     <string name="debrid_not_cached">Not cached on Torbox.</string>
@@ -2370,6 +2372,8 @@
     <string name="person_detail_personal_info">Personal info</string>
     <string name="person_detail_died">Died</string>
     <string name="person_detail_active_since">Active since</string>
+    <string name="person_detail_name">Name</string>
+    <string name="person_detail_role">Role</string>
     <string name="person_detail_date_with_age">%1$s (age %2$d)</string>
     <string name="image_viewer_download">Download</string>
     <string name="image_viewer_save_title">Save image</string>
@@ -2393,6 +2397,7 @@
     <string name="entity_browse_headquarters">Headquarters</string>
     <string name="entity_browse_catalogue">Catalogue</string>
     <string name="entity_browse_about">About</string>
+    <string name="entity_browse_info">Info</string>
     <string name="player_external_loading_subtitles">Loading subtitles from addons…</string>
     <string name="player_external_downloading_subtitles">Downloading subtitles...</string>
     <plurals name="entity_browse_title_count">

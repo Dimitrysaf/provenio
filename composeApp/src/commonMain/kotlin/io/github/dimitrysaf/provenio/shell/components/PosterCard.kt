@@ -206,6 +206,8 @@ fun PosterCard(
         shape = shape,
     )
     val shouldShowTitleBelow = showTitleBelow && !posterCardStyle.hideLabelsEnabled
+    val zoomImageUrl = imageUrl ?: fallbackImageUrls.firstOrNull { !it.isNullOrBlank() }
+    val liftSource = rememberPosterLiftSource(zoomImageUrl)
 
     Column(
         modifier = modifier.width(cardWidth),
@@ -220,8 +222,9 @@ fun PosterCard(
                 .posterCardClickable(
                     onClick = onClick,
                     onLongClick = onLongClick,
-                    zoomImageUrl = imageUrl ?: fallbackImageUrls.firstOrNull { !it.isNullOrBlank() },
+                    zoomImageUrl = zoomImageUrl,
                     zoomCornerRadius = posterCardStyle.cornerRadiusDp.dp,
+                    liftSource = liftSource,
                 ),
             contentAlignment = Alignment.Center,
         ) {
@@ -249,7 +252,7 @@ fun PosterCard(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         // Above the progress bar, when there is one.
-                        .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = if (progress != null) 20.dp else 10.dp),
+                        .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = if (progress != null) 16.dp else 10.dp),
                 ) {
                     if (!bottomLeftLogoUrl.isNullOrBlank()) {
                         AsyncImage(
@@ -274,7 +277,8 @@ fun PosterCard(
             }
 
             PosterProgressBar(progress = progress.takeIf { !isWatched })
-            PosterWatchedOverlay(isWatched = isWatched)
+            // The zoom carries the artwork only: a scrim lifted with it would stretch over the page.
+            if (!liftSource.isLifted) PosterWatchedOverlay(isWatched = isWatched)
         }
         if (shouldShowTitleBelow) {
             FindableText(

@@ -9,6 +9,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.input.InputMode
@@ -32,7 +33,7 @@ fun SelectableText(
     val inputModeManager = LocalInputModeManager.current
     val selection = Modifier.focusProperties { canFocus = inputModeManager.inputMode != InputMode.Keyboard }
     if (copyText.isNullOrEmpty()) {
-        SelectionContainer(modifier = modifier.then(selection), content = content)
+        TextSelection(modifier = modifier.then(selection), content = content)
         return
     }
     val menu = rememberTextActionsMenu()
@@ -44,9 +45,24 @@ fun SelectableText(
             .indication(interactionSource, ripple(focusRingShape = SelectableTextShape))
             .focusable(interactionSource = interactionSource),
     ) {
-        SelectionContainer(modifier = selection, content = content)
+        TextSelection(modifier = selection, content = content)
     }
     TextActionsMenu(menu, text = copyText, moreCopies = moreCopies)
+}
+
+/**
+ * True inside a selection that spans the whole window, as on desktop: text there is selectable
+ * already, and a container of its own would only cut it out of the window's select all.
+ */
+val LocalPageTextSelection = staticCompositionLocalOf { false }
+
+@Composable
+private fun TextSelection(modifier: Modifier, content: @Composable () -> Unit) {
+    if (LocalPageTextSelection.current) {
+        Box(modifier = modifier) { content() }
+    } else {
+        SelectionContainer(modifier = modifier, content = content)
+    }
 }
 
 private val SelectableTextShape = RoundedCornerShape(8.dp)

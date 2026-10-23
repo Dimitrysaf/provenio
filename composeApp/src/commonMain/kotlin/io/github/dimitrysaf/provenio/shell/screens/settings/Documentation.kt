@@ -2,11 +2,11 @@
 
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -36,8 +36,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -92,7 +93,7 @@ internal fun DocumentationAppBarActions() {
 
 /**
  * About → Documentation: every page of the wiki by its sidebar's sections, and a search through
- * them. A page opens right here, under a breadcrumb bar of the pages that led to it.
+ * them. A page opens right here, and the app bar shows it under the pages that led to it.
  */
 internal fun LazyListScope.documentationContent(isTablet: Boolean) {
     item { DocumentationBody(isTablet = isTablet) }
@@ -116,7 +117,6 @@ private fun DocumentationBody(isTablet: Boolean) {
             DocumentationIndex(isTablet = isTablet)
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                DocsBreadcrumbs(shown)
                 // Each page starts at its own top, so a page before it does not leave its place behind.
                 key(current) {
                     val loaded = rememberDocsPage(current)
@@ -140,43 +140,58 @@ private fun DocumentationBody(isTablet: Boolean) {
     }
 }
 
-/** Where the reader is: Documentation › the page opened › the pages its links led to, each a way back. */
+/** The app bar's title on the Documentation page: the page being read, or [default] on the list. */
+@Composable
+internal fun documentationAppBarTitle(default: String): String {
+    val trail by DocsBrowser.trail.collectAsStateWithLifecycle()
+    val docs by Docs.state.collectAsStateWithLifecycle()
+    return trail.lastOrNull()?.let { docs.titleOf(it) } ?: default
+}
+
+/**
+ * The app bar's line under the title while a page is read: Documentation › the pages that led to
+ * the one shown, each a way back to it. Nothing on the list.
+ */
+@Composable
+internal fun documentationAppBarBreadcrumbs(): (@Composable () -> Unit)? {
+    val trail by DocsBrowser.trail.collectAsStateWithLifecycle()
+    if (trail.isEmpty()) return null
+    return { DocsBreadcrumbs(trail) }
+}
+
 @Composable
 private fun DocsBreadcrumbs(trail: List<String>) {
     val docs by Docs.state.collectAsStateWithLifecycle()
     Row(
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Crumb(text = stringResource(Res.string.settings_documentation), current = false) { DocsBrowser.goTo(0) }
-        trail.forEachIndexed { index, name ->
+        Crumb(text = stringResource(Res.string.settings_documentation)) { DocsBrowser.goTo(0) }
+        trail.dropLast(1).forEachIndexed { index, name ->
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(16.dp),
             )
-            Crumb(text = docs.titleOf(name), current = index == trail.lastIndex) { DocsBrowser.goTo(index + 1) }
+            Crumb(text = docs.titleOf(name)) { DocsBrowser.goTo(index + 1) }
         }
     }
 }
 
 @Composable
-private fun Crumb(text: String, current: Boolean, onClick: () -> Unit) {
-    if (current) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 12.dp),
-        )
-    } else {
-        TextButton(onClick = onClick, contentPadding = PaddingValues(horizontal = 12.dp)) {
-            Text(text = text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    }
+private fun Crumb(text: String, onClick: () -> Unit) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.small)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+    )
 }
 
 private fun DocsState.titleOf(name: String): String =

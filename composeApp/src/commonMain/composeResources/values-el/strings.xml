@@ -1686,6 +1686,8 @@
     <string name="streams_sort_size_asc">Μέγεθος: μικρότερο πρώτα</string>
     <string name="streams_sort_seeds_desc">Seeds: περισσότερα πρώτα</string>
     <string name="streams_sort_seeds_asc">Seeds: λιγότερα πρώτα</string>
+    <string name="streams_sort_peers_desc">Peers: περισσότερα πρώτα</string>
+    <string name="streams_sort_peers_asc">Peers: λιγότερα πρώτα</string>
     <string name="streams_torrent_not_supported">Αυτός ο τύπος ροής δεν υποστηρίζεται</string>
     <string name="debrid_missing_api_key">Συνδέστε έναν λογαριασμό στις Ρυθμίσεις.</string>
     <string name="debrid_not_cached">Δεν είναι αποθηκευμένο στην προσωρινή μνήμη του Torbox.</string>
@@ -2338,6 +2340,8 @@
     <string name="person_detail_personal_info">Προσωπικές πληροφορίες</string>
     <string name="person_detail_died">Θάνατος</string>
     <string name="person_detail_active_since">Ενεργός από</string>
+    <string name="person_detail_name">Όνομα</string>
+    <string name="person_detail_role">Ρόλος</string>
     <string name="person_detail_date_with_age">%1$s (ηλικία %2$d)</string>
     <string name="image_viewer_download">Λήψη</string>
     <string name="image_viewer_save_title">Αποθήκευση εικόνας</string>
@@ -2361,6 +2365,7 @@
     <string name="entity_browse_headquarters">Έδρα</string>
     <string name="entity_browse_catalogue">Κατάλογος</string>
     <string name="entity_browse_about">Σχετικά</string>
+    <string name="entity_browse_info">Πληροφορίες</string>
     <string name="player_external_loading_subtitles">Φόρτωση υποτίτλων από πρόσθετα…</string>
     <string name="player_external_downloading_subtitles">Λήψη υποτίτλων...</string>
     <plurals name="entity_browse_title_count">

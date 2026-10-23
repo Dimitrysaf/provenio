@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -40,6 +39,7 @@ import io.github.dimitrysaf.provenio.shell.components.SkeletonBlock
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeSkeletonRow
 import io.github.dimitrysaf.provenio.shell.screens.details.components.CompanyLogo
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailInfoRows
+import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPosterRailSection
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbEntityBrowseData
@@ -58,7 +58,6 @@ private sealed interface EntityBrowseUiState {
     data class Success(val data: TmdbEntityBrowseData) : EntityBrowseUiState
 }
 
-private val EntityHeaderWideMinWidth = 600.dp
 private val EntityHorizontalPadding = 16.dp
 
 @Composable
@@ -105,9 +104,12 @@ fun TmdbEntityBrowseScreen(
     val posterCellWidth = rememberPosterCellWidth()
     val posterCardStyle = rememberPosterCardStyleUiState()
     BoxWithConstraints(modifier = modifier) {
+        // Wide screens split the page as the other details pages do: who it is on one side, what it made on the other.
+        val isTwoPane = maxWidth >= DetailTwoPaneMinWidth
+        val railsWidth = if (isTwoPane) maxWidth * (1f - DetailPrimaryPaneWeight) else maxWidth
         val railShelfGrid = if (shelfSettings.shelfLayout == HomeShelfLayout.Grid) {
             DetailShelfGridContext(
-                contentWidth = maxWidth - EntityHorizontalPadding * 2,
+                contentWidth = railsWidth - EntityHorizontalPadding * 2,
                 horizontalPadding = EntityHorizontalPadding,
                 contentMaxWidth = Dp.Unspecified,
                 expandedByDefault = shelfSettings.shelvesExpandedByDefault,
@@ -123,40 +125,65 @@ fun TmdbEntityBrowseScreen(
             subtitle = entityKindLabel(entityKind),
             onBack = onBack.takeUnless { LocalUseNativeNavigation.current },
             horizontalPadding = 0.dp,
+            sidePane = if (isTwoPane) {
+                {
+                    when (state) {
+                        is EntityBrowseUiState.Loading -> entityRailsSkeleton()
+                        is EntityBrowseUiState.Error -> Unit
+                        is EntityBrowseUiState.Success -> entityRails(
+                            data = state.data,
+                            watchedKeys = watchedUiState.watchedKeys,
+                            fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                            railShelfGrid = railShelfGrid,
+                            onOpenMeta = onOpenMeta,
+                        )
+                    }
+                }
+            } else {
+                null
+            },
+            sidePaneWeight = 1f - DetailPrimaryPaneWeight,
         ) {
             when (state) {
-                is EntityBrowseUiState.Loading -> entityBrowseSkeleton()
+                is EntityBrowseUiState.Loading -> {
+                    entityHeaderSkeleton()
+                    if (!isTwoPane) entityRailsSkeleton()
+                }
                 is EntityBrowseUiState.Error -> item(key = "error") {
                     EntityBrowseError(
                         message = state.message,
                         onRetry = { attempt++ },
                     )
                 }
-                is EntityBrowseUiState.Success -> entityBrowseContent(
-                    data = state.data,
-                    watchedKeys = watchedUiState.watchedKeys,
-                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                    railShelfGrid = railShelfGrid,
-                    onOpenMeta = onOpenMeta,
-                )
+                is EntityBrowseUiState.Success -> {
+                    item(key = "header") {
+                        EntityHeader(
+                            header = state.data.header,
+                            catalogueCount = state.data.rails.sumOf { it.items.size },
+                        )
+                    }
+                    if (!isTwoPane) {
+                        entityRails(
+                            data = state.data,
+                            watchedKeys = watchedUiState.watchedKeys,
+                            fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                            railShelfGrid = railShelfGrid,
+                            onOpenMeta = onOpenMeta,
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-private fun LazyListScope.entityBrowseContent(
+private fun LazyListScope.entityRails(
     data: TmdbEntityBrowseData,
     watchedKeys: Set<String>,
     fullyWatchedSeriesKeys: Set<String>,
     railShelfGrid: DetailShelfGridContext?,
     onOpenMeta: (MetaPreview) -> Unit,
 ) {
-    item(key = "header") {
-        EntityHeader(
-            header = data.header,
-            catalogueCount = data.rails.sumOf { it.items.size },
-        )
-    }
     if (data.rails.isEmpty()) {
         item(key = "empty") {
             Text(
@@ -196,35 +223,22 @@ private fun LazyListScope.entityBrowseContent(
     }
 }
 
+/** The logo across the pane, sized to it, then the facts as the details pages' table, then what it is about. */
 @Composable
 private fun EntityHeader(
     header: TmdbEntityHeader,
     catalogueCount: Int,
 ) {
-    BoxWithConstraints(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = EntityHorizontalPadding),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        val logo: @Composable () -> Unit = { EntityLogo(header = header) }
-        val details: @Composable () -> Unit = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                EntityFacts(header = header, catalogueCount = catalogueCount)
-                header.description?.takeIf { it.isNotBlank() }?.let { description ->
-                    EntityAbout(description = description)
-                }
-            }
-        }
-        if (maxWidth >= EntityHeaderWideMinWidth) {
-            Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                logo()
-                Box(modifier = Modifier.weight(1f)) { details() }
-            }
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                logo()
-                details()
-            }
+        EntityLogo(header = header)
+        EntityFacts(header = header, catalogueCount = catalogueCount)
+        header.description?.takeIf { it.isNotBlank() }?.let { description ->
+            EntityAbout(description = description)
         }
     }
 }
@@ -232,33 +246,38 @@ private fun EntityHeader(
 @Composable
 private fun EntityLogo(header: TmdbEntityHeader) {
     val logo = header.logo?.takeIf { it.isNotBlank() }
-    Surface(
-        shape = MaterialTheme.shapes.extraLarge,
-        color = if (logo != null) {
-            MaterialTheme.colorScheme.surfaceContainerHigh
-        } else {
-            MaterialTheme.colorScheme.primaryContainer
-        },
-    ) {
-        Box(
-            modifier = Modifier
-                .width(EntityLogoWidth)
-                .height(EntityLogoHeight)
-                .padding(20.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (logo != null) {
-                CompanyLogo(
-                    url = logo,
-                    contentDescription = header.name,
-                    modifier = Modifier.fillMaxSize(),
-                )
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        // As wide as the pane allows, in the logo card's own shape, and never taller than a third of the screen.
+        val width = minOf(maxWidth, EntityLogoMaxWidth)
+        val height = (width / EntityLogoAspectRatio).coerceAtMost(EntityLogoMaxHeight)
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            color = if (logo != null) {
+                MaterialTheme.colorScheme.surfaceContainerHigh
             } else {
-                Text(
-                    text = header.name.initials(),
-                    style = MaterialTheme.typography.headlineMedium,
-                    maxLines = 1,
-                )
+                MaterialTheme.colorScheme.primaryContainer
+            },
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(width)
+                    .height(height)
+                    .padding(height * 0.18f),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (logo != null) {
+                    CompanyLogo(
+                        url = logo,
+                        contentDescription = header.name,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    Text(
+                        text = header.name.initials(),
+                        style = MaterialTheme.typography.displaySmall,
+                        maxLines = 1,
+                    )
+                }
             }
         }
     }
@@ -278,7 +297,9 @@ private fun EntityFacts(
         },
     )
     if (rows.isNotEmpty()) {
-        DetailInfoRows(rows = rows)
+        DetailSection(title = stringResource(Res.string.entity_browse_info)) {
+            DetailInfoRows(rows = rows)
+        }
     }
 }
 
@@ -320,16 +341,26 @@ private fun entityRailTitle(rail: TmdbEntityRail): String {
     return stringResource(Res.string.details_browse_rail_title, mediaLabel, railLabel)
 }
 
-private fun LazyListScope.entityBrowseSkeleton() {
+private fun LazyListScope.entityHeaderSkeleton() {
     item(key = "header-skeleton") {
         Column(
             modifier = Modifier.padding(horizontal = EntityHorizontalPadding),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            SkeletonBlock(width = EntityLogoWidth, height = EntityLogoHeight, cornerRadius = 28.dp)
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val width = minOf(maxWidth, EntityLogoMaxWidth)
+                SkeletonBlock(
+                    width = width,
+                    height = (width / EntityLogoAspectRatio).coerceAtMost(EntityLogoMaxHeight),
+                    cornerRadius = 28.dp,
+                )
+            }
             SkeletonBlock(modifier = Modifier.fillMaxWidth(), height = 128.dp, cornerRadius = 12.dp)
         }
     }
+}
+
+private fun LazyListScope.entityRailsSkeleton() {
     items(3) {
         HomeSkeletonRow(horizontalPadding = EntityHorizontalPadding)
     }
@@ -358,8 +389,9 @@ private fun EntityBrowseError(
     }
 }
 
-private val EntityLogoWidth = 200.dp
-private val EntityLogoHeight = 112.dp
+private val EntityLogoMaxWidth = 560.dp
+private val EntityLogoMaxHeight = 280.dp
+private const val EntityLogoAspectRatio = 16f / 9f
 
 private fun String.initials(): String {
     val parts = trim()

@@ -40,6 +40,8 @@ enum class StreamSortOrder {
     SMALLEST_FIRST,
     MOST_SEEDS,
     FEWEST_SEEDS,
+    MOST_PEERS,
+    FEWEST_PEERS,
 }
 
 private val StreamSizePattern = Regex(
@@ -70,14 +72,25 @@ private val StreamSeedsPattern = Regex(
 fun StreamItem.seeds(): Int? =
     StreamSeedsPattern.find(searchableText())?.groupValues?.get(1)?.toIntOrNull()
 
-// Orders each group's streams by size or seeds, keeping the groups in place; streams without that value go last.
+private val StreamPeersPattern = Regex(
+    "\\b(?:peer|leecher|leech(?:e)?)s?\\s*[:=]\\s*(\\d+)",
+    RegexOption.IGNORE_CASE,
+)
+
+// How many peers the torrent has, as the add-on wrote it: a label like "Peers: 8" or "Leechers: 8", with its colon.
+fun StreamItem.peers(): Int? =
+    StreamPeersPattern.find(searchableText())?.groupValues?.get(1)?.toIntOrNull()
+
+// Orders each group's streams by size, seeds or peers, keeping the groups in place; streams without that value go last.
 fun List<AddonStreamGroup>.sortedByOrder(order: StreamSortOrder): List<AddonStreamGroup> {
     val value: (StreamItem) -> Long? = when (order) {
         StreamSortOrder.DEFAULT -> return this
         StreamSortOrder.LARGEST_FIRST, StreamSortOrder.SMALLEST_FIRST -> { stream -> stream.sizeBytes() }
         StreamSortOrder.MOST_SEEDS, StreamSortOrder.FEWEST_SEEDS -> { stream -> stream.seeds()?.toLong() }
+        StreamSortOrder.MOST_PEERS, StreamSortOrder.FEWEST_PEERS -> { stream -> stream.peers()?.toLong() }
     }
-    val descending = order == StreamSortOrder.LARGEST_FIRST || order == StreamSortOrder.MOST_SEEDS
+    val descending = order == StreamSortOrder.LARGEST_FIRST || order == StreamSortOrder.MOST_SEEDS ||
+        order == StreamSortOrder.MOST_PEERS
     return map { group ->
         val valued = group.streams.map { it to value(it) }
         val known = valued.filter { it.second != null }

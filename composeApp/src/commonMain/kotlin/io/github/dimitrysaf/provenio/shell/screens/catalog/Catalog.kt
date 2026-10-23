@@ -66,6 +66,7 @@ import io.github.dimitrysaf.provenio.shell.components.LocalPosterProgress
 import io.github.dimitrysaf.provenio.shell.components.SkeletonPoster
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
 import io.github.dimitrysaf.provenio.shell.components.posterCardClickable
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterLiftSource
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
 import io.github.dimitrysaf.provenio.shell.components.withDuplicateSafeLazyKeys
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
@@ -306,6 +307,7 @@ private fun CatalogPosterTile(
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
 ) {
+    val liftSource = rememberPosterLiftSource(item.poster)
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -320,6 +322,7 @@ private fun CatalogPosterTile(
                     onLongClick = onLongClick,
                     zoomImageUrl = item.poster,
                     zoomCornerRadius = cornerRadiusDp.dp,
+                    liftSource = liftSource,
                 ),
         ) {
             if (item.poster != null) {
@@ -331,7 +334,8 @@ private fun CatalogPosterTile(
                 )
             }
             PosterProgressBar(progress = LocalPosterProgress.current(item).takeIf { !isWatched })
-            PosterWatchedOverlay(isWatched = isWatched)
+            // The zoom carries the artwork only: a scrim lifted with it would stretch over the page.
+            if (!liftSource.isLifted) PosterWatchedOverlay(isWatched = isWatched)
         }
         if (!hideLabels) {
             Text(

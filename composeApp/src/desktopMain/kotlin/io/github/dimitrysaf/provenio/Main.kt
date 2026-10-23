@@ -72,6 +72,8 @@ import io.github.dimitrysaf.provenio.core.watch.watched.WatchedStorage
 import io.github.dimitrysaf.provenio.core.diagnostics.AppLogs
 import io.github.dimitrysaf.provenio.desktop.AppWindowExceptionHandlerFactory
 import io.github.dimitrysaf.provenio.desktop.Context
+import io.github.dimitrysaf.provenio.desktop.PageTextSelectAll
+import io.github.dimitrysaf.provenio.desktop.PageTextSelection
 import io.github.dimitrysaf.provenio.desktop.DesktopDisplayScale
 import io.github.dimitrysaf.provenio.desktop.MouseNavigationButtons
 import io.github.dimitrysaf.provenio.desktop.DesktopLaunchScreen
@@ -177,6 +179,8 @@ fun main(args: Array<String>) {
                         else -> AppKeyboardShortcuts.handle(event)
                     }
                 },
+                // After the page had its turn, so a text field's own Ctrl+A selects its text.
+                onKeyEvent = PageTextSelectAll::handle,
             ) {
                 LaunchedEffect(Unit) {
                     SingleInstance.showRequests.collect {
@@ -192,7 +196,9 @@ fun main(args: Array<String>) {
                 ProvideDesktopDisplayScale {
                     CompositionLocalProvider(LocalContextMenuRepresentation provides MaterialContextMenuRepresentation) {
                         DesktopLaunchScreen {
-                            App()
+                            PageTextSelection {
+                                App()
+                            }
                         }
                     }
                 }

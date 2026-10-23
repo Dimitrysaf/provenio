@@ -278,6 +278,8 @@ private fun DetailHeroPage(
             meta = meta,
             layout = layout,
             posterFallback = posterFallback,
+            // The title, its logo and genres belong to the first page only; the others are its pictures.
+            showTitle = posterFallback,
             contentAlpha = contentAlpha,
         )
 
@@ -303,6 +305,7 @@ private fun HeroArtworkPage(
     meta: MetaDetails,
     layout: HomeHeroLayout,
     posterFallback: Boolean,
+    showTitle: Boolean,
     contentAlpha: () -> Float,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -320,6 +323,7 @@ private fun HeroArtworkPage(
             )
         }
 
+        if (!showTitle) return@Box
         HeroPageScrim()
 
         Box(

@@ -34,6 +34,7 @@ import io.github.dimitrysaf.provenio.core.streams.AddonStreamGroup
 import io.github.dimitrysaf.provenio.core.streams.StreamQuality
 import io.github.dimitrysaf.provenio.core.streams.StreamSortOrder
 import io.github.dimitrysaf.provenio.core.streams.filteredBy
+import io.github.dimitrysaf.provenio.core.streams.peers
 import io.github.dimitrysaf.provenio.core.streams.quality
 import io.github.dimitrysaf.provenio.core.streams.seeds
 import io.github.dimitrysaf.provenio.core.streams.sizeBytes
@@ -92,7 +93,7 @@ internal fun StreamFilterBar(state: StreamFilterState, groups: List<AddonStreamG
     val qualities = remember(groups) {
         groups.flatMap { it.streams }.map { it.quality() }.toSet().sorted()
     }
-    // Each way of sorting is offered only when some stream says the size or seeds it sorts by.
+    // Each way of sorting is offered only when some stream says the size, seeds or peers it sorts by.
     val orders = remember(groups) {
         val streams = groups.flatMap { it.streams }
         buildList {
@@ -104,6 +105,10 @@ internal fun StreamFilterBar(state: StreamFilterState, groups: List<AddonStreamG
             if (streams.any { it.seeds() != null }) {
                 add(StreamSortOrder.MOST_SEEDS)
                 add(StreamSortOrder.FEWEST_SEEDS)
+            }
+            if (streams.any { it.peers() != null }) {
+                add(StreamSortOrder.MOST_PEERS)
+                add(StreamSortOrder.FEWEST_PEERS)
             }
         }.takeIf { it.size > 1 }.orEmpty()
     }
@@ -307,6 +312,8 @@ private fun StreamSortOrder.label(): String = when (this) {
     StreamSortOrder.SMALLEST_FIRST -> stringResource(Res.string.streams_sort_size_asc)
     StreamSortOrder.MOST_SEEDS -> stringResource(Res.string.streams_sort_seeds_desc)
     StreamSortOrder.FEWEST_SEEDS -> stringResource(Res.string.streams_sort_seeds_asc)
+    StreamSortOrder.MOST_PEERS -> stringResource(Res.string.streams_sort_peers_desc)
+    StreamSortOrder.FEWEST_PEERS -> stringResource(Res.string.streams_sort_peers_asc)
 }
 
 @Composable

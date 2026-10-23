@@ -2,7 +2,10 @@ package io.github.dimitrysaf.provenio.shell.components
 
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
@@ -55,6 +58,8 @@ fun ScreenScaffold(
     modifier: Modifier = Modifier,
     title: String? = null,
     subtitle: String? = null,
+    /** The line under the title, drawn by the screen, in place of [subtitle]. */
+    subtitleContent: (@Composable () -> Unit)? = null,
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     bottomBar: (@Composable () -> Unit)? = null,
@@ -67,6 +72,9 @@ fun ScreenScaffold(
     /** Pulling the list down calls this, when given, and its indicator shows while [refreshing]. */
     onRefresh: (() -> Unit)? = null,
     refreshing: Boolean = false,
+    /** A second list at the end side, as the two-pane details pages have, taking [sidePaneWeight] of the width. */
+    sidePane: (LazyListScope.() -> Unit)? = null,
+    sidePaneWeight: Float = 0.44f,
     content: LazyListScope.() -> Unit,
 ) {
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -93,36 +101,53 @@ fun ScreenScaffold(
             indicatorTop = innerPadding.calculateTopPadding(),
             modifier = Modifier.fillMaxSize(),
         ) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize().arrowKeyScrollContent(arrowKeyScroll, listState, textOnly),
-                contentPadding = PaddingValues(
-                    start = sidePadding,
-                    top = topPadding
-                        ?: if (title != null) {
-                            innerPadding.calculateTopPadding()
-                        } else {
-                            10.dp + statusBarTop + platformExtraTopPadding
-                        },
-                    end = sidePadding,
-                    // A bottom bar already reserves its own height plus the navigation bar inset in
-                    // the scaffold's inner padding, so the content only adds the screen's own gap
-                    // above it.
-                    bottom = if (bottomBar != null) {
-                        innerPadding.calculateBottomPadding() + 18.dp
+            val contentPadding = PaddingValues(
+                start = sidePadding,
+                top = topPadding
+                    ?: if (title != null) {
+                        innerPadding.calculateTopPadding()
                     } else {
-                        safeBottomPadding(18.dp)
+                        10.dp + statusBarTop + platformExtraTopPadding
                     },
-                ),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                content = content,
+                end = sidePadding,
+                // A bottom bar already reserves its own height plus the navigation bar inset in
+                // the scaffold's inner padding, so the content only adds the screen's own gap
+                // above it.
+                bottom = if (bottomBar != null) {
+                    innerPadding.calculateBottomPadding() + 18.dp
+                } else {
+                    safeBottomPadding(18.dp)
+                },
             )
-            PageScrollbar(
-                state = listState,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = innerPadding.calculateTopPadding()),
-            )
+            val pane: @Composable (Modifier, LazyListState, Boolean, LazyListScope.() -> Unit) -> Unit =
+                { paneModifier, state, focusable, paneContent ->
+                    Box(modifier = paneModifier) {
+                        LazyColumn(
+                            state = state,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .then(if (focusable) Modifier.arrowKeyScrollContent(arrowKeyScroll, state, textOnly) else Modifier),
+                            contentPadding = contentPadding,
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            content = paneContent,
+                        )
+                        PageScrollbar(
+                            state = state,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(top = innerPadding.calculateTopPadding()),
+                        )
+                    }
+                }
+            if (sidePane == null) {
+                pane(Modifier.fillMaxSize(), listState, true, content)
+            } else {
+                val sideListState = rememberLazyListState()
+                Row(modifier = Modifier.fillMaxSize()) {
+                    pane(Modifier.weight(1f - sidePaneWeight).fillMaxHeight(), listState, true, content)
+                    pane(Modifier.weight(sidePaneWeight).fillMaxHeight(), sideListState, false, sidePane)
+                }
+            }
         }
     }
 
@@ -141,7 +166,7 @@ fun ScreenScaffold(
             if (title == null) return@Scaffold
             LargeFlexibleTopAppBar(
                 title = { Text(title) },
-                subtitle = subtitle?.let { { Text(it) } },
+                subtitle = subtitleContent ?: subtitle?.let { { Text(it) } },
                 navigationIcon = {
                     if (onBack != null) {
                         WithTooltip(stringResource(Res.string.action_back)) {

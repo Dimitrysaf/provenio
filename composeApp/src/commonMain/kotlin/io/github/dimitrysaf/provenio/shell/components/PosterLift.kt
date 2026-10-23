@@ -78,6 +78,16 @@ internal class PosterLiftSource(private val graphicsContext: GraphicsContext) : 
     }
 }
 
+/**
+ * The picture of a poster that its zoom carries, kept by the card itself so what is drawn over the
+ * poster can leave the picture while it is lifted, as the watched scrim does.
+ */
+@Composable
+internal fun rememberPosterLiftSource(zoomImageUrl: String?): PosterLiftSource {
+    val graphicsContext = LocalGraphicsContext.current
+    return remember(graphicsContext, zoomImageUrl) { PosterLiftSource(graphicsContext) }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun Modifier.posterCardClickable(
@@ -85,9 +95,13 @@ internal fun Modifier.posterCardClickable(
     onLongClick: (() -> Unit)?,
     zoomImageUrl: String? = null,
     zoomCornerRadius: Dp = 12.dp,
+    liftSource: PosterLiftSource? = null,
 ): Modifier {
     val graphicsContext = LocalGraphicsContext.current
-    val source = remember(graphicsContext, zoomImageUrl) { PosterLiftSource(graphicsContext) }
+    val ownSource = remember(graphicsContext, zoomImageUrl, liftSource == null) {
+        if (liftSource == null) PosterLiftSource(graphicsContext) else null
+    }
+    val source = liftSource ?: ownSource!!
     val onPosterClickAnchor = LocalPosterClickAnchor.current
     val posterModifier = Modifier
         .drawWithContent {

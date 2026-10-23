@@ -21,6 +21,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import provenio.composeapp.generated.resources.Res
@@ -121,24 +123,31 @@ fun BoxScope.CompletedOverlay(
 
 /**
  * How far through a title is, as a bar along the bottom of its poster; nothing for null. It is the
- * whole movie or series, unlike Continue Watching, whose bar is the episode or movie playing.
+ * whole movie or series, unlike Continue Watching, whose bar is the episode or movie playing, and
+ * it is drawn the way Continue Watching's posters draw theirs: edge to edge along the bottom.
  */
 @Composable
 fun BoxScope.PosterProgressBar(progress: Float?, modifier: Modifier = Modifier) {
     if (progress == null) return
+    val windowWidthDp = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp().value }
     LinearProgressIndicator(
         progress = { progress.coerceIn(0f, 1f) },
         modifier = modifier
             .align(Alignment.BottomCenter)
-            // Drawn as Continue Watching draws its bar: thin, and close to the card's bottom edge.
-            .padding(horizontal = 8.dp, vertical = 3.dp)
             .fillMaxWidth()
-            .height(3.dp),
+            .height(posterProgressHeight(windowWidthDp)),
         color = MaterialTheme.colorScheme.primary,
         trackColor = Color.White.copy(alpha = 0.24f),
         gapSize = 0.dp,
         drawStopIndicator = {},
     )
+}
+
+/** How thick a poster's progress bar is, in a window [windowWidthDp] wide. */
+internal fun posterProgressHeight(windowWidthDp: Float): Dp = when {
+    windowWidthDp >= 1440f -> 6.dp
+    windowWidthDp >= 1024f -> 5.dp
+    else -> 4.dp
 }
 
 private val CompletedBadgeSize = 40.dp

@@ -461,6 +461,7 @@ private fun PersonHero(
                         deceased = deceased,
                         placeholderIcon = placeholderIcon,
                         layout = layout,
+                        showTitle = true,
                         contentAlpha = { 1f },
                     )
                 }
@@ -502,6 +503,7 @@ private fun PersonHero(
                             deceased = deceased,
                             placeholderIcon = placeholderIcon,
                             layout = layout,
+                            showTitle = index == 0,
                             contentAlpha = { heroItemContentAlpha(drawInfo) },
                         )
                     }
@@ -521,6 +523,8 @@ private fun PersonHeroPage(
     deceased: Boolean,
     placeholderIcon: ImageVector?,
     layout: HomeHeroLayout,
+    /** The name and what is under it belong to the first page only; the others are only pictures. */
+    showTitle: Boolean,
     contentAlpha: () -> Float,
 ) {
     val centerTitle = layout.centerTitle
@@ -552,6 +556,7 @@ private fun PersonHeroPage(
             )
         }
 
+        if (!showTitle) return@Box
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -818,6 +823,8 @@ private fun personInfoRows(
     val firstYear = credits.mapNotNull { it.rawReleaseDate?.take(4)?.toIntOrNull() }.minOrNull()
 
     val candidates = listOf(
+        stringResource(Res.string.person_detail_name) to person.name,
+        stringResource(Res.string.person_detail_role) to person.knownFor,
         stringResource(Res.string.person_detail_born) to bornValue,
         stringResource(Res.string.person_detail_died) to diedValue,
         stringResource(Res.string.person_detail_place_of_birth) to person.placeOfBirth,

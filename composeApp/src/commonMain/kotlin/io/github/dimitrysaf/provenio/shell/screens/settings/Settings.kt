@@ -451,7 +451,14 @@ private fun MobileSettingsScreen(
             modifier = Modifier.nestedScroll(rootSearchRevealConnection),
             // Native navigation supplies its own header, so the app bar only appears when this
             // screen is responsible for one.
-            title = if (showInternalHeader) stringResource(page.titleRes) else null,
+            title = if (!showInternalHeader) {
+                null
+            } else if (page == SettingsPage.Documentation) {
+                documentationAppBarTitle(stringResource(page.titleRes))
+            } else {
+                stringResource(page.titleRes)
+            },
+            subtitleContent = if (page == SettingsPage.Documentation) documentationAppBarBreadcrumbs() else null,
             listState = listState,
             onBack = previousPage?.let { { if (!pageBack(page)) onNavigateBack() } },
             actions = { SettingsPageActions(page) },
@@ -758,9 +765,12 @@ private fun TabletSettingsScreen(
             val previousPage = shownPage.previousPage()?.takeIf { it != SettingsPage.Root && !searching }
             val pageTitle = if (searching) {
                 stringResource(Res.string.compose_settings_page_root)
+            } else if (shownPage == SettingsPage.Documentation) {
+                documentationAppBarTitle(stringResource(shownPage.titleRes))
             } else {
                 stringResource(shownPage.titleRes)
             }
+            val pageSubtitle = if (!searching && shownPage == SettingsPage.Documentation) documentationAppBarBreadcrumbs() else null
             val topAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
             val arrowKeyScroll = rememberArrowKeyScroll()
             val docs by Docs.state.collectAsStateWithLifecycle()
@@ -775,6 +785,7 @@ private fun TabletSettingsScreen(
                     if (showInternalHeader) {
                         LargeFlexibleTopAppBar(
                             title = { Text(pageTitle) },
+                            subtitle = pageSubtitle,
                             navigationIcon = {
                                 if (previousPage != null) {
                                     WithTooltip(stringResource(Res.string.action_back)) {

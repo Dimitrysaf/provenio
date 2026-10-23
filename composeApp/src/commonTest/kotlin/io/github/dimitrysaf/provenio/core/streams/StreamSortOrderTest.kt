@@ -62,4 +62,25 @@ class StreamSortOrderTest {
         assertEquals(listOf("most", "mid", "few", "none"), most)
         assertEquals(listOf("few", "mid", "most", "none"), fewest)
     }
+
+    @Test
+    fun peersAreReadFromTheDescription() {
+        assertEquals(8, stream("a", "1080p Peers: 8").peers())
+        assertEquals(15, stream("a", "Seeders: 40 Leechers: 15").peers())
+        assertNull(stream("Peer Gynt", "1080p 💾 2 GB").peers())
+    }
+
+    @Test
+    fun ordersEachGroupByPeersWithUnknownPeersLast() {
+        val group = AddonStreamGroup(
+            addonName = "Addon",
+            addonId = "addon",
+            streams = listOf(stream("mid", "Peers: 50"), stream("none"), stream("most", "Peers: 900"), stream("few", "Peers: 3")),
+        )
+        val most = listOf(group).sortedByOrder(StreamSortOrder.MOST_PEERS).single().streams.map { it.name }
+        val fewest = listOf(group).sortedByOrder(StreamSortOrder.FEWEST_PEERS).single().streams.map { it.name }
+
+        assertEquals(listOf("most", "mid", "few", "none"), most)
+        assertEquals(listOf("few", "mid", "most", "none"), fewest)
+    }
 }

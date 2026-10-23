@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import io.github.dimitrysaf.provenio.shell.components.posterProgressHeight
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterAreaContentWidth
 import io.github.dimitrysaf.provenio.shell.components.posterAreaMarginDp
 import androidx.compose.material3.ripple
@@ -1233,7 +1234,7 @@ internal fun rememberContinueWatchingLayout(
             posterCardHeight = posterHeight,
             posterLandscape = posterCardStyle.catalogLandscapeModeEnabled,
             posterShowsTitle = !posterCardStyle.hideLabelsEnabled,
-            progressHeight = 6.dp,
+            progressHeight = posterProgressHeight(maxWidthDp),
             posterTitleBlockHeight = 40.dp,
         )
         maxWidthDp >= 1024f -> ContinueWatchingLayout(
@@ -1246,7 +1247,7 @@ internal fun rememberContinueWatchingLayout(
             posterCardHeight = posterHeight,
             posterLandscape = posterCardStyle.catalogLandscapeModeEnabled,
             posterShowsTitle = !posterCardStyle.hideLabelsEnabled,
-            progressHeight = 5.dp,
+            progressHeight = posterProgressHeight(maxWidthDp),
             posterTitleBlockHeight = 40.dp,
         )
         maxWidthDp >= 768f -> ContinueWatchingLayout(
@@ -1259,7 +1260,7 @@ internal fun rememberContinueWatchingLayout(
             posterCardHeight = posterHeight,
             posterLandscape = posterCardStyle.catalogLandscapeModeEnabled,
             posterShowsTitle = !posterCardStyle.hideLabelsEnabled,
-            progressHeight = 4.dp,
+            progressHeight = posterProgressHeight(maxWidthDp),
             posterTitleBlockHeight = 38.dp,
         )
         else -> ContinueWatchingLayout(
@@ -1272,7 +1273,7 @@ internal fun rememberContinueWatchingLayout(
             posterCardHeight = posterHeight,
             posterLandscape = posterCardStyle.catalogLandscapeModeEnabled,
             posterShowsTitle = !posterCardStyle.hideLabelsEnabled,
-            progressHeight = 4.dp,
+            progressHeight = posterProgressHeight(maxWidthDp),
             posterTitleBlockHeight = 38.dp,
         )
     }
