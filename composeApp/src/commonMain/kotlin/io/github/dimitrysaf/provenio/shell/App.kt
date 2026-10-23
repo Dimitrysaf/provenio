@@ -4,6 +4,7 @@ import io.github.dimitrysaf.provenio.shell.components.clearFocusOnTap
 import io.github.dimitrysaf.provenio.shell.components.SearchFocusScrimHost
 import io.github.dimitrysaf.provenio.shell.components.KeyActionHintHost
 import io.github.dimitrysaf.provenio.shell.screens.settings.CrashPrompt
+import io.github.dimitrysaf.provenio.shell.screens.settings.DocsPageHost
 import io.github.dimitrysaf.provenio.shell.screens.onboarding.OnboardingPreviewHost
 import io.github.dimitrysaf.provenio.shell.components.FocusMemoryRoot
 import io.github.dimitrysaf.provenio.core.settings.ThemeMode
@@ -90,6 +91,7 @@ fun App(
                 AppSnackbarHost(modifier = Modifier.align(Alignment.BottomCenter))
                 KeyActionHintHost(modifier = Modifier.align(Alignment.BottomCenter))
                 CrashPrompt()
+                DocsPageHost()
                 OnboardingPreviewHost()
             }
         }

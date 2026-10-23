@@ -2,6 +2,7 @@ package io.github.dimitrysaf.provenio.shell.components.markdown
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,6 +24,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
@@ -48,6 +51,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -58,6 +62,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -80,6 +85,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.launch
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import io.github.dimitrysaf.provenio.shell.components.ImageViewerRequest
@@ -98,18 +104,32 @@ import coil3.size.Size as ImageSize
  * Draws [document] in a column, the way GitHub draws Markdown, in the app's own type and colours.
  * Links are handed to [onLinkClick] as written; pictures open in the image viewer when tapped.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MarkdownContent(
     document: MarkdownDocument,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    MarkdownScope(onLinkClick) {
+    // A link to one of the page's own headings scrolls whatever holds the page to bring it to the top.
+    val requesters = remember(document) { document.anchors.mapValues { BringIntoViewRequester() } }
+    val byBlock = remember(document) { document.anchors.entries.associate { (anchor, index) -> index to requesters.getValue(anchor) } }
+    val scope = rememberCoroutineScope()
+    val handleLink: (String) -> Unit = { link ->
+        val requester = link.takeIf { it.startsWith("#") }?.let { requesters[it.removePrefix("#")] }
+        if (requester != null) scope.launch { requester.bringIntoView(TopOfView) } else onLinkClick(link)
+    }
+    MarkdownScope(handleLink) {
         Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(BlockSpacing)) {
-            document.blocks.forEach { MarkdownBlockView(it) }
+            document.blocks.forEachIndexed { index, block ->
+                MarkdownBlockView(block, byBlock[index]?.let { Modifier.bringIntoViewRequester(it) } ?: Modifier)
+            }
         }
     }
 }
+
+// Taller than any screen, so bringing it into view puts its top edge at the top rather than at the bottom.
+private val TopOfView = Rect(0f, 0f, 1f, 100_000f)
 
 /**
  * [document] as items of a lazy list, one per block, so a long page draws only what is on screen

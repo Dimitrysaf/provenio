@@ -452,7 +452,8 @@ private fun MobileSettingsScreen(
             // screen is responsible for one.
             title = if (showInternalHeader) stringResource(page.titleRes) else null,
             listState = listState,
-            onBack = previousPage?.let { { onNavigateBack() } },
+            onBack = previousPage?.let { { if (!pageBack(page)) onNavigateBack() } },
+            actions = { SettingsPageActions(page) },
             contentMaxWidth = SettingsContentMaxWidth,
             textOnly = page == SettingsPage.KeyboardShortcuts,
         ) {
@@ -773,7 +774,7 @@ private fun TabletSettingsScreen(
                             navigationIcon = {
                                 if (previousPage != null) {
                                     WithTooltip(stringResource(Res.string.action_back)) {
-                                        IconButton(onClick = onNavigateBack) {
+                                        IconButton(onClick = { if (searching || !pageBack(shownPage)) onNavigateBack() }) {
                                             Icon(
                                                 imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                                                 contentDescription = stringResource(Res.string.action_back),
@@ -782,6 +783,7 @@ private fun TabletSettingsScreen(
                                     }
                                 }
                             },
+                            actions = { if (!searching) SettingsPageActions(shownPage) },
                             scrollBehavior = topAppBarScrollBehavior,
                         )
                     }
@@ -1016,6 +1018,15 @@ internal class SettingsPageLinks(
     val onCheckForUpdatesClick: (() -> Unit)?,
 )
 
+/** Buttons a page adds to its app bar. */
+@Composable
+private fun SettingsPageActions(page: SettingsPage) {
+    if (page == SettingsPage.Documentation) DocumentationAppBarActions()
+}
+
+// The app bar's back first steps back inside a page that keeps its own trail, as Documentation does.
+private fun pageBack(page: SettingsPage): Boolean = page == SettingsPage.Documentation && DocsBrowser.back()
+
 // Every settings page except the root, which each layout lays out itself.
 internal fun LazyListScope.settingsPageContent(
     page: SettingsPage,
@@ -1036,7 +1047,10 @@ internal fun LazyListScope.settingsPageContent(
         )
         SettingsPage.About -> aboutSettingsContent(
             isTablet = isTablet,
-            onDocumentationClick = { links.openSubPage(SettingsPage.Documentation) },
+            onDocumentationClick = {
+                DocsBrowser.reset()
+                links.openSubPage(SettingsPage.Documentation)
+            },
             onLicensesAttributionsClick = links.onLicensesAttributionsClick,
             onCheckForUpdatesClick = links.onCheckForUpdatesClick,
         )
