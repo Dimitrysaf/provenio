@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
@@ -75,11 +74,8 @@ import io.github.dimitrysaf.provenio.shell.components.StatusModal
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.components.TextPromptDialog
 import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
-import io.github.dimitrysaf.provenio.shell.screens.settings.DocsPages
-import io.github.dimitrysaf.provenio.shell.screens.settings.DocsViewer
 import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
 import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
-import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
 import io.github.dimitrysaf.provenio.shell.screens.settings.segmentShape
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
@@ -125,17 +121,6 @@ internal fun AddonsSettingsPageContent(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // The guide is the documentation's Addons page, opened over this one.
-        SettingsList {
-            navigationRow(
-                title = stringResource(Res.string.addons_guide_title),
-                description = stringResource(Res.string.addons_guide_entry_description),
-                icon = Icons.AutoMirrored.Rounded.MenuBook,
-                opensPage = true,
-                onClick = { DocsViewer.open(DocsPages.Addons) },
-            )
-        }
-
         // How many are active is a property of this list, so it rides the heading rather than
         // taking a summary block of its own above it. With nothing installed there is no count
         // worth stating, and the empty state below says it better than "(0/0)" would.

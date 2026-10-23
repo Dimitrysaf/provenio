@@ -141,8 +141,6 @@
     <string name="keyboard_action_next_episode">Next episode</string>
     <string name="keyboard_action_player_fullscreen">Full screen</string>
     <string name="keyboard_action_leave_player">Leave the player</string>
-    <string name="addons_guide_title">Addons guide</string>
-    <string name="addons_guide_entry_description">What addons are, where to find them and how to install them</string>
     <string name="addons_guide_cinemeta_body">Movie and series information, made by the Stremio team.</string>
     <string name="addons_guide_torrentio_body">Finds streams from [[torrent|torrents]]. Works right away and can be [[configure|configured]] with a [[debrid|debrid]] service.</string>
     <string name="addons_guide_opensubtitles_body">Subtitles in many languages for movies and series, so you can turn them on in the player.</string>

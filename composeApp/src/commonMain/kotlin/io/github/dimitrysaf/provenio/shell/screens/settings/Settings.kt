@@ -1022,6 +1022,7 @@ private fun SettingsPageActions(page: SettingsPage) {
     when (page) {
         SettingsPage.Documentation -> DocumentationAppBarActions()
         SettingsPage.P2pStreaming -> DocsHelpButton(DocsPages.Torrents)
+        SettingsPage.Addons -> DocsHelpButton(DocsPages.Addons)
         else -> Unit
     }
 }

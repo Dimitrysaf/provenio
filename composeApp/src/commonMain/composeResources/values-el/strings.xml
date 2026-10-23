@@ -141,8 +141,6 @@
     <string name="keyboard_action_next_episode">Επόμενο επεισόδιο</string>
     <string name="keyboard_action_player_fullscreen">Πλήρης οθόνη</string>
     <string name="keyboard_action_leave_player">Έξοδος από την αναπαραγωγή</string>
-    <string name="addons_guide_title">Οδηγός πρόσθετων</string>
-    <string name="addons_guide_entry_description">Τι είναι τα πρόσθετα, πού θα τα βρείτε και πώς να τα εγκαταστήσετε</string>
     <string name="addons_guide_cinemeta_body">Πληροφορίες για ταινίες και σειρές, από την ομάδα του Stremio.</string>
     <string name="addons_guide_torrentio_body">Βρίσκει ροές από [[torrent|torrent]]. Λειτουργεί αμέσως και μπορεί να [[configure|ρυθμιστεί]] με μια υπηρεσία [[debrid|debrid]].</string>
     <string name="addons_guide_opensubtitles_body">Υπότιτλοι σε πολλές γλώσσες για ταινίες και σειρές, για να τους ενεργοποιείτε στο πρόγραμμα αναπαραγωγής.</string>

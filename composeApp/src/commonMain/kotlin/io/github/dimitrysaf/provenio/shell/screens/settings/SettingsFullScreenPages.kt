@@ -144,6 +144,7 @@ fun AddonsSettingsScreen(
         modifier = Modifier.fillMaxSize(),
         onBack = onBack,
         contentMaxWidth = SettingsContentMaxWidth,
+        actions = { DocsHelpButton(DocsPages.Addons) },
     ) {
         addonsSettingsContent()
     }
