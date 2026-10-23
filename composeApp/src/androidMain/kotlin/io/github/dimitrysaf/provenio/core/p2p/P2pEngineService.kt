@@ -52,6 +52,14 @@ class P2pEngineService : Service() {
         return START_NOT_STICKY
     }
 
+    // Swiping Provenio away ends its player, but the player's own clean-up may never run while this
+    // service keeps the process alive, so the engine would stream on for nothing. Downloads still
+    // hold the engine, and the service stops once it goes idle.
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        P2pStreamingEngine.shutdown()
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         super.onDestroy()
