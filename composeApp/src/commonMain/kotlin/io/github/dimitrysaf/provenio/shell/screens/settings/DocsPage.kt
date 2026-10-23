@@ -35,9 +35,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.docs.Docs
+import io.github.dimitrysaf.provenio.core.deeplink.handleAppUrl
 import io.github.dimitrysaf.provenio.core.docs.DocsPageResult
 import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
@@ -56,6 +58,7 @@ import provenio.composeapp.generated.resources.*
 
 /** The wiki pages the app links to from its own screens. */
 internal object DocsPages {
+    const val Addons = "Addons"
     const val Torrents = "Torrents"
 }
 
@@ -92,6 +95,20 @@ internal fun DocsHelpButton(page: String, beforeOpen: (() -> Unit)? = null, onCl
         ) {
             Icon(Icons.AutoMirrored.Rounded.HelpOutline, contentDescription = label)
         }
+    }
+}
+
+/**
+ * Opens a link from a documentation page that leads out of it. An addon's `stremio://` install link
+ * installs the addon here, as it would coming from a browser, so a page can offer one-tap installs;
+ * anything else opens outside the app.
+ */
+internal fun openDocsLink(link: String, uriHandler: UriHandler) {
+    if (link.startsWith("stremio://", ignoreCase = true)) {
+        DocsViewer.close()
+        handleAppUrl(link)
+    } else {
+        runCatching { uriHandler.openUri(link) }
     }
 }
 
@@ -231,7 +248,7 @@ private fun OverlayPage(page: String, onBack: () -> Unit, onOpenPage: (String) -
                             scope.launch { listState.animateScrollToItem(index + 1) }
                         }
                         linkedPage != null -> onOpenPage(linkedPage)
-                        else -> runCatching { uriHandler.openUri(link) }
+                        else -> openDocsLink(link, uriHandler)
                     }
                 }
             }

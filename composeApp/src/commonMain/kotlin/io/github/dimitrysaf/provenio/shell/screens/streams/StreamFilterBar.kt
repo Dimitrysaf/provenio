@@ -32,11 +32,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.streams.AddonStreamGroup
 import io.github.dimitrysaf.provenio.core.streams.StreamQuality
-import io.github.dimitrysaf.provenio.core.streams.StreamSizeOrder
+import io.github.dimitrysaf.provenio.core.streams.StreamSortOrder
 import io.github.dimitrysaf.provenio.core.streams.filteredBy
 import io.github.dimitrysaf.provenio.core.streams.quality
+import io.github.dimitrysaf.provenio.core.streams.seeds
 import io.github.dimitrysaf.provenio.core.streams.sizeBytes
-import io.github.dimitrysaf.provenio.core.streams.sortedBySize
+import io.github.dimitrysaf.provenio.core.streams.sortedByOrder
 import io.github.dimitrysaf.provenio.core.streams.streamQueryRegex
 import io.github.dimitrysaf.provenio.shell.components.BottomSheetBodyMargin
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
@@ -50,14 +51,14 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
-/** The chosen qualities and size order, kept from one list of streams to the next until changed. */
+/** The chosen qualities and order, kept from one list of streams to the next until changed. */
 private object RememberedStreamFilter {
     var qualities by mutableStateOf(emptySet<StreamQuality>())
-    var sizeOrder by mutableStateOf(StreamSizeOrder.DEFAULT)
+    var sortOrder by mutableStateOf(StreamSortOrder.DEFAULT)
 }
 
 /**
- * The search text for one list of streams, with the qualities and size order chosen last time.
+ * The search text for one list of streams, with the qualities and order chosen last time.
  * Chosen qualities a list does not have are left out for it, so they never hide every stream.
  */
 @Stable
@@ -70,15 +71,15 @@ internal class StreamFilterState {
             RememberedStreamFilter.qualities = value
         }
 
-    var sizeOrder: StreamSizeOrder
-        get() = RememberedStreamFilter.sizeOrder
+    var sortOrder: StreamSortOrder
+        get() = RememberedStreamFilter.sortOrder
         set(value) {
-            RememberedStreamFilter.sizeOrder = value
+            RememberedStreamFilter.sortOrder = value
         }
 
     fun apply(groups: List<AddonStreamGroup>): List<AddonStreamGroup> {
         val available = groups.flatMap { it.streams }.map { it.quality() }.toSet()
-        return groups.filteredBy(streamQueryRegex(query), qualities intersect available).sortedBySize(sizeOrder)
+        return groups.filteredBy(streamQueryRegex(query), qualities intersect available).sortedByOrder(sortOrder)
     }
 }
 
@@ -91,18 +92,32 @@ internal fun StreamFilterBar(state: StreamFilterState, groups: List<AddonStreamG
     val qualities = remember(groups) {
         groups.flatMap { it.streams }.map { it.quality() }.toSet().sorted()
     }
-    val hasSizes = remember(groups) { groups.any { group -> group.streams.any { it.sizeBytes() != null } } }
+    // Each way of sorting is offered only when some stream says the size or seeds it sorts by.
+    val orders = remember(groups) {
+        val streams = groups.flatMap { it.streams }
+        buildList {
+            add(StreamSortOrder.DEFAULT)
+            if (streams.any { it.sizeBytes() != null }) {
+                add(StreamSortOrder.LARGEST_FIRST)
+                add(StreamSortOrder.SMALLEST_FIRST)
+            }
+            if (streams.any { it.seeds() != null }) {
+                add(StreamSortOrder.MOST_SEEDS)
+                add(StreamSortOrder.FEWEST_SEEDS)
+            }
+        }.takeIf { it.size > 1 }.orEmpty()
+    }
     SearchField(
         query = state.query,
         onQueryChange = { state.query = it },
         placeholder = stringResource(Res.string.streams_search_placeholder),
         divided = true,
-        actions = if (hasSizes || qualities.size > 1) {
+        actions = if (orders.isNotEmpty() || qualities.size > 1) {
             {
                 StreamFilterMenuButton(
                     state = state,
                     qualities = qualities.takeIf { it.size > 1 }.orEmpty(),
-                    showSizeOrder = hasSizes,
+                    orders = orders,
                 )
             }
         } else {
@@ -126,11 +141,13 @@ internal fun StreamsNoMatchesBlock() {
 private fun StreamFilterMenuButton(
     state: StreamFilterState,
     qualities: List<StreamQuality>,
-    showSizeOrder: Boolean,
+    orders: List<StreamSortOrder>,
 ) {
     var open by remember { mutableStateOf(false) }
     val title = stringResource(Res.string.streams_filter_title)
-    val active = state.qualities.isNotEmpty() || state.sizeOrder != StreamSizeOrder.DEFAULT
+    // An order this list cannot sort by leaves it as it came, so it shows as the default.
+    val shownOrder = state.sortOrder.takeIf { it in orders } ?: StreamSortOrder.DEFAULT
+    val active = state.qualities.isNotEmpty() || shownOrder != StreamSortOrder.DEFAULT
     Box {
         WithTooltip(title) {
             IconButton(onClick = { open = true }) {
@@ -143,17 +160,17 @@ private fun StreamFilterMenuButton(
         }
         if (LocalWindowBreakpoint.current.isTwoPane) {
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                if (showSizeOrder) {
+                if (orders.isNotEmpty()) {
                     StreamFilterMenuLabel(stringResource(Res.string.streams_sort_title))
-                    StreamSizeOrder.entries.forEach { order ->
+                    orders.forEach { order ->
                         DropdownMenuItem(
                             text = { Text(order.label()) },
-                            onClick = { state.sizeOrder = order },
-                            leadingIcon = { RadioButton(selected = order == state.sizeOrder, onClick = null) },
+                            onClick = { state.sortOrder = order },
+                            leadingIcon = { RadioButton(selected = order == shownOrder, onClick = null) },
                         )
                     }
                 }
-                if (showSizeOrder && qualities.isNotEmpty()) {
+                if (orders.isNotEmpty() && qualities.isNotEmpty()) {
                     HorizontalDivider()
                 }
                 if (qualities.isNotEmpty()) {
@@ -180,7 +197,8 @@ private fun StreamFilterMenuButton(
                 title = title,
                 state = state,
                 qualities = qualities,
-                showSizeOrder = showSizeOrder,
+                orders = orders,
+                shownOrder = shownOrder,
                 onDismiss = { open = false },
             )
         }
@@ -203,7 +221,8 @@ private fun StreamFilterSheet(
     title: String,
     state: StreamFilterState,
     qualities: List<StreamQuality>,
-    showSizeOrder: Boolean,
+    orders: List<StreamSortOrder>,
+    shownOrder: StreamSortOrder,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -226,18 +245,18 @@ private fun StreamFilterSheet(
                 .padding(horizontal = BottomSheetBodyMargin)
                 .padding(bottom = BottomSheetBodyMargin),
         ) {
-            if (showSizeOrder) {
+            if (orders.isNotEmpty()) {
                 item {
                     ListSubheader(
                         text = stringResource(Res.string.streams_sort_title),
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     )
                 }
-                items(StreamSizeOrder.entries) { order ->
-                    val selected = order == state.sizeOrder
+                items(orders) { order ->
+                    val selected = order == shownOrder
                     SelectableListRow(
                         selected = selected,
-                        onClick = { state.sizeOrder = order },
+                        onClick = { state.sortOrder = order },
                         headline = order.label(),
                         trailingContent = {
                             RadioButton(selected = selected, onClick = null)
@@ -282,10 +301,12 @@ private fun StreamFilterSheet(
 }
 
 @Composable
-private fun StreamSizeOrder.label(): String = when (this) {
-    StreamSizeOrder.DEFAULT -> stringResource(Res.string.streams_sort_default)
-    StreamSizeOrder.LARGEST_FIRST -> stringResource(Res.string.streams_sort_size_desc)
-    StreamSizeOrder.SMALLEST_FIRST -> stringResource(Res.string.streams_sort_size_asc)
+private fun StreamSortOrder.label(): String = when (this) {
+    StreamSortOrder.DEFAULT -> stringResource(Res.string.streams_sort_default)
+    StreamSortOrder.LARGEST_FIRST -> stringResource(Res.string.streams_sort_size_desc)
+    StreamSortOrder.SMALLEST_FIRST -> stringResource(Res.string.streams_sort_size_asc)
+    StreamSortOrder.MOST_SEEDS -> stringResource(Res.string.streams_sort_seeds_desc)
+    StreamSortOrder.FEWEST_SEEDS -> stringResource(Res.string.streams_sort_seeds_asc)
 }
 
 @Composable

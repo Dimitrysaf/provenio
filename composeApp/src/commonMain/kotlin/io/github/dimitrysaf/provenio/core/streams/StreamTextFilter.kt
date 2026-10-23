@@ -34,10 +34,12 @@ fun List<AddonStreamGroup>.filteredBy(query: Regex?, qualities: Set<StreamQualit
     }
 }
 
-enum class StreamSizeOrder {
+enum class StreamSortOrder {
     DEFAULT,
     LARGEST_FIRST,
     SMALLEST_FIRST,
+    MOST_SEEDS,
+    FEWEST_SEEDS,
 }
 
 private val StreamSizePattern = Regex(
@@ -59,16 +61,27 @@ fun StreamItem.sizeBytes(): Long? {
     return (value * unit).toLong().takeIf { it > 0L }
 }
 
-// Orders each group's streams by size, keeping the groups in place; streams without a size go last.
-fun List<AddonStreamGroup>.sortedBySize(order: StreamSizeOrder): List<AddonStreamGroup> {
-    if (order == StreamSizeOrder.DEFAULT) return this
+private val StreamSeedsPattern = Regex(
+    "(?:\uD83D\uDC64|\uD83D\uDC65|\uD83C\uDF31|\\bseed(?:er)?s?\\s*[:=])\\s*(\\d+)",
+    RegexOption.IGNORE_CASE,
+)
+
+// How many seeds the torrent has, as the add-on wrote it: 👤, 👥 or 🌱 before a number, or a label like "Seeders: 12". The word needs its colon, so "The Bad Seed 2018" is not read as seeds.
+fun StreamItem.seeds(): Int? =
+    StreamSeedsPattern.find(searchableText())?.groupValues?.get(1)?.toIntOrNull()
+
+// Orders each group's streams by size or seeds, keeping the groups in place; streams without that value go last.
+fun List<AddonStreamGroup>.sortedByOrder(order: StreamSortOrder): List<AddonStreamGroup> {
+    val value: (StreamItem) -> Long? = when (order) {
+        StreamSortOrder.DEFAULT -> return this
+        StreamSortOrder.LARGEST_FIRST, StreamSortOrder.SMALLEST_FIRST -> { stream -> stream.sizeBytes() }
+        StreamSortOrder.MOST_SEEDS, StreamSortOrder.FEWEST_SEEDS -> { stream -> stream.seeds()?.toLong() }
+    }
+    val descending = order == StreamSortOrder.LARGEST_FIRST || order == StreamSortOrder.MOST_SEEDS
     return map { group ->
-        val sized = group.streams.map { it to it.sizeBytes() }
-        val known = sized.filter { it.second != null }
-        val ordered = when (order) {
-            StreamSizeOrder.LARGEST_FIRST -> known.sortedByDescending { it.second }
-            else -> known.sortedBy { it.second }
-        }
-        group.copy(streams = ordered.map { it.first } + sized.filter { it.second == null }.map { it.first })
+        val valued = group.streams.map { it to value(it) }
+        val known = valued.filter { it.second != null }
+        val ordered = if (descending) known.sortedByDescending { it.second } else known.sortedBy { it.second }
+        group.copy(streams = ordered.map { it.first } + valued.filter { it.second == null }.map { it.first })
     }
 }

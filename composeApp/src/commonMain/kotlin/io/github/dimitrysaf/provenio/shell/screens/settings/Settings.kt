@@ -77,8 +77,6 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsUiState
 import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleRepository
 import io.github.dimitrysaf.provenio.core.settings.PosterCardStyleUiState
 import io.github.dimitrysaf.provenio.core.collection.CollectionRepository
-import io.github.dimitrysaf.provenio.shell.screens.addons.AddonAddRequests
-import io.github.dimitrysaf.provenio.shell.screens.addons.addonsGuideContent
 import io.github.dimitrysaf.provenio.shell.screens.collection.CollectionsInlinePane
 import io.github.dimitrysaf.provenio.shell.screens.downloads.DownloadsScreen
 import io.github.dimitrysaf.provenio.core.downloads.DownloadItem
@@ -1140,20 +1138,11 @@ internal fun LazyListScope.settingsPageContent(
             shelfLayout = data.homescreen.shelfLayout,
             shelvesExpandedByDefault = data.homescreen.shelvesExpandedByDefault,
         )
-        SettingsPage.Addons -> addonsSettingsContent(
-            onGuideClick = { links.openSubPage(SettingsPage.AddonsGuide) },
-        )
-        SettingsPage.AddonsGuide -> addonsGuideContent(
-            isTablet = isTablet,
-            onAddAddonClick = {
-                AddonAddRequests.request()
-                links.navigateBack()
-            },
-        )
+        SettingsPage.Addons -> addonsSettingsContent()
         SettingsPage.Plugins -> if (AppFeaturePolicy.pluginsEnabled) {
             pluginsSettingsContent()
         } else {
-            addonsSettingsContent(onGuideClick = { links.openSubPage(SettingsPage.AddonsGuide) })
+            addonsSettingsContent()
         }
         SettingsPage.Homescreen -> homescreenSettingsContent(
             isTablet = isTablet,

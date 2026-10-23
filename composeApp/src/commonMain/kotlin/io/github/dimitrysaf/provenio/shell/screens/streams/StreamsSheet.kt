@@ -215,7 +215,7 @@ fun StreamsSheet(
     val hasVisibleRows = shownGroups.any { it.streams.isNotEmpty() || it.isLoading }
     val stillLoading = preparing || uiState.isAnyLoading
     val filter = rememberStreamFilterState(uiState.requestToken)
-    val filteredGroups = remember(shownGroups, filter.query, filter.qualities, filter.sizeOrder) { filter.apply(shownGroups) }
+    val filteredGroups = remember(shownGroups, filter.query, filter.qualities, filter.sortOrder) { filter.apply(shownGroups) }
     val p2pSettings by remember {
         P2pSettingsRepository.ensureLoaded()
         P2pSettingsRepository.uiState

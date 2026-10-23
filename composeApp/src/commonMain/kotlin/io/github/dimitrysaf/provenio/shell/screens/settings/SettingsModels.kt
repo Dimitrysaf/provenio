@@ -20,7 +20,6 @@ import provenio.composeapp.generated.resources.settings_root_section_account
 import provenio.composeapp.generated.resources.settings_root_section_content
 import provenio.composeapp.generated.resources.settings_root_section_user_interface
 import provenio.composeapp.generated.resources.settings_category_subtitles_audio
-import provenio.composeapp.generated.resources.addons_guide_title
 import provenio.composeapp.generated.resources.collections_header
 import provenio.composeapp.generated.resources.compose_settings_category_about
 import provenio.composeapp.generated.resources.compose_settings_page_addons
@@ -242,11 +241,6 @@ internal enum class SettingsPage(
         titleRes = Res.string.compose_settings_page_addons,
         category = SettingsCategory.Addons,
         parentPage = Root,
-    ),
-    AddonsGuide(
-        titleRes = Res.string.addons_guide_title,
-        category = SettingsCategory.Addons,
-        parentPage = Addons,
     ),
     Plugins(
         titleRes = Res.string.compose_settings_page_plugins,

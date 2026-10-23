@@ -121,7 +121,7 @@ private fun DocumentationBody(isTablet: Boolean) {
                         document = document,
                         onLinkClick = { link ->
                             val linkedPage = Docs.pageNameOf(link)
-                            if (linkedPage != null) DocsBrowser.open(linkedPage) else runCatching { uriHandler.openUri(link) }
+                            if (linkedPage != null) DocsBrowser.open(linkedPage) else openDocsLink(link, uriHandler)
                         },
                     )
                 }

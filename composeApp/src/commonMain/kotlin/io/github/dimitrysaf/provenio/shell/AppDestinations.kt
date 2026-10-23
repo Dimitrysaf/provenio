@@ -370,14 +370,8 @@ internal fun appEntryProvider(
         )
     }
     entry<AddonsSettingsRoute> { route ->
-        val guideTitle = stringResource(Res.string.addons_guide_title)
         SettingsDestination(route, navController) { onBack ->
-            AddonsSettingsScreen(
-                onBack = onBack,
-                onGuideClick = {
-                    navController.navigate(SettingsPageRoute(SettingsPage.AddonsGuide.name, guideTitle))
-                },
-            )
+            AddonsSettingsScreen(onBack = onBack)
         }
     }
     if (AppFeaturePolicy.pluginsEnabled) {

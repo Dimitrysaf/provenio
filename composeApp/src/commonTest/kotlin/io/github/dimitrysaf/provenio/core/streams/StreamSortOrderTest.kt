@@ -4,7 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-class StreamSizeOrderTest {
+class StreamSortOrderTest {
     private fun stream(name: String, description: String? = null, videoSize: Long? = null) = StreamItem(
         name = name,
         description = description,
@@ -32,12 +32,34 @@ class StreamSizeOrderTest {
             addonId = "addon",
             streams = listOf(stream("mid", "2 GB"), stream("none"), stream("big", "10 GB"), stream("small", "500 MB")),
         )
-        val largest = listOf(group).sortedBySize(StreamSizeOrder.LARGEST_FIRST).single().streams.map { it.name }
-        val smallest = listOf(group).sortedBySize(StreamSizeOrder.SMALLEST_FIRST).single().streams.map { it.name }
-        val unchanged = listOf(group).sortedBySize(StreamSizeOrder.DEFAULT).single().streams.map { it.name }
+        val largest = listOf(group).sortedByOrder(StreamSortOrder.LARGEST_FIRST).single().streams.map { it.name }
+        val smallest = listOf(group).sortedByOrder(StreamSortOrder.SMALLEST_FIRST).single().streams.map { it.name }
+        val unchanged = listOf(group).sortedByOrder(StreamSortOrder.DEFAULT).single().streams.map { it.name }
 
         assertEquals(listOf("big", "mid", "small", "none"), largest)
         assertEquals(listOf("small", "mid", "big", "none"), smallest)
         assertEquals(listOf("mid", "none", "big", "small"), unchanged)
+    }
+
+    @Test
+    fun seedsAreReadFromTheDescription() {
+        assertEquals(523, stream("a", "👤 523 💾 2.1 GB ⚙️ ThePirateBay").seeds())
+        assertEquals(12, stream("a", "👥 12").seeds())
+        assertEquals(40, stream("a", "1080p Seeders: 40").seeds())
+        assertNull(stream("The Bad Seed 2018", "1080p 💾 2 GB").seeds())
+    }
+
+    @Test
+    fun ordersEachGroupBySeedsWithUnknownSeedsLast() {
+        val group = AddonStreamGroup(
+            addonName = "Addon",
+            addonId = "addon",
+            streams = listOf(stream("mid", "👤 50"), stream("none"), stream("most", "👤 900"), stream("few", "👤 3")),
+        )
+        val most = listOf(group).sortedByOrder(StreamSortOrder.MOST_SEEDS).single().streams.map { it.name }
+        val fewest = listOf(group).sortedByOrder(StreamSortOrder.FEWEST_SEEDS).single().streams.map { it.name }
+
+        assertEquals(listOf("most", "mid", "few", "none"), most)
+        assertEquals(listOf("few", "mid", "most", "none"), fewest)
     }
 }

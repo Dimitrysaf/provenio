@@ -488,7 +488,7 @@ private fun PlayerStreamGroupsList(
     }
     val hasVisibleRows = shownGroups.any { it.streams.isNotEmpty() || it.isLoading }
     val filter = rememberStreamFilterState(streamsUiState.requestToken)
-    val filteredGroups = remember(shownGroups, filter.query, filter.qualities, filter.sizeOrder) {
+    val filteredGroups = remember(shownGroups, filter.query, filter.qualities, filter.sortOrder) {
         filter.apply(shownGroups)
     }
     val hasMatches = filteredGroups.any { it.streams.isNotEmpty() || it.isLoading }

@@ -134,7 +134,6 @@ fun ContinueWatchingSettingsScreen(
 @Composable
 fun AddonsSettingsScreen(
     onBack: () -> Unit,
-    onGuideClick: (() -> Unit)? = null,
 ) {
     LaunchedEffect(Unit) {
         AddonRepository.initialize()
@@ -146,7 +145,7 @@ fun AddonsSettingsScreen(
         onBack = onBack,
         contentMaxWidth = SettingsContentMaxWidth,
     ) {
-        addonsSettingsContent(onGuideClick = onGuideClick)
+        addonsSettingsContent()
     }
 }
 
