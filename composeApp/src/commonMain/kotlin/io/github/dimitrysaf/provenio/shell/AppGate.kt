@@ -6,7 +6,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -345,7 +344,7 @@ internal fun AppGate(
 
         androidx.compose.animation.AnimatedVisibility(
             visibleState = launchOverlayState,
-            enter = fadeIn(M3Motion.fadeThroughInSpec()) + scaleIn(M3Motion.fadeThroughInSpec(), initialScale = 0.92f),
+            enter = fadeIn(M3Motion.fadeThroughInSpec()),
             exit = fadeOut(M3Motion.fadeThroughOutSpec()),
             modifier = Modifier.fillMaxSize(),
         ) {
@@ -496,7 +495,7 @@ private fun ProfileSelectionOverlay(
         enter = if (gate.skipProfileSelectionEnterAnimation) {
             androidx.compose.animation.EnterTransition.None
         } else {
-            fadeIn(M3Motion.fadeThroughInSpec()) + scaleIn(M3Motion.fadeThroughInSpec(), initialScale = 0.92f)
+            fadeIn(M3Motion.fadeThroughInSpec())
         },
         exit = fadeOut(M3Motion.fadeThroughOutSpec()),
         modifier = Modifier

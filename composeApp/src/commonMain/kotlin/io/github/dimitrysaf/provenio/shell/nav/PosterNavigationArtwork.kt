@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
+import io.github.dimitrysaf.provenio.core.build.isDesktop
 import io.github.dimitrysaf.provenio.shell.components.PosterOpenMotion
 import io.github.dimitrysaf.provenio.shell.components.drawLiftedPoster
 
@@ -37,12 +38,15 @@ internal fun PosterNavigationArtwork(request: PosterNavigationRequest) {
                 scaleX = viewport.width / size.width
                 scaleY = viewport.height / size.height
                 alpha = PosterOpenMotion.artworkAlpha(request.elapsedMillis)
-                val bounds = PosterOpenMotion.bounds(request.anchor.boundsInRoot, request.viewportBounds, request.elapsedMillis)
-                val radius = PosterOpenMotion.artworkBlurRadius(size, bounds.size, request.elapsedMillis)
-                renderEffect = if (alpha > 0f && radius.width > 0.1f && radius.height > 0.1f) {
-                    BlurEffect(radius.width, radius.height, TileMode.Clamp)
-                } else {
-                    null
+                // The poster's blur as it grows is left out on desktop, for the same dropped frames.
+                if (!isDesktop) {
+                    val bounds = PosterOpenMotion.bounds(request.anchor.boundsInRoot, request.viewportBounds, request.elapsedMillis)
+                    val radius = PosterOpenMotion.artworkBlurRadius(size, bounds.size, request.elapsedMillis)
+                    renderEffect = if (alpha > 0f && radius.width > 0.1f && radius.height > 0.1f) {
+                        BlurEffect(radius.width, radius.height, TileMode.Clamp)
+                    } else {
+                        null
+                    }
                 }
             }
             .drawBehind { drawLiftedPoster(source) },

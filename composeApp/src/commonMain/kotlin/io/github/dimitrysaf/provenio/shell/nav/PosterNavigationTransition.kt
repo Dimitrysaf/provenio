@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
+import io.github.dimitrysaf.provenio.core.build.isDesktop
 import io.github.dimitrysaf.provenio.shell.components.PosterOpenMotion
 
 internal fun posterNavigationEntry(
@@ -71,14 +72,19 @@ private fun PosterNavigationEntry(
         Box(
             modifier = Modifier.fillMaxSize().graphicsLayer {
                 if (outgoing) {
-                    val scale = PosterOpenMotion.backgroundScale(request.elapsedMillis)
-                    scaleX = scale
-                    scaleY = scale
                     alpha = PosterOpenMotion.backgroundAlpha(request.elapsedMillis)
-                    val radius = PosterOpenMotion.blurRadiusForSigma(
-                        PosterOpenMotion.backgroundBlurSigmaDp(request.elapsedMillis).dp.toPx(),
-                    )
-                    renderEffect = if (alpha > 0f && radius > 0.1f) BlurEffect(radius, radius, TileMode.Clamp) else null
+                    // On desktop the page left only fades. Shrinking it opened a gap round its
+                    // edges that nothing painted, and blurring the whole window dropped frames, so
+                    // the window's own blank background flashed through.
+                    if (!isDesktop) {
+                        val scale = PosterOpenMotion.backgroundScale(request.elapsedMillis)
+                        scaleX = scale
+                        scaleY = scale
+                        val radius = PosterOpenMotion.blurRadiusForSigma(
+                            PosterOpenMotion.backgroundBlurSigmaDp(request.elapsedMillis).dp.toPx(),
+                        )
+                        renderEffect = if (alpha > 0f && radius > 0.1f) BlurEffect(radius, radius, TileMode.Clamp) else null
+                    }
                 } else if (incoming && size.width > 0f && size.height > 0f) {
                     val end = request.viewportBounds
                     val bounds = PosterOpenMotion.bounds(request.anchor.boundsInRoot, end, request.elapsedMillis)

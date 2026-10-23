@@ -485,6 +485,7 @@
     <string name="settings_category_playback_description">Πρόγραμμα αναπαραγωγής, επιλογή ροής, αποκωδικοποιητής και παράλειψη</string>
     <string name="settings_category_server">Διακομιστής</string>
     <string name="settings_category_server_description">Ροή P2P, διακομιστής torrent και δίκτυο</string>
+    <string name="settings_category_documentation_description">Οδηγοί για το Provenio, τα πρόσθετα και τα torrent</string>
     <string name="settings_category_advanced_description">Εκκίνηση, προφίλ, συντομεύσεις πληκτρολογίου και αρχεία καταγραφής</string>
     <string name="settings_category_about_description">Έκδοση, ενημερώσεις, άδειες και απόρρητο</string>
     <string name="compose_settings_category_general">Γενικά</string>

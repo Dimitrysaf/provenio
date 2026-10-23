@@ -22,6 +22,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.using
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import io.github.dimitrysaf.provenio.shell.components.M3Motion
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -109,6 +117,21 @@ internal fun openDocsLink(link: String, uriHandler: UriHandler) {
         handleAppUrl(link)
     } else {
         runCatching { uriHandler.openUri(link) }
+    }
+}
+
+/**
+ * Moving between documentation pages, as a trail of them: a page further in slides in from the
+ * end and one back from the start, the way the app's own pages move. The height is not animated,
+ * since pages of any length follow one another.
+ */
+@Composable
+internal fun rememberDocsSlide(): AnimatedContentTransitionScope<List<String>>.() -> ContentTransform {
+    val density = LocalDensity.current
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val slidePx = with(density) { M3Motion.SharedAxisSlide.roundToPx() } * if (rtl) -1 else 1
+    return remember(slidePx) {
+        { M3Motion.sharedAxisX(forward = targetState.size >= initialState.size, slidePx = slidePx) using null }
     }
 }
 
@@ -210,13 +233,20 @@ private fun DocsPageOverlay(page: String?, onDismiss: () -> Unit) {
         enter = slideInHorizontally { it / 4 } + fadeIn(),
         exit = slideOutHorizontally { it / 4 } + fadeOut(),
     ) {
-        val current = history.lastOrNull() ?: return@AnimatedVisibility
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
-            OverlayPage(
-                page = current,
-                onBack = back,
-                onOpenPage = { name -> if (!name.equals(current, ignoreCase = true)) history = history + name },
-            )
+        AnimatedContent(
+            targetState = history,
+            transitionSpec = rememberDocsSlide(),
+            contentKey = { it.lastOrNull() },
+            label = "docs_overlay_page",
+        ) { shown ->
+            val current = shown.lastOrNull() ?: return@AnimatedContent
+            Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+                OverlayPage(
+                    page = current,
+                    onBack = back,
+                    onOpenPage = { name -> if (!name.equals(current, ignoreCase = true)) history = history + name },
+                )
+            }
         }
     }
 }

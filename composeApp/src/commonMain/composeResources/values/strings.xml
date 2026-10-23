@@ -485,6 +485,7 @@
     <string name="settings_category_playback_description">Player, stream selection, decoder and skipping</string>
     <string name="settings_category_server">Server</string>
     <string name="settings_category_server_description">P2P streaming, torrent server and network</string>
+    <string name="settings_category_documentation_description">Guides to Provenio, its addons and torrents</string>
     <string name="settings_category_advanced_description">Startup, profiles, keyboard shortcuts and logs</string>
     <string name="settings_category_about_description">Version, updates, licenses and privacy</string>
     <string name="compose_settings_category_general">General</string>

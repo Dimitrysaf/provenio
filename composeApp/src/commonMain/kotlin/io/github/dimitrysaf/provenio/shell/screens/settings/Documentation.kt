@@ -24,7 +24,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -99,30 +101,39 @@ internal fun LazyListScope.documentationContent(isTablet: Boolean) {
 @Composable
 private fun DocumentationBody(isTablet: Boolean) {
     LaunchedEffect(Unit) { Docs.refresh() }
+    // Leaving Documentation forgets the page that was open, so it opens on its index next time.
+    DisposableEffect(Unit) { onDispose { DocsBrowser.reset() } }
     val trail by DocsBrowser.trail.collectAsStateWithLifecycle()
     PlatformBackHandler(enabled = trail.isNotEmpty()) { DocsBrowser.back() }
-    val current = trail.lastOrNull()
-    if (current == null) {
-        DocumentationIndex(isTablet = isTablet)
-    } else {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            DocsBreadcrumbs(trail)
-            // Each page starts at its own top, so a page before it does not leave its place behind.
-            key(current) {
-                val loaded = rememberDocsPage(current)
-                val document = loaded.document
-                if (document == null) {
-                    DocsPageMessage(loaded)
-                } else {
-                    val uriHandler = LocalUriHandler.current
-                    DocsOfflineLine()
-                    MarkdownContent(
-                        document = document,
-                        onLinkClick = { link ->
-                            val linkedPage = Docs.pageNameOf(link)
-                            if (linkedPage != null) DocsBrowser.open(linkedPage) else openDocsLink(link, uriHandler)
-                        },
-                    )
+    AnimatedContent(
+        targetState = trail,
+        transitionSpec = rememberDocsSlide(),
+        contentKey = { it.lastOrNull() },
+        label = "docs_page",
+    ) { shown ->
+        val current = shown.lastOrNull()
+        if (current == null) {
+            DocumentationIndex(isTablet = isTablet)
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                DocsBreadcrumbs(shown)
+                // Each page starts at its own top, so a page before it does not leave its place behind.
+                key(current) {
+                    val loaded = rememberDocsPage(current)
+                    val document = loaded.document
+                    if (document == null) {
+                        DocsPageMessage(loaded)
+                    } else {
+                        val uriHandler = LocalUriHandler.current
+                        DocsOfflineLine()
+                        MarkdownContent(
+                            document = document,
+                            onLinkClick = { link ->
+                                val linkedPage = Docs.pageNameOf(link)
+                                if (linkedPage != null) DocsBrowser.open(linkedPage) else openDocsLink(link, uriHandler)
+                            },
+                        )
+                    }
                 }
             }
         }

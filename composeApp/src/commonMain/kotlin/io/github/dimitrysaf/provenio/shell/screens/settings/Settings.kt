@@ -1063,10 +1063,6 @@ internal fun LazyListScope.settingsPageContent(
         )
         SettingsPage.About -> aboutSettingsContent(
             isTablet = isTablet,
-            onDocumentationClick = {
-                DocsBrowser.reset()
-                links.openSubPage(SettingsPage.Documentation)
-            },
             onLicensesAttributionsClick = links.onLicensesAttributionsClick,
             onCheckForUpdatesClick = links.onCheckForUpdatesClick,
         )

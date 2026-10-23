@@ -16,7 +16,6 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -46,9 +45,9 @@ internal object M3Motion {
     }
 
     // Fade through, for switching between destinations that are not related, like top-level tabs.
+    // Only a fade: a scale makes desktop show empty frames around the page while it grows.
     fun fadeThrough(): ContentTransform =
-        (fadeIn(fadeThroughInSpec()) + scaleIn(fadeThroughInSpec(), initialScale = 0.92f)) togetherWith
-            fadeOut(fadeThroughOutSpec())
+        fadeIn(fadeThroughInSpec()) togetherWith fadeOut(fadeThroughOutSpec())
 
     fun <T> fadeThroughInSpec() = tween<T>(FadeThroughInMillis, delayMillis = FadeThroughOutMillis, easing = EmphasizedDecelerate)
 

@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Icon
-import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.CloudDownload
@@ -55,7 +54,6 @@ import io.github.dimitrysaf.provenio.core.updater.AppUpdaterPlatform
 import io.github.dimitrysaf.provenio.core.p2p.P2pSettingsRepository
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktCommentsSettings
 import provenio.composeapp.generated.resources.Res
-import provenio.composeapp.generated.resources.settings_documentation
 import provenio.composeapp.generated.resources.settings_imports_section_title
 import provenio.composeapp.generated.resources.compose_about_channel_beta
 import provenio.composeapp.generated.resources.compose_about_channel_release
@@ -231,7 +229,6 @@ internal fun LazyListScope.advancedLinksContent(
  */
 internal fun LazyListScope.aboutSettingsContent(
     isTablet: Boolean,
-    onDocumentationClick: () -> Unit,
     onLicensesAttributionsClick: () -> Unit,
     onCheckForUpdatesClick: (() -> Unit)? = null,
 ) {
@@ -245,12 +242,6 @@ internal fun LazyListScope.aboutSettingsContent(
             showTitle = false,
         ) {
             SettingsList {
-                navigationRow(
-                    title = stringResource(Res.string.settings_documentation),
-                    icon = Icons.AutoMirrored.Rounded.MenuBook,
-                    opensPage = true,
-                    onClick = onDocumentationClick,
-                )
                 navigationRow(
                     title = stringResource(Res.string.compose_settings_page_privacy_policy),
                     description = stringResource(Res.string.compose_settings_root_privacy_policy_description),

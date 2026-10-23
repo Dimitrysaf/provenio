@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.CollectionsBookmark
@@ -30,6 +31,7 @@ import provenio.composeapp.generated.resources.compose_settings_page_hero_carous
 import provenio.composeapp.generated.resources.compose_settings_page_homescreen
 import provenio.composeapp.generated.resources.compose_settings_page_licenses_attributions
 import provenio.composeapp.generated.resources.settings_documentation
+import provenio.composeapp.generated.resources.settings_category_documentation_description
 import provenio.composeapp.generated.resources.compose_settings_page_mdblist_ratings
 import provenio.composeapp.generated.resources.compose_settings_page_meta_screen
 import provenio.composeapp.generated.resources.compose_settings_page_notifications
@@ -79,6 +81,7 @@ internal enum class SettingsCategory(
     Downloads(Res.string.compose_settings_root_downloads_title, Res.string.compose_settings_root_downloads_description, Icons.Rounded.DataUsage),
     Collections(Res.string.collections_header, Res.string.settings_content_discovery_collections_description, Icons.Rounded.CollectionsBookmark),
     Notifications(Res.string.compose_settings_page_notifications, Res.string.compose_settings_root_notifications_description, Icons.Rounded.Notifications),
+    Documentation(Res.string.settings_documentation, Res.string.settings_category_documentation_description, Icons.AutoMirrored.Rounded.MenuBook),
     Advanced(Res.string.compose_settings_page_advanced, Res.string.settings_category_advanced_description, Icons.Rounded.Tune),
     Server(Res.string.settings_category_server, Res.string.settings_category_server_description, Icons.Rounded.Dns),
     About(Res.string.compose_settings_category_about, Res.string.settings_category_about_description, Icons.Rounded.Info),
@@ -107,6 +110,7 @@ internal val SettingsCategory.rootSection: SettingsRootSection
         SettingsCategory.Collections,
         SettingsCategory.Server,
         -> SettingsRootSection.Content
+        SettingsCategory.Documentation,
         SettingsCategory.Advanced,
         SettingsCategory.About,
         -> SettingsRootSection.About
@@ -130,6 +134,7 @@ internal val SettingsCategory.iconHue: SettingsIconHue
         SettingsCategory.Downloads -> SettingsIconHue.Green
         SettingsCategory.Collections -> SettingsIconHue.Brown
         SettingsCategory.Notifications -> SettingsIconHue.Yellow
+        SettingsCategory.Documentation -> SettingsIconHue.Pink
         SettingsCategory.Advanced -> SettingsIconHue.Grey
         SettingsCategory.Server -> SettingsIconHue.Cyan
         SettingsCategory.About -> SettingsIconHue.Teal
@@ -146,6 +151,7 @@ internal val SettingsCategory.page: SettingsPage?
         SettingsCategory.Plugins -> SettingsPage.Plugins
         SettingsCategory.Downloads, SettingsCategory.Collections -> null
         SettingsCategory.Notifications -> SettingsPage.Notifications
+        SettingsCategory.Documentation -> SettingsPage.Documentation
         SettingsCategory.Advanced -> SettingsPage.Advanced
         SettingsCategory.Server -> SettingsPage.P2pStreaming
         SettingsCategory.About -> SettingsPage.About
@@ -279,8 +285,8 @@ internal enum class SettingsPage(
     ),
     Documentation(
         titleRes = Res.string.settings_documentation,
-        category = SettingsCategory.About,
-        parentPage = About,
+        category = SettingsCategory.Documentation,
+        parentPage = Root,
     ),
 }
 
