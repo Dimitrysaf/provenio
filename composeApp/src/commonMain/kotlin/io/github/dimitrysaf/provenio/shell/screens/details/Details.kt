@@ -36,6 +36,7 @@ import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.ErrorDialog
 import io.github.dimitrysaf.provenio.shell.components.LoadErrorDialog
 import io.github.dimitrysaf.provenio.shell.components.PageScrollbar
+import io.github.dimitrysaf.provenio.shell.components.PullToRefreshContainer
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCellWidth
 import io.github.dimitrysaf.provenio.shell.screens.details.components.rememberResolvedCast
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
@@ -262,6 +263,13 @@ fun MetaDetailsScreen(
     }
     val pageFailure = currentFailure ?: lastFailure
 
+    // Only a pull shows the indicator: the page's own loading, enrichment included, shows elsewhere.
+    val loadingThis = uiState.isLoading && uiState.requestKey == "$type:$id"
+    var pulledToRefresh by remember(type, id) { mutableStateOf(false) }
+    LaunchedEffect(loadingThis) {
+        if (!loadingThis) pulledToRefresh = false
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -334,6 +342,11 @@ fun MetaDetailsScreen(
                         shouldShowComments = shouldShowComments,
                         deferredMetaWorkAllowed = deferredMetaWorkAllowed,
                         isEnriching = uiState.isLoading,
+                        refreshing = pulledToRefresh && loadingThis,
+                        onRefresh = {
+                            pulledToRefresh = true
+                            MetaDetailsRepository.load(type, id, force = true)
+                        },
                         onBack = onBack,
                         onPlay = onPlay,
                         onPlayManually = onPlayManually,
@@ -558,6 +571,8 @@ private fun MetaDetailsContent(
     shouldShowComments: Boolean,
     deferredMetaWorkAllowed: Boolean,
     isEnriching: Boolean,
+    refreshing: Boolean,
+    onRefresh: () -> Unit,
     onBack: () -> Unit,
     onPlay: DetailPlayHandler?,
     onPlayManually: DetailPlayHandler?,
@@ -875,73 +890,80 @@ private fun MetaDetailsContent(
                     backdropUrl = backdropUrl,
                     visible = deferredMetaWorkAllowed,
                 )
-                Row(
+                // Pulling either column down past its top asks the add-ons for this title again.
+                PullToRefreshContainer(
+                    refreshing = refreshing,
+                    onRefresh = onRefresh,
+                    indicatorTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
+                        TopAppBarDefaults.TopAppBarExpandedHeight,
                     modifier = Modifier
                         .fillMaxSize()
                         .zIndex(1f),
                 ) {
-                    CompositionLocalProvider(LocalPosterAreaWidth provides primaryPaneWidth) {
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier
-                            .weight(primaryPaneWeight)
-                            .fillMaxHeight(),
-                    ) {
-                        item(key = "detail-hero") {
-                            DetailHero(
-                                meta = meta,
-                                slides = heroSlides,
-                                viewportHeight = viewportHeight,
-                                onHeightChanged = { heroHeightPx.intValue = it },
-                                trailerResolutionEnabled = heroTrailerPlaybackEnabled &&
-                                    deferredMetaWorkAllowed &&
-                                    !isLeavingDetails,
-                                trailerPlayWhenReady = {
-                                    !isLeavingDetails && !isHeroCollapsed.value
-                                },
-                                trailerMuted = heroTrailerMuted,
-                                onTrailerMuteToggle = {
-                                    HeroTrailerAudioState.toggleMuted()
-                                },
-                                onOpenArtwork = openArtwork,
-                            )
-                        }
-
-                        detailSectionItems(
-                            primaryPaneSettings,
-                            if (isTablet && sidePaneSection == null) contentMaxWidth else Dp.Unspecified,
-                            primaryPaneWidth,
-                        )
-
-                        item(key = "detail-bottom-spacer") {
-                            Spacer(modifier = Modifier.height(safeBottomPadding(32.dp)))
-                        }
-                    }
-                    }
-
-                    if (sidePaneSettings != null) CompositionLocalProvider(LocalPosterAreaWidth provides sidePaneWidth) {
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        CompositionLocalProvider(LocalPosterAreaWidth provides primaryPaneWidth) {
                         LazyColumn(
-                            state = sidePaneListState,
+                            state = listState,
                             modifier = Modifier
-                                .weight(1f - primaryPaneWeight)
-                                .fillMaxHeight()
-                                // The side pane is reached with the right arrow only: up and
-                                // down keep to the main column, which is gone through first.
-                                .focusProperties {
-                                    onEnter = {
-                                        if (requestedFocusDirection in SidePaneBlockedDirections) cancelFocusChange()
-                                    }
-                                }
-                                .focusGroup(),
-                            contentPadding = PaddingValues(
-                                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
-                                    TopAppBarDefaults.TopAppBarExpandedHeight,
-                            ),
+                                .weight(primaryPaneWeight)
+                                .fillMaxHeight(),
                         ) {
-                            detailSectionItems(sidePaneSettings, Dp.Unspecified, sidePaneWidth)
+                            item(key = "detail-hero") {
+                                DetailHero(
+                                    meta = meta,
+                                    slides = heroSlides,
+                                    viewportHeight = viewportHeight,
+                                    onHeightChanged = { heroHeightPx.intValue = it },
+                                    trailerResolutionEnabled = heroTrailerPlaybackEnabled &&
+                                        deferredMetaWorkAllowed &&
+                                        !isLeavingDetails,
+                                    trailerPlayWhenReady = {
+                                        !isLeavingDetails && !isHeroCollapsed.value
+                                    },
+                                    trailerMuted = heroTrailerMuted,
+                                    onTrailerMuteToggle = {
+                                        HeroTrailerAudioState.toggleMuted()
+                                    },
+                                    onOpenArtwork = openArtwork,
+                                )
+                            }
 
-                            item(key = "detail-side-bottom-spacer") {
+                            detailSectionItems(
+                                primaryPaneSettings,
+                                if (isTablet && sidePaneSection == null) contentMaxWidth else Dp.Unspecified,
+                                primaryPaneWidth,
+                            )
+
+                            item(key = "detail-bottom-spacer") {
                                 Spacer(modifier = Modifier.height(safeBottomPadding(32.dp)))
+                            }
+                        }
+                        }
+
+                        if (sidePaneSettings != null) CompositionLocalProvider(LocalPosterAreaWidth provides sidePaneWidth) {
+                            LazyColumn(
+                                state = sidePaneListState,
+                                modifier = Modifier
+                                    .weight(1f - primaryPaneWeight)
+                                    .fillMaxHeight()
+                                    // The side pane is reached with the right arrow only: up and
+                                    // down keep to the main column, which is gone through first.
+                                    .focusProperties {
+                                        onEnter = {
+                                            if (requestedFocusDirection in SidePaneBlockedDirections) cancelFocusChange()
+                                        }
+                                    }
+                                    .focusGroup(),
+                                contentPadding = PaddingValues(
+                                    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
+                                        TopAppBarDefaults.TopAppBarExpandedHeight,
+                                ),
+                            ) {
+                                detailSectionItems(sidePaneSettings, Dp.Unspecified, sidePaneWidth)
+
+                                item(key = "detail-side-bottom-spacer") {
+                                    Spacer(modifier = Modifier.height(safeBottomPadding(32.dp)))
+                                }
                             }
                         }
                     }

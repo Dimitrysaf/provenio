@@ -131,6 +131,13 @@ object WatchedRepository {
     val uiState: StateFlow<WatchedUiState> = _uiState.asStateFlow()
     private val _fullyWatchedSeriesKeys = MutableStateFlow<Set<String>>(emptySet())
     val fullyWatchedSeriesKeys: StateFlow<Set<String>> = _fullyWatchedSeriesKeys.asStateFlow()
+    private val _seriesProgress = MutableStateFlow<Map<String, Float>>(emptyMap())
+
+    /**
+     * How far through each series watched from is, from 0 to 1, by its watched key: worked out
+     * with the fully watched state, from the same episode lists, and kept for this run only.
+     */
+    val seriesProgress: StateFlow<Map<String, Float>> = _seriesProgress.asStateFlow()
 
     private var hasLoaded = false
     private var currentProfileId: Int = 1
@@ -204,6 +211,7 @@ object WatchedRepository {
         deltaCursorEventId = 0L
         deltaInitialized = false
         _fullyWatchedSeriesKeys.value = emptySet()
+        _seriesProgress.value = emptyMap()
         _uiState.value = WatchedUiState()
     }
 
@@ -788,6 +796,16 @@ object WatchedRepository {
         setFullyWatchedSeriesKeysForSource(source = source, keys = updated)
         publish()
         persist()
+    }
+
+    /** Sets how far through these series are; a series given null has nothing watched any more. */
+    internal fun updateSeriesProgress(progress: Map<String, Float?>) {
+        if (progress.isEmpty()) return
+        _seriesProgress.value = _seriesProgress.value.toMutableMap().apply {
+            progress.forEach { (key, fraction) ->
+                if (fraction == null || fraction <= 0f) remove(key) else put(key, fraction.coerceAtMost(1f))
+            }
+        }
     }
 
     fun setExpandedFullyWatchedSeriesKeys(keys: Set<String>) {

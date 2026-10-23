@@ -62,14 +62,19 @@ object MetaDetailsRepository {
     private val cachedMetaByRequestKey = mutableMapOf<String, CachedMetaEntry>()
     private val previews = MutableStateFlow<Map<String, MetaPreview>>(emptyMap())
 
-    fun load(type: String, id: String) {
-        log.d { "load() called — type=$type id=$id" }
+    /**
+     * Shows a title's details, from what was kept when there is a copy. [force] asks the add-ons
+     * again even so; the kept copy stays for [peek] until the new answer replaces it, so a refresh
+     * that fails leaves the page as it was.
+     */
+    fun load(type: String, id: String, force: Boolean = false) {
+        log.d { "load() called — type=$type id=$id force=$force" }
         val requestKey = "$type:$id"
         val currentState = _uiState.value
         val mdbListSettings = MdbListSettingsRepository.snapshot()
         val metaScreenSettingsFingerprint = buildMetaScreenSettingsFingerprint(mdbListSettings)
 
-        cachedMetaByRequestKey[requestKey]?.let { cachedEntry ->
+        if (!force) cachedMetaByRequestKey[requestKey]?.let { cachedEntry ->
             cachedEntry.metaScreenMeta
                 ?.takeIf { cachedEntry.metaScreenSettingsFingerprint == metaScreenSettingsFingerprint }
                 ?.let { cachedMeta ->
@@ -114,7 +119,7 @@ object MetaDetailsRepository {
             return
         }
 
-        if (currentState.meta?.type == type && currentState.meta.id == id && !currentState.isLoading) {
+        if (!force && currentState.meta?.type == type && currentState.meta.id == id && !currentState.isLoading) {
             log.d { "Skipping reload for cached meta — type=$type id=$id" }
             activeRequestKey = requestKey
             return

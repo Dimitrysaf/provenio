@@ -29,6 +29,7 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.ErrorOutline
@@ -49,6 +50,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -88,11 +90,13 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
+import coil3.request.CachePolicy
 import io.github.dimitrysaf.provenio.shell.components.ImageViewerHost
 import io.github.dimitrysaf.provenio.shell.components.ImageViewerRequest
 import io.github.dimitrysaf.provenio.shell.components.LocalImageViewerLauncher
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
+import io.github.dimitrysaf.provenio.shell.components.skeleton
 import io.github.dimitrysaf.provenio.shell.components.viewerImageOf
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsList
 import io.github.dimitrysaf.provenio.shell.theme.provenio
@@ -287,12 +291,46 @@ private fun ParagraphView(content: List<MarkdownInline>, modifier: Modifier) {
     }
 }
 
+/**
+ * Which pictures were fetched from the network in this run of the app. A picture's saved copy is
+ * only its fallback, so one replaced under the same address shows as it is now; [renew] asks for
+ * every picture afresh, for a refresh asked for by hand.
+ */
+internal object MarkdownPictures {
+    private val fetched = mutableSetOf<String>()
+
+    /** Counts the refreshes asked for, so the pictures on screen ask again when it moves. */
+    var generation by mutableIntStateOf(0)
+        private set
+
+    fun isFresh(url: String): Boolean = url in fetched
+
+    fun markFresh(url: String) {
+        fetched += url
+    }
+
+    fun renew() {
+        fetched.clear()
+        generation++
+    }
+}
+
 @Composable
 private fun MarkdownPicture(image: MarkdownInline.Image, link: String?, modifier: Modifier = Modifier) {
     val context = LocalPlatformContext.current
-    // Loaded at its own size, so a small picture such as a badge keeps it instead of filling the page.
-    val request = remember(image.url, context) {
-        ImageRequest.Builder(context).data(image.url).size(ImageSize.ORIGINAL).build()
+    val generation = MarkdownPictures.generation
+    // The network first, once a run; the saved copy only when it cannot be reached.
+    var fromCache by remember(image.url, generation) { mutableStateOf(MarkdownPictures.isFresh(image.url)) }
+    var failed by remember(image.url, generation) { mutableStateOf(false) }
+    val request = remember(image.url, context, generation, fromCache) {
+        ImageRequest.Builder(context)
+            .data(image.url)
+            // Loaded at its own size, so a small picture such as a badge keeps it instead of filling the page.
+            .size(ImageSize.ORIGINAL)
+            .memoryCacheKey("${image.url}#$generation")
+            .placeholderMemoryCacheKey("${image.url}#${generation - 1}")
+            .apply { if (!fromCache) diskCachePolicy(CachePolicy.WRITE_ONLY) }
+            .build()
     }
     var natural by remember(image.url) { mutableStateOf<androidx.compose.ui.geometry.Size?>(null) }
     val viewer = LocalImageViewerLauncher.current
@@ -300,32 +338,71 @@ private fun MarkdownPicture(image: MarkdownInline.Image, link: String?, modifier
     BoxWithConstraints(modifier = modifier) {
         val loaded = natural
         // A picture's pixels are drawn as dp, the way a browser draws CSS pixels, never wider than the page.
-        val width = (image.width?.dp ?: loaded?.width?.dp)?.coerceAtMost(maxWidth)
-        val sizing = when {
-            width != null && loaded != null -> Modifier.width(width).aspectRatio(loaded.width / loaded.height)
-            width != null -> Modifier.width(width)
-            else -> Modifier.fillMaxWidth()
-        }
-        AsyncImage(
-            model = request,
-            contentDescription = image.alt.ifBlank { null },
-            contentScale = ContentScale.Fit,
-            onSuccess = { state ->
-                val size = state.painter.intrinsicSize
-                if (size.isSpecified && size.width > 0f && size.height > 0f) natural = size
-            },
-            modifier = sizing
-                .clip(RoundedCornerShape(8.dp))
-                .clickable {
+        val width = (image.width?.dp ?: loaded?.width?.dp)?.coerceAtMost(maxWidth) ?: maxWidth
+        // Until the picture says its own shape, a 16:9 stand-in holds its place, so the page does not jump.
+        val aspect = loaded?.let { it.width / it.height } ?: PictureStandInAspect
+        val shape = RoundedCornerShape(8.dp)
+        Box(
+            modifier = Modifier
+                .width(width)
+                .aspectRatio(aspect)
+                .clip(shape)
+                .clickable(enabled = loaded != null || link != null) {
                     if (link != null) {
                         openLink(link)
                     } else {
                         viewer?.invoke(ImageViewerRequest(images = listOf(viewerImageOf(image.url)), title = image.alt))
                     }
                 },
-        )
+        ) {
+            when {
+                failed -> BrokenPicture(alt = image.alt, modifier = Modifier.matchParentSize())
+                loaded == null -> Box(modifier = Modifier.matchParentSize().skeleton(shape))
+            }
+            AsyncImage(
+                model = request,
+                contentDescription = image.alt.ifBlank { null },
+                contentScale = ContentScale.Fit,
+                onSuccess = { state ->
+                    val size = state.painter.intrinsicSize
+                    if (size.isSpecified && size.width > 0f && size.height > 0f) natural = size
+                    if (!fromCache) MarkdownPictures.markFresh(image.url)
+                    failed = false
+                },
+                onError = {
+                    if (fromCache) failed = true else fromCache = true
+                },
+                modifier = Modifier.matchParentSize(),
+            )
+        }
     }
 }
+
+/** A picture that could not be loaded, fetched or saved: what it was meant to show, if it says. */
+@Composable
+private fun BrokenPicture(alt: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.BrokenImage,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (alt.isNotBlank()) {
+            Text(
+                text = alt,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+            )
+        }
+    }
+}
+
+private const val PictureStandInAspect = 16f / 9f
 
 /**
  * Links on their own as rows, the way Settings lists its pages: a page of the document's own opens

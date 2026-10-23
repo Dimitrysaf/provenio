@@ -8,6 +8,7 @@ import io.github.dimitrysaf.provenio.core.watch.watching.domain.WatchingContentR
 import io.github.dimitrysaf.provenio.core.watch.watching.domain.WatchingReleasedEpisode
 import io.github.dimitrysaf.provenio.core.watch.watching.domain.buildPlaybackVideoId
 import io.github.dimitrysaf.provenio.core.watch.watching.domain.hasWatchedAllMainSeasonEpisodes as domainHasWatchedAllMainSeasonEpisodes
+import io.github.dimitrysaf.provenio.core.watch.watching.domain.watchedMainSeasonFraction as domainWatchedMainSeasonFraction
 import io.github.dimitrysaf.provenio.core.watch.watching.domain.releasedEpisodes
 import io.github.dimitrysaf.provenio.core.watch.watching.domain.releasedMainSeasonEpisodes as domainReleasedMainSeasonEpisodes
 
@@ -84,6 +85,21 @@ fun MetaDetails.hasWatchedAllMainSeasonEpisodes(
         sortedPlayableEpisodes().firstOrNull { episode -> episode.id == domainEpisode.videoId }?.let(isEpisodeWatched) == true
     },
 )
+
+/** How far through this series is, by [watchedMainSeasonFraction], with [episodeShare] for each episode. */
+fun MetaDetails.watchedMainSeasonFraction(
+    todayIsoDate: String,
+    episodeShare: (MetaVideo) -> Float,
+): Float? {
+    val playable = sortedPlayableEpisodes()
+    return domainWatchedMainSeasonFraction(
+        episodes = playable.map(MetaVideo::toDomainReleasedEpisode),
+        todayIsoDate = todayIsoDate,
+        episodeShare = { domainEpisode ->
+            playable.firstOrNull { episode -> episode.id == domainEpisode.videoId }?.let(episodeShare) ?: 0f
+        },
+    )
+}
 
 fun MetaDetails.episodePlaybackId(video: MetaVideo): String =
     buildPlaybackVideoId(

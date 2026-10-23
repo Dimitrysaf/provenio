@@ -193,6 +193,8 @@ fun PosterCard(
     bottomLeftLogoUrl: String? = null,
     bottomLeftText: String? = null,
     isWatched: Boolean = false,
+    /** How far through the title is, from 0 to 1, as a bar along the bottom; null for none. */
+    progress: Float? = null,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
 ) {
@@ -246,7 +248,8 @@ fun PosterCard(
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(horizontal = 10.dp, vertical = 10.dp),
+                        // Above the progress bar, when there is one.
+                        .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = if (progress != null) 20.dp else 10.dp),
                 ) {
                     if (!bottomLeftLogoUrl.isNullOrBlank()) {
                         AsyncImage(
@@ -270,6 +273,7 @@ fun PosterCard(
                 }
             }
 
+            PosterProgressBar(progress = progress.takeIf { !isWatched })
             PosterWatchedOverlay(isWatched = isWatched)
         }
         if (shouldShowTitleBelow) {

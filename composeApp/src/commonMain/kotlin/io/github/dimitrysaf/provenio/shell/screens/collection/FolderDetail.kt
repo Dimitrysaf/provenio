@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.shell.components.PosterCard
+import io.github.dimitrysaf.provenio.shell.components.LocalPosterProgress
 import io.github.dimitrysaf.provenio.shell.components.PosterCardShape
 import io.github.dimitrysaf.provenio.shell.components.ScreenHeader
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
@@ -307,6 +308,7 @@ private fun TabbedGridContent(
                                     watchedKeys = watchedKeys,
                                     item = item,
                                 ),
+                                progress = LocalPosterProgress.current(item),
                                 onClick = { onPosterClick(item) },
                             )
                         }

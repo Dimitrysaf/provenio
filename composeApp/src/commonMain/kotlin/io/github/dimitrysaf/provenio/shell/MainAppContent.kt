@@ -34,6 +34,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import io.github.dimitrysaf.provenio.shell.components.LocalPosterClickAnchor
+import io.github.dimitrysaf.provenio.shell.components.LocalPosterProgress
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterProgressLookup
 import io.github.dimitrysaf.provenio.shell.nav.PosterNavigationState
 import io.github.dimitrysaf.provenio.shell.nav.posterNavigationEntry
 import io.github.dimitrysaf.provenio.core.auth.AuthRepository
@@ -496,9 +498,11 @@ internal fun MainAppContent(
             ) {
             val navigationMotion = rememberAppNavigationMotion()
             val cornersDecorator = remember { predictiveBackCornersDecorator() }
+            val posterProgress = rememberPosterProgressLookup()
             SharedTransitionLayout {
                 CompositionLocalProvider(
                     LocalPosterClickAnchor provides if (posterNavigationEnabled) posterNavigation::prepare else null,
+                    LocalPosterProgress provides posterProgress,
                     LocalUseNativeNavigation provides useNativeNavigation,
                     LocalNativeNavigationBarHidden provides (currentRoute?.hidesNavigationBar == true),
                 ) {

@@ -186,20 +186,7 @@ fun CommentDetailSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    comment.rating?.let { rating ->
-                        Text(
-                            text = stringResource(Res.string.detail_comments_badge_rating, rating),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Text(
-                        text = stringResource(Res.string.detail_comments_likes, comment.likes),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                CommentStats(rating = comment.rating, likes = comment.likes)
                 comment.createdAt?.take(10)?.let { date ->
                     Text(
                         text = date,

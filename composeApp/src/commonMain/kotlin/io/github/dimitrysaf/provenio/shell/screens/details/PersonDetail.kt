@@ -31,6 +31,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.LocalBar
+import androidx.compose.material.icons.rounded.RocketLaunch
+import androidx.compose.material.icons.rounded.Science
+import androidx.compose.material.icons.rounded.SportsMma
 import androidx.compose.material3.Icon
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -199,6 +205,7 @@ internal class DetailPageMetrics(
 /**
  * A details page: the artwork carousel with the title over it, then [infoItems], with [railItems]
  * beside them on wide screens. Without [images], the carousel shows [placeholderIcon] instead.
+ * A page with nothing for that side, [hasRails] false, says so there rather than leaving it blank.
  */
 @Composable
 internal fun DetailPage(
@@ -211,6 +218,7 @@ internal fun DetailPage(
     infoItems: LazyListScope.(DetailPageMetrics) -> Unit,
     railItems: LazyListScope.(DetailPageMetrics) -> Unit,
     placeholderIcon: ImageVector? = null,
+    hasRails: Boolean = true,
 ) {
     val metaScreenSettingsUiState by remember {
         MetaScreenSettingsRepository.ensureLoaded()
@@ -318,6 +326,15 @@ internal fun DetailPage(
                     ) {
                         railItems(metrics)
 
+                        if (!hasRails) {
+                            item(key = "person-side-end") {
+                                SidePaneEnd(
+                                    seed = pageKey,
+                                    modifier = Modifier.fillParentMaxHeight(0.75f),
+                                )
+                            }
+                        }
+
                         item(key = "person-side-bottom-spacer") {
                             Spacer(modifier = Modifier.height(safeBottomPadding(32.dp)))
                         }
@@ -362,6 +379,37 @@ internal fun DetailPage(
         )
     }
 }
+
+/** The end of an empty side pane: "That's all", with an icon picked by the page for a little fun. */
+@Composable
+private fun SidePaneEnd(seed: String, modifier: Modifier = Modifier) {
+    val icon = remember(seed) { SidePaneEndIcons[seed.hashCode().mod(SidePaneEndIcons.size)] }
+    Column(
+        modifier = modifier.fillMaxWidth().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(48.dp),
+        )
+        Text(
+            text = stringResource(Res.string.detail_side_pane_end),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+private val SidePaneEndIcons = listOf(
+    Icons.Rounded.LocalBar,
+    Icons.Rounded.SportsMma,
+    Icons.Rounded.RocketLaunch,
+    Icons.Rounded.Science,
+    Icons.Rounded.AutoAwesome,
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -674,6 +722,7 @@ private fun PersonDetailContent(
 
     DetailPage(
         pageKey = "person-${person.tmdbId}",
+        hasRails = rails.isNotEmpty(),
         name = person.name,
         subtitle = person.knownFor?.trim()?.takeIf(String::isNotBlank),
         images = images,

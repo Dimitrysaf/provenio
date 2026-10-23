@@ -5,6 +5,7 @@ import io.github.dimitrysaf.provenio.core.home.landscapeArtworkCandidates
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import io.github.dimitrysaf.provenio.core.format.formatReleaseDateForDisplay
+import io.github.dimitrysaf.provenio.shell.components.LocalPosterProgress
 import io.github.dimitrysaf.provenio.shell.components.PosterCard
 import io.github.dimitrysaf.provenio.shell.components.PosterCardShape
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
@@ -35,6 +36,7 @@ fun HomePosterCard(
         bottomLeftLogoUrl = if (isLandscapeMode && showLandscapeOverlay) item.logo else null,
         bottomLeftText = if (isLandscapeMode && showLandscapeOverlay && item.logo.isNullOrBlank() && !posterCardStyle.hideLabelsEnabled) item.name else null,
         isWatched = isWatched,
+        progress = LocalPosterProgress.current(item),
         onClick = onClick,
         onLongClick = onLongClick,
     )

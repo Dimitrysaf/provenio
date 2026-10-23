@@ -127,6 +127,7 @@ private fun EpisodeDetailContent(
             }
         },
         railItems = {},
+        hasRails = false,
     )
 }
 
@@ -187,5 +188,6 @@ private fun EpisodeDetailPlaceholder(
             }
         },
         railItems = {},
+        hasRails = false,
     )
 }

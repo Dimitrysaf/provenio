@@ -21,7 +21,6 @@ import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -116,7 +115,7 @@ private fun DocumentationBody(isTablet: Boolean) {
                     DocsPageMessage(loaded)
                 } else {
                     val uriHandler = LocalUriHandler.current
-                    DocsRefreshLine()
+                    DocsOfflineLine()
                     MarkdownContent(
                         document = document,
                         onLinkClick = { link ->
@@ -185,11 +184,8 @@ private fun DocumentationIndex(isTablet: Boolean) {
             placeholder = stringResource(Res.string.docs_search),
             modifier = Modifier.fillMaxWidth(),
         )
-        // A refresh over pages already shown, or saved pages shown while the wiki cannot be reached.
-        when {
-            state.loading && hasCopy -> LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
-            state.offline && hasCopy -> OfflineNotice(onRetry = { Docs.refresh(force = true) })
-        }
+        // Saved pages shown while the wiki cannot be reached; the pull indicator shows a refresh.
+        if (hasCopy) DocsOfflineLine()
         when {
             query.isNotBlank() -> {
                 val results = remember(query, state) { Docs.search(query) }

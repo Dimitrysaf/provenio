@@ -679,6 +679,7 @@
     <string name="detail_comments_spoiler_card">Αυτό το σχόλιο περιέχει σπόιλερ.</string>
     <string name="detail_comments_spoiler_hidden_sheet">Αυτό το σχόλιο περιέχει σπόιλερ και έχει αποκρυφθεί.</string>
     <string name="detail_comments_title">Σχόλια</string>
+    <string name="detail_side_pane_end">Αυτά ήταν</string>
     <string name="detail_tab_trailer">Τρέιλερ</string>
     <string name="detail_trailer_category_count">%1$s (%2$d)</string>
     <string name="detail_trailers_title">Τρέιλερ</string>

@@ -61,6 +61,8 @@ import io.github.dimitrysaf.provenio.core.format.formatReleaseDateForDisplay
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.NetworkOfflineCard
 import io.github.dimitrysaf.provenio.shell.components.PosterWatchedOverlay
+import io.github.dimitrysaf.provenio.shell.components.PosterProgressBar
+import io.github.dimitrysaf.provenio.shell.components.LocalPosterProgress
 import io.github.dimitrysaf.provenio.shell.components.SkeletonPoster
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
 import io.github.dimitrysaf.provenio.shell.components.posterCardClickable
@@ -328,6 +330,7 @@ private fun CatalogPosterTile(
                     contentScale = ContentScale.Crop,
                 )
             }
+            PosterProgressBar(progress = LocalPosterProgress.current(item).takeIf { !isWatched })
             PosterWatchedOverlay(isWatched = isWatched)
         }
         if (!hideLabels) {

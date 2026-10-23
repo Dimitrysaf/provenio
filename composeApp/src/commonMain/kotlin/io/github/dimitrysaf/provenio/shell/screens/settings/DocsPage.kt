@@ -20,7 +20,6 @@ import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -47,6 +46,7 @@ import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
 import io.github.dimitrysaf.provenio.shell.components.ScreenScaffold
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import io.github.dimitrysaf.provenio.shell.components.markdown.MarkdownDocument
+import io.github.dimitrysaf.provenio.shell.components.markdown.MarkdownPictures
 import io.github.dimitrysaf.provenio.shell.components.markdown.markdownItems
 import io.github.dimitrysaf.provenio.shell.components.markdown.parseMarkdown
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -143,14 +143,11 @@ internal fun rememberDocsPage(page: String): LoadedDocsPage {
     return LoadedDocsPage(document = document, result = result, retry = { attempt++ })
 }
 
-/** The wavy line while a newer copy of what is shown is fetched, or the offline note while it cannot be. */
+/** The offline note while a newer copy of what is shown cannot be fetched; the pull indicator shows the fetching. */
 @Composable
-internal fun DocsRefreshLine(modifier: Modifier = Modifier) {
+internal fun DocsOfflineLine(modifier: Modifier = Modifier) {
     val docs by Docs.state.collectAsStateWithLifecycle()
-    when {
-        docs.loading -> LinearWavyProgressIndicator(modifier = modifier.fillMaxWidth())
-        docs.offline -> OfflineNotice(onRetry = { Docs.refresh(force = true) }, modifier = modifier)
-    }
+    if (docs.offline && !docs.loading) OfflineNotice(onRetry = ::refreshDocs, modifier = modifier)
 }
 
 /** What stands in for a page that has no document yet: loading, missing, or out of reach. */
@@ -173,6 +170,12 @@ internal fun DocsPageMessage(page: LoadedDocsPage) {
             LoadingSpinner()
         }
     }
+}
+
+/** Fetches every page and picture again, as pulling the documentation down asks. */
+internal fun refreshDocs() {
+    MarkdownPictures.renew()
+    Docs.refresh(force = true)
 }
 
 /** The app bar's button that opens [page] on GitHub, or the whole wiki without one. */
@@ -234,11 +237,13 @@ private fun OverlayPage(page: String, onBack: () -> Unit, onOpenPage: (String) -
             listState = listState,
             contentMaxWidth = SettingsContentMaxWidth,
             actions = { OpenDocsOnGitHubButton(page) },
+            refreshing = docs.loading,
+            onRefresh = ::refreshDocs,
         ) {
             if (document == null) {
                 item { DocsPageMessage(loaded) }
             } else {
-                item { DocsRefreshLine(modifier = Modifier.padding(bottom = 16.dp)) }
+                item { DocsOfflineLine(modifier = Modifier.padding(bottom = 16.dp)) }
                 markdownItems(document) { link ->
                     val anchor = link.removePrefix("#").takeIf { link.startsWith("#") }
                     val linkedPage = Docs.pageNameOf(link)

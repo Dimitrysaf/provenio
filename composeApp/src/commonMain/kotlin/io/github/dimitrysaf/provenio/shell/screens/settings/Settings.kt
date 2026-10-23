@@ -66,6 +66,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.dimitrysaf.provenio.shell.components.PullToRefreshContainer
+import io.github.dimitrysaf.provenio.core.docs.Docs
 import io.github.dimitrysaf.provenio.shell.components.LocalScreenActive
 import io.github.dimitrysaf.provenio.shell.components.ScreenActivityEffect
 import io.github.dimitrysaf.provenio.shell.components.LocalBottomNavigationOverlayPadding
@@ -443,6 +445,7 @@ private fun MobileSettingsScreen(
             onCheckForUpdatesClick = onCheckForUpdatesClick,
         )
         val previousPage = page.previousPage()
+        val docs by Docs.state.collectAsStateWithLifecycle()
 
         ScreenScaffold(
             modifier = Modifier.nestedScroll(rootSearchRevealConnection),
@@ -454,6 +457,8 @@ private fun MobileSettingsScreen(
             actions = { SettingsPageActions(page) },
             contentMaxWidth = SettingsContentMaxWidth,
             textOnly = page == SettingsPage.KeyboardShortcuts,
+            onRefresh = if (page == SettingsPage.Documentation) ::refreshDocs else null,
+            refreshing = docs.loading,
         ) {
             if (!showInternalHeader) {
                 item { Spacer(modifier = Modifier.height(44.dp)) }
@@ -758,6 +763,7 @@ private fun TabletSettingsScreen(
             }
             val topAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
             val arrowKeyScroll = rememberArrowKeyScroll()
+            val docs by Docs.state.collectAsStateWithLifecycle()
 
             Scaffold(
                 modifier = Modifier
@@ -787,45 +793,52 @@ private fun TabletSettingsScreen(
                     }
                 },
             ) { innerPadding ->
-                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                    val contentSidePadding = max(32.dp, (maxWidth - SettingsContentMaxWidth) / 2)
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .arrowKeyScrollContent(
-                                scroll = arrowKeyScroll,
-                                state = listState,
-                                textOnly = shownPage == SettingsPage.KeyboardShortcuts && !searching,
+                PullToRefreshContainer(
+                    refreshing = docs.loading,
+                    onRefresh = if (shownPage == SettingsPage.Documentation && !searching) ::refreshDocs else null,
+                    indicatorTop = if (showInternalHeader) innerPadding.calculateTopPadding() else topOffset,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                        val contentSidePadding = max(32.dp, (maxWidth - SettingsContentMaxWidth) / 2)
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .arrowKeyScrollContent(
+                                    scroll = arrowKeyScroll,
+                                    state = listState,
+                                    textOnly = shownPage == SettingsPage.KeyboardShortcuts && !searching,
+                                ),
+                            contentPadding = PaddingValues(
+                                start = contentSidePadding,
+                                top = if (showInternalHeader) innerPadding.calculateTopPadding() else topOffset,
+                                end = contentSidePadding,
+                                bottom = 40.dp + bottomOverlayPadding,
                             ),
-                        contentPadding = PaddingValues(
-                            start = contentSidePadding,
-                            top = if (showInternalHeader) innerPadding.calculateTopPadding() else topOffset,
-                            end = contentSidePadding,
-                            bottom = 40.dp + bottomOverlayPadding,
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(18.dp),
-                    ) {
-                        if (searching) {
-                            settingsSearchRootContent(
-                                query = settingsSearchQuery,
-                                entries = {
-                                    settingsSearchEntries(
-                                        isTablet = true,
-                                        pluginsEnabled = AppFeaturePolicy.pluginsEnabled,
-                                        personalMediaAddonCopyEnabled = AppFeaturePolicy.personalMediaAddonCopyEnabled,
-                                        switchProfileAvailable = onSwitchProfile != null,
-                                        checkForUpdatesAvailable = onCheckForUpdatesClick != null,
-                                    )
-                                },
-                                isTablet = true,
-                                showSearchField = false,
-                                animateSearchField = false,
-                                onQueryChange = { settingsSearchQuery = it },
-                                onTargetClick = { openSearchTarget(it) },
-                            )
-                        } else {
-                            settingsPageContent(shownPage, isTablet = true, data = data, links = links)
+                            verticalArrangement = Arrangement.spacedBy(18.dp),
+                        ) {
+                            if (searching) {
+                                settingsSearchRootContent(
+                                    query = settingsSearchQuery,
+                                    entries = {
+                                        settingsSearchEntries(
+                                            isTablet = true,
+                                            pluginsEnabled = AppFeaturePolicy.pluginsEnabled,
+                                            personalMediaAddonCopyEnabled = AppFeaturePolicy.personalMediaAddonCopyEnabled,
+                                            switchProfileAvailable = onSwitchProfile != null,
+                                            checkForUpdatesAvailable = onCheckForUpdatesClick != null,
+                                        )
+                                    },
+                                    isTablet = true,
+                                    showSearchField = false,
+                                    animateSearchField = false,
+                                    onQueryChange = { settingsSearchQuery = it },
+                                    onTargetClick = { openSearchTarget(it) },
+                                )
+                            } else {
+                                settingsPageContent(shownPage, isTablet = true, data = data, links = links)
+                            }
                         }
                     }
                 }

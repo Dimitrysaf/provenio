@@ -75,8 +75,9 @@ suspend fun resolveWatchedBadgesBulk(
                 add(item.id)
             }
         }
+        // Any episode with progress, finished or not, moves how far through its series is.
         progressEntries.forEach { entry ->
-            if (entry.parentMetaType.isSeriesLikeWatchedType() && entry.isEpisode && entry.isEffectivelyCompleted) {
+            if (entry.parentMetaType.isSeriesLikeWatchedType() && entry.isEpisode) {
                 add(entry.parentMetaId)
             }
         }
@@ -97,6 +98,7 @@ suspend fun resolveWatchedBadgesBulk(
     val semaphore = Semaphore(BADGE_RESOLUTION_CONCURRENCY)
     val resolvedIds = mutableSetOf<String>()
     val resolvedStates = linkedMapOf<String, Boolean>()
+    val resolvedProgress = linkedMapOf<String, Float?>()
 
     try {
         for (contentId in touchedSeriesIds) {
@@ -135,6 +137,21 @@ suspend fun resolveWatchedBadgesBulk(
                         },
                     )
                     resolvedStates[watchedItemKey(meta.type, meta.id)] = isFullyWatched
+                    resolvedProgress[watchedItemKey(meta.type, meta.id)] = if (isFullyWatched) {
+                        1f
+                    } else {
+                        meta.watchedMainSeasonFraction(todayIsoDate) { episode ->
+                            val keys = watchedItemKeys(meta.type, meta.id, episode.season, episode.episode)
+                            val playbackId = meta.episodePlaybackId(episode)
+                            val entry = progressEntries
+                                .filter { it.videoId == playbackId }
+                                .maxByOrNull { it.progressFraction }
+                            when {
+                                keys.any(watchedKeys::contains) || entry?.isEffectivelyCompleted == true -> 1f
+                                else -> entry?.progressFraction ?: 0f
+                            }
+                        }
+                    }
                     if (meta.type.isSeriesLikeWatchedType() && meta.videos.isNotEmpty()) {
                         resolvedIds.add(contentId)
                         onSeriesResolved(contentId)
@@ -146,6 +163,7 @@ suspend fun resolveWatchedBadgesBulk(
     } finally {
         // Also on cancellation, so the series reported through onSeriesResolved keep their badges.
         WatchedRepository.updateFullyWatchedSeriesStates(resolvedStates)
+        WatchedRepository.updateSeriesProgress(resolvedProgress)
     }
     log.i { "Bulk badge resolution complete: resolved ${resolvedIds.size}/${touchedSeriesIds.size}" }
 

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -15,11 +14,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.tracking.TrackingLibraryTab
+import io.github.dimitrysaf.provenio.core.tracking.TrackingProviderRegistry
 import io.github.dimitrysaf.provenio.core.tracking.trackingMembershipDestinations
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.Res
@@ -45,6 +46,13 @@ fun TrackingListPickerSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     val destinations = trackingMembershipDestinations(tabs)
+    // Lists kept by a tracker sit under its name; the app's own library needs no heading.
+    val providerNames = remember(destinations) {
+        destinations.mapNotNull { it.providerId }.distinct().associateWith { provider ->
+            TrackingProviderRegistry.authProvider(provider)?.descriptor?.displayName
+                ?: provider.name.lowercase().replaceFirstChar { it.uppercase() }
+        }
+    }
 
     ModalSheet(
         onDismissRequest = {
@@ -105,22 +113,33 @@ fun TrackingListPickerSheet(
                     }
                 }
             } else {
-                items(items = destinations, key = { it.key }) { tab ->
-                    val checked = membership[tab.key] == true
-                    SelectableListRow(
-                        selected = checked,
-                        onClick = { onToggle(tab.key) },
-                        headline = tab.title,
-                        enabled = !isPending,
-                        trailingContent = {
-                            if (checked) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = stringResource(Res.string.cd_selected),
-                                )
-                            }
-                        },
-                    )
+                destinations.forEachIndexed { index, tab ->
+                    val provider = tab.providerId
+                    if (provider != null && provider != destinations.getOrNull(index - 1)?.providerId) {
+                        item(key = "provider-${provider.storageId}") {
+                            ListSubheader(
+                                text = providerNames[provider].orEmpty(),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            )
+                        }
+                    }
+                    item(key = tab.key) {
+                        val checked = membership[tab.key] == true
+                        SelectableListRow(
+                            selected = checked,
+                            onClick = { onToggle(tab.key) },
+                            headline = tab.title,
+                            enabled = !isPending,
+                            trailingContent = {
+                                if (checked) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = stringResource(Res.string.cd_selected),
+                                    )
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }

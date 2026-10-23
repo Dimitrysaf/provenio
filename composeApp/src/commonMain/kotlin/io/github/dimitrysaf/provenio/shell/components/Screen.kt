@@ -2,7 +2,6 @@ package io.github.dimitrysaf.provenio.shell.components
 
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
@@ -65,6 +64,9 @@ fun ScreenScaffold(
     contentMaxWidth: Dp = Dp.Unspecified,
     /** The page has nothing to focus, only text: the content is focused itself, to scroll it. */
     textOnly: Boolean = false,
+    /** Pulling the list down calls this, when given, and its indicator shows while [refreshing]. */
+    onRefresh: (() -> Unit)? = null,
+    refreshing: Boolean = false,
     content: LazyListScope.() -> Unit,
 ) {
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -85,7 +87,12 @@ fun ScreenScaffold(
 
     val arrowKeyScroll = rememberArrowKeyScroll()
     val list: @Composable (Dp, PaddingValues) -> Unit = { sidePadding, innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        PullToRefreshContainer(
+            refreshing = refreshing,
+            onRefresh = onRefresh,
+            indicatorTop = innerPadding.calculateTopPadding(),
+            modifier = Modifier.fillMaxSize(),
+        ) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize().arrowKeyScrollContent(arrowKeyScroll, listState, textOnly),

@@ -4,6 +4,7 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.watch.watched.WatchedItem
 import io.github.dimitrysaf.provenio.core.watch.watched.normalizeWatchedMarkedAtEpochMs
+import io.github.dimitrysaf.provenio.core.watch.watched.watchedItemKey
 import io.github.dimitrysaf.provenio.core.watch.watched.watchedItemKeys
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressEntry
 import io.github.dimitrysaf.provenio.core.watch.progress.continueWatchingEntries
@@ -24,6 +25,27 @@ object WatchingState {
         if (posterKeys.any(watchedKeys::contains)) return true
         return item.type.isSeriesLikePosterType() && posterKeys.any(fullyWatchedSeriesKeys::contains)
     }
+
+    /**
+     * How far through a poster's title is, from 0 to 1, for the bar under its artwork: a movie by
+     * its own progress, a series by [seriesProgress] across all its episodes. Null when it has not
+     * been started, or has been finished, which the watched mark shows instead.
+     */
+    fun posterProgress(
+        item: MetaPreview,
+        movieProgress: Map<String, Float>,
+        seriesProgress: Map<String, Float>,
+    ): Float? {
+        val posterKeys = watchedItemKeys(type = item.type, id = item.id)
+        val progress = if (item.type.isSeriesLikePosterType()) seriesProgress else movieProgress
+        return posterKeys.firstNotNullOfOrNull(progress::get)?.takeIf { it > 0f && it < 1f }
+    }
+
+    /** The progress of each movie started and not finished, by its watched key, for [posterProgress]. */
+    fun movieProgressByKey(entries: List<WatchProgressEntry>): Map<String, Float> =
+        entries
+            .filter { !it.isEpisode && !it.parentMetaType.isSeriesLikePosterType() && !it.isEffectivelyCompleted }
+            .associate { entry -> watchedItemKey(entry.parentMetaType, entry.parentMetaId) to entry.progressFraction }
 
     fun isEpisodeWatched(
         watchedKeys: Set<String>,

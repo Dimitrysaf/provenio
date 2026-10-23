@@ -168,6 +168,26 @@ fun hasWatchedAllMainSeasonEpisodes(
     return mainSeasonEpisodes.isNotEmpty() && mainSeasonEpisodes.all(isEpisodeWatched)
 }
 
+/**
+ * How far through a series is, from 0 to 1: every released main-season episode counts as one,
+ * a watched episode as all of it and one part-watched by [episodeShare] of it. Null when the
+ * series has no released episode yet.
+ */
+fun watchedMainSeasonFraction(
+    episodes: List<WatchingReleasedEpisode>,
+    todayIsoDate: String,
+    nowEpochMs: Long = EpisodeReleaseDatePlatform.nowEpochMs(),
+    episodeShare: (WatchingReleasedEpisode) -> Float,
+): Float? {
+    val mainSeasonEpisodes = releasedMainSeasonEpisodes(
+        episodes = episodes,
+        todayIsoDate = todayIsoDate,
+        nowEpochMs = nowEpochMs,
+    )
+    if (mainSeasonEpisodes.isEmpty()) return null
+    return mainSeasonEpisodes.sumOf { episodeShare(it).coerceIn(0f, 1f).toDouble() }.toFloat() / mainSeasonEpisodes.size
+}
+
 fun latestCompletedSeriesEpisode(
     content: WatchingContentRef,
     progressRecords: List<WatchingProgressRecord>,
