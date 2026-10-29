@@ -5,6 +5,7 @@ import io.github.dimitrysaf.provenio.shell.components.arrowKeyScrollHost
 import io.github.dimitrysaf.provenio.shell.components.rememberArrowKeyScroll
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
+import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.People
 import io.github.dimitrysaf.provenio.core.profiles.Profile
 import io.github.dimitrysaf.provenio.core.settings.ThemeMode
@@ -99,6 +100,7 @@ import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificati
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsUiState
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsUiState
+import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklAuthRepository
 import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklAuthUiState
@@ -114,6 +116,8 @@ import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPrefere
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.compose_settings_root_switch_profile_title
 import provenio.composeapp.generated.resources.compose_settings_root_switch_profile_description
+import provenio.composeapp.generated.resources.watch_party_root_description
+import provenio.composeapp.generated.resources.watch_party_title
 import provenio.composeapp.generated.resources.compose_settings_page_root
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -137,7 +141,8 @@ private val SettingsSearchRevealThreshold = 28.dp
 private const val SettingsSearchRevealAnimationMillis = 240L
 private const val SettingsSearchRevealHapticDelayMillis = 90L
 
-private fun SettingsPage.isEnabledByPolicy(): Boolean = true
+// A watch party needs the sockets Local sync has, which iOS does not yet.
+private fun SettingsPage.isEnabledByPolicy(): Boolean = this != SettingsPage.WatchParty || PartyRepository.isSupported
 
 @Composable
 private fun settingsPageTitles(): Map<SettingsPage, String> {
@@ -479,6 +484,7 @@ private fun MobileSettingsScreen(
                         settingsCategoryListContent(
                             categories = visibleSettingsCategories(),
                             onSwitchProfile = onSwitchProfile,
+                            onWatchParty = { onPageChange(SettingsPage.WatchParty) }.takeIf { PartyRepository.isSupported },
                             onCategoryClick = { category ->
                                 when (category) {
                                     SettingsCategory.Downloads -> onDownloadsClick()
@@ -652,14 +658,18 @@ private fun TabletSettingsScreen(
                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
                             )
                             val switchProfile = onSwitchProfile.takeIf { section == SettingsRootSection.Account }
-                            val rowCount = sectionCategories.size + if (switchProfile != null) 1 else 0
+                            val watchParty = section == SettingsRootSection.Account && PartyRepository.isSupported
+                            val rowCount = sectionCategories.size +
+                                (if (switchProfile != null) 1 else 0) +
+                                (if (watchParty) 1 else 0)
                             sectionCategories.forEachIndexed { index, category ->
                                 SettingsSidebarItem(
                                     label = stringResource(category.labelRes),
                                     description = stringResource(category.descriptionRes),
                                     icon = category.icon,
                                     hue = category.iconHue,
-                                    selected = settingsSearchQuery.isBlank() && category == activeCategory,
+                                    selected = settingsSearchQuery.isBlank() && category == activeCategory &&
+                                        shownPage != SettingsPage.WatchParty,
                                     index = index,
                                     count = rowCount,
                                     onClick = {
@@ -675,9 +685,24 @@ private fun TabletSettingsScreen(
                                     icon = Icons.Rounded.People,
                                     hue = SettingsIconHue.Blue,
                                     selected = false,
-                                    index = rowCount - 1,
+                                    index = sectionCategories.size,
                                     count = rowCount,
                                     onClick = switchProfile,
+                                )
+                            }
+                            if (watchParty) {
+                                SettingsSidebarItem(
+                                    label = stringResource(Res.string.watch_party_title),
+                                    description = stringResource(Res.string.watch_party_root_description),
+                                    icon = Icons.Rounded.Groups,
+                                    hue = SettingsIconHue.Blue,
+                                    selected = settingsSearchQuery.isBlank() && shownPage == SettingsPage.WatchParty,
+                                    index = rowCount - 1,
+                                    count = rowCount,
+                                    onClick = {
+                                        settingsSearchQuery = ""
+                                        openInlinePage(SettingsPage.WatchParty)
+                                    },
                                 )
                             }
                         }
@@ -1059,6 +1084,7 @@ internal fun LazyListScope.settingsPageContent(
             onCheckForUpdatesClick = links.onCheckForUpdatesClick,
         )
         SettingsPage.LicensesAttributions -> licensesAttributionsContent(isTablet = isTablet)
+        SettingsPage.WatchParty -> watchPartySettingsContent(isTablet = isTablet)
         SettingsPage.Documentation -> documentationContent(isTablet = isTablet)
         SettingsPage.Playback -> playbackSettingsContent(
             isTablet = isTablet,

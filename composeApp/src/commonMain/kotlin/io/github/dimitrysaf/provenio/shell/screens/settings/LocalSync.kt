@@ -326,7 +326,7 @@ internal fun LocalSyncPairingSheet(
 
 /** Dark modules on white whatever the theme, since that is what camera scanners read best. */
 @Composable
-private fun LocalSyncQrCode(
+internal fun LocalSyncQrCode(
     matrix: List<BooleanArray>,
     modifier: Modifier = Modifier,
 ) {

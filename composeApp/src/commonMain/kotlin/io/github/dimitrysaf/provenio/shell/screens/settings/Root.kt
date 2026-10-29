@@ -31,6 +31,7 @@ import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Keyboard
+import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.Policy
 import androidx.compose.material3.MaterialTheme
@@ -64,6 +65,8 @@ import provenio.composeapp.generated.resources.compose_settings_root_check_updat
 import provenio.composeapp.generated.resources.compose_settings_root_check_updates_title
 import provenio.composeapp.generated.resources.compose_settings_root_privacy_policy_description
 import provenio.composeapp.generated.resources.compose_settings_root_switch_profile_description
+import provenio.composeapp.generated.resources.watch_party_root_description
+import provenio.composeapp.generated.resources.watch_party_title
 import provenio.composeapp.generated.resources.compose_settings_root_switch_profile_title
 import provenio.composeapp.generated.resources.compose_settings_root_about_section
 import provenio.composeapp.generated.resources.compose_settings_root_advanced_section
@@ -97,6 +100,7 @@ internal fun LazyListScope.settingsCategoryListContent(
     categories: List<SettingsCategory>,
     onCategoryClick: (SettingsCategory) -> Unit,
     onSwitchProfile: (() -> Unit)? = null,
+    onWatchParty: (() -> Unit)? = null,
 ) {
     groupedSettingsCategories(categories).forEach { (section, sectionCategories) ->
         item(key = "settings-root-${section.name}") {
@@ -109,6 +113,8 @@ internal fun LazyListScope.settingsCategoryListContent(
                 }
                 val switchProfileTitle = stringResource(Res.string.compose_settings_root_switch_profile_title)
                 val switchProfileDescription = stringResource(Res.string.compose_settings_root_switch_profile_description)
+                val watchPartyTitle = stringResource(Res.string.watch_party_title)
+                val watchPartyDescription = stringResource(Res.string.watch_party_root_description)
                 SettingsList {
                     rows.forEach { (category, title, description) ->
                         navigationRow(
@@ -126,6 +132,15 @@ internal fun LazyListScope.settingsCategoryListContent(
                             icon = Icons.Rounded.People,
                             iconHue = SettingsIconHue.Blue,
                             onClick = onSwitchProfile,
+                        )
+                    }
+                    if (section == SettingsRootSection.Account && onWatchParty != null) {
+                        navigationRow(
+                            title = watchPartyTitle,
+                            description = watchPartyDescription,
+                            icon = Icons.Rounded.Groups,
+                            iconHue = SettingsIconHue.Blue,
+                            onClick = onWatchParty,
                         )
                     }
                 }

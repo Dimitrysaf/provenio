@@ -7,6 +7,12 @@ import kotlin.test.assertNull
 class AppUrlBridgeTest {
 
     @Test
+    fun `parses watch party invite deeplink`() {
+        val link = "provenio://party?v=1&c=123456&p=47640&a=192.168.1.5,2001:db8::5&k=abc"
+        assertEquals(AppDeepLink.PartyJoin(link), parseAppDeepLink(link))
+    }
+
+    @Test
     fun `parses existing notification meta deeplink`() {
         assertEquals(
             AppDeepLink.Meta(type = "series", id = "tt0944947"),

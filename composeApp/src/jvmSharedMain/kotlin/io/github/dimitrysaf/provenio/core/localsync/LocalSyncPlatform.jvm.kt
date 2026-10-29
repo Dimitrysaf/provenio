@@ -151,7 +151,7 @@ private val ContainerInterfacePrefixes = listOf(
     "podman", "cni", "flannel", "kube", "zt", "tailscale", "wg", "ham", "ppp", "utun",
 )
 
-private fun String.isContainerInterface(): Boolean = ContainerInterfacePrefixes.any { startsWith(it) }
+internal fun String.isContainerInterface(): Boolean = ContainerInterfacePrefixes.any { startsWith(it) }
 
 private fun defaultRouteInterfaceNames(): Set<String> = runCatching {
     java.io.File("/proc/net/route").readLines()

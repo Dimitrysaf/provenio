@@ -369,7 +369,15 @@ internal fun MainAppContent(
         ContinueWatchingPreferencesRepository.uiState
     }.collectAsStateWithLifecycle()
 
-        AppDeepLinkEffect(navController, ownsAppRuntime, ::activateTab) {
+        AppDeepLinkEffect(
+            navController = navController,
+            enabled = ownsAppRuntime,
+            onActivateTab = ::activateTab,
+            onOpenSettingsPage = { page ->
+                requestedSettingsPageName = page.name
+                activateTab(AppScreenTab.Settings)
+            },
+        ) {
             requestedSettingsPageName = SettingsDownloadsPageName
             activateTab(AppScreenTab.Settings)
         }

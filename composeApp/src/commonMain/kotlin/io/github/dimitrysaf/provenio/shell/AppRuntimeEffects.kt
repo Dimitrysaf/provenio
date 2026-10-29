@@ -15,6 +15,7 @@ import io.github.dimitrysaf.provenio.core.auth.AuthState
 import io.github.dimitrysaf.provenio.core.deeplink.AppDeepLink
 import io.github.dimitrysaf.provenio.core.deeplink.AppDeepLinkRepository
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncRepository
+import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
 import io.github.dimitrysaf.provenio.core.network.NetworkCondition
 import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
@@ -26,6 +27,7 @@ import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressSourceCoor
 import io.github.dimitrysaf.provenio.shell.components.NativeTabBridge
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.nav.*
+import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsPage
 import provenio.composeapp.generated.resources.*
 import kotlinx.coroutines.flow.collectLatest
 import org.jetbrains.compose.resources.getString
@@ -209,15 +211,17 @@ internal fun ForegroundSyncEffect(enabled: Boolean) {
     }
 }
 
-// Opens pending deep links: titles, addon installs and downloads.
+// Opens pending deep links: titles, addon installs, downloads and watch party invites.
 @Composable
 internal fun AppDeepLinkEffect(
     navController: Navigator,
     enabled: Boolean,
     onActivateTab: (AppScreenTab) -> Unit,
+    onOpenSettingsPage: (SettingsPage) -> Unit,
     onOpenDownloads: () -> Unit,
 ) {
     val currentOnActivateTab by rememberUpdatedState(onActivateTab)
+    val currentOnOpenSettingsPage by rememberUpdatedState(onOpenSettingsPage)
     val currentOnOpenDownloads by rememberUpdatedState(onOpenDownloads)
     val detailsFallbackTitle = stringResource(Res.string.meta_section_details_title)
     val addonsSettingsTitle = stringResource(Res.string.compose_settings_page_addons)
@@ -265,6 +269,12 @@ internal fun AppDeepLinkEffect(
 
                 AppDeepLink.Downloads -> {
                     currentOnOpenDownloads()
+                    AppDeepLinkRepository.markConsumed(deepLink)
+                }
+
+                is AppDeepLink.PartyJoin -> {
+                    currentOnOpenSettingsPage(SettingsPage.WatchParty)
+                    PartyRepository.join(deepLink.link)
                     AppDeepLinkRepository.markConsumed(deepLink)
                 }
 

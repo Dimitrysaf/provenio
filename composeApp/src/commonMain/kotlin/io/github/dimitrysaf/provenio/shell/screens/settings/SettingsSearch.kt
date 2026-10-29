@@ -30,6 +30,7 @@ import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.SwapVert
+import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Search
@@ -59,6 +60,7 @@ import io.github.dimitrysaf.provenio.shell.components.SearchField
 import io.github.dimitrysaf.provenio.shell.theme.Tokens
 import io.github.dimitrysaf.provenio.shell.theme.provenio
 import io.github.dimitrysaf.provenio.core.build.isIos
+import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.build.supportsPosterNavigationMotion
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -200,6 +202,16 @@ internal fun settingsSearchEntries(
             category = accountCategory,
             icon = Icons.Rounded.People,
             target = SettingsSearchTarget.SwitchProfile,
+        )
+    }
+    if (PartyRepository.isSupported) {
+        addPage(
+            page = SettingsPage.WatchParty,
+            key = "watch-party",
+            title = stringResource(Res.string.watch_party_title),
+            description = stringResource(Res.string.watch_party_root_description),
+            category = accountCategory,
+            icon = Icons.Rounded.Groups,
         )
     }
     addPage(

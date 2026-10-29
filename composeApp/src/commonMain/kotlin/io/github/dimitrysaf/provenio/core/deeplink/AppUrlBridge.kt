@@ -19,6 +19,11 @@ internal sealed interface AppDeepLink {
     ) : AppDeepLink
 
     data object Downloads : AppDeepLink
+
+    /** A watch party's invite link, joined as it is. */
+    data class PartyJoin(
+        val link: String,
+    ) : AppDeepLink
 }
 
 internal object AppDeepLinkRepository {
@@ -60,6 +65,10 @@ fun buildMetaDeepLinkUrl(
 fun buildDownloadsDeepLinkUrl(): String = "provenio://downloads"
 
 internal fun parseAppDeepLink(url: String): AppDeepLink? {
+    // Checked before the URL parser, which a raw IPv6 address in the invite's query could trip.
+    if (url.substringBefore('?').trimEnd('/').equals("provenio://party", ignoreCase = true)) {
+        return AppDeepLink.PartyJoin(url)
+    }
     val parsedUrl = runCatching { Url(url) }.getOrNull() ?: return null
     val scheme = parsedUrl.protocol.name.lowercase()
     if (scheme == "stremio") {
