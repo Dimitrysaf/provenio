@@ -174,6 +174,8 @@ internal sealed interface EpisodeListEntry {
         val episodeCount: Int,
         val expanded: Boolean,
         val completed: Boolean,
+        val posterUrl: String? = null,
+        val name: String? = null,
     ) : EpisodeListEntry
 
     data class Episode(
@@ -198,6 +200,8 @@ internal fun buildEpisodeListEntries(
                 episodeCount = episodes.size,
                 expanded = expanded,
                 completed = season in completedSeasons,
+                posterUrl = episodes.firstNotNullOfOrNull { it.seasonPoster?.takeIf(String::isNotBlank) },
+                name = episodes.firstNotNullOfOrNull { it.seasonName?.takeIf(String::isNotBlank) },
             ),
         )
         if (!expanded) return@forEach
@@ -248,6 +252,8 @@ internal fun DetailEpisodeListRow(
             } else {
                 stringResource(Res.string.episodes_season, entry.season)
             },
+            name = entry.name?.takeIf { entry.season > 0 && !isGenericSeasonName(it, entry.season) },
+            posterUrl = entry.posterUrl ?: meta.seasonPosters[entry.season],
             episodeCount = entry.episodeCount,
             expanded = entry.expanded,
             completed = entry.completed,
@@ -291,6 +297,8 @@ internal fun DetailEpisodeListRow(
 @Composable
 private fun SeasonRow(
     label: String,
+    name: String?,
+    posterUrl: String?,
     episodeCount: Int,
     expanded: Boolean,
     completed: Boolean,
@@ -312,6 +320,30 @@ private fun SeasonRow(
         colors = ListItemDefaults.segmentedColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ),
+        leadingContent = posterUrl?.let { url ->
+            {
+                ShapedArtworkImage(
+                    candidates = listOf(url),
+                    contentDescription = null,
+                    letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    modifier = Modifier
+                        .width(SeasonPosterWidth)
+                        .aspectRatio(2f / 3f)
+                        .clip(MaterialTheme.shapes.small)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                )
+            }
+        },
+        // A season with a name of its own shows it under "Season 2", as an episode shows its title under S1E2.
+        overlineContent = name?.let {
+            {
+                FindableText(
+                    text = label,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                )
+            }
+        },
         trailingContent = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -340,12 +372,19 @@ private fun SeasonRow(
         },
     ) {
         FindableText(
-            text = label,
-            maxLines = 1,
+            text = name ?: label,
+            maxLines = if (name != null) 2 else 1,
             overflow = TextOverflow.Ellipsis,
         )
     }
 }
+
+// TMDB names most seasons only "Season 2", in whatever language, which says nothing the row's
+// own label does not. Only a name of its own, such as "The Long Night", is shown.
+internal fun isGenericSeasonName(name: String, season: Int): Boolean =
+    GenericSeasonName.matchEntire(name.trim())?.groupValues?.get(1)?.toIntOrNull() == season
+
+private val GenericSeasonName = Regex("""\p{L}+\.?\s*(\d+)""")
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -475,6 +514,7 @@ private enum class EpisodeStatus(val icon: ImageVector, val label: StringResourc
 }
 
 private val EpisodeThumbnailWidth = 128.dp
+private val SeasonPosterWidth = 40.dp
 private val EpisodeStatusSize = 36.dp
 private val EpisodeStatusIconSize = 20.dp
 private val EpisodeProgressHeight = 4.dp

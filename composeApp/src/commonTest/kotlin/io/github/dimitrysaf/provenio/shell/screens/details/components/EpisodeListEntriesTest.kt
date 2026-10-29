@@ -4,6 +4,7 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressEntry
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -108,6 +109,37 @@ class EpisodeListEntriesTest {
             durationMs = 120_000L,
             lastUpdatedEpochMs = updatedAt,
         )
+
+    @Test
+    fun `a season row carries its poster and name from its episodes`() {
+        val named = mapOf(
+            1 to listOf(
+                episode(season = 1, number = 1),
+                episode(season = 1, number = 2).copy(seasonPoster = "https://example.com/s1.jpg", seasonName = "The Long Night"),
+            ),
+        )
+        val season = buildEpisodeListEntries(named, expandedSeasons = emptySet()).single() as EpisodeListEntry.Season
+
+        assertEquals("https://example.com/s1.jpg", season.posterUrl)
+        assertEquals("The Long Night", season.name)
+    }
+
+    @Test
+    fun `a season row without poster or name keeps them empty`() {
+        val season = buildEpisodeListEntries(grouped, expandedSeasons = emptySet()).first() as EpisodeListEntry.Season
+
+        assertNull(season.posterUrl)
+        assertNull(season.name)
+    }
+
+    @Test
+    fun `only a season name of its own counts as a name`() {
+        assertTrue(isGenericSeasonName("Season 2", 2))
+        assertTrue(isGenericSeasonName("Σεζόν 2", 2))
+        assertTrue(isGenericSeasonName("Staffel 2", 2))
+        assertFalse(isGenericSeasonName("The Long Night", 2))
+        assertFalse(isGenericSeasonName("Season 3", 2))
+    }
 
     private fun episode(season: Int, number: Int): MetaVideo =
         MetaVideo(
