@@ -11,14 +11,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Logout
-import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.GroupAdd
 import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PersonAdd
+import androidx.compose.material.icons.rounded.PersonOff
 import androidx.compose.material.icons.rounded.QrCode
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material3.AlertDialog
@@ -116,7 +115,7 @@ private fun WatchPartyStart(isTablet: Boolean) {
             navigationRow(
                 title = stringResource(Res.string.watch_party_create),
                 description = stringResource(Res.string.watch_party_create_description),
-                icon = Icons.Rounded.GroupAdd,
+                icon = Icons.Rounded.PersonAdd,
                 onClick = PartyRepository::createRoom,
             )
             if (scan != null) {
@@ -328,7 +327,7 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
                     navigationRow(
                         title = member.name.ifBlank { guestName },
                         description = unbanDescription,
-                        icon = Icons.Rounded.Block,
+                        icon = Icons.Rounded.PersonOff,
                         onClick = { PartyRepository.unban(member.id) },
                     )
                 }
@@ -339,7 +338,7 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
     SettingsList {
         navigationRow(
             title = stringResource(if (room.isHost) Res.string.watch_party_close else Res.string.watch_party_leave),
-            icon = if (room.isHost) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.Logout,
+            icon = Icons.Rounded.Close,
             onClick = { showLeave = true },
         )
     }
