@@ -100,6 +100,7 @@ import io.github.dimitrysaf.provenio.core.notifications.EpisodeReleaseNotificati
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsRepository
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsUiState
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsUiState
+import io.github.dimitrysaf.provenio.core.party.PartyPhase
 import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklAuthRepository
@@ -140,6 +141,11 @@ internal const val SettingsDownloadsPageName = "Downloads"
 private val SettingsSearchRevealThreshold = 28.dp
 private const val SettingsSearchRevealAnimationMillis = 240L
 private const val SettingsSearchRevealHapticDelayMillis = 90L
+
+// In a room, the Watch party page is the room's conversation, which draws its own top.
+@Composable
+private fun isWatchPartyConversation(page: SettingsPage): Boolean =
+    page == SettingsPage.WatchParty && PartyRepository.uiState.collectAsStateWithLifecycle().value.phase is PartyPhase.InRoom
 
 // A watch party needs the sockets Local sync has, which iOS does not yet.
 private fun SettingsPage.isEnabledByPolicy(): Boolean = this != SettingsPage.WatchParty || PartyRepository.isSupported
@@ -442,7 +448,8 @@ private fun MobileSettingsScreen(
             modifier = Modifier.nestedScroll(rootSearchRevealConnection),
             // Native navigation supplies its own header, so the app bar only appears when this
             // screen is responsible for one.
-            title = if (!showInternalHeader) {
+            // The room's conversation has the room at its top instead, as a chat app does.
+            title = if (!showInternalHeader || isWatchPartyConversation(page)) {
                 null
             } else if (page == SettingsPage.Documentation) {
                 documentationAppBarTitle(stringResource(page.titleRes))
@@ -669,7 +676,7 @@ private fun TabletSettingsScreen(
                                     icon = category.icon,
                                     hue = category.iconHue,
                                     selected = settingsSearchQuery.isBlank() && category == activeCategory &&
-                                        shownPage != SettingsPage.WatchParty,
+                                        shownPage != SettingsPage.WatchParty && shownPage != SettingsPage.WatchPartyRoom,
                                     index = index,
                                     count = rowCount,
                                     onClick = {
@@ -696,7 +703,8 @@ private fun TabletSettingsScreen(
                                     description = stringResource(Res.string.watch_party_root_description),
                                     icon = Icons.Rounded.Groups,
                                     hue = SettingsIconHue.Blue,
-                                    selected = settingsSearchQuery.isBlank() && shownPage == SettingsPage.WatchParty,
+                                    selected = settingsSearchQuery.isBlank() &&
+                                        (shownPage == SettingsPage.WatchParty || shownPage == SettingsPage.WatchPartyRoom),
                                     index = rowCount - 1,
                                     count = rowCount,
                                     onClick = {
@@ -779,6 +787,7 @@ private fun TabletSettingsScreen(
                 stringResource(shownPage.titleRes)
             }
             val pageSubtitle = if (!searching && shownPage == SettingsPage.Documentation) documentationAppBarBreadcrumbs() else null
+            val partyInRoom = PartyRepository.uiState.collectAsStateWithLifecycle().value.phase is PartyPhase.InRoom
             val topAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
             val arrowKeyScroll = rememberArrowKeyScroll()
             val docs by Docs.state.collectAsStateWithLifecycle()
@@ -790,7 +799,7 @@ private fun TabletSettingsScreen(
                     .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
                 containerColor = MaterialTheme.colorScheme.surface,
                 topBar = {
-                    if (showInternalHeader) {
+                    if (showInternalHeader && !(shownPage == SettingsPage.WatchParty && partyInRoom && !searching)) {
                         LargeFlexibleTopAppBar(
                             title = { Text(pageTitle) },
                             subtitle = pageSubtitle,
@@ -831,7 +840,11 @@ private fun TabletSettingsScreen(
                                 ),
                             contentPadding = PaddingValues(
                                 start = contentSidePadding,
-                                top = if (showInternalHeader) innerPadding.calculateTopPadding() else topOffset,
+                                top = when {
+                                    shownPage == SettingsPage.WatchParty && partyInRoom && !searching -> statusBarPadding + 8.dp
+                                    showInternalHeader -> innerPadding.calculateTopPadding()
+                                    else -> topOffset
+                                },
                                 end = contentSidePadding,
                                 bottom = 40.dp + bottomOverlayPadding,
                             ),
@@ -1084,7 +1097,13 @@ internal fun LazyListScope.settingsPageContent(
             onCheckForUpdatesClick = links.onCheckForUpdatesClick,
         )
         SettingsPage.LicensesAttributions -> licensesAttributionsContent(isTablet = isTablet)
-        SettingsPage.WatchParty -> watchPartySettingsContent(isTablet = isTablet)
+        SettingsPage.WatchParty -> watchPartySettingsContent(
+            isTablet = isTablet,
+            // On a large screen the page is the top of its half, with nothing to go back to.
+            onBack = links.navigateBack.takeIf { !isTablet },
+            onOpenRoomSettings = { links.openSubPage(SettingsPage.WatchPartyRoom) },
+        )
+        SettingsPage.WatchPartyRoom -> watchPartyRoomSettingsContent(isTablet = isTablet, onRoomClosed = links.navigateBack)
         SettingsPage.Documentation -> documentationContent(isTablet = isTablet)
         SettingsPage.Playback -> playbackSettingsContent(
             isTablet = isTablet,

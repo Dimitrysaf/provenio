@@ -2636,6 +2636,6 @@
     <string name="watch_party_notification_channel">Κοινή προβολή</string>
     <string name="watch_party_notification_text">Συμμετέχετε σε κοινή προβολή</string>
     <string name="watch_party_line_source_advice">Όλοι αναπαράγουν την πηγή που επιλέγετε: διαλέξτε μία με πολλά seeds και peers</string>
-    <string name="watch_party_chat_empty">Δεν υπάρχουν ακόμη μηνύματα. Χαιρετήστε το δωμάτιο.</string>
     <string name="watch_party_chat_off">Ο οικοδεσπότης απενεργοποίησε τη συνομιλία.</string>
+    <string name="watch_party_room_settings">Λεπτομέρειες</string>
 </resources>

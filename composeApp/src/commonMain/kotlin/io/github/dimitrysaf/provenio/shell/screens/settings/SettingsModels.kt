@@ -26,6 +26,7 @@ import provenio.composeapp.generated.resources.compose_settings_page_addons
 import provenio.composeapp.generated.resources.compose_settings_page_advanced
 import provenio.composeapp.generated.resources.compose_settings_page_continue_watching
 import provenio.composeapp.generated.resources.compose_settings_page_debrid
+import provenio.composeapp.generated.resources.watch_party_room_settings
 import provenio.composeapp.generated.resources.watch_party_title
 import provenio.composeapp.generated.resources.compose_settings_page_hero_carousel
 import provenio.composeapp.generated.resources.compose_settings_page_homescreen
@@ -196,6 +197,11 @@ internal enum class SettingsPage(
         titleRes = Res.string.watch_party_title,
         category = SettingsCategory.Accounts,
         parentPage = Root,
+    ),
+    WatchPartyRoom(
+        titleRes = Res.string.watch_party_room_settings,
+        category = SettingsCategory.Accounts,
+        parentPage = WatchParty,
     ),
     Appearance(
         titleRes = Res.string.settings_category_interface,

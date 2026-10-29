@@ -3,28 +3,39 @@ package io.github.dimitrysaf.provenio.shell.screens.settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,28 +44,39 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.party.PartyChatMessage
 import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.party.PartyRoom
 import io.github.dimitrysaf.provenio.core.time.EpisodeReleaseDatePlatform
+import io.github.dimitrysaf.provenio.shell.WatchPartyPrompts
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
-private val ChatHeight = 380.dp
-private val BubbleCorner = 20.dp
-private val BubbleTail = 4.dp
+private val BubbleShape = RoundedCornerShape(26.dp)
+private val AvatarSize = 32.dp
+
+// A gap this long between two messages starts a new stretch, with the time over it.
+private const val TimeSeparatorGapMs = 15 * 60_000L
 
 /**
- * The room's chat on the Watch party page, as a messaging app has it: this device's messages in
- * bubbles on the right, everyone else's on the left under their name, and the field to write in
- * at the bottom. It is the same chat the player shows over the video.
+ * The room, as a conversation in Google Messages: the room at the top, which opens its
+ * settings, the messages filling the page in round bubbles, this device's on the right and
+ * everyone else's on the left, and the field to write in at the bottom.
  */
 @Composable
-internal fun WatchPartyChatSection(room: PartyRoom, isTablet: Boolean) {
+internal fun WatchPartyConversation(
+    room: PartyRoom,
+    onBack: (() -> Unit)?,
+    onOpenRoomSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val messages by PartyRepository.chat.collectAsStateWithLifecycle()
     val nextChatAt by PartyRepository.nextChatAtEpochMs.collectAsStateWithLifecycle()
     val now by produceState(EpisodeReleaseDatePlatform.nowEpochMs(), nextChatAt) {
@@ -65,170 +87,244 @@ internal fun WatchPartyChatSection(room: PartyRoom, isTablet: Boolean) {
         }
     }
     val waitSeconds = if (room.isHost) 0 else ((nextChatAt - now + 999) / 1_000).toInt().coerceAtLeast(0)
-    SettingsSection(
-        title = stringResource(Res.string.watch_party_chat),
-        isTablet = isTablet,
+    // The line at the top of the app would only repeat the room's header here.
+    DisposableEffect(Unit) {
+        WatchPartyPrompts.setConversationShown(true)
+        onDispose { WatchPartyPrompts.setConversationShown(false) }
+    }
+    Column(modifier = modifier.imePadding()) {
+        ConversationHeader(room = room, onBack = onBack, onClick = onOpenRoomSettings)
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            ConversationMessages(messages = messages, room = room)
+        }
+        ConversationInput(enabled = room.settings.chatEnabled, waitSeconds = waitSeconds)
+    }
+}
+
+@Composable
+private fun ConversationHeader(room: PartyRoom, onBack: (() -> Unit)?, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = Color.Transparent,
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(ChatHeight),
+        Row(
+            modifier = Modifier.padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                    if (messages.isEmpty()) {
-                        Text(
-                            text = stringResource(
-                                if (room.settings.chatEnabled) Res.string.watch_party_chat_empty else Res.string.watch_party_chat_off,
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.align(Alignment.Center).padding(24.dp),
-                        )
-                    } else {
-                        ChatMessages(messages = messages, myMemberId = room.myMemberId)
-                    }
-                }
-                if (room.settings.chatEnabled) {
-                    ChatInput(waitSeconds = waitSeconds)
-                } else if (messages.isNotEmpty()) {
-                    Text(
-                        text = stringResource(Res.string.watch_party_chat_off),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(12.dp),
+            if (onBack != null) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                        contentDescription = stringResource(Res.string.action_back),
                     )
                 }
+            }
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(start = if (onBack != null) 4.dp else 0.dp).size(44.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(imageVector = Icons.Rounded.Groups, contentDescription = null)
+                }
+            }
+            Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
+                Text(
+                    text = if (room.isHost) {
+                        stringResource(Res.string.watch_party_title)
+                    } else {
+                        stringResource(Res.string.watch_party_hosted_by, room.hostName.orEmpty())
+                    },
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = stringResource(Res.string.watch_party_section_members, room.members.size),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ChatMessages(messages: List<PartyChatMessage>, myMemberId: String) {
+private fun ConversationMessages(messages: List<PartyChatMessage>, room: PartyRoom) {
     val listState = rememberLazyListState()
     // Opens on the newest message and follows new ones as they come.
     LaunchedEffect(messages.size) {
-        listState.animateScrollToItem(messages.lastIndex)
+        if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
     }
+    val guestName = stringResource(Res.string.watch_party_guest_name)
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(vertical = 12.dp),
     ) {
         itemsIndexed(messages, key = { _, message -> message.id }) { index, message ->
             val previous = messages.getOrNull(index - 1)
             val next = messages.getOrNull(index + 1)
-            ChatBubble(
+            val newStretch = previous == null || message.sentAtEpochMs - previous.sentAtEpochMs >= TimeSeparatorGapMs
+            if (newStretch) {
+                localClockTime(message.sentAtEpochMs)?.let { time ->
+                    Text(
+                        text = time,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = if (previous == null) 4.dp else 20.dp, bottom = 12.dp),
+                    )
+                }
+            }
+            val mine = message.memberId == room.myMemberId
+            val firstOfRun = newStretch || previous?.memberId != message.memberId
+            val lastOfRun = next == null || next.memberId != message.memberId ||
+                next.sentAtEpochMs - message.sentAtEpochMs >= TimeSeparatorGapMs
+            MessageBubble(
                 message = message,
-                mine = message.memberId == myMemberId,
-                firstOfRun = previous?.memberId != message.memberId,
-                lastOfRun = next?.memberId != message.memberId,
+                name = message.name.ifBlank { guestName },
+                mine = mine,
+                firstOfRun = firstOfRun,
+                lastOfRun = lastOfRun,
+                // Two people need no names; a room of more does.
+                showSender = room.members.size > 2 || room.members.none { it.id == message.memberId },
             )
         }
     }
 }
 
-// A run of messages from one person reads as one block: the name over its first bubble, the
-// tail on its last, and a wider gap before the next person's.
+// Messages from one person in a row sit close together; a new person starts further down.
 @Composable
-private fun ChatBubble(
+private fun MessageBubble(
     message: PartyChatMessage,
+    name: String,
     mine: Boolean,
     firstOfRun: Boolean,
     lastOfRun: Boolean,
+    showSender: Boolean,
 ) {
     val colors = MaterialTheme.colorScheme
-    val shape = if (mine) {
-        RoundedCornerShape(
-            topStart = BubbleCorner,
-            topEnd = if (firstOfRun) BubbleCorner else BubbleTail,
-            bottomEnd = if (lastOfRun) BubbleCorner else BubbleTail,
-            bottomStart = BubbleCorner,
-        )
-    } else {
-        RoundedCornerShape(
-            topStart = if (firstOfRun) BubbleCorner else BubbleTail,
-            topEnd = BubbleCorner,
-            bottomEnd = BubbleCorner,
-            bottomStart = if (lastOfRun) BubbleCorner else BubbleTail,
-        )
-    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = if (firstOfRun) 8.dp else 0.dp),
+            .padding(top = if (firstOfRun) 10.dp else 3.dp),
         horizontalAlignment = if (mine) Alignment.End else Alignment.Start,
     ) {
-        if (firstOfRun && !mine) {
+        if (!mine && showSender && firstOfRun) {
             Text(
-                text = message.name,
+                text = name,
                 style = MaterialTheme.typography.labelMedium,
                 color = colors.onSurfaceVariant,
-                modifier = Modifier.padding(start = 12.dp, bottom = 2.dp),
+                modifier = Modifier.padding(start = AvatarSize + 8.dp + 14.dp, bottom = 4.dp),
             )
         }
-        Surface(
-            shape = shape,
-            color = if (mine) colors.primary else colors.surfaceContainerHighest,
-            contentColor = if (mine) colors.onPrimary else colors.onSurface,
-            modifier = Modifier.widthIn(max = 300.dp),
-        ) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            if (!mine && showSender) {
+                if (lastOfRun) Avatar(name) else Spacer(modifier = Modifier.width(AvatarSize))
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Surface(
+                shape = BubbleShape,
+                color = if (mine) colors.primaryContainer else colors.surfaceContainerHigh,
+                contentColor = if (mine) colors.onPrimaryContainer else colors.onSurface,
+                modifier = Modifier.widthIn(max = 320.dp),
+            ) {
+                Text(
+                    text = message.text,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun Avatar(name: String) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        modifier = Modifier.size(AvatarSize),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
             Text(
-                text = message.text,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                text = name.trim().take(1).uppercase(),
+                style = MaterialTheme.typography.labelLarge,
             )
         }
     }
 }
 
 @Composable
-private fun ChatInput(waitSeconds: Int) {
+private fun ConversationInput(enabled: Boolean, waitSeconds: Int) {
     var draft by rememberSaveable { mutableStateOf("") }
-    val canSend = waitSeconds == 0 && draft.isNotBlank()
+    val canSend = enabled && waitSeconds == 0 && draft.isNotBlank()
     val send = {
         if (canSend && PartyRepository.sendChat(draft)) draft = ""
     }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 12.dp, end = 8.dp, bottom = 12.dp, top = 4.dp),
+            .padding(top = 8.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        OutlinedTextField(
+        TextField(
             value = draft,
             onValueChange = { draft = it },
+            enabled = enabled,
             placeholder = {
                 Text(
-                    if (waitSeconds > 0) {
-                        stringResource(Res.string.watch_party_chat_wait, waitSeconds)
-                    } else {
-                        stringResource(Res.string.watch_party_chat_hint)
+                    when {
+                        !enabled -> stringResource(Res.string.watch_party_chat_off)
+                        waitSeconds > 0 -> stringResource(Res.string.watch_party_chat_wait, waitSeconds)
+                        else -> stringResource(Res.string.watch_party_chat_hint)
                     },
                 )
             },
-            shape = RoundedCornerShape(50),
-            maxLines = 4,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            shape = CircleShape,
+            maxLines = 5,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
             ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
             keyboardActions = KeyboardActions(onSend = { send() }),
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .heightIn(min = 56.dp),
         )
-        FilledIconButton(onClick = send, enabled = canSend) {
+        FilledIconButton(
+            onClick = send,
+            enabled = canSend,
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            ),
+            modifier = Modifier.size(56.dp),
+        ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.Send,
                 contentDescription = stringResource(Res.string.watch_party_chat_send),
             )
         }
     }
+}
+
+// The hour and minute [epochMs] falls on here, as 11:10.
+private fun localClockTime(epochMs: Long): String? {
+    val date = EpisodeReleaseDatePlatform.localIsoDateAtEpochMs(epochMs) ?: return null
+    val dayStart = EpisodeReleaseDatePlatform.localDateTimeToEpochMs("${date}T00:00:00") ?: return null
+    val minutes = ((epochMs - dayStart) / 60_000L).toInt().coerceIn(0, 24 * 60 - 1)
+    return "${minutes / 60}:${(minutes % 60).toString().padStart(2, '0')}"
 }

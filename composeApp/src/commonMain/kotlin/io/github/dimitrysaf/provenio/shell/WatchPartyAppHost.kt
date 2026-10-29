@@ -79,6 +79,14 @@ internal object WatchPartyPrompts {
     fun dismissJoin() {
         _joinRequest.value = null
     }
+
+    private val _conversationShown = MutableStateFlow(false)
+    val conversationShown: StateFlow<Boolean> = _conversationShown.asStateFlow()
+
+    /** The room's conversation is on screen, with the room at its top. */
+    fun setConversationShown(shown: Boolean) {
+        _conversationShown.value = shown
+    }
 }
 
 /**
@@ -103,6 +111,7 @@ internal fun WatchPartyAppHost(
     val suggestions by PartyRepository.suggestions.collectAsStateWithLifecycle()
     val leaveRequest by WatchPartyPrompts.leaveRequest.collectAsStateWithLifecycle()
     val joinRequest by WatchPartyPrompts.joinRequest.collectAsStateWithLifecycle()
+    val conversationShown by WatchPartyPrompts.conversationShown.collectAsStateWithLifecycle()
     val isHost = room?.isHost == true
     val isGuest = room?.isHost == false
     var openedPlaybackId by remember { mutableStateOf<Long?>(null) }
@@ -148,7 +157,7 @@ internal fun WatchPartyAppHost(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        if (room != null && currentRoute !is PlayerRoute) {
+        if (room != null && currentRoute !is PlayerRoute && !conversationShown) {
             val hostName = room.hostName.orEmpty()
             val shared = sharedPlayback
             val (text, action) = when {

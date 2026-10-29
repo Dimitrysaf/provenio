@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,19 +74,41 @@ private val SlowModeOptions = listOf(0, 5, 10, 30, 60)
  * it shows how guests reach it, its invite, who is in it, and its settings, which only the host
  * edits. Opening and connecting are dialogs, shown app-wide with the room's other messages.
  */
-internal fun LazyListScope.watchPartySettingsContent(isTablet: Boolean) {
+internal fun LazyListScope.watchPartySettingsContent(
+    isTablet: Boolean,
+    onBack: (() -> Unit)?,
+    onOpenRoomSettings: () -> Unit,
+) {
     item(key = "watch-party") {
-        WatchPartyPage(isTablet = isTablet)
+        val state by PartyRepository.uiState.collectAsStateWithLifecycle()
+        when (val phase = state.phase) {
+            // In a room the page is its conversation, filling the screen as in Google Messages.
+            is PartyPhase.InRoom -> WatchPartyConversation(
+                room = phase.room,
+                onBack = onBack,
+                onOpenRoomSettings = onOpenRoomSettings,
+                modifier = Modifier.fillParentMaxSize(),
+            )
+            else -> Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                WatchPartyStart(isTablet = isTablet)
+            }
+        }
     }
 }
 
-@Composable
-private fun WatchPartyPage(isTablet: Boolean) {
-    val state by PartyRepository.uiState.collectAsStateWithLifecycle()
-    Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        when (val phase = state.phase) {
-            is PartyPhase.InRoom -> WatchPartyRoomContent(room = phase.room, isTablet = isTablet)
-            else -> WatchPartyStart(isTablet = isTablet)
+/** The room's settings, opened from the top of its conversation: how guests reach it, who is in it, and its rules. */
+internal fun LazyListScope.watchPartyRoomSettingsContent(isTablet: Boolean, onRoomClosed: () -> Unit) {
+    item(key = "watch-party-room") {
+        val state by PartyRepository.uiState.collectAsStateWithLifecycle()
+        val room = (state.phase as? PartyPhase.InRoom)?.room
+        // Out of the room there is nothing left to set; back to the start.
+        LaunchedEffect(room == null) {
+            if (room == null) onRoomClosed()
+        }
+        if (room != null) {
+            Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                WatchPartyRoomContent(room = room, isTablet = isTablet)
+            }
         }
     }
 }
@@ -182,8 +205,6 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
             }
         }
     }
-
-    WatchPartyChatSection(room = room, isTablet = isTablet)
 
     SettingsSection(
         title = settings.memberLimit?.let { limit ->
