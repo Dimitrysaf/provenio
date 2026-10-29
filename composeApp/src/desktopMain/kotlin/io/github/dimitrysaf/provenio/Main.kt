@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.LocalWindowExceptionHandlerFactory
 import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import io.github.dimitrysaf.provenio.core.addons.AddonHttpClientProvider
@@ -83,6 +82,7 @@ import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
 import io.github.dimitrysaf.provenio.desktop.MaterialContextMenuRepresentation
 import io.github.dimitrysaf.provenio.desktop.SingleInstance
 import io.github.dimitrysaf.provenio.desktop.UpdateFailureDialog
+import io.github.dimitrysaf.provenio.desktop.WindowFullscreen
 import io.github.dimitrysaf.provenio.desktop.WindowsInstallerLock
 import java.awt.SystemTray
 import java.io.File
@@ -118,8 +118,9 @@ fun main(args: Array<String>) {
             P2pStreamingEngine.shutdownAll()
             exitApplication()
         }
+        val windowFullscreen = remember { WindowFullscreen() }
         LaunchedEffect(fullscreen) {
-            windowState.placement = if (fullscreen) WindowPlacement.Fullscreen else WindowPlacement.Floating
+            windowFullscreen.apply(windowState, fullscreen)
         }
         LaunchedEffect(windowState.isMinimized, windowVisible) {
             DesktopWindowState.setVisible(windowVisible && !windowState.isMinimized)

@@ -9,6 +9,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
@@ -24,6 +25,7 @@ import androidx.compose.ui.window.rememberWindowState
 import io.github.dimitrysaf.provenio.desktop.DesktopDisplayScale
 import io.github.dimitrysaf.provenio.desktop.DesktopWindowState
 import io.github.dimitrysaf.provenio.desktop.ProvideDesktopDisplayScale
+import io.github.dimitrysaf.provenio.desktop.WindowFullscreen
 import io.github.dimitrysaf.provenio.shell.components.AppSnackbarHost
 import io.github.dimitrysaf.provenio.desktop.MaterialContextMenuRepresentation
 import org.jetbrains.compose.resources.painterResource
@@ -48,8 +50,9 @@ internal actual fun DetachedPlayerWindow(
         position = PlayerWindowGeometry.position,
     )
     val fullscreen by DesktopWindowState.isPlayerFullscreen.collectAsState()
+    val windowFullscreen = remember { WindowFullscreen() }
     LaunchedEffect(fullscreen) {
-        state.placement = if (fullscreen) WindowPlacement.Fullscreen else WindowPlacement.Floating
+        windowFullscreen.apply(state, fullscreen)
     }
     LaunchedEffect(state.isMinimized) {
         DesktopWindowState.setPlayerWindowVisible(!state.isMinimized)
