@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.party.PartyRoom
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -168,6 +169,13 @@ internal class PlayerScreenRuntime(
     var hasSentCompletionScrobbleForCurrentItem by mutableStateOf(false)
     var playNextWatchedKey by mutableStateOf<String?>(null)
     var currentTrackingMedia by mutableStateOf<TrackingMediaReference?>(null)
+
+    // The watch party this player is part of, if any: a guest follows the host and suggests
+    // instead of choosing.
+    var partyRoom by mutableStateOf<PartyRoom?>(null)
+    val partyGuest: Boolean get() = partyRoom?.isHost == false
+    val partyHost: Boolean get() = partyRoom?.isHost == true
+    var showPartyChat by mutableStateOf(false)
 
     var showSourcesPanel by mutableStateOf(false)
     var showEpisodesPanel by mutableStateOf(false)

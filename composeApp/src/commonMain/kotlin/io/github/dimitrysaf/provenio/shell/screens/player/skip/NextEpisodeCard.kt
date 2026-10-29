@@ -89,6 +89,8 @@ fun NextEpisodeCard(
     modifier: Modifier = Modifier,
     showPlayNextButton: Boolean = false,
     countdown: Int? = null,
+    // In a watch party a guest suggests the next episode instead, and says so.
+    playNextLabel: String? = null,
 ) {
     if (nextEpisode == null) return
 
@@ -178,7 +180,7 @@ fun NextEpisodeCard(
                 label = "next_episode_morph",
             ) { target ->
                 when (target) {
-                    NextEpisodeMode.Button -> PlayNextButtonContent(isLoading = isLoading, countdown = countdown)
+                    NextEpisodeMode.Button -> PlayNextButtonContent(isLoading = isLoading, countdown = countdown, label = playNextLabel)
                     NextEpisodeMode.Card -> NextEpisodeCardContent(
                         nextEpisode = nextEpisode,
                         isLoading = isLoading,
@@ -196,7 +198,7 @@ fun NextEpisodeCard(
 
 /** The small form: an icon and Play next, a pill above the progress bar; the icon turns into a spinner while the next episode loads. */
 @Composable
-private fun PlayNextButtonContent(isLoading: Boolean, countdown: Int?) {
+private fun PlayNextButtonContent(isLoading: Boolean, countdown: Int?, label: String? = null) {
     Row(
         modifier = Modifier.padding(start = 14.dp, end = 18.dp, top = 10.dp, bottom = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -225,7 +227,7 @@ private fun PlayNextButtonContent(isLoading: Boolean, countdown: Int?) {
             )
         }
         Text(
-            text = stringResource(Res.string.player_play_next),
+            text = label ?: stringResource(Res.string.player_play_next),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )

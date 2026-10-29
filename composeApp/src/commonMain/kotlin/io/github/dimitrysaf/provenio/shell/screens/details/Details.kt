@@ -51,6 +51,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbMetadataService
+import io.github.dimitrysaf.provenio.core.party.PartyPhase
+import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.profiles.ProfileAgeLimits
 import androidx.compose.material.icons.rounded.Lock
@@ -705,17 +707,24 @@ private fun MetaDetailsContent(
         onPlayTrailer?.invoke(trailer, meta.name, meta.logo, meta.poster, meta.background)
     }
     val primaryVideoId = seriesStreamVideoId ?: seriesAction?.videoId ?: meta.id
+    // A guest in a watch party suggests what to watch instead, while the host allows it.
+    val partyState by PartyRepository.uiState.collectAsStateWithLifecycle()
+    val partyGuestRoom = (partyState.phase as? PartyPhase.InRoom)?.room?.takeIf { !it.isHost }
     val isPrimaryPlayEnabled = playbackAvailability.canPlay(
         type = meta.type,
         videoId = primaryVideoId,
         parentMetaId = meta.id,
         seasonNumber = seriesAction?.seasonNumber,
         episodeNumber = seriesAction?.episodeNumber,
-    )
+    ) && partyGuestRoom?.settings?.suggestionsEnabled != false
+    val playDisabledLabel = partyGuestRoom?.let { stringResource(Res.string.watch_party_suggestions_off_short) }
     val playText = stringResource(Res.string.action_play)
     val resumeText = stringResource(Res.string.action_resume)
-    val playButtonLabel = remember(movieProgress, seriesAction, meta.type, hasEpisodes, playText, resumeText) {
+    val suggestText = stringResource(Res.string.watch_party_suggest)
+    val isPartyGuest = partyGuestRoom != null
+    val playButtonLabel = remember(movieProgress, seriesAction, meta.type, hasEpisodes, playText, resumeText, isPartyGuest, suggestText) {
         when {
+            isPartyGuest -> suggestText
             (meta.type == "series" || hasEpisodes) && seriesAction != null ->
                 seriesAction.label
             meta.type != "series" && !hasEpisodes && movieProgress != null ->
@@ -819,6 +828,7 @@ private fun MetaDetailsContent(
                     contentHorizontalPadding = sectionHorizontalPadding,
                     contentMaxWidth = sectionMaxWidth,
                     playButtonLabel = playButtonLabel,
+                    playDisabledLabel = playDisabledLabel,
                     isPrimaryPlayEnabled = isPrimaryPlayEnabled,
                     isSaved = isSaved,
                     isWatched = isWatched,

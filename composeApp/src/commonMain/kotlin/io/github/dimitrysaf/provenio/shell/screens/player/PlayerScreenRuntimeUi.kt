@@ -31,6 +31,8 @@ import io.github.dimitrysaf.provenio.core.build.isIos
 import io.github.dimitrysaf.provenio.shell.screens.p2p.TorrentDetailsSheet
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
+import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlatform
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlaybackRequest
 import io.github.dimitrysaf.provenio.core.playback.PlayerStreamsRepository
@@ -220,6 +222,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             feedback = renderedGestureFeedback,
         )
         RenderPlaybackOverlays(runtime = runtime)
+        PlayerWatchPartyChat(runtime = runtime)
         RenderPlayerModals(displayedPositionMs = displayedPositionMs)
         PlayerSubtitleAudioSettings(
             visible = showSubtitleAudioSettings,
@@ -314,7 +317,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 chapters = chapters,
                 metrics = metrics,
                 resizeMode = resizeMode,
-                showPlaybackControls = controlsVisible,
+                showPlaybackControls = controlsVisible && !showPartyChat,
                 controlsReady = !loading && playerController != null,
                 playbackRequested = shouldPlay,
                 statusLines = statusLines,
@@ -367,10 +370,18 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 } else {
                     null
                 },
-                onSourcesClick = if (activeVideoId != null) { { openSourcesPanel() } } else null,
-                onEpisodesClick = if (isSeries && playerMetaVideos.isNotEmpty()) { { openEpisodesPanel() } } else null,
+                // A guest in a watch party plays what the host plays, so it neither picks
+                // another source or episode nor skips ahead.
+                onSourcesClick = if (activeVideoId != null && !partyGuest) { { openSourcesPanel() } } else null,
+                onEpisodesClick = if (isSeries && playerMetaVideos.isNotEmpty() && !partyGuest) { { openEpisodesPanel() } } else null,
+                onChatClick = partyRoom?.takeIf { it.settings.chatEnabled }?.let {
+                    {
+                        showPartyChat = true
+                        controlsVisible = false
+                    }
+                },
                 showControlLabels = playerSettingsUiState.showPlayerControlLabels,
-                onNextEpisode = nextEpisodeInfo?.takeIf { it.hasAired }?.let {
+                onNextEpisode = nextEpisodeInfo?.takeIf { it.hasAired && !partyGuest }?.let {
                     {
                         nextEpisodeAutoPlayJob?.cancel()
                         playNextEpisode()
@@ -471,8 +482,13 @@ private fun BoxScope.RenderPlaybackOverlays(
             blurUnwatchedEpisodes = metaScreenSettingsUiState.blurUnwatchedEpisodes,
             onPlayNextEpisode = {
                 nextEpisodeAutoPlayJob?.cancel()
-                markCurrentEpisodeWatched()
-                playNextEpisode()
+                if (PartyRepository.isGuest) {
+                    // The host picks what plays; a guest's next episode goes to them as a suggestion.
+                    suggestNextEpisodeToHost()
+                } else {
+                    markCurrentEpisodeWatched()
+                    playNextEpisode()
+                }
             },
             onDismissNextEpisode = {
                 nextEpisodeAutoPlayJob?.cancel()
@@ -487,6 +503,7 @@ private fun BoxScope.RenderPlaybackOverlays(
                 flushWatchProgress()
                 args.onBack()
             },
+            playNextLabel = if (partyGuest) stringResource(Res.string.watch_party_suggest) else null,
         )
     }
 }

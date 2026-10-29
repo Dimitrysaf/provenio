@@ -8,7 +8,7 @@ class AppUrlBridgeTest {
 
     @Test
     fun `parses watch party invite deeplink`() {
-        val link = "provenio://party?v=1&c=123456&p=47640&a=192.168.1.5,2001:db8::5&k=abc"
+        val link = "provenio://party?v=2&a=203.0.113.7:47640,[2001:db8::5]:47640&k=abc"
         assertEquals(AppDeepLink.PartyJoin(link), parseAppDeepLink(link))
     }
 

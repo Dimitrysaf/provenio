@@ -10,7 +10,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
 // Raised whenever a message changes in a way an older build would misread; host and guests must match.
-internal const val PARTY_PROTOCOL_VERSION = 1
+internal const val PARTY_PROTOCOL_VERSION = 2
 internal const val PARTY_NONCE_SIZE = 16
 
 internal val partyJson = Json {
@@ -18,49 +18,29 @@ internal val partyJson = Json {
     encodeDefaults = true
 }
 
-@Serializable
-internal enum class PartyJoinMode { LINK, CODE }
-
-/**
- * What a guest says first, before anything is sealed. With a link it proves it holds the
- * room's secret; with a code it sends its half of a key exchange instead.
- */
+/** What a guest says first, before anything is sealed: it proves it holds the link's secret. */
 @Serializable
 internal data class PartyHello(
     val version: Int,
-    val mode: PartyJoinMode,
-    val code: String,
     val memberId: String,
     val name: String,
     val nonce: String,
-    val proof: String? = null,
-    val publicKey: String? = null,
+    val proof: String = "",
 )
 
 @Serializable
-internal enum class PartyHelloStatus {
-    /** In the room; the welcome follows. */
-    ACCEPTED,
-
-    /** Waiting for the host to let them in. */
-    PENDING,
-    FULL,
-    BANNED,
-    REJECTED,
-    VERSION_MISMATCH,
-}
+internal enum class PartyHelloStatus { ACCEPTED, FULL, BANNED, REJECTED, VERSION_MISMATCH }
 
 @Serializable
 internal data class PartyHelloReply(
     val version: Int,
     val status: PartyHelloStatus,
     val nonce: String = "",
-    val proof: String? = null,
-    val publicKey: String? = null,
+    val proof: String = "",
 )
 
 @Serializable
-internal enum class PartyRemoval { KICKED, BANNED, DENIED, FULL, CLOSED }
+internal enum class PartyRemoval { KICKED, BANNED, FULL, CLOSED }
 
 /** Everything after the hello, sealed with the session's key. */
 @Serializable
@@ -70,6 +50,10 @@ internal sealed interface PartyMessage {
     data class Welcome(
         val settings: PartySettings,
         val members: List<PartyMember>,
+        val activity: PartyActivity,
+        val playback: PartyPlayback?,
+        val playbackState: PartyPlaybackState?,
+        val chat: List<PartyChatMessage>,
     ) : PartyMessage
 
     @Serializable
@@ -79,6 +63,32 @@ internal sealed interface PartyMessage {
     @Serializable
     @SerialName("settings")
     data class Settings(val settings: PartySettings) : PartyMessage
+
+    @Serializable
+    @SerialName("activity")
+    data class Activity(val activity: PartyActivity) : PartyMessage
+
+    /** The host opened a source, or left the player when [playback] is null. */
+    @Serializable
+    @SerialName("playback")
+    data class Playback(val playback: PartyPlayback?) : PartyMessage
+
+    @Serializable
+    @SerialName("playback_state")
+    data class PlaybackState(val state: PartyPlaybackState) : PartyMessage
+
+    /** A guest's message, which the host lets through or not. */
+    @Serializable
+    @SerialName("chat_send")
+    data class ChatSend(val text: String) : PartyMessage
+
+    @Serializable
+    @SerialName("chat")
+    data class Chat(val message: PartyChatMessage) : PartyMessage
+
+    @Serializable
+    @SerialName("suggest")
+    data class Suggest(val suggestion: PartySuggestion) : PartyMessage
 
     @Serializable
     @SerialName("removed")
@@ -96,17 +106,6 @@ internal sealed interface PartyMessage {
     @SerialName("leave")
     data object Leave : PartyMessage
 }
-
-/** A room announcing its code on this network, for guests who only have the code. */
-@Serializable
-internal data class PartyBeacon(
-    val app: String,
-    val code: String,
-    val port: Int,
-    val hostId: String,
-)
-
-internal const val PARTY_BEACON_APP = "provenio-party"
 
 internal fun partyProof(secret: ByteArray, vararg parts: String): String =
     encodePartyBytes(LocalSyncPlatform.hmacSha256(secret, parts.joinToString("|").encodeToByteArray()))

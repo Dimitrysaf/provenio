@@ -2,38 +2,28 @@ package io.github.dimitrysaf.provenio.core.party
 
 import kotlin.io.encoding.Base64
 
-internal const val PARTY_CODE_LENGTH = 6
 internal const val PARTY_SECRET_SIZE = 32
 private const val LINK_PREFIX = "provenio://party"
-private const val LINK_VERSION = "1"
+private const val LINK_VERSION = "2"
 
-/** What someone typed, scanned or opened to join a room. */
-internal sealed interface PartyJoinTarget {
-    /** Just the code: the room is found by listening for it on this network, and the host lets them in. */
-    data class Code(val code: String) : PartyJoinTarget
+/** Where a room listens and the secret that lets a guest in, as an invite link carries them. */
+internal data class PartyInvite(
+    val endpoints: List<PartyEndpoint>,
+    val secret: ByteArray,
+)
 
-    /**
-     * A link, which says where the room listens. With the room's secret it enters straight away;
-     * without one it waits for the host, like a code.
-     */
-    data class Link(
-        val code: String,
-        val port: Int,
-        val addresses: List<String>,
-        val secret: ByteArray?,
-    ) : PartyJoinTarget
+internal data class PartyEndpoint(val host: String, val port: Int) {
+    // IPv6 addresses go in brackets, so their colons are not read as the port's.
+    override fun toString(): String = if (':' in host) "[$host]:$port" else "$host:$port"
 }
 
-// provenio://party?v=1&c=<code>&p=<port>&a=<address,address>&k=<secret>
-internal fun buildPartyLink(code: String, port: Int, addresses: List<String>, secret: ByteArray): String =
-    "$LINK_PREFIX?v=$LINK_VERSION&c=$code&p=$port&a=${addresses.joinToString(",")}&k=${encodePartyBytes(secret)}"
+// provenio://party?v=2&a=<host:port,[v6]:port>&k=<secret>
+internal fun buildPartyLink(endpoints: List<PartyEndpoint>, secret: ByteArray): String =
+    "$LINK_PREFIX?v=$LINK_VERSION&a=${endpoints.joinToString(",")}&k=${encodePartyBytes(secret)}"
 
-internal fun parsePartyJoinTarget(input: String): PartyJoinTarget? {
-    val text = input.trim()
-    val digits = text.filterNot { it == ' ' || it == '-' }
-    if (digits.isPartyCode()) return PartyJoinTarget.Code(digits)
-
+internal fun parsePartyInvite(input: String): PartyInvite? {
     // The link may come pasted inside a message, so it is picked out of the text around it.
+    val text = input.trim()
     val start = text.indexOf(LINK_PREFIX, ignoreCase = true).takeIf { it >= 0 } ?: return null
     val link = text.substring(start).takeWhile { !it.isWhitespace() }
     val parameters = link.substringAfter('?', "")
@@ -44,21 +34,29 @@ internal fun parsePartyJoinTarget(input: String): PartyJoinTarget? {
         }
         .toMap()
     if (parameters["v"] != LINK_VERSION) return null
-    val code = parameters["c"]?.takeIf { it.isPartyCode() } ?: return null
-    val port = parameters["p"]?.toIntOrNull()?.takeIf { it in 1..65_535 } ?: return null
-    val addresses = parameters["a"].orEmpty()
+    val endpoints = parameters["a"].orEmpty()
         .split(',')
-        .map { it.trim().removeSurrounding("[", "]") }
-        .filter { address -> address.isNotEmpty() && address.all { it.isLetterOrDigit() || it in ".:-%" } }
+        .mapNotNull { parseEndpoint(it.trim()) }
         .takeIf { it.isNotEmpty() }
         ?: return null
-    val secret = parameters["k"]?.let { value ->
-        runCatching { decodePartyBytes(value) }.getOrNull()?.takeIf { it.size == PARTY_SECRET_SIZE } ?: return null
-    }
-    return PartyJoinTarget.Link(code = code, port = port, addresses = addresses, secret = secret)
+    val secret = parameters["k"]
+        ?.let { runCatching { decodePartyBytes(it) }.getOrNull() }
+        ?.takeIf { it.size == PARTY_SECRET_SIZE }
+        ?: return null
+    return PartyInvite(endpoints = endpoints, secret = secret)
 }
 
-internal fun String.isPartyCode(): Boolean = length == PARTY_CODE_LENGTH && all { it in '0'..'9' }
+private fun parseEndpoint(value: String): PartyEndpoint? {
+    val (host, port) = if (value.startsWith('[')) {
+        val end = value.indexOf(']').takeIf { it > 1 } ?: return null
+        value.substring(1, end) to value.substring(end + 1).removePrefix(":")
+    } else {
+        value.substringBeforeLast(':', "") to value.substringAfterLast(':', "")
+    }
+    val portNumber = port.toIntOrNull()?.takeIf { it in 1..65_535 } ?: return null
+    if (host.isEmpty() || !host.all { it.isLetterOrDigit() || it in ".:-%" }) return null
+    return PartyEndpoint(host, portNumber)
+}
 
 // URL-safe and without padding, which chat apps tend to cut off or escape.
 internal fun encodePartyBytes(bytes: ByteArray): String = Base64.UrlSafe.encode(bytes).trimEnd('=')

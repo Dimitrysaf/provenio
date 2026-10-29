@@ -15,7 +15,6 @@ import io.github.dimitrysaf.provenio.core.auth.AuthState
 import io.github.dimitrysaf.provenio.core.deeplink.AppDeepLink
 import io.github.dimitrysaf.provenio.core.deeplink.AppDeepLinkRepository
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncRepository
-import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
 import io.github.dimitrysaf.provenio.core.network.NetworkCondition
 import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
@@ -274,7 +273,7 @@ internal fun AppDeepLinkEffect(
 
                 is AppDeepLink.PartyJoin -> {
                     currentOnOpenSettingsPage(SettingsPage.WatchParty)
-                    PartyRepository.join(deepLink.link)
+                    WatchPartyPrompts.requestJoin(deepLink.link)
                     AppDeepLinkRepository.markConsumed(deepLink)
                 }
 

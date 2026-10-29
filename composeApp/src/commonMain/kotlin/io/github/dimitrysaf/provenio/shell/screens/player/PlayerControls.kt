@@ -40,6 +40,7 @@ import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.CastConnected
 import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material.icons.rounded.Forward10
@@ -151,6 +152,7 @@ internal fun PlayerControlsShell(
     onVideoSettingsClick: (() -> Unit)? = null,
     onSourcesClick: (() -> Unit)? = null,
     onEpisodesClick: (() -> Unit)? = null,
+    onChatClick: (() -> Unit)? = null,
     showControlLabels: Boolean = false,
     onNextEpisode: (() -> Unit)? = null,
     onOpenInExternalPlayer: (() -> Unit)? = null,
@@ -282,6 +284,7 @@ internal fun PlayerControlsShell(
                     onSubmitIntroClick = onSubmitIntroClick,
                     onSourcesClick = onSourcesClick,
                     onEpisodesClick = onEpisodesClick,
+                    onChatClick = onChatClick,
                     showControlLabels = showControlLabels,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -746,6 +749,7 @@ private fun BottomControls(
     onSubmitIntroClick: (() -> Unit)?,
     onSourcesClick: (() -> Unit)?,
     onEpisodesClick: (() -> Unit)?,
+    onChatClick: (() -> Unit)?,
     showControlLabels: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -835,6 +839,9 @@ private fun BottomControls(
                     icon = Icons.Rounded.VideoLibrary,
                 ),
             )
+        }
+        onChatClick?.let {
+            add(PlayerGroupAction(stringResource(Res.string.watch_party_chat), it, icon = Icons.Rounded.Forum))
         }
     }
 

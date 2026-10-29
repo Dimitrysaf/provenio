@@ -64,6 +64,8 @@ internal fun LazyListScope.configuredMetaSectionItems(
     contentMaxWidth: Dp,
     playButtonLabel: String,
     isPrimaryPlayEnabled: Boolean,
+    // What a disabled Play says, when it is not that playback is unavailable.
+    playDisabledLabel: String? = null,
     isSaved: Boolean,
     isWatched: Boolean,
     onPrimaryPlayClick: () -> Unit,
@@ -143,6 +145,7 @@ internal fun LazyListScope.configuredMetaSectionItems(
                     horizontalScrollPadding = contentHorizontalPadding,
                     playButtonLabel = playButtonLabel,
                     isPrimaryPlayEnabled = isPrimaryPlayEnabled,
+                    playDisabledLabel = playDisabledLabel,
                     isSaved = isSaved,
                     isWatched = isWatched,
                     onPrimaryPlayClick = onPrimaryPlayClick,
@@ -389,6 +392,8 @@ internal fun ConfiguredMetaSections(
     horizontalScrollPadding: Dp,
     playButtonLabel: String,
     isPrimaryPlayEnabled: Boolean,
+    // What a disabled Play says, when it is not that playback is unavailable.
+    playDisabledLabel: String? = null,
     isSaved: Boolean,
     isWatched: Boolean,
     onPrimaryPlayClick: () -> Unit,
@@ -430,7 +435,7 @@ internal fun ConfiguredMetaSections(
         when (key) {
             MetaScreenSectionKey.ACTIONS -> {
                 DetailActionButtons(
-                    playLabel = if (isPrimaryPlayEnabled) playButtonLabel else stringResource(Res.string.playback_unavailable),
+                    playLabel = if (isPrimaryPlayEnabled) playButtonLabel else playDisabledLabel ?: stringResource(Res.string.playback_unavailable),
                     playEnabled = isPrimaryPlayEnabled,
                     secondaryActions = buildList {
                         add(DetailSecondaryAction(

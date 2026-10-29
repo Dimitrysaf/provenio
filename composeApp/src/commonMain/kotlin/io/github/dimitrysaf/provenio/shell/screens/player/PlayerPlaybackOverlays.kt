@@ -46,6 +46,7 @@ internal fun BoxScope.PlayerPlaybackOverlays(
     onDismissNextEpisode: () -> Unit,
     errorMessage: String?,
     onDismissError: () -> Unit,
+    playNextLabel: String? = null,
 ) {
     AnimatedVisibility(
         visible = playerControlsLocked && lockedOverlayVisible,
@@ -89,6 +90,7 @@ internal fun BoxScope.PlayerPlaybackOverlays(
                     onPlayNext = onPlayNextEpisode,
                     onDismiss = onDismissNextEpisode,
                     showPlayNextButton = controlsVisible && inPlayNextWindow,
+                    playNextLabel = playNextLabel,
                 )
             }
         }

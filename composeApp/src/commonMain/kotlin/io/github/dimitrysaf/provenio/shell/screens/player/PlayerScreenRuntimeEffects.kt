@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import io.github.dimitrysaf.provenio.core.format.formatReleaseDay
 import androidx.compose.runtime.Composable
@@ -728,10 +729,12 @@ private fun PlayerScreenRuntime.BindPlayerMetadataAndSkipEffects() {
         )
         if (shouldShow && !showNextEpisodeCard && !nextEpisodeCardDismissed) {
             showNextEpisodeCard = true
+            // A guest in a watch party waits for the host, who picks what plays next.
             if (
                 playerSettingsUiState.streamAutoPlayNextEpisodeEnabled &&
                 nextEpisodeInfo?.hasAired == true &&
-                !sleepTimer.stopsAtEndOfVideo
+                !sleepTimer.stopsAtEndOfVideo &&
+                !PartyRepository.isGuest
             ) {
                 playNextEpisode(autoPlay = true)
             }
@@ -757,7 +760,11 @@ private fun PlayerScreenRuntime.BindPlayerMetadataAndSkipEffects() {
             !nextEpisodeCardDismissed
         ) {
             showNextEpisodeCard = true
-            if (playerSettingsUiState.streamAutoPlayNextEpisodeEnabled && nextEpisodeInfo?.hasAired == true) {
+            if (
+                playerSettingsUiState.streamAutoPlayNextEpisodeEnabled &&
+                nextEpisodeInfo?.hasAired == true &&
+                !PartyRepository.isGuest
+            ) {
                 playNextEpisode(autoPlay = true)
             }
         }

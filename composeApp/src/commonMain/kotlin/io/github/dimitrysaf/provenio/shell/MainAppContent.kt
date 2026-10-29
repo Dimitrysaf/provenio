@@ -717,6 +717,21 @@ internal fun MainAppContent(
                 }
             }
 
+            WatchPartyAppHost(
+                navController = navController,
+                playback = playback,
+                profileId = activePlaybackProfileId,
+                currentRoute = currentRoute,
+                enabled = ownsAppRuntime,
+                onOpenWatchParty = {
+                    while (navController.currentRoute != null && navController.currentRoute !is TabsRoute) {
+                        if (!navController.popBackStack()) break
+                    }
+                    requestedSettingsPageName = SettingsPage.WatchParty.name
+                    activateTab(AppScreenTab.Settings)
+                },
+            )
+
             FindInPageBar(modifier = Modifier.fillMaxWidth())
 
             }

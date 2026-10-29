@@ -4,28 +4,27 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.PersonOff
+import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.QrCode
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -33,7 +32,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,24 +44,24 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.dimitrysaf.provenio.core.party.PartyError
+import io.github.dimitrysaf.provenio.core.localsync.LocalSyncFirewallPrompt
 import io.github.dimitrysaf.provenio.core.party.PartyPhase
+import io.github.dimitrysaf.provenio.core.party.PartyReachability
 import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.party.PartyRoom
+import io.github.dimitrysaf.provenio.shell.WatchPartyPrompts
 import io.github.dimitrysaf.provenio.shell.components.BottomSheetBodyMargin
 import io.github.dimitrysaf.provenio.shell.components.ModalSheet
 import io.github.dimitrysaf.provenio.shell.components.SheetHeader
 import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
 import io.github.dimitrysaf.provenio.shell.components.TextActionsMenu
 import io.github.dimitrysaf.provenio.shell.components.ToastController
-import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import io.github.dimitrysaf.provenio.shell.components.arrowKeysLeaveField
 import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.rememberTextActionsMenu
 import io.github.dimitrysaf.provenio.shell.components.textActionsMenu
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
@@ -71,8 +69,9 @@ private val MemberLimitOptions = listOf<Int?>(null, 2, 3, 4, 6, 8, 10, 15, 20)
 private val SlowModeOptions = listOf(0, 5, 10, 30, 60)
 
 /**
- * The Watch party page: create a room, or join one by scanning or typing its link or code. In a
- * room it shows the code and invite, who is in it, and its settings, which only the host edits.
+ * The Watch party page: create a room, or join one by scanning or pasting its invite. In a room
+ * it shows how guests reach it, its invite, who is in it, and its settings, which only the host
+ * edits. Opening and connecting are dialogs, shown app-wide with the room's other messages.
  */
 internal fun LazyListScope.watchPartySettingsContent(isTablet: Boolean) {
     item(key = "watch-party") {
@@ -83,32 +82,21 @@ internal fun LazyListScope.watchPartySettingsContent(isTablet: Boolean) {
 @Composable
 private fun WatchPartyPage(isTablet: Boolean) {
     val state by PartyRepository.uiState.collectAsStateWithLifecycle()
-    WatchPartyNoticeEffect(state.notice)
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
         when (val phase = state.phase) {
-            PartyPhase.Idle -> WatchPartyStart(isTablet = isTablet)
             is PartyPhase.InRoom -> WatchPartyRoomContent(room = phase.room, isTablet = isTablet)
-            else -> WatchPartyProgress(phase = phase, isTablet = isTablet)
+            else -> WatchPartyStart(isTablet = isTablet)
         }
-    }
-}
-
-// Why a join failed or a room ended is said once, as a snackbar.
-@Composable
-private fun WatchPartyNoticeEffect(notice: PartyError?) {
-    LaunchedEffect(notice) {
-        notice ?: return@LaunchedEffect
-        ToastController.show(getString(notice.messageRes()))
-        PartyRepository.clearNotice()
     }
 }
 
 @Composable
 private fun WatchPartyStart(isTablet: Boolean) {
     var showEntry by rememberSaveable { mutableStateOf(false) }
-    val scan = rememberLocalSyncScanner { result -> result?.let(PartyRepository::join) }
+    var showHostWarning by rememberSaveable { mutableStateOf(false) }
+    val scan = rememberLocalSyncScanner { result -> result?.let(WatchPartyPrompts::requestJoin) }
     SettingsSection(
-        title = stringResource(Res.string.watch_party_section_start),
+        title = stringResource(Res.string.watch_party_title),
         isTablet = isTablet,
     ) {
         SettingsList {
@@ -116,7 +104,7 @@ private fun WatchPartyStart(isTablet: Boolean) {
                 title = stringResource(Res.string.watch_party_create),
                 description = stringResource(Res.string.watch_party_create_description),
                 icon = Icons.Rounded.PersonAdd,
-                onClick = PartyRepository::createRoom,
+                onClick = { showHostWarning = true },
             )
             if (scan != null) {
                 navigationRow(
@@ -132,72 +120,28 @@ private fun WatchPartyStart(isTablet: Boolean) {
                 icon = Icons.Rounded.Keyboard,
                 onClick = { showEntry = true },
             )
-            infoRow(
-                title = stringResource(Res.string.watch_party_how_title),
-                description = stringResource(Res.string.watch_party_how_description),
-            )
         }
     }
     if (showEntry) {
         WatchPartyJoinDialog(
             onJoin = { input ->
                 showEntry = false
-                PartyRepository.join(input)
+                WatchPartyPrompts.requestJoin(input)
             },
             onDismiss = { showEntry = false },
         )
     }
-}
-
-// Opening, finding, connecting or waiting at the door, with a way to stop.
-@Composable
-private fun WatchPartyProgress(phase: PartyPhase, isTablet: Boolean) {
-    val status = stringResource(
-        when (phase) {
-            PartyPhase.Creating -> Res.string.watch_party_status_creating
-            PartyPhase.Finding -> Res.string.watch_party_status_finding
-            PartyPhase.AwaitingApproval -> Res.string.watch_party_status_waiting
-            else -> Res.string.watch_party_status_connecting
-        },
-    )
-    SettingsSection(
-        title = stringResource(Res.string.watch_party_title),
-        isTablet = isTablet,
-    ) {
-        SettingsList {
-            shapedRow { shape -> WatchPartyStatusRow(shape = shape, text = status) }
-            navigationRow(
-                title = stringResource(Res.string.action_cancel),
-                icon = Icons.Rounded.Close,
-                onClick = PartyRepository::leave,
-            )
-        }
-    }
-}
-
-@Composable
-private fun WatchPartyStatusRow(shape: RoundedCornerShape, text: String) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = shape,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 56.dp)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            LocalSyncProgress()
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-            )
-        }
+    if (showHostWarning) {
+        WatchPartyRiskDialog(
+            title = stringResource(Res.string.watch_party_host_warning_title),
+            text = stringResource(Res.string.watch_party_host_warning),
+            confirm = stringResource(Res.string.watch_party_create),
+            onConfirm = {
+                showHostWarning = false
+                PartyRepository.createRoom()
+            },
+            onDismiss = { showHostWarning = false },
+        )
     }
 }
 
@@ -208,8 +152,6 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
     var showMemberLimit by rememberSaveable { mutableStateOf(false) }
     var showSlowMode by rememberSaveable { mutableStateOf(false) }
     var memberToRemoveId by rememberSaveable { mutableStateOf<String?>(null) }
-    val clipboardManager = LocalClipboardManager.current
-    val linkCopied = stringResource(Res.string.watch_party_link_copied)
     val guestName = stringResource(Res.string.watch_party_guest_name)
     val hostLabel = stringResource(Res.string.watch_party_member_host)
     val youLabel = stringResource(Res.string.watch_party_member_you)
@@ -220,64 +162,23 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
         isTablet = isTablet,
     ) {
         SettingsList {
-            infoRow(
-                title = stringResource(Res.string.watch_party_code),
-                description = stringResource(Res.string.watch_party_code_description),
-                value = room.code.chunked(3).joinToString(" "),
-            )
-            room.inviteLink?.let { link ->
+            if (room.isHost) {
+                infoRow(
+                    title = stringResource(room.reachability.titleRes()),
+                    description = stringResource(room.reachability.descriptionRes()),
+                )
                 navigationRow(
                     title = stringResource(Res.string.watch_party_show_invite),
                     description = stringResource(Res.string.watch_party_show_invite_description),
                     icon = Icons.Rounded.QrCode,
+                    enabled = room.inviteLink != null,
                     onClick = { showInvite = true },
                 )
-                navigationRow(
-                    title = stringResource(Res.string.watch_party_copy_link),
-                    icon = Icons.Rounded.ContentCopy,
-                    onClick = {
-                        clipboardManager.setText(AnnotatedString(link))
-                        ToastController.show(linkCopied)
-                    },
+            } else {
+                infoRow(
+                    title = stringResource(Res.string.watch_party_hosted_by, room.hostName.orEmpty().ifBlank { guestName }),
+                    description = stringResource(Res.string.watch_party_guest_description),
                 )
-            }
-        }
-    }
-
-    if (room.isHost && room.joinRequests.isNotEmpty()) {
-        val approveLabel = stringResource(Res.string.watch_party_approve)
-        val denyLabel = stringResource(Res.string.watch_party_deny)
-        val requestDescription = stringResource(Res.string.watch_party_request_description)
-        SettingsSection(
-            title = stringResource(Res.string.watch_party_section_requests),
-            isTablet = isTablet,
-        ) {
-            SettingsList {
-                room.joinRequests.forEach { request ->
-                    navigationRow(
-                        title = request.name.ifBlank { guestName },
-                        description = requestDescription,
-                        icon = Icons.Rounded.Person,
-                        trailingContent = {
-                            Row {
-                                WithTooltip(denyLabel) {
-                                    IconButton(onClick = { PartyRepository.deny(request.memberId) }) {
-                                        Icon(imageVector = Icons.Rounded.Close, contentDescription = denyLabel)
-                                    }
-                                }
-                                WithTooltip(approveLabel) {
-                                    IconButton(
-                                        onClick = { PartyRepository.approve(request.memberId) },
-                                        enabled = !room.isFull,
-                                    ) {
-                                        Icon(imageVector = Icons.Rounded.Check, contentDescription = approveLabel)
-                                    }
-                                }
-                            }
-                        },
-                        onClick = { if (!room.isFull) PartyRepository.approve(request.memberId) },
-                    )
-                }
             }
         }
     }
@@ -309,12 +210,40 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
         }
     }
 
-    WatchPartySettingsSection(
-        room = room,
+    SettingsSection(
+        title = stringResource(Res.string.watch_party_section_settings),
         isTablet = isTablet,
-        onMemberLimitClick = { showMemberLimit = true },
-        onSlowModeClick = { showSlowMode = true },
-    )
+    ) {
+        val editable = room.isHost
+        SettingsList {
+            navigationRow(
+                title = stringResource(Res.string.watch_party_member_limit),
+                description = memberLimitLabel(settings.memberLimit),
+                enabled = editable,
+                onClick = { showMemberLimit = true },
+            )
+            switchRow(
+                title = stringResource(Res.string.watch_party_chat),
+                description = stringResource(Res.string.watch_party_chat_description),
+                checked = { settings.chatEnabled },
+                enabled = editable,
+                onCheckedChange = { enabled -> PartyRepository.updateSettings { it.copy(chatEnabled = enabled) } },
+            )
+            navigationRow(
+                title = stringResource(Res.string.watch_party_slow_mode),
+                description = slowModeLabel(settings.slowModeSeconds),
+                enabled = editable && settings.chatEnabled,
+                onClick = { showSlowMode = true },
+            )
+            switchRow(
+                title = stringResource(Res.string.watch_party_suggestions),
+                description = stringResource(Res.string.watch_party_suggestions_description),
+                checked = { settings.suggestionsEnabled },
+                enabled = editable,
+                onCheckedChange = { enabled -> PartyRepository.updateSettings { it.copy(suggestionsEnabled = enabled) } },
+            )
+        }
+    }
 
     if (room.isHost && room.banned.isNotEmpty()) {
         val unbanDescription = stringResource(Res.string.watch_party_unban_description)
@@ -335,22 +264,27 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
         }
     }
 
-    SettingsList {
-        navigationRow(
-            title = stringResource(if (room.isHost) Res.string.watch_party_close else Res.string.watch_party_leave),
-            icon = Icons.Rounded.Close,
-            onClick = { showLeave = true },
+    Button(
+        onClick = { showLeave = true },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.error,
+            contentColor = MaterialTheme.colorScheme.onError,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .padding(horizontal = if (isTablet) 0.dp else 16.dp),
+    ) {
+        Icon(imageVector = Icons.Rounded.Close, contentDescription = null)
+        Text(
+            text = stringResource(if (room.isHost) Res.string.watch_party_close else Res.string.watch_party_leave),
+            modifier = Modifier.padding(start = 8.dp),
         )
     }
 
     if (showInvite) {
         room.inviteLink?.let { link ->
-            WatchPartyInviteSheet(
-                link = link,
-                code = room.code,
-                qr = room.inviteQr,
-                onDismiss = { showInvite = false },
-            )
+            WatchPartyInviteSheet(link = link, qr = room.inviteQr, onDismiss = { showInvite = false })
         }
     }
 
@@ -379,6 +313,8 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
             onDismiss = { memberToRemoveId = null },
         )
     }
+
+    room.firewall?.let { prompt -> WatchPartyFirewallDialog(prompt) }
 
     if (showMemberLimit && room.isHost) {
         IosEnumSelectionDialog(
@@ -409,52 +345,20 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
     }
 }
 
-// The same rows for everyone; only the host's can be changed.
-@Composable
-private fun WatchPartySettingsSection(
-    room: PartyRoom,
-    isTablet: Boolean,
-    onMemberLimitClick: () -> Unit,
-    onSlowModeClick: () -> Unit,
-) {
-    val settings = room.settings
-    val editable = room.isHost
-    SettingsSection(
-        title = stringResource(Res.string.watch_party_section_settings),
-        isTablet = isTablet,
-    ) {
-        SettingsList {
-            navigationRow(
-                title = stringResource(Res.string.watch_party_member_limit),
-                description = memberLimitLabel(settings.memberLimit),
-                enabled = editable,
-                onClick = onMemberLimitClick,
-            )
-            switchRow(
-                title = stringResource(Res.string.watch_party_chat),
-                description = stringResource(Res.string.watch_party_chat_description),
-                checked = { settings.chatEnabled },
-                enabled = editable,
-                onCheckedChange = { enabled -> PartyRepository.updateSettings { it.copy(chatEnabled = enabled) } },
-            )
-            navigationRow(
-                title = stringResource(Res.string.watch_party_slow_mode),
-                description = slowModeLabel(settings.slowModeSeconds),
-                enabled = editable && settings.chatEnabled,
-                onClick = onSlowModeClick,
-            )
-            switchRow(
-                title = stringResource(Res.string.watch_party_suggestions),
-                description = stringResource(Res.string.watch_party_suggestions_description),
-                checked = { settings.suggestionsEnabled },
-                enabled = editable,
-                onCheckedChange = { enabled -> PartyRepository.updateSettings { it.copy(suggestionsEnabled = enabled) } },
-            )
-            if (!editable) {
-                infoRow(title = stringResource(Res.string.watch_party_settings_read_only))
-            }
-        }
-    }
+private fun PartyReachability.titleRes(): StringResource = when (this) {
+    PartyReachability.CHECKING -> Res.string.watch_party_reach_checking
+    PartyReachability.OPEN -> Res.string.watch_party_reach_open
+    PartyReachability.SHARED_ADDRESS -> Res.string.watch_party_reach_shared
+    PartyReachability.IPV6_ONLY -> Res.string.watch_party_reach_ipv6
+    PartyReachability.LOCAL_ONLY -> Res.string.watch_party_reach_local
+}
+
+private fun PartyReachability.descriptionRes(): StringResource = when (this) {
+    PartyReachability.CHECKING -> Res.string.watch_party_reach_checking_description
+    PartyReachability.OPEN -> Res.string.watch_party_reach_open_description
+    PartyReachability.SHARED_ADDRESS -> Res.string.watch_party_reach_shared_description
+    PartyReachability.IPV6_ONLY -> Res.string.watch_party_reach_ipv6_description
+    PartyReachability.LOCAL_ONLY -> Res.string.watch_party_reach_local_description
 }
 
 @Composable
@@ -470,12 +374,11 @@ private fun slowModeLabel(seconds: Int): String =
         stringResource(Res.string.watch_party_slow_mode_off)
     }
 
-/** The QR code and link for guests, and the code for those on the same Wi-Fi. */
+/** The QR code and the link, with the one way to copy it. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WatchPartyInviteSheet(
     link: String,
-    code: String,
     qr: List<BooleanArray>?,
     onDismiss: () -> Unit,
 ) {
@@ -500,11 +403,6 @@ private fun WatchPartyInviteSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             if (qr != null) LocalSyncQrCode(matrix = qr)
-            Text(
-                text = code.chunked(3).joinToString(" "),
-                style = MaterialTheme.typography.headlineSmall.copy(fontFamily = FontFamily.Monospace),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
             Text(
                 text = link,
                 style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
@@ -548,6 +446,38 @@ private fun WatchPartyJoinDialog(
                 enabled = input.isNotBlank(),
             ) {
                 Text(stringResource(Res.string.watch_party_join))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(Res.string.action_cancel))
+            }
+        },
+    )
+}
+
+// What hosting or joining means, acknowledged before it happens.
+@Composable
+internal fun WatchPartyRiskDialog(
+    title: String,
+    text: String,
+    confirm: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(imageVector = Icons.Rounded.Public, contentDescription = null) },
+        title = { Text(title) },
+        text = {
+            Text(
+                text = text,
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(confirm)
             }
         },
         dismissButton = {
@@ -624,19 +554,51 @@ private fun WatchPartyMemberDialog(
     )
 }
 
-private fun PartyError.messageRes(): StringResource = when (this) {
-    PartyError.NOT_SUPPORTED -> Res.string.watch_party_error_not_supported
-    PartyError.NO_NETWORK -> Res.string.watch_party_error_no_network
-    PartyError.INVALID_LINK -> Res.string.watch_party_error_invalid_link
-    PartyError.NO_ROOM_FOR_CODE -> Res.string.watch_party_error_no_room
-    PartyError.UNREACHABLE -> Res.string.watch_party_error_unreachable
-    PartyError.REJECTED -> Res.string.watch_party_error_rejected
-    PartyError.ROOM_FULL -> Res.string.watch_party_error_full
-    PartyError.BANNED -> Res.string.watch_party_error_banned
-    PartyError.DENIED -> Res.string.watch_party_error_denied
-    PartyError.KICKED -> Res.string.watch_party_error_kicked
-    PartyError.CLOSED -> Res.string.watch_party_error_closed
-    PartyError.CONNECTION_LOST -> Res.string.watch_party_error_lost
-    PartyError.VERSION_MISMATCH -> Res.string.watch_party_error_version
-    PartyError.FAILED -> Res.string.watch_party_error_failed
+// A Linux firewall that blocks the room's port, with a way to allow it or the command to do so.
+@Composable
+private fun WatchPartyFirewallDialog(prompt: LocalSyncFirewallPrompt) {
+    val clipboardManager = LocalClipboardManager.current
+    val command = "sudo firewall-cmd --permanent --add-port=${prompt.tcpPort}/tcp && sudo firewall-cmd --reload"
+    AlertDialog(
+        onDismissRequest = PartyRepository::dismissFirewallPrompt,
+        title = { Text(stringResource(Res.string.watch_party_firewall_title)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(stringResource(Res.string.watch_party_firewall_text))
+                Surface(
+                    onClick = { clipboardManager.setText(AnnotatedString(command)) },
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                ) {
+                    Text(
+                        text = command,
+                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                        modifier = Modifier.padding(12.dp),
+                    )
+                }
+                if (prompt.allowFailed) {
+                    Text(
+                        text = stringResource(Res.string.local_sync_firewall_allow_failed),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = PartyRepository::allowThroughFirewall,
+                enabled = !prompt.allowing,
+            ) {
+                Text(stringResource(Res.string.local_sync_firewall_allow))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = PartyRepository::dismissFirewallPrompt) {
+                Text(stringResource(Res.string.action_close))
+            }
+        },
+    )
 }

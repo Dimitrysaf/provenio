@@ -130,6 +130,7 @@ internal fun PlayerScreenContent(args: PlayerScreenArgs) {
             ),
         )
         runtime.BindPlayerRuntimeEffects()
+        runtime.BindWatchPartyEffects()
         runtime.RenderPlayerRuntimeUi()
     }
 }

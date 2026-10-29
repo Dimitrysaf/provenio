@@ -20,6 +20,8 @@ import io.github.dimitrysaf.provenio.core.cloud.providerPosterUrl
 import io.github.dimitrysaf.provenio.core.downloads.DownloadItem
 import io.github.dimitrysaf.provenio.core.downloads.DownloadSubtitles
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsRepository
+import io.github.dimitrysaf.provenio.core.party.PartyRepository
+import io.github.dimitrysaf.provenio.core.party.PartySuggestion
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerIntentResult
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlatform
 import io.github.dimitrysaf.provenio.core.playback.PlayerLaunch
@@ -237,6 +239,41 @@ internal class AppPlayback(
         manualSelection: Boolean,
         startFromBeginning: Boolean,
     ) {
+        // A guest in a watch party suggests the title to the host, who picks the source. Choosing
+        // one alone means leaving the room first.
+        if (PartyRepository.isGuest) {
+            if (manualSelection) {
+                WatchPartyPrompts.askToLeave {
+                    play(
+                        type, videoId, parentMetaId, parentMetaType, title, logo, poster, background,
+                        seasonNumber, episodeNumber, episodeTitle, episodeThumbnail, pauseDescription,
+                        resumePositionMs, resumeProgressFraction, manualSelection, startFromBeginning,
+                    )
+                }
+                return
+            }
+            val sent = PartyRepository.suggest(
+                PartySuggestion(
+                    type = type,
+                    videoId = videoId,
+                    parentMetaId = parentMetaId,
+                    parentMetaType = parentMetaType,
+                    title = title,
+                    logo = logo,
+                    poster = poster,
+                    background = background,
+                    seasonNumber = seasonNumber,
+                    episodeNumber = episodeNumber,
+                    episodeTitle = episodeTitle,
+                    episodeThumbnail = episodeThumbnail,
+                ),
+            )
+            scope.launch {
+                ToastController.show(getString(if (sent) Res.string.watch_party_suggested else Res.string.watch_party_suggestions_off))
+            }
+            return
+        }
+
         val targetResumePositionMs = if (startFromBeginning) 0L else (resumePositionMs ?: 0L)
         val targetResumeProgressFraction = if (startFromBeginning) null else resumeProgressFraction
 

@@ -1,11 +1,12 @@
 package io.github.dimitrysaf.provenio.core.party
 
 // Watch parties are not built for iOS yet, as with Local sync, whose sockets they use.
-internal actual class PartyKeyAgreement actual constructor() {
-    actual val publicKey: ByteArray = ByteArray(0)
+internal actual object PartyPortMapper {
+    actual suspend fun map(internalPort: Int): PartyPortMapping? = null
 
-    actual fun sharedSecret(peerPublicKey: ByteArray): ByteArray =
-        throw UnsupportedOperationException("Watch parties are not available on iOS")
+    actual suspend fun renew(mapping: PartyPortMapping): PartyPortMapping? = null
+
+    actual suspend fun unmap(mapping: PartyPortMapping) = Unit
 }
 
 internal actual fun partyGlobalIpv6Addresses(): List<String> = emptyList()

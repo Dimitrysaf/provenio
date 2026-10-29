@@ -92,8 +92,9 @@ internal fun PlayerScreenRuntime.playerKeyboardAndMouse(): Modifier {
                 mute.volumeUpHeld = false
                 mute.volumeUpReleasedAt = TimeSource.Monotonic.markNow()
             }
-            // A sheet over the player has the keys, even one in the player's own window.
-            if (OpenSheets.count > 0) {
+            // A sheet over the player has the keys, even one in the player's own window, and so
+            // does the watch party's chat while it is open.
+            if (OpenSheets.count > 0 || showPartyChat) {
                 false
             } else if (event.key == Key.Spacebar) {
                 handleSpaceKey(event.type, scope, spaceHold)

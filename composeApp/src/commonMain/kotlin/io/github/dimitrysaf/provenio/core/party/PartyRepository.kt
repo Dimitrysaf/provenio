@@ -2,13 +2,16 @@ package io.github.dimitrysaf.provenio.core.party
 
 import co.touchlab.kermit.Logger
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncConnection
+import io.github.dimitrysaf.provenio.core.localsync.LocalSyncFirewall
+import io.github.dimitrysaf.provenio.core.localsync.LocalSyncFirewallPrompt
+import io.github.dimitrysaf.provenio.core.localsync.LocalSyncFirewallState
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncPlatform
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncServer
-import io.github.dimitrysaf.provenio.core.localsync.LocalSyncWifiLock
 import io.github.dimitrysaf.provenio.core.localsync.localSyncDeviceName
 import io.github.dimitrysaf.provenio.core.localsync.localSyncQrMatrix
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
 import io.github.dimitrysaf.provenio.core.sync.SyncClientIdentity
+import io.github.dimitrysaf.provenio.core.time.EpisodeReleaseDatePlatform
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -30,24 +33,24 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * A watch party: one device hosts a room and is its server, and the others join it with its
- * link or its code. There is no server in between. A link says where the room listens and
- * carries its secret, so it works from anywhere the host can be reached; a code is found by
- * listening for the room on the same network, and the host lets each such guest in.
+ * link. There is no server in between. The host asks its router to forward the room's port, so
+ * the link works from anywhere; the link carries the room's secret, which every guest proves.
  *
  * Everything runs on one thread, so the room's state needs no locks; the sockets block on
  * their own threads.
  */
 object PartyRepository {
     private const val DEFAULT_PORT = 47_640
-    private const val BEACON_PORT = 47_641
-    private const val BEACON_INTERVAL_MS = 2_000L
-    private const val FIND_TIMEOUT_MS = 8_000L
-    private const val CONNECT_TIMEOUT_MS = 5_000
+    private const val CONNECT_TIMEOUT_MS = 6_000
     private const val HANDSHAKE_TIMEOUT_MS = 10_000L
     private const val PING_INTERVAL_MS = 20_000L
-    private const val APPROVAL_TIMEOUT_MS = 120_000L
     private const val FAREWELL_TIMEOUT_MS = 1_500L
+    private const val MIN_RENEW_INTERVAL_MS = 60_000L
     private const val MAX_NAME_LENGTH = 40
+    private const val MAX_CHAT_LENGTH = 300
+    private const val CHAT_HISTORY = 100
+    private const val WELCOME_CHAT = 50
+    private const val MAX_SUGGESTIONS = 20
 
     private val log = Logger.withTag("WatchParty")
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
@@ -55,33 +58,63 @@ object PartyRepository {
     private val _uiState = MutableStateFlow(PartyUiState())
     val uiState: StateFlow<PartyUiState> = _uiState.asStateFlow()
 
+    /** What the host is doing: set by the host's own app, and heard by every guest. */
+    private val _activity = MutableStateFlow(PartyActivity())
+    val activity: StateFlow<PartyActivity> = _activity.asStateFlow()
+
+    /** The source the host has open, which guests open too; null while the host is not watching. */
+    private val _playback = MutableStateFlow<PartyPlayback?>(null)
+    val playback: StateFlow<PartyPlayback?> = _playback.asStateFlow()
+
+    private val _playbackState = MutableStateFlow<PartyPlaybackState?>(null)
+    val playbackState: StateFlow<PartyPlaybackState?> = _playbackState.asStateFlow()
+
+    private val _chat = MutableStateFlow<List<PartyChatMessage>>(emptyList())
+    val chat: StateFlow<List<PartyChatMessage>> = _chat.asStateFlow()
+
+    /** When this device may send its next chat message, under the room's slow mode. */
+    private val _nextChatAtEpochMs = MutableStateFlow(0L)
+    val nextChatAtEpochMs: StateFlow<Long> = _nextChatAtEpochMs.asStateFlow()
+
+    /** What guests suggested, for the host to pick a source for or dismiss. */
+    private val _suggestions = MutableStateFlow<List<PartySuggestion>>(emptyList())
+    val suggestions: StateFlow<List<PartySuggestion>> = _suggestions.asStateFlow()
+
     val isSupported: Boolean get() = LocalSyncPlatform.isSupported
+
+    val currentRoom: PartyRoom? get() = (_uiState.value.phase as? PartyPhase.InRoom)?.room
+    val isHost: Boolean get() = currentRoom?.isHost == true
+    val isGuest: Boolean get() = currentRoom?.isHost == false
 
     // The room being hosted or attended; only one at a time.
     private var sessionJob: Job? = null
     private var hosted: HostedRoom? = null
     private var guestConnection: LocalSyncConnection? = null
     private var guestChannel: PartyChannel? = null
+    private var nextPlaybackId = 1L
+    private var nextChatNumber = 1L
 
     private class PartyGuest(
         val member: PartyMember,
         val channel: PartyChannel,
-        var approved: Boolean,
     ) {
         // Set once the host sends them off; whoever did that also closes the connection.
         var removed = false
+        var lastChatAtEpochMs = 0L
     }
 
     private class HostedRoom(
-        val code: String,
         val secret: ByteArray,
         val server: LocalSyncServer,
         val host: PartyMember,
-        val inviteLink: String,
-        val inviteQr: List<BooleanArray>?,
     ) {
         var settings = PartySettings()
         var closed = false
+        var inviteLink: String? = null
+        var inviteQr: List<BooleanArray>? = null
+        var reachability = PartyReachability.CHECKING
+        var mapping: PartyPortMapping? = null
+        var firewall: LocalSyncFirewallPrompt? = null
         val guests = LinkedHashMap<String, PartyGuest>()
         val banned = LinkedHashMap<String, String>()
 
@@ -89,24 +122,24 @@ object PartyRepository {
         val handshakes = mutableSetOf<LocalSyncConnection>()
 
         val members: List<PartyMember>
-            get() = listOf(host) + guests.values.filter { it.approved }.map { it.member }
+            get() = listOf(host) + guests.values.map { it.member }
 
         val isFull: Boolean
             get() = settings.memberLimit?.let { members.size >= it } == true
     }
 
-    // ---- What the settings page asks for ----
+    // ---- What the app asks for ----
 
     fun createRoom() {
         if (!isSupported) return notify(PartyError.NOT_SUPPORTED)
         launchSession { hostRoom() }
     }
 
-    /** Joins with a link or a code, as typed, scanned or opened. */
+    /** Joins with an invite link, as scanned, pasted or opened. */
     fun join(input: String) {
         if (!isSupported) return notify(PartyError.NOT_SUPPORTED)
-        val target = parsePartyJoinTarget(input) ?: return notify(PartyError.INVALID_LINK)
-        launchSession { attendRoom(target) }
+        val invite = parsePartyInvite(input) ?: return notify(PartyError.INVALID_LINK)
+        launchSession { attendRoom(invite) }
     }
 
     /** Leaves the room, or closes it for everyone when this device hosts it; also stops a join on its way. */
@@ -126,9 +159,15 @@ object PartyRepository {
             guestConnection = null
             guestChannel = null
             if (sessionJob === job) sessionJob = null
-            _uiState.update { it.copy(phase = PartyPhase.Idle) }
+            end(notice = null)
         }
     }
+
+    fun clearNotice() {
+        _uiState.update { it.copy(notice = null) }
+    }
+
+    // ---- The host's controls ----
 
     fun updateSettings(transform: (PartySettings) -> PartySettings) {
         scope.launch {
@@ -141,22 +180,12 @@ object PartyRepository {
         }
     }
 
-    fun approve(memberId: String) {
+    fun kick(memberId: String) {
         scope.launch {
             val room = hosted ?: return@launch
-            val guest = room.guests[memberId]?.takeIf { !it.approved } ?: return@launch
-            if (room.isFull) return@launch removeGuest(room, guest, PartyRemoval.FULL)
-            guest.approved = true
-            val welcome = PartyMessage.Welcome(room.settings, room.members)
-            scope.launch { runCatching { guest.channel.send(welcome) } }
-            broadcast(room, PartyMessage.Members(room.members), except = guest)
-            publishHost()
+            room.guests[memberId]?.let { guest -> removeGuest(room, guest, PartyRemoval.KICKED) }
         }
     }
-
-    fun deny(memberId: String) = removeById(memberId, PartyRemoval.DENIED)
-
-    fun kick(memberId: String) = removeById(memberId, PartyRemoval.KICKED)
 
     fun ban(memberId: String) {
         scope.launch {
@@ -174,15 +203,111 @@ object PartyRepository {
         }
     }
 
-    fun clearNotice() {
-        _uiState.update { it.copy(notice = null) }
-    }
-
-    private fun removeById(memberId: String, reason: PartyRemoval) {
+    fun allowThroughFirewall() {
         scope.launch {
             val room = hosted ?: return@launch
-            room.guests[memberId]?.let { guest -> removeGuest(room, guest, reason) }
+            val prompt = room.firewall?.takeIf { !it.allowing } ?: return@launch
+            room.firewall = prompt.copy(allowing = true, allowFailed = false)
+            publishHost()
+            val allowed = runCatching { LocalSyncFirewall.allow(prompt.tcpPort, prompt.udpPort) }.getOrDefault(false)
+            if (hosted !== room) return@launch
+            room.firewall = if (allowed) null else prompt.copy(allowing = false, allowFailed = true)
+            publishHost()
         }
+    }
+
+    fun dismissFirewallPrompt() {
+        scope.launch {
+            val room = hosted ?: return@launch
+            room.firewall = null
+            publishHost()
+        }
+    }
+
+    /** What the host's app is showing, for the guests' line at the top. */
+    fun setActivity(activity: PartyActivity) {
+        scope.launch {
+            val room = hosted ?: return@launch
+            if (_activity.value == activity) return@launch
+            _activity.value = activity
+            broadcast(room, PartyMessage.Activity(activity))
+        }
+    }
+
+    /**
+     * The host opened [playback]; every guest opens it too. Returns the id it is shared under,
+     * the same one when it is already shared, or null when this device does not host a room.
+     */
+    fun startPlayback(playback: PartyPlayback): Long? {
+        if (!isHost) return null
+        val current = _playback.value
+        if (current != null && current.copy(id = 0) == playback.copy(id = 0)) return current.id
+        // Called from the player on the main thread, so the id is handed out there.
+        val id = nextPlaybackId++
+        scope.launch {
+            val room = hosted ?: return@launch
+            val shared = playback.copy(id = id)
+            _playback.value = shared
+            _playbackState.value = null
+            broadcast(room, PartyMessage.Playback(shared))
+        }
+        return id
+    }
+
+    /** The host left the player. */
+    fun stopPlayback(playbackId: Long) {
+        scope.launch {
+            val room = hosted ?: return@launch
+            if (_playback.value?.id != playbackId) return@launch
+            _playback.value = null
+            _playbackState.value = null
+            broadcast(room, PartyMessage.Playback(null))
+        }
+    }
+
+    /** Where the host is in the shared source, which guests follow. */
+    fun updatePlaybackState(state: PartyPlaybackState) {
+        scope.launch {
+            val room = hosted ?: return@launch
+            if (_playback.value?.id != state.playbackId) return@launch
+            _playbackState.value = state
+            broadcast(room, PartyMessage.PlaybackState(state))
+        }
+    }
+
+    fun dismissSuggestion(id: String) {
+        _suggestions.update { list -> list.filterNot { it.id == id } }
+    }
+
+    // ---- Everyone ----
+
+    /** Sends [text] to the room; false when chat is off or slow mode asks to wait. */
+    fun sendChat(text: String): Boolean {
+        val message = text.trim().take(MAX_CHAT_LENGTH)
+        val room = currentRoom ?: return false
+        if (message.isEmpty() || !room.settings.chatEnabled) return false
+        val now = EpisodeReleaseDatePlatform.nowEpochMs()
+        if (!room.isHost && now < _nextChatAtEpochMs.value) return false
+        if (!room.isHost) _nextChatAtEpochMs.value = now + room.settings.slowModeSeconds * 1_000L
+        scope.launch {
+            val hostedRoom = hosted
+            if (hostedRoom != null) {
+                postChat(hostedRoom, hostedRoom.host, message)
+            } else {
+                guestChannel?.let { channel -> runCatching { channel.send(PartyMessage.ChatSend(message)) } }
+            }
+        }
+        return true
+    }
+
+    /** A guest suggests a title; false when the host turned suggestions off. */
+    fun suggest(suggestion: PartySuggestion): Boolean {
+        val room = currentRoom?.takeIf { !it.isHost } ?: return false
+        if (!room.settings.suggestionsEnabled) return false
+        scope.launch {
+            guestChannel?.let { channel -> runCatching { channel.send(PartyMessage.Suggest(suggestion)) } }
+        }
+        return true
     }
 
     private fun notify(error: PartyError) {
@@ -201,7 +326,14 @@ object PartyRepository {
         _uiState.update { it.copy(phase = phase) }
     }
 
+    // Back to the start, with everything the room shared forgotten.
     private fun end(notice: PartyError?) {
+        _activity.value = PartyActivity()
+        _playback.value = null
+        _playbackState.value = null
+        _chat.value = emptyList()
+        _suggestions.value = emptyList()
+        _nextChatAtEpochMs.value = 0L
         _uiState.update { PartyUiState(phase = PartyPhase.Idle, notice = notice ?: it.notice) }
     }
 
@@ -212,12 +344,17 @@ object PartyRepository {
 
     private fun cleanName(name: String): String = name.filterNot { it.isISOControl() }.trim().take(MAX_NAME_LENGTH)
 
+    private fun appendChat(message: PartyChatMessage) {
+        _chat.update { (it + message).takeLast(CHAT_HISTORY) }
+    }
+
     // ---- Hosting ----
 
     private suspend fun hostRoom() {
         setPhase(PartyPhase.Creating)
-        val addresses = LocalSyncPlatform.localIpv4Addresses() + partyGlobalIpv6Addresses()
-        if (addresses.isEmpty()) return end(PartyError.NO_NETWORK)
+        val lanAddresses = LocalSyncPlatform.localIpv4Addresses()
+        val ipv6Addresses = partyGlobalIpv6Addresses()
+        if (lanAddresses.isEmpty() && ipv6Addresses.isEmpty()) return end(PartyError.NO_NETWORK)
         val server = try {
             LocalSyncPlatform.listen(DEFAULT_PORT)
         } catch (error: CancellationException) {
@@ -228,26 +365,16 @@ object PartyRepository {
         }
         try {
             coroutineScope {
-                val code = LocalSyncPlatform.randomBytes(4)
-                    .fold(0L) { value, byte -> (value shl 8) or (byte.toLong() and 0xff) }
-                    .rem(1_000_000L)
-                    .toString()
-                    .padStart(PARTY_CODE_LENGTH, '0')
-                val secret = LocalSyncPlatform.randomBytes(PARTY_SECRET_SIZE)
-                val link = buildPartyLink(code, server.port, addresses, secret)
                 val room = HostedRoom(
-                    code = code,
-                    secret = secret,
+                    secret = LocalSyncPlatform.randomBytes(PARTY_SECRET_SIZE),
                     server = server,
                     host = PartyMember(id = myId(), name = myName(), isHost = true),
-                    inviteLink = link,
-                    inviteQr = localSyncQrMatrix(link),
                 )
                 hosted = room
-                log.i { "Watch party open on port ${server.port}" }
-                publishHost()
-                launch { announce(room) }
+                log.i { "Watch party listening on port ${server.port}" }
                 launch { pingGuests(room) }
+                launch { checkFirewall(room) }
+                launch { openToInternet(room, lanAddresses, ipv6Addresses) }
                 while (currentCoroutineContext().isActive) {
                     val connection = try {
                         server.accept()
@@ -266,7 +393,57 @@ object PartyRepository {
         }
     }
 
-    // Closes the room: everyone still in it hears so, and the page goes back to the start.
+    // Asks the router to forward the room's port, then builds the link from the addresses that work.
+    private suspend fun openToInternet(room: HostedRoom, lanAddresses: List<String>, ipv6Addresses: List<String>) {
+        val port = room.server.port
+        val mapping = PartyPortMapper.map(port)
+        if (room.closed) {
+            mapping?.let { scope.launch { PartyPortMapper.unmap(it) } }
+            return
+        }
+        room.mapping = mapping
+        val publicAddress = mapping?.externalAddress?.takeIf { isPublicIpv4(it) }
+        room.reachability = when {
+            publicAddress != null -> PartyReachability.OPEN
+            mapping != null -> PartyReachability.SHARED_ADDRESS
+            ipv6Addresses.isNotEmpty() -> PartyReachability.IPV6_ONLY
+            else -> PartyReachability.LOCAL_ONLY
+        }
+        log.i { "Watch party reachability: ${room.reachability} (${mapping?.method})" }
+        // Public first; the local ones last, for guests on the same network whose router will
+        // not loop back to its own public address.
+        val endpoints = buildList {
+            if (publicAddress != null && mapping != null) add(PartyEndpoint(publicAddress, mapping.externalPort))
+            ipv6Addresses.forEach { add(PartyEndpoint(it, port)) }
+            lanAddresses.forEach { add(PartyEndpoint(it, port)) }
+        }
+        val link = buildPartyLink(endpoints, room.secret)
+        room.inviteLink = link
+        room.inviteQr = localSyncQrMatrix(link)
+        publishHost()
+        if (mapping != null) keepMapping(room, mapping)
+    }
+
+    // Renews the router's lease before it runs out, for as long as the room is open.
+    private suspend fun keepMapping(room: HostedRoom, initial: PartyPortMapping) {
+        var mapping = initial
+        while (currentCoroutineContext().isActive && !room.closed && mapping.leaseSeconds > 0) {
+            delay((mapping.leaseSeconds * 1_000L / 2).coerceAtLeast(MIN_RENEW_INTERVAL_MS))
+            if (room.closed) return
+            mapping = PartyPortMapper.renew(mapping) ?: PartyPortMapper.map(room.server.port) ?: mapping
+            room.mapping = mapping
+        }
+    }
+
+    private suspend fun checkFirewall(room: HostedRoom) {
+        val port = room.server.port
+        val state = runCatching { LocalSyncFirewall.state(port, port) }.getOrDefault(LocalSyncFirewallState.UNKNOWN)
+        if (state != LocalSyncFirewallState.BLOCKED || room.closed) return
+        room.firewall = LocalSyncFirewallPrompt(state = state, tcpPort = port, udpPort = port)
+        publishHost()
+    }
+
+    // Closes the room: everyone still in it hears so, and the app goes back to the start.
     private fun endHosting(room: HostedRoom, notice: PartyError?) {
         if (hosted !== room) return
         hosted = null
@@ -277,25 +454,11 @@ object PartyRepository {
         room.handshakes.forEach { it.close() }
         room.handshakes.clear()
         room.server.close()
+        room.mapping?.let { mapping -> scope.launch { PartyPortMapper.unmap(mapping) } }
         sessionJob?.cancel()
         sessionJob = null
         end(notice)
         guests.forEach { guest -> sendOff(guest, PartyRemoval.CLOSED) }
-    }
-
-    private suspend fun announce(room: HostedRoom) {
-        val beacon = PartyBeacon(app = PARTY_BEACON_APP, code = room.code, port = room.server.port, hostId = room.host.id)
-        val payload = partyJson.encodeToString(PartyBeacon.serializer(), beacon).encodeToByteArray()
-        while (currentCoroutineContext().isActive) {
-            try {
-                LocalSyncPlatform.sendBeacon(payload, BEACON_PORT)
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Throwable) {
-                log.d { "Could not announce the watch party: ${error.message}" }
-            }
-            delay(BEACON_INTERVAL_MS)
-        }
     }
 
     // Keeps quiet connections from timing out, and finds the ones that went away.
@@ -335,6 +498,11 @@ object PartyRepository {
             while (true) {
                 val message = guest.channel.receive()
                 if (message == PartyMessage.Leave || room.guests[guest.member.id] !== guest) break
+                when (message) {
+                    is PartyMessage.ChatSend -> onGuestChat(room, guest, message.text)
+                    is PartyMessage.Suggest -> onGuestSuggestion(room, guest, message.suggestion)
+                    else -> Unit
+                }
             }
         } catch (error: CancellationException) {
             throw error
@@ -345,7 +513,7 @@ object PartyRepository {
                 guest.removed -> Unit
                 room.guests[guest.member.id] === guest -> {
                     room.guests.remove(guest.member.id)
-                    if (guest.approved && !room.closed) broadcast(room, PartyMessage.Members(room.members))
+                    if (!room.closed) broadcast(room, PartyMessage.Members(room.members))
                     publishHost()
                     guest.channel.close()
                 }
@@ -355,7 +523,7 @@ object PartyRepository {
         }
     }
 
-    // Returns the guest once they are in the room or waiting at its door, or null if they were turned away.
+    // Returns the guest once they are in the room, or null if they were turned away.
     private suspend fun handshake(room: HostedRoom, connection: LocalSyncConnection): PartyGuest? {
         val hello = connection.readPartyHello()
         suspend fun refuse(status: PartyHelloStatus): PartyGuest? {
@@ -365,67 +533,96 @@ object PartyRepository {
         if (hello.version != PARTY_PROTOCOL_VERSION) return refuse(PartyHelloStatus.VERSION_MISMATCH)
         if (room.closed) return null
         if (hello.memberId in room.banned) return refuse(PartyHelloStatus.BANNED)
-        if (hello.code != room.code || hello.memberId == room.host.id) return refuse(PartyHelloStatus.REJECTED)
+        val expected = partyProof(room.secret, "guest", hello.memberId, hello.nonce)
+        if (hello.proof != expected || hello.memberId == room.host.id) return refuse(PartyHelloStatus.REJECTED)
+        val returning = hello.memberId in room.guests
+        if (room.isFull && !returning) return refuse(PartyHelloStatus.FULL)
         val hostNonce = encodePartyBytes(LocalSyncPlatform.randomBytes(PARTY_NONCE_SIZE))
-        val key: ByteArray
-        val reply: PartyHelloReply
-        when (hello.mode) {
-            PartyJoinMode.LINK -> {
-                val expected = partyProof(room.secret, "guest", room.code, hello.memberId, hello.nonce)
-                if (hello.proof != expected) return refuse(PartyHelloStatus.REJECTED)
-                if (room.isFull && room.guests[hello.memberId]?.approved != true) return refuse(PartyHelloStatus.FULL)
-                key = partySessionKey(room.secret, hello.nonce, hostNonce)
-                reply = PartyHelloReply(
-                    version = PARTY_PROTOCOL_VERSION,
-                    status = PartyHelloStatus.ACCEPTED,
-                    nonce = hostNonce,
-                    proof = partyProof(room.secret, "host", hello.nonce, hostNonce),
-                )
-            }
-            PartyJoinMode.CODE -> {
-                if (room.isFull) return refuse(PartyHelloStatus.FULL)
-                val agreement = PartyKeyAgreement()
-                val shared = hello.publicKey
-                    ?.let { runCatching { agreement.sharedSecret(decodePartyBytes(it)) }.getOrNull() }
-                    ?: return refuse(PartyHelloStatus.REJECTED)
-                key = partySessionKey(shared, room.code, hello.nonce, hostNonce)
-                reply = PartyHelloReply(
-                    version = PARTY_PROTOCOL_VERSION,
-                    status = PartyHelloStatus.PENDING,
-                    nonce = hostNonce,
-                    publicKey = encodePartyBytes(agreement.publicKey),
-                )
-            }
-        }
-        connection.writePartyReply(reply)
+        connection.writePartyReply(
+            PartyHelloReply(
+                version = PARTY_PROTOCOL_VERSION,
+                status = PartyHelloStatus.ACCEPTED,
+                nonce = hostNonce,
+                proof = partyProof(room.secret, "host", hello.nonce, hostNonce),
+            ),
+        )
         if (room.closed) return null
 
+        val previous = room.guests[hello.memberId]
         val guest = PartyGuest(
-            member = PartyMember(id = hello.memberId, name = cleanName(hello.name)),
-            channel = PartyChannel(connection, key),
-            approved = hello.mode == PartyJoinMode.LINK,
+            member = PartyMember(
+                id = hello.memberId,
+                name = previous?.member?.name ?: uniqueName(room, cleanName(hello.name)),
+            ),
+            channel = PartyChannel(connection, partySessionKey(room.secret, hello.nonce, hostNonce)),
         )
-        val previous = room.guests.put(guest.member.id, guest)
+        room.guests[guest.member.id] = guest
         previous?.channel?.close()
-        if (guest.approved) {
-            guest.channel.send(PartyMessage.Welcome(room.settings, room.members))
-            broadcast(room, PartyMessage.Members(room.members), except = guest)
-        } else {
-            if (previous?.approved == true) broadcast(room, PartyMessage.Members(room.members))
-            scope.launch {
-                delay(APPROVAL_TIMEOUT_MS)
-                if (!guest.approved) removeGuest(room, guest, PartyRemoval.DENIED)
-            }
-        }
+        guest.channel.send(
+            PartyMessage.Welcome(
+                settings = room.settings,
+                members = room.members,
+                activity = _activity.value,
+                playback = _playback.value,
+                playbackState = _playbackState.value,
+                chat = _chat.value.takeLast(WELCOME_CHAT),
+            ),
+        )
+        broadcast(room, PartyMessage.Members(room.members), except = guest)
         publishHost()
         return guest
+    }
+
+    // Two people with the same name are told apart by a number: Maria, Maria (2).
+    private fun uniqueName(room: HostedRoom, name: String): String {
+        val taken = room.members.map { it.name.lowercase() }.toSet()
+        if (name.lowercase() !in taken) return name
+        var number = 2
+        while ("$name ($number)".lowercase() in taken) number += 1
+        return "$name ($number)"
+    }
+
+    private fun onGuestChat(room: HostedRoom, guest: PartyGuest, text: String) {
+        val message = text.trim().take(MAX_CHAT_LENGTH)
+        if (message.isEmpty() || !room.settings.chatEnabled) return
+        val now = EpisodeReleaseDatePlatform.nowEpochMs()
+        // A second's grace, for the guest's clock running a little ahead of this one.
+        val wait = room.settings.slowModeSeconds * 1_000L - 1_000L
+        if (wait > 0 && now - guest.lastChatAtEpochMs < wait) return
+        guest.lastChatAtEpochMs = now
+        postChat(room, guest.member, message)
+    }
+
+    private fun postChat(room: HostedRoom, member: PartyMember, text: String) {
+        val now = EpisodeReleaseDatePlatform.nowEpochMs()
+        val message = PartyChatMessage(
+            id = "${member.id}-$now-${nextChatNumber++}",
+            memberId = member.id,
+            name = member.name,
+            text = text,
+            sentAtEpochMs = now,
+        )
+        appendChat(message)
+        broadcast(room, PartyMessage.Chat(message))
+    }
+
+    private fun onGuestSuggestion(room: HostedRoom, guest: PartyGuest, suggestion: PartySuggestion) {
+        if (!room.settings.suggestionsEnabled) return
+        val stamped = suggestion.copy(
+            id = "${guest.member.id}-${EpisodeReleaseDatePlatform.nowEpochMs()}",
+            memberId = guest.member.id,
+            memberName = guest.member.name,
+        )
+        _suggestions.update { list ->
+            (list.filterNot { it.memberId == guest.member.id && it.videoId == stamped.videoId } + stamped).takeLast(MAX_SUGGESTIONS)
+        }
     }
 
     private fun removeGuest(room: HostedRoom, guest: PartyGuest, reason: PartyRemoval) {
         if (room.guests[guest.member.id] !== guest) return
         room.guests.remove(guest.member.id)
         guest.removed = true
-        if (guest.approved) broadcast(room, PartyMessage.Members(room.members))
+        broadcast(room, PartyMessage.Members(room.members))
         publishHost()
         sendOff(guest, reason)
     }
@@ -439,7 +636,7 @@ object PartyRepository {
     }
 
     private fun broadcast(room: HostedRoom, message: PartyMessage, except: PartyGuest? = null) {
-        room.guests.values.filter { it.approved && it !== except }.forEach { guest ->
+        room.guests.values.filter { it !== except }.forEach { guest ->
             scope.launch { runCatching { guest.channel.send(message) } }
         }
     }
@@ -449,14 +646,14 @@ object PartyRepository {
         setPhase(
             PartyPhase.InRoom(
                 PartyRoom(
-                    code = room.code,
                     isHost = true,
                     myMemberId = room.host.id,
                     settings = room.settings,
                     members = room.members,
                     inviteLink = room.inviteLink,
                     inviteQr = room.inviteQr,
-                    joinRequests = room.guests.values.filter { !it.approved }.map { PartyJoinRequest(it.member.id, it.member.name) },
+                    reachability = room.reachability,
+                    firewall = room.firewall,
                     banned = room.banned.map { (id, name) -> PartyMember(id = id, name = name) },
                 ),
             ),
@@ -465,21 +662,13 @@ object PartyRepository {
 
     // ---- Joining ----
 
-    private suspend fun attendRoom(target: PartyJoinTarget) {
+    private suspend fun attendRoom(invite: PartyInvite) {
         val error = try {
-            val (code, candidates, secret) = when (target) {
-                is PartyJoinTarget.Code -> {
-                    setPhase(PartyPhase.Finding)
-                    val found = findRoom(target.code) ?: return end(PartyError.NO_ROOM_FOR_CODE)
-                    Triple(target.code, listOf(found), null)
-                }
-                is PartyJoinTarget.Link -> Triple(target.code, target.addresses.map { it to target.port }, target.secret)
-            }
             setPhase(PartyPhase.Connecting)
-            val connection = connectFirst(candidates) ?: return end(PartyError.UNREACHABLE)
+            val connection = connectFirst(invite.endpoints) ?: return end(PartyError.UNREACHABLE)
             guestConnection = connection
             try {
-                converse(connection, code, secret)
+                converse(connection, invite.secret)
             } finally {
                 if (guestConnection === connection) guestConnection = null
                 guestChannel = null
@@ -489,67 +678,64 @@ object PartyRepository {
             throw error
         } catch (error: Throwable) {
             log.w(error) { "Lost the watch party" }
-            when (_uiState.value.phase) {
-                is PartyPhase.InRoom, PartyPhase.AwaitingApproval -> PartyError.CONNECTION_LOST
-                else -> PartyError.FAILED
-            }
+            if (_uiState.value.phase is PartyPhase.InRoom) PartyError.CONNECTION_LOST else PartyError.UNREACHABLE
         }
         end(error)
     }
 
     // Says hello and then follows the room until it ends; returns why it ended.
-    private suspend fun converse(connection: LocalSyncConnection, code: String, secret: ByteArray?): PartyError {
+    private suspend fun converse(connection: LocalSyncConnection, secret: ByteArray): PartyError {
         val memberId = myId()
         val nonce = encodePartyBytes(LocalSyncPlatform.randomBytes(PARTY_NONCE_SIZE))
-        val agreement = if (secret == null) PartyKeyAgreement() else null
         connection.writePartyHello(
             PartyHello(
                 version = PARTY_PROTOCOL_VERSION,
-                mode = if (secret != null) PartyJoinMode.LINK else PartyJoinMode.CODE,
-                code = code,
                 memberId = memberId,
                 name = myName(),
                 nonce = nonce,
-                proof = secret?.let { partyProof(it, "guest", code, memberId, nonce) },
-                publicKey = agreement?.let { encodePartyBytes(it.publicKey) },
+                proof = partyProof(secret, "guest", memberId, nonce),
             ),
         )
         val reply = connection.readPartyReply()
         if (reply.version != PARTY_PROTOCOL_VERSION) return PartyError.VERSION_MISMATCH
-        val key = when (reply.status) {
-            PartyHelloStatus.ACCEPTED -> {
-                // Only the room that holds the link's secret can answer this, so no one stands in for the host.
-                if (secret == null || reply.proof != partyProof(secret, "host", nonce, reply.nonce)) return PartyError.REJECTED
-                partySessionKey(secret, nonce, reply.nonce)
-            }
-            PartyHelloStatus.PENDING -> {
-                val ownKey = agreement ?: return PartyError.REJECTED
-                val peerKey = reply.publicKey ?: return PartyError.REJECTED
-                partySessionKey(ownKey.sharedSecret(decodePartyBytes(peerKey)), code, nonce, reply.nonce)
-            }
+        when (reply.status) {
+            PartyHelloStatus.ACCEPTED -> Unit
             PartyHelloStatus.FULL -> return PartyError.ROOM_FULL
             PartyHelloStatus.BANNED -> return PartyError.BANNED
             PartyHelloStatus.REJECTED -> return PartyError.REJECTED
             PartyHelloStatus.VERSION_MISMATCH -> return PartyError.VERSION_MISMATCH
         }
-        if (reply.status == PartyHelloStatus.PENDING) setPhase(PartyPhase.AwaitingApproval)
-        val channel = PartyChannel(connection, key)
+        // Only the room that holds the link's secret can answer this, so no one stands in for the host.
+        if (reply.proof != partyProof(secret, "host", nonce, reply.nonce)) return PartyError.REJECTED
+        val channel = PartyChannel(connection, partySessionKey(secret, nonce, reply.nonce))
         guestChannel = channel
         var room: PartyRoom? = null
         while (true) {
             when (val message = channel.receive()) {
-                is PartyMessage.Welcome -> room = PartyRoom(
-                    code = code,
-                    isHost = false,
-                    myMemberId = memberId,
-                    settings = message.settings,
-                    members = message.members,
-                )
+                is PartyMessage.Welcome -> {
+                    room = PartyRoom(
+                        isHost = false,
+                        myMemberId = memberId,
+                        settings = message.settings,
+                        members = message.members,
+                    )
+                    _activity.value = message.activity
+                    _playback.value = message.playback
+                    _playbackState.value = message.playbackState
+                    _chat.value = message.chat
+                }
                 is PartyMessage.Members -> room = room?.copy(members = message.members)
                 is PartyMessage.Settings -> room = room?.copy(settings = message.settings)
+                is PartyMessage.Activity -> _activity.value = message.activity
+                is PartyMessage.Playback -> {
+                    _playback.value = message.playback
+                    _playbackState.value = null
+                }
+                is PartyMessage.PlaybackState -> _playbackState.value = message.state
+                is PartyMessage.Chat -> appendChat(message.message)
                 is PartyMessage.Removed -> return message.reason.toError()
                 PartyMessage.Ping -> channel.send(PartyMessage.Pong)
-                PartyMessage.Pong, PartyMessage.Leave, null -> Unit
+                is PartyMessage.ChatSend, is PartyMessage.Suggest, PartyMessage.Pong, PartyMessage.Leave, null -> Unit
             }
             room?.let { setPhase(PartyPhase.InRoom(it)) }
         }
@@ -558,52 +744,22 @@ object PartyRepository {
     private fun PartyRemoval.toError(): PartyError = when (this) {
         PartyRemoval.KICKED -> PartyError.KICKED
         PartyRemoval.BANNED -> PartyError.BANNED
-        PartyRemoval.DENIED -> PartyError.DENIED
         PartyRemoval.FULL -> PartyError.ROOM_FULL
         PartyRemoval.CLOSED -> PartyError.CLOSED
     }
 
-    // Listens for a room on this network that announces [code].
-    private suspend fun findRoom(code: String): Pair<String, Int>? {
-        val ownId = myId()
-        val found = CompletableDeferred<Pair<String, Int>>()
-        LocalSyncWifiLock.acquire()
-        return try {
-            withTimeoutOrNull(FIND_TIMEOUT_MS) {
-                val listener = launch {
-                    LocalSyncPlatform.receiveBeacons(BEACON_PORT) { payload, host ->
-                        val beacon = runCatching {
-                            partyJson.decodeFromString(PartyBeacon.serializer(), payload.decodeToString())
-                        }.getOrNull()
-                        if (beacon != null && beacon.app == PARTY_BEACON_APP && beacon.code == code && beacon.hostId != ownId) {
-                            found.complete(host to beacon.port)
-                        }
-                    }
-                }
-                found.await().also { listener.cancel() }
-            }
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Throwable) {
-            log.w(error) { "Could not listen for watch parties" }
-            null
-        } finally {
-            LocalSyncWifiLock.release()
-        }
-    }
-
     // Tries every address at once and keeps the first that answers; the rest are closed as they come in.
-    private suspend fun connectFirst(candidates: List<Pair<String, Int>>): LocalSyncConnection? {
-        if (candidates.isEmpty()) return null
+    private suspend fun connectFirst(endpoints: List<PartyEndpoint>): LocalSyncConnection? {
+        if (endpoints.isEmpty()) return null
         val winner = CompletableDeferred<LocalSyncConnection?>()
-        var remaining = candidates.size
+        var remaining = endpoints.size
         var abandoned = false
-        candidates.forEach { (host, port) ->
+        endpoints.forEach { endpoint ->
             scope.launch {
                 val connection = try {
-                    LocalSyncPlatform.connect(host, port, CONNECT_TIMEOUT_MS)
+                    LocalSyncPlatform.connect(endpoint.host, endpoint.port, CONNECT_TIMEOUT_MS)
                 } catch (error: Throwable) {
-                    log.d { "Could not reach $host port $port: ${error.message}" }
+                    log.d { "Could not reach $endpoint: ${error.message}" }
                     null
                 }
                 remaining -= 1
@@ -620,5 +776,20 @@ object PartyRepository {
             if (!winner.complete(null)) withContext(NonCancellable) { winner.await()?.close() }
             throw error
         }
+    }
+}
+
+// Not one of the private, shared or reserved ranges, so the internet can reach it.
+internal fun isPublicIpv4(address: String): Boolean {
+    val parts = address.split('.').mapNotNull { it.toIntOrNull() }
+    if (parts.size != 4 || parts.any { it !in 0..255 }) return false
+    val (a, b) = parts
+    return when {
+        a == 10 || a == 127 || a == 0 || a >= 224 -> false
+        a == 172 && b in 16..31 -> false
+        a == 192 && b == 168 -> false
+        a == 169 && b == 254 -> false
+        a == 100 && b in 64..127 -> false
+        else -> true
     }
 }
