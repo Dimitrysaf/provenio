@@ -54,6 +54,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -220,7 +221,7 @@ internal fun PlayerScreenRuntime.suggestNextEpisodeToHost() {
 }
 
 /**
- * The room's chat over the video: no box behind it, a round field to write in, and above it the
+ * The room's chat over the video, at its right edge: no box behind it, a round field to write in, and above it the
  * last two messages, fading out at the top, which scroll back to older ones. Opening it puts the
  * controls away; while it is closed, new messages show for a few seconds where it would be.
  */
@@ -239,7 +240,7 @@ internal fun BoxScope.PlayerWatchPartyChat(runtime: PlayerScreenRuntime) {
     PlatformBackHandler(enabled = chatOpen) { runtime.showPartyChat = false }
     val peeking = messages.takeLast(PartyChatPeekCount).filter { now - it.sentAtEpochMs < PartyChatPeekMs }
     val modifier = Modifier
-        .align(Alignment.BottomStart)
+        .align(Alignment.BottomEnd)
         .playerFrameInsets(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
         .imePadding()
         .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
@@ -281,8 +282,12 @@ private fun PartyChatBox(
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
     }
     LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
+    // Sent, the field goes away with the controls' chat, and the message shows over the video.
     val send = {
-        if (waitSeconds == 0 && onSend(draft)) draft = ""
+        if (waitSeconds == 0 && onSend(draft)) {
+            draft = ""
+            onClose()
+        }
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         LazyColumn(
@@ -359,8 +364,9 @@ private fun PartyChatBox(
 
 @Composable
 private fun PartyChatLine(message: PartyChatMessage, mine: Boolean) {
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
         Text(
+            textAlign = TextAlign.End,
             text = buildAnnotatedString {
                 withStyle(
                     SpanStyle(

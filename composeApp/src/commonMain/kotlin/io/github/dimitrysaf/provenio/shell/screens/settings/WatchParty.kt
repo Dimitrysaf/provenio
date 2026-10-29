@@ -183,6 +183,8 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
         }
     }
 
+    WatchPartyChatSection(room = room, isTablet = isTablet)
+
     SettingsSection(
         title = settings.memberLimit?.let { limit ->
             stringResource(Res.string.watch_party_section_members_limited, room.members.size, limit)
@@ -272,8 +274,7 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
-            .padding(horizontal = if (isTablet) 0.dp else 16.dp),
+            .height(56.dp),
     ) {
         Icon(imageVector = Icons.Rounded.Close, contentDescription = null)
         Text(

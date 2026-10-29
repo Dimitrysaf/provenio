@@ -2668,4 +2668,6 @@
     <string name="watch_party_notification_channel">Watch party</string>
     <string name="watch_party_notification_text">You're in a watch party</string>
     <string name="watch_party_line_source_advice">Everyone plays the source you pick: choose one with many seeds and peers</string>
+    <string name="watch_party_chat_empty">No messages yet. Say hi to the room.</string>
+    <string name="watch_party_chat_off">The host turned chat off.</string>
 </resources>
