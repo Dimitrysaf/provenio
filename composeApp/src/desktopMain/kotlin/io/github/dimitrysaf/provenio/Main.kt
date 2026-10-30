@@ -112,17 +112,15 @@ fun main(args: Array<String>) {
     args.firstOrNull { it.startsWith("provenio:") || it.startsWith("stremio:") }?.let(::handleAppUrl)
     SingleInstance.listen(::handleAppUrl)
     application {
-        val windowState = rememberWindowState(size = DesktopDisplayScale.initialWindowSize(DpSize(1280.dp, 800.dp)))
+        val defaultWindowSize = remember { DesktopDisplayScale.initialWindowSize(DpSize(1280.dp, 800.dp)) }
+        val windowState = rememberWindowState(size = defaultWindowSize)
         val fullscreen by DesktopWindowState.isFullscreen.collectAsState()
         var windowVisible by remember { mutableStateOf(true) }
         val quit = {
             P2pStreamingEngine.shutdownAll()
             exitApplication()
         }
-        val windowFullscreen = remember { WindowFullscreen() }
-        LaunchedEffect(fullscreen) {
-            windowFullscreen.apply(windowState, fullscreen)
-        }
+        val windowFullscreen = remember { WindowFullscreen(defaultWindowSize) }
         LaunchedEffect(windowState.isMinimized, windowVisible) {
             DesktopWindowState.setVisible(windowVisible && !windowState.isMinimized)
         }
@@ -184,6 +182,9 @@ fun main(args: Array<String>) {
                 // After the page had its turn, so a text field's own Ctrl+A selects its text.
                 onKeyEvent = PageTextSelectAll::handle,
             ) {
+                LaunchedEffect(fullscreen, windowState.isMinimized) {
+                    windowFullscreen.apply(window, windowState, fullscreen)
+                }
                 LaunchedEffect(Unit) {
                     SingleInstance.showRequests.collect {
                         // Already in front: taking focus again would only pull it away from where

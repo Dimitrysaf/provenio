@@ -35,7 +35,8 @@ import provenio.composeapp.generated.resources.app_icon_arctic_blue
 internal actual val playerWindowSupported: Boolean = true
 
 private object PlayerWindowGeometry {
-    var size: DpSize = DesktopDisplayScale.initialWindowSize(DpSize(1280.dp, 720.dp))
+    val defaultSize: DpSize = DesktopDisplayScale.initialWindowSize(DpSize(1280.dp, 720.dp))
+    var size: DpSize = defaultSize
     var position: WindowPosition = WindowPosition.PlatformDefault
 }
 
@@ -50,17 +51,15 @@ internal actual fun DetachedPlayerWindow(
         position = PlayerWindowGeometry.position,
     )
     val fullscreen by DesktopWindowState.isPlayerFullscreen.collectAsState()
-    val windowFullscreen = remember { WindowFullscreen() }
-    LaunchedEffect(fullscreen) {
-        windowFullscreen.apply(state, fullscreen)
-    }
+    val windowFullscreen = remember { WindowFullscreen(PlayerWindowGeometry.defaultSize) }
     LaunchedEffect(state.isMinimized) {
         DesktopWindowState.setPlayerWindowVisible(!state.isMinimized)
     }
     DisposableEffect(Unit) {
         DesktopWindowState.setPlayerWindowOpen(true)
         onDispose {
-            if (state.placement == WindowPlacement.Floating) {
+            // A fullscreen window covers the screen, which isn't the size to open at next time.
+            if (state.placement == WindowPlacement.Floating && !DesktopWindowState.isPlayerFullscreen.value) {
                 PlayerWindowGeometry.size = state.size
                 PlayerWindowGeometry.position = state.position
             }
@@ -90,6 +89,9 @@ internal actual fun DetachedPlayerWindow(
             }
         },
     ) {
+        LaunchedEffect(fullscreen, state.isMinimized) {
+            windowFullscreen.apply(window, state, fullscreen)
+        }
         ProvideDesktopDisplayScale {
             CompositionLocalProvider(LocalContextMenuRepresentation provides MaterialContextMenuRepresentation) {
                 AppThemeEnvironment {
