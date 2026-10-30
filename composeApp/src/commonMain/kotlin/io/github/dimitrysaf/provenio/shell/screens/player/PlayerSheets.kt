@@ -22,11 +22,11 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ListItemShapes
@@ -169,11 +169,14 @@ internal fun PlayerAudioSheet(
     )
 }
 
-/** Opens the Subtitles & Audio settings page from a player sheet's header. */
+/** Opens the Subtitles & Audio settings page from a player sheet's header, as a cog. */
 @Composable
 internal fun MoreSettingsButton(onClick: () -> Unit) {
-    TextButton(onClick = onClick) {
-        Text(stringResource(Res.string.player_more_settings))
+    val label = stringResource(Res.string.player_more_settings)
+    WithTooltip(label) {
+        IconButton(onClick = onClick) {
+            Icon(Icons.Rounded.Settings, contentDescription = label)
+        }
     }
 }
 

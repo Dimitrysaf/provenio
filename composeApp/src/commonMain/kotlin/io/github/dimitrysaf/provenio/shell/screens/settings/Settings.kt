@@ -1066,6 +1066,7 @@ private fun SettingsPageActions(page: SettingsPage) {
         SettingsPage.Documentation -> DocumentationAppBarActions()
         SettingsPage.P2pStreaming -> DocsHelpButton(DocsPages.Torrents)
         SettingsPage.Addons -> DocsHelpButton(DocsPages.Addons)
+        SettingsPage.WatchParty, SettingsPage.WatchPartyRoom -> DocsHelpButton(DocsPages.WatchParty)
         else -> Unit
     }
 }

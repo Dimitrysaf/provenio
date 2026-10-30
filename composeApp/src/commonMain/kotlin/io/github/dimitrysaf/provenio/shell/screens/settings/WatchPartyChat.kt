@@ -156,6 +156,7 @@ private fun ConversationHeader(room: PartyRoom, onBack: (() -> Unit)?, onClick: 
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        DocsHelpButton(DocsPages.WatchParty)
         IconButton(onClick = onClick) {
             Icon(
                 imageVector = Icons.Rounded.Settings,

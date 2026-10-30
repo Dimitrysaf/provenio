@@ -67,6 +67,7 @@ import provenio.composeapp.generated.resources.*
 internal object DocsPages {
     const val Addons = "Addons"
     const val Torrents = "Torrents"
+    const val WatchParty = "Watch-Party"
 }
 
 /** Which documentation page is open over the app, if any, as the "?" buttons open them. */
@@ -75,9 +76,14 @@ internal object DocsViewer {
     val page: StateFlow<String?> = _page.asStateFlow()
     private var onClose: (() -> Unit)? = null
 
-    /** Opens [name]; [onClose] runs once it is closed, for whatever stepped aside for it to come back. */
-    fun open(name: String, onClose: (() -> Unit)? = null) {
+    /** The heading [page] opens at, as a link's `#anchor` names it; null is the top. */
+    var anchor: String? = null
+        private set
+
+    /** Opens [name], at its [anchor] heading if given; [onClose] runs once it is closed, for whatever stepped aside for it to come back. */
+    fun open(name: String, onClose: (() -> Unit)? = null, anchor: String? = null) {
         this.onClose = onClose
+        this.anchor = anchor
         _page.value = name
     }
 
@@ -242,6 +248,8 @@ private fun DocsPageOverlay(page: String?, onDismiss: () -> Unit) {
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
                 OverlayPage(
                     page = current,
+                    // Only the page the overlay opened on goes to a heading; pages followed from it start at the top.
+                    anchor = DocsViewer.anchor.takeIf { shown.size == 1 },
                     onBack = back,
                     onOpenPage = { name -> if (!name.equals(current, ignoreCase = true)) history = history + name },
                 )
@@ -251,7 +259,7 @@ private fun DocsPageOverlay(page: String?, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun OverlayPage(page: String, onBack: () -> Unit, onOpenPage: (String) -> Unit) {
+private fun OverlayPage(page: String, anchor: String?, onBack: () -> Unit, onOpenPage: (String) -> Unit) {
     val docs by Docs.state.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
@@ -262,6 +270,9 @@ private fun OverlayPage(page: String, onBack: () -> Unit, onOpenPage: (String) -
         val loaded = rememberDocsPage(page)
         val document = loaded.document
         val listState = rememberLazyListState()
+        // Opens at the heading asked for, once the page is there.
+        val anchorIndex = anchor?.let { document?.anchors?.get(it) }
+        LaunchedEffect(anchorIndex) { anchorIndex?.let { listState.scrollToItem(it + 1) } }
         ScreenScaffold(
             title = title,
             onBack = onBack,
@@ -276,11 +287,11 @@ private fun OverlayPage(page: String, onBack: () -> Unit, onOpenPage: (String) -
             } else {
                 item { DocsOfflineLine(modifier = Modifier.padding(bottom = 16.dp)) }
                 markdownItems(document) { link ->
-                    val anchor = link.removePrefix("#").takeIf { link.startsWith("#") }
+                    val heading = link.removePrefix("#").takeIf { link.startsWith("#") }
                     val linkedPage = Docs.pageNameOf(link)
                     when {
                         // The line above the page comes first, so a block's item is one further on.
-                        anchor != null -> document.anchors[anchor]?.let { index ->
+                        heading != null -> document.anchors[heading]?.let { index ->
                             scope.launch { listState.animateScrollToItem(index + 1) }
                         }
                         linkedPage != null -> onOpenPage(linkedPage)

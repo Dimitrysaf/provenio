@@ -47,6 +47,8 @@ import io.github.dimitrysaf.provenio.shell.nav.EpisodeDetailRoute
 import io.github.dimitrysaf.provenio.shell.nav.Navigator
 import io.github.dimitrysaf.provenio.shell.nav.PlayerRoute
 import io.github.dimitrysaf.provenio.shell.nav.StreamRoute
+import io.github.dimitrysaf.provenio.shell.screens.settings.DocsPages
+import io.github.dimitrysaf.provenio.shell.screens.settings.DocsViewer
 import io.github.dimitrysaf.provenio.shell.screens.settings.WatchPartyRiskDialog
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -103,6 +105,9 @@ internal object WatchPartyPrompts {
 
 /** The height of the room's line at the top, under the status bar; the page below moves down by it. */
 internal val WatchPartyLineHeight = 40.dp
+
+// The Watch party page's heading on rooms that couldn't open, which "I want help" opens at.
+private const val CouldNotOpenHeading = "couldnt-open-the-room"
 
 /** What the room's line at the top of the app says, set by [WatchPartyAppHost]; null text hides it. */
 @Stable
@@ -436,10 +441,15 @@ private fun WatchPartyNoticeDialog(notice: PartyError) {
                 Text(stringResource(Res.string.action_close))
             }
         },
-        // A room that couldn't open points to help with forwarding the port; the wiki page isn't written yet.
+        // A room that couldn't open points to the documentation's help with the router.
         dismissButton = if (notice == PartyError.PORT_CLOSED || notice == PartyError.SHARED_ADDRESS) {
             {
-                TextButton(onClick = {}) {
+                TextButton(
+                    onClick = {
+                        PartyRepository.clearNotice()
+                        DocsViewer.open(DocsPages.WatchParty, anchor = CouldNotOpenHeading)
+                    },
+                ) {
                     Text(stringResource(Res.string.watch_party_error_help))
                 }
             }
