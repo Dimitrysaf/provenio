@@ -10,6 +10,14 @@ enum class PlayerResizeMode {
 // The content type of a trailer launch, which keeps it out of watch progress and tracking.
 const val TrailerContentType = "trailer"
 
+/** The torrent a played link came from, such as a debrid one, which a watch party shares in place of the link. */
+data class PlayerSourceTorrent(
+    val infoHash: String,
+    val fileIdx: Int? = null,
+    val filename: String? = null,
+    val trackers: List<String> = emptyList(),
+)
+
 data class PlayerLaunch(
     val profileId: Int,
     val title: String,
@@ -40,6 +48,7 @@ data class PlayerLaunch(
     val torrentFileIdx: Int? = null,
     val torrentFilename: String? = null,
     val torrentTrackers: List<String> = emptyList(),
+    val sourceTorrent: PlayerSourceTorrent? = null,
     val initialPositionMs: Long = 0L,
     val initialProgressFraction: Float? = null,
     val contentLanguage: String? = null,

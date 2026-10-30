@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.playback.PlayerSourceTorrent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlaybackRequest
@@ -41,6 +42,7 @@ fun PlayerScreen(
     torrentFileIdx: Int? = null,
     torrentFilename: String? = null,
     torrentTrackers: List<String> = emptyList(),
+    sourceTorrent: PlayerSourceTorrent? = null,
     initialPositionMs: Long = 0L,
     initialProgressFraction: Float? = null,
     contentLanguage: String? = null,
@@ -82,6 +84,7 @@ fun PlayerScreen(
             torrentFileIdx = torrentFileIdx,
             torrentFilename = torrentFilename,
             torrentTrackers = torrentTrackers,
+            sourceTorrent = sourceTorrent,
             initialPositionMs = initialPositionMs,
             initialProgressFraction = initialProgressFraction,
             contentLanguage = contentLanguage,

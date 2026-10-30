@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.streams.sourceTorrent
 import io.github.dimitrysaf.provenio.core.p2p.buildP2pMagnetUri
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.core.debrid.DirectDebridPlayableResult
@@ -158,6 +159,7 @@ internal fun PlayerScreenRuntime.switchToP2pSourceStream(stream: StreamItem) {
     activeProviderName = stream.addonName
     activeProviderAddonId = stream.addonId
     currentStreamBingeGroup = stream.behaviorHints.bingeGroup
+    activeSourceTorrent = stream.sourceTorrent()
     activeInitialPositionMs = currentPositionMs
     // A resume point kept as a fraction still applies if nothing has played yet.
     if (currentPositionMs > 0L) activeInitialProgressFraction = null
@@ -256,6 +258,7 @@ internal fun PlayerScreenRuntime.switchToSource(stream: StreamItem, recordAsActi
     activeProviderName = stream.addonName
     activeProviderAddonId = stream.addonId
     currentStreamBingeGroup = stream.behaviorHints.bingeGroup
+    activeSourceTorrent = stream.sourceTorrent()
     activeInitialPositionMs = currentPositionMs
     // A resume point kept as a fraction still applies if nothing has played yet.
     if (currentPositionMs > 0L) activeInitialProgressFraction = null
@@ -312,6 +315,7 @@ internal fun PlayerScreenRuntime.switchToEpisodeStream(
 }
 
 internal fun PlayerScreenRuntime.switchToDownloadedEpisode(downloadItem: DownloadItem, episode: MetaVideo) {
+    activeSourceTorrent = null
     val localFileUri = DownloadsRepository.playableLocalFileUri(downloadItem) ?: return
     ActiveStreamStore.clear()
     resetEpisodePanelAndNextEpisodeState()
@@ -463,6 +467,7 @@ private fun PlayerScreenRuntime.applyEpisodeStreamMetadata(
     activeProviderName = stream.addonName
     activeProviderAddonId = stream.addonId
     currentStreamBingeGroup = stream.behaviorHints.bingeGroup
+    activeSourceTorrent = stream.sourceTorrent()
     activeSeasonNumber = episode.season
     activeEpisodeNumber = episode.episode
     activeEpisodeTitle = episode.title

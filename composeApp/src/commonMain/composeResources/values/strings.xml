@@ -2683,7 +2683,7 @@
     <string name="watch_party_guest_speed">Guests can change the speed</string>
     <string name="watch_party_guest_speed_description">A guest who changes the speed changes it for everyone.</string>
     <string name="watch_party_share_links">Share my stream links</string>
-    <string name="watch_party_share_links_description">Guests open the exact link you play. When off, they find their own source for the same title.</string>
+    <string name="watch_party_share_links_description">Guests open the exact link you play. When off, they stream the torrent behind it themselves, or find their own source for the same title.</string>
     <string name="watch_party_share_links_warning_title">Share your stream links?</string>
     <string name="watch_party_share_links_warning">Guests' devices will open the exact links you play, debrid links included. A debrid link belongs to your account: every guest would stream through it, which debrid services forbid in their terms of service, and which can get your account limited or banned. A link can also carry your account's access key, which guests could keep and use. Only turn this on for people you fully trust, at your own risk.</string>
     <string name="watch_party_share_links_confirm">I understand, share</string>

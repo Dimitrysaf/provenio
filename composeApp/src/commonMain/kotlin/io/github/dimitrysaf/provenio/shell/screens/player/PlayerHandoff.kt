@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.playback.PlayerSourceTorrent
+
 data class PlayerHandoff(
     val sourceUrl: String,
     val sourceAudioUrl: String?,
@@ -20,5 +22,6 @@ data class PlayerHandoff(
     val torrentFileIdx: Int?,
     val torrentFilename: String?,
     val torrentTrackers: List<String>,
+    val sourceTorrent: PlayerSourceTorrent? = null,
     val positionMs: Long,
 )

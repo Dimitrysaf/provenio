@@ -357,6 +357,7 @@ internal fun PlayerScreenRuntime.moveToOtherWindow() {
             torrentFileIdx = activeTorrentFileIdx,
             torrentFilename = activeTorrentFilename,
             torrentTrackers = activeTorrentTrackers,
+            sourceTorrent = activeSourceTorrent,
             positionMs = positionMs,
         ),
     )

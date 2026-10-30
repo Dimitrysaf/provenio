@@ -91,23 +91,32 @@ private class HostPartyClock {
 @Composable
 internal fun PlayerScreenRuntime.HostPartySync() {
     var sharedId by remember { mutableStateOf<Long?>(null) }
-    // A torrent each guest streams alone; a web link only when the host shares links; otherwise guests find their own source.
+    // Guests stream the torrent themselves, even the one behind a debrid link; a web link goes out only when shared.
     val shareLinks = partyRoom?.settings?.shareStreamLinks == true
-    LaunchedEffect(activeSourceIdentityKey, activeVideoId, shareLinks) {
+    val sourceTorrent = activeSourceTorrent
+    LaunchedEffect(activeSourceIdentityKey, activeVideoId, shareLinks, sourceTorrent) {
         val playback = currentPartyPlayback()
-        val ownSource = activeTorrentInfoHash.isNullOrBlank() &&
-            !(shareLinks && isShareablePartySource(activeSourceUrl, activeTorrentInfoHash))
         sharedId = PartyRepository.startPlayback(
-            if (ownSource) {
-                playback.copy(
+            when {
+                !activeTorrentInfoHash.isNullOrBlank() -> playback
+                shareLinks && isShareablePartySource(activeSourceUrl, null) -> playback
+                sourceTorrent != null -> playback.copy(
+                    sourceUrl = "torrent://${sourceTorrent.infoHash}${sourceTorrent.fileIdx?.let { "?index=$it" }.orEmpty()}",
+                    sourceAudioUrl = null,
+                    sourceHeaders = emptyMap(),
+                    sourceResponseHeaders = emptyMap(),
+                    torrentInfoHash = sourceTorrent.infoHash,
+                    torrentFileIdx = sourceTorrent.fileIdx,
+                    torrentFilename = sourceTorrent.filename,
+                    torrentTrackers = sourceTorrent.trackers,
+                )
+                else -> playback.copy(
                     sourceUrl = "",
                     sourceAudioUrl = null,
                     sourceHeaders = emptyMap(),
                     sourceResponseHeaders = emptyMap(),
                     ownSource = true,
                 )
-            } else {
-                playback
             },
         )
     }

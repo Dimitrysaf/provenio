@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell
 
+import io.github.dimitrysaf.provenio.core.streams.sourceTorrent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -185,6 +186,7 @@ internal fun StreamLaunch.directPlayerLaunch(
     videoId = videoId,
     parentMetaId = parentMetaId ?: videoId,
     parentMetaType = parentMetaType ?: type,
+    sourceTorrent = stream.sourceTorrent(),
     initialPositionMs = resumePositionMs ?: 0L,
     initialProgressFraction = resumeProgressFraction,
     contentLanguage = contentLanguage(videoId),

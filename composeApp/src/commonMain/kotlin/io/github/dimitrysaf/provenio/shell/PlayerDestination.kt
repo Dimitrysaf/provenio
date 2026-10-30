@@ -69,6 +69,7 @@ internal fun PlayerDestination(
         torrentFileIdx = launch.torrentFileIdx,
         torrentFilename = launch.torrentFilename,
         torrentTrackers = launch.torrentTrackers,
+        sourceTorrent = launch.sourceTorrent,
         initialPositionMs = launch.initialPositionMs,
         initialProgressFraction = launch.initialProgressFraction,
         contentLanguage = launch.contentLanguage,
@@ -152,6 +153,7 @@ private fun PlayerLaunch.handedOff(handoff: PlayerHandoff): PlayerLaunch = copy(
     torrentFileIdx = handoff.torrentFileIdx,
     torrentFilename = handoff.torrentFilename,
     torrentTrackers = handoff.torrentTrackers,
+    sourceTorrent = handoff.sourceTorrent,
     initialPositionMs = handoff.positionMs,
     initialProgressFraction = null,
 )

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.streams
 
+import io.github.dimitrysaf.provenio.core.playback.PlayerSourceTorrent
 import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
 import kotlinx.serialization.Serializable
 
@@ -316,4 +317,17 @@ data class StreamsUiState(
 
     val hasAnyStreams: Boolean
         get() = groups.any { it.streams.isNotEmpty() }
+}
+
+private val UrlInfoHash = Regex("(?<![0-9a-fA-F])[0-9a-fA-F]{40}(?![0-9a-fA-F])")
+
+/** The torrent behind this stream, also for a debrid link whose add-on only names it in the address. */
+fun StreamItem.sourceTorrent(): PlayerSourceTorrent? {
+    val infoHash = p2pInfoHash ?: url?.let { UrlInfoHash.find(it)?.value?.lowercase() } ?: return null
+    return PlayerSourceTorrent(
+        infoHash = infoHash,
+        fileIdx = p2pFileIdx,
+        filename = behaviorHints.filename,
+        trackers = p2pTrackers,
+    )
 }

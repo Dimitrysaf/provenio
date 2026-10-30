@@ -119,6 +119,9 @@ internal class PlayerScreenRuntime(
     var activeTorrentFileIdx by mutableStateOf(torrentFileIdx)
     var activeTorrentFilename by mutableStateOf(torrentFilename)
     var activeTorrentTrackers by mutableStateOf(torrentTrackers)
+
+    // The torrent behind the link playing, which a watch party shares instead of a debrid link.
+    var activeSourceTorrent by mutableStateOf(args.sourceTorrent)
     var p2pResolvedSourceUrl by mutableStateOf<String?>(null)
     var activeSourceIdentityKey by mutableStateOf(
         torrentInfoHash?.trim()?.lowercase()?.takeIf { it.isNotBlank() }?.let { hash ->

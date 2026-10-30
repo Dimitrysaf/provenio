@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.playback.PlayerSourceTorrent
 import androidx.compose.ui.Modifier
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlaybackRequest
 
@@ -39,6 +40,7 @@ internal data class PlayerScreenArgs(
     val torrentFileIdx: Int?,
     val torrentFilename: String?,
     val torrentTrackers: List<String>,
+    val sourceTorrent: PlayerSourceTorrent? = null,
     val initialPositionMs: Long,
     val initialProgressFraction: Float?,
     val contentLanguage: String? = null,
