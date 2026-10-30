@@ -49,7 +49,15 @@ object StreamsRepository {
     ): String =
         "$type::$videoId::$season::$episode::$manualSelection"
 
-    fun load(type: String, videoId: String, parentMetaId: String? = null, season: Int? = null, episode: Int? = null, manualSelection: Boolean = false) {
+    fun load(
+        type: String,
+        videoId: String,
+        parentMetaId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        manualSelection: Boolean = false,
+        preferredBingeGroup: String? = null,
+    ) {
         load(
             type = type,
             videoId = videoId,
@@ -58,6 +66,7 @@ object StreamsRepository {
             episode = episode,
             manualSelection = manualSelection,
             forceRefresh = false,
+            preferredBingeGroup = preferredBingeGroup,
         )
     }
 
@@ -73,7 +82,16 @@ object StreamsRepository {
         )
     }
 
-    private fun load(type: String, videoId: String, parentMetaId: String?, season: Int?, episode: Int?, manualSelection: Boolean, forceRefresh: Boolean) {
+    private fun load(
+        type: String,
+        videoId: String,
+        parentMetaId: String?,
+        season: Int?,
+        episode: Int?,
+        manualSelection: Boolean,
+        forceRefresh: Boolean,
+        preferredBingeGroup: String? = null,
+    ) {
         val requestToken = requestToken(
             type = type,
             videoId = videoId,
@@ -106,8 +124,8 @@ object StreamsRepository {
             !(autoPlayMode == StreamAutoPlayMode.REGEX_MATCH &&
                 !StreamAutoPlayPolicy.isRegexSelectionConfigured(playerSettings.streamAutoPlayRegex))
 
-        // Look up persisted binge group when both settings are enabled
-        val persistedBingeGroup = if (
+        // Look up persisted binge group when both settings are enabled; a watch party's release comes first
+        val persistedBingeGroup = preferredBingeGroup?.takeIf { it.isNotBlank() } ?: if (
             playerSettings.streamAutoPlayPreferBingeGroup &&
             playerSettings.streamAutoPlayReuseBingeGroup
         ) {

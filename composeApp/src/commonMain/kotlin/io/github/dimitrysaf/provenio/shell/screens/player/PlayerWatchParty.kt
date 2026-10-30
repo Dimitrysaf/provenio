@@ -29,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -129,6 +130,7 @@ internal fun PlayerScreenRuntime.currentPartyPlayback(): PartyPlayback = PartyPl
     torrentFileIdx = activeTorrentFileIdx,
     torrentFilename = activeTorrentFilename,
     torrentTrackers = activeTorrentTrackers,
+    bingeGroup = currentStreamBingeGroup,
 )
 
 /** A guest whose room only lets the host move its time: seeking is off, and the seek bar is gray. */
@@ -139,9 +141,36 @@ internal val PlayerScreenRuntime.partySeekLocked: Boolean
 internal val PlayerScreenRuntime.partyPauseLocked: Boolean
     get() = partyRoom?.let { !it.isHost && it.settings.guestPause == PartyGuestPause.HOST_ONLY } == true
 
-/** Guests play at the host's speed, so theirs can't change. */
+/** A guest at the host's speed with no say in it: where only the host skips, or everyone moves but not by speed. */
 internal val PlayerScreenRuntime.partySpeedLocked: Boolean
-    get() = partyGuest
+    get() = partyRoom?.let { room ->
+        !room.isHost && (
+            room.settings.guestSeek == PartyGuestSeek.SNAP_BACK ||
+                (room.settings.guestSeek == PartyGuestSeek.SEEK_EVERYONE && !room.settings.guestSpeed)
+            )
+    } == true
+
+/** A guest's speed goes where the skip rule says: asked of the host, set for everyone, or their own; false when it's set here. */
+internal fun PlayerScreenRuntime.routePartySpeed(speed: Float): Boolean {
+    val room = partyRoom?.takeIf { !it.isHost } ?: return false
+    val sync = partyGuestSync
+    return when (room.settings.guestSeek) {
+        PartyGuestSeek.SUGGEST -> {
+            askPartyHost(PartyControlAction.SPEED, playbackSnapshot.positionMs, speed)
+            true
+        }
+        PartyGuestSeek.SEEK_EVERYONE -> {
+            sync?.let { PartyRepository.requestControl(it.playbackId, PartyControlAction.SPEED, playbackSnapshot.positionMs, speed) }
+            true
+        }
+        // Their own speed means watching on their own.
+        PartyGuestSeek.ON_THEIR_OWN -> {
+            sync?.following = false
+            false
+        }
+        PartyGuestSeek.SNAP_BACK -> true
+    }
+}
 
 /** What a guest asks the host for, said without their name, which goes beside it. */
 @Composable
@@ -154,10 +183,12 @@ internal fun partyRequestText(request: PartyRequest): String {
         }
         return stringResource(Res.string.watch_party_request_title, suggestion.title + episode)
     }
+    if (request.join) return stringResource(Res.string.watch_party_request_join)
     return when (request.action) {
         PartyControlAction.PLAY -> stringResource(Res.string.watch_party_request_play)
         PartyControlAction.PAUSE -> stringResource(Res.string.watch_party_request_pause)
         PartyControlAction.SEEK -> stringResource(Res.string.watch_party_request_seek, formatPlaybackTime(request.positionMs))
+        PartyControlAction.SPEED -> stringResource(Res.string.watch_party_request_speed, formatPlaybackSpeedLabel(request.speed))
         null -> ""
     }
 }
@@ -171,19 +202,23 @@ internal val PlayerScreenRuntime.partySeekSuggests: Boolean
     get() = partyRoom?.let { !it.isHost && it.settings.guestSeek == PartyGuestSeek.SUGGEST } == true
 
 /** Asks the host to play, pause or seek the room, instead of doing it here. */
-internal fun PlayerScreenRuntime.askPartyHost(action: PartyControlAction, positionMs: Long) {
+internal fun PlayerScreenRuntime.askPartyHost(action: PartyControlAction, positionMs: Long, speed: Float = 1f) {
     val playbackId = partyGuestSync?.playbackId ?: return
-    PartyRepository.requestControl(playbackId, action, positionMs)
+    PartyRepository.requestControl(playbackId, action, positionMs, speed)
     controlsVisible = true
-    scope.launch { ToastController.show(getString(Res.string.watch_party_requested)) }
 }
 
 /** The room's note about [name], such as them joining. */
 @Composable
-internal fun partyChatEventText(event: PartyChatEvent, name: String): String = when (event) {
+internal fun partyChatEventText(message: PartyChatMessage, name: String): String = when (message.event) {
     PartyChatEvent.JOINED -> stringResource(Res.string.watch_party_chat_joined, name)
     PartyChatEvent.LEFT -> stringResource(Res.string.watch_party_chat_left, name)
     PartyChatEvent.REMOVED -> stringResource(Res.string.watch_party_chat_removed, name)
+    PartyChatEvent.PLAYED -> stringResource(Res.string.watch_party_chat_played, name)
+    PartyChatEvent.PAUSED -> stringResource(Res.string.watch_party_chat_paused, name)
+    PartyChatEvent.SEEKED -> stringResource(Res.string.watch_party_chat_seeked, name, formatPlaybackTime(message.positionMs ?: 0L))
+    PartyChatEvent.SPEED -> stringResource(Res.string.watch_party_chat_speed, name, formatPlaybackSpeedLabel(message.speed ?: 1f))
+    null -> ""
 }
 
 /** What the room's line at the top of the player says, and what tapping it does. */
@@ -211,6 +246,7 @@ internal fun PlayerScreenRuntime.partyPlayerLine(): PartyPlayerLine? {
     }
     val myName = room.members.firstOrNull { it.id == room.myMemberId }?.name
     return when {
+        room.reconnecting -> PartyPlayerLine(stringResource(Res.string.watch_party_reconnecting), null) {}
         waiting.isNotEmpty() && !room.isHost && myName in waiting && waiting.size == 1 ->
             PartyPlayerLine(stringResource(Res.string.watch_party_status_waiting_you), null) {}
         waiting.isNotEmpty() -> PartyPlayerLine(
@@ -281,6 +317,7 @@ internal fun BoxScope.PlayerWatchPartyChat(runtime: PlayerScreenRuntime) {
     PlatformBackHandler(enabled = chatOpen) { runtime.showPartyChat = false }
     val answered by PartyRepository.answeredRequests.collectAsStateWithLifecycle()
     val canAnswer = { message: PartyChatMessage -> room.isHost && message.request != null && message.id !in answered }
+    val canVote = { message: PartyChatMessage -> !room.isHost && room.settings.pollsEnabled && message.request?.suggestion != null }
     val peeking = messages.takeLast(PartyChatPeekCount).filter { message ->
         now - message.sentAtEpochMs < if (canAnswer(message)) PartyRequestPeekMs else PartyChatPeekMs
     }
@@ -320,6 +357,7 @@ internal fun BoxScope.PlayerWatchPartyChat(runtime: PlayerScreenRuntime) {
             messages = messages,
             myMemberId = room.myMemberId,
             canAnswer = canAnswer,
+            canVote = canVote,
             waitSeconds = if (room.isHost) 0 else ((nextChatAt - now + 999) / 1_000).toInt().coerceAtLeast(0),
             onSend = PartyRepository::sendChat,
             onClose = { runtime.showPartyChat = false },
@@ -333,7 +371,12 @@ internal fun BoxScope.PlayerWatchPartyChat(runtime: PlayerScreenRuntime) {
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             peeking.forEach { message ->
-                PartyChatLine(message, mine = message.memberId == room.myMemberId, canAnswer = canAnswer(message))
+                PartyChatLine(
+                    message,
+                    mine = message.memberId == room.myMemberId,
+                    canAnswer = canAnswer(message),
+                    canVote = canVote(message),
+                )
             }
         }
     }
@@ -344,6 +387,7 @@ private fun PartyChatBox(
     messages: List<PartyChatMessage>,
     myMemberId: String,
     canAnswer: (PartyChatMessage) -> Boolean,
+    canVote: (PartyChatMessage) -> Boolean,
     waitSeconds: Int,
     onSend: (String) -> Boolean,
     onClose: () -> Unit,
@@ -380,7 +424,7 @@ private fun PartyChatBox(
                 },
         ) {
             items(messages, key = { it.id }) { message ->
-                PartyChatLine(message, mine = message.memberId == myMemberId, canAnswer = canAnswer(message))
+                PartyChatLine(message, mine = message.memberId == myMemberId, canAnswer = canAnswer(message), canVote = canVote(message))
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -436,15 +480,15 @@ private fun PartyChatBox(
 }
 
 @Composable
-private fun PartyChatLine(message: PartyChatMessage, mine: Boolean, canAnswer: Boolean) {
+private fun PartyChatLine(message: PartyChatMessage, mine: Boolean, canAnswer: Boolean, canVote: Boolean = false) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        message.event?.let { event ->
+        if (message.event != null) {
             Text(
-                text = partyChatEventText(event, message.name),
+                text = partyChatEventText(message, message.name),
                 style = MaterialTheme.typography.bodyMedium.copy(shadow = ChatTextShadow, fontStyle = FontStyle.Italic),
                 color = Color.White.copy(alpha = 0.8f),
                 textAlign = TextAlign.End,
@@ -464,15 +508,36 @@ private fun PartyChatLine(message: PartyChatMessage, mine: Boolean, canAnswer: B
                 }
                 append("  ")
                 append(message.request?.let { partyRequestText(it) } ?: message.text)
+                if (message.votes.isNotEmpty()) append("  ·  ${message.votes.size}")
             },
             style = MaterialTheme.typography.bodyMedium.copy(shadow = ChatTextShadow),
             color = Color.White,
             modifier = Modifier.weight(1f, fill = false),
         )
-        if (canAnswer) {
+        PartyRequestButtons(message, canAnswer = canAnswer, canVote = canVote)
+    }
+}
+
+/** The host's answer to a request, Let in and Deny for someone waiting to join, or a guest's vote on a suggestion. */
+@Composable
+internal fun PartyRequestButtons(message: PartyChatMessage, canAnswer: Boolean, canVote: Boolean) {
+    val request = message.request ?: return
+    if (canAnswer && request.join) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilledTonalButton(onClick = { PartyRepository.acceptRequest(message) }) {
-                Text(stringResource(Res.string.watch_party_request_yes))
+                Text(stringResource(Res.string.watch_party_request_let_in))
             }
+            TextButton(onClick = { PartyRepository.declineRequest(message) }) {
+                Text(stringResource(Res.string.watch_party_request_deny))
+            }
+        }
+    } else if (canAnswer) {
+        FilledTonalButton(onClick = { PartyRepository.acceptRequest(message) }) {
+            Text(stringResource(Res.string.watch_party_request_yes))
+        }
+    } else if (canVote && request.suggestion != null) {
+        TextButton(onClick = { PartyRepository.vote(message.id) }) {
+            Text(stringResource(Res.string.watch_party_vote))
         }
     }
 }

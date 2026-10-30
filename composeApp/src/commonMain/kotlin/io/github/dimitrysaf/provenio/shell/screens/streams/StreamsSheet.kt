@@ -109,6 +109,7 @@ fun StreamsSheet(
     resumeProgressFraction: Float? = null,
     manualSelection: Boolean = false,
     startFromBeginning: Boolean = false,
+    preferredBingeGroup: String? = null,
     showLoadingScreen: Boolean = false,
     /**
      * The episode's own id is still being looked up, so there is nothing to ask the add-ons for
@@ -199,6 +200,7 @@ fun StreamsSheet(
             season = seasonNumber,
             episode = episodeNumber,
             manualSelection = manualSelection,
+            preferredBingeGroup = preferredBingeGroup,
         )
     }
 

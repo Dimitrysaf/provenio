@@ -238,10 +238,13 @@ internal class AppPlayback(
         resumeProgressFraction: Float?,
         manualSelection: Boolean,
         startFromBeginning: Boolean,
+        // The room's own title, which a guest plays from a source of their own when the host doesn't share links.
+        forParty: Boolean = false,
+        preferredBingeGroup: String? = null,
     ) {
         // A guest in a watch party suggests the title to the host, who picks the source. Choosing
         // one alone means leaving the room first.
-        if (PartyRepository.isGuest) {
+        if (PartyRepository.isGuest && !forParty) {
             if (manualSelection) {
                 WatchPartyPrompts.askToLeave {
                     play(
@@ -343,6 +346,7 @@ internal class AppPlayback(
                 resumeProgressFraction = targetResumeProgressFraction,
                 manualSelection = manualSelection,
                 startFromBeginning = startFromBeginning,
+                preferredBingeGroup = preferredBingeGroup,
             ),
         )
         navController.navigate(StreamRoute(launchId = streamLaunchId, title = title))

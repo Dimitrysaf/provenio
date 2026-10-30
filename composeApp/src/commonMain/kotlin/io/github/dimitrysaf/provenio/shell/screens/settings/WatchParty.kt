@@ -183,6 +183,7 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
     var showLoading by rememberSaveable { mutableStateOf(false) }
     var showLoadingWait by rememberSaveable { mutableStateOf(false) }
     var showSyncTolerance by rememberSaveable { mutableStateOf(false) }
+    var showShareLinksWarning by rememberSaveable { mutableStateOf(false) }
     var memberToRemoveId by rememberSaveable { mutableStateOf<String?>(null) }
     val guestName = stringResource(Res.string.watch_party_guest_name)
     val hostLabel = stringResource(Res.string.watch_party_member_host)
@@ -251,6 +252,13 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
                 onClick = { showMemberLimit = true },
             )
             switchRow(
+                title = stringResource(Res.string.watch_party_ask_to_join),
+                description = stringResource(Res.string.watch_party_ask_to_join_description),
+                checked = { settings.askToJoin },
+                enabled = editable,
+                onCheckedChange = { enabled -> PartyRepository.updateSettings { it.copy(askToJoin = enabled) } },
+            )
+            switchRow(
                 title = stringResource(Res.string.watch_party_chat),
                 description = stringResource(Res.string.watch_party_chat_description),
                 checked = { settings.chatEnabled },
@@ -270,6 +278,15 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
                 enabled = editable,
                 onCheckedChange = { enabled -> PartyRepository.updateSettings { it.copy(suggestionsEnabled = enabled) } },
             )
+            if (settings.suggestionsEnabled) {
+                switchRow(
+                    title = stringResource(Res.string.watch_party_polls),
+                    description = stringResource(Res.string.watch_party_polls_description),
+                    checked = { settings.pollsEnabled },
+                    enabled = editable,
+                    onCheckedChange = { enabled -> PartyRepository.updateSettings { it.copy(pollsEnabled = enabled) } },
+                )
+            }
         }
     }
 
@@ -291,6 +308,16 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
                 enabled = editable,
                 onClick = { showGuestSeek = true },
             )
+            // Speed goes with skipping: only a room where everyone moves everyone asks whether speed does too.
+            if (settings.guestSeek == PartyGuestSeek.SEEK_EVERYONE) {
+                switchRow(
+                    title = stringResource(Res.string.watch_party_guest_speed),
+                    description = stringResource(Res.string.watch_party_guest_speed_description),
+                    checked = { settings.guestSpeed },
+                    enabled = editable,
+                    onCheckedChange = { enabled -> PartyRepository.updateSettings { it.copy(guestSpeed = enabled) } },
+                )
+            }
             navigationRow(
                 title = stringResource(Res.string.watch_party_loading),
                 description = stringResource(settings.loading.labelRes()),
@@ -314,6 +341,27 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
                     onClick = { showSyncTolerance = true },
                 )
             }
+            switchRow(
+                title = stringResource(Res.string.watch_party_match_tracks),
+                description = stringResource(Res.string.watch_party_match_tracks_description),
+                checked = { settings.matchTracks },
+                enabled = editable,
+                onCheckedChange = { enabled -> PartyRepository.updateSettings { it.copy(matchTracks = enabled) } },
+            )
+            // Turning link sharing on asks first, for what it risks; turning it off doesn't.
+            switchRow(
+                title = stringResource(Res.string.watch_party_share_links),
+                description = stringResource(Res.string.watch_party_share_links_description),
+                checked = { settings.shareStreamLinks },
+                enabled = editable,
+                onCheckedChange = { enabled ->
+                    if (enabled) {
+                        showShareLinksWarning = true
+                    } else {
+                        PartyRepository.updateSettings { it.copy(shareStreamLinks = false) }
+                    }
+                },
+            )
         }
     }
 
@@ -471,6 +519,30 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
                 PartyRepository.updateSettings { it.copy(loadingWaitSeconds = seconds) }
             },
             onDismiss = { showLoadingWait = false },
+        )
+    }
+
+    if (showShareLinksWarning && room.isHost) {
+        AlertDialog(
+            onDismissRequest = { showShareLinksWarning = false },
+            title = { Text(stringResource(Res.string.watch_party_share_links_warning_title)) },
+            text = { Text(stringResource(Res.string.watch_party_share_links_warning)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showShareLinksWarning = false
+                        PartyRepository.updateSettings { it.copy(shareStreamLinks = true) }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Text(stringResource(Res.string.watch_party_share_links_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showShareLinksWarning = false }) {
+                    Text(stringResource(Res.string.action_cancel))
+                }
+            },
         )
     }
 

@@ -37,16 +37,21 @@ import io.github.dimitrysaf.provenio.core.party.PartyError
 import io.github.dimitrysaf.provenio.core.party.PartyPhase
 import io.github.dimitrysaf.provenio.core.party.PartyPlayback
 import io.github.dimitrysaf.provenio.core.party.PartyRepository
+import io.github.dimitrysaf.provenio.core.party.PartySuggestion
 import io.github.dimitrysaf.provenio.core.party.toPlayerLaunch
 import io.github.dimitrysaf.provenio.core.playback.PlayerLaunchStore
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.nav.AppRoute
 import io.github.dimitrysaf.provenio.shell.nav.DetailRoute
+import io.github.dimitrysaf.provenio.shell.nav.EpisodeDetailRoute
 import io.github.dimitrysaf.provenio.shell.nav.Navigator
 import io.github.dimitrysaf.provenio.shell.nav.PlayerRoute
 import io.github.dimitrysaf.provenio.shell.nav.StreamRoute
 import io.github.dimitrysaf.provenio.shell.screens.settings.WatchPartyRiskDialog
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.jetbrains.compose.resources.StringResource
@@ -77,6 +82,14 @@ internal object WatchPartyPrompts {
 
     fun dismissJoin() {
         _joinRequest.value = null
+    }
+
+    private val _openDetails = MutableSharedFlow<PartySuggestion>(extraBufferCapacity = 1)
+    val openDetails: SharedFlow<PartySuggestion> = _openDetails.asSharedFlow()
+
+    /** Opens a suggestion's page: the episode's, or the movie's or series'. */
+    fun openDetails(suggestion: PartySuggestion) {
+        _openDetails.tryEmit(suggestion)
     }
 
     private val _conversationShown = MutableStateFlow(false)
@@ -134,6 +147,33 @@ internal fun WatchPartyAppHost(
 
     fun openShared(shared: PartyPlayback) {
         val positionMs = PartyRepository.playbackState.value?.takeIf { it.playbackId == shared.id }?.positionMs ?: 0L
+        // The host keeps its link to itself: this guest plays the same title from a source of their own.
+        if (shared.ownSource) {
+            openedPlaybackId = shared.id
+            partyPlayerRoute = null
+            playback.play(
+                type = shared.contentType ?: shared.parentMetaType,
+                videoId = shared.videoId ?: shared.parentMetaId,
+                parentMetaId = shared.parentMetaId,
+                parentMetaType = shared.parentMetaType,
+                title = shared.title,
+                logo = shared.logo,
+                poster = shared.poster,
+                background = shared.background,
+                seasonNumber = shared.seasonNumber,
+                episodeNumber = shared.episodeNumber,
+                episodeTitle = shared.episodeTitle,
+                episodeThumbnail = shared.episodeThumbnail,
+                pauseDescription = null,
+                resumePositionMs = positionMs,
+                resumeProgressFraction = null,
+                manualSelection = false,
+                startFromBeginning = false,
+                forParty = true,
+                preferredBingeGroup = shared.bingeGroup,
+            )
+            return
+        }
         val route = PlayerRoute(
             launchId = PlayerLaunchStore.put(shared.toPlayerLaunch(profileId, positionMs)),
             title = shared.title,
@@ -142,6 +182,26 @@ internal fun WatchPartyAppHost(
         navController.navigate(route) { popUpTo<PlayerRoute> { inclusive = true } }
         openedPlaybackId = shared.id
         partyPlayerRoute = route
+    }
+
+    // A suggestion tapped in the chat opens its page.
+    LaunchedEffect(navController) {
+        WatchPartyPrompts.openDetails.collect { suggestion ->
+            val episode = suggestion.seasonNumber != null && suggestion.episodeNumber != null &&
+                suggestion.videoId != suggestion.parentMetaId
+            navController.navigate(
+                if (episode) {
+                    EpisodeDetailRoute(
+                        type = suggestion.parentMetaType,
+                        metaId = suggestion.parentMetaId,
+                        videoId = suggestion.videoId,
+                        episodeTitle = suggestion.episodeTitle ?: suggestion.title,
+                    )
+                } else {
+                    DetailRoute(type = suggestion.parentMetaType, id = suggestion.parentMetaId, title = suggestion.title)
+                },
+            )
+        }
     }
 
     // The host tells the room what it is looking at.
@@ -154,7 +214,13 @@ internal fun WatchPartyAppHost(
         if (!enabled || !isGuest) return@LaunchedEffect
         val shared = sharedPlayback
         if (shared == null) {
-            partyPlayerRoute?.let { route -> navController.popBackStack(expectedRoute = route) }
+            // A player this guest opened from their own source is left the same way, whatever its route.
+            val route = partyPlayerRoute
+            if (route != null) {
+                navController.popBackStack(expectedRoute = route)
+            } else if (openedPlaybackId != null && navController.currentRoute is PlayerRoute) {
+                navController.popBackStack()
+            }
             partyPlayerRoute = null
             openedPlaybackId = null
             return@LaunchedEffect
@@ -166,6 +232,7 @@ internal fun WatchPartyAppHost(
         val hostName = room.hostName.orEmpty()
         val shared = sharedPlayback
         val (text, action) = when {
+            room.reconnecting -> stringResource(Res.string.watch_party_reconnecting) to null
             // Everyone streams the source the host picks, so the best seeded one serves them best.
             isHost && currentRoute is StreamRoute -> stringResource(Res.string.watch_party_line_source_advice) to null
             isHost -> stringResource(Res.string.watch_party_line_hosting, room.members.size) to null
@@ -198,6 +265,7 @@ internal fun WatchPartyAppHost(
     when (state.phase) {
         PartyPhase.Creating -> WatchPartyProgressDialog(Res.string.watch_party_status_creating)
         PartyPhase.Connecting -> WatchPartyProgressDialog(Res.string.watch_party_status_connecting)
+        PartyPhase.Waiting -> WatchPartyProgressDialog(Res.string.watch_party_status_waiting_host)
         else -> Unit
     }
 
@@ -386,6 +454,7 @@ private fun PartyError.titleRes(): StringResource = when (this) {
     PartyError.CLOSED -> Res.string.watch_party_ended_closed_title
     PartyError.KICKED, PartyError.BANNED -> Res.string.watch_party_ended_removed_title
     PartyError.PORT_CLOSED, PartyError.SHARED_ADDRESS -> Res.string.watch_party_error_open_title
+    PartyError.DENIED -> Res.string.watch_party_ended_removed_title
     else -> Res.string.watch_party_title
 }
 
@@ -403,5 +472,6 @@ internal fun PartyError.messageRes(): StringResource = when (this) {
     PartyError.CLOSED -> Res.string.watch_party_error_closed
     PartyError.CONNECTION_LOST -> Res.string.watch_party_error_lost
     PartyError.VERSION_MISMATCH -> Res.string.watch_party_error_version
+    PartyError.DENIED -> Res.string.watch_party_error_denied
     PartyError.FAILED -> Res.string.watch_party_error_failed
 }

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.party.PartyGuestSeek
 import io.github.dimitrysaf.provenio.core.party.PartyControlAction
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -226,6 +227,7 @@ internal fun PlayerScreenRuntime.cyclePlaybackSpeed() {
     val speeds = listOf(1f, 1.25f, 1.5f, 2f)
     val current = playbackSnapshot.playbackSpeed
     val next = speeds.firstOrNull { it > current + 0.01f } ?: speeds.first()
+    if (routePartySpeed(next)) return
     playerController?.setPlaybackSpeed(next)
     showGestureMessage(formatPlaybackSpeedLabel(next))
     controlsVisible = true
@@ -238,12 +240,14 @@ internal fun PlayerScreenRuntime.setResizeModeTo(mode: PlayerResizeMode) {
 }
 
 internal fun PlayerScreenRuntime.setPlaybackSpeedTo(speed: Float) {
-    if (partySpeedLocked) return
+    if (partySpeedLocked || routePartySpeed(speed)) return
     playerController?.setPlaybackSpeed(speed)
 }
 
 internal fun PlayerScreenRuntime.activateHoldToSpeed() {
-    if (!playerSettingsUiState.holdToSpeedEnabled || partySpeedLocked) return
+    // Holding for speed is a guest's own only when they watch on their own.
+    val ownSpeed = partyRoom?.let { it.isHost || it.settings.guestSeek == PartyGuestSeek.ON_THEIR_OWN } ?: true
+    if (!playerSettingsUiState.holdToSpeedEnabled || !ownSpeed) return
     val controller = playerController ?: return
     if (speedBoostRestoreSpeed != null) return
 

@@ -19,6 +19,8 @@ data class StreamLaunch(
     val resumeProgressFraction: Float? = null,
     val manualSelection: Boolean = false,
     val startFromBeginning: Boolean = false,
+    /** A release to pick first, by its binge group, as a watch party guest does to match the host. */
+    val preferredBingeGroup: String? = null,
 )
 
 object StreamLaunchStore {

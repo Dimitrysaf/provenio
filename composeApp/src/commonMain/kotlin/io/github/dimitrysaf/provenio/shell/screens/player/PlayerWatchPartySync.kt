@@ -9,6 +9,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.dimitrysaf.provenio.core.party.PartyChatEvent
+import io.github.dimitrysaf.provenio.core.playback.languageMatchesPreference
+import io.github.dimitrysaf.provenio.core.playback.selectionKey
 import io.github.dimitrysaf.provenio.core.party.PartyControl
 import io.github.dimitrysaf.provenio.core.party.PartyControlAction
 import io.github.dimitrysaf.provenio.core.party.PartyGuestPause
@@ -68,8 +71,14 @@ private class HostPartyClock {
     var pendingPlay: Pair<Boolean, String>? = null
     var pendingSeek: Pair<Long, String>? = null
 
+    var pendingSpeed: Pair<Float, String>? = null
+
     // Paused for someone loading, so it plays on when they have.
     var waitPaused = false
+
+    // A play or pause the room made itself, for a wait, which the chat doesn't note.
+    var quietPlay: Boolean? = null
+    var lastSpeed = 1f
 
     var lastPositionMs = -1L
     var lastAtMs = 0L
@@ -82,12 +91,25 @@ private class HostPartyClock {
 @Composable
 internal fun PlayerScreenRuntime.HostPartySync() {
     var sharedId by remember { mutableStateOf<Long?>(null) }
-    LaunchedEffect(activeSourceIdentityKey, activeVideoId) {
-        sharedId = if (isShareablePartySource(activeSourceUrl, activeTorrentInfoHash)) {
-            PartyRepository.startPlayback(currentPartyPlayback())
-        } else {
-            null
-        }
+    // A torrent each guest streams alone; a web link only when the host shares links; otherwise guests find their own source.
+    val shareLinks = partyRoom?.settings?.shareStreamLinks == true
+    LaunchedEffect(activeSourceIdentityKey, activeVideoId, shareLinks) {
+        val playback = currentPartyPlayback()
+        val ownSource = activeTorrentInfoHash.isNullOrBlank() &&
+            !(shareLinks && isShareablePartySource(activeSourceUrl, activeTorrentInfoHash))
+        sharedId = PartyRepository.startPlayback(
+            if (ownSource) {
+                playback.copy(
+                    sourceUrl = "",
+                    sourceAudioUrl = null,
+                    sourceHeaders = emptyMap(),
+                    sourceResponseHeaders = emptyMap(),
+                    ownSource = true,
+                )
+            } else {
+                playback
+            },
+        )
     }
     val id = sharedId
     val clock = remember(id) { HostPartyClock() }
@@ -103,11 +125,13 @@ internal fun PlayerScreenRuntime.HostPartySync() {
         if (waitingFor.isNotEmpty()) {
             if (meansToPlay()) {
                 clock.waitPaused = true
+                clock.quietPlay = false
                 shouldPlay = false
                 playerController?.pause()
             }
         } else if (clock.waitPaused) {
             clock.waitPaused = false
+            clock.quietPlay = true
             shouldPlay = true
             playerController?.play()
         }
@@ -141,8 +165,11 @@ private fun PlayerScreenRuntime.applyGuestControl(clock: HostPartyClock, control
             clock.pendingSeek = control.positionMs to control.memberName
             controller.seekTo(control.positionMs)
         }
+        PartyControlAction.SPEED -> {
+            clock.pendingSpeed = control.speed to control.memberName
+            controller.setPlaybackSpeed(control.speed)
+        }
     }
-    announceRoomChange(control.action, control.memberName, control.positionMs)
 }
 
 // Says where the host is on every change, and every couple of seconds besides.
@@ -158,6 +185,7 @@ private fun PlayerScreenRuntime.hostTick(playbackId: Long, clock: HostPartyClock
         PartyRepository.stopWaiting()
     }
 
+    // Each jump, play, pause and change of speed goes in the chat, as the host's or the guest's who asked for it.
     if (clock.lastPositionMs >= 0L) {
         val elapsed = if (clock.lastPlaying && !snapshot.isLoading) ((now - clock.lastAtMs) * snapshot.playbackSpeed).toLong() else 0L
         if (abs(position - (clock.lastPositionMs + elapsed)) > PartySeekJumpMs) {
@@ -165,12 +193,24 @@ private fun PlayerScreenRuntime.hostTick(playbackId: Long, clock: HostPartyClock
             val pending = clock.pendingSeek
             clock.changedBy = pending?.takeIf { abs(position - it.first) < PartySeekJumpMs }?.second
             clock.pendingSeek = null
+            PartyRepository.postRoomAction(PartyChatEvent.SEEKED, clock.changedBy, positionMs = position)
+        }
+        if (playing != clock.lastPlaying) {
+            clock.changedBy = clock.pendingPlay?.takeIf { it.first == playing }?.second
+            clock.pendingPlay = null
+            if (clock.quietPlay != playing) {
+                PartyRepository.postRoomAction(if (playing) PartyChatEvent.PLAYED else PartyChatEvent.PAUSED, clock.changedBy)
+            }
+            clock.quietPlay = null
+        }
+        // Holding for speed is a moment's boost, not a change the room needs told about.
+        if (abs(snapshot.playbackSpeed - clock.lastSpeed) > 0.01f && speedBoostRestoreSpeed == null) {
+            val by = clock.pendingSpeed?.takeIf { abs(it.first - snapshot.playbackSpeed) < 0.01f }?.second
+            clock.pendingSpeed = null
+            PartyRepository.postRoomAction(PartyChatEvent.SPEED, by, speed = snapshot.playbackSpeed)
         }
     }
-    if (playing != clock.lastPlaying && clock.lastPositionMs >= 0L) {
-        clock.changedBy = clock.pendingPlay?.takeIf { it.first == playing }?.second
-        clock.pendingPlay = null
-    }
+    clock.lastSpeed = snapshot.playbackSpeed
     clock.lastPositionMs = position
     clock.lastAtMs = now
     clock.lastPlaying = playing
@@ -183,6 +223,13 @@ private fun PlayerScreenRuntime.hostTick(playbackId: Long, clock: HostPartyClock
         seekCount = clock.seekCount,
         waitingFor = PartyRepository.waitingFor.value.map { it.name },
         changedBy = clock.changedBy,
+        speed = snapshot.playbackSpeed,
+        audioLanguage = audioTracks.firstOrNull { it.index == selectedAudioIndex }?.language,
+        subtitleLanguage = when {
+            useCustomSubtitles -> selectedAddonSubtitle?.language
+            selectedSubtitleIndex < 0 -> ""
+            else -> subtitleTracks.firstOrNull { it.index == selectedSubtitleIndex }?.language
+        },
     )
     val last = clock.lastSent
     val changed = last == null || last.copy(positionMs = 0L) != state.copy(positionMs = 0L)
@@ -226,11 +273,15 @@ internal class PartyGuestSync(val playbackId: Long) {
     var keepUpLeadMs = PartyKeepUpLeadMs
     var keepUpTargetMs: Long? = null
 
-    /** Where the host is now, from what it last said and the time since. */
+    // The host's subtitle and audio languages this player last matched, so each is matched once.
+    var matchedAudio: String? = null
+    var matchedSubtitle: String? = null
+
+    /** Where the host is now, from what it last said and the time since, at the host's speed. */
     fun hostPositionMs(nowMs: Long = partyClockMs()): Long? {
         val state = state ?: return null
         val moving = state.isPlaying && !state.isLoading && state.waitingFor.isEmpty()
-        return state.positionMs + if (moving) nowMs - stateAtMs else 0L
+        return state.positionMs + if (moving) ((nowMs - stateAtMs) * state.speed).toLong() else 0L
     }
 }
 
@@ -252,10 +303,9 @@ internal fun PlayerScreenRuntime.GuestPartySync(room: PartyRoom) {
     LaunchedEffect(sync) {
         PartyRepository.playbackState.collect { state ->
             if (state == null || state.playbackId != sync.playbackId) return@collect
-            val previous = sync.state
             sync.state = state
             sync.stateAtMs = partyClockMs()
-            onHostState(sync, previous, state, settings)
+            onHostState(sync, state, settings)
         }
     }
     LaunchedEffect(sync) {
@@ -274,17 +324,15 @@ internal fun PlayerScreenRuntime.catchUpWithParty(sync: PartyGuestSync) {
     sync.holding = false
     sync.followedPlaying = state.isPlaying
     setPartyPlay(sync, state.isPlaying)
+    playerController?.setPlaybackSpeed(state.speed)
     sync.hostPositionMs()?.let { partySeek(sync, it) }
 }
 
 private fun PlayerScreenRuntime.onHostState(
     sync: PartyGuestSync,
-    previous: PartyPlaybackState?,
     state: PartyPlaybackState,
     settings: PartySettings,
 ) {
-    val myName = partyRoom?.let { room -> room.members.firstOrNull { it.id == room.myMemberId }?.name }
-    val byOther = state.changedBy?.takeIf { it != myName }
     // The host jumped: everyone keeping to the room jumps with it.
     val seen = sync.seenSeekCount
     sync.seenSeekCount = state.seekCount
@@ -292,8 +340,9 @@ private fun PlayerScreenRuntime.onHostState(
         sync.holding = false
         // The guest who moved the room is there already.
         if (abs(playbackSnapshot.positionMs - state.positionMs) > settings.syncTolerance.driftMs) partySeek(sync, state.positionMs)
-        byOther?.let { announceRoomChange(PartyControlAction.SEEK, it, state.positionMs) }
     }
+    // Everyone keeping to the room plays at the host's speed.
+    if (sync.following && abs(playbackSnapshot.playbackSpeed - state.speed) > 0.01f) playerController?.setPlaybackSpeed(state.speed)
     // Everyone keeping to the room plays and pauses with the host, and waits while it loads if the room waits.
     val waits = settings.loading == PartyLoading.PAUSE_EVERYONE && (state.isLoading || state.waitingFor.isNotEmpty())
     val hostPlaying = state.isPlaying && !waits
@@ -305,9 +354,7 @@ private fun PlayerScreenRuntime.onHostState(
             setPartyPlay(sync, hostPlaying)
         }
     }
-    if (previous != null && previous.isPlaying != state.isPlaying && sync.following) {
-        byOther?.let { announceRoomChange(if (state.isPlaying) PartyControlAction.PLAY else PartyControlAction.PAUSE, it, state.positionMs) }
-    }
+
 }
 
 private fun PlayerScreenRuntime.guestTick(sync: PartyGuestSync, settings: PartySettings) {
@@ -337,6 +384,7 @@ private fun PlayerScreenRuntime.guestTick(sync: PartyGuestSync, settings: PartyS
     val state = sync.state ?: return
     val hostNow = sync.hostPositionMs(now) ?: return
     val keeping = sync.following && !sync.ownPace
+    if (settings.matchTracks && sync.following) matchPartyTracks(sync, state)
 
     // Loading: the room waits, this player keeps up with the host's time, or it carries on behind.
     val loading = snapshot.isLoading && keeping
@@ -454,6 +502,43 @@ private fun PlayerScreenRuntime.onOwnSeek(sync: PartyGuestSync, settings: PartyS
     }
 }
 
+// Picks the subtitle and audio tracks in the host's languages, each once it changes and this player has a track for it.
+private fun PlayerScreenRuntime.matchPartyTracks(sync: PartyGuestSync, state: PartyPlaybackState) {
+    val controller = playerController ?: return
+    state.audioLanguage?.takeIf { it != sync.matchedAudio }?.let { language ->
+        val track = audioTracks.firstOrNull { languageMatchesPreference(it.language, language) } ?: return@let
+        sync.matchedAudio = language
+        if (track.index != selectedAudioIndex) {
+            selectedAudioIndex = track.index
+            controller.selectAudioTrack(track.index)
+        }
+    }
+    val subtitle = state.subtitleLanguage?.takeIf { it != sync.matchedSubtitle } ?: return
+    if (subtitle.isEmpty()) {
+        sync.matchedSubtitle = subtitle
+        if (useCustomSubtitles) controller.clearExternalSubtitleAndSelect(-1) else controller.selectSubtitleTrack(-1)
+        useCustomSubtitles = false
+        selectedAddonSubtitleId = null
+        selectedSubtitleIndex = -1
+        return
+    }
+    val builtIn = subtitleTracks.firstOrNull { languageMatchesPreference(it.language, subtitle) }
+    if (builtIn != null) {
+        sync.matchedSubtitle = subtitle
+        if (useCustomSubtitles) controller.clearExternalSubtitleAndSelect(builtIn.index) else controller.selectSubtitleTrack(builtIn.index)
+        useCustomSubtitles = false
+        selectedAddonSubtitleId = null
+        selectedSubtitleIndex = builtIn.index
+        return
+    }
+    val addon = addonSubtitles.firstOrNull { languageMatchesPreference(it.language, subtitle) } ?: return
+    sync.matchedSubtitle = subtitle
+    useCustomSubtitles = true
+    selectedAddonSubtitleId = addon.selectionKey
+    selectedSubtitleIndex = -1
+    controller.setSubtitleUri(addon.url)
+}
+
 // Gives the host time to carry out the guest's request before this player is judged.
 private fun awaitRoom(sync: PartyGuestSync) {
     sync.settleUntilMs = partyClockMs() + PartySettleMs
@@ -476,21 +561,12 @@ private fun PlayerScreenRuntime.partySeek(sync: PartyGuestSync, positionMs: Long
     sync.settleUntilMs = sync.lastAtMs + PartySettleMs
 }
 
-// Tells everyone in the player who played, paused or moved the room, when it was a guest.
-private fun PlayerScreenRuntime.announceRoomChange(action: PartyControlAction, name: String, positionMs: Long) {
-    scope.launch {
-        ToastController.show(
-            when (action) {
-                PartyControlAction.PLAY -> getString(Res.string.watch_party_played_by, name)
-                PartyControlAction.PAUSE -> getString(Res.string.watch_party_paused_by, name)
-                PartyControlAction.SEEK -> getString(Res.string.watch_party_moved_by, name, formatPlaybackTime(positionMs))
-            },
-        )
-    }
-}
-
 // This player shows the host's [playback], rather than something the guest opened alone.
 internal fun PlayerScreenRuntime.showsSource(playback: PartyPlayback): Boolean {
+    // From a source of the guest's own, the same title and episode is the host's.
+    if (playback.ownSource) {
+        return parentMetaId == playback.parentMetaId && (playback.videoId == null || activeVideoId == playback.videoId)
+    }
     val hostHash = playback.torrentInfoHash?.lowercase()
     return if (hostHash != null) {
         activeTorrentInfoHash?.lowercase() == hostHash && activeTorrentFileIdx == playback.torrentFileIdx

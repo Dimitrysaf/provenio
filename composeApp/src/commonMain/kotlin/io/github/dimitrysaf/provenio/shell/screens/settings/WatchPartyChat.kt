@@ -1,18 +1,18 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -27,14 +27,16 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -47,6 +49,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -61,6 +64,7 @@ import io.github.dimitrysaf.provenio.core.time.EpisodeReleaseDatePlatform
 import io.github.dimitrysaf.provenio.shell.WatchPartyPrompts
 import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.shell.screens.player.partyChatEventText
+import io.github.dimitrysaf.provenio.shell.screens.player.PartyRequestButtons
 import io.github.dimitrysaf.provenio.shell.screens.player.partyRequestText
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
@@ -68,7 +72,6 @@ import provenio.composeapp.generated.resources.*
 
 private val BubbleCorner = 20.dp
 private val BubbleJoinCorner = 6.dp
-private val AvatarSize = 32.dp
 private val InputHeight = 56.dp
 
 // A gap this long between two messages starts a new stretch, with the time over it.
@@ -162,6 +165,7 @@ private fun ConversationHeader(room: PartyRoom, onBack: (() -> Unit)?, onClick: 
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ConversationMessages(messages: List<PartyChatMessage>, room: PartyRoom) {
     if (messages.isEmpty()) {
@@ -181,7 +185,12 @@ private fun ConversationMessages(messages: List<PartyChatMessage>, room: PartyRo
     }
     val guestName = stringResource(Res.string.watch_party_guest_name)
     var memberToRemoveId by rememberSaveable { mutableStateOf<String?>(null) }
+    var messageToDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
     val answered by PartyRepository.answeredRequests.collectAsStateWithLifecycle()
+    // The host holds a message to delete it for everyone.
+    val deletable: (PartyChatMessage) -> (() -> Unit)? = { message ->
+        if (room.isHost && message.request?.join != true) ({ messageToDeleteId = message.id }) else null
+    }
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
@@ -205,20 +214,24 @@ private fun ConversationMessages(messages: List<PartyChatMessage>, room: PartyRo
                 }
             }
             val name = message.name.ifBlank { guestName }
-            message.event?.let { event ->
+            if (message.event != null) {
+                val onLongClick = deletable(message)
                 Text(
-                    text = partyChatEventText(event, name),
+                    text = partyChatEventText(message, name),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(if (onLongClick != null) Modifier.combinedClickable(onClick = {}, onLongClick = onLongClick) else Modifier)
+                        .padding(vertical = 8.dp),
                 )
                 return@itemsIndexed
             }
             val firstOfRun = newStretch || previous.memberId != message.memberId || previous.event != null
             val lastOfRun = next == null || next.memberId != message.memberId || next.event != null ||
                 next.sentAtEpochMs - message.sentAtEpochMs >= TimeSeparatorGapMs
-            // The host taps a guest's name or picture to remove or ban them.
+            // The host taps a guest's name to remove or ban them.
             val manageable = room.isHost && room.members.any { it.id == message.memberId && !it.isHost }
             MessageBubble(
                 message = message,
@@ -227,13 +240,34 @@ private fun ConversationMessages(messages: List<PartyChatMessage>, room: PartyRo
                 firstOfRun = firstOfRun,
                 lastOfRun = lastOfRun,
                 onSenderClick = if (manageable) ({ memberToRemoveId = message.memberId }) else null,
-                onYes = if (room.isHost && message.request != null && message.id !in answered) {
-                    { PartyRepository.acceptRequest(message) }
-                } else {
-                    null
-                },
+                canAnswer = room.isHost && message.request != null && message.id !in answered,
+                canVote = !room.isHost && room.settings.pollsEnabled && message.request?.suggestion != null,
+                onLongClick = deletable(message),
             )
         }
+    }
+    if (room.isHost && messageToDeleteId != null) {
+        AlertDialog(
+            onDismissRequest = { messageToDeleteId = null },
+            title = { Text(stringResource(Res.string.watch_party_delete_message_title)) },
+            text = { Text(stringResource(Res.string.watch_party_delete_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        messageToDeleteId?.let(PartyRepository::deleteMessage)
+                        messageToDeleteId = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Text(stringResource(Res.string.watch_party_delete_message_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { messageToDeleteId = null }) {
+                    Text(stringResource(Res.string.action_cancel))
+                }
+            },
+        )
     }
     room.members.firstOrNull { it.id == memberToRemoveId && room.isHost && !it.isHost }?.let { member ->
         WatchPartyMemberDialog(
@@ -252,6 +286,7 @@ private fun ConversationMessages(messages: List<PartyChatMessage>, room: PartyRo
 }
 
 // Messages from one person in a row sit close together, their joined corners tighter; others' carry their name.
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MessageBubble(
     message: PartyChatMessage,
@@ -260,8 +295,20 @@ private fun MessageBubble(
     firstOfRun: Boolean,
     lastOfRun: Boolean,
     onSenderClick: (() -> Unit)?,
-    onYes: (() -> Unit)?,
+    canAnswer: Boolean,
+    canVote: Boolean,
+    onLongClick: (() -> Unit)?,
 ) {
+    // A suggestion opens its page here, though not in the player, where a tap is easily a mistake.
+    val suggestion = message.request?.suggestion
+    val bubbleClick = if (suggestion != null || onLongClick != null) {
+        Modifier.combinedClickable(
+            onClick = { suggestion?.let(WatchPartyPrompts::openDetails) },
+            onLongClick = onLongClick,
+        )
+    } else {
+        Modifier
+    }
     val colors = MaterialTheme.colorScheme
     val senderModifier = if (onSenderClick != null) Modifier.clickable(onClick = onSenderClick) else Modifier
     val top = if (firstOfRun) BubbleCorner else BubbleJoinCorner
@@ -285,24 +332,16 @@ private fun MessageBubble(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
-                    .padding(start = AvatarSize + 8.dp + 12.dp, bottom = 4.dp)
+                    .padding(start = 12.dp, bottom = 4.dp)
                     .then(senderModifier),
             )
         }
         Row(verticalAlignment = Alignment.Bottom) {
-            if (!mine) {
-                if (lastOfRun) {
-                    Box(modifier = senderModifier) { Avatar(name) }
-                } else {
-                    Spacer(modifier = Modifier.width(AvatarSize))
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-            }
             Surface(
                 shape = shape,
                 color = if (mine) colors.primaryContainer else colors.surfaceContainerHigh,
                 contentColor = if (mine) colors.onPrimaryContainer else colors.onSurface,
-                modifier = Modifier.widthIn(max = 300.dp),
+                modifier = Modifier.widthIn(max = 300.dp).clip(shape).then(bubbleClick),
             ) {
                 Text(
                     text = message.request?.let { partyRequestText(it) } ?: message.text,
@@ -315,31 +354,17 @@ private fun MessageBubble(
                 )
             }
         }
-        // The host answers a guest's request here; Yes plays the title, or plays, pauses or seeks the room.
-        if (onYes != null) {
-            FilledTonalButton(
-                onClick = onYes,
-                modifier = Modifier.padding(start = AvatarSize + 8.dp, top = 6.dp),
-            ) {
-                Text(stringResource(Res.string.watch_party_request_yes))
-            }
-        }
-    }
-}
-
-@Composable
-private fun Avatar(name: String) {
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.tertiaryContainer,
-        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-        modifier = Modifier.size(AvatarSize),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
+        if (message.votes.isNotEmpty()) {
             Text(
-                text = name.trim().take(1).uppercase(),
-                style = MaterialTheme.typography.labelLarge,
+                text = stringResource(Res.string.watch_party_votes, message.votes.size),
+                style = MaterialTheme.typography.labelMedium,
+                color = colors.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
             )
+        }
+        // The host answers a guest's request here; a guest votes on a suggestion when the room has polls.
+        Box(modifier = Modifier.padding(top = 4.dp)) {
+            PartyRequestButtons(message, canAnswer = canAnswer, canVote = canVote)
         }
     }
 }

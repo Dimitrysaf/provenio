@@ -18,6 +18,16 @@ data class PartySettings(
     /** How long the room waits for someone loading; null is as long as it takes. */
     val loadingWaitSeconds: Int? = null,
     val syncTolerance: PartySyncTolerance = PartySyncTolerance.TIGHT,
+    /** Someone with the link waits until the host lets them in. */
+    val askToJoin: Boolean = true,
+    /** Guests can vote on each other's suggestions in the chat. */
+    val pollsEnabled: Boolean = false,
+    /** Guests switch to the subtitle and audio languages the host picks. */
+    val matchTracks: Boolean = false,
+    /** Under [PartyGuestSeek.SEEK_EVERYONE], guests can change the speed for everyone too. */
+    val guestSpeed: Boolean = false,
+    /** Guests open the host's own stream links, such as a debrid link, rather than finding their own source. */
+    val shareStreamLinks: Boolean = false,
 )
 
 /** What happens when a guest pauses, and then plays again. */
@@ -78,13 +88,14 @@ enum class PartySyncTolerance(val driftMs: Long) {
 
 /** What a guest asks the host's player to do for everyone. */
 @Serializable
-enum class PartyControlAction { PLAY, PAUSE, SEEK }
+enum class PartyControlAction { PLAY, PAUSE, SEEK, SPEED }
 
-/** A guest's play, pause or seek, which the host's player carries out for the room. */
+/** A guest's play, pause, seek or speed, which the host's player carries out for the room. */
 data class PartyControl(
     val action: PartyControlAction,
     val positionMs: Long,
     val memberName: String,
+    val speed: Float = 1f,
 )
 
 @Serializable
@@ -133,6 +144,10 @@ data class PartyPlayback(
     val torrentFileIdx: Int? = null,
     val torrentFilename: String? = null,
     val torrentTrackers: List<String> = emptyList(),
+    /** The host's link isn't shared: each guest plays the same title from a source of their own. */
+    val ownSource: Boolean = false,
+    /** The release the host plays, by its add-on's binge group, which guests finding their own source pick first. */
+    val bingeGroup: String? = null,
 )
 
 /** Where the host is in [PartyPlayback] [playbackId], and whether it plays. */
@@ -150,6 +165,11 @@ data class PartyPlaybackState(
     val waitingFor: List<String> = emptyList(),
     /** The guest who last played, paused or moved the room; null when it was the host. */
     val changedBy: String? = null,
+    val speed: Float = 1f,
+    /** The host's audio language, for guests who match it; null when unknown. */
+    val audioLanguage: String? = null,
+    /** The host's subtitle language, "" for none; null when unknown. */
+    val subtitleLanguage: String? = null,
 )
 
 @Serializable
@@ -163,6 +183,12 @@ data class PartyChatMessage(
     val event: PartyChatEvent? = null,
     /** Set when a guest asks the host for something, which the host answers with Yes. */
     val request: PartyRequest? = null,
+    /** Where a seek note moved the room to. */
+    val positionMs: Long? = null,
+    /** The speed a speed note set. */
+    val speed: Float? = null,
+    /** Who voted for a suggestion, when the room has polls. */
+    val votes: List<String> = emptyList(),
 )
 
 /** What a guest asks the host for: a title to watch, or to play, pause or seek the room. */
@@ -172,11 +198,14 @@ data class PartyRequest(
     val action: PartyControlAction? = null,
     val positionMs: Long = 0L,
     val suggestion: PartySuggestion? = null,
+    val speed: Float = 1f,
+    /** Someone waiting to join; only the host sees this one. */
+    val join: Boolean = false,
 )
 
 /** What the room says in the chat about [PartyChatMessage.name]. */
 @Serializable
-enum class PartyChatEvent { JOINED, LEFT, REMOVED }
+enum class PartyChatEvent { JOINED, LEFT, REMOVED, PLAYED, PAUSED, SEEKED, SPEED }
 
 /** A title a guest would like to watch; the host picks the source. */
 @Serializable
@@ -205,6 +234,8 @@ data class PartyRoom(
     val members: List<PartyMember>,
     /** The room's address on the internet, as the host opened it or as this guest reached it. */
     val address: String? = null,
+    /** This guest lost the connection and is trying to get back in. */
+    val reconnecting: Boolean = false,
     // The rest is only known to the host.
     val inviteLink: String? = null,
     val inviteQr: List<BooleanArray>? = null,
@@ -219,6 +250,9 @@ sealed interface PartyPhase {
     data object Idle : PartyPhase
     data object Creating : PartyPhase
     data object Connecting : PartyPhase
+
+    /** The room asks the host before letting this guest in. */
+    data object Waiting : PartyPhase
     data class InRoom(val room: PartyRoom) : PartyPhase
 }
 
@@ -240,6 +274,9 @@ enum class PartyError {
     CLOSED,
     CONNECTION_LOST,
     VERSION_MISMATCH,
+
+    /** The host didn't let this guest in. */
+    DENIED,
     FAILED,
 }
 

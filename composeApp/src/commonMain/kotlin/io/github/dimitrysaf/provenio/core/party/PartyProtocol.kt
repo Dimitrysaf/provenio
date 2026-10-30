@@ -10,7 +10,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
 // Raised whenever a message changes in a way an older build would misread; host and guests must match.
-internal const val PARTY_PROTOCOL_VERSION = 5
+internal const val PARTY_PROTOCOL_VERSION = 6
 internal const val PARTY_NONCE_SIZE = 16
 
 internal val partyJson = Json {
@@ -29,7 +29,7 @@ internal data class PartyHello(
 )
 
 @Serializable
-internal enum class PartyHelloStatus { ACCEPTED, FULL, BANNED, REJECTED, VERSION_MISMATCH }
+internal enum class PartyHelloStatus { ACCEPTED, FULL, BANNED, REJECTED, VERSION_MISMATCH, WAITING, DENIED }
 
 @Serializable
 internal data class PartyHelloReply(
@@ -97,12 +97,23 @@ internal sealed interface PartyMessage {
         val playbackId: Long,
         val action: PartyControlAction,
         val positionMs: Long,
+        val speed: Float = 1f,
     ) : PartyMessage
 
     /** Whether a guest's player is loading the host's source, for a room that waits for them. */
     @Serializable
     @SerialName("loading")
     data class Loading(val playbackId: Long, val loading: Boolean) : PartyMessage
+
+    /** The host deleted a message from the chat, for everyone. */
+    @Serializable
+    @SerialName("chat_deleted")
+    data class ChatDeleted(val messageId: String) : PartyMessage
+
+    /** A guest's vote for a suggestion in the chat. */
+    @Serializable
+    @SerialName("vote")
+    data class Vote(val messageId: String) : PartyMessage
 
     @Serializable
     @SerialName("removed")
