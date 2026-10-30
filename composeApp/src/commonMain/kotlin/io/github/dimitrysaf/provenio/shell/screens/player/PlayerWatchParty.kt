@@ -26,11 +26,12 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,29 +56,23 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.party.PartyChatMessage
 import io.github.dimitrysaf.provenio.core.party.PartyPhase
 import io.github.dimitrysaf.provenio.core.party.PartyPlayback
-import io.github.dimitrysaf.provenio.core.party.PartyPlaybackState
 import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.party.PartySuggestion
-import io.github.dimitrysaf.provenio.core.party.isShareablePartySource
 import io.github.dimitrysaf.provenio.core.time.EpisodeReleaseDatePlatform
 import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
-
-// How far a guest may drift from the host before it seeks to catch up.
-private const val PartySyncDriftMs = 3_000L
-private const val PartyStateIntervalMs = 2_000L
 
 // Messages that arrive while the chat is closed show for this long.
 private const val PartyChatPeekMs = 8_000L
@@ -85,11 +80,7 @@ private const val PartyChatPeekCount = 2
 
 private val ChatTextShadow = Shadow(color = Color.Black.copy(alpha = 0.85f), offset = Offset(0f, 1f), blurRadius = 4f)
 
-/**
- * The watch party inside the player. The host shares the source it plays and where it is in
- * it; a guest's player keeps to the host's: it plays and pauses with the host, and seeks when it
- * drifts too far behind or ahead.
- */
+/** The watch party inside the player: the host shares what it plays, and guests keep to it. */
 @Composable
 internal fun PlayerScreenRuntime.BindWatchPartyEffects() {
     val partyState by PartyRepository.uiState.collectAsStateWithLifecycle()
@@ -97,75 +88,13 @@ internal fun PlayerScreenRuntime.BindWatchPartyEffects() {
     partyRoom = room
     if (room == null) {
         showPartyChat = false
+        partyGuestSync = null
         return
     }
-    if (room.isHost) HostPartySync() else GuestPartySync()
+    if (room.isHost) HostPartySync() else GuestPartySync(room)
 }
 
-@Composable
-private fun PlayerScreenRuntime.HostPartySync() {
-    var sharedId by remember { mutableStateOf<Long?>(null) }
-    LaunchedEffect(activeSourceIdentityKey, activeVideoId) {
-        sharedId = if (isShareablePartySource(activeSourceUrl, activeTorrentInfoHash)) {
-            PartyRepository.startPlayback(currentPartyPlayback())
-        } else {
-            null
-        }
-    }
-    val id = sharedId
-    // Straight away when the host plays or pauses, and every couple of seconds besides.
-    LaunchedEffect(id, playbackSnapshot.isPlaying) {
-        id ?: return@LaunchedEffect
-        while (true) {
-            PartyRepository.updatePlaybackState(
-                PartyPlaybackState(
-                    playbackId = id,
-                    isPlaying = playbackSnapshot.isPlaying,
-                    positionMs = playbackSnapshot.positionMs,
-                ),
-            )
-            delay(PartyStateIntervalMs)
-        }
-    }
-    DisposableEffect(Unit) {
-        onDispose { sharedId?.let(PartyRepository::stopPlayback) }
-    }
-}
-
-@Composable
-private fun PlayerScreenRuntime.GuestPartySync() {
-    val shared by PartyRepository.playback.collectAsStateWithLifecycle()
-    val hostState by PartyRepository.playbackState.collectAsStateWithLifecycle()
-    var followedPlaying by remember { mutableStateOf<Boolean?>(null) }
-    LaunchedEffect(hostState) {
-        val state = hostState ?: return@LaunchedEffect
-        shared?.takeIf { it.id == state.playbackId && showsSource(it) } ?: return@LaunchedEffect
-        val controller = playerController ?: return@LaunchedEffect
-        // Play and pause follow the host when the host changes them; a guest who paused on their
-        // own stays paused until then.
-        if (followedPlaying != state.isPlaying) {
-            followedPlaying = state.isPlaying
-            shouldPlay = state.isPlaying
-            if (state.isPlaying) controller.play() else controller.pause()
-        }
-        if (playbackSnapshot.isLoading || playbackSnapshot.isPlaying != state.isPlaying) return@LaunchedEffect
-        if (abs(playbackSnapshot.positionMs - state.positionMs) > PartySyncDriftMs) {
-            controller.seekTo(state.positionMs)
-        }
-    }
-}
-
-// This player shows the host's [playback], rather than something the guest opened alone.
-private fun PlayerScreenRuntime.showsSource(playback: PartyPlayback): Boolean {
-    val hostHash = playback.torrentInfoHash?.lowercase()
-    return if (hostHash != null) {
-        activeTorrentInfoHash?.lowercase() == hostHash && activeTorrentFileIdx == playback.torrentFileIdx
-    } else {
-        activeSourceUrl == playback.sourceUrl
-    }
-}
-
-private fun PlayerScreenRuntime.currentPartyPlayback(): PartyPlayback = PartyPlayback(
+internal fun PlayerScreenRuntime.currentPartyPlayback(): PartyPlayback = PartyPlayback(
     id = 0,
     title = title,
     sourceUrl = activeSourceUrl,
@@ -193,6 +122,82 @@ private fun PlayerScreenRuntime.currentPartyPlayback(): PartyPlayback = PartyPla
     torrentFilename = activeTorrentFilename,
     torrentTrackers = activeTorrentTrackers,
 )
+
+/** A line at the top of the player while it is out of step with the room, with the way back. */
+@Composable
+internal fun BoxScope.PlayerWatchPartyStatus(runtime: PlayerScreenRuntime) {
+    val room = runtime.partyRoom ?: return
+    val hostState by PartyRepository.playbackState.collectAsStateWithLifecycle()
+    val hostWaiting by PartyRepository.waitingFor.collectAsStateWithLifecycle()
+    val sync = runtime.partyGuestSync
+    // Ticks, so the time behind or ahead keeps up.
+    val tick by produceState(0L, sync) {
+        while (true) {
+            delay(1_000L)
+            value += 1
+        }
+    }
+    tick
+    val waiting = if (room.isHost) {
+        hostWaiting.map { it.name }
+    } else {
+        hostState?.takeIf { it.playbackId == sync?.playbackId }?.waitingFor.orEmpty()
+    }
+    val myName = room.members.firstOrNull { it.id == room.myMemberId }?.name
+    var action: Pair<String, () -> Unit>? = null
+    val text = when {
+        waiting.isNotEmpty() && !room.isHost && myName in waiting && waiting.size == 1 ->
+            stringResource(Res.string.watch_party_status_waiting_you)
+        waiting.isNotEmpty() -> {
+            if (room.isHost) action = stringResource(Res.string.watch_party_status_dont_wait) to PartyRepository::stopWaiting
+            stringResource(Res.string.watch_party_status_waiting, waiting.filter { it != myName }.joinToString(", "))
+        }
+        sync != null && (!sync.following || sync.ownPace) -> {
+            action = stringResource(Res.string.watch_party_status_catch_up) to { runtime.catchUpWithParty(sync) }
+            val offset = sync.hostPositionMs()?.let { runtime.playbackSnapshot.positionMs - it } ?: 0L
+            when {
+                offset <= -1_000L -> stringResource(Res.string.watch_party_status_behind, formatPlaybackTime(-offset))
+                offset >= 1_000L -> stringResource(Res.string.watch_party_status_ahead, formatPlaybackTime(offset))
+                else -> stringResource(Res.string.watch_party_status_own)
+            }
+        }
+        sync?.holding == true -> stringResource(Res.string.watch_party_status_holding)
+        else -> null
+    }
+    AnimatedVisibility(
+        visible = text != null,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = Modifier
+            .align(Alignment.TopCenter)
+            .playerFrameInsets(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+            .padding(start = 16.dp, end = 16.dp, top = if (runtime.controlsVisible) 72.dp else 16.dp),
+    ) {
+        Surface(
+            shape = RoundedCornerShape(50),
+            color = Color.Black.copy(alpha = 0.6f),
+            contentColor = Color.White,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = 16.dp, end = if (action != null) 4.dp else 16.dp).heightIn(min = 40.dp),
+            ) {
+                Text(
+                    text = text.orEmpty(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                action?.let { (label, onClick) ->
+                    TextButton(onClick = onClick) {
+                        Text(text = label, color = MaterialTheme.colorScheme.primaryContainer)
+                    }
+                }
+            }
+        }
+    }
+}
 
 /** A guest's next episode goes to the host as a suggestion, and the card goes away. */
 internal fun PlayerScreenRuntime.suggestNextEpisodeToHost() {
