@@ -10,7 +10,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
 // Raised whenever a message changes in a way an older build would misread; host and guests must match.
-internal const val PARTY_PROTOCOL_VERSION = 4
+internal const val PARTY_PROTOCOL_VERSION = 5
 internal const val PARTY_NONCE_SIZE = 16
 
 internal val partyJson = Json {

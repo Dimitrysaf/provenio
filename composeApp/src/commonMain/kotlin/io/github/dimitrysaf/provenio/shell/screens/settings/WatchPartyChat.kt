@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -46,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,6 +59,7 @@ import io.github.dimitrysaf.provenio.core.party.PartyRoom
 import io.github.dimitrysaf.provenio.core.time.EpisodeReleaseDatePlatform
 import io.github.dimitrysaf.provenio.shell.WatchPartyPrompts
 import io.github.dimitrysaf.provenio.shell.screens.player.partyChatEventText
+import io.github.dimitrysaf.provenio.shell.screens.player.partyRequestText
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
@@ -164,6 +167,7 @@ private fun ConversationMessages(messages: List<PartyChatMessage>, room: PartyRo
     }
     val guestName = stringResource(Res.string.watch_party_guest_name)
     var memberToRemoveId by rememberSaveable { mutableStateOf<String?>(null) }
+    val answered by PartyRepository.answeredRequests.collectAsStateWithLifecycle()
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
@@ -209,6 +213,11 @@ private fun ConversationMessages(messages: List<PartyChatMessage>, room: PartyRo
                 firstOfRun = firstOfRun,
                 lastOfRun = lastOfRun,
                 onSenderClick = if (manageable) ({ memberToRemoveId = message.memberId }) else null,
+                onYes = if (room.isHost && message.request != null && message.id !in answered) {
+                    { PartyRepository.acceptRequest(message) }
+                } else {
+                    null
+                },
             )
         }
     }
@@ -237,6 +246,7 @@ private fun MessageBubble(
     firstOfRun: Boolean,
     lastOfRun: Boolean,
     onSenderClick: (() -> Unit)?,
+    onYes: (() -> Unit)?,
 ) {
     val colors = MaterialTheme.colorScheme
     val senderModifier = if (onSenderClick != null) Modifier.clickable(onClick = onSenderClick) else Modifier
@@ -281,10 +291,23 @@ private fun MessageBubble(
                 modifier = Modifier.widthIn(max = 300.dp),
             ) {
                 Text(
-                    text = message.text,
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = message.request?.let { partyRequestText(it) } ?: message.text,
+                    style = if (message.request != null) {
+                        MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic)
+                    } else {
+                        MaterialTheme.typography.bodyLarge
+                    },
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                 )
+            }
+        }
+        // The host answers a guest's request here; Yes plays the title, or plays, pauses or seeks the room.
+        if (onYes != null) {
+            FilledTonalButton(
+                onClick = onYes,
+                modifier = Modifier.padding(start = AvatarSize + 8.dp, top = 6.dp),
+            ) {
+                Text(stringResource(Res.string.watch_party_request_yes))
             }
         }
     }

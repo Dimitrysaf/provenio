@@ -418,6 +418,11 @@ private fun PlayerScreenRuntime.onOwnPlayPause(sync: PartyGuestSync, settings: P
         }
         // A pause from the keyboard or a headset is undone, since only the host pauses.
         PartyGuestPause.HOST_ONLY -> setPartyPlay(sync, sync.followedPlaying == true)
+        // One that got past the controls, from a headset say, asks the host and is undone here.
+        PartyGuestPause.SUGGEST -> {
+            PartyRepository.requestControl(sync.playbackId, if (play) PartyControlAction.PLAY else PartyControlAction.PAUSE, position)
+            setPartyPlay(sync, sync.followedPlaying == true)
+        }
         PartyGuestPause.SNAP_TO_HOST -> {
             if (play && state.isPlaying) {
                 sync.ownPace = false
@@ -438,6 +443,10 @@ private fun PlayerScreenRuntime.onOwnSeek(sync: PartyGuestSync, settings: PartyS
             awaitRoom(sync)
         }
         PartyGuestSeek.ON_THEIR_OWN -> sync.following = false
+        PartyGuestSeek.SUGGEST -> {
+            PartyRepository.requestControl(sync.playbackId, PartyControlAction.SEEK, position)
+            sync.hostPositionMs()?.let { partySeek(sync, it) }
+        }
         PartyGuestSeek.SNAP_BACK -> {
             sync.hostPositionMs()?.let { partySeek(sync, it) }
             scope.launch { ToastController.show(getString(Res.string.watch_party_seek_host_only)) }

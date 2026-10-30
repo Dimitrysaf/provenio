@@ -34,6 +34,9 @@ enum class PartyGuestPause {
 
     /** Guests have no pause; the room plays and pauses with the host only. */
     HOST_ONLY,
+
+    /** The guest's pause or play asks the host, who answers with Yes in the chat. */
+    SUGGEST,
 }
 
 /** What happens when a guest moves to another moment. */
@@ -47,6 +50,9 @@ enum class PartyGuestSeek {
 
     /** Only the host moves the room; the guest goes back to where the host is. */
     SNAP_BACK,
+
+    /** The guest's seek asks the host, who answers with Yes in the chat. */
+    SUGGEST,
 }
 
 /** What the room does while someone's player is loading. */
@@ -155,6 +161,17 @@ data class PartyChatMessage(
     val sentAtEpochMs: Long,
     /** Set for the room's own notes, such as someone joining, which have no text. */
     val event: PartyChatEvent? = null,
+    /** Set when a guest asks the host for something, which the host answers with Yes. */
+    val request: PartyRequest? = null,
+)
+
+/** What a guest asks the host for: a title to watch, or to play, pause or seek the room. */
+@Serializable
+data class PartyRequest(
+    val playbackId: Long? = null,
+    val action: PartyControlAction? = null,
+    val positionMs: Long = 0L,
+    val suggestion: PartySuggestion? = null,
 )
 
 /** What the room says in the chat about [PartyChatMessage.name]. */

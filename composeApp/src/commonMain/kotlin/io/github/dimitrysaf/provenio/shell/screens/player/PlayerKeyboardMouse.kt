@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.party.PartyControlAction
 import io.github.dimitrysaf.provenio.shell.components.OpenSheets
 import io.github.dimitrysaf.provenio.shell.components.openedWithKeys
 import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
@@ -295,6 +296,7 @@ private fun Key.digitOrNull(): Int? = when (this) {
 private fun PlayerScreenRuntime.seekToFraction(fraction: Float) {
     if (partySeekLocked) return
     val durationMs = playbackSnapshot.durationMs.takeIf { it > 0L } ?: return
+    if (partySeekSuggests) return askPartyHost(PartyControlAction.SEEK, (durationMs * fraction).toLong())
     playerController?.seekTo((durationMs * fraction).toLong())
     scheduleProgressSyncAfterSeek()
     controlsVisible = true

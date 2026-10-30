@@ -38,6 +38,7 @@ import io.github.dimitrysaf.provenio.shell.screens.p2p.TorrentDetailsSheet
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import io.github.dimitrysaf.provenio.core.party.PartyControlAction
 import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlatform
 import io.github.dimitrysaf.provenio.core.playback.ExternalPlayerPlaybackRequest
@@ -339,7 +340,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 controlsReady = !loading && playerController != null,
                 playbackRequested = shouldPlay,
                 seekEnabled = !partySeekLocked,
-                pauseVisible = !partyPauseLocked,
+                pauseEnabled = !partyPauseLocked,
                 speedEnabled = !partySpeedLocked,
                 statusLines = statusLines,
                 onStatusClick = if (activeTorrentInfoHash != null) {
@@ -456,8 +457,12 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 onScrubFinished = { positionMs ->
                     isScrubbingTimeline = false
                     scrubbingPositionMs = null
-                    playerController?.seekTo(positionMs)
-                    scheduleProgressSyncAfterSeek()
+                    if (partySeekSuggests) {
+                        askPartyHost(PartyControlAction.SEEK, positionMs)
+                    } else {
+                        playerController?.seekTo(positionMs)
+                        scheduleProgressSyncAfterSeek()
+                    }
                 },
                 modifier = Modifier.fillMaxSize(),
             )

@@ -2623,6 +2623,16 @@
     <string name="watch_party_guest_seek_own_description">They watch from there on their own until they catch up.</string>
     <string name="watch_party_guest_seek_host_only">Only the host moves the room</string>
     <string name="watch_party_guest_seek_host_only_description">They go straight back to where the host is.</string>
+    <string name="watch_party_guest_pause_suggest">Ask the host</string>
+    <string name="watch_party_guest_pause_suggest_description">Their pause or play asks the host, who answers with Yes in the chat.</string>
+    <string name="watch_party_guest_seek_suggest">Ask the host</string>
+    <string name="watch_party_guest_seek_suggest_description">Their seek asks the host to move the room there, with Yes in the chat.</string>
+    <string name="watch_party_request_title">Suggests watching %1$s</string>
+    <string name="watch_party_request_pause">Asks to pause</string>
+    <string name="watch_party_request_play">Asks to play</string>
+    <string name="watch_party_request_seek">Asks to go to %1$s</string>
+    <string name="watch_party_request_yes">Yes</string>
+    <string name="watch_party_requested">Asked the host</string>
     <string name="watch_party_loading">While someone is loading</string>
     <string name="watch_party_loading_pause">Pause for everyone</string>
     <string name="watch_party_loading_pause_description">The room waits until they've loaded, then plays on together.</string>
@@ -2703,9 +2713,6 @@
     <string name="watch_party_suggested">Suggested to the host</string>
     <string name="watch_party_suggestions_off">The host turned suggestions off</string>
     <string name="watch_party_suggestions_off_short">Suggestions are off</string>
-    <string name="watch_party_suggestion_title">%1$s suggests</string>
-    <string name="watch_party_suggestion_choose">Choose a source</string>
-    <string name="watch_party_suggestion_dismiss">Not now</string>
     <string name="watch_party_chat_hint">Message the room</string>
     <string name="watch_party_chat_wait">Slow mode: wait %1$d s</string>
     <string name="watch_party_chat_send">Send</string>

@@ -2591,6 +2591,16 @@
     <string name="watch_party_guest_seek_own_description">Βλέπει από εκεί μόνος του μέχρι να προλάβει.</string>
     <string name="watch_party_guest_seek_host_only">Μόνο ο οικοδεσπότης μετακινεί το δωμάτιο</string>
     <string name="watch_party_guest_seek_host_only_description">Επιστρέφει αμέσως εκεί που βρίσκεται ο οικοδεσπότης.</string>
+    <string name="watch_party_guest_pause_suggest">Ερώτηση στον οικοδεσπότη</string>
+    <string name="watch_party_guest_pause_suggest_description">Η παύση ή η αναπαραγωγή τους ρωτά τον οικοδεσπότη, που απαντά με Ναι στη συνομιλία.</string>
+    <string name="watch_party_guest_seek_suggest">Ερώτηση στον οικοδεσπότη</string>
+    <string name="watch_party_guest_seek_suggest_description">Η μετακίνησή τους ζητά από τον οικοδεσπότη να πάει εκεί το δωμάτιο, με Ναι στη συνομιλία.</string>
+    <string name="watch_party_request_title">Προτείνει να δείτε %1$s</string>
+    <string name="watch_party_request_pause">Ζητά παύση</string>
+    <string name="watch_party_request_play">Ζητά αναπαραγωγή</string>
+    <string name="watch_party_request_seek">Ζητά να πάτε στο %1$s</string>
+    <string name="watch_party_request_yes">Ναι</string>
+    <string name="watch_party_requested">Ρωτήθηκε ο οικοδεσπότης</string>
     <string name="watch_party_loading">Όσο κάποιος φορτώνει</string>
     <string name="watch_party_loading_pause">Παύση για όλους</string>
     <string name="watch_party_loading_pause_description">Το δωμάτιο περιμένει να φορτώσει και μετά συνεχίζει μαζί.</string>
@@ -2671,9 +2681,6 @@
     <string name="watch_party_suggested">Προτάθηκε στον οικοδεσπότη</string>
     <string name="watch_party_suggestions_off">Ο οικοδεσπότης απενεργοποίησε τις προτάσεις</string>
     <string name="watch_party_suggestions_off_short">Οι προτάσεις είναι απενεργοποιημένες</string>
-    <string name="watch_party_suggestion_title">Πρόταση από %1$s</string>
-    <string name="watch_party_suggestion_choose">Επιλογή πηγής</string>
-    <string name="watch_party_suggestion_dismiss">Όχι τώρα</string>
     <string name="watch_party_chat_hint">Μήνυμα στο δωμάτιο</string>
     <string name="watch_party_chat_wait">Αργή λειτουργία: περιμένετε %1$d δ.</string>
     <string name="watch_party_chat_send">Αποστολή</string>

@@ -20,6 +20,9 @@ import java.net.SocketTimeoutException
 import java.net.URL
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
 private const val MAX_IPV6_ADDRESSES = 2
@@ -31,6 +34,7 @@ private const val SSDP_PORT = 1_900
 private const val SSDP_WAIT_MS = 2_500L
 private const val SSDP_SETTLE_MS = 400L
 private const val HTTP_CONNECT_TIMEOUT_MS = 3_000
+private const val PROBE_CONNECT_TIMEOUT_MS = 800
 private const val HTTP_READ_TIMEOUT_MS = 5_000
 private const val HTTP_MAX_BODY_BYTES = 512 * 1024
 
@@ -43,6 +47,24 @@ private const val UPNP_CONFLICT = 718
 private const val PORT_ATTEMPTS = 5
 
 private val log = Logger.withTag("WatchParty")
+
+// Where common routers keep their UPnP description, asked over plain HTTP when no router answers the search.
+private val KnownDescriptions = listOf(
+    1900 to "/gatedesc.xml",
+    1900 to "/rootDesc.xml",
+    1900 to "/igd.xml",
+    1900 to "/description.xml",
+    5000 to "/rootDesc.xml",
+    52869 to "/picsdesc.xml",
+    49000 to "/igddesc.xml",
+    49000 to "/igd2desc.xml",
+    49152 to "/rootDesc.xml",
+    49152 to "/IGDdevicedesc_brlan0.xml",
+    2869 to "/IGatewayDeviceDescDoc",
+    5431 to "/igdevicedesc.xml",
+    1780 to "/InternetGatewayDevice.xml",
+    80 to "/rootDesc.xml",
+)
 
 private val SearchTargets = listOf(
     "urn:schemas-upnp-org:device:InternetGatewayDevice:2",
@@ -57,7 +79,13 @@ internal actual object PartyPortMapper {
             .onFailure { log.w(it) { "UPnP search failed" } }
             .getOrDefault(emptyList())
         log.i { "UPnP routers found: ${gateways.map { it.first }}" }
-        runCatching { mapWithUpnp(gateways, internalPort) }.onFailure { log.w(it) { "UPnP mapping failed" } }.getOrNull()
+        // A firewall or a switch can drop the search and its answers; the router's own address still answers HTTP.
+        val described = gateways.ifEmpty {
+            runCatching { probeDescriptions() }.getOrDefault(emptyList()).also { found ->
+                log.i { "UPnP descriptions found directly: ${found.map { it.first }}" }
+            }
+        }
+        runCatching { mapWithUpnp(described, internalPort) }.onFailure { log.w(it) { "UPnP mapping failed" } }.getOrNull()
             ?: runCatching { mapWithNatPmp(gateways.map { it.second }, internalPort) }
                 .onFailure { log.w(it) { "NAT-PMP mapping failed" } }
                 .getOrNull()
@@ -161,6 +189,25 @@ private fun discoverGateways(): List<Pair<String, String>> {
     } finally {
         sources.forEach { it.close() }
     }
+}
+
+// Asks the router directly at the addresses common routers use, each port at once; a closed port is skipped quickly.
+private suspend fun probeDescriptions(): List<Pair<String, String>> = coroutineScope {
+    val routers = listOfNotNull(defaultGateway()).ifEmpty { guessedGateways() }.distinct()
+    routers.flatMap { router ->
+        KnownDescriptions.groupBy({ it.first }, { it.second }).map { (port, paths) ->
+            async(Dispatchers.IO) {
+                for (path in paths) {
+                    val url = "http://$router:$port$path"
+                    val result = runCatching { http(url, "GET", connectTimeoutMs = PROBE_CONNECT_TIMEOUT_MS) }.getOrNull()
+                        ?: return@async null
+                    val body = result.body
+                    if (result.status == 200 && ("WANIPConnection" in body || "WANPPPConnection" in body)) return@async url to router
+                }
+                null
+            }
+        }
+    }.awaitAll().filterNotNull()
 }
 
 private fun mapWithUpnp(gateways: List<Pair<String, String>>, internalPort: Int): PartyPortMapping? {
@@ -278,11 +325,12 @@ private fun http(
     method: String,
     body: String? = null,
     headers: Map<String, String> = emptyMap(),
+    connectTimeoutMs: Int = HTTP_CONNECT_TIMEOUT_MS,
 ): HttpResult {
     val target = URL(url)
     val port = if (target.port > 0) target.port else 80
     Socket().use { socket ->
-        socket.connect(InetSocketAddress(target.host, port), HTTP_CONNECT_TIMEOUT_MS)
+        socket.connect(InetSocketAddress(target.host, port), connectTimeoutMs)
         socket.soTimeout = HTTP_READ_TIMEOUT_MS
         val payload = body?.toByteArray(Charsets.UTF_8)
         val request = buildString {

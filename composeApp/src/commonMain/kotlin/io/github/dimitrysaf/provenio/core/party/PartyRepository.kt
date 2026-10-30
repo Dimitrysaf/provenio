@@ -55,10 +55,12 @@ object PartyRepository {
     const val MAX_CHAT_LENGTH = 225
     private const val CHAT_HISTORY = 100
     private const val WELCOME_CHAT = 50
-    private const val MAX_SUGGESTIONS = 20
 
     // A guest who keeps tapping play and pause moves the room at most this often.
     private const val MIN_CONTROL_INTERVAL_MS = 500L
+
+    // A guest's requests to the host come at most this often, so the chat isn't flooded.
+    private const val MIN_REQUEST_INTERVAL_MS = 1_000L
 
     private val log = Logger.withTag("WatchParty")
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
@@ -84,9 +86,13 @@ object PartyRepository {
     private val _nextChatAtEpochMs = MutableStateFlow(0L)
     val nextChatAtEpochMs: StateFlow<Long> = _nextChatAtEpochMs.asStateFlow()
 
-    /** What guests suggested, for the host to pick a source for or dismiss. */
-    private val _suggestions = MutableStateFlow<List<PartySuggestion>>(emptyList())
-    val suggestions: StateFlow<List<PartySuggestion>> = _suggestions.asStateFlow()
+    /** The requests in the chat the host already said Yes to. */
+    private val _answeredRequests = MutableStateFlow<Set<String>>(emptySet())
+    val answeredRequests: StateFlow<Set<String>> = _answeredRequests.asStateFlow()
+
+    /** Titles the host said Yes to, for the app to play as it plays anything. */
+    private val _acceptedSuggestions = MutableSharedFlow<PartySuggestion>(extraBufferCapacity = 4)
+    val acceptedSuggestions: SharedFlow<PartySuggestion> = _acceptedSuggestions.asSharedFlow()
 
     /** Guests' allowed plays, pauses and seeks, for the host's player to carry out. */
     private val _controls = MutableSharedFlow<PartyControl>(extraBufferCapacity = 8)
@@ -314,8 +320,17 @@ object PartyRepository {
         }
     }
 
-    fun dismissSuggestion(id: String) {
-        _suggestions.update { list -> list.filterNot { it.id == id } }
+    /** The host's Yes to a guest's request in the chat: the title plays, or the room plays, pauses or seeks. */
+    fun acceptRequest(message: PartyChatMessage) {
+        val request = message.request ?: return
+        if (!isHost || message.id in _answeredRequests.value) return
+        _answeredRequests.update { it + message.id }
+        request.suggestion?.let { _acceptedSuggestions.tryEmit(it) }
+        val action = request.action ?: return
+        scope.launch {
+            if (_playback.value?.id != request.playbackId) return@launch
+            _controls.tryEmit(PartyControl(action, request.positionMs, message.name))
+        }
     }
 
     // ---- Everyone ----
@@ -392,7 +407,7 @@ object PartyRepository {
         _playback.value = null
         _playbackState.value = null
         _chat.value = emptyList()
-        _suggestions.value = emptyList()
+        _answeredRequests.value = emptySet()
         _waitingFor.value = emptyList()
         reportedLoading = null
         _nextChatAtEpochMs.value = 0L
@@ -687,13 +702,35 @@ object PartyRepository {
             memberId = guest.member.id,
             memberName = guest.member.name,
         )
-        _suggestions.update { list ->
-            (list.filterNot { it.memberId == guest.member.id && it.videoId == stamped.videoId } + stamped).takeLast(MAX_SUGGESTIONS)
-        }
+        postRequest(room, guest, PartyRequest(suggestion = stamped))
+    }
+
+    // A guest's request, in the chat for everyone, with Yes for the host; it goes through whether chat is on or not.
+    private fun postRequest(room: HostedRoom, guest: PartyGuest, request: PartyRequest) {
+        val now = EpisodeReleaseDatePlatform.nowEpochMs()
+        if (now - guest.lastControlAtEpochMs < MIN_REQUEST_INTERVAL_MS) return
+        guest.lastControlAtEpochMs = now
+        val message = PartyChatMessage(
+            id = "request-${guest.member.id}-$now-${nextChatNumber++}",
+            memberId = guest.member.id,
+            name = guest.member.name,
+            text = "",
+            sentAtEpochMs = now,
+            request = request,
+        )
+        appendChat(message)
+        broadcast(room, PartyMessage.Chat(message))
     }
 
     private fun onGuestControl(room: HostedRoom, guest: PartyGuest, control: PartyMessage.Control) {
         if (_playback.value?.id != control.playbackId) return
+        val suggests = when (control.action) {
+            PartyControlAction.PLAY, PartyControlAction.PAUSE -> room.settings.guestPause == PartyGuestPause.SUGGEST
+            PartyControlAction.SEEK -> room.settings.guestSeek == PartyGuestSeek.SUGGEST
+        }
+        if (suggests) {
+            return postRequest(room, guest, PartyRequest(control.playbackId, control.action, control.positionMs))
+        }
         val allowed = when (control.action) {
             PartyControlAction.PLAY, PartyControlAction.PAUSE -> room.settings.guestPause == PartyGuestPause.PAUSE_EVERYONE
             PartyControlAction.SEEK -> room.settings.guestSeek == PartyGuestSeek.SEEK_EVERYONE

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.party.PartyControlAction
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.rememberUpdatedState
@@ -129,6 +130,10 @@ internal fun PlayerScreenRuntime.showVolumeFeedback(level: PlayerAudioLevel) {
 
 internal fun PlayerScreenRuntime.togglePlayback() {
     if (partyPauseLocked) return
+    if (partyPauseSuggests) {
+        val playing = playbackSnapshot.isPlaying || (playbackSnapshot.isLoading && shouldPlay)
+        return askPartyHost(if (playing) PartyControlAction.PAUSE else PartyControlAction.PLAY, playbackSnapshot.positionMs)
+    }
     // While loading, the request to play is what the button shows, so that is what it toggles.
     if (playbackSnapshot.isPlaying || (playbackSnapshot.isLoading && shouldPlay)) {
         shouldPlay = false
@@ -145,6 +150,7 @@ internal fun PlayerScreenRuntime.togglePlayback() {
 
 internal fun PlayerScreenRuntime.seekBy(offsetMs: Long) {
     if (partySeekLocked) return
+    if (partySeekSuggests) return askPartyHost(PartyControlAction.SEEK, (playbackSnapshot.positionMs + offsetMs).coerceAtLeast(0L))
     playerController?.seekBy(offsetMs)
     scheduleProgressSyncAfterSeek()
     controlsVisible = true
@@ -162,6 +168,10 @@ internal fun PlayerScreenRuntime.seekStepMs(direction: PlayerSeekDirection): Lon
 
 internal fun PlayerScreenRuntime.handleDoubleTapSeek(direction: PlayerSeekDirection) {
     if (partySeekLocked) return
+    if (partySeekSuggests) {
+        val offsetMs = if (direction == PlayerSeekDirection.Forward) seekStepMs(direction) else -seekStepMs(direction)
+        return askPartyHost(PartyControlAction.SEEK, (playbackSnapshot.positionMs + offsetMs).coerceAtLeast(0L))
+    }
     val currentPositionMs = playbackSnapshot.positionMs.coerceAtLeast(0L)
     val currentSeekState = accumulatedSeekState
     val nextState = if (currentSeekState?.direction == direction) {

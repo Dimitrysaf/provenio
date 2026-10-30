@@ -11,10 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -40,7 +37,6 @@ import io.github.dimitrysaf.provenio.core.party.PartyError
 import io.github.dimitrysaf.provenio.core.party.PartyPhase
 import io.github.dimitrysaf.provenio.core.party.PartyPlayback
 import io.github.dimitrysaf.provenio.core.party.PartyRepository
-import io.github.dimitrysaf.provenio.core.party.PartySuggestion
 import io.github.dimitrysaf.provenio.core.party.toPlayerLaunch
 import io.github.dimitrysaf.provenio.core.playback.PlayerLaunchStore
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
@@ -119,7 +115,6 @@ internal fun WatchPartyAppHost(
     val room = (state.phase as? PartyPhase.InRoom)?.room
     val activity by PartyRepository.activity.collectAsStateWithLifecycle()
     val sharedPlayback by PartyRepository.playback.collectAsStateWithLifecycle()
-    val suggestions by PartyRepository.suggestions.collectAsStateWithLifecycle()
     val leaveRequest by WatchPartyPrompts.leaveRequest.collectAsStateWithLifecycle()
     val joinRequest by WatchPartyPrompts.joinRequest.collectAsStateWithLifecycle()
     val conversationShown by WatchPartyPrompts.conversationShown.collectAsStateWithLifecycle()
@@ -208,33 +203,28 @@ internal fun WatchPartyAppHost(
 
     state.notice?.let { notice -> WatchPartyNoticeDialog(notice) }
 
-    if (isHost) {
-        suggestions.firstOrNull()?.let { suggestion ->
-            WatchPartySuggestionDialog(
-                suggestion = suggestion,
-                onChoose = {
-                    PartyRepository.dismissSuggestion(suggestion.id)
-                    playback.play(
-                        type = suggestion.type,
-                        videoId = suggestion.videoId,
-                        parentMetaId = suggestion.parentMetaId,
-                        parentMetaType = suggestion.parentMetaType,
-                        title = suggestion.title,
-                        logo = suggestion.logo,
-                        poster = suggestion.poster,
-                        background = suggestion.background,
-                        seasonNumber = suggestion.seasonNumber,
-                        episodeNumber = suggestion.episodeNumber,
-                        episodeTitle = suggestion.episodeTitle,
-                        episodeThumbnail = suggestion.episodeThumbnail,
-                        pauseDescription = null,
-                        resumePositionMs = null,
-                        resumeProgressFraction = null,
-                        manualSelection = false,
-                        startFromBeginning = false,
-                    )
-                },
-                onDismiss = { PartyRepository.dismissSuggestion(suggestion.id) },
+    // A title the host said Yes to in the chat plays as anything does: by the remembered source, the auto-play rules, or Sources.
+    LaunchedEffect(enabled, isHost) {
+        if (!enabled || !isHost) return@LaunchedEffect
+        PartyRepository.acceptedSuggestions.collect { suggestion ->
+            playback.play(
+                type = suggestion.type,
+                videoId = suggestion.videoId,
+                parentMetaId = suggestion.parentMetaId,
+                parentMetaType = suggestion.parentMetaType,
+                title = suggestion.title,
+                logo = suggestion.logo,
+                poster = suggestion.poster,
+                background = suggestion.background,
+                seasonNumber = suggestion.seasonNumber,
+                episodeNumber = suggestion.episodeNumber,
+                episodeTitle = suggestion.episodeTitle,
+                episodeThumbnail = suggestion.episodeThumbnail,
+                pauseDescription = null,
+                resumePositionMs = null,
+                resumeProgressFraction = null,
+                manualSelection = false,
+                startFromBeginning = false,
             )
         }
     }
@@ -376,40 +366,6 @@ private fun WatchPartyNoticeDialog(notice: PartyError) {
         confirmButton = {
             TextButton(onClick = PartyRepository::clearNotice) {
                 Text(stringResource(Res.string.action_close))
-            }
-        },
-    )
-}
-
-@Composable
-private fun WatchPartySuggestionDialog(
-    suggestion: PartySuggestion,
-    onChoose: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val episode = listOfNotNull(
-        if (suggestion.seasonNumber != null && suggestion.episodeNumber != null) {
-            "S${suggestion.seasonNumber}E${suggestion.episodeNumber}"
-        } else {
-            null
-        },
-        suggestion.episodeTitle,
-    ).joinToString(" · ")
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(imageVector = Icons.Rounded.Groups, contentDescription = null) },
-        title = { Text(stringResource(Res.string.watch_party_suggestion_title, suggestion.memberName)) },
-        text = {
-            Text(if (episode.isBlank()) suggestion.title else "${suggestion.title}\n$episode")
-        },
-        confirmButton = {
-            TextButton(onClick = onChoose) {
-                Text(stringResource(Res.string.watch_party_suggestion_choose))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(Res.string.watch_party_suggestion_dismiss))
             }
         },
     )

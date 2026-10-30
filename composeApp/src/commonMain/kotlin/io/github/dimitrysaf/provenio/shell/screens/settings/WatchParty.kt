@@ -490,6 +490,7 @@ private fun PartyGuestPause.labelRes(): StringResource = when (this) {
     PartyGuestPause.CONTINUE_WHERE_LEFT -> Res.string.watch_party_guest_pause_continue
     PartyGuestPause.SNAP_TO_HOST -> Res.string.watch_party_guest_pause_snap
     PartyGuestPause.HOST_ONLY -> Res.string.watch_party_guest_pause_host_only
+    PartyGuestPause.SUGGEST -> Res.string.watch_party_guest_pause_suggest
 }
 
 private fun PartyGuestPause.descriptionRes(): StringResource = when (this) {
@@ -497,18 +498,21 @@ private fun PartyGuestPause.descriptionRes(): StringResource = when (this) {
     PartyGuestPause.CONTINUE_WHERE_LEFT -> Res.string.watch_party_guest_pause_continue_description
     PartyGuestPause.SNAP_TO_HOST -> Res.string.watch_party_guest_pause_snap_description
     PartyGuestPause.HOST_ONLY -> Res.string.watch_party_guest_pause_host_only_description
+    PartyGuestPause.SUGGEST -> Res.string.watch_party_guest_pause_suggest_description
 }
 
 private fun PartyGuestSeek.labelRes(): StringResource = when (this) {
     PartyGuestSeek.SEEK_EVERYONE -> Res.string.watch_party_guest_seek_everyone
     PartyGuestSeek.ON_THEIR_OWN -> Res.string.watch_party_guest_seek_own
     PartyGuestSeek.SNAP_BACK -> Res.string.watch_party_guest_seek_host_only
+    PartyGuestSeek.SUGGEST -> Res.string.watch_party_guest_seek_suggest
 }
 
 private fun PartyGuestSeek.descriptionRes(): StringResource = when (this) {
     PartyGuestSeek.SEEK_EVERYONE -> Res.string.watch_party_guest_seek_everyone_description
     PartyGuestSeek.ON_THEIR_OWN -> Res.string.watch_party_guest_seek_own_description
     PartyGuestSeek.SNAP_BACK -> Res.string.watch_party_guest_seek_host_only_description
+    PartyGuestSeek.SUGGEST -> Res.string.watch_party_guest_seek_suggest_description
 }
 
 private fun PartyLoading.labelRes(): StringResource = when (this) {
