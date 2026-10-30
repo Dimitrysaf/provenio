@@ -173,6 +173,7 @@ internal class PlayerScreenRuntime(
     // The watch party this player is part of, if any: a guest follows the host and suggests
     // instead of choosing.
     var partyRoom by mutableStateOf<PartyRoom?>(null)
+    var partyGuestSync by mutableStateOf<PartyGuestSync?>(null)
     val partyGuest: Boolean get() = partyRoom?.isHost == false
     val partyHost: Boolean get() = partyRoom?.isHost == true
     var showPartyChat by mutableStateOf(false)

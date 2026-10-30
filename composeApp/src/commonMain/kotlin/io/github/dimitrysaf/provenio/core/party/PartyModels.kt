@@ -12,6 +12,70 @@ data class PartySettings(
     val suggestionsEnabled: Boolean = true,
     /** How long each member waits between chat messages; 0 is off. */
     val slowModeSeconds: Int = 0,
+    val guestPause: PartyGuestPause = PartyGuestPause.SNAP_TO_HOST,
+    val guestSeek: PartyGuestSeek = PartyGuestSeek.SNAP_BACK,
+    val loading: PartyLoading = PartyLoading.KEEP_UP,
+    /** How long the room waits for someone loading, under [PartyLoading.PAUSE_EVERYONE]; null is as long as it takes. */
+    val loadingWaitSeconds: Int? = 30,
+    val syncTolerance: PartySyncTolerance = PartySyncTolerance.NORMAL,
+)
+
+/** What happens when a guest pauses, and then plays again. */
+@Serializable
+enum class PartyGuestPause {
+    /** The guest's pause pauses the room, and their play plays it. */
+    PAUSE_EVERYONE,
+
+    /** The room carries on; the guest carries on from where they paused, on their own until they catch up. */
+    CONTINUE_WHERE_LEFT,
+
+    /** The room carries on; when the guest plays, they jump to where the host is now. */
+    SNAP_TO_HOST,
+}
+
+/** What happens when a guest moves to another moment. */
+@Serializable
+enum class PartyGuestSeek {
+    /** The room moves there with them. */
+    SEEK_EVERYONE,
+
+    /** They watch from there on their own, until they catch up. */
+    ON_THEIR_OWN,
+
+    /** Only the host moves the room; the guest goes back to where the host is. */
+    SNAP_BACK,
+}
+
+/** What the room does while someone's player is loading. */
+@Serializable
+enum class PartyLoading {
+    /** The host pauses until everyone has loaded, for at most [PartySettings.loadingWaitSeconds]. */
+    PAUSE_EVERYONE,
+
+    /** The player of whoever is loading keeps up with the host's time, and loads from there. */
+    KEEP_UP,
+
+    /** Whoever is loading carries on from where they stopped, behind the room. */
+    CONTINUE,
+}
+
+/** How far a guest may drift from the host before their player is put back in step. */
+@Serializable
+enum class PartySyncTolerance(val driftMs: Long) {
+    TIGHT(1_000),
+    NORMAL(3_000),
+    RELAXED(8_000),
+}
+
+/** What a guest asks the host's player to do for everyone. */
+@Serializable
+enum class PartyControlAction { PLAY, PAUSE, SEEK }
+
+/** A guest's play, pause or seek, which the host's player carries out for the room. */
+data class PartyControl(
+    val action: PartyControlAction,
+    val positionMs: Long,
+    val memberName: String,
 )
 
 @Serializable
@@ -66,8 +130,17 @@ data class PartyPlayback(
 @Serializable
 data class PartyPlaybackState(
     val playbackId: Long,
+    /** Whether the host means to play; it may still be loading. */
     val isPlaying: Boolean,
     val positionMs: Long,
+    /** The host's player is loading, so its position stands still. */
+    val isLoading: Boolean = false,
+    /** Counts the host's jumps, so everyone keeping to the room jumps with it. */
+    val seekCount: Int = 0,
+    /** Who the room is paused for while they load. */
+    val waitingFor: List<String> = emptyList(),
+    /** The guest who last played, paused or moved the room; null when it was the host. */
+    val changedBy: String? = null,
 )
 
 @Serializable

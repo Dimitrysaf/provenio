@@ -46,10 +46,14 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncFirewallPrompt
+import io.github.dimitrysaf.provenio.core.party.PartyGuestPause
+import io.github.dimitrysaf.provenio.core.party.PartyGuestSeek
+import io.github.dimitrysaf.provenio.core.party.PartyLoading
 import io.github.dimitrysaf.provenio.core.party.PartyPhase
 import io.github.dimitrysaf.provenio.core.party.PartyReachability
 import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.party.PartyRoom
+import io.github.dimitrysaf.provenio.core.party.PartySyncTolerance
 import io.github.dimitrysaf.provenio.shell.WatchPartyPrompts
 import io.github.dimitrysaf.provenio.shell.components.BottomSheetBodyMargin
 import io.github.dimitrysaf.provenio.shell.components.ModalSheet
@@ -68,6 +72,7 @@ import provenio.composeapp.generated.resources.*
 
 private val MemberLimitOptions = listOf<Int?>(null, 2, 3, 4, 6, 8, 10, 15, 20)
 private val SlowModeOptions = listOf(0, 5, 10, 30, 60)
+private val LoadingWaitOptions = listOf<Int?>(15, 30, 60, 120, null)
 
 /**
  * The Watch party page: create a room, or join one by scanning or pasting its invite. In a room
@@ -174,6 +179,11 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
     var showLeave by rememberSaveable { mutableStateOf(false) }
     var showMemberLimit by rememberSaveable { mutableStateOf(false) }
     var showSlowMode by rememberSaveable { mutableStateOf(false) }
+    var showGuestPause by rememberSaveable { mutableStateOf(false) }
+    var showGuestSeek by rememberSaveable { mutableStateOf(false) }
+    var showLoading by rememberSaveable { mutableStateOf(false) }
+    var showLoadingWait by rememberSaveable { mutableStateOf(false) }
+    var showSyncTolerance by rememberSaveable { mutableStateOf(false) }
     var memberToRemoveId by rememberSaveable { mutableStateOf<String?>(null) }
     val guestName = stringResource(Res.string.watch_party_guest_name)
     val hostLabel = stringResource(Res.string.watch_party_member_host)
@@ -264,6 +274,45 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
                 checked = { settings.suggestionsEnabled },
                 enabled = editable,
                 onCheckedChange = { enabled -> PartyRepository.updateSettings { it.copy(suggestionsEnabled = enabled) } },
+            )
+        }
+    }
+
+    SettingsSection(
+        title = stringResource(Res.string.watch_party_section_playback),
+        isTablet = isTablet,
+    ) {
+        val editable = room.isHost
+        SettingsList {
+            navigationRow(
+                title = stringResource(Res.string.watch_party_guest_pause),
+                description = stringResource(settings.guestPause.labelRes()),
+                enabled = editable,
+                onClick = { showGuestPause = true },
+            )
+            navigationRow(
+                title = stringResource(Res.string.watch_party_guest_seek),
+                description = stringResource(settings.guestSeek.labelRes()),
+                enabled = editable,
+                onClick = { showGuestSeek = true },
+            )
+            navigationRow(
+                title = stringResource(Res.string.watch_party_loading),
+                description = stringResource(settings.loading.labelRes()),
+                enabled = editable,
+                onClick = { showLoading = true },
+            )
+            navigationRow(
+                title = stringResource(Res.string.watch_party_loading_wait),
+                description = loadingWaitLabel(settings.loadingWaitSeconds),
+                enabled = editable && settings.loading == PartyLoading.PAUSE_EVERYONE,
+                onClick = { showLoadingWait = true },
+            )
+            navigationRow(
+                title = stringResource(Res.string.watch_party_sync_tolerance),
+                description = stringResource(settings.syncTolerance.labelRes()),
+                enabled = editable && settings.loading != PartyLoading.CONTINUE,
+                onClick = { showSyncTolerance = true },
             )
         }
     }
@@ -365,7 +414,134 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
             onDismiss = { showSlowMode = false },
         )
     }
+
+    if (showGuestPause && room.isHost) {
+        IosEnumSelectionDialog(
+            title = stringResource(Res.string.watch_party_guest_pause),
+            options = PartyGuestPause.entries,
+            selected = settings.guestPause,
+            label = { stringResource(it.labelRes()) },
+            description = { stringResource(it.descriptionRes()) },
+            onSelect = { choice ->
+                showGuestPause = false
+                PartyRepository.updateSettings { it.copy(guestPause = choice) }
+            },
+            onDismiss = { showGuestPause = false },
+        )
+    }
+
+    if (showGuestSeek && room.isHost) {
+        IosEnumSelectionDialog(
+            title = stringResource(Res.string.watch_party_guest_seek),
+            options = PartyGuestSeek.entries,
+            selected = settings.guestSeek,
+            label = { stringResource(it.labelRes()) },
+            description = { stringResource(it.descriptionRes()) },
+            onSelect = { choice ->
+                showGuestSeek = false
+                PartyRepository.updateSettings { it.copy(guestSeek = choice) }
+            },
+            onDismiss = { showGuestSeek = false },
+        )
+    }
+
+    if (showLoading && room.isHost) {
+        IosEnumSelectionDialog(
+            title = stringResource(Res.string.watch_party_loading),
+            options = PartyLoading.entries,
+            selected = settings.loading,
+            label = { stringResource(it.labelRes()) },
+            description = { stringResource(it.descriptionRes()) },
+            onSelect = { choice ->
+                showLoading = false
+                PartyRepository.updateSettings { it.copy(loading = choice) }
+            },
+            onDismiss = { showLoading = false },
+        )
+    }
+
+    if (showLoadingWait && room.isHost) {
+        IosEnumSelectionDialog(
+            title = stringResource(Res.string.watch_party_loading_wait),
+            options = LoadingWaitOptions,
+            selected = settings.loadingWaitSeconds,
+            label = { loadingWaitLabel(it) },
+            onSelect = { seconds ->
+                showLoadingWait = false
+                PartyRepository.updateSettings { it.copy(loadingWaitSeconds = seconds) }
+            },
+            onDismiss = { showLoadingWait = false },
+        )
+    }
+
+    if (showSyncTolerance && room.isHost) {
+        IosEnumSelectionDialog(
+            title = stringResource(Res.string.watch_party_sync_tolerance),
+            options = PartySyncTolerance.entries,
+            selected = settings.syncTolerance,
+            label = { stringResource(it.labelRes()) },
+            description = { stringResource(it.descriptionRes()) },
+            onSelect = { choice ->
+                showSyncTolerance = false
+                PartyRepository.updateSettings { it.copy(syncTolerance = choice) }
+            },
+            onDismiss = { showSyncTolerance = false },
+        )
+    }
 }
+
+private fun PartyGuestPause.labelRes(): StringResource = when (this) {
+    PartyGuestPause.PAUSE_EVERYONE -> Res.string.watch_party_guest_pause_everyone
+    PartyGuestPause.CONTINUE_WHERE_LEFT -> Res.string.watch_party_guest_pause_continue
+    PartyGuestPause.SNAP_TO_HOST -> Res.string.watch_party_guest_pause_snap
+}
+
+private fun PartyGuestPause.descriptionRes(): StringResource = when (this) {
+    PartyGuestPause.PAUSE_EVERYONE -> Res.string.watch_party_guest_pause_everyone_description
+    PartyGuestPause.CONTINUE_WHERE_LEFT -> Res.string.watch_party_guest_pause_continue_description
+    PartyGuestPause.SNAP_TO_HOST -> Res.string.watch_party_guest_pause_snap_description
+}
+
+private fun PartyGuestSeek.labelRes(): StringResource = when (this) {
+    PartyGuestSeek.SEEK_EVERYONE -> Res.string.watch_party_guest_seek_everyone
+    PartyGuestSeek.ON_THEIR_OWN -> Res.string.watch_party_guest_seek_own
+    PartyGuestSeek.SNAP_BACK -> Res.string.watch_party_guest_seek_host_only
+}
+
+private fun PartyGuestSeek.descriptionRes(): StringResource = when (this) {
+    PartyGuestSeek.SEEK_EVERYONE -> Res.string.watch_party_guest_seek_everyone_description
+    PartyGuestSeek.ON_THEIR_OWN -> Res.string.watch_party_guest_seek_own_description
+    PartyGuestSeek.SNAP_BACK -> Res.string.watch_party_guest_seek_host_only_description
+}
+
+private fun PartyLoading.labelRes(): StringResource = when (this) {
+    PartyLoading.PAUSE_EVERYONE -> Res.string.watch_party_loading_pause
+    PartyLoading.KEEP_UP -> Res.string.watch_party_loading_keep_up
+    PartyLoading.CONTINUE -> Res.string.watch_party_loading_continue
+}
+
+private fun PartyLoading.descriptionRes(): StringResource = when (this) {
+    PartyLoading.PAUSE_EVERYONE -> Res.string.watch_party_loading_pause_description
+    PartyLoading.KEEP_UP -> Res.string.watch_party_loading_keep_up_description
+    PartyLoading.CONTINUE -> Res.string.watch_party_loading_continue_description
+}
+
+private fun PartySyncTolerance.labelRes(): StringResource = when (this) {
+    PartySyncTolerance.TIGHT -> Res.string.watch_party_sync_tolerance_tight
+    PartySyncTolerance.NORMAL -> Res.string.watch_party_sync_tolerance_normal
+    PartySyncTolerance.RELAXED -> Res.string.watch_party_sync_tolerance_relaxed
+}
+
+private fun PartySyncTolerance.descriptionRes(): StringResource = when (this) {
+    PartySyncTolerance.TIGHT -> Res.string.watch_party_sync_tolerance_tight_description
+    PartySyncTolerance.NORMAL -> Res.string.watch_party_sync_tolerance_normal_description
+    PartySyncTolerance.RELAXED -> Res.string.watch_party_sync_tolerance_relaxed_description
+}
+
+@Composable
+private fun loadingWaitLabel(seconds: Int?): String =
+    seconds?.let { stringResource(Res.string.watch_party_loading_wait_value, it) }
+        ?: stringResource(Res.string.watch_party_loading_wait_unlimited)
 
 private fun PartyReachability.titleRes(): StringResource = when (this) {
     PartyReachability.CHECKING -> Res.string.watch_party_reach_checking

@@ -10,7 +10,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
 // Raised whenever a message changes in a way an older build would misread; host and guests must match.
-internal const val PARTY_PROTOCOL_VERSION = 2
+internal const val PARTY_PROTOCOL_VERSION = 3
 internal const val PARTY_NONCE_SIZE = 16
 
 internal val partyJson = Json {
@@ -89,6 +89,20 @@ internal sealed interface PartyMessage {
     @Serializable
     @SerialName("suggest")
     data class Suggest(val suggestion: PartySuggestion) : PartyMessage
+
+    /** A guest plays, pauses or seeks for the room, which the host does where the room lets them. */
+    @Serializable
+    @SerialName("control")
+    data class Control(
+        val playbackId: Long,
+        val action: PartyControlAction,
+        val positionMs: Long,
+    ) : PartyMessage
+
+    /** Whether a guest's player is loading the host's source, for a room that waits for them. */
+    @Serializable
+    @SerialName("loading")
+    data class Loading(val playbackId: Long, val loading: Boolean) : PartyMessage
 
     @Serializable
     @SerialName("removed")

@@ -222,6 +222,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             feedback = renderedGestureFeedback,
         )
         RenderPlaybackOverlays(runtime = runtime)
+        PlayerWatchPartyStatus(runtime = runtime)
         PlayerWatchPartyChat(runtime = runtime)
         RenderPlayerModals(displayedPositionMs = displayedPositionMs)
         PlayerSubtitleAudioSettings(

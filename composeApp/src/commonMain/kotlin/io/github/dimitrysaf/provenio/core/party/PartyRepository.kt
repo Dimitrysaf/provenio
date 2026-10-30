@@ -22,8 +22,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
@@ -51,6 +54,9 @@ object PartyRepository {
     private const val CHAT_HISTORY = 100
     private const val WELCOME_CHAT = 50
     private const val MAX_SUGGESTIONS = 20
+
+    // A guest who keeps tapping play and pause moves the room at most this often.
+    private const val MIN_CONTROL_INTERVAL_MS = 500L
 
     private val log = Logger.withTag("WatchParty")
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
@@ -80,6 +86,14 @@ object PartyRepository {
     private val _suggestions = MutableStateFlow<List<PartySuggestion>>(emptyList())
     val suggestions: StateFlow<List<PartySuggestion>> = _suggestions.asStateFlow()
 
+    /** Guests' plays, pauses and seeks that the room lets through, for the host's player to carry out. */
+    private val _controls = MutableSharedFlow<PartyControl>(extraBufferCapacity = 8)
+    val controls: SharedFlow<PartyControl> = _controls.asSharedFlow()
+
+    /** The guests the host's player waits for while they load, under [PartyLoading.PAUSE_EVERYONE]. */
+    private val _waitingFor = MutableStateFlow<List<PartyMember>>(emptyList())
+    val waitingFor: StateFlow<List<PartyMember>> = _waitingFor.asStateFlow()
+
     val isSupported: Boolean get() = LocalSyncPlatform.isSupported
 
     val currentRoom: PartyRoom? get() = (_uiState.value.phase as? PartyPhase.InRoom)?.room
@@ -94,6 +108,9 @@ object PartyRepository {
     private var nextPlaybackId = 1L
     private var nextChatNumber = 1L
 
+    // What this guest last told the host about loading, so it is said once.
+    private var reportedLoading: Pair<Long, Boolean>? = null
+
     private class PartyGuest(
         val member: PartyMember,
         val channel: PartyChannel,
@@ -101,6 +118,13 @@ object PartyRepository {
         // Set once the host sends them off; whoever did that also closes the connection.
         var removed = false
         var lastChatAtEpochMs = 0L
+        var lastControlAtEpochMs = 0L
+
+        // Since when their player has been loading the host's source, while it is.
+        var loadingSinceEpochMs: Long? = null
+
+        // The host chose not to wait for this load.
+        var waitSkipped = false
     }
 
     private class HostedRoom(
@@ -115,6 +139,7 @@ object PartyRepository {
         var reachability = PartyReachability.CHECKING
         var mapping: PartyPortMapping? = null
         var firewall: LocalSyncFirewallPrompt? = null
+        var waitExpiry: Job? = null
         val guests = LinkedHashMap<String, PartyGuest>()
         val banned = LinkedHashMap<String, String>()
 
@@ -177,6 +202,7 @@ object PartyRepository {
             room.settings = settings
             broadcast(room, PartyMessage.Settings(settings))
             publishHost()
+            refreshWaiting(room)
         }
     }
 
@@ -249,6 +275,7 @@ object PartyRepository {
             val shared = playback.copy(id = id)
             _playback.value = shared
             _playbackState.value = null
+            forgetLoading(room)
             broadcast(room, PartyMessage.Playback(shared))
         }
         return id
@@ -261,6 +288,7 @@ object PartyRepository {
             if (_playback.value?.id != playbackId) return@launch
             _playback.value = null
             _playbackState.value = null
+            forgetLoading(room)
             broadcast(room, PartyMessage.Playback(null))
         }
     }
@@ -272,6 +300,15 @@ object PartyRepository {
             if (_playback.value?.id != state.playbackId) return@launch
             _playbackState.value = state
             broadcast(room, PartyMessage.PlaybackState(state))
+        }
+    }
+
+    /** The host plays on without waiting for whoever is loading now. */
+    fun stopWaiting() {
+        scope.launch {
+            val room = hosted ?: return@launch
+            room.guests.values.filter { it.loadingSinceEpochMs != null }.forEach { it.waitSkipped = true }
+            refreshWaiting(room)
         }
     }
 
@@ -310,6 +347,27 @@ object PartyRepository {
         return true
     }
 
+    /** A guest plays, pauses or seeks for everyone; the host decides whether the room lets them. */
+    fun requestControl(playbackId: Long, action: PartyControlAction, positionMs: Long) {
+        if (!isGuest) return
+        scope.launch {
+            guestChannel?.let { channel ->
+                runCatching { channel.send(PartyMessage.Control(playbackId, action, positionMs.coerceAtLeast(0L))) }
+            }
+        }
+    }
+
+    /** Tells the host whether this guest's player is loading [playbackId], for a room that waits. */
+    fun reportLoading(playbackId: Long, loading: Boolean) {
+        if (!isGuest) return
+        val report = playbackId to loading
+        if (reportedLoading == report) return
+        reportedLoading = report
+        scope.launch {
+            guestChannel?.let { channel -> runCatching { channel.send(PartyMessage.Loading(playbackId, loading)) } }
+        }
+    }
+
     private fun notify(error: PartyError) {
         _uiState.update { it.copy(notice = error) }
     }
@@ -333,6 +391,8 @@ object PartyRepository {
         _playbackState.value = null
         _chat.value = emptyList()
         _suggestions.value = emptyList()
+        _waitingFor.value = emptyList()
+        reportedLoading = null
         _nextChatAtEpochMs.value = 0L
         _uiState.update { PartyUiState(phase = PartyPhase.Idle, notice = notice ?: it.notice) }
     }
@@ -455,6 +515,7 @@ object PartyRepository {
         room.handshakes.clear()
         room.server.close()
         room.mapping?.let { mapping -> scope.launch { PartyPortMapper.unmap(mapping) } }
+        room.waitExpiry?.cancel()
         sessionJob?.cancel()
         sessionJob = null
         end(notice)
@@ -501,6 +562,8 @@ object PartyRepository {
                 when (message) {
                     is PartyMessage.ChatSend -> onGuestChat(room, guest, message.text)
                     is PartyMessage.Suggest -> onGuestSuggestion(room, guest, message.suggestion)
+                    is PartyMessage.Control -> onGuestControl(room, guest, message)
+                    is PartyMessage.Loading -> onGuestLoading(room, guest, message)
                     else -> Unit
                 }
             }
@@ -515,6 +578,7 @@ object PartyRepository {
                     room.guests.remove(guest.member.id)
                     if (!room.closed) broadcast(room, PartyMessage.Members(room.members))
                     publishHost()
+                    refreshWaiting(room)
                     guest.channel.close()
                 }
                 // Replaced by a newer connection from the same device.
@@ -618,12 +682,76 @@ object PartyRepository {
         }
     }
 
+    private fun onGuestControl(room: HostedRoom, guest: PartyGuest, control: PartyMessage.Control) {
+        if (_playback.value?.id != control.playbackId) return
+        val allowed = when (control.action) {
+            PartyControlAction.PLAY, PartyControlAction.PAUSE -> room.settings.guestPause == PartyGuestPause.PAUSE_EVERYONE
+            PartyControlAction.SEEK -> room.settings.guestSeek == PartyGuestSeek.SEEK_EVERYONE
+        }
+        if (!allowed) return
+        // Seeks all go through, so the room ends where the guest let go.
+        if (control.action != PartyControlAction.SEEK) {
+            val now = EpisodeReleaseDatePlatform.nowEpochMs()
+            if (now - guest.lastControlAtEpochMs < MIN_CONTROL_INTERVAL_MS) return
+            guest.lastControlAtEpochMs = now
+        }
+        _controls.tryEmit(PartyControl(control.action, control.positionMs, guest.member.name))
+    }
+
+    private fun onGuestLoading(room: HostedRoom, guest: PartyGuest, loading: PartyMessage.Loading) {
+        if (_playback.value?.id != loading.playbackId) return
+        if (loading.loading) {
+            if (guest.loadingSinceEpochMs == null) guest.loadingSinceEpochMs = EpisodeReleaseDatePlatform.nowEpochMs()
+        } else {
+            guest.loadingSinceEpochMs = null
+            guest.waitSkipped = false
+        }
+        refreshWaiting(room)
+    }
+
+    // A new source starts everyone's loading afresh.
+    private fun forgetLoading(room: HostedRoom) {
+        room.guests.values.forEach { guest ->
+            guest.loadingSinceEpochMs = null
+            guest.waitSkipped = false
+        }
+        refreshWaiting(room)
+    }
+
+    // Who the room waits for now; the wait ends by itself once its limit runs out.
+    private fun refreshWaiting(room: HostedRoom) {
+        room.waitExpiry?.cancel()
+        room.waitExpiry = null
+        val settings = room.settings
+        if (room.closed || settings.loading != PartyLoading.PAUSE_EVERYONE) {
+            _waitingFor.value = emptyList()
+            return
+        }
+        val now = EpisodeReleaseDatePlatform.nowEpochMs()
+        val limitMs = settings.loadingWaitSeconds?.let { it * 1_000L }
+        val loading = room.guests.values.filter { guest ->
+            val since = guest.loadingSinceEpochMs ?: return@filter false
+            !guest.waitSkipped && (limitMs == null || now - since < limitMs)
+        }
+        val waiting = loading.map { it.member }
+        if (_waitingFor.value != waiting) _waitingFor.value = waiting
+        if (limitMs != null && loading.isNotEmpty()) {
+            val nextExpiry = loading.minOf { it.loadingSinceEpochMs!! } + limitMs
+            room.waitExpiry = scope.launch {
+                delay((nextExpiry - now).coerceAtLeast(0L))
+                room.waitExpiry = null
+                refreshWaiting(room)
+            }
+        }
+    }
+
     private fun removeGuest(room: HostedRoom, guest: PartyGuest, reason: PartyRemoval) {
         if (room.guests[guest.member.id] !== guest) return
         room.guests.remove(guest.member.id)
         guest.removed = true
         broadcast(room, PartyMessage.Members(room.members))
         publishHost()
+        refreshWaiting(room)
         sendOff(guest, reason)
     }
 
@@ -730,12 +858,14 @@ object PartyRepository {
                 is PartyMessage.Playback -> {
                     _playback.value = message.playback
                     _playbackState.value = null
+                    reportedLoading = null
                 }
                 is PartyMessage.PlaybackState -> _playbackState.value = message.state
                 is PartyMessage.Chat -> appendChat(message.message)
                 is PartyMessage.Removed -> return message.reason.toError()
                 PartyMessage.Ping -> channel.send(PartyMessage.Pong)
-                is PartyMessage.ChatSend, is PartyMessage.Suggest, PartyMessage.Pong, PartyMessage.Leave, null -> Unit
+                is PartyMessage.ChatSend, is PartyMessage.Suggest, is PartyMessage.Control, is PartyMessage.Loading,
+                PartyMessage.Pong, PartyMessage.Leave, null -> Unit
             }
             room?.let { setPhase(PartyPhase.InRoom(it)) }
         }
