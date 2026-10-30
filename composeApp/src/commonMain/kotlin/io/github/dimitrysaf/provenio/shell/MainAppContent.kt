@@ -3,10 +3,12 @@ package io.github.dimitrysaf.provenio.shell
 import io.github.dimitrysaf.provenio.core.profiles.Profile
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -22,11 +24,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -490,6 +494,7 @@ internal fun MainAppContent(
             selectedContinueWatchingForActions = item
         }
 
+        val partyLine = remember { WatchPartyLine() }
         AppUpdaterHost(
             controller = appUpdaterController,
             modifier = Modifier.fillMaxSize(),
@@ -499,9 +504,12 @@ internal fun MainAppContent(
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface),
             ) {
+            // The room's line covers the top, so the pages move down by its height; their status bar gap goes under it.
+            val partyLineInset by animateDpAsState(if (partyLine.text != null) WatchPartyLineHeight else 0.dp)
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(top = partyLineInset)
                     .background(MaterialTheme.colorScheme.surface),
             ) {
             val navigationMotion = rememberAppNavigationMotion()
@@ -638,6 +646,13 @@ internal fun MainAppContent(
             }
             }
 
+            WatchPartyLineBar(
+                text = partyLine.text,
+                action = partyLine.action,
+                onClick = partyLine.onClick,
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
+
             selectedPosterActionTarget?.let { posterActionTarget ->
                 key(posterActionTarget) {
                     PosterActionsSheet(
@@ -718,6 +733,7 @@ internal fun MainAppContent(
             }
 
             WatchPartyAppHost(
+                line = partyLine,
                 navController = navController,
                 playback = playback,
                 profileId = activePlaybackProfileId,

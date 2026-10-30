@@ -26,9 +26,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -53,13 +51,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.dimitrysaf.provenio.core.party.PartyChatEvent
 import io.github.dimitrysaf.provenio.core.party.PartyChatMessage
 import io.github.dimitrysaf.provenio.core.party.PartyPhase
 import io.github.dimitrysaf.provenio.core.party.PartyPlayback
@@ -123,13 +122,24 @@ internal fun PlayerScreenRuntime.currentPartyPlayback(): PartyPlayback = PartyPl
     torrentTrackers = activeTorrentTrackers,
 )
 
-/** A line at the top of the player while it is out of step with the room, with the way back. */
+/** The room's note about [name], such as them joining. */
 @Composable
-internal fun BoxScope.PlayerWatchPartyStatus(runtime: PlayerScreenRuntime) {
-    val room = runtime.partyRoom ?: return
+internal fun partyChatEventText(event: PartyChatEvent, name: String): String = when (event) {
+    PartyChatEvent.JOINED -> stringResource(Res.string.watch_party_chat_joined, name)
+    PartyChatEvent.LEFT -> stringResource(Res.string.watch_party_chat_left, name)
+    PartyChatEvent.REMOVED -> stringResource(Res.string.watch_party_chat_removed, name)
+}
+
+/** What the room's line at the top of the player says, and what tapping it does. */
+internal class PartyPlayerLine(val text: String, val action: String?, val onClick: () -> Unit)
+
+/** The room's line while the player is out of step with it: someone is loading, or this guest watches on their own. */
+@Composable
+internal fun PlayerScreenRuntime.partyPlayerLine(): PartyPlayerLine? {
+    val room = partyRoom ?: return null
     val hostState by PartyRepository.playbackState.collectAsStateWithLifecycle()
     val hostWaiting by PartyRepository.waitingFor.collectAsStateWithLifecycle()
-    val sync = runtime.partyGuestSync
+    val sync = partyGuestSync
     // Ticks, so the time behind or ahead keeps up.
     val tick by produceState(0L, sync) {
         while (true) {
@@ -144,58 +154,28 @@ internal fun BoxScope.PlayerWatchPartyStatus(runtime: PlayerScreenRuntime) {
         hostState?.takeIf { it.playbackId == sync?.playbackId }?.waitingFor.orEmpty()
     }
     val myName = room.members.firstOrNull { it.id == room.myMemberId }?.name
-    var action: Pair<String, () -> Unit>? = null
-    val text = when {
+    return when {
         waiting.isNotEmpty() && !room.isHost && myName in waiting && waiting.size == 1 ->
-            stringResource(Res.string.watch_party_status_waiting_you)
-        waiting.isNotEmpty() -> {
-            if (room.isHost) action = stringResource(Res.string.watch_party_status_dont_wait) to PartyRepository::stopWaiting
-            stringResource(Res.string.watch_party_status_waiting, waiting.filter { it != myName }.joinToString(", "))
-        }
+            PartyPlayerLine(stringResource(Res.string.watch_party_status_waiting_you), null) {}
+        waiting.isNotEmpty() -> PartyPlayerLine(
+            text = stringResource(Res.string.watch_party_status_waiting, waiting.filter { it != myName }.joinToString(", ")),
+            action = if (room.isHost) stringResource(Res.string.watch_party_status_dont_wait) else null,
+            onClick = { if (room.isHost) PartyRepository.stopWaiting() },
+        )
         sync != null && (!sync.following || sync.ownPace) -> {
-            action = stringResource(Res.string.watch_party_status_catch_up) to { runtime.catchUpWithParty(sync) }
-            val offset = sync.hostPositionMs()?.let { runtime.playbackSnapshot.positionMs - it } ?: 0L
-            when {
-                offset <= -1_000L -> stringResource(Res.string.watch_party_status_behind, formatPlaybackTime(-offset))
-                offset >= 1_000L -> stringResource(Res.string.watch_party_status_ahead, formatPlaybackTime(offset))
-                else -> stringResource(Res.string.watch_party_status_own)
-            }
+            val offset = sync.hostPositionMs()?.let { playbackSnapshot.positionMs - it } ?: 0L
+            PartyPlayerLine(
+                text = when {
+                    offset <= -1_000L -> stringResource(Res.string.watch_party_status_behind, formatPlaybackTime(-offset))
+                    offset >= 1_000L -> stringResource(Res.string.watch_party_status_ahead, formatPlaybackTime(offset))
+                    else -> stringResource(Res.string.watch_party_status_own)
+                },
+                action = stringResource(Res.string.watch_party_status_catch_up),
+                onClick = { catchUpWithParty(sync) },
+            )
         }
-        sync?.holding == true -> stringResource(Res.string.watch_party_status_holding)
+        sync?.holding == true -> PartyPlayerLine(stringResource(Res.string.watch_party_status_holding), null) {}
         else -> null
-    }
-    AnimatedVisibility(
-        visible = text != null,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = Modifier
-            .align(Alignment.TopCenter)
-            .playerFrameInsets(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
-            .padding(start = 16.dp, end = 16.dp, top = if (runtime.controlsVisible) 72.dp else 16.dp),
-    ) {
-        Surface(
-            shape = RoundedCornerShape(50),
-            color = Color.Black.copy(alpha = 0.6f),
-            contentColor = Color.White,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 16.dp, end = if (action != null) 4.dp else 16.dp).heightIn(min = 40.dp),
-            ) {
-                Text(
-                    text = text.orEmpty(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                action?.let { (label, onClick) ->
-                    TextButton(onClick = onClick) {
-                        Text(text = label, color = MaterialTheme.colorScheme.primaryContainer)
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -318,7 +298,7 @@ private fun PartyChatBox(
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextField(
                 value = draft,
-                onValueChange = { draft = it },
+                onValueChange = { draft = it.take(PartyRepository.MAX_CHAT_LENGTH) },
                 singleLine = true,
                 placeholder = {
                     Text(
@@ -370,6 +350,15 @@ private fun PartyChatBox(
 @Composable
 private fun PartyChatLine(message: PartyChatMessage, mine: Boolean) {
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+        message.event?.let { event ->
+            Text(
+                text = partyChatEventText(event, message.name),
+                style = MaterialTheme.typography.bodyMedium.copy(shadow = ChatTextShadow, fontStyle = FontStyle.Italic),
+                color = Color.White.copy(alpha = 0.8f),
+                textAlign = TextAlign.End,
+            )
+            return@Box
+        }
         Text(
             textAlign = TextAlign.End,
             text = buildAnnotatedString {

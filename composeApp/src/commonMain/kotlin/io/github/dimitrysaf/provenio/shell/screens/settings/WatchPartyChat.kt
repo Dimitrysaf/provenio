@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,7 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -55,12 +56,15 @@ import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.party.PartyRoom
 import io.github.dimitrysaf.provenio.core.time.EpisodeReleaseDatePlatform
 import io.github.dimitrysaf.provenio.shell.WatchPartyPrompts
+import io.github.dimitrysaf.provenio.shell.screens.player.partyChatEventText
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
-private val BubbleShape = RoundedCornerShape(26.dp)
+private val BubbleCorner = 20.dp
+private val BubbleJoinCorner = 6.dp
 private val AvatarSize = 32.dp
+private val InputHeight = 56.dp
 
 // A gap this long between two messages starts a new stretch, with the time over it.
 private const val TimeSeparatorGapMs = 15 * 60_000L
@@ -159,6 +163,7 @@ private fun ConversationMessages(messages: List<PartyChatMessage>, room: PartyRo
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
     }
     val guestName = stringResource(Res.string.watch_party_guest_name)
+    var memberToRemoveId by rememberSaveable { mutableStateOf<String?>(null) }
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
@@ -181,24 +186,49 @@ private fun ConversationMessages(messages: List<PartyChatMessage>, room: PartyRo
                     )
                 }
             }
-            val mine = message.memberId == room.myMemberId
-            val firstOfRun = newStretch || previous?.memberId != message.memberId
-            val lastOfRun = next == null || next.memberId != message.memberId ||
+            val name = message.name.ifBlank { guestName }
+            message.event?.let { event ->
+                Text(
+                    text = partyChatEventText(event, name),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                )
+                return@itemsIndexed
+            }
+            val firstOfRun = newStretch || previous.memberId != message.memberId || previous.event != null
+            val lastOfRun = next == null || next.memberId != message.memberId || next.event != null ||
                 next.sentAtEpochMs - message.sentAtEpochMs >= TimeSeparatorGapMs
+            // The host taps a guest's name or picture to remove or ban them.
+            val manageable = room.isHost && room.members.any { it.id == message.memberId && !it.isHost }
             MessageBubble(
                 message = message,
-                name = message.name.ifBlank { guestName },
-                mine = mine,
+                name = name,
+                mine = message.memberId == room.myMemberId,
                 firstOfRun = firstOfRun,
                 lastOfRun = lastOfRun,
-                // Two people need no names; a room of more does.
-                showSender = room.members.size > 2 || room.members.none { it.id == message.memberId },
+                onSenderClick = if (manageable) ({ memberToRemoveId = message.memberId }) else null,
             )
         }
     }
+    room.members.firstOrNull { it.id == memberToRemoveId && room.isHost && !it.isHost }?.let { member ->
+        WatchPartyMemberDialog(
+            name = member.name.ifBlank { guestName },
+            onKick = {
+                memberToRemoveId = null
+                PartyRepository.kick(member.id)
+            },
+            onBan = {
+                memberToRemoveId = null
+                PartyRepository.ban(member.id)
+            },
+            onDismiss = { memberToRemoveId = null },
+        )
+    }
 }
 
-// Messages from one person in a row sit close together; a new person starts further down.
+// Messages from one person in a row sit close together, their joined corners tighter; others' carry their name.
 @Composable
 private fun MessageBubble(
     message: PartyChatMessage,
@@ -206,38 +236,54 @@ private fun MessageBubble(
     mine: Boolean,
     firstOfRun: Boolean,
     lastOfRun: Boolean,
-    showSender: Boolean,
+    onSenderClick: (() -> Unit)?,
 ) {
     val colors = MaterialTheme.colorScheme
+    val senderModifier = if (onSenderClick != null) Modifier.clickable(onClick = onSenderClick) else Modifier
+    val top = if (firstOfRun) BubbleCorner else BubbleJoinCorner
+    val bottom = if (lastOfRun) BubbleCorner else BubbleJoinCorner
+    val shape = if (mine) {
+        RoundedCornerShape(topStart = BubbleCorner, topEnd = top, bottomEnd = bottom, bottomStart = BubbleCorner)
+    } else {
+        RoundedCornerShape(topStart = top, topEnd = BubbleCorner, bottomEnd = BubbleCorner, bottomStart = bottom)
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = if (firstOfRun) 10.dp else 3.dp),
+            .padding(top = if (firstOfRun) 10.dp else 2.dp),
         horizontalAlignment = if (mine) Alignment.End else Alignment.Start,
     ) {
-        if (!mine && showSender && firstOfRun) {
+        if (!mine && firstOfRun) {
             Text(
                 text = name,
                 style = MaterialTheme.typography.labelMedium,
                 color = colors.onSurfaceVariant,
-                modifier = Modifier.padding(start = AvatarSize + 8.dp + 14.dp, bottom = 4.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .padding(start = AvatarSize + 8.dp + 12.dp, bottom = 4.dp)
+                    .then(senderModifier),
             )
         }
         Row(verticalAlignment = Alignment.Bottom) {
-            if (!mine && showSender) {
-                if (lastOfRun) Avatar(name) else Spacer(modifier = Modifier.width(AvatarSize))
+            if (!mine) {
+                if (lastOfRun) {
+                    Box(modifier = senderModifier) { Avatar(name) }
+                } else {
+                    Spacer(modifier = Modifier.width(AvatarSize))
+                }
                 Spacer(modifier = Modifier.width(8.dp))
             }
             Surface(
-                shape = BubbleShape,
+                shape = shape,
                 color = if (mine) colors.primaryContainer else colors.surfaceContainerHigh,
                 contentColor = if (mine) colors.onPrimaryContainer else colors.onSurface,
-                modifier = Modifier.widthIn(max = 320.dp),
+                modifier = Modifier.widthIn(max = 300.dp),
             ) {
                 Text(
                     text = message.text,
                     style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                 )
             }
         }
@@ -277,8 +323,9 @@ private fun ConversationInput(enabled: Boolean, waitSeconds: Int) {
     ) {
         TextField(
             value = draft,
-            onValueChange = { draft = it },
+            onValueChange = { draft = it.take(PartyRepository.MAX_CHAT_LENGTH) },
             enabled = enabled,
+            singleLine = true,
             placeholder = {
                 Text(
                     when {
@@ -289,7 +336,6 @@ private fun ConversationInput(enabled: Boolean, waitSeconds: Int) {
                 )
             },
             shape = CircleShape,
-            maxLines = 5,
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -302,7 +348,7 @@ private fun ConversationInput(enabled: Boolean, waitSeconds: Int) {
             keyboardActions = KeyboardActions(onSend = { send() }),
             modifier = Modifier
                 .weight(1f)
-                .heightIn(min = 56.dp),
+                .height(InputHeight),
         )
         FilledIconButton(
             onClick = send,
@@ -311,7 +357,7 @@ private fun ConversationInput(enabled: Boolean, waitSeconds: Int) {
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             ),
-            modifier = Modifier.size(56.dp),
+            modifier = Modifier.size(InputHeight),
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.Send,

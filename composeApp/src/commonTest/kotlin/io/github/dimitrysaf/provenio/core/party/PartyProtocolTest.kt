@@ -40,6 +40,20 @@ class PartyProtocolTest {
     }
 
     @Test
+    fun `a note that someone joined arrives as one, and a message without a note is plain`() {
+        val note = PartyMessage.Chat(
+            PartyChatMessage(id = "e1", memberId = "m1", name = "Maria", text = "", sentAtEpochMs = 1, event = PartyChatEvent.JOINED),
+        )
+        val plain = partyJson.decodeFromString(
+            PartyChatMessage.serializer(),
+            """{"id":"c1","memberId":"m1","name":"Maria","text":"hi","sentAtEpochMs":1}""",
+        )
+
+        assertEquals(note, roundTrip(note))
+        assertEquals(null, plain.event)
+    }
+
+    @Test
     fun `settings without the playback rules keep to the room as it was`() {
         val settings = partyJson.decodeFromString(PartySettings.serializer(), """{"chatEnabled":false}""")
 

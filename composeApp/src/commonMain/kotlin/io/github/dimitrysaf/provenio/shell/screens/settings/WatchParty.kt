@@ -50,7 +50,6 @@ import io.github.dimitrysaf.provenio.core.party.PartyGuestPause
 import io.github.dimitrysaf.provenio.core.party.PartyGuestSeek
 import io.github.dimitrysaf.provenio.core.party.PartyLoading
 import io.github.dimitrysaf.provenio.core.party.PartyPhase
-import io.github.dimitrysaf.provenio.core.party.PartyReachability
 import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.party.PartyRoom
 import io.github.dimitrysaf.provenio.core.party.PartySyncTolerance
@@ -197,8 +196,8 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
         SettingsList {
             if (room.isHost) {
                 infoRow(
-                    title = stringResource(room.reachability.titleRes()),
-                    description = stringResource(room.reachability.descriptionRes()),
+                    title = stringResource(Res.string.watch_party_reach_open),
+                    description = stringResource(Res.string.watch_party_reach_open_description),
                 )
                 navigationRow(
                     title = stringResource(Res.string.watch_party_show_invite),
@@ -543,22 +542,6 @@ private fun loadingWaitLabel(seconds: Int?): String =
     seconds?.let { stringResource(Res.string.watch_party_loading_wait_value, it) }
         ?: stringResource(Res.string.watch_party_loading_wait_unlimited)
 
-private fun PartyReachability.titleRes(): StringResource = when (this) {
-    PartyReachability.CHECKING -> Res.string.watch_party_reach_checking
-    PartyReachability.OPEN -> Res.string.watch_party_reach_open
-    PartyReachability.SHARED_ADDRESS -> Res.string.watch_party_reach_shared
-    PartyReachability.IPV6_ONLY -> Res.string.watch_party_reach_ipv6
-    PartyReachability.LOCAL_ONLY -> Res.string.watch_party_reach_local
-}
-
-private fun PartyReachability.descriptionRes(): StringResource = when (this) {
-    PartyReachability.CHECKING -> Res.string.watch_party_reach_checking_description
-    PartyReachability.OPEN -> Res.string.watch_party_reach_open_description
-    PartyReachability.SHARED_ADDRESS -> Res.string.watch_party_reach_shared_description
-    PartyReachability.IPV6_ONLY -> Res.string.watch_party_reach_ipv6_description
-    PartyReachability.LOCAL_ONLY -> Res.string.watch_party_reach_local_description
-}
-
 @Composable
 private fun memberLimitLabel(limit: Int?): String =
     limit?.let { stringResource(Res.string.watch_party_member_limit_value, it) }
@@ -721,7 +704,7 @@ private fun WatchPartyLeaveDialog(
 }
 
 @Composable
-private fun WatchPartyMemberDialog(
+internal fun WatchPartyMemberDialog(
     name: String,
     onKick: () -> Unit,
     onBan: () -> Unit,

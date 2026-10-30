@@ -22,6 +22,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -50,7 +51,8 @@ object PartyRepository {
     private const val FAREWELL_TIMEOUT_MS = 1_500L
     private const val MIN_RENEW_INTERVAL_MS = 60_000L
     private const val MAX_NAME_LENGTH = 40
-    private const val MAX_CHAT_LENGTH = 300
+    /** The longest chat message; fields stop taking text there. */
+    const val MAX_CHAT_LENGTH = 225
     private const val CHAT_HISTORY = 100
     private const val WELCOME_CHAT = 50
     private const val MAX_SUGGESTIONS = 20
@@ -136,7 +138,6 @@ object PartyRepository {
         var closed = false
         var inviteLink: String? = null
         var inviteQr: List<BooleanArray>? = null
-        var reachability = PartyReachability.CHECKING
         var mapping: PartyPortMapping? = null
         var firewall: LocalSyncFirewallPrompt? = null
         var waitExpiry: Job? = null
@@ -424,17 +425,36 @@ object PartyRepository {
             return end(PartyError.FAILED)
         }
         try {
+            // The room only opens once the internet can reach it; a stopped open still gives the port back.
+            val mapping = withContext(NonCancellable) { PartyPortMapper.map(server.port) }
+            val publicAddress = mapping?.externalAddress?.takeIf { isPublicIpv4(it) }
+            if (!currentCoroutineContext().isActive || mapping == null || publicAddress == null) {
+                mapping?.let { withContext(NonCancellable) { PartyPortMapper.unmap(it) } }
+                log.w { "Watch party not opened: ${mapping?.method ?: "no port"}, external ${mapping?.externalAddress}" }
+                currentCoroutineContext().ensureActive()
+                return end(if (mapping == null) PartyError.PORT_CLOSED else PartyError.SHARED_ADDRESS)
+            }
+            log.i { "Watch party open at $publicAddress:${mapping.externalPort} with ${mapping.method}" }
             coroutineScope {
                 val room = HostedRoom(
                     secret = LocalSyncPlatform.randomBytes(PARTY_SECRET_SIZE),
                     server = server,
                     host = PartyMember(id = myId(), name = myName(), isHost = true),
                 )
+                room.mapping = mapping
+                // Public first; the local ones last, for guests whose router won't loop back to its own address.
+                val endpoints = buildList {
+                    add(PartyEndpoint(publicAddress, mapping.externalPort))
+                    ipv6Addresses.forEach { add(PartyEndpoint(it, server.port)) }
+                    lanAddresses.forEach { add(PartyEndpoint(it, server.port)) }
+                }
+                room.inviteLink = buildPartyLink(endpoints, room.secret)
+                room.inviteQr = room.inviteLink?.let(::localSyncQrMatrix)
                 hosted = room
-                log.i { "Watch party listening on port ${server.port}" }
+                publishHost()
                 launch { pingGuests(room) }
                 launch { checkFirewall(room) }
-                launch { openToInternet(room, lanAddresses, ipv6Addresses) }
+                launch { keepMapping(room, mapping) }
                 while (currentCoroutineContext().isActive) {
                     val connection = try {
                         server.accept()
@@ -451,37 +471,6 @@ object PartyRepository {
         } finally {
             server.close()
         }
-    }
-
-    // Asks the router to forward the room's port, then builds the link from the addresses that work.
-    private suspend fun openToInternet(room: HostedRoom, lanAddresses: List<String>, ipv6Addresses: List<String>) {
-        val port = room.server.port
-        val mapping = PartyPortMapper.map(port)
-        if (room.closed) {
-            mapping?.let { scope.launch { PartyPortMapper.unmap(it) } }
-            return
-        }
-        room.mapping = mapping
-        val publicAddress = mapping?.externalAddress?.takeIf { isPublicIpv4(it) }
-        room.reachability = when {
-            publicAddress != null -> PartyReachability.OPEN
-            mapping != null -> PartyReachability.SHARED_ADDRESS
-            ipv6Addresses.isNotEmpty() -> PartyReachability.IPV6_ONLY
-            else -> PartyReachability.LOCAL_ONLY
-        }
-        log.i { "Watch party reachability: ${room.reachability} (${mapping?.method})" }
-        // Public first; the local ones last, for guests on the same network whose router will
-        // not loop back to its own public address.
-        val endpoints = buildList {
-            if (publicAddress != null && mapping != null) add(PartyEndpoint(publicAddress, mapping.externalPort))
-            ipv6Addresses.forEach { add(PartyEndpoint(it, port)) }
-            lanAddresses.forEach { add(PartyEndpoint(it, port)) }
-        }
-        val link = buildPartyLink(endpoints, room.secret)
-        room.inviteLink = link
-        room.inviteQr = localSyncQrMatrix(link)
-        publishHost()
-        if (mapping != null) keepMapping(room, mapping)
     }
 
     // Renews the router's lease before it runs out, for as long as the room is open.
@@ -576,7 +565,10 @@ object PartyRepository {
                 guest.removed -> Unit
                 room.guests[guest.member.id] === guest -> {
                     room.guests.remove(guest.member.id)
-                    if (!room.closed) broadcast(room, PartyMessage.Members(room.members))
+                    if (!room.closed) {
+                        broadcast(room, PartyMessage.Members(room.members))
+                        postEvent(room, guest.member, PartyChatEvent.LEFT)
+                    }
                     publishHost()
                     refreshWaiting(room)
                     guest.channel.close()
@@ -634,6 +626,7 @@ object PartyRepository {
         )
         broadcast(room, PartyMessage.Members(room.members), except = guest)
         publishHost()
+        if (previous == null) postEvent(room, guest.member, PartyChatEvent.JOINED)
         return guest
     }
 
@@ -665,6 +658,21 @@ object PartyRepository {
             name = member.name,
             text = text,
             sentAtEpochMs = now,
+        )
+        appendChat(message)
+        broadcast(room, PartyMessage.Chat(message))
+    }
+
+    // A note from the room itself, such as someone joining, which everyone sees whether chat is on or not.
+    private fun postEvent(room: HostedRoom, member: PartyMember, event: PartyChatEvent) {
+        val now = EpisodeReleaseDatePlatform.nowEpochMs()
+        val message = PartyChatMessage(
+            id = "event-${member.id}-$now-${nextChatNumber++}",
+            memberId = member.id,
+            name = member.name,
+            text = "",
+            sentAtEpochMs = now,
+            event = event,
         )
         appendChat(message)
         broadcast(room, PartyMessage.Chat(message))
@@ -750,6 +758,7 @@ object PartyRepository {
         room.guests.remove(guest.member.id)
         guest.removed = true
         broadcast(room, PartyMessage.Members(room.members))
+        postEvent(room, guest.member, PartyChatEvent.REMOVED)
         publishHost()
         refreshWaiting(room)
         sendOff(guest, reason)
@@ -780,7 +789,6 @@ object PartyRepository {
                     members = room.members,
                     inviteLink = room.inviteLink,
                     inviteQr = room.inviteQr,
-                    reachability = room.reachability,
                     firewall = room.firewall,
                     banned = room.banned.map { (id, name) -> PartyMember(id = id, name = name) },
                 ),

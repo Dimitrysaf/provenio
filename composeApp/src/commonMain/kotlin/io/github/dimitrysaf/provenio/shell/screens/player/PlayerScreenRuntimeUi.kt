@@ -11,6 +11,12 @@ import io.github.dimitrysaf.provenio.core.cast.CastController
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import io.github.dimitrysaf.provenio.shell.WatchPartyLineBar
+import io.github.dimitrysaf.provenio.shell.WatchPartyLineHeight
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -96,10 +102,15 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
     // The share of the buffer the player waits for before it plays: 2.5s to start, 5s to resume.
     val bufferTargetMs = if (initialLoadCompleted) 5_000f else 2_500f
     val bufferFraction = (playbackSnapshot.bufferedPositionMs - playbackSnapshot.positionMs).coerceAtLeast(0L) / bufferTargetMs
+    // The room's line takes the top, and the video moves down by its height.
+    val partyLine = partyPlayerLine()
+    val partyLineInset by animateDpAsState(if (partyLine != null) WatchPartyLineHeight else 0.dp)
 
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .padding(top = partyLineInset)
             .onSizeChanged { layoutSize = it }
             .then(playerKeyboardAndMouse())
             .playerSurfaceTapGestures(
@@ -222,7 +233,6 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             feedback = renderedGestureFeedback,
         )
         RenderPlaybackOverlays(runtime = runtime)
-        PlayerWatchPartyStatus(runtime = runtime)
         PlayerWatchPartyChat(runtime = runtime)
         RenderPlayerModals(displayedPositionMs = displayedPositionMs)
         PlayerSubtitleAudioSettings(
@@ -256,6 +266,13 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             )
         }
         RenderCastLayer()
+    }
+    WatchPartyLineBar(
+        text = partyLine?.text,
+        action = partyLine?.action,
+        onClick = { partyLine?.onClick?.invoke() },
+        modifier = Modifier.align(Alignment.TopCenter),
+    )
     }
 }
 

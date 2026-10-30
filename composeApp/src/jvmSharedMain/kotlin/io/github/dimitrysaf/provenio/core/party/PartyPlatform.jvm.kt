@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.party
 
+import co.touchlab.kermit.Logger
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncPlatform
 import io.github.dimitrysaf.provenio.core.localsync.isContainerInterface
 import java.io.BufferedInputStream
@@ -36,11 +37,12 @@ private const val HTTP_MAX_BODY_BYTES = 512 * 1024
 private const val NAT_PMP_PORT = 5_351
 private const val NAT_PMP_FIRST_WAIT_MS = 250
 private const val NAT_PMP_TRIES = 3
-private const val NAT_PMP_CANDIDATES = 2
+private const val NAT_PMP_CANDIDATES = 4
 
 private const val UPNP_CONFLICT = 718
-private const val UPNP_ONLY_PERMANENT_LEASES = 725
 private const val PORT_ATTEMPTS = 5
+
+private val log = Logger.withTag("WatchParty")
 
 private val SearchTargets = listOf(
     "urn:schemas-upnp-org:device:InternetGatewayDevice:2",
@@ -51,9 +53,14 @@ private val SearchTargets = listOf(
 
 internal actual object PartyPortMapper {
     actual suspend fun map(internalPort: Int): PartyPortMapping? = withContext(Dispatchers.IO) {
-        val gateways = runCatching { discoverGateways() }.getOrDefault(emptyList())
-        runCatching { mapWithUpnp(gateways, internalPort) }.getOrNull()
-            ?: runCatching { mapWithNatPmp(gateways.map { it.second }, internalPort) }.getOrNull()
+        val gateways = runCatching { discoverGateways() }
+            .onFailure { log.w(it) { "UPnP search failed" } }
+            .getOrDefault(emptyList())
+        log.i { "UPnP routers found: ${gateways.map { it.first }}" }
+        runCatching { mapWithUpnp(gateways, internalPort) }.onFailure { log.w(it) { "UPnP mapping failed" } }.getOrNull()
+            ?: runCatching { mapWithNatPmp(gateways.map { it.second }, internalPort) }
+                .onFailure { log.w(it) { "NAT-PMP mapping failed" } }
+                .getOrNull()
     }
 
     actual suspend fun renew(mapping: PartyPortMapping): PartyPortMapping? = withContext(Dispatchers.IO) {
@@ -105,36 +112,48 @@ internal actual object PartyPortMapper {
 
 private class UpnpService(val controlUrl: String, val serviceType: String)
 
-// Each router that answers, as its description's address and its own address.
-private fun discoverGateways(): List<Pair<String, String>> = DatagramSocket().use { socket ->
-    socket.soTimeout = 200
-    val group = InetAddress.getByName(SSDP_ADDRESS)
-    SearchTargets.forEach { target ->
-        val search = "M-SEARCH * HTTP/1.1\r\nHOST: $SSDP_ADDRESS:$SSDP_PORT\r\nMAN: \"ssdp:discover\"\r\nMX: 2\r\nST: $target\r\n\r\n"
-            .toByteArray(Charsets.US_ASCII)
-        socket.send(DatagramPacket(search, search.size, group, SSDP_PORT))
-    }
-    val found = LinkedHashMap<String, String>()
-    val buffer = ByteArray(2_048)
-    var deadline = System.currentTimeMillis() + SSDP_WAIT_MS
-    while (System.currentTimeMillis() < deadline) {
-        val packet = DatagramPacket(buffer, buffer.size)
-        try {
-            socket.receive(packet)
-        } catch (_: SocketTimeoutException) {
-            continue
+// Each router that answers, as its description's address and its own address. The search goes out
+// from every local address, so a VPN or a second network card doesn't take it elsewhere.
+private fun discoverGateways(): List<Pair<String, String>> {
+    val sources = LocalSyncPlatform.localIpv4Addresses().mapNotNull { address ->
+        runCatching { DatagramSocket(InetSocketAddress(InetAddress.getByName(address), 0)) }.getOrNull()
+    }.ifEmpty { listOf(DatagramSocket()) }
+    try {
+        val group = InetAddress.getByName(SSDP_ADDRESS)
+        sources.forEach { socket ->
+            socket.soTimeout = 100
+            SearchTargets.forEach { target ->
+                val search = "M-SEARCH * HTTP/1.1\r\nHOST: $SSDP_ADDRESS:$SSDP_PORT\r\nMAN: \"ssdp:discover\"\r\nMX: 2\r\nST: $target\r\n\r\n"
+                    .toByteArray(Charsets.US_ASCII)
+                runCatching { socket.send(DatagramPacket(search, search.size, group, SSDP_PORT)) }
+            }
         }
-        val response = String(packet.data, 0, packet.length, Charsets.UTF_8)
-        val location = response.lineSequence()
-            .firstOrNull { it.startsWith("location:", ignoreCase = true) }
-            ?.substringAfter(':')
-            ?.trim()
-            ?: continue
-        val responder = packet.address?.hostAddress ?: continue
-        if (found.isEmpty()) deadline = minOf(deadline, System.currentTimeMillis() + SSDP_SETTLE_MS)
-        found.putIfAbsent(location, responder)
+        val found = LinkedHashMap<String, String>()
+        val buffer = ByteArray(2_048)
+        var deadline = System.currentTimeMillis() + SSDP_WAIT_MS
+        while (System.currentTimeMillis() < deadline) {
+            sources.forEach { socket ->
+                val packet = DatagramPacket(buffer, buffer.size)
+                try {
+                    socket.receive(packet)
+                } catch (_: SocketTimeoutException) {
+                    return@forEach
+                }
+                val response = String(packet.data, 0, packet.length, Charsets.UTF_8)
+                val location = response.lineSequence()
+                    .firstOrNull { it.startsWith("location:", ignoreCase = true) }
+                    ?.substringAfter(':')
+                    ?.trim()
+                    ?: return@forEach
+                val responder = packet.address?.hostAddress ?: return@forEach
+                if (found.isEmpty()) deadline = minOf(deadline, System.currentTimeMillis() + SSDP_SETTLE_MS)
+                found.putIfAbsent(location, responder)
+            }
+        }
+        return found.toList()
+    } finally {
+        sources.forEach { it.close() }
     }
-    found.toList()
 }
 
 private fun mapWithUpnp(gateways: List<Pair<String, String>>, internalPort: Int): PartyPortMapping? {
@@ -147,6 +166,7 @@ private fun mapWithUpnp(gateways: List<Pair<String, String>>, internalPort: Int)
                 // The same port outside first; another one if something else already has it.
                 val externalPort = if (attempt == 0) internalPort else Random.nextInt(20_000, 60_000)
                 val result = addUpnpMapping(service, externalPort, internalPort, internalClient)
+                log.i { "UPnP ${service.serviceType} port $externalPort: ${result.lease?.let { "lease $it" } ?: "error ${result.errorCode}"}" }
                 result.lease?.let { lease ->
                     return PartyPortMapping(
                         method = PartyPortMappingMethod.UPNP,
@@ -168,8 +188,7 @@ private fun mapWithUpnp(gateways: List<Pair<String, String>>, internalPort: Int)
 
 private class UpnpAddResult(val lease: Int?, val errorCode: Int?)
 
-// The lease the router took, or the error it refused with; a router that only keeps mappings
-// for good is asked again without a lease.
+// The lease the router took, or the error it refused with; a refused lease is asked again without one.
 private fun addUpnpMapping(service: UpnpService, externalPort: Int, internalPort: Int, internalClient: String): UpnpAddResult {
     var errorCode: Int? = null
     for (lease in listOf(LEASE_SECONDS, 0)) {
@@ -189,7 +208,9 @@ private fun addUpnpMapping(service: UpnpService, externalPort: Int, internalPort
         )
         if (result.status == 200) return UpnpAddResult(lease = lease, errorCode = null)
         errorCode = Regex("<errorCode>\\s*(\\d+)\\s*</errorCode>").find(result.body)?.groupValues?.get(1)?.toIntOrNull()
-        if (errorCode != UPNP_ONLY_PERMANENT_LEASES) break
+            ?: result.status
+        // Many routers refuse a lease with some other code than 725; only a taken port needs another one.
+        if (errorCode == UPNP_CONFLICT) break
     }
     return UpnpAddResult(lease = null, errorCode = errorCode)
 }
@@ -338,7 +359,9 @@ private fun mapWithNatPmp(responders: List<String>, internalPort: Int): PartyPor
     val candidates = (responders + listOfNotNull(defaultGateway()) + guessedGateways()).distinct().take(NAT_PMP_CANDIDATES)
     candidates.forEach { candidate ->
         val gateway = runCatching { InetAddress.getByName(candidate) }.getOrNull() as? Inet4Address ?: return@forEach
-        val external = natPmpExternalAddress(gateway) ?: return@forEach
+        val external = natPmpExternalAddress(gateway)
+        log.i { "NAT-PMP $candidate: ${external ?: "no answer"}" }
+        external ?: return@forEach
         val (externalPort, lease) = natPmpMap(gateway, internalPort, internalPort, LEASE_SECONDS) ?: return@forEach
         return PartyPortMapping(
             method = PartyPortMappingMethod.NAT_PMP,
@@ -421,9 +444,12 @@ private fun defaultGateway(): String? = runCatching {
         }
 }.getOrNull()
 
-// Where a home router usually sits: the first address of this device's network.
+// Where a home router usually sits: the first or the last address of this device's network.
 private fun guessedGateways(): List<String> =
-    LocalSyncPlatform.localIpv4Addresses().map { it.substringBeforeLast('.') + ".1" }
+    LocalSyncPlatform.localIpv4Addresses().flatMap { address ->
+        val network = address.substringBeforeLast('.')
+        listOf("$network.1", "$network.254")
+    }
 
 // ---- IPv6 ----
 

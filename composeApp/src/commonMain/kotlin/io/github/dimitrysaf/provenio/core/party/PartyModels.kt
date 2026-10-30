@@ -150,7 +150,13 @@ data class PartyChatMessage(
     val name: String,
     val text: String,
     val sentAtEpochMs: Long,
+    /** Set for the room's own notes, such as someone joining, which have no text. */
+    val event: PartyChatEvent? = null,
 )
+
+/** What the room says in the chat about [PartyChatMessage.name]. */
+@Serializable
+enum class PartyChatEvent { JOINED, LEFT, REMOVED }
 
 /** A title a guest would like to watch; the host picks the source. */
 @Serializable
@@ -172,23 +178,6 @@ data class PartySuggestion(
     val episodeThumbnail: String? = null,
 )
 
-/** How guests outside the host's network can reach the room. */
-enum class PartyReachability {
-    CHECKING,
-
-    /** The router forwards the room's port, and its address is public. */
-    OPEN,
-
-    /** The router forwards the port, but sits behind another one, as with a carrier's shared address. */
-    SHARED_ADDRESS,
-
-    /** No router would forward the port; only an IPv6 address is offered. */
-    IPV6_ONLY,
-
-    /** Neither: only guests on the host's own network can join. */
-    LOCAL_ONLY,
-}
-
 data class PartyRoom(
     val isHost: Boolean,
     val myMemberId: String,
@@ -197,7 +186,6 @@ data class PartyRoom(
     // The rest is only known to the host.
     val inviteLink: String? = null,
     val inviteQr: List<BooleanArray>? = null,
-    val reachability: PartyReachability = PartyReachability.CHECKING,
     val firewall: LocalSyncFirewallPrompt? = null,
     val banned: List<PartyMember> = emptyList(),
 ) {
@@ -215,6 +203,12 @@ sealed interface PartyPhase {
 enum class PartyError {
     NOT_SUPPORTED,
     NO_NETWORK,
+
+    /** The router opened no port, so no one outside could reach the room. */
+    PORT_CLOSED,
+
+    /** The port is open, but behind an address the provider shares, so no one outside could reach it. */
+    SHARED_ADDRESS,
     INVALID_LINK,
     UNREACHABLE,
     REJECTED,

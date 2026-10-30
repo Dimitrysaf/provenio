@@ -1,16 +1,15 @@
 package io.github.dimitrysaf.provenio.shell
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material3.AlertDialog
@@ -21,6 +20,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -89,13 +90,21 @@ internal object WatchPartyPrompts {
     }
 }
 
-/**
- * The watch party wherever the app is: the line at the top saying what the host is doing, the
- * dialogs for opening, connecting and the room ending, the host's suggestions, and, for a guest,
- * the player opening on the host's source the moment the host opens it.
- */
+/** The height of the room's line at the top, under the status bar; the page below moves down by it. */
+internal val WatchPartyLineHeight = 40.dp
+
+/** What the room's line at the top of the app says, set by [WatchPartyAppHost]; null text hides it. */
+@Stable
+internal class WatchPartyLine {
+    var text by mutableStateOf<String?>(null)
+    var action by mutableStateOf<String?>(null)
+    var onClick by mutableStateOf<() -> Unit>({})
+}
+
+/** The watch party wherever the app is: the line at the top, its dialogs, suggestions, and a guest following the host. */
 @Composable
 internal fun WatchPartyAppHost(
+    line: WatchPartyLine,
     navController: Navigator,
     playback: AppPlayback,
     profileId: Int,
@@ -156,43 +165,37 @@ internal fun WatchPartyAppHost(
         if (openedPlaybackId != shared.id) openShared(shared)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (room != null && currentRoute !is PlayerRoute && !conversationShown) {
-            val hostName = room.hostName.orEmpty()
-            val shared = sharedPlayback
-            val (text, action) = when {
-                // Everyone streams the source the host picks, so the best seeded one serves them best.
-                isHost && currentRoute is StreamRoute -> stringResource(Res.string.watch_party_line_source_advice) to null
-                isHost -> stringResource(Res.string.watch_party_line_hosting, room.members.size) to null
-                activity.kind == PartyActivityKind.WATCHING && shared != null -> stringResource(
-                    Res.string.watch_party_line_watching,
-                    hostName,
-                    activity.title?.takeIf { it.isNotBlank() } ?: shared.title,
-                ) to stringResource(Res.string.watch_party_line_join)
-                activity.kind == PartyActivityKind.CHOOSING -> stringResource(
-                    Res.string.watch_party_line_choosing,
-                    hostName,
-                    activity.title.orEmpty(),
-                ) to null
-                activity.kind == PartyActivityKind.BROWSING -> stringResource(
-                    Res.string.watch_party_line_browsing,
-                    hostName,
-                    activity.title.orEmpty(),
-                ) to null
-                else -> stringResource(Res.string.watch_party_line_connected, hostName) to null
-            }
-            WatchPartyStatusLine(
-                text = text,
-                action = action,
-                onClick = {
-                    if (action != null && shared != null) openShared(shared) else onOpenWatchParty()
-                },
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .statusBarsPadding()
-                    .padding(top = 6.dp, start = 16.dp, end = 16.dp),
-            )
+    if (room != null && currentRoute !is PlayerRoute && !conversationShown) {
+        val hostName = room.hostName.orEmpty()
+        val shared = sharedPlayback
+        val (text, action) = when {
+            // Everyone streams the source the host picks, so the best seeded one serves them best.
+            isHost && currentRoute is StreamRoute -> stringResource(Res.string.watch_party_line_source_advice) to null
+            isHost -> stringResource(Res.string.watch_party_line_hosting, room.members.size) to null
+            activity.kind == PartyActivityKind.WATCHING && shared != null -> stringResource(
+                Res.string.watch_party_line_watching,
+                hostName,
+                activity.title?.takeIf { it.isNotBlank() } ?: shared.title,
+            ) to stringResource(Res.string.watch_party_line_join)
+            activity.kind == PartyActivityKind.CHOOSING -> stringResource(
+                Res.string.watch_party_line_choosing,
+                hostName,
+                activity.title.orEmpty(),
+            ) to null
+            activity.kind == PartyActivityKind.BROWSING -> stringResource(
+                Res.string.watch_party_line_browsing,
+                hostName,
+                activity.title.orEmpty(),
+            ) to null
+            else -> stringResource(Res.string.watch_party_line_connected, hostName) to null
         }
+        SideEffect {
+            line.text = text
+            line.action = action
+            line.onClick = { if (action != null && shared != null) openShared(shared) else onOpenWatchParty() }
+        }
+    } else {
+        SideEffect { line.text = null }
     }
 
     when (state.phase) {
@@ -279,40 +282,56 @@ private fun AppRoute?.partyActivity(): PartyActivity = when (this) {
     else -> PartyActivity()
 }
 
+/** A line from edge to edge at the top, under the status bar, with no icons; tapping it does its action. */
 @Composable
-private fun WatchPartyStatusLine(
-    text: String,
+internal fun WatchPartyLineBar(
+    text: String?,
     action: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.94f),
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        shadowElevation = 2.dp,
-        modifier = modifier.widthIn(max = 520.dp),
+    // The last words stay while the line folds away.
+    var shownText by remember { mutableStateOf(text.orEmpty()) }
+    var shownAction by remember { mutableStateOf(action) }
+    if (text != null) {
+        shownText = text
+        shownAction = action
+    }
+    AnimatedVisibility(
+        visible = text != null,
+        enter = expandVertically(expandFrom = Alignment.Top),
+        exit = shrinkVertically(shrinkTowards = Alignment.Top),
+        modifier = modifier.fillMaxWidth(),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Surface(
+            onClick = onClick,
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            Icon(imageVector = Icons.Rounded.Groups, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-            action?.let {
+            Row(
+                modifier = Modifier
+                    .statusBarsPadding()
+                    .height(WatchPartyLineHeight)
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
-                    text = it,
+                    text = shownText,
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
                 )
+                shownAction?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                    )
+                }
             }
         }
     }
@@ -397,12 +416,15 @@ private fun PartyError.titleRes(): StringResource = when (this) {
     PartyError.CONNECTION_LOST -> Res.string.watch_party_ended_lost_title
     PartyError.CLOSED -> Res.string.watch_party_ended_closed_title
     PartyError.KICKED, PartyError.BANNED -> Res.string.watch_party_ended_removed_title
+    PartyError.PORT_CLOSED, PartyError.SHARED_ADDRESS -> Res.string.watch_party_error_open_title
     else -> Res.string.watch_party_title
 }
 
 internal fun PartyError.messageRes(): StringResource = when (this) {
     PartyError.NOT_SUPPORTED -> Res.string.watch_party_error_not_supported
     PartyError.NO_NETWORK -> Res.string.watch_party_error_no_network
+    PartyError.PORT_CLOSED -> Res.string.watch_party_error_port_closed
+    PartyError.SHARED_ADDRESS -> Res.string.watch_party_error_shared_address
     PartyError.INVALID_LINK -> Res.string.watch_party_error_invalid_link
     PartyError.UNREACHABLE -> Res.string.watch_party_error_unreachable
     PartyError.REJECTED -> Res.string.watch_party_error_rejected
