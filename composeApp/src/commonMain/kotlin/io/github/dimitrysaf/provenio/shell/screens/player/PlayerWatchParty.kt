@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -59,6 +61,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.party.PartyChatEvent
+import io.github.dimitrysaf.provenio.core.party.PartyGuestPause
+import io.github.dimitrysaf.provenio.core.party.PartyGuestSeek
 import io.github.dimitrysaf.provenio.core.party.PartyChatMessage
 import io.github.dimitrysaf.provenio.core.party.PartyPhase
 import io.github.dimitrysaf.provenio.core.party.PartyPlayback
@@ -121,6 +125,18 @@ internal fun PlayerScreenRuntime.currentPartyPlayback(): PartyPlayback = PartyPl
     torrentFilename = activeTorrentFilename,
     torrentTrackers = activeTorrentTrackers,
 )
+
+/** A guest whose room only lets the host move its time: seeking is off, and the seek bar is gray. */
+internal val PlayerScreenRuntime.partySeekLocked: Boolean
+    get() = partyRoom?.let { !it.isHost && it.settings.guestSeek == PartyGuestSeek.SNAP_BACK } == true
+
+/** A guest whose room only lets the host pause: the pause button is gone. */
+internal val PlayerScreenRuntime.partyPauseLocked: Boolean
+    get() = partyRoom?.let { !it.isHost && it.settings.guestPause == PartyGuestPause.HOST_ONLY } == true
+
+/** Guests play at the host's speed, so theirs can't change. */
+internal val PlayerScreenRuntime.partySpeedLocked: Boolean
+    get() = partyGuest
 
 /** The room's note about [name], such as them joining. */
 @Composable
@@ -231,7 +247,32 @@ internal fun BoxScope.PlayerWatchPartyChat(runtime: PlayerScreenRuntime) {
         .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
         .widthIn(max = 420.dp)
         .fillMaxWidth(0.9f)
-    AnimatedVisibility(visible = chatOpen, enter = fadeIn(), exit = fadeOut(), modifier = modifier) {
+    // Open, the chat runs the full height, over a shadow that comes in from the right edge.
+    AnimatedVisibility(
+        visible = chatOpen,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight().fillMaxWidth(0.6f),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Brush.horizontalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)))),
+        )
+    }
+    AnimatedVisibility(
+        visible = chatOpen,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .fillMaxHeight()
+            .playerFrameInsets(WindowInsetsSides.Vertical + WindowInsetsSides.Horizontal)
+            .imePadding()
+            .padding(16.dp)
+            .widthIn(max = 420.dp)
+            .fillMaxWidth(0.9f),
+    ) {
         PartyChatBox(
             messages = messages,
             myMemberId = room.myMemberId,
@@ -274,19 +315,19 @@ private fun PartyChatBox(
             onClose()
         }
     }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Bottom),
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 56.dp)
+                .weight(1f)
                 // The top fades out, so older messages look like they slip away behind it.
                 .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
                 .drawWithContent {
                     drawContent()
                     drawRect(
-                        brush = Brush.verticalGradient(0f to Color.Transparent, 0.6f to Color.Black),
+                        brush = Brush.verticalGradient(0f to Color.Transparent, 0.15f to Color.Black),
                         blendMode = BlendMode.DstIn,
                     )
                 },

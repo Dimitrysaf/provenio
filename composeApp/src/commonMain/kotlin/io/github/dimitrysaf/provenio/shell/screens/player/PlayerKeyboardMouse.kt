@@ -191,7 +191,7 @@ private fun PlayerScreenRuntime.handlePlayerKey(
             refreshTracks()
             showAudioModal = true
         }
-        event.key == Key.S -> showSpeedSheet = true
+        event.key == Key.S -> showSpeedSheet = !partySpeedLocked
         event.key == Key.N -> {
             if (nextEpisodeInfo?.hasAired != true) return false
             nextEpisodeAutoPlayJob?.cancel()
@@ -293,6 +293,7 @@ private fun Key.digitOrNull(): Int? = when (this) {
 }
 
 private fun PlayerScreenRuntime.seekToFraction(fraction: Float) {
+    if (partySeekLocked) return
     val durationMs = playbackSnapshot.durationMs.takeIf { it > 0L } ?: return
     playerController?.seekTo((durationMs * fraction).toLong())
     scheduleProgressSyncAfterSeek()

@@ -2614,6 +2614,8 @@
     <string name="watch_party_guest_pause_continue_description">The room carries on. They pick up from where they paused and watch on their own until they catch up.</string>
     <string name="watch_party_guest_pause_snap">Snap to the present</string>
     <string name="watch_party_guest_pause_snap_description">The room carries on. When they press play, they jump to where the host is now.</string>
+    <string name="watch_party_guest_pause_host_only">Only the host pauses</string>
+    <string name="watch_party_guest_pause_host_only_description">Guests have no pause button. The room plays and pauses with the host.</string>
     <string name="watch_party_guest_seek">When someone skips</string>
     <string name="watch_party_guest_seek_everyone">Move everyone</string>
     <string name="watch_party_guest_seek_everyone_description">The room jumps there with them.</string>
@@ -2642,6 +2644,9 @@
     <string name="watch_party_paused_by">%1$s paused</string>
     <string name="watch_party_moved_by">%1$s moved the room to %2$s</string>
     <string name="watch_party_seek_host_only">Only the host moves the room. You're back where everyone is.</string>
+    <string name="watch_party_status">Status</string>
+    <string name="watch_party_status_connected">Connected</string>
+    <string name="watch_party_status_connected_at">Connected · %1$s</string>
     <string name="watch_party_status_waiting">Waiting for %1$s to load…</string>
     <string name="watch_party_status_waiting_you">Everyone is waiting for you to load…</string>
     <string name="watch_party_status_dont_wait">Don't wait</string>
@@ -2681,9 +2686,6 @@
     <string name="watch_party_join_warning_title">Join this watch party?</string>
     <string name="watch_party_join_warning">The host's device is the room's server: the host learns your device's internet address, and everyone in the room sees your profile name and your messages. Whatever the host plays, your device opens by itself: a torrent is downloaded and shared from your device. Only join rooms of people you trust.</string>
     <string name="watch_party_hosted_by">Hosted by %1$s</string>
-    <string name="watch_party_guest_description">Whatever the host plays opens here too. Suggest what to watch with the Suggest button.</string>
-    <string name="watch_party_reach_open">Open to the internet</string>
-    <string name="watch_party_reach_open_description">Your router forwards the room's port, so guests can join from anywhere.</string>
     <string name="watch_party_firewall_title">Your firewall is blocking guests</string>
     <string name="watch_party_firewall_text">Guests can't reach this computer until its firewall allows the room's port. Allow it now, or run this command in a terminal:</string>
     <string name="watch_party_ended_lost_title">Connection lost</string>

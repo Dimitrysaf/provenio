@@ -194,22 +194,18 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
         isTablet = isTablet,
     ) {
         SettingsList {
+            infoRow(
+                title = stringResource(Res.string.watch_party_status),
+                description = room.address?.let { stringResource(Res.string.watch_party_status_connected_at, it) }
+                    ?: stringResource(Res.string.watch_party_status_connected),
+            )
             if (room.isHost) {
-                infoRow(
-                    title = stringResource(Res.string.watch_party_reach_open),
-                    description = stringResource(Res.string.watch_party_reach_open_description),
-                )
                 navigationRow(
                     title = stringResource(Res.string.watch_party_show_invite),
                     description = stringResource(Res.string.watch_party_show_invite_description),
                     icon = Icons.Rounded.QrCode,
                     enabled = room.inviteLink != null,
                     onClick = { showInvite = true },
-                )
-            } else {
-                infoRow(
-                    title = stringResource(Res.string.watch_party_hosted_by, room.hostName.orEmpty().ifBlank { guestName }),
-                    description = stringResource(Res.string.watch_party_guest_description),
                 )
             }
         }
@@ -493,12 +489,14 @@ private fun PartyGuestPause.labelRes(): StringResource = when (this) {
     PartyGuestPause.PAUSE_EVERYONE -> Res.string.watch_party_guest_pause_everyone
     PartyGuestPause.CONTINUE_WHERE_LEFT -> Res.string.watch_party_guest_pause_continue
     PartyGuestPause.SNAP_TO_HOST -> Res.string.watch_party_guest_pause_snap
+    PartyGuestPause.HOST_ONLY -> Res.string.watch_party_guest_pause_host_only
 }
 
 private fun PartyGuestPause.descriptionRes(): StringResource = when (this) {
     PartyGuestPause.PAUSE_EVERYONE -> Res.string.watch_party_guest_pause_everyone_description
     PartyGuestPause.CONTINUE_WHERE_LEFT -> Res.string.watch_party_guest_pause_continue_description
     PartyGuestPause.SNAP_TO_HOST -> Res.string.watch_party_guest_pause_snap_description
+    PartyGuestPause.HOST_ONLY -> Res.string.watch_party_guest_pause_host_only_description
 }
 
 private fun PartyGuestSeek.labelRes(): StringResource = when (this) {

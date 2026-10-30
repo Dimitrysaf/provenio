@@ -112,12 +112,14 @@ internal actual object PartyPortMapper {
 
 private class UpnpService(val controlUrl: String, val serviceType: String)
 
-// Each router that answers, as its description's address and its own address. The search goes out
-// from every local address, so a VPN or a second network card doesn't take it elsewhere.
+// Each router that answers, as its description's address and its own address, searched from every local address.
 private fun discoverGateways(): List<Pair<String, String>> {
     val sources = LocalSyncPlatform.localIpv4Addresses().mapNotNull { address ->
         runCatching { DatagramSocket(InetSocketAddress(InetAddress.getByName(address), 0)) }.getOrNull()
     }.ifEmpty { listOf(DatagramSocket()) }
+    // Asked directly too, the router's answer is a reply a firewall lets in; the whole network's answers it may drop.
+    val routers = (listOfNotNull(defaultGateway()) + guessedGateways()).distinct()
+        .mapNotNull { runCatching { InetAddress.getByName(it) }.getOrNull() }
     try {
         val group = InetAddress.getByName(SSDP_ADDRESS)
         sources.forEach { socket ->
@@ -126,6 +128,11 @@ private fun discoverGateways(): List<Pair<String, String>> {
                 val search = "M-SEARCH * HTTP/1.1\r\nHOST: $SSDP_ADDRESS:$SSDP_PORT\r\nMAN: \"ssdp:discover\"\r\nMX: 2\r\nST: $target\r\n\r\n"
                     .toByteArray(Charsets.US_ASCII)
                 runCatching { socket.send(DatagramPacket(search, search.size, group, SSDP_PORT)) }
+                routers.forEach { router ->
+                    val direct = "M-SEARCH * HTTP/1.1\r\nHOST: ${router.hostAddress}:$SSDP_PORT\r\nMAN: \"ssdp:discover\"\r\nST: $target\r\n\r\n"
+                        .toByteArray(Charsets.US_ASCII)
+                    runCatching { socket.send(DatagramPacket(direct, direct.size, router, SSDP_PORT)) }
+                }
             }
         }
         val found = LinkedHashMap<String, String>()

@@ -128,6 +128,7 @@ internal fun PlayerScreenRuntime.showVolumeFeedback(level: PlayerAudioLevel) {
 }
 
 internal fun PlayerScreenRuntime.togglePlayback() {
+    if (partyPauseLocked) return
     // While loading, the request to play is what the button shows, so that is what it toggles.
     if (playbackSnapshot.isPlaying || (playbackSnapshot.isLoading && shouldPlay)) {
         shouldPlay = false
@@ -143,6 +144,7 @@ internal fun PlayerScreenRuntime.togglePlayback() {
 }
 
 internal fun PlayerScreenRuntime.seekBy(offsetMs: Long) {
+    if (partySeekLocked) return
     playerController?.seekBy(offsetMs)
     scheduleProgressSyncAfterSeek()
     controlsVisible = true
@@ -159,6 +161,7 @@ internal fun PlayerScreenRuntime.seekStepMs(direction: PlayerSeekDirection): Lon
     } * 1000L
 
 internal fun PlayerScreenRuntime.handleDoubleTapSeek(direction: PlayerSeekDirection) {
+    if (partySeekLocked) return
     val currentPositionMs = playbackSnapshot.positionMs.coerceAtLeast(0L)
     val currentSeekState = accumulatedSeekState
     val nextState = if (currentSeekState?.direction == direction) {
@@ -209,6 +212,7 @@ internal fun PlayerScreenRuntime.cycleResizeMode() {
 }
 
 internal fun PlayerScreenRuntime.cyclePlaybackSpeed() {
+    if (partySpeedLocked) return
     val speeds = listOf(1f, 1.25f, 1.5f, 2f)
     val current = playbackSnapshot.playbackSpeed
     val next = speeds.firstOrNull { it > current + 0.01f } ?: speeds.first()
@@ -224,11 +228,12 @@ internal fun PlayerScreenRuntime.setResizeModeTo(mode: PlayerResizeMode) {
 }
 
 internal fun PlayerScreenRuntime.setPlaybackSpeedTo(speed: Float) {
+    if (partySpeedLocked) return
     playerController?.setPlaybackSpeed(speed)
 }
 
 internal fun PlayerScreenRuntime.activateHoldToSpeed() {
-    if (!playerSettingsUiState.holdToSpeedEnabled) return
+    if (!playerSettingsUiState.holdToSpeedEnabled || partySpeedLocked) return
     val controller = playerController ?: return
     if (speedBoostRestoreSpeed != null) return
 

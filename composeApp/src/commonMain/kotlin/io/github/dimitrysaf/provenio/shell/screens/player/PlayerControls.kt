@@ -135,6 +135,10 @@ internal fun PlayerControlsShell(
     showPlaybackControls: Boolean = true,
     controlsReady: Boolean = true,
     playbackRequested: Boolean = true,
+    // A watch party guest may be kept from seeking, pausing or changing speed.
+    seekEnabled: Boolean = true,
+    pauseVisible: Boolean = true,
+    speedEnabled: Boolean = true,
     onLockToggle: () -> Unit,
     onBack: () -> Unit,
     onTogglePlayback: () -> Unit,
@@ -223,6 +227,8 @@ internal fun PlayerControlsShell(
                         metrics = metrics,
                         controlsReady = controlsReady,
                         playbackRequested = playbackRequested,
+                        seekEnabled = seekEnabled,
+                        pauseVisible = pauseVisible,
                         onSeekBack = onSeekBack,
                         onSeekForward = onSeekForward,
                         seekBackwardSeconds = seekBackwardSeconds,
@@ -249,6 +255,8 @@ internal fun PlayerControlsShell(
                                 snapshot = playbackSnapshot,
                                 controlsReady = controlsReady,
                                 playbackRequested = playbackRequested,
+                                seekEnabled = seekEnabled,
+                                pauseVisible = pauseVisible,
                                 onSeekBack = onSeekBack,
                                 onSeekForward = onSeekForward,
                                 seekBackwardSeconds = seekBackwardSeconds,
@@ -267,6 +275,8 @@ internal fun PlayerControlsShell(
                     metrics = metrics,
                     resizeMode = resizeMode,
                     controlsReady = controlsReady,
+                    seekEnabled = seekEnabled,
+                    speedEnabled = speedEnabled,
                     onScrubChange = onScrubChange,
                     onScrubFinished = onScrubFinished,
                     onResizeModeClick = onResizeModeClick,
@@ -430,6 +440,8 @@ private fun CenterControls(
     metrics: PlayerLayoutMetrics,
     controlsReady: Boolean,
     playbackRequested: Boolean,
+    seekEnabled: Boolean,
+    pauseVisible: Boolean,
     onSeekBack: () -> Unit,
     onSeekForward: () -> Unit,
     seekBackwardSeconds: Int,
@@ -443,15 +455,26 @@ private fun CenterControls(
         horizontalArrangement = Arrangement.spacedBy(metrics.centerGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CenterControlButton(
-            icon = seekBackwardIcon(seekBackwardSeconds),
-            contentDescription = stringResource(Res.string.compose_player_seek_backward_seconds, seekBackwardSeconds),
-            metrics = metrics,
-            onClick = onSeekBack.takeIf { controlsReady },
-        )
+        if (seekEnabled) {
+            CenterControlButton(
+                icon = seekBackwardIcon(seekBackwardSeconds),
+                contentDescription = stringResource(Res.string.compose_player_seek_backward_seconds, seekBackwardSeconds),
+                metrics = metrics,
+                onClick = onSeekBack.takeIf { controlsReady },
+            )
+        }
         // Square when paused or finished, round while playing or buffering.
         val isRound = !snapshot.isEnded && (snapshot.isLoading || snapshot.isPlaying)
         when {
+            // Without a pause button, loading still shows as a ring.
+            !pauseVisible -> if (snapshot.isLoading && playbackRequested && !snapshot.isEnded) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(metrics.playIconSize + metrics.playButtonPadding * 2),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = PlayerScrimColor,
+                    strokeWidth = 4.dp,
+                )
+            }
             snapshot.isEnded && onNextEpisode != null -> PrimaryControlButton(
                 icon = Icons.Rounded.SkipNext,
                 contentDescription = stringResource(Res.string.player_next_episode),
@@ -491,12 +514,14 @@ private fun CenterControls(
                 onClick = onTogglePlayback,
             )
         }
-        CenterControlButton(
-            icon = seekForwardIcon(seekForwardSeconds),
-            contentDescription = stringResource(Res.string.compose_player_seek_forward_seconds, seekForwardSeconds),
-            metrics = metrics,
-            onClick = onSeekForward.takeIf { controlsReady },
-        )
+        if (seekEnabled) {
+            CenterControlButton(
+                icon = seekForwardIcon(seekForwardSeconds),
+                contentDescription = stringResource(Res.string.compose_player_seek_forward_seconds, seekForwardSeconds),
+                metrics = metrics,
+                onClick = onSeekForward.takeIf { controlsReady },
+            )
+        }
     }
 }
 
@@ -600,6 +625,8 @@ private fun TransportButtonGroup(
     snapshot: PlayerPlaybackSnapshot,
     controlsReady: Boolean,
     playbackRequested: Boolean,
+    seekEnabled: Boolean,
+    pauseVisible: Boolean,
     onSeekBack: () -> Unit,
     onSeekForward: () -> Unit,
     seekBackwardSeconds: Int,
@@ -640,24 +667,30 @@ private fun TransportButtonGroup(
         horizontalArrangement = Arrangement.spacedBy(PlayerGroupGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TransportSideButton(
-            icon = seekBackwardIcon(seekBackwardSeconds),
-            contentDescription = stringResource(Res.string.compose_player_seek_backward_seconds, seekBackwardSeconds),
-            shape = playerGroupShape(0, 3),
-            onClick = onSeekBack.takeIf { controlsReady },
-        )
-        TransportPrimaryButton(
-            icon = primaryIcon,
-            contentDescription = primaryDescription,
-            isRound = isRound,
-            onClick = primaryClick,
-        )
-        TransportSideButton(
-            icon = seekForwardIcon(seekForwardSeconds),
-            contentDescription = stringResource(Res.string.compose_player_seek_forward_seconds, seekForwardSeconds),
-            shape = playerGroupShape(2, 3),
-            onClick = onSeekForward.takeIf { controlsReady },
-        )
+        if (seekEnabled) {
+            TransportSideButton(
+                icon = seekBackwardIcon(seekBackwardSeconds),
+                contentDescription = stringResource(Res.string.compose_player_seek_backward_seconds, seekBackwardSeconds),
+                shape = playerGroupShape(0, 3),
+                onClick = onSeekBack.takeIf { controlsReady },
+            )
+        }
+        if (pauseVisible) {
+            TransportPrimaryButton(
+                icon = primaryIcon,
+                contentDescription = primaryDescription,
+                isRound = isRound,
+                onClick = primaryClick,
+            )
+        }
+        if (seekEnabled) {
+            TransportSideButton(
+                icon = seekForwardIcon(seekForwardSeconds),
+                contentDescription = stringResource(Res.string.compose_player_seek_forward_seconds, seekForwardSeconds),
+                shape = playerGroupShape(2, 3),
+                onClick = onSeekForward.takeIf { controlsReady },
+            )
+        }
     }
 }
 
@@ -732,6 +765,8 @@ private fun BottomControls(
     metrics: PlayerLayoutMetrics,
     resizeMode: PlayerResizeMode,
     controlsReady: Boolean,
+    seekEnabled: Boolean,
+    speedEnabled: Boolean,
     onScrubChange: (Long) -> Unit,
     onScrubFinished: (Long) -> Unit,
     onResizeModeClick: () -> Unit,
@@ -757,7 +792,7 @@ private fun BottomControls(
     val leftActions = listOfNotNull(
         PlayerGroupAction(stringResource(resizeMode.labelRes), onResizeModeClick, icon = Icons.Rounded.AspectRatio),
         // Speed and tracks need a loaded stream, so they wait until it is ready.
-        PlayerGroupAction(speedLabel, onSpeedClick.takeIf { controlsReady }, label = speedLabel),
+        PlayerGroupAction(speedLabel, onSpeedClick.takeIf { controlsReady && speedEnabled }, label = speedLabel),
         PlayerGroupAction(
             stringResource(Res.string.compose_player_subs),
             onSubtitleClick.takeIf { controlsReady },
@@ -878,6 +913,7 @@ private fun BottomControls(
             isPlaying = playbackSnapshot.isPlaying,
             chapters = chapters,
             metrics = metrics,
+            enabled = seekEnabled,
             onScrubChange = onScrubChange,
             onScrubFinished = onScrubFinished,
         )
@@ -1048,6 +1084,8 @@ internal fun PlayerSeekBar(
     onScrubFinished: (Long) -> Unit,
     modifier: Modifier = Modifier,
     chapters: List<PlayerChapter> = emptyList(),
+    // Off, it can't be dragged and its played part is the disabled gray instead of the theme's colour.
+    enabled: Boolean = true,
 ) {
     val durationKnown = durationMs > 0L
     val seekDurationMs = durationMs.coerceAtLeast(1L)
@@ -1064,7 +1102,7 @@ internal fun PlayerSeekBar(
             chapters.map { it.startMs.toFloat() / seekDurationMs }.filter { it > ChapterEdgeFraction && it < 1f - ChapterEdgeFraction }
         }
     }
-    val activeColor = MaterialTheme.colorScheme.primary
+    val activeColor = if (enabled) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.38f)
     val interactionSource = remember { MutableInteractionSource() }
     val dragged by interactionSource.collectIsDraggedAsState()
     val pressed by interactionSource.collectIsPressedAsState()
@@ -1072,7 +1110,7 @@ internal fun PlayerSeekBar(
     var barWidth by remember { mutableIntStateOf(0) }
     val thumbSizePx = with(LocalDensity.current) { SeekThumbSize.toPx() }
     val scrubbing = durationKnown && (dragged || pressed)
-    val hoverFraction = hoverX?.takeIf { durationKnown && barWidth > thumbSizePx }?.let { x ->
+    val hoverFraction = hoverX?.takeIf { enabled && durationKnown && barWidth > thumbSizePx }?.let { x ->
         ((x - thumbSizePx / 2f) / (barWidth - thumbSizePx)).coerceIn(0f, 1f)
     }
     val labelFraction = if (scrubbing) {
@@ -1112,7 +1150,7 @@ internal fun PlayerSeekBar(
             value = if (durationKnown) displayedPositionMs.coerceIn(0L, seekDurationMs).toFloat() else 0f,
             onValueChange = { value -> onScrubChange(value.toLong()) },
             onValueChangeFinished = { onScrubFinished(displayedPositionMs.coerceIn(0L, seekDurationMs)) },
-            enabled = durationMs > 0L,
+            enabled = durationMs > 0L && enabled,
             valueRange = 0f..seekDurationMs.toFloat(),
             interactionSource = interactionSource,
             thumb = { Spacer(Modifier.size(SeekThumbSize)) },

@@ -141,6 +141,7 @@ object PartyRepository {
         var mapping: PartyPortMapping? = null
         var firewall: LocalSyncFirewallPrompt? = null
         var waitExpiry: Job? = null
+        var address: String? = null
         val guests = LinkedHashMap<String, PartyGuest>()
         val banned = LinkedHashMap<String, String>()
 
@@ -442,6 +443,7 @@ object PartyRepository {
                     host = PartyMember(id = myId(), name = myName(), isHost = true),
                 )
                 room.mapping = mapping
+                room.address = PartyEndpoint(publicAddress, mapping.externalPort).toString()
                 // Public first; the local ones last, for guests whose router won't loop back to its own address.
                 val endpoints = buildList {
                     add(PartyEndpoint(publicAddress, mapping.externalPort))
@@ -789,6 +791,7 @@ object PartyRepository {
                     members = room.members,
                     inviteLink = room.inviteLink,
                     inviteQr = room.inviteQr,
+                    address = room.address,
                     firewall = room.firewall,
                     banned = room.banned.map { (id, name) -> PartyMember(id = id, name = name) },
                 ),
@@ -801,10 +804,10 @@ object PartyRepository {
     private suspend fun attendRoom(invite: PartyInvite) {
         val error = try {
             setPhase(PartyPhase.Connecting)
-            val connection = connectFirst(invite.endpoints) ?: return end(PartyError.UNREACHABLE)
+            val (connection, endpoint) = connectFirst(invite.endpoints) ?: return end(PartyError.UNREACHABLE)
             guestConnection = connection
             try {
-                converse(connection, invite.secret)
+                converse(connection, invite.secret, endpoint)
             } finally {
                 if (guestConnection === connection) guestConnection = null
                 guestChannel = null
@@ -820,7 +823,7 @@ object PartyRepository {
     }
 
     // Says hello and then follows the room until it ends; returns why it ended.
-    private suspend fun converse(connection: LocalSyncConnection, secret: ByteArray): PartyError {
+    private suspend fun converse(connection: LocalSyncConnection, secret: ByteArray, endpoint: PartyEndpoint): PartyError {
         val memberId = myId()
         val nonce = encodePartyBytes(LocalSyncPlatform.randomBytes(PARTY_NONCE_SIZE))
         connection.writePartyHello(
@@ -854,6 +857,7 @@ object PartyRepository {
                         myMemberId = memberId,
                         settings = message.settings,
                         members = message.members,
+                        address = endpoint.toString(),
                     )
                     _activity.value = message.activity
                     _playback.value = message.playback
@@ -887,9 +891,9 @@ object PartyRepository {
     }
 
     // Tries every address at once and keeps the first that answers; the rest are closed as they come in.
-    private suspend fun connectFirst(endpoints: List<PartyEndpoint>): LocalSyncConnection? {
+    private suspend fun connectFirst(endpoints: List<PartyEndpoint>): Pair<LocalSyncConnection, PartyEndpoint>? {
         if (endpoints.isEmpty()) return null
-        val winner = CompletableDeferred<LocalSyncConnection?>()
+        val winner = CompletableDeferred<Pair<LocalSyncConnection, PartyEndpoint>?>()
         var remaining = endpoints.size
         var abandoned = false
         endpoints.forEach { endpoint ->
@@ -902,7 +906,7 @@ object PartyRepository {
                 }
                 remaining -= 1
                 when {
-                    connection != null -> if (abandoned || !winner.complete(connection)) connection.close()
+                    connection != null -> if (abandoned || !winner.complete(connection to endpoint)) connection.close()
                     remaining == 0 -> winner.complete(null)
                 }
             }
@@ -911,7 +915,7 @@ object PartyRepository {
             winner.await()
         } catch (error: CancellationException) {
             abandoned = true
-            if (!winner.complete(null)) withContext(NonCancellable) { winner.await()?.close() }
+            if (!winner.complete(null)) withContext(NonCancellable) { winner.await()?.first?.close() }
             throw error
         }
     }

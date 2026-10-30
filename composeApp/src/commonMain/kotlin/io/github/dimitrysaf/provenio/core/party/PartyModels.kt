@@ -31,6 +31,9 @@ enum class PartyGuestPause {
 
     /** The room carries on; when the guest plays, they jump to where the host is now. */
     SNAP_TO_HOST,
+
+    /** Guests have no pause; the room plays and pauses with the host only. */
+    HOST_ONLY,
 }
 
 /** What happens when a guest moves to another moment. */
@@ -183,6 +186,8 @@ data class PartyRoom(
     val myMemberId: String,
     val settings: PartySettings,
     val members: List<PartyMember>,
+    /** The room's address on the internet, as the host opened it or as this guest reached it. */
+    val address: String? = null,
     // The rest is only known to the host.
     val inviteLink: String? = null,
     val inviteQr: List<BooleanArray>? = null,

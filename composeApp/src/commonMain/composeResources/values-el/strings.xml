@@ -2582,6 +2582,8 @@
     <string name="watch_party_guest_pause_continue_description">Το δωμάτιο συνεχίζει. Εκείνος συνεχίζει από εκεί που έκανε παύση και βλέπει μόνος του μέχρι να προλάβει.</string>
     <string name="watch_party_guest_pause_snap">Μετάβαση στο τώρα</string>
     <string name="watch_party_guest_pause_snap_description">Το δωμάτιο συνεχίζει. Όταν πατήσει αναπαραγωγή, πηγαίνει εκεί που βρίσκεται τώρα ο οικοδεσπότης.</string>
+    <string name="watch_party_guest_pause_host_only">Παύση μόνο από τον οικοδεσπότη</string>
+    <string name="watch_party_guest_pause_host_only_description">Οι καλεσμένοι δεν έχουν κουμπί παύσης. Το δωμάτιο παίζει και σταματά με τον οικοδεσπότη.</string>
     <string name="watch_party_guest_seek">Όταν κάποιος μετακινείται</string>
     <string name="watch_party_guest_seek_everyone">Μετακίνηση όλων</string>
     <string name="watch_party_guest_seek_everyone_description">Το δωμάτιο πηγαίνει εκεί μαζί του.</string>
@@ -2610,6 +2612,9 @@
     <string name="watch_party_paused_by">Ο/Η %1$s έκανε παύση</string>
     <string name="watch_party_moved_by">Ο/Η %1$s μετακίνησε το δωμάτιο στο %2$s</string>
     <string name="watch_party_seek_host_only">Μόνο ο οικοδεσπότης μετακινεί το δωμάτιο. Επιστρέψατε εκεί που είναι όλοι.</string>
+    <string name="watch_party_status">Κατάσταση</string>
+    <string name="watch_party_status_connected">Συνδεδεμένο</string>
+    <string name="watch_party_status_connected_at">Συνδεδεμένο · %1$s</string>
     <string name="watch_party_status_waiting">Αναμονή για να φορτώσει: %1$s…</string>
     <string name="watch_party_status_waiting_you">Όλοι περιμένουν να φορτώσετε…</string>
     <string name="watch_party_status_dont_wait">Χωρίς αναμονή</string>
@@ -2649,9 +2654,6 @@
     <string name="watch_party_join_warning_title">Συμμετοχή στην κοινή προβολή;</string>
     <string name="watch_party_join_warning">Η συσκευή του οικοδεσπότη είναι ο διακομιστής του δωματίου: ο οικοδεσπότης μαθαίνει τη διεύθυνση διαδικτύου της συσκευής σας και όλοι στο δωμάτιο βλέπουν το όνομα του προφίλ σας και τα μηνύματά σας. Ό,τι αναπαράγει ο οικοδεσπότης το ανοίγει μόνη της η συσκευή σας: ένα torrent κατεβαίνει και διαμοιράζεται από τη συσκευή σας. Συμμετέχετε μόνο σε δωμάτια ατόμων που εμπιστεύεστε.</string>
     <string name="watch_party_hosted_by">Οικοδεσπότης: %1$s</string>
-    <string name="watch_party_guest_description">Ό,τι αναπαράγει ο οικοδεσπότης ανοίγει και εδώ. Προτείνετε τι θα δείτε με το κουμπί Πρόταση.</string>
-    <string name="watch_party_reach_open">Ανοιχτό στο διαδίκτυο</string>
-    <string name="watch_party_reach_open_description">Ο δρομολογητής σας προωθεί τη θύρα του δωματίου, οπότε οι επισκέπτες μπορούν να συνδεθούν από οπουδήποτε.</string>
     <string name="watch_party_firewall_title">Το τείχος προστασίας σας μπλοκάρει τους επισκέπτες</string>
     <string name="watch_party_firewall_text">Οι επισκέπτες δεν μπορούν να φτάσουν σε αυτόν τον υπολογιστή μέχρι το τείχος προστασίας να επιτρέψει τη θύρα του δωματίου. Επιτρέψτε την τώρα ή εκτελέστε αυτή την εντολή σε ένα τερματικό:</string>
     <string name="watch_party_ended_lost_title">Η σύνδεση χάθηκε</string>

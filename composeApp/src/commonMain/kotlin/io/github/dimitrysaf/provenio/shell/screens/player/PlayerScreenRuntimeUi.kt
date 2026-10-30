@@ -338,6 +338,9 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 showPlaybackControls = controlsVisible && !showPartyChat,
                 controlsReady = !loading && playerController != null,
                 playbackRequested = shouldPlay,
+                seekEnabled = !partySeekLocked,
+                pauseVisible = !partyPauseLocked,
+                speedEnabled = !partySpeedLocked,
                 statusLines = statusLines,
                 onStatusClick = if (activeTorrentInfoHash != null) {
                     { showTorrentDetailsSheet = true }

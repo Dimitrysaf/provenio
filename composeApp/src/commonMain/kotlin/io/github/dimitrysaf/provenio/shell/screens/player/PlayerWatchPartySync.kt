@@ -416,6 +416,8 @@ private fun PlayerScreenRuntime.onOwnPlayPause(sync: PartyGuestSync, settings: P
             sync.following = false
             sync.ownPace = false
         }
+        // A pause from the keyboard or a headset is undone, since only the host pauses.
+        PartyGuestPause.HOST_ONLY -> setPartyPlay(sync, sync.followedPlaying == true)
         PartyGuestPause.SNAP_TO_HOST -> {
             if (play && state.isPlaying) {
                 sync.ownPace = false
