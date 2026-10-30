@@ -57,6 +57,7 @@ import io.github.dimitrysaf.provenio.core.streams.StreamBadgeSettingsStorage
 import io.github.dimitrysaf.provenio.core.streams.StreamLinkCacheStorage
 import io.github.dimitrysaf.provenio.core.sync.SyncClientIdentityStorage
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncStorage
+import io.github.dimitrysaf.provenio.core.party.PartyStorage
 import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklAuthStorage
 import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklSyncStorage
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktAuthStorage
@@ -213,6 +214,7 @@ private fun initializePlatform(context: Context) {
     ThemeSettingsStorage.initialize(context)
     SyncClientIdentityStorage.initialize(context)
     LocalSyncStorage.initialize(context)
+    PartyStorage.initialize(context)
     AddonHttpClientProvider.initialize(context)
     AddonStorage.initialize(context)
     AuthStorage.initialize(context)

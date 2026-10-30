@@ -11,8 +11,6 @@ command: provenio
 finish-args:
   # Streams, add-ons, sign-in and the P2P engine's peers.
   - --share=network
-  # Lets a watch party ask firewalld to let guests in, when it blocks the room's port.
-  - --system-talk-name=org.fedoraproject.FirewallD1
   # The desktop app draws through Java AWT, which speaks X11 (XWayland on Wayland sessions).
   - --share=ipc
   - --socket=x11

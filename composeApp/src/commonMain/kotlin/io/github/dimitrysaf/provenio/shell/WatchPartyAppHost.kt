@@ -368,6 +368,16 @@ private fun WatchPartyNoticeDialog(notice: PartyError) {
                 Text(stringResource(Res.string.action_close))
             }
         },
+        // A room that couldn't open points to help with forwarding the port; the wiki page isn't written yet.
+        dismissButton = if (notice == PartyError.PORT_CLOSED || notice == PartyError.SHARED_ADDRESS) {
+            {
+                TextButton(onClick = {}) {
+                    Text(stringResource(Res.string.watch_party_error_help))
+                }
+            }
+        } else {
+            null
+        },
     )
 }
 

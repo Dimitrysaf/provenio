@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,7 +24,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -58,6 +59,7 @@ import io.github.dimitrysaf.provenio.core.party.PartyRepository
 import io.github.dimitrysaf.provenio.core.party.PartyRoom
 import io.github.dimitrysaf.provenio.core.time.EpisodeReleaseDatePlatform
 import io.github.dimitrysaf.provenio.shell.WatchPartyPrompts
+import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.shell.screens.player.partyChatEventText
 import io.github.dimitrysaf.provenio.shell.screens.player.partyRequestText
 import kotlinx.coroutines.delay
@@ -99,7 +101,8 @@ internal fun WatchPartyConversation(
         WatchPartyPrompts.setConversationShown(true)
         onDispose { WatchPartyPrompts.setConversationShown(false) }
     }
-    Column(modifier = modifier.imePadding()) {
+    // Android already slides the screen up for the keyboard; padding for it here as well lifted the field twice.
+    Column(modifier = modifier) {
         ConversationHeader(room = room, onBack = onBack, onClick = onOpenRoomSettings)
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             ConversationMessages(messages = messages, room = room)
@@ -110,56 +113,67 @@ internal fun WatchPartyConversation(
 
 @Composable
 private fun ConversationHeader(room: PartyRoom, onBack: (() -> Unit)?, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        color = Color.Transparent,
-        modifier = Modifier.fillMaxWidth(),
+    // Only the settings button at the end opens the room's settings, not the whole header.
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        if (onBack != null) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                    contentDescription = stringResource(Res.string.action_back),
+                )
+            }
+        }
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.padding(start = if (onBack != null) 4.dp else 0.dp).size(44.dp),
         ) {
-            if (onBack != null) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                        contentDescription = stringResource(Res.string.action_back),
-                    )
-                }
+            Box(contentAlignment = Alignment.Center) {
+                Icon(imageVector = Icons.Rounded.Groups, contentDescription = null)
             }
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(start = if (onBack != null) 4.dp else 0.dp).size(44.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(imageVector = Icons.Rounded.Groups, contentDescription = null)
-                }
-            }
-            Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
-                Text(
-                    text = if (room.isHost) {
-                        stringResource(Res.string.watch_party_title)
-                    } else {
-                        stringResource(Res.string.watch_party_hosted_by, room.hostName.orEmpty())
-                    },
-                    style = MaterialTheme.typography.titleLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = stringResource(Res.string.watch_party_section_members, room.members.size),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        }
+        Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
+            Text(
+                text = if (room.isHost) {
+                    stringResource(Res.string.watch_party_title)
+                } else {
+                    stringResource(Res.string.watch_party_hosted_by, room.hostName.orEmpty())
+                },
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = stringResource(Res.string.watch_party_section_members, room.members.size),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(onClick = onClick) {
+            Icon(
+                imageVector = Icons.Rounded.Settings,
+                contentDescription = stringResource(Res.string.watch_party_section_settings),
+            )
         }
     }
 }
 
 @Composable
 private fun ConversationMessages(messages: List<PartyChatMessage>, room: PartyRoom) {
+    if (messages.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            EmptyState(
+                icon = Icons.Rounded.Forum,
+                title = stringResource(Res.string.watch_party_chat_empty_title),
+                message = stringResource(Res.string.watch_party_chat_empty_message),
+            )
+        }
+        return
+    }
     val listState = rememberLazyListState()
     // Opens on the newest message and follows new ones as they come.
     LaunchedEffect(messages.size) {

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -288,7 +287,6 @@ internal fun BoxScope.PlayerWatchPartyChat(runtime: PlayerScreenRuntime) {
     val modifier = Modifier
         .align(Alignment.BottomEnd)
         .playerFrameInsets(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
-        .imePadding()
         .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
         .widthIn(max = 420.dp)
         .fillMaxWidth(0.9f)
@@ -312,8 +310,8 @@ internal fun BoxScope.PlayerWatchPartyChat(runtime: PlayerScreenRuntime) {
         modifier = Modifier
             .align(Alignment.BottomEnd)
             .fillMaxHeight()
+            // Android slides the screen up for the keyboard itself, so no padding for it here.
             .playerFrameInsets(WindowInsetsSides.Vertical + WindowInsetsSides.Horizontal)
-            .imePadding()
             .padding(16.dp)
             .widthIn(max = 420.dp)
             .fillMaxWidth(0.9f),

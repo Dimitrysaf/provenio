@@ -32,6 +32,7 @@ import io.github.dimitrysaf.provenio.core.auth.AuthStorage
 import io.github.dimitrysaf.provenio.core.deeplink.handleAppUrl
 import io.github.dimitrysaf.provenio.core.sync.SyncClientIdentityStorage
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncStorage
+import io.github.dimitrysaf.provenio.core.party.PartyStorage
 import io.github.dimitrysaf.provenio.core.party.PartyKeepAlive
 import io.github.dimitrysaf.provenio.core.localsync.LocalSyncWifiLock
 import io.github.dimitrysaf.provenio.core.addons.AddonHttpClientProvider
@@ -116,6 +117,7 @@ open class MainActivity : AppCompatActivity() {
         pipRemoteActionReceiver = PipRemoteActionReceiver.register(this)
         SyncClientIdentityStorage.initialize(applicationContext)
         LocalSyncStorage.initialize(applicationContext)
+        PartyStorage.initialize(applicationContext)
         LocalSyncWifiLock.initialize(applicationContext)
         PartyKeepAlive.start(applicationContext)
         MobileDataMonitor.initialize(applicationContext)

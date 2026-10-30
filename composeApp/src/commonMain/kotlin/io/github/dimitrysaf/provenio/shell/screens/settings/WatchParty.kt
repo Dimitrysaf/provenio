@@ -71,7 +71,7 @@ import provenio.composeapp.generated.resources.*
 
 private val MemberLimitOptions = listOf<Int?>(null, 2, 3, 4, 6, 8, 10, 15, 20)
 private val SlowModeOptions = listOf(0, 5, 10, 30, 60)
-private val LoadingWaitOptions = listOf<Int?>(15, 30, 60, 120, null)
+private val LoadingWaitOptions = listOf<Int?>(null, 15, 30, 60, 120)
 
 /**
  * The Watch party page: create a room, or join one by scanning or pasting its invite. In a room
@@ -297,18 +297,23 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
                 enabled = editable,
                 onClick = { showLoading = true },
             )
-            navigationRow(
-                title = stringResource(Res.string.watch_party_loading_wait),
-                description = loadingWaitLabel(settings.loadingWaitSeconds),
-                enabled = editable && settings.loading == PartyLoading.PAUSE_EVERYONE,
-                onClick = { showLoadingWait = true },
-            )
-            navigationRow(
-                title = stringResource(Res.string.watch_party_sync_tolerance),
-                description = stringResource(settings.syncTolerance.labelRes()),
-                enabled = editable && settings.loading != PartyLoading.CONTINUE,
-                onClick = { showSyncTolerance = true },
-            )
+            // Rows that don't apply to the loading choice are left out rather than shown disabled.
+            if (settings.loading == PartyLoading.PAUSE_EVERYONE) {
+                navigationRow(
+                    title = stringResource(Res.string.watch_party_loading_wait),
+                    description = loadingWaitLabel(settings.loadingWaitSeconds),
+                    enabled = editable,
+                    onClick = { showLoadingWait = true },
+                )
+            }
+            if (settings.loading != PartyLoading.CONTINUE) {
+                navigationRow(
+                    title = stringResource(Res.string.watch_party_sync_tolerance),
+                    description = stringResource(settings.syncTolerance.labelRes()),
+                    enabled = editable,
+                    onClick = { showSyncTolerance = true },
+                )
+            }
         }
     }
 
@@ -475,7 +480,6 @@ private fun WatchPartyRoomContent(room: PartyRoom, isTablet: Boolean) {
             options = PartySyncTolerance.entries,
             selected = settings.syncTolerance,
             label = { stringResource(it.labelRes()) },
-            description = { stringResource(it.descriptionRes()) },
             onSelect = { choice ->
                 showSyncTolerance = false
                 PartyRepository.updateSettings { it.copy(syncTolerance = choice) }
@@ -531,12 +535,6 @@ private fun PartySyncTolerance.labelRes(): StringResource = when (this) {
     PartySyncTolerance.TIGHT -> Res.string.watch_party_sync_tolerance_tight
     PartySyncTolerance.NORMAL -> Res.string.watch_party_sync_tolerance_normal
     PartySyncTolerance.RELAXED -> Res.string.watch_party_sync_tolerance_relaxed
-}
-
-private fun PartySyncTolerance.descriptionRes(): StringResource = when (this) {
-    PartySyncTolerance.TIGHT -> Res.string.watch_party_sync_tolerance_tight_description
-    PartySyncTolerance.NORMAL -> Res.string.watch_party_sync_tolerance_normal_description
-    PartySyncTolerance.RELAXED -> Res.string.watch_party_sync_tolerance_relaxed_description
 }
 
 @Composable

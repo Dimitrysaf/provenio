@@ -54,14 +54,14 @@ class PartyProtocolTest {
     }
 
     @Test
-    fun `settings without the playback rules keep to the room as it was`() {
+    fun `settings without the playback rules take the defaults`() {
         val settings = partyJson.decodeFromString(PartySettings.serializer(), """{"chatEnabled":false}""")
 
-        assertEquals(PartyGuestPause.SNAP_TO_HOST, settings.guestPause)
-        assertEquals(PartyGuestSeek.SNAP_BACK, settings.guestSeek)
-        assertEquals(PartyLoading.KEEP_UP, settings.loading)
-        assertEquals(30, settings.loadingWaitSeconds)
-        assertEquals(PartySyncTolerance.NORMAL, settings.syncTolerance)
+        assertEquals(PartyGuestPause.SUGGEST, settings.guestPause)
+        assertEquals(PartyGuestSeek.SUGGEST, settings.guestSeek)
+        assertEquals(PartyLoading.PAUSE_EVERYONE, settings.loading)
+        assertEquals(null, settings.loadingWaitSeconds)
+        assertEquals(PartySyncTolerance.TIGHT, settings.syncTolerance)
     }
 
     @Test

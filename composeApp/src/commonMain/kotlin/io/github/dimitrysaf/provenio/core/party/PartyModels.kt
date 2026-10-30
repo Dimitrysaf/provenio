@@ -12,12 +12,12 @@ data class PartySettings(
     val suggestionsEnabled: Boolean = true,
     /** How long each member waits between chat messages; 0 is off. */
     val slowModeSeconds: Int = 0,
-    val guestPause: PartyGuestPause = PartyGuestPause.SNAP_TO_HOST,
-    val guestSeek: PartyGuestSeek = PartyGuestSeek.SNAP_BACK,
-    val loading: PartyLoading = PartyLoading.KEEP_UP,
+    val guestPause: PartyGuestPause = PartyGuestPause.SUGGEST,
+    val guestSeek: PartyGuestSeek = PartyGuestSeek.SUGGEST,
+    val loading: PartyLoading = PartyLoading.PAUSE_EVERYONE,
     /** How long the room waits for someone loading; null is as long as it takes. */
-    val loadingWaitSeconds: Int? = 30,
-    val syncTolerance: PartySyncTolerance = PartySyncTolerance.NORMAL,
+    val loadingWaitSeconds: Int? = null,
+    val syncTolerance: PartySyncTolerance = PartySyncTolerance.TIGHT,
 )
 
 /** What happens when a guest pauses, and then plays again. */

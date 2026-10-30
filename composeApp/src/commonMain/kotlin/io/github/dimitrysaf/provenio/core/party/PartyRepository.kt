@@ -208,6 +208,7 @@ object PartyRepository {
             val settings = transform(room.settings)
             if (settings == room.settings) return@launch
             room.settings = settings
+            saveSettings(settings)
             broadcast(room, PartyMessage.Settings(settings))
             publishHost()
             refreshWaiting(room)
@@ -419,6 +420,16 @@ object PartyRepository {
     private fun myName(): String =
         ProfileRepository.state.value.activeProfile?.name?.takeIf { it.isNotBlank() } ?: localSyncDeviceName()
 
+    // The rules the host last set, for each room they open; settings an older build can't read fall back to the defaults.
+    private fun savedSettings(): PartySettings = PartyStorage.loadSettings()
+        ?.let { runCatching { partyJson.decodeFromString(PartySettings.serializer(), it) }.getOrNull() }
+        ?: PartySettings()
+
+    private fun saveSettings(settings: PartySettings) {
+        runCatching { PartyStorage.saveSettings(partyJson.encodeToString(PartySettings.serializer(), settings)) }
+            .onFailure { log.w(it) { "Could not keep the watch party settings" } }
+    }
+
     private fun cleanName(name: String): String = name.filterNot { it.isISOControl() }.trim().take(MAX_NAME_LENGTH)
 
     private fun appendChat(message: PartyChatMessage) {
@@ -457,6 +468,7 @@ object PartyRepository {
                     server = server,
                     host = PartyMember(id = myId(), name = myName(), isHost = true),
                 )
+                room.settings = savedSettings()
                 room.mapping = mapping
                 room.address = PartyEndpoint(publicAddress, mapping.externalPort).toString()
                 // Public first; the local ones last, for guests whose router won't loop back to its own address.
