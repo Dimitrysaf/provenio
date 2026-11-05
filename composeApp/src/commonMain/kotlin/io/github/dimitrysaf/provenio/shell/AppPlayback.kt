@@ -38,6 +38,7 @@ import io.github.dimitrysaf.provenio.core.playback.prepareExternalPlayerLaunch
 import io.github.dimitrysaf.provenio.core.streams.BingeGroupCacheRepository
 import io.github.dimitrysaf.provenio.core.streams.StreamLaunch
 import io.github.dimitrysaf.provenio.core.streams.StreamLaunchStore
+import io.github.dimitrysaf.provenio.core.streams.SeasonSourceMode
 import io.github.dimitrysaf.provenio.core.streams.StreamsRepository
 import io.github.dimitrysaf.provenio.core.tracking.TrackingScrobbleAction
 import io.github.dimitrysaf.provenio.core.tracking.TrackingScrobbleCoordinator
@@ -241,6 +242,7 @@ internal class AppPlayback(
         // The room's own title, which a guest plays from a source of their own when the host doesn't share links.
         forParty: Boolean = false,
         preferredBingeGroup: String? = null,
+        seasonSourceMode: SeasonSourceMode? = null,
     ) {
         // A guest in a watch party suggests the title to the host, who picks the source. Choosing
         // one alone means leaving the room first.
@@ -347,6 +349,7 @@ internal class AppPlayback(
                 manualSelection = manualSelection,
                 startFromBeginning = startFromBeginning,
                 preferredBingeGroup = preferredBingeGroup,
+                seasonSourceMode = seasonSourceMode,
             ),
         )
         navController.navigate(StreamRoute(launchId = streamLaunchId, title = title))
@@ -355,6 +358,10 @@ internal class AppPlayback(
     val onPlay: ContentPlayAction = contentPlayAction(manualSelection = false)
 
     val onPlayManually: ContentPlayAction = contentPlayAction(manualSelection = true)
+
+    /** Picks a source by hand for a whole season, starting from the episode it is given. */
+    fun playWholeSeason(mode: SeasonSourceMode): ContentPlayAction =
+        contentPlayAction(manualSelection = true, seasonSourceMode = mode)
 
     fun canPlayContinueWatching(item: ContinueWatchingItem): Boolean =
         item.isCloudLibraryContinueWatchingItem() || playbackAvailability.canPlay(
@@ -473,7 +480,10 @@ internal class AppPlayback(
         navController.openPlayer(PlayerRoute(launchId = launchId, title = playerLaunch.title))
     }
 
-    private fun contentPlayAction(manualSelection: Boolean): ContentPlayAction =
+    private fun contentPlayAction(
+        manualSelection: Boolean,
+        seasonSourceMode: SeasonSourceMode? = null,
+    ): ContentPlayAction =
         { type, videoId, parentMetaId, parentMetaType, title, logo, poster, background, seasonNumber, episodeNumber, episodeTitle, episodeThumbnail, pauseDescription, resumePositionMs ->
             play(
                 type = type,
@@ -493,6 +503,7 @@ internal class AppPlayback(
                 resumeProgressFraction = null,
                 manualSelection = manualSelection,
                 startFromBeginning = false,
+                seasonSourceMode = seasonSourceMode,
             )
         }
 }

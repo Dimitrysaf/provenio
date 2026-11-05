@@ -18,6 +18,9 @@ import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbService
 import io.github.dimitrysaf.provenio.shell.nav.DetailRoute
 import io.github.dimitrysaf.provenio.shell.nav.EntityBrowseRoute
 import io.github.dimitrysaf.provenio.shell.nav.EpisodeDetailRoute
+import io.github.dimitrysaf.provenio.shell.nav.SeasonDetailRoute
+import io.github.dimitrysaf.provenio.core.streams.SeasonSourceMode
+import io.github.dimitrysaf.provenio.shell.screens.details.SeasonDetailScreen
 import io.github.dimitrysaf.provenio.shell.nav.Navigator
 import io.github.dimitrysaf.provenio.shell.nav.PersonDetailRoute
 import kotlinx.coroutines.launch
@@ -78,6 +81,7 @@ internal fun DetailsDestination(
     navController: Navigator,
     onPlay: ContentPlayAction,
     onPlayManually: ContentPlayAction,
+    onPlayWholeSeason: (SeasonSourceMode) -> ContentPlayAction,
     onPlayTrailer: (MetaTrailer, title: String, logo: String?, poster: String?, background: String?) -> Unit,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -93,6 +97,7 @@ internal fun DetailsDestination(
         onBack = onBack,
         onPlay = onPlay,
         onPlayManually = onPlayManually,
+        onPlayWholeSeason = onPlayWholeSeason,
         onPlayTrailer = onPlayTrailer,
         onOpenMeta = onOpenMeta,
         onCastClick = { person, avatarTransitionKey ->
@@ -139,6 +144,16 @@ internal fun DetailsDestination(
                 ),
             )
         },
+        onOpenSeason = { season, seasonTitle ->
+            navController.navigate(
+                SeasonDetailRoute(
+                    type = route.type,
+                    metaId = route.id,
+                    season = season,
+                    seasonTitle = seasonTitle,
+                ),
+            )
+        },
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
         modifier = Modifier.fillMaxSize(),
@@ -156,6 +171,22 @@ internal fun EpisodeDestination(
         metaId = route.metaId,
         videoId = route.videoId,
         episodeTitle = route.episodeTitle,
+        onBack = onBack,
+        modifier = Modifier.fillMaxSize(),
+    )
+}
+
+@Composable
+internal fun SeasonDestination(
+    route: SeasonDetailRoute,
+    navController: Navigator,
+) {
+    val onBack = rememberGuardedPopBackStack(navController, route)
+    SeasonDetailScreen(
+        type = route.type,
+        metaId = route.metaId,
+        season = route.season,
+        seasonTitle = route.seasonTitle,
         onBack = onBack,
         modifier = Modifier.fillMaxSize(),
     )

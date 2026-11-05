@@ -5,7 +5,19 @@ import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.screens.watchprogress.computeAirDateText
 import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
+import androidx.compose.material3.carousel.rememberCarouselState
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -216,6 +228,137 @@ internal fun buildEpisodeListEntries(
     }
 }
 
+/**
+ * The carousel layout: every season as a poster, the selected one's episodes as a plain list.
+ *
+ * Null when no season has a poster of its own, so the caller keeps to the expandable list. A
+ * season missing one, such as Specials often is, shows the show's poster instead.
+ */
+internal class SeasonCarousel(
+    val seasons: List<EpisodeListEntry.Season>,
+    val selectedSeason: Int,
+    val episodes: List<EpisodeListEntry.Episode>,
+)
+
+internal fun buildSeasonCarousel(
+    groupedEpisodes: Map<Int, List<MetaVideo>>,
+    selectedSeason: Int?,
+    completedSeasons: Set<Int>,
+    seasonPosters: Map<Int, String>,
+    fallbackPoster: String?,
+): SeasonCarousel? {
+    val seasons = buildEpisodeListEntries(groupedEpisodes, expandedSeasons = emptySet(), completedSeasons = completedSeasons)
+        .filterIsInstance<EpisodeListEntry.Season>()
+        .map { it.copy(posterUrl = it.posterUrl ?: seasonPosters[it.season]) }
+    if (seasons.none { it.posterUrl != null }) return null
+    val selected = selectedSeason?.takeIf { season -> seasons.any { it.season == season } } ?: seasons.first().season
+    val episodes = buildEpisodeListEntries(
+        groupedEpisodes = mapOf(selected to groupedEpisodes.getValue(selected)),
+        expandedSeasons = setOf(selected),
+    ).filterIsInstance<EpisodeListEntry.Episode>()
+    return SeasonCarousel(
+        seasons = seasons.map { it.copy(posterUrl = it.posterUrl ?: fallbackPoster) },
+        selectedSeason = selected,
+        episodes = episodes,
+    )
+}
+
+/** The seasons' posters in a small Material carousel; the selected season is outlined. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun SeasonPosterCarousel(
+    carousel: SeasonCarousel,
+    meta: MetaDetails,
+    onSeasonSelected: (Int) -> Unit,
+    onSeasonLongPress: ((Int) -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    val seasons = carousel.seasons
+    val state = rememberCarouselState(
+        initialItem = seasons.indexOfFirst { it.season == carousel.selectedSeason }.coerceAtLeast(0),
+    ) { seasons.size }
+    HorizontalUncontainedCarousel(
+        state = state,
+        itemWidth = SeasonCarouselItemWidth,
+        itemSpacing = 8.dp,
+        modifier = modifier.fillMaxWidth().height(SeasonCarouselItemWidth * 3f / 2f),
+    ) { index ->
+        val season = seasons[index]
+        val isSelected = season.season == carousel.selectedSeason
+        val label = seasonLabel(meta, season.season)
+        val shape = MaterialTheme.shapes.medium
+        val longPress = onSeasonLongPress?.let { handler -> { handler(season.season) } }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .maskClip(shape)
+                .then(
+                    if (isSelected) {
+                        Modifier.maskBorder(BorderStroke(3.dp, MaterialTheme.colorScheme.primary), shape)
+                    } else {
+                        Modifier
+                    },
+                )
+                .combinedClickable(
+                    onClick = { onSeasonSelected(season.season) },
+                    onLongClick = longPress,
+                    onClickLabel = label,
+                    role = Role.Tab,
+                )
+                .onSecondaryClick(longPress)
+                .semantics { selected = isSelected }
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+        ) {
+            ShapedArtworkImage(
+                candidates = listOf(season.posterUrl),
+                contentDescription = null,
+                letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                modifier = Modifier.matchParentSize(),
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f)),
+                        ),
+                    )
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = HeroOnArtworkColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (season.completed) {
+                        Icon(
+                            imageVector = Icons.Rounded.Check,
+                            contentDescription = stringResource(Res.string.episodes_cd_watched),
+                            tint = HeroOnArtworkColor,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun seasonLabel(meta: MetaDetails, season: Int): String = when {
+    meta.type != "series" && season <= 0 -> stringResource(Res.string.details_videos)
+    season <= 0 -> stringResource(Res.string.episodes_specials)
+    else -> stringResource(Res.string.episodes_season, season)
+}
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun DetailEpisodeListRow(
@@ -245,13 +388,7 @@ internal fun DetailEpisodeListRow(
 
     when (entry) {
         is EpisodeListEntry.Season -> SeasonRow(
-            label = if (meta.type != "series" && entry.season <= 0) {
-                stringResource(Res.string.details_videos)
-            } else if (entry.season <= 0) {
-                stringResource(Res.string.episodes_specials)
-            } else {
-                stringResource(Res.string.episodes_season, entry.season)
-            },
+            label = seasonLabel(meta, entry.season),
             name = entry.name?.takeIf { entry.season > 0 && !isGenericSeasonName(it, entry.season) },
             posterUrl = entry.posterUrl ?: meta.seasonPosters[entry.season],
             episodeCount = entry.episodeCount,
@@ -515,6 +652,7 @@ private enum class EpisodeStatus(val icon: ImageVector, val label: StringResourc
 
 private val EpisodeThumbnailWidth = 128.dp
 private val SeasonPosterWidth = 40.dp
+private val SeasonCarouselItemWidth = 104.dp
 private val EpisodeStatusSize = 36.dp
 private val EpisodeStatusIconSize = 20.dp
 private val EpisodeProgressHeight = 4.dp

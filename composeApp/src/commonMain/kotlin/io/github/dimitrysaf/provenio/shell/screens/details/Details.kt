@@ -120,6 +120,10 @@ import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingSta
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
+import io.github.dimitrysaf.provenio.core.streams.SeasonSourceMode
+import io.github.dimitrysaf.provenio.core.watch.watched.releasedEpisodesForSeason
+import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
+import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.metadata.HeroTrailerAudioState
 import io.github.dimitrysaf.provenio.core.metadata.MetaCompany
@@ -149,6 +153,9 @@ fun MetaDetailsScreen(
     onCastClick: ((MetaPerson, String?) -> Unit)? = null,
     onCompanyClick: ((MetaCompany, String) -> Unit)? = null,
     onOpenEpisode: ((MetaVideo) -> Unit)? = null,
+    onOpenSeason: ((season: Int, seasonTitle: String) -> Unit)? = null,
+    /** Opens the Sources sheet for a whole season, listing sources the way [SeasonSourceMode] asks. */
+    onPlayWholeSeason: ((SeasonSourceMode) -> (type: String, videoId: String, parentMetaId: String, parentMetaType: String, title: String, logo: String?, poster: String?, background: String?, seasonNumber: Int?, episodeNumber: Int?, episodeTitle: String?, episodeThumbnail: String?, pauseDescription: String?, resumePositionMs: Long?) -> Unit)? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     modifier: Modifier = Modifier,
@@ -357,6 +364,8 @@ fun MetaDetailsScreen(
                         onCastClick = onCastClick,
                         onCompanyClick = onCompanyClick,
                         onOpenEpisode = onOpenEpisode,
+                        onOpenSeason = onOpenSeason,
+                        onPlayWholeSeason = onPlayWholeSeason,
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope,
                     )
@@ -583,6 +592,8 @@ private fun MetaDetailsContent(
     onCastClick: ((MetaPerson, String?) -> Unit)?,
     onCompanyClick: ((MetaCompany, String) -> Unit)?,
     onOpenEpisode: ((MetaVideo) -> Unit)?,
+    onOpenSeason: ((season: Int, seasonTitle: String) -> Unit)?,
+    onPlayWholeSeason: ((SeasonSourceMode) -> DetailPlayHandler)?,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
 ) {
@@ -594,6 +605,7 @@ private fun MetaDetailsContent(
     }
     var selectedEpisodeForActions by remember(meta.id) { mutableStateOf<MetaVideo?>(null) }
     var selectedSeasonForActions by remember(meta.id) { mutableStateOf<Int?>(null) }
+    var seasonForWholePlay by remember(meta.id) { mutableStateOf<Int?>(null) }
     val metaPreview = remember(meta) { meta.toMetaPreview() }
     val todayIsoDate = CurrentDateProvider.todayIsoDate()
     val isSaved = remember(
@@ -651,7 +663,13 @@ private fun MetaDetailsContent(
     val seriesPauseDescription = primaryPlay.seriesPauseDescription
     val movieProgress = primaryPlay.movieProgress
     val hasEpisodes = meta.videos.any { it.season != null || it.episode != null }
-    val episodeList = rememberDetailEpisodeList(meta, progressByVideoId, watchedUiState.watchedKeys, todayIsoDate)
+    val episodeList = rememberDetailEpisodeList(
+        meta,
+        progressByVideoId,
+        watchedUiState.watchedKeys,
+        todayIsoDate,
+        layout = metaScreenSettingsUiState.episodeLayout,
+    )
     val sectionContent = rememberDetailSectionContent(meta, homeSections)
     val hasProductionSection = sectionContent.hasProduction
     val hasAdditionalInfoSection = sectionContent.hasAdditionalInfo
@@ -855,6 +873,8 @@ private fun MetaDetailsContent(
                     episodeListEntries = episodeList.entries,
                     todayIsoDate = todayIsoDate,
                     onEpisodeSeasonToggle = episodeList.onSeasonToggle,
+                    seasonCarousel = episodeList.carousel,
+                    onSeasonSelected = episodeList.onSeasonSelected,
                     onRetryComments = {
                         detailsScope.launch { comments.loadFirstPage(meta, forceRefresh = true) }
                     },
@@ -1016,20 +1036,15 @@ private fun MetaDetailsContent(
                     onDismiss = { selectedEpisodeForActions = null },
                     onPlayManually = { onEpisodeManualPlayClick(selectedEpisode) },
                     onShowDetails = onOpenEpisode?.let { open -> { open(selectedEpisode) } },
-                    onViewImage = launchImageViewer?.let { openViewer ->
-                        { url ->
-                            openViewer(
-                                ImageViewerRequest(
-                                    images = listOf(viewerImageOf(url)),
-                                    title = selectedEpisode.title,
-                                ),
-                            )
-                        }
-                    },
                 )
             }
 
             selectedSeasonForActions?.let { selectedSeason ->
+                val seasonTitle = if (selectedSeason <= 0) {
+                    stringResource(Res.string.episodes_specials)
+                } else {
+                    stringResource(Res.string.episodes_season, selectedSeason)
+                }
                 SeasonActionsSheet(
                     meta = meta,
                     season = selectedSeason,
@@ -1037,6 +1052,42 @@ private fun MetaDetailsContent(
                     progressByVideoId = progressByVideoId,
                     todayIsoDate = todayIsoDate,
                     onDismiss = { selectedSeasonForActions = null },
+                    onPlayWholeSeason = onPlayWholeSeason
+                        ?.takeIf { showManualPlayOption && meta.releasedEpisodesForSeason(selectedSeason, todayIsoDate).isNotEmpty() }
+                        ?.let { { seasonForWholePlay = selectedSeason } },
+                    onShowDetails = onOpenSeason?.let { open -> { open(selectedSeason, seasonTitle) } },
+                )
+            }
+
+            // Which sources to list for the whole season, asked before the Sources sheet opens.
+            seasonForWholePlay?.let { season ->
+                val playWholeSeason = onPlayWholeSeason ?: return@let
+                SingleChoiceBottomSheet(
+                    title = stringResource(Res.string.season_play_title),
+                    options = SeasonSourceMode.entries.map { mode ->
+                        SingleChoiceOption(
+                            value = mode,
+                            label = stringResource(
+                                when (mode) {
+                                    SeasonSourceMode.Packs -> Res.string.season_play_packs
+                                    SeasonSourceMode.EpisodeByEpisode -> Res.string.season_play_episodes
+                                },
+                            ),
+                            supportingText = stringResource(
+                                when (mode) {
+                                    SeasonSourceMode.Packs -> Res.string.season_play_packs_description
+                                    SeasonSourceMode.EpisodeByEpisode -> Res.string.season_play_episodes_description
+                                },
+                            ),
+                        )
+                    },
+                    isSelected = { false },
+                    onSelected = { mode ->
+                        meta.releasedEpisodesForSeason(season, todayIsoDate).firstOrNull()?.let { first ->
+                            meta.playEpisode(playWholeSeason(mode), first, watchProgressUiState)
+                        }
+                    },
+                    onDismiss = { seasonForWholePlay = null },
                 )
             }
 

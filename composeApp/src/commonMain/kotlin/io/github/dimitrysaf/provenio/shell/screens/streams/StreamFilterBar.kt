@@ -133,9 +133,9 @@ internal fun StreamFilterBar(state: StreamFilterState, groups: List<AddonStreamG
 
 // Shown in place of the list when streams exist but none match the search or qualities.
 @Composable
-internal fun StreamsNoMatchesBlock() {
+internal fun StreamsNoMatchesBlock(text: String = stringResource(Res.string.streams_filter_no_matches)) {
     Text(
-        text = stringResource(Res.string.streams_filter_no_matches),
+        text = text,
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(horizontal = StreamsHorizontalPadding, vertical = 16.dp),

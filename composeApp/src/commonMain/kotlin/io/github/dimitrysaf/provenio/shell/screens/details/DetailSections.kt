@@ -34,6 +34,8 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPare
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPosterRailSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailProductionSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailEpisodeListRow
+import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonCarousel
+import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonPosterCarousel
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSectionSkeleton
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSectionTitle
 import io.github.dimitrysaf.provenio.shell.screens.details.components.EpisodeListEntry
@@ -91,6 +93,8 @@ internal fun LazyListScope.configuredMetaSectionItems(
     episodeListEntries: List<EpisodeListEntry>,
     todayIsoDate: String,
     onEpisodeSeasonToggle: (Int) -> Unit,
+    seasonCarousel: SeasonCarousel? = null,
+    onSeasonSelected: (Int) -> Unit = {},
     onRetryComments: () -> Unit,
     onLoadMoreComments: () -> Unit,
     onCommentClick: (TraktCommentReview) -> Unit,
@@ -199,8 +203,26 @@ internal fun LazyListScope.configuredMetaSectionItems(
                 DetailSectionTitle(title = stringResource(Res.string.details_episodes))
             }
         }
+        if (seasonCarousel != null) {
+            item(key = "$key-season-carousel", contentType = "detail-season-carousel") {
+                DetailSectionContainer(
+                    horizontalPadding = contentHorizontalPadding,
+                    contentMaxWidth = contentMaxWidth,
+                    bottomPadding = 14.dp,
+                ) {
+                    SeasonPosterCarousel(
+                        carousel = seasonCarousel,
+                        meta = meta,
+                        onSeasonSelected = onSeasonSelected,
+                        onSeasonLongPress = onSeasonLongPress,
+                    )
+                }
+            }
+        }
+        // In the carousel layout the season rows are the posters above, so only the selected season's episodes list here.
+        val rows: List<EpisodeListEntry> = seasonCarousel?.episodes ?: episodeListEntries
         itemsIndexed(
-            items = episodeListEntries,
+            items = rows,
             key = { _, entry -> "$key-${entry.key}" },
             contentType = { _, entry ->
                 if (entry is EpisodeListEntry.Season) "detail-episode-season" else "detail-episode"
@@ -209,13 +231,13 @@ internal fun LazyListScope.configuredMetaSectionItems(
             DetailSectionContainer(
                 horizontalPadding = contentHorizontalPadding,
                 contentMaxWidth = contentMaxWidth,
-                bottomPadding = if (index == episodeListEntries.lastIndex) 20.dp else ListItemBetweenSpace,
+                bottomPadding = if (index == rows.lastIndex) 20.dp else ListItemBetweenSpace,
                 modifier = Modifier.animateItem(),
             ) {
                 DetailEpisodeListRow(
                     entry = entry,
                     index = index,
-                    count = episodeListEntries.size,
+                    count = rows.size,
                     meta = meta,
                     todayIsoDate = todayIsoDate,
                     progressByVideoId = progressByVideoId,

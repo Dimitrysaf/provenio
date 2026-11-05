@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.shell.screens.details
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
+import io.github.dimitrysaf.provenio.core.metadata.normalizeSeasonNumber
 import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
 import io.github.dimitrysaf.provenio.core.metadata.SeriesPrimaryAction
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressEntry
@@ -15,6 +16,7 @@ import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingAct
 import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingState
 import io.github.dimitrysaf.provenio.shell.screens.details.components.EpisodeWatchedActionSheet
 import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonWatchedActionSheet
+import io.github.dimitrysaf.provenio.shell.screens.details.components.isGenericSeasonName
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.episodes_season
 import provenio.composeapp.generated.resources.episodes_specials
@@ -135,7 +137,6 @@ internal fun EpisodeActionsSheet(
     showPlayManually: Boolean,
     onDismiss: () -> Unit,
     onPlayManually: () -> Unit,
-    onViewImage: ((String) -> Unit)? = null,
     onShowDetails: (() -> Unit)? = null,
 ) {
     val isEpisodeWatched = remember(meta, episode, watchedKeys, progressByVideoId) {
@@ -144,14 +145,8 @@ internal fun EpisodeActionsSheet(
     val previousEpisodes = remember(meta, episode, todayIsoDate) {
         meta.previousReleasedEpisodesBefore(target = episode, todayIsoDate = todayIsoDate)
     }
-    val seasonEpisodes = remember(meta, episode, todayIsoDate) {
-        meta.releasedEpisodesForSeason(seasonNumber = episode.season, todayIsoDate = todayIsoDate)
-    }
     val arePreviousEpisodesWatched = remember(previousEpisodes, watchedKeys, progressByVideoId) {
         areEpisodesWatchedForActions(meta, previousEpisodes, watchedKeys, progressByVideoId)
-    }
-    val isSeasonWatched = remember(seasonEpisodes, watchedKeys, progressByVideoId) {
-        areEpisodesWatchedForActions(meta, seasonEpisodes, watchedKeys, progressByVideoId)
     }
     EpisodeWatchedActionSheet(
         episode = episode,
@@ -161,7 +156,6 @@ internal fun EpisodeActionsSheet(
         isEpisodeWatched = isEpisodeWatched,
         canMarkPreviousEpisodes = previousEpisodes.isNotEmpty(),
         arePreviousEpisodesWatched = arePreviousEpisodesWatched,
-        isSeasonWatched = isSeasonWatched,
         thumbnailUrl = episode.thumbnail ?: meta.background ?: meta.poster,
         blurThumbnail = blurUnwatchedEpisodes && !isEpisodeWatched,
         onDismiss = onDismiss,
@@ -179,19 +173,9 @@ internal fun EpisodeActionsSheet(
                 areCurrentlyWatched = arePreviousEpisodesWatched,
             )
         },
-        onToggleSeasonWatched = {
-            WatchingActions.toggleSeasonWatched(
-                meta = meta,
-                episodes = seasonEpisodes,
-                areCurrentlyWatched = isSeasonWatched,
-            )
-        },
         showPlayManually = showPlayManually,
         onPlayManually = onPlayManually,
         onShowDetails = onShowDetails,
-        onViewImage = episode.thumbnail
-            ?.takeIf(String::isNotBlank)
-            ?.let { thumbnail -> onViewImage?.let { view -> { view(thumbnail) } } },
     )
 }
 
@@ -204,6 +188,8 @@ internal fun SeasonActionsSheet(
     progressByVideoId: Map<String, WatchProgressEntry>,
     todayIsoDate: String,
     onDismiss: () -> Unit,
+    onPlayWholeSeason: (() -> Unit)? = null,
+    onShowDetails: (() -> Unit)? = null,
 ) {
     val seasonEpisodes = remember(meta, season, todayIsoDate) {
         meta.releasedEpisodesForSeason(seasonNumber = season, todayIsoDate = todayIsoDate)
@@ -245,6 +231,8 @@ internal fun SeasonActionsSheet(
                 areCurrentlyWatched = false,
             )
         },
+        onPlayWholeSeason = onPlayWholeSeason,
+        onShowDetails = onShowDetails?.takeIf { meta.hasSeasonInfo(season) },
     )
 }
 
@@ -284,4 +272,18 @@ private fun areEpisodesWatchedForActions(
     progressByVideoId: Map<String, WatchProgressEntry>,
 ): Boolean = episodes.isNotEmpty() && episodes.all { episode ->
     isEpisodeWatchedForActions(meta, episode, watchedKeys, progressByVideoId)
+}
+
+/**
+ * Whether a season has anything of its own to show on a Season info page: an overview, a name
+ * that is more than "Season 2", or a poster. Episode counts and dates alone are already on the
+ * Details page.
+ */
+internal fun MetaDetails.hasSeasonInfo(season: Int): Boolean {
+    val episodes = videos.filter { normalizeSeasonNumber(it.season) == season }
+    return seasonPosters[season] != null || episodes.any { episode ->
+        !episode.seasonOverview.isNullOrBlank() ||
+            !episode.seasonPoster.isNullOrBlank() ||
+            episode.seasonName?.takeIf(String::isNotBlank)?.let { !isGenericSeasonName(it, season) } == true
+    }
 }

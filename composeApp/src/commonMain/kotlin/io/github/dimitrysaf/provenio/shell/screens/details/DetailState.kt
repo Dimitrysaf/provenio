@@ -20,6 +20,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSection
@@ -41,6 +42,9 @@ import io.github.dimitrysaf.provenio.core.watch.watched.WatchedUiState
 import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.screens.details.components.EpisodeListEntry
 import io.github.dimitrysaf.provenio.shell.screens.details.components.buildEpisodeListEntries
+import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonCarousel
+import io.github.dimitrysaf.provenio.shell.screens.details.components.buildSeasonCarousel
+import io.github.dimitrysaf.provenio.core.metadata.EpisodeLayout
 import io.github.dimitrysaf.provenio.shell.screens.details.components.episodeWatchState
 import io.github.dimitrysaf.provenio.shell.screens.details.components.rememberEpisodeSeasonExpansion
 import io.github.dimitrysaf.provenio.shell.screens.details.components.summarizeEpisodeSeasons
@@ -117,10 +121,12 @@ internal fun rememberDetailPrimaryPlay(
     )
 }
 
-// The episode list rows, with each season folded or open.
+// The episode list rows, with each season folded or open, or the season carousel when that layout is on.
 internal class DetailEpisodeList(
     val entries: List<EpisodeListEntry>,
     val onSeasonToggle: (Int) -> Unit,
+    val carousel: SeasonCarousel? = null,
+    val onSeasonSelected: (Int) -> Unit = {},
 )
 
 @Composable
@@ -129,6 +135,7 @@ internal fun rememberDetailEpisodeList(
     progressByVideoId: Map<String, WatchProgressEntry>,
     watchedKeys: Set<String>,
     todayIsoDate: String,
+    layout: EpisodeLayout = EpisodeLayout.List,
 ): DetailEpisodeList {
     val groupedEpisodes = remember(meta.videos, meta.type) {
         meta.groupedEpisodesForDisplay()
@@ -149,9 +156,25 @@ internal fun rememberDetailEpisodeList(
             completedSeasons = seasonSummary.completedSeasons,
         )
     }
+    var selectedSeason by rememberSaveable(meta.id) { mutableStateOf<Int?>(null) }
+    val carousel = if (layout == EpisodeLayout.Carousel) {
+        remember(groupedEpisodes, selectedSeason, seasonSummary, meta.seasonPosters, meta.poster) {
+            buildSeasonCarousel(
+                groupedEpisodes = groupedEpisodes,
+                selectedSeason = selectedSeason ?: seasonSummary.defaultSeason,
+                completedSeasons = seasonSummary.completedSeasons,
+                seasonPosters = meta.seasonPosters,
+                fallbackPoster = meta.poster,
+            )
+        }
+    } else {
+        null
+    }
     return DetailEpisodeList(
         entries = entries,
         onSeasonToggle = { season -> seasonExpansion.toggle(season, seasonSummary.defaultSeason) },
+        carousel = carousel,
+        onSeasonSelected = { season -> selectedSeason = season },
     )
 }
 

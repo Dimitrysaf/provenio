@@ -3,7 +3,6 @@ package io.github.dimitrysaf.provenio.shell.screens.details.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.DoneAll
-import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.PlaylistAddCheckCircle
@@ -28,19 +27,26 @@ fun EpisodeWatchedActionSheet(
     isEpisodeWatched: Boolean,
     canMarkPreviousEpisodes: Boolean,
     arePreviousEpisodesWatched: Boolean,
-    isSeasonWatched: Boolean,
     onDismiss: () -> Unit,
     onToggleWatched: () -> Unit,
     onTogglePreviousWatched: () -> Unit,
-    onToggleSeasonWatched: () -> Unit,
     thumbnailUrl: String? = null,
     blurThumbnail: Boolean = false,
     showPlayManually: Boolean = false,
     onPlayManually: (() -> Unit)? = null,
-    onViewImage: (() -> Unit)? = null,
     onShowDetails: (() -> Unit)? = null,
 ) {
+    // The season's own actions live on the season's menu, so this one is about the episode alone.
     val actions = buildList {
+        if (showPlayManually && onPlayManually != null) {
+            add(
+                MediaSheetAction(
+                    icon = Icons.Rounded.PlayArrow,
+                    label = stringResource(Res.string.play_manually),
+                    onSelected = onPlayManually,
+                ),
+            )
+        }
         if (onShowDetails != null) {
             add(
                 MediaSheetAction(
@@ -71,35 +77,6 @@ fun EpisodeWatchedActionSheet(
                         stringResource(Res.string.episode_mark_previous_watched)
                     },
                     onSelected = onTogglePreviousWatched,
-                ),
-            )
-        }
-        add(
-            MediaSheetAction(
-                icon = Icons.Rounded.PlaylistAddCheckCircle,
-                label = if (isSeasonWatched) {
-                    stringResource(Res.string.episode_mark_season_unwatched, seasonLabel)
-                } else {
-                    stringResource(Res.string.episode_mark_season_watched, seasonLabel)
-                },
-                onSelected = onToggleSeasonWatched,
-            ),
-        )
-        if (showPlayManually && onPlayManually != null) {
-            add(
-                MediaSheetAction(
-                    icon = Icons.Rounded.PlayArrow,
-                    label = stringResource(Res.string.play_manually),
-                    onSelected = onPlayManually,
-                ),
-            )
-        }
-        if (onViewImage != null) {
-            add(
-                MediaSheetAction(
-                    icon = Icons.Rounded.Image,
-                    label = stringResource(Res.string.image_viewer_view_image),
-                    onSelected = onViewImage,
                 ),
             )
         }
@@ -136,8 +113,28 @@ fun SeasonWatchedActionSheet(
     onMarkPreviousSeasonsWatched: () -> Unit,
     posterUrl: String? = null,
     showTitle: String? = null,
+    onPlayWholeSeason: (() -> Unit)? = null,
+    onShowDetails: (() -> Unit)? = null,
 ) {
     val actions = buildList {
+        if (onPlayWholeSeason != null) {
+            add(
+                MediaSheetAction(
+                    icon = Icons.Rounded.PlayArrow,
+                    label = stringResource(Res.string.season_action_play_manually),
+                    onSelected = onPlayWholeSeason,
+                ),
+            )
+        }
+        if (onShowDetails != null) {
+            add(
+                MediaSheetAction(
+                    icon = Icons.Rounded.Info,
+                    label = stringResource(Res.string.season_action_info),
+                    onSelected = onShowDetails,
+                ),
+            )
+        }
         add(
             MediaSheetAction(
                 icon = Icons.Rounded.PlaylistAddCheckCircle,

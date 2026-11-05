@@ -823,6 +823,7 @@ object TmdbMetadataService {
                         thumbnail = episode.thumbnail,
                         seasonPoster = episode.seasonPoster,
                         seasonName = episode.seasonName,
+                        seasonOverview = episode.seasonOverview,
                         season = season,
                         episode = number,
                         overview = episode.overview,
@@ -993,6 +994,11 @@ object TmdbMetadataService {
                                 enrichmentForEpisode.seasonName ?: video.seasonName
                             } else {
                                 video.seasonName
+                            },
+                            seasonOverview = if (settings.useEpisodes) {
+                                enrichmentForEpisode.seasonOverview ?: video.seasonOverview
+                            } else {
+                                video.seasonOverview
                             },
                             runtime = if (settings.useEpisodes) {
                                 enrichmentForEpisode.runtimeMinutes ?: video.runtime
@@ -1282,6 +1288,7 @@ object TmdbMetadataService {
                                 thumbnail = buildImageUrl(episode.stillPath, "w500"),
                                 seasonPoster = buildImageUrl(details.posterPath, "w500"),
                                 seasonName = details.name?.trim()?.takeIf(String::isNotBlank),
+                                seasonOverview = details.overview?.trim()?.takeIf(String::isNotBlank),
                                 airDate = episode.airDate?.trim()?.takeIf(String::isNotBlank),
                                 runtimeMinutes = episode.runtime,
                             )
@@ -1596,6 +1603,7 @@ internal data class TmdbEpisodeEnrichment(
     val thumbnail: String?,
     val seasonPoster: String? = null,
     val seasonName: String? = null,
+    val seasonOverview: String? = null,
     val airDate: String?,
     val runtimeMinutes: Int?,
 )
@@ -2207,6 +2215,7 @@ private data class TmdbCollectionPart(
 @Serializable
 private data class TmdbSeasonDetailsResponse(
     val name: String? = null,
+    val overview: String? = null,
     @SerialName("poster_path") val posterPath: String? = null,
     val episodes: List<TmdbEpisodeResponse> = emptyList(),
 )

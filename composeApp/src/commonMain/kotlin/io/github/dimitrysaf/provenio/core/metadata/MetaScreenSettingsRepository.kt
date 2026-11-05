@@ -41,7 +41,30 @@ data class MetaScreenSettingsUiState(
     val heroTrailerPlayback: Boolean = false,
     val blurUnwatchedEpisodes: Boolean = false,
     val posterTransitionEnabled: Boolean = false,
+    val episodeLayout: EpisodeLayout = EpisodeLayout.List,
 )
+
+/** How a series lays out its seasons, on the Details page and in the player's Episodes sheet. */
+enum class EpisodeLayout {
+    /** Each season is a row that expands into its episodes. */
+    List,
+    /** The seasons' posters in a carousel; the picked season's episodes list below it. */
+    Carousel,
+    ;
+
+    companion object {
+        fun parse(raw: String?): EpisodeLayout? = when (raw?.lowercase()) {
+            "list" -> List
+            "carousel" -> Carousel
+            else -> null
+        }
+
+        fun persist(layout: EpisodeLayout): String = when (layout) {
+            List -> "list"
+            Carousel -> "carousel"
+        }
+    }
+}
 
 /** What sits behind the Detail and person pages. */
 enum class MetaScreenBackgroundMode {
@@ -86,6 +109,8 @@ private data class StoredMetaScreenSettingsPayload(
     val blurUnwatchedEpisodes: Boolean = false,
     @SerialName("poster_transition_enabled")
     val posterTransitionEnabled: Boolean = false,
+    @SerialName("episode_layout")
+    val episodeLayout: String? = null,
 )
 
 private data class MetaScreenSectionDefinition(
@@ -167,6 +192,7 @@ object MetaScreenSettingsRepository {
     private var heroTrailerPlayback: Boolean = false
     private var blurUnwatchedEpisodes: Boolean = false
     private var posterTransitionEnabled: Boolean = false
+    private var episodeLayout: EpisodeLayout = EpisodeLayout.List
     private fun localizedString(resource: StringResource): String = runBlocking { getString(resource) }
 
     fun ensureLoaded() {
@@ -184,6 +210,7 @@ object MetaScreenSettingsRepository {
                 heroTrailerPlayback = parsed.heroTrailerPlayback
                 blurUnwatchedEpisodes = parsed.blurUnwatchedEpisodes
                 posterTransitionEnabled = parsed.posterTransitionEnabled
+                episodeLayout = EpisodeLayout.parse(parsed.episodeLayout) ?: EpisodeLayout.List
                 preferences = parsed.items.mapNotNull { item ->
                     val key = runCatching { MetaScreenSectionKey.valueOf(item.key) }.getOrNull() ?: return@mapNotNull null
                     key to item
@@ -203,6 +230,7 @@ object MetaScreenSettingsRepository {
         heroTrailerPlayback = false
         blurUnwatchedEpisodes = false
         posterTransitionEnabled = false
+        episodeLayout = EpisodeLayout.List
         _uiState.value = MetaScreenSettingsUiState()
         ensureLoaded()
     }
@@ -235,6 +263,13 @@ object MetaScreenSettingsRepository {
         persist()
     }
 
+    fun setEpisodeLayout(layout: EpisodeLayout) {
+        ensureLoaded()
+        episodeLayout = layout
+        publish()
+        persist()
+    }
+
     fun clearLocalState() {
         hasLoaded = false
         preferences.clear()
@@ -242,6 +277,7 @@ object MetaScreenSettingsRepository {
         heroTrailerPlayback = false
         blurUnwatchedEpisodes = false
         posterTransitionEnabled = false
+        episodeLayout = EpisodeLayout.List
         _uiState.value = MetaScreenSettingsUiState()
     }
 
@@ -333,6 +369,7 @@ object MetaScreenSettingsRepository {
             heroTrailerPlayback = heroTrailerPlayback,
             blurUnwatchedEpisodes = blurUnwatchedEpisodes,
             posterTransitionEnabled = posterTransitionEnabled,
+            episodeLayout = episodeLayout,
         )
     }
 
@@ -346,6 +383,7 @@ object MetaScreenSettingsRepository {
                     heroTrailerPlayback = heroTrailerPlayback,
                     blurUnwatchedEpisodes = blurUnwatchedEpisodes,
                     posterTransitionEnabled = posterTransitionEnabled,
+                    episodeLayout = EpisodeLayout.persist(episodeLayout),
                 ),
             ),
         )

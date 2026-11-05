@@ -239,6 +239,7 @@ internal fun appEntryProvider(
             navController = navController,
             onPlay = playback.onPlay,
             onPlayManually = playback.onPlayManually,
+            onPlayWholeSeason = playback::playWholeSeason,
             onPlayTrailer = playback::playTrailer,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
@@ -254,6 +255,9 @@ internal fun appEntryProvider(
     }
     entry<EpisodeDetailRoute> { route ->
         EpisodeDestination(route = route, navController = navController)
+    }
+    entry<SeasonDetailRoute> { route ->
+        SeasonDestination(route = route, navController = navController)
     }
     entry<EntityBrowseRoute> { route ->
         EntityDestination(route = route, navController = navController)

@@ -2341,7 +2341,7 @@
     <string name="image_viewer_download">Download</string>
     <string name="image_viewer_save_title">Save image</string>
     <string name="image_viewer_view_image">View image</string>
-    <string name="episode_action_show_details">Show details</string>
+    <string name="episode_action_show_details">Episode info</string>
     <string name="player_info_title">Now playing</string>
     <string name="episode_details_section">Episode details</string>
     <string name="episode_details_overview">Overview</string>
@@ -2746,4 +2746,25 @@
     <string name="watch_party_line_source_advice">Everyone plays the source you pick: choose one with many seeds and peers</string>
     <string name="watch_party_chat_off">The host turned chat off.</string>
     <string name="watch_party_room_settings">Details</string>
+    <string name="settings_meta_episode_layout">Episodes Layout</string>
+    <string name="settings_meta_episode_layout_description">How a series shows its seasons, here and in the player's Episodes sheet.</string>
+    <string name="settings_meta_episode_layout_list">List</string>
+    <string name="settings_meta_episode_layout_list_description">Each season is a row that opens to show its episodes.</string>
+    <string name="settings_meta_episode_layout_carousel">Carousel</string>
+    <string name="settings_meta_episode_layout_carousel_description">Season posters in a carousel, with the selected season's episodes below. Seasons without posters use the list.</string>
+    <string name="season_action_info">Season info</string>
+    <string name="season_action_play_manually">Play whole season manually</string>
+    <string name="season_details_section">Season details</string>
+    <string name="season_details_first_aired">First aired</string>
+    <string name="season_details_last_aired">Last aired</string>
+    <string name="season_details_not_found">This season could not be found.</string>
+    <string name="season_play_title">Play whole season</string>
+    <string name="season_play_packs">Season packs</string>
+    <string name="season_play_packs_description">Only torrents that hold the whole season.</string>
+    <string name="season_play_episodes">Episode by episode</string>
+    <string name="season_play_episodes_description">All sources. Downloading the season finds a matching source for each episode in turn.</string>
+    <string name="streams_download_season">Download whole season</string>
+    <string name="streams_download_season_started">Finding sources for %1$d episodes…</string>
+    <string name="streams_download_season_done">Queued %1$d of %2$d episodes for download</string>
+    <string name="streams_no_season_packs">No source holds the whole season. Try Episode by episode.</string>
 </resources>

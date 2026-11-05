@@ -351,6 +351,7 @@ internal fun StreamDestination(
             manualSelection = launch.manualSelection,
             startFromBeginning = launch.startFromBeginning,
             preferredBingeGroup = launch.preferredBingeGroup,
+            seasonSourceMode = launch.seasonSourceMode,
             onStreamSelected = { stream, resolvedResumePositionMs, resolvedResumeProgressFraction ->
                 openSelectedStream(
                     stream = stream,

@@ -64,6 +64,17 @@ data class EpisodeDetailRoute(
 }
 
 @Serializable
+data class SeasonDetailRoute(
+    val type: String,
+    val metaId: String,
+    val season: Int,
+    val seasonTitle: String,
+) : AppRoute {
+    override val title: String
+        get() = seasonTitle
+}
+
+@Serializable
 data class EntityBrowseRoute(
     val entityKind: String,
     val entityId: Int,

@@ -98,6 +98,8 @@ data class MetaVideo(
     val seasonPoster: String? = null,
     /** The name of the episode's season when it has one of its own, such as TMDB gives. */
     val seasonName: String? = null,
+    /** The season's own overview, such as TMDB gives. */
+    val seasonOverview: String? = null,
     val season: Int? = null,
     val episode: Int? = null,
     val overview: String? = null,

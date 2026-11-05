@@ -21,6 +21,8 @@ data class StreamLaunch(
     val startFromBeginning: Boolean = false,
     /** A release to pick first, by its binge group, as a watch party guest does to match the host. */
     val preferredBingeGroup: String? = null,
+    /** Set when the sheet is for a whole season rather than one episode. */
+    val seasonSourceMode: SeasonSourceMode? = null,
 )
 
 object StreamLaunchStore {

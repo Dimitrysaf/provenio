@@ -34,6 +34,13 @@ import provenio.composeapp.generated.resources.settings_meta_background_mode_nor
 import provenio.composeapp.generated.resources.settings_meta_background_mode_description
 import provenio.composeapp.generated.resources.settings_meta_background_mode
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenBackgroundMode
+import io.github.dimitrysaf.provenio.core.metadata.EpisodeLayout
+import provenio.composeapp.generated.resources.settings_meta_episode_layout
+import provenio.composeapp.generated.resources.settings_meta_episode_layout_carousel
+import provenio.composeapp.generated.resources.settings_meta_episode_layout_carousel_description
+import provenio.composeapp.generated.resources.settings_meta_episode_layout_description
+import provenio.composeapp.generated.resources.settings_meta_episode_layout_list
+import provenio.composeapp.generated.resources.settings_meta_episode_layout_list_description
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import androidx.compose.runtime.setValue
@@ -100,6 +107,7 @@ internal fun LazyListScope.metaScreenSettingsContent(
         AppFeaturePolicy.trailerPlaybackMode == TrailerPlaybackMode.IN_APP
     item {
         var showBackgroundSheet by rememberSaveable { mutableStateOf(false) }
+        var showEpisodeLayoutSheet by rememberSaveable { mutableStateOf(false) }
         SettingsSection(
             title = stringResource(Res.string.settings_meta_section_appearance),
             isTablet = isTablet,
@@ -126,6 +134,11 @@ internal fun LazyListScope.metaScreenSettingsContent(
                         onCheckedChange = { MetaScreenSettingsRepository.setHeroTrailerPlayback(it) },
                     )
                 }
+                navigationRow(
+                    title = stringResource(Res.string.settings_meta_episode_layout),
+                    description = stringResource(uiState.episodeLayout.labelRes),
+                    onClick = { showEpisodeLayoutSheet = true },
+                )
                 switchRow(
                     title = stringResource(Res.string.settings_meta_blur_unwatched_episodes),
                     description = stringResource(Res.string.settings_meta_blur_unwatched_episodes_description),
@@ -148,6 +161,23 @@ internal fun LazyListScope.metaScreenSettingsContent(
                 isSelected = { it == uiState.backgroundMode },
                 onSelected = MetaScreenSettingsRepository::setBackgroundMode,
                 onDismiss = { showBackgroundSheet = false },
+            )
+        }
+        if (showEpisodeLayoutSheet) {
+            SingleChoiceBottomSheet(
+                title = stringResource(Res.string.settings_meta_episode_layout),
+                description = stringResource(Res.string.settings_meta_episode_layout_description),
+                options = EpisodeLayout.entries.map { layout ->
+                    SingleChoiceOption(
+                        value = layout,
+                        label = stringResource(layout.labelRes),
+                        supportingText = stringResource(layout.descriptionRes),
+                        leadingContent = { EpisodeLayoutPreview(layout) },
+                    )
+                },
+                isSelected = { it == uiState.episodeLayout },
+                onSelected = MetaScreenSettingsRepository::setEpisodeLayout,
+                onDismiss = { showEpisodeLayoutSheet = false },
             )
         }
     }
@@ -318,6 +348,18 @@ private val MetaScreenBackgroundMode.descriptionRes: StringResource
     get() = when (this) {
         MetaScreenBackgroundMode.Normal -> Res.string.settings_meta_background_mode_normal_description
         MetaScreenBackgroundMode.Cinematic -> Res.string.settings_meta_background_mode_cinematic_description
+    }
+
+private val EpisodeLayout.labelRes: StringResource
+    get() = when (this) {
+        EpisodeLayout.List -> Res.string.settings_meta_episode_layout_list
+        EpisodeLayout.Carousel -> Res.string.settings_meta_episode_layout_carousel
+    }
+
+private val EpisodeLayout.descriptionRes: StringResource
+    get() = when (this) {
+        EpisodeLayout.List -> Res.string.settings_meta_episode_layout_list_description
+        EpisodeLayout.Carousel -> Res.string.settings_meta_episode_layout_carousel_description
     }
 
 private val MetaScreenSectionKey.titleRes: StringResource

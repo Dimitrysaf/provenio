@@ -58,6 +58,8 @@ import io.github.dimitrysaf.provenio.shell.components.ToastController
 import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
 import io.github.dimitrysaf.provenio.core.downloads.DownloadsRepository
+import io.github.dimitrysaf.provenio.core.streams.SeasonSourceMode
+import io.github.dimitrysaf.provenio.core.streams.isSeasonPack
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.debrid.DebridSettingsRepository
 import io.github.dimitrysaf.provenio.core.debrid.DirectDebridPlayableResult
@@ -110,6 +112,8 @@ fun StreamsSheet(
     manualSelection: Boolean = false,
     startFromBeginning: Boolean = false,
     preferredBingeGroup: String? = null,
+    /** Set when the sheet is for the whole of [seasonNumber], opened on its first episode. */
+    seasonSourceMode: SeasonSourceMode? = null,
     showLoadingScreen: Boolean = false,
     /**
      * The episode's own id is still being looked up, so there is nothing to ask the add-ons for
@@ -218,6 +222,15 @@ fun StreamsSheet(
     val stillLoading = preparing || uiState.isAnyLoading
     val filter = rememberStreamFilterState(uiState.requestToken)
     val filteredGroups = remember(shownGroups, filter.query, filter.qualities, filter.sortOrder) { filter.apply(shownGroups) }
+    val packSeason = seasonNumber.takeIf { seasonSourceMode == SeasonSourceMode.Packs }
+    // For season packs, only the sources that hold the whole season are listed.
+    val listedGroups = remember(filteredGroups, packSeason) {
+        if (packSeason == null) {
+            filteredGroups
+        } else {
+            filteredGroups.map { group -> group.copy(streams = group.streams.filter { it.isSeasonPack(packSeason) }) }
+        }
+    }
     val p2pSettings by remember {
         P2pSettingsRepository.ensureLoaded()
         P2pSettingsRepository.uiState
@@ -229,7 +242,17 @@ fun StreamsSheet(
         delay(TorrentPrefetchSettleMs)
         P2pStreams.warmUp(torrentCandidates)
     }
-    val subtitle = if (seasonNumber != null && episodeNumber != null) {
+    val subtitle = if (seasonSourceMode != null && seasonNumber != null) {
+        listOf(
+            stringResource(Res.string.episodes_season, seasonNumber),
+            stringResource(
+                when (seasonSourceMode) {
+                    SeasonSourceMode.Packs -> Res.string.season_play_packs
+                    SeasonSourceMode.EpisodeByEpisode -> Res.string.season_play_episodes
+                },
+            ),
+        ).joinToString(" · ")
+    } else if (seasonNumber != null && episodeNumber != null) {
         val code = stringResource(Res.string.streams_episode_badge, seasonNumber, episodeNumber)
         episodeTitle?.takeIf { it.isNotBlank() }?.let { "$code · $it" } ?: code
     } else {
@@ -330,9 +353,19 @@ fun StreamsSheet(
                         item(key = "streams_no_matches") { StreamsNoMatchesBlock() }
                     }
 
+                    packSeason != null && listedGroups.none { it.streams.isNotEmpty() } -> {
+                        if (stillLoading) {
+                            item(key = "streams_preparing") { StreamsPreparingBlock() }
+                        } else {
+                            item(key = "streams_no_season_packs") {
+                                StreamsNoMatchesBlock(text = stringResource(Res.string.streams_no_season_packs))
+                            }
+                        }
+                    }
+
                     else -> {
                         streamGroups(
-                            groups = filteredGroups,
+                            groups = listedGroups,
                             expansion = expansion,
                             debridEnabled = debridSettings.canResolvePlayableLinks,
                             appendInstantServiceToDefaultName = debridSettings.canResolvePlayableLinks &&
@@ -362,7 +395,7 @@ fun StreamsSheet(
                 landscapeThumbnail = true,
                 onDismiss = { streamActionsTarget = null },
                 navigation = SheetNavigation.Back,
-                actions = listOf(
+                actions = listOfNotNull(
                     MediaSheetAction(
                         icon = Icons.Rounded.ContentCopy,
                         label = stringResource(Res.string.streams_copy_link),
@@ -418,6 +451,26 @@ fun StreamsSheet(
                             )
                         },
                     ),
+                    seasonNumber?.takeIf { seasonSourceMode != null }?.let { season ->
+                        MediaSheetAction(
+                            icon = Icons.Rounded.Download,
+                            label = stringResource(Res.string.streams_download_season),
+                            onSelected = {
+                                SeasonDownloads.start(
+                                    template = stream,
+                                    type = type,
+                                    templateVideoId = videoId,
+                                    parentMetaId = parentMetaId,
+                                    parentMetaType = parentMetaType,
+                                    title = title,
+                                    logo = logo,
+                                    poster = poster,
+                                    background = background,
+                                    season = season,
+                                )
+                            },
+                        )
+                    },
                 ),
             )
         }

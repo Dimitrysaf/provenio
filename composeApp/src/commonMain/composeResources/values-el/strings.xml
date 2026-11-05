@@ -2309,7 +2309,7 @@
     <string name="image_viewer_download">Λήψη</string>
     <string name="image_viewer_save_title">Αποθήκευση εικόνας</string>
     <string name="image_viewer_view_image">Προβολή εικόνας</string>
-    <string name="episode_action_show_details">Εμφάνιση λεπτομερειών</string>
+    <string name="episode_action_show_details">Πληροφορίες επεισοδίου</string>
     <string name="player_info_title">Αναπαράγεται τώρα</string>
     <string name="episode_details_section">Λεπτομέρειες επεισοδίου</string>
     <string name="episode_details_overview">Επισκόπηση</string>
@@ -2714,4 +2714,25 @@
     <string name="watch_party_line_source_advice">Όλοι αναπαράγουν την πηγή που επιλέγετε: διαλέξτε μία με πολλά seeds και peers</string>
     <string name="watch_party_chat_off">Ο οικοδεσπότης απενεργοποίησε τη συνομιλία.</string>
     <string name="watch_party_room_settings">Λεπτομέρειες</string>
+    <string name="settings_meta_episode_layout">Διάταξη επεισοδίων</string>
+    <string name="settings_meta_episode_layout_description">Πώς εμφανίζει μια σειρά τις σεζόν της, εδώ και στη λίστα Επεισόδια του προγράμματος αναπαραγωγής.</string>
+    <string name="settings_meta_episode_layout_list">Λίστα</string>
+    <string name="settings_meta_episode_layout_list_description">Κάθε σεζόν είναι μια γραμμή που ανοίγει και δείχνει τα επεισόδιά της.</string>
+    <string name="settings_meta_episode_layout_carousel">Καρουζέλ</string>
+    <string name="settings_meta_episode_layout_carousel_description">Αφίσες σεζόν σε καρουζέλ, με τα επεισόδια της επιλεγμένης σεζόν από κάτω. Οι σεζόν χωρίς αφίσες εμφανίζονται ως λίστα.</string>
+    <string name="season_action_info">Πληροφορίες σεζόν</string>
+    <string name="season_action_play_manually">Χειροκίνητη αναπαραγωγή όλης της σεζόν</string>
+    <string name="season_details_section">Λεπτομέρειες σεζόν</string>
+    <string name="season_details_first_aired">Πρώτη προβολή</string>
+    <string name="season_details_last_aired">Τελευταία προβολή</string>
+    <string name="season_details_not_found">Δεν βρέθηκε αυτή η σεζόν.</string>
+    <string name="season_play_title">Αναπαραγωγή όλης της σεζόν</string>
+    <string name="season_play_packs">Πακέτα σεζόν</string>
+    <string name="season_play_packs_description">Μόνο torrent που περιέχουν όλη τη σεζόν.</string>
+    <string name="season_play_episodes">Επεισόδιο προς επεισόδιο</string>
+    <string name="season_play_episodes_description">Όλες οι πηγές. Η λήψη της σεζόν βρίσκει αντίστοιχη πηγή για κάθε επεισόδιο με τη σειρά.</string>
+    <string name="streams_download_season">Λήψη όλης της σεζόν</string>
+    <string name="streams_download_season_started">Αναζήτηση πηγών για %1$d επεισόδια…</string>
+    <string name="streams_download_season_done">Προστέθηκαν %1$d από %2$d επεισόδια για λήψη</string>
+    <string name="streams_no_season_packs">Καμία πηγή δεν περιέχει όλη τη σεζόν. Δοκιμάστε Επεισόδιο προς επεισόδιο.</string>
 </resources>

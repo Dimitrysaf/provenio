@@ -804,6 +804,7 @@ internal fun settingsSearchEntries(
     }
     listOf(
         PlaybackSearchRow("meta-background-mode", stringResource(Res.string.settings_meta_background_mode), stringResource(Res.string.settings_meta_background_mode_description)),
+        PlaybackSearchRow("meta-episode-layout", stringResource(Res.string.settings_meta_episode_layout), stringResource(Res.string.settings_meta_episode_layout_description)),
         PlaybackSearchRow("meta-blur-episodes", stringResource(Res.string.settings_meta_blur_unwatched_episodes), stringResource(Res.string.settings_meta_blur_unwatched_episodes_description)),
     ).forEach { row ->
         addRow(

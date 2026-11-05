@@ -141,6 +141,29 @@ class EpisodeListEntriesTest {
         assertFalse(isGenericSeasonName("Season 3", 2))
     }
 
+    @Test
+    fun theCarouselFallsBackToTheListWhenNoSeasonHasAPoster() {
+        assertNull(
+            buildSeasonCarousel(grouped, selectedSeason = null, completedSeasons = emptySet(), seasonPosters = emptyMap(), fallbackPoster = "show"),
+        )
+    }
+
+    @Test
+    fun theCarouselListsTheSelectedSeasonsEpisodesAlone() {
+        val carousel = buildSeasonCarousel(
+            groupedEpisodes = grouped,
+            selectedSeason = 2,
+            completedSeasons = emptySet(),
+            seasonPosters = mapOf(2 to "season-2"),
+            fallbackPoster = "show",
+        )!!
+        assertEquals(listOf(1, 2, 0), carousel.seasons.map { it.season })
+        // A season without a poster of its own shows the show's.
+        assertEquals(listOf("show", "season-2", "show"), carousel.seasons.map { it.posterUrl })
+        assertEquals(2, carousel.selectedSeason)
+        assertTrue(carousel.episodes.all { it.episode.season == 2 })
+    }
+
     private fun episode(season: Int, number: Int): MetaVideo =
         MetaVideo(
             id = "s${season}e$number",

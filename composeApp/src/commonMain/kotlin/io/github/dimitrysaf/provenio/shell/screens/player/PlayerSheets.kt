@@ -42,6 +42,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,6 +64,10 @@ import io.github.dimitrysaf.provenio.shell.screens.details.SeasonActionsSheet
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailEpisodeListRow
 import io.github.dimitrysaf.provenio.shell.screens.details.components.EpisodeListEntry
 import io.github.dimitrysaf.provenio.shell.screens.details.components.buildEpisodeListEntries
+import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonPosterCarousel
+import io.github.dimitrysaf.provenio.shell.screens.details.components.buildSeasonCarousel
+import io.github.dimitrysaf.provenio.core.metadata.EpisodeLayout
+import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
 import io.github.dimitrysaf.provenio.shell.screens.details.components.episodeWatchState
 import io.github.dimitrysaf.provenio.shell.screens.details.components.rememberEpisodeSeasonExpansion
 import io.github.dimitrysaf.provenio.shell.screens.details.components.summarizeEpisodeSeasons
@@ -395,9 +400,30 @@ private fun PlayerEpisodeList(
     val defaultSeason = currentSeason?.takeIf { it in grouped } ?: summary.defaultSeason
     val expansion = rememberEpisodeSeasonExpansion(meta.id)
     val expandedSeasons = grouped.keys.filter { expansion.isExpanded(it, defaultSeason) }.toSet()
-    val entries = remember(grouped, expandedSeasons, summary.completedSeasons) {
+    val listEntries = remember(grouped, expandedSeasons, summary.completedSeasons) {
         buildEpisodeListEntries(grouped, expandedSeasons, summary.completedSeasons)
     }
+    val metaScreenSettings by remember {
+        MetaScreenSettingsRepository.ensureLoaded()
+        MetaScreenSettingsRepository.uiState
+    }.collectAsStateWithLifecycle()
+    var selectedSeason by rememberSaveable(meta.id) { mutableStateOf<Int?>(null) }
+    val carousel = if (metaScreenSettings.episodeLayout == EpisodeLayout.Carousel) {
+        remember(grouped, selectedSeason, defaultSeason, summary.completedSeasons, meta.seasonPosters, meta.poster) {
+            buildSeasonCarousel(
+                groupedEpisodes = grouped,
+                selectedSeason = selectedSeason ?: defaultSeason,
+                completedSeasons = summary.completedSeasons,
+                seasonPosters = meta.seasonPosters,
+                fallbackPoster = meta.poster,
+            )
+        }
+    } else {
+        null
+    }
+    // In the carousel layout the seasons are the posters, so the list holds only the selected season's episodes.
+    val entries: List<EpisodeListEntry> = carousel?.episodes ?: listEntries
+    val rowOffset = if (carousel != null) 1 else 0
 
     var episodeForActions by remember(meta.id) { mutableStateOf<MetaVideo?>(null) }
     var seasonForActions by remember(meta.id) { mutableStateOf<Int?>(null) }
@@ -408,7 +434,7 @@ private fun PlayerEpisodeList(
         if (scrolledToCurrent) return@LaunchedEffect
         val currentIndex = entries.indexOfFirst { it is EpisodeListEntry.Episode && it.episode.id == currentVideoId }
         if (currentIndex < 0) return@LaunchedEffect
-        listState.scrollToItem(currentIndex)
+        listState.scrollToItem(currentIndex + rowOffset)
         scrolledToCurrent = true
     }
 
@@ -417,6 +443,19 @@ private fun PlayerEpisodeList(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(top = 8.dp, bottom = safeBottomPadding(16.dp)),
     ) {
+        if (carousel != null) {
+            item(key = "season-carousel") {
+                SeasonPosterCarousel(
+                    carousel = carousel,
+                    meta = meta,
+                    onSeasonSelected = { season -> selectedSeason = season },
+                    onSeasonLongPress = { season -> seasonForActions = season },
+                    modifier = Modifier
+                        .padding(horizontal = StreamsHorizontalPadding)
+                        .padding(bottom = 12.dp),
+                )
+            }
+        }
         itemsIndexed(entries, key = { _, entry -> entry.key }) { index, entry ->
             DetailEpisodeListRow(
                 entry = entry,
