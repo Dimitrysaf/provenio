@@ -177,7 +177,8 @@ public actor Engine {
     public func prepareStream(
         torrentID: String,
         fileIndex: UInt32? = nil,
-        filenameHint: String? = nil
+        filenameHint: String? = nil,
+        download: Bool = false
     ) async throws -> Stream {
         try validateTorrentID(torrentID)
         if let filenameHint {
@@ -197,6 +198,7 @@ public actor Engine {
                 request.torrent_id = torrentPointer
                 request.file_index = fileIndex ?? UInt32.max
                 request.filename_hint = hintPointer
+                request.flags = download ? ENGINE_STREAM_FLAG_DOWNLOAD.rawValue : 0
                 return try submit { handle, requestID in
                     engine_prepare_stream(handle, &request, &requestID)
                 }

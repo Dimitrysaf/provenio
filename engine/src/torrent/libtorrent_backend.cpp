@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <deque>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -560,7 +561,8 @@ public:
         const std::uint64_t request_id,
         const std::string& id,
         const std::uint32_t file_index,
-        TorrentFileInfo file
+        TorrentFileInfo file,
+        const bool download
     ) override {
         const auto torrent = handles_.find(id);
         if (torrent == handles_.end() || !torrent->second.is_valid()) {
@@ -569,19 +571,19 @@ public:
         focus_torrent(id);
         activate_torrent(id, torrent->second);
         touch_disk_cache(id);
-        if (pending_prepares_.contains(id)) {
-            throw std::runtime_error("stream preparation already pending");
-        }
         const auto metadata = torrent->second.torrent_file();
         if (!metadata || file_index >= static_cast<std::uint32_t>(metadata->num_files())) {
             throw std::runtime_error("selected torrent file is unavailable");
         }
-        PendingPrepare prepare{request_id, file_index, std::move(file)};
+        PendingPrepare prepare{request_id, file_index, std::move(file), download};
         if (torrent->second.status().is_seeding) {
             queued_events_.push_back(prepared_event(torrent->second, id, prepare));
             return;
         }
-        pending_prepares_.emplace(id, std::move(prepare));
+        // Several files of one torrent may be prepared at once: each waits its turn here, and
+        // every file already streamed or still waiting stays wanted.
+        auto& queue = pending_prepares_[id];
+        queue.push_back(std::move(prepare));
         try {
             std::vector<lt::download_priority_t> priorities(
                 static_cast<std::size_t>(metadata->num_files()),
@@ -592,10 +594,15 @@ public:
                     priorities[streamed] = lt::default_priority;
                 }
             }
-            priorities[static_cast<std::size_t>(file_index)] = lt::default_priority;
+            for (const auto& waiting : queue) {
+                priorities[static_cast<std::size_t>(waiting.file_index)] = lt::default_priority;
+            }
             torrent->second.prioritize_files(priorities);
         } catch (...) {
-            pending_prepares_.erase(id);
+            queue.pop_back();
+            if (queue.empty()) {
+                pending_prepares_.erase(id);
+            }
             throw;
         }
     }
@@ -647,13 +654,15 @@ public:
         }
         const auto prepare = pending_prepares_.find(id);
         if (prepare != pending_prepares_.end()) {
-            queued_events_.push_back({
-                BackendEventType::torrent_error,
-                prepare->second.request_id,
-                id,
-                "stream preparation cancelled by torrent removal",
-                {},
-            });
+            for (const auto& waiting : prepare->second) {
+                queued_events_.push_back({
+                    BackendEventType::torrent_error,
+                    waiting.request_id,
+                    id,
+                    "stream preparation cancelled by torrent removal",
+                    {},
+                });
+            }
             pending_prepares_.erase(prepare);
         }
     }
@@ -1055,6 +1064,7 @@ private:
         std::uint64_t request_id;
         std::uint32_t file_index;
         TorrentFileInfo file;
+        bool download = false;
     };
 
     struct TorrentTelemetry {
@@ -1934,7 +1944,8 @@ private:
             handle,
             id,
             prepare.file_index,
-            prepare.file
+            prepare.file,
+            prepare.download
         );
         event.stream_id = stream.stream_id;
         event.stream_url = stream.url;
@@ -2061,13 +2072,19 @@ private:
     ) {
         const auto id = torrent_id(alert.handle);
         const auto pending = pending_prepares_.find(id);
-        if (pending == pending_prepares_.end()) {
+        if (pending == pending_prepares_.end() || pending->second.empty()) {
             return;
+        }
+        // One alert answers each prioritize_files call, in the order the prepares were queued.
+        const auto prepare = std::move(pending->second.front());
+        pending->second.pop_front();
+        if (pending->second.empty()) {
+            pending_prepares_.erase(pending);
         }
         if (alert.error) {
             events.push_back({
                 BackendEventType::torrent_error,
-                pending->second.request_id,
+                prepare.request_id,
                 id,
                 alert.error.message(),
                 {},
@@ -2075,7 +2092,7 @@ private:
         } else {
             try {
                 alert.handle.unset_flags(lt::torrent_flags::upload_mode);
-                events.push_back(prepared_event(alert.handle, id, pending->second));
+                events.push_back(prepared_event(alert.handle, id, prepare));
                 request_resume_save(
                     alert.handle,
                     lt::torrent_handle::only_if_modified |
@@ -2084,14 +2101,13 @@ private:
             } catch (const std::exception& error) {
                 events.push_back({
                     BackendEventType::torrent_error,
-                    pending->second.request_id,
+                    prepare.request_id,
                     id,
                     error.what(),
                     {},
                 });
             }
         }
-        pending_prepares_.erase(pending);
     }
 
     void handle_file_error(
@@ -2103,13 +2119,16 @@ private:
         if (pending == pending_prepares_.end()) {
             return;
         }
-        events.push_back({
-            BackendEventType::torrent_error,
-            pending->second.request_id,
-            id,
-            alert.error.message(),
-            {},
-        });
+        // A file error stops the whole torrent, so every file waiting on it fails.
+        for (const auto& waiting : pending->second) {
+            events.push_back({
+                BackendEventType::torrent_error,
+                waiting.request_id,
+                id,
+                alert.error.message(),
+                {},
+            });
+        }
         pending_prepares_.erase(pending);
     }
 
@@ -2170,7 +2189,7 @@ private:
     std::unordered_map<std::string, std::chrono::steady_clock::time_point> warm_since_;
     std::unordered_set<std::string> quiesced_torrents_;
     std::vector<PendingDiskReclaim> pending_disk_reclaims_;
-    std::unordered_map<std::string, PendingPrepare> pending_prepares_;
+    std::unordered_map<std::string, std::deque<PendingPrepare>> pending_prepares_;
     std::unordered_map<std::string, std::uint64_t> pending_removals_;
     std::unordered_set<RequestContext*> pending_resume_saves_;
     std::unordered_set<std::string> pending_cache_unloads_;

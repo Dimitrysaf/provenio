@@ -10,6 +10,7 @@ import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_EVENT_TORRENT_ERROR
 import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_EVENT_TORRENT_METADATA_READY
 import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_STATUS_NO_EVENT
 import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_STATUS_OK
+import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_STREAM_FLAG_DOWNLOAD
 import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_TORRENT_PROFILE_BALANCED
 import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_TORRENT_PROFILE_FAST
 import io.github.dimitrysaf.provenio.core.p2p.native.ENGINE_TORRENT_PROFILE_SOFT
@@ -292,6 +293,7 @@ actual object P2pStreamingEngine {
                         torrentId,
                         request.fileIdx,
                         request.filename,
+                        download = true,
                     ).also { preparedStream = it }
                 }
                 if (downloadSessions[downloadId] !== session) {
@@ -517,6 +519,7 @@ actual object P2pStreamingEngine {
         torrentId: String,
         fileIndex: Int?,
         filename: String?,
+        download: Boolean = false,
     ): NativeStream {
         val requestId = submit(activeEngine) {
             memScoped {
@@ -528,6 +531,7 @@ actual object P2pStreamingEngine {
                 request.torrent_id = torrentId.cstr.getPointer(this)
                 request.file_index = fileIndex?.toUInt() ?: UInt.MAX_VALUE
                 request.filename_hint = filename?.cstr?.getPointer(this)
+                request.flags = if (download) ENGINE_STREAM_FLAG_DOWNLOAD else 0u
                 val output = alloc<ULongVar>()
                 checkStatus(engine_prepare_stream(activeEngine, request.ptr, output.ptr))
                 output.value

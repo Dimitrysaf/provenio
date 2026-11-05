@@ -49,6 +49,8 @@ data class DownloadItem(
     // torrent is stored instead and the URL is resolved each time the transfer starts.
     val torrentInfoHash: String? = null,
     val torrentFileIdx: Int? = null,
+    // The file's name inside the torrent, so the engine finds it even when no index was given.
+    val torrentFilename: String? = null,
     val torrentTrackers: List<String> = emptyList(),
     val fileName: String,
     val status: DownloadStatus,

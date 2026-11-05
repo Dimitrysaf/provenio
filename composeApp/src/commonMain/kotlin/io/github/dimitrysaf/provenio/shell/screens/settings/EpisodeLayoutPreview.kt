@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -46,13 +45,13 @@ internal fun EpisodeLayoutPreview(layout: EpisodeLayout) {
             }
 
             EpisodeLayout.Carousel -> {
-                // The seasons' posters, the first one picked, then its episodes.
+                // The seasons' posters, large to small as a multi-browse carousel shows them, the first one picked, then its episodes.
                 Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                    repeat(3) { index ->
+                    PosterWidths.forEachIndexed { index, width ->
                         Box(
                             modifier = Modifier
-                                .width(PosterWidth)
-                                .aspectRatio(2f / 3f)
+                                .width(width)
+                                .height(PosterHeight)
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(colors.surfaceContainerHighest)
                                 .then(
@@ -113,4 +112,5 @@ private fun PreviewEpisodeRow(block: Color, thumbnail: Color) {
 
 private val PreviewWidth = 72.dp
 private val PreviewHeight = 84.dp
-private val PosterWidth = 16.dp
+private val PosterWidths = listOf(28.dp, 18.dp, 8.dp)
+private val PosterHeight = 36.dp

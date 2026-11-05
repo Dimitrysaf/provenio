@@ -228,6 +228,7 @@ object DownloadsRepository {
             localFileUri = null,
             torrentInfoHash = torrentInfoHash,
             torrentFileIdx = if (torrentInfoHash != null) stream.p2pFileIdx else null,
+            torrentFilename = if (torrentInfoHash != null) stream.behaviorHints.filename else null,
             torrentTrackers = torrentTrackers,
             fileName = fileName,
             status = DownloadStatus.Downloading,
@@ -436,6 +437,7 @@ object DownloadsRepository {
                     request = P2pStreamRequest(
                         infoHash = infoHash,
                         fileIdx = item.torrentFileIdx,
+                        filename = item.torrentFilename,
                         trackers = item.torrentTrackers,
                     ),
                 )

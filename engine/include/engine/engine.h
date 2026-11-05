@@ -103,11 +103,18 @@ typedef struct engine_event {
     char stream_url[512];
 } engine_event;
 
+typedef uint32_t engine_stream_flags;
+enum engine_stream_flag_value {
+    /* A download rather than playback: every piece of the file is fetched at once, with no
+     * playback deadlines or window, and the stream never replaces another stream. */
+    ENGINE_STREAM_FLAG_DOWNLOAD = 1u << 0
+};
+
 typedef struct engine_stream_request {
     uint32_t struct_size;
     const char* torrent_id;
     uint32_t file_index;
-    uint32_t reserved_0;
+    engine_stream_flags flags;
     const char* filename_hint;
 } engine_stream_request;
 

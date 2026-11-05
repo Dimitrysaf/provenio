@@ -550,6 +550,7 @@ engine_status engine_prepare_stream(
             *normalized,
             requested_index,
             std::move(filename_hint),
+            (request->flags & ENGINE_STREAM_FLAG_DOWNLOAD) != 0,
             *request_id
         );
     } catch (const std::bad_alloc&) {

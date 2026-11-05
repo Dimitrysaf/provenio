@@ -9,12 +9,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
+import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -263,7 +260,7 @@ internal fun buildSeasonCarousel(
     )
 }
 
-/** The seasons' posters in a small Material carousel; the selected season is outlined. */
+/** The seasons' posters in a Material multi-browse carousel; the selected season is outlined. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun SeasonPosterCarousel(
@@ -277,9 +274,9 @@ internal fun SeasonPosterCarousel(
     val state = rememberCarouselState(
         initialItem = seasons.indexOfFirst { it.season == carousel.selectedSeason }.coerceAtLeast(0),
     ) { seasons.size }
-    HorizontalUncontainedCarousel(
+    HorizontalMultiBrowseCarousel(
         state = state,
-        itemWidth = SeasonCarouselItemWidth,
+        preferredItemWidth = SeasonCarouselItemWidth,
         itemSpacing = 8.dp,
         modifier = modifier.fillMaxWidth().height(SeasonCarouselItemWidth * 3f / 2f),
     ) { index ->
@@ -308,46 +305,15 @@ internal fun SeasonPosterCarousel(
                 .onSecondaryClick(longPress)
                 .semantics { selected = isSelected }
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+            contentAlignment = Alignment.Center,
         ) {
             ShapedArtworkImage(
                 candidates = listOf(season.posterUrl),
-                contentDescription = null,
+                contentDescription = label,
                 letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                 modifier = Modifier.matchParentSize(),
             )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color.Transparent, MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f)),
-                        ),
-                    )
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = HeroOnArtworkColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    if (season.completed) {
-                        Icon(
-                            imageVector = Icons.Rounded.Check,
-                            contentDescription = stringResource(Res.string.episodes_cd_watched),
-                            tint = HeroOnArtworkColor,
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
-                }
-            }
+            if (season.completed) EpisodeStatusBadge(EpisodeStatus.Watched)
         }
     }
 }
@@ -626,22 +592,26 @@ private fun EpisodeThumbnail(
                 .matchParentSize()
                 .then(if (blurArtwork) Modifier.blur(12.dp) else Modifier),
         )
-        if (status != null) {
-            Box(
-                modifier = Modifier
-                    .size(EpisodeStatusSize)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = status.icon,
-                    contentDescription = stringResource(status.label),
-                    modifier = Modifier.size(EpisodeStatusIconSize),
-                    tint = HeroOnArtworkColor,
-                )
-            }
-        }
+        if (status != null) EpisodeStatusBadge(status)
+    }
+}
+
+/** The watched or unaired mark over an episode's still, and over a watched season's poster. */
+@Composable
+private fun EpisodeStatusBadge(status: EpisodeStatus) {
+    Box(
+        modifier = Modifier
+            .size(EpisodeStatusSize)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = status.icon,
+            contentDescription = stringResource(status.label),
+            modifier = Modifier.size(EpisodeStatusIconSize),
+            tint = HeroOnArtworkColor,
+        )
     }
 }
 

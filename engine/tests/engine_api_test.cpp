@@ -2061,4 +2061,112 @@ TEST("concurrent distant HTTP ranges remain blocking until disconnect") {
     EXPECT_TRUE(received_removed);
     engine_destroy(engine);
 }
+
+TEST("download streams on one torrent run side by side and serve their whole files") {
+    EngineTestDirectories directories;
+    constexpr std::string_view seeded_torrent_id =
+        "52cf6aac49649826749e5ffb4c3ac4ede5f2c49e";
+    {
+        const auto payload_directory =
+            directories.root() / "cache" / "payload" / seeded_torrent_id / "pack";
+        std::filesystem::create_directories(payload_directory);
+        std::ofstream(payload_directory / "a.bin", std::ios::binary) << "aaaa";
+        std::ofstream(payload_directory / "b.bin", std::ios::binary) << "bbbb";
+    }
+    std::string torrent =
+        "d4:infod5:filesld6:lengthi4e4:pathl5:a.bineed6:lengthi4e4:pathl5:b.bineee"
+        "4:name4:pack12:piece lengthi16384e6:pieces20:";
+    constexpr std::array<unsigned char, 20> piece_hash{
+        0xc5, 0x5e, 0x94, 0x24, 0x7f, 0xbf, 0xc4, 0xf1, 0x18, 0x42,
+        0xfc, 0x3b, 0xd9, 0x79, 0xe5, 0xbe, 0xb5, 0xed, 0x10, 0x80,
+    };
+    torrent.append(reinterpret_cast<const char*>(piece_hash.data()), piece_hash.size());
+    torrent += "ee";
+
+    engine_config config;
+    engine_config_init(&config);
+    directories.apply(config);
+    engine* engine = nullptr;
+    EXPECT_EQ(engine_create(&config, &engine), ENGINE_STATUS_OK);
+
+    engine_torrent_request add_request;
+    engine_torrent_request_init(&add_request);
+    add_request.source_type = ENGINE_TORRENT_SOURCE_DATA;
+    add_request.torrent_data = reinterpret_cast<const std::uint8_t*>(torrent.data());
+    add_request.torrent_data_size = torrent.size();
+    std::uint64_t add_request_id = 0;
+    EXPECT_EQ(engine_add_torrent(engine, &add_request, &add_request_id), ENGINE_STATUS_OK);
+
+    engine_event event;
+    engine_event_init(&event);
+    std::string torrent_id;
+    for (int attempt = 0; attempt < 200 && torrent_id.empty(); ++attempt) {
+        const auto status = engine_poll_event(engine, &event);
+        if (status == ENGINE_STATUS_NO_EVENT) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            continue;
+        }
+        EXPECT_EQ(status, ENGINE_STATUS_OK);
+        if (event.type == ENGINE_EVENT_TORRENT_METADATA_READY) {
+            torrent_id = event.torrent_id;
+        }
+    }
+    EXPECT_EQ(torrent_id, std::string(seeded_torrent_id));
+
+    // Both files are asked for before either is ready: the engine queues them on one torrent.
+    const auto submit_download = [&](const std::uint32_t file_index) {
+        engine_stream_request stream_request;
+        engine_stream_request_init(&stream_request);
+        stream_request.torrent_id = torrent_id.c_str();
+        stream_request.file_index = file_index;
+        stream_request.flags = ENGINE_STREAM_FLAG_DOWNLOAD;
+        std::uint64_t prepare_request_id = 0;
+        EXPECT_EQ(
+            engine_prepare_stream(engine, &stream_request, &prepare_request_id),
+            ENGINE_STATUS_OK
+        );
+        return prepare_request_id;
+    };
+    const auto first_request = submit_download(0);
+    const auto second_request = submit_download(1);
+    std::string first_url;
+    std::string second_url;
+    for (int attempt = 0; attempt < 400 && (first_url.empty() || second_url.empty()); ++attempt) {
+        const auto status = engine_poll_event(engine, &event);
+        if (status == ENGINE_STATUS_NO_EVENT) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            continue;
+        }
+        EXPECT_EQ(status, ENGINE_STATUS_OK);
+        // Neither download may stop or fail the other.
+        EXPECT_TRUE(event.type != ENGINE_EVENT_STREAM_STOPPED);
+        EXPECT_TRUE(event.type != ENGINE_EVENT_TORRENT_ERROR);
+        if (event.type == ENGINE_EVENT_STREAM_PREPARED) {
+            if (event.request_id == first_request) {
+                first_url = event.stream_url;
+            } else if (event.request_id == second_request) {
+                second_url = event.stream_url;
+            }
+        }
+    }
+    EXPECT_TRUE(!first_url.empty());
+    EXPECT_TRUE(!second_url.empty());
+    const auto first = parse_local_stream_url(first_url);
+    const auto second = parse_local_stream_url(second_url);
+
+    const auto first_body = test::send_http_request(
+        first.port,
+        "GET " + first.target + " HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n"
+    );
+    const auto second_body = test::send_http_request(
+        second.port,
+        "GET " + second.target + " HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n"
+    );
+    EXPECT_TRUE(first_body.find("HTTP/1.1 200 OK\r\n") == 0);
+    EXPECT_TRUE(first_body.ends_with("aaaa"));
+    EXPECT_TRUE(second_body.find("HTTP/1.1 200 OK\r\n") == 0);
+    EXPECT_TRUE(second_body.ends_with("bbbb"));
+
+    engine_destroy(engine);
+}
 #endif

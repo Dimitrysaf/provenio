@@ -50,6 +50,7 @@ public:
         std::string torrent_id,
         std::optional<std::size_t> requested_index,
         std::string filename_hint,
+        bool download,
         std::uint64_t& request_id
     );
     [[nodiscard]] engine_status remove_torrent(
@@ -116,6 +117,7 @@ private:
         std::string stream_id;
         std::uint32_t file_index = 0;
         torrent::TorrentFileInfo file;
+        bool download = false;
         std::uint64_t target_bytes = 0;
         engine_upload_mode upload_mode = ENGINE_UPLOAD_DISABLED;
     };

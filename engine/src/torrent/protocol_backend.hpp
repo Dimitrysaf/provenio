@@ -218,11 +218,13 @@ public:
         TorrentInput input,
         const std::string& save_path
     ) = 0;
+    // A download fetches the whole file at once, outside playback scheduling.
     virtual void prepare_file(
         std::uint64_t request_id,
         const std::string& torrent_id,
         std::uint32_t file_index,
-        TorrentFileInfo file
+        TorrentFileInfo file,
+        bool download
     ) = 0;
     virtual void remove_torrent(
         std::uint64_t request_id,

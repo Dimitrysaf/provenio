@@ -164,7 +164,8 @@ actual object P2pStreamingEngine {
     private var currentStream: Stream? = null
     @Volatile
     private var streamDurationMs: Long? = null
-    private val speedHistory = ArrayDeque<P2pSpeedSample>()
+    // Per torrent, so a download's chart shows its own speed and keeps moving with no playback.
+    private val speedHistories = mutableMapOf<String, ArrayDeque<P2pSpeedSample>>()
 
     fun initialize(context: Context) {
         appContext = context.applicationContext
@@ -177,6 +178,41 @@ actual object P2pStreamingEngine {
                 .map { it.enableUpload }
                 .distinctUntilChanged()
                 .collect { enabled -> engine?.let { applySeeding(it, enabled) } }
+        }
+        scope.launch { sampleTorrentSpeeds() }
+    }
+
+    /** Records each streaming torrent's speed once a second, for playback and downloads alike. */
+    private suspend fun sampleTorrentSpeeds() {
+        while (currentCoroutineContext().isActive) {
+            val activeEngine = engine
+            val torrentIds = synchronized(lifecycleLock) {
+                buildSet {
+                    currentTorrentId?.let(::add)
+                    downloadSessions.values.forEach { session -> session.stream?.torrentId?.let(::add) }
+                }
+            }
+            if (activeEngine != null) {
+                torrentIds.forEach { torrentId ->
+                    try {
+                        activeEngine.currentTorrentDetails(torrentId)?.let { details ->
+                            recordSpeedSample(
+                                torrentId,
+                                P2pSpeedSample(
+                                    downloadBytesPerSecond = details.downloadRateBytesPerSecond,
+                                    uploadBytesPerSecond = details.uploadRateBytesPerSecond,
+                                ),
+                            )
+                        }
+                    } catch (cancellation: CancellationException) {
+                        throw cancellation
+                    } catch (error: Exception) {
+                        Log.w(TAG, "Error sampling torrent speed", error)
+                    }
+                }
+            }
+            synchronized(speedHistories) { speedHistories.keys.retainAll(torrentIds) }
+            delay(DIAGNOSTIC_SAMPLE_INTERVAL_MS)
         }
     }
 
@@ -468,6 +504,7 @@ actual object P2pStreamingEngine {
                         torrentId = torrentId,
                         fileIndex = request.fileIdx,
                         filenameHint = request.filename,
+                        download = true,
                     ).also { preparedStream = it }
                 }
                 val attached = synchronized(lifecycleLock) {
@@ -882,12 +919,6 @@ actual object P2pStreamingEngine {
                     val nowMs = SystemClock.elapsedRealtime()
                     if (nowMs >= nextDiagnosticSampleAtMs) {
                         nextDiagnosticSampleAtMs = nowMs + DIAGNOSTIC_SAMPLE_INTERVAL_MS
-                        recordSpeedSample(
-                            P2pSpeedSample(
-                                downloadBytesPerSecond = aggregate.downloadRateBytesPerSecond,
-                                uploadBytesPerSecond = aggregate.uploadRateBytesPerSecond,
-                            ),
-                        )
                         Log.i(
                             DIAGNOSTIC_TAG,
                             "sample request=$requestSequence elapsedMs=${elapsedSince(startedAtMs)} " +
@@ -957,9 +988,10 @@ actual object P2pStreamingEngine {
         }
     }
 
-    private fun recordSpeedSample(sample: P2pSpeedSample) = synchronized(speedHistory) {
-        if (speedHistory.size >= P2P_SPEED_HISTORY_SIZE) speedHistory.removeFirst()
-        speedHistory.addLast(sample)
+    private fun recordSpeedSample(torrentId: String, sample: P2pSpeedSample) = synchronized(speedHistories) {
+        val history = speedHistories.getOrPut(torrentId) { ArrayDeque() }
+        if (history.size >= P2P_SPEED_HISTORY_SIZE) history.removeFirst()
+        history.addLast(sample)
     }
 
     private data class StreamedFile(
@@ -1007,7 +1039,7 @@ actual object P2pStreamingEngine {
                             details?.toP2pTorrentDetails(
                                 file = streamedFile?.takeIf { it.streamId == stream?.id },
                                 route = route,
-                                history = synchronized(speedHistory) { speedHistory.toList() },
+                                history = synchronized(speedHistories) { speedHistories[torrentId]?.toList().orEmpty() },
                             )
                         } catch (cancellation: CancellationException) {
                             throw cancellation
@@ -1243,7 +1275,6 @@ actual object P2pStreamingEngine {
     }
 
     private fun beginStreamGeneration(): Long = synchronized(lifecycleLock) {
-        synchronized(speedHistory) { speedHistory.clear() }
         shutdownRequested = false
         streamDurationMs = null
         streamGeneration += 1

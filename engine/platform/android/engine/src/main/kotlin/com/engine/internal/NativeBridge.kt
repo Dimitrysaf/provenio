@@ -37,6 +37,7 @@ internal object NativeBridge {
         torrentId: String,
         fileIndex: Int,
         filenameHint: String?,
+        download: Boolean,
     ): LongArray
     external fun nativeStopStream(handle: Long, streamId: String): LongArray
     external fun nativeRemoveTorrent(handle: Long, torrentId: String): LongArray

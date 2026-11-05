@@ -49,7 +49,8 @@ public:
         const lt::torrent_handle& handle,
         const std::string& torrent_id,
         std::uint32_t file_index,
-        const TorrentFileInfo& file
+        const TorrentFileInfo& file,
+        bool download = false
     );
     void poll();
     [[nodiscard]] std::vector<StoppedStream> pop_expired_streams();

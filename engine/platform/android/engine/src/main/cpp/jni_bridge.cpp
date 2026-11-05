@@ -375,7 +375,8 @@ Java_com_engine_internal_NativeBridge_nativePrepareStream(
     const jlong handle,
     jstring torrent_id_value,
     const jint file_index,
-    jstring filename_hint_value
+    jstring filename_hint_value,
+    const jboolean download
 ) {
     std::string torrent_id;
     std::string filename_hint;
@@ -390,6 +391,7 @@ Java_com_engine_internal_NativeBridge_nativePrepareStream(
     request.torrent_id = torrent_id.c_str();
     request.file_index = static_cast<std::uint32_t>(file_index);
     request.filename_hint = filename_hint_value == nullptr ? nullptr : filename_hint.c_str();
+    request.flags = download == JNI_TRUE ? ENGINE_STREAM_FLAG_DOWNLOAD : 0u;
     std::uint64_t request_id = 0;
     const auto status = engine_prepare_stream(
         engine_from_handle(handle),

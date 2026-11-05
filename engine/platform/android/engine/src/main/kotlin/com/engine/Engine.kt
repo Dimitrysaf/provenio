@@ -128,6 +128,8 @@ public class Engine private constructor(
         fileIndex: Int? = null,
         filenameHint: String? = null,
         minimumContiguousBytes: Long = 0L,
+        /** A download: the whole file is fetched at once, outside playback scheduling. */
+        download: Boolean = false,
     ): Stream {
         validateTorrentId(torrentId)
         require(fileIndex == null || fileIndex >= 0) { "file index must be non-negative" }
@@ -140,6 +142,7 @@ public class Engine private constructor(
                 torrentId,
                 fileIndex ?: -1,
                 filenameHint,
+                download,
             )
         }
         val stream = Stream(

@@ -81,6 +81,7 @@ engine_status EngineRuntime::prepare_stream(
     std::string torrent_id,
     const std::optional<std::size_t> requested_index,
     std::string filename_hint,
+    const bool download,
     std::uint64_t& request_id
 ) {
     torrent::TorrentFileInfo selected_file;
@@ -112,6 +113,7 @@ engine_status EngineRuntime::prepare_stream(
     command.torrent_id = std::move(torrent_id);
     command.file_index = static_cast<std::uint32_t>(selected_index);
     command.file = std::move(selected_file);
+    command.download = download;
     return enqueue(std::move(command), request_id);
 }
 
@@ -389,7 +391,8 @@ void EngineRuntime::process_command(Command command) {
                 command.request_id,
                 command.torrent_id,
                 command.file_index,
-                std::move(command.file)
+                std::move(command.file),
+                command.download
             );
             break;
         case CommandType::stop_stream:

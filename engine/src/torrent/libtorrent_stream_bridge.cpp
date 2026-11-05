@@ -217,6 +217,8 @@ struct LibtorrentStreamBridge::Impl {
         std::uint64_t file_size = 0;
         std::shared_ptr<StreamActivity> activity;
         std::shared_ptr<StreamCounters> counters = std::make_shared<StreamCounters>();
+        // A download wants the whole file now and is kept out of playback scheduling.
+        bool download = false;
     };
 
     using PieceKey = cache::PieceCacheKey;
@@ -324,7 +326,8 @@ struct LibtorrentStreamBridge::Impl {
         const lt::torrent_handle& handle,
         const std::string& id,
         const std::uint32_t file_index,
-        const TorrentFileInfo& file
+        const TorrentFileInfo& file,
+        const bool download
     ) {
         if (shutting_down.load()) {
             throw std::runtime_error("stream bridge is shutting down");
@@ -345,13 +348,16 @@ struct LibtorrentStreamBridge::Impl {
             file.size,
             std::make_shared<StreamActivity>(std::chrono::steady_clock::now()),
         };
+        route.download = download;
         route.target = "/stream/" + route.stream_id;
+        // A new playback stream replaces the torrent's earlier playback stream. Downloads run
+        // side by side, so a download replaces nothing and playback never replaces a download.
         std::vector<std::string> previous_streams;
-        {
+        if (!download) {
             std::lock_guard lock(routes_mutex);
             for (const auto& [target, existing] : routes) {
                 static_cast<void>(target);
-                if (existing.torrent_id == id) {
+                if (existing.torrent_id == id && !existing.download) {
                     previous_streams.push_back(existing.stream_id);
                 }
             }
@@ -366,6 +372,9 @@ struct LibtorrentStreamBridge::Impl {
         next_progress_sample = {};
         last_ready_pieces.erase(id);
         revoked_torrents.erase(id);
+        if (download) {
+            recompute_schedule(id);
+        }
         return {
             route.stream_id,
             "http://127.0.0.1:" + std::to_string(server->port()) + route.target,
@@ -606,6 +615,7 @@ struct LibtorrentStreamBridge::Impl {
         for (const auto& id : changed_torrents) {
             recompute_schedule(id);
         }
+        serve_download_reads();
         expire_inactive_streams();
     }
 
@@ -709,6 +719,38 @@ struct LibtorrentStreamBridge::Impl {
             return;
         }
         piece_waiters[key].push_back(command.waiter);
+        // Playback reads arrive through their piece deadline. A download has no deadlines, so
+        // its read is served as soon as the piece is verified: now, or once poll() sees it.
+        if (command.route.download) {
+            download_reads.insert_or_assign(key, command.route.handle);
+            serve_download_reads();
+        }
+    }
+
+    void serve_download_reads() {
+        for (auto read = download_reads.begin(); read != download_reads.end();) {
+            const auto& [key, handle] = *read;
+            if (!piece_waiters.contains(key) || !handle.is_valid()) {
+                read = download_reads.erase(read);
+                continue;
+            }
+            try {
+                const lt::piece_index_t index(static_cast<int>(key.piece));
+                if (!handle.have_piece(index)) {
+                    ++read;
+                    continue;
+                }
+                if (!prefetching.contains(key)) {
+                    handle.read_piece(index);
+                    prefetching.insert(key);
+                }
+            } catch (const std::exception& error) {
+                fail_piece(key, error.what());
+            } catch (...) {
+                fail_piece(key, "failed to read downloaded piece");
+            }
+            read = download_reads.erase(read);
+        }
     }
 
     void prefetch_after(const StreamRoute& route, const std::uint32_t piece) {
@@ -784,11 +826,27 @@ struct LibtorrentStreamBridge::Impl {
         std::vector<scheduler::StreamDemand> demands;
         const StreamRoute* focused_route = nullptr;
         std::uint64_t focused_demand = 0;
+        // The piece each download is reading now goes first among its file's pieces, so the
+        // reader is never starved, but with no deadline: it does not jump the swarm's queue.
+        std::vector<std::pair<std::uint32_t, scheduler::PriorityClass>> download_pieces;
         for (const auto& [demand_id, demand] : active_demands) {
             if (demand.route.torrent_id != id) {
                 continue;
             }
             handle = demand.route.handle;
+            if (demand.route.download) {
+                if (demand.route.piece_size > 0 && demand.range.start <= demand.range.end) {
+                    const auto first = (demand.route.file_offset + demand.range.start) /
+                        demand.route.piece_size;
+                    if (first <= std::numeric_limits<std::uint32_t>::max()) {
+                        download_pieces.emplace_back(
+                            static_cast<std::uint32_t>(first),
+                            scheduler::PriorityClass::critical
+                        );
+                    }
+                }
+                continue;
+            }
             if (focused_route == nullptr || demand_id > focused_demand) {
                 focused_route = &demand.route;
                 focused_demand = demand_id;
@@ -815,6 +873,35 @@ struct LibtorrentStreamBridge::Impl {
             }
         } catch (...) {
             return;
+        }
+        // Every piece of a downloading file is wanted at once; playback's own pieces keep
+        // whichever priority is higher.
+        {
+            std::lock_guard lock(routes_mutex);
+            for (const auto& [target, route] : routes) {
+                static_cast<void>(target);
+                if (route.torrent_id != id || !route.download || route.piece_size == 0 ||
+                    route.file_size == 0) {
+                    continue;
+                }
+                handle = route.handle;
+                const auto first = route.file_offset / route.piece_size;
+                const auto last = (route.file_offset + route.file_size - 1) / route.piece_size;
+                for (auto piece = first;
+                     piece <= last && piece <= std::numeric_limits<std::uint32_t>::max();
+                     ++piece) {
+                    download_pieces.emplace_back(
+                        static_cast<std::uint32_t>(piece),
+                        scheduler::PriorityClass::playback
+                    );
+                }
+            }
+        }
+        for (const auto& [piece, priority] : download_pieces) {
+            const auto existing = combined.find(piece);
+            if (existing == combined.end() || priority < existing->second) {
+                combined.insert_or_assign(piece, priority);
+            }
         }
         const auto previous = current_schedules.find(id);
         if (!handle.has_value() && previous != current_schedules.end()) {
@@ -1293,6 +1380,8 @@ struct LibtorrentStreamBridge::Impl {
     const std::chrono::milliseconds inactivity_timeout;
     std::unordered_map<std::string, std::uint64_t> stream_durations;
     std::unordered_set<PieceKey, PieceKeyHash> prefetching;
+    // Download reads waiting for their piece to be verified, which no deadline will announce.
+    std::unordered_map<PieceKey, lt::torrent_handle, PieceKeyHash> download_reads;
     std::mutex routes_mutex;
     std::unordered_map<std::string, StreamRoute> routes;
     std::vector<BackendStats::Stream> stream_progress_cache;
@@ -1338,9 +1427,10 @@ PreparedStream LibtorrentStreamBridge::register_stream(
     const lt::torrent_handle& handle,
     const std::string& torrent_id,
     const std::uint32_t file_index,
-    const TorrentFileInfo& file
+    const TorrentFileInfo& file,
+    const bool download
 ) {
-    return impl_->register_stream(handle, torrent_id, file_index, file);
+    return impl_->register_stream(handle, torrent_id, file_index, file, download);
 }
 
 void LibtorrentStreamBridge::poll() {
