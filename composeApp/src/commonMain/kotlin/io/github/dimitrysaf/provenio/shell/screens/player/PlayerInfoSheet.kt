@@ -17,6 +17,7 @@ import io.github.dimitrysaf.provenio.shell.components.SelectableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
@@ -43,6 +44,7 @@ import io.github.dimitrysaf.provenio.shell.components.dismissBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailAdditionalInfoSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailCastSection
+import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailListPreviewCount
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailMetaInfo
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailParentsGuideSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailProductionSection
@@ -52,6 +54,7 @@ import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroMinSmallI
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.player_info_show_more
 import provenio.composeapp.generated.resources.player_info_title
 
 /**
@@ -69,6 +72,7 @@ internal fun PlayerInfoSheet(
     poster: String?,
     background: String?,
     onDismiss: () -> Unit,
+    onShowMoreInfo: (() -> Unit)? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -145,6 +149,16 @@ internal fun PlayerInfoSheet(
                     parentsGuideEnabled = sections.any { it.key == MetaScreenSectionKey.PARENTS_GUIDE },
                 )
             }
+            if (onShowMoreInfo != null) {
+                FilledTonalButton(
+                    onClick = onShowMoreInfo,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = BottomSheetBodyMargin),
+                ) {
+                    Text(stringResource(Res.string.player_info_show_more))
+                }
+            }
         }
     }
 }
@@ -182,8 +196,9 @@ private fun PlayerInfoSections(
                 DetailProductionSection(meta = meta, modifier = sectionModifier)
             }
             MetaScreenSectionKey.CAST -> if (meta.cast.isNotEmpty()) {
+                // The first few only: the whole cast is on the Details page, which Show more info opens.
                 DetailCastSection(
-                    cast = meta.cast,
+                    cast = meta.cast.take(DetailListPreviewCount),
                     modifier = sectionModifier,
                     metaId = meta.id,
                     metaType = meta.type,

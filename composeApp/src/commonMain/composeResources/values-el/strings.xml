@@ -2751,4 +2751,5 @@
     <string name="search_keyword_clear">Καθαρισμός λέξης-κλειδιού</string>
     <string name="search_keyword_results_title">Με ετικέτα «%1$s»</string>
     <string name="search_keyword_no_results">Καμία λέξη-κλειδί δεν ταιριάζει.</string>
+    <string name="player_info_show_more">Περισσότερες πληροφορίες</string>
 </resources>

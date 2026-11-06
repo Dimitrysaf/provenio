@@ -264,6 +264,13 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                     showInfoSheet = false
                     controlsVisible = true
                 },
+                onShowMoreInfo = args.onShowMoreInfo?.let { open ->
+                    {
+                        showInfoSheet = false
+                        flushWatchProgress()
+                        open()
+                    }
+                },
             )
         }
         RenderCastLayer()

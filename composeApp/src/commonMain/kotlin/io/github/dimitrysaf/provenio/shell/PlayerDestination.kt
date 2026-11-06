@@ -15,6 +15,7 @@ import io.github.dimitrysaf.provenio.shell.screens.player.PlayerHandoff
 import io.github.dimitrysaf.provenio.shell.screens.player.PlayerScreen
 import io.github.dimitrysaf.provenio.shell.nav.Navigator
 import io.github.dimitrysaf.provenio.shell.nav.PlayerRoute
+import io.github.dimitrysaf.provenio.shell.nav.DetailRoute
 
 @Composable
 internal fun PlayerDestination(
@@ -74,6 +75,16 @@ internal fun PlayerDestination(
         initialProgressFraction = launch.initialProgressFraction,
         contentLanguage = launch.contentLanguage,
         onBack = onBack,
+        onShowMoreInfo = {
+            onBack()
+            // Details may already be the page under the player, when playback started from it.
+            val current = navController.currentRoute as? DetailRoute
+            if (current?.id != launch.parentMetaId || current.type != launch.parentMetaType) {
+                navController.navigate(
+                    DetailRoute(type = launch.parentMetaType, id = launch.parentMetaId, title = launch.title),
+                )
+            }
+        },
         onOpenInExternalPlayer = { request ->
             val playerLaunch = PlayerLaunch(
                 profileId = launch.profileId,

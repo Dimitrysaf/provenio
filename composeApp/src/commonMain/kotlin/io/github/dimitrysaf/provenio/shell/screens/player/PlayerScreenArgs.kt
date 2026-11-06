@@ -18,6 +18,8 @@ internal data class PlayerScreenArgs(
     val initialBingeGroup: String?,
     val pauseDescription: String?,
     val onBack: () -> Unit,
+    /** Leaves the player for the title's Details page; null where there is no page to open. */
+    val onShowMoreInfo: (() -> Unit)? = null,
     val onOpenInExternalPlayer: ((ExternalPlayerPlaybackRequest) -> Unit)?,
     val onOpenExternalUrl: ((String) -> Unit)?,
     val onMoveWindow: ((PlayerHandoff) -> Unit)? = null,
