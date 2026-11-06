@@ -37,6 +37,7 @@ import org.jetbrains.compose.resources.stringResource
  * [onViewAll] is given; every loaded comment when it is not.
  */
 @Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 fun DetailCommentsSection(
     comments: List<TraktCommentReview>,
     isLoading: Boolean,

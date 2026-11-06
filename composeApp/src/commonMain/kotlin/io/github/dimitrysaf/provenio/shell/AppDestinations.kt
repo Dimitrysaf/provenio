@@ -231,6 +231,7 @@ internal fun appEntryProvider(
     onCatalogClick: (HomeCatalogSection) -> Unit,
     onSwitchProfile: (() -> Unit)?,
     onProfileSelected: ((Profile) -> Unit)?,
+    activateTab: (AppScreenTab) -> Unit,
     tabs: @Composable () -> Unit,
 ): (NavKey) -> NavEntry<NavKey> = entryProvider<NavKey> {
     entry<TabsRoute> { tabs() }

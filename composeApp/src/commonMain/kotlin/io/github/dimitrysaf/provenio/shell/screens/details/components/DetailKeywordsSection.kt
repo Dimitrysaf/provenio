@@ -2,7 +2,7 @@ package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Tag
+import androidx.compose.material.icons.rounded.LocalOffer
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemDefaults
@@ -50,7 +50,7 @@ internal fun DetailKeywordsSection(
                 colors = ListItemDefaults.segmentedColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                 ),
-                leadingContent = { Icon(imageVector = Icons.Rounded.Tag, contentDescription = null) },
+                leadingContent = { Icon(imageVector = Icons.Rounded.LocalOffer, contentDescription = null) },
             ) {
                 FindableText(text = keyword.name, maxLines = 1)
             }

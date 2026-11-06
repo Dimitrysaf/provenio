@@ -72,6 +72,7 @@ internal fun rememberTrailerCategories(trailers: List<MetaTrailer>): TrailerCate
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 fun DetailTrailersSection(
     trailers: List<MetaTrailer>,
     onTrailerClick: (MetaTrailer) -> Unit,

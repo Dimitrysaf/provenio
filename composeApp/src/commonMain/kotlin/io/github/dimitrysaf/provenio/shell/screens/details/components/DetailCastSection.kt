@@ -45,7 +45,7 @@ import provenio.composeapp.generated.resources.settings_meta_cast
  * is given; every member when it is not, as in the player's info sheet.
  */
 @Composable
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
 fun DetailCastSection(
     cast: List<MetaPerson>,
     modifier: Modifier = Modifier,

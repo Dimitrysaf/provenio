@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,6 +55,7 @@ internal fun listSearchMatcher(query: String): ((String) -> Boolean)? {
 
 /** The whole cast of a title, searchable, laid out like the other info pages. */
 @Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 fun CastListScreen(
     type: String,
     metaId: String,
@@ -114,6 +116,7 @@ fun CastListScreen(
  * pages. Scrolling to the end loads the next page while no search is narrowing the list.
  */
 @Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 fun CommentsListScreen(
     type: String,
     metaId: String,
