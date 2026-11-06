@@ -5,16 +5,10 @@ import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.screens.watchprogress.computeAirDateText
 import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonDefaults
-import androidx.compose.runtime.remember
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -61,6 +55,8 @@ import io.github.dimitrysaf.provenio.core.metadata.SPECIALS_SEASON_NUMBER
 import io.github.dimitrysaf.provenio.core.metadata.isReleasedBy
 import io.github.dimitrysaf.provenio.core.metadata.seasonSortKey
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroOnArtworkColor
+import io.github.dimitrysaf.provenio.shell.screens.settings.InnerCorner
+import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
 import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
 import io.github.dimitrysaf.provenio.shell.screens.settings.segmentShape
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressEntry
@@ -226,7 +222,7 @@ internal fun buildEpisodeListEntries(
     }
 }
 
-/** The season buttons layout: a button per season, the selected one's episodes as a plain list. */
+/** The season buttons layout: a row item per season, the selected one's episodes as a plain list. */
 internal class SeasonSelection(
     val seasons: List<EpisodeListEntry.Season>,
     val selectedSeason: Int,
@@ -250,12 +246,12 @@ internal fun buildSeasonSelection(
 }
 
 /**
- * The seasons as a scrolling row of Material toggle buttons: the selected season is the checked
- * button, which morphs to its checked shape. A watched season carries a check in the icon slot.
+ * The seasons as a scrolling, horizontally segmented row of the same list items the List layout
+ * uses: each with its poster, the selected one taking the list item's selected shape and colours.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-internal fun SeasonToggleRow(
+internal fun SeasonItemRow(
     selection: SeasonSelection,
     meta: MetaDetails,
     onSeasonSelected: (Int) -> Unit,
@@ -271,35 +267,84 @@ internal fun SeasonToggleRow(
         state = listState,
         modifier = modifier.fillMaxWidth(),
         contentPadding = contentPadding,
-        horizontalArrangement = Arrangement.spacedBy(ToggleButtonDefaults.IconSpacing),
+        horizontalArrangement = Arrangement.spacedBy(ListItemBetweenSpace),
     ) {
-        items(seasons, key = { it.key }) { season ->
-            val interactionSource = remember { MutableInteractionSource() }
+        itemsIndexed(seasons, key = { _, season -> season.key }) { index, season ->
+            val label = seasonLabel(meta, season.season)
+            val name = season.name?.takeIf { season.season > 0 && !isGenericSeasonName(it, season.season) }
+            val posterUrl = season.posterUrl ?: meta.seasonPosters[season.season]
+            val shape = horizontalSegmentShape(index = index, count = seasons.size)
             val longPress = onSeasonLongPress?.let { handler -> { handler(season.season) } }
-            val gate = rememberLongPressGate(interactionSource = interactionSource, onLongClick = longPress)
-            ToggleButton(
-                checked = season.season == selection.selectedSeason,
-                onCheckedChange = { if (!gate.consume()) onSeasonSelected(season.season) },
-                shapes = ToggleButtonDefaults.shapesFor(ToggleButtonDefaults.MinHeight),
-                contentPadding = ButtonDefaults.contentPaddingFor(
-                    buttonHeight = ToggleButtonDefaults.MinHeight,
-                    hasStartIcon = season.completed,
+            SegmentedListItem(
+                selected = season.season == selection.selectedSeason,
+                onClick = { onSeasonSelected(season.season) },
+                onLongClick = longPress,
+                shapes = ListItemDefaults.shapes(
+                    shape = shape,
+                    selectedShape = RoundedCornerShape(OuterCorner),
+                    pressedShape = shape,
+                    focusedShape = shape,
+                    hoveredShape = shape,
                 ),
-                interactionSource = interactionSource,
-                modifier = Modifier.onSecondaryClick(longPress),
+                colors = ListItemDefaults.segmentedColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                ),
+                modifier = Modifier.width(SeasonItemWidth).onSecondaryClick(longPress),
+                leadingContent = posterUrl?.let { url ->
+                    {
+                        ShapedArtworkImage(
+                            candidates = listOf(url),
+                            contentDescription = null,
+                            letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            modifier = Modifier
+                                .width(SeasonPosterWidth)
+                                .aspectRatio(2f / 3f)
+                                .clip(MaterialTheme.shapes.small)
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        )
+                    }
+                },
+                overlineContent = name?.let {
+                    { FindableText(text = label, fontWeight = FontWeight.Bold, maxLines = 1) }
+                },
+                trailingContent = if (season.completed) {
+                    {
+                        Icon(
+                            imageVector = Icons.Rounded.Check,
+                            contentDescription = stringResource(Res.string.episodes_cd_watched),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                } else {
+                    null
+                },
             ) {
-                if (season.completed) {
-                    Icon(
-                        imageVector = Icons.Rounded.Check,
-                        contentDescription = stringResource(Res.string.episodes_cd_watched),
-                        modifier = Modifier.size(ToggleButtonDefaults.IconSize),
-                    )
-                    Spacer(modifier = Modifier.width(ToggleButtonDefaults.IconSpacing))
-                }
-                Text(text = seasonLabel(meta, season.season), maxLines = 1)
+                FindableText(
+                    text = name ?: label,
+                    maxLines = if (name != null) 2 else 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }
+}
+
+// The row's segments join side by side: outer corners at its two ends, inner ones between.
+private fun horizontalSegmentShape(index: Int, count: Int): RoundedCornerShape = when {
+    count == 1 -> RoundedCornerShape(OuterCorner)
+    index == 0 -> RoundedCornerShape(
+        topStart = OuterCorner,
+        bottomStart = OuterCorner,
+        topEnd = InnerCorner,
+        bottomEnd = InnerCorner,
+    )
+    index == count - 1 -> RoundedCornerShape(
+        topStart = InnerCorner,
+        bottomStart = InnerCorner,
+        topEnd = OuterCorner,
+        bottomEnd = OuterCorner,
+    )
+    else -> RoundedCornerShape(InnerCorner)
 }
 
 @Composable
@@ -606,6 +651,7 @@ private enum class EpisodeStatus(val icon: ImageVector, val label: StringResourc
 
 private val EpisodeThumbnailWidth = 128.dp
 private val SeasonPosterWidth = 40.dp
+private val SeasonItemWidth = 176.dp
 private val EpisodeStatusSize = 36.dp
 private val EpisodeStatusIconSize = 20.dp
 private val EpisodeProgressHeight = 4.dp

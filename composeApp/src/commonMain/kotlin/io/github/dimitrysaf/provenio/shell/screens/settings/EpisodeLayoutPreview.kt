@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -45,17 +44,27 @@ internal fun EpisodeLayoutPreview(layout: EpisodeLayout) {
             }
 
             EpisodeLayout.SeasonButtons -> {
-                // The season buttons, the first one checked: squarer and in the selected colour, as a
-                // checked toggle button is. Then its episodes.
-                Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                    repeat(3) { index ->
-                        Box(
+                // The seasons side by side, each with its poster, the first one selected in the
+                // selected colour. Then its episodes.
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    repeat(2) { index ->
+                        Row(
                             modifier = Modifier
-                                .width(ButtonWidth)
-                                .height(ButtonHeight)
-                                .clip(if (index == 0) RoundedCornerShape(3.dp) else CircleShape)
-                                .background(if (index == 0) colors.primary else colors.surfaceContainerHighest),
-                        )
+                                .width(SeasonItemWidth)
+                                .height(SeasonItemHeight)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(if (index == 0) colors.secondaryContainer else colors.surfaceContainerHighest)
+                                .padding(2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(8.dp)
+                                    .height(12.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(colors.outlineVariant),
+                            )
+                        }
                     }
                 }
                 repeat(3) { PreviewEpisodeRow(block = colors.surfaceContainerHighest, thumbnail = colors.outlineVariant) }
@@ -106,5 +115,5 @@ private fun PreviewEpisodeRow(block: Color, thumbnail: Color) {
 
 private val PreviewWidth = 72.dp
 private val PreviewHeight = 84.dp
-private val ButtonWidth = 18.dp
-private val ButtonHeight = 10.dp
+private val SeasonItemWidth = 34.dp
+private val SeasonItemHeight = 16.dp

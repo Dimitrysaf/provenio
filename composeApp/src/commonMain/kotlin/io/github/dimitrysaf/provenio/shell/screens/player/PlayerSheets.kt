@@ -64,7 +64,7 @@ import io.github.dimitrysaf.provenio.shell.screens.details.SeasonActionsSheet
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailEpisodeListRow
 import io.github.dimitrysaf.provenio.shell.screens.details.components.EpisodeListEntry
 import io.github.dimitrysaf.provenio.shell.screens.details.components.buildEpisodeListEntries
-import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonToggleRow
+import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonItemRow
 import io.github.dimitrysaf.provenio.shell.screens.details.components.buildSeasonSelection
 import io.github.dimitrysaf.provenio.core.metadata.EpisodeLayout
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
@@ -419,7 +419,7 @@ private fun PlayerEpisodeList(
     } else {
         null
     }
-    // With season buttons the seasons are the buttons, so the list holds only the selected season's episodes.
+    // With season buttons the seasons are the row above, so the list holds only the selected season's episodes.
     val entries: List<EpisodeListEntry> = seasonSelection?.episodes ?: listEntries
     val rowOffset = if (seasonSelection != null) 1 else 0
 
@@ -443,7 +443,7 @@ private fun PlayerEpisodeList(
     ) {
         if (seasonSelection != null) {
             item(key = "season-buttons") {
-                SeasonToggleRow(
+                SeasonItemRow(
                     selection = seasonSelection,
                     meta = meta,
                     onSeasonSelected = { season -> selectedSeason = season },

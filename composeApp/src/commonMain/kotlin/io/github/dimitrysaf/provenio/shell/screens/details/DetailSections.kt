@@ -35,7 +35,7 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPost
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailProductionSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailEpisodeListRow
 import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonSelection
-import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonToggleRow
+import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonItemRow
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSectionSkeleton
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSectionTitle
 import io.github.dimitrysaf.provenio.shell.screens.details.components.EpisodeListEntry
@@ -210,7 +210,7 @@ internal fun LazyListScope.configuredMetaSectionItems(
                     contentMaxWidth = contentMaxWidth,
                     bottomPadding = 14.dp,
                 ) {
-                    SeasonToggleRow(
+                    SeasonItemRow(
                         selection = seasonSelection,
                         meta = meta,
                         onSeasonSelected = onSeasonSelected,
@@ -219,7 +219,7 @@ internal fun LazyListScope.configuredMetaSectionItems(
                 }
             }
         }
-        // With season buttons the season rows are the buttons above, so only the selected season's episodes list here.
+        // With season buttons the seasons are the row above, so only the selected season's episodes list here.
         val rows: List<EpisodeListEntry> = seasonSelection?.episodes ?: episodeListEntries
         itemsIndexed(
             items = rows,

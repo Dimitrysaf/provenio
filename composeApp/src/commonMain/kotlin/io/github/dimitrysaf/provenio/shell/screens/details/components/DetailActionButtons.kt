@@ -202,7 +202,7 @@ fun DetailActionButtons(
  * cancels the pending wait, so a short press never reaches the timeout at all.
  */
 @Stable
-internal class LongPressGate {
+private class LongPressGate {
     var fired by mutableStateOf(false)
 
     fun consume(): Boolean {
@@ -213,7 +213,7 @@ internal class LongPressGate {
 }
 
 @Composable
-internal fun rememberLongPressGate(
+private fun rememberLongPressGate(
     interactionSource: InteractionSource,
     onLongClick: (() -> Unit)?,
 ): LongPressGate {
