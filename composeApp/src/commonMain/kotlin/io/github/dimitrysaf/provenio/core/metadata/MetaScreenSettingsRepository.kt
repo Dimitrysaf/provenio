@@ -48,20 +48,21 @@ data class MetaScreenSettingsUiState(
 enum class EpisodeLayout {
     /** Each season is a row that expands into its episodes. */
     List,
-    /** The seasons' posters in a carousel; the picked season's episodes list below it. */
-    Carousel,
+    /** A scrolling row of season buttons; the selected season's episodes list below it. */
+    SeasonButtons,
     ;
 
     companion object {
         fun parse(raw: String?): EpisodeLayout? = when (raw?.lowercase()) {
             "list" -> List
-            "carousel" -> Carousel
+            // "carousel" is what the first version of this layout was saved as.
+            "season_buttons", "carousel" -> SeasonButtons
             else -> null
         }
 
         fun persist(layout: EpisodeLayout): String = when (layout) {
             List -> "list"
-            Carousel -> "carousel"
+            SeasonButtons -> "season_buttons"
         }
     }
 }

@@ -64,8 +64,8 @@ import io.github.dimitrysaf.provenio.shell.screens.details.SeasonActionsSheet
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailEpisodeListRow
 import io.github.dimitrysaf.provenio.shell.screens.details.components.EpisodeListEntry
 import io.github.dimitrysaf.provenio.shell.screens.details.components.buildEpisodeListEntries
-import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonPosterCarousel
-import io.github.dimitrysaf.provenio.shell.screens.details.components.buildSeasonCarousel
+import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonToggleRow
+import io.github.dimitrysaf.provenio.shell.screens.details.components.buildSeasonSelection
 import io.github.dimitrysaf.provenio.core.metadata.EpisodeLayout
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
 import io.github.dimitrysaf.provenio.shell.screens.details.components.episodeWatchState
@@ -408,22 +408,20 @@ private fun PlayerEpisodeList(
         MetaScreenSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
     var selectedSeason by rememberSaveable(meta.id) { mutableStateOf<Int?>(null) }
-    val carousel = if (metaScreenSettings.episodeLayout == EpisodeLayout.Carousel) {
-        remember(grouped, selectedSeason, defaultSeason, summary.completedSeasons, meta.seasonPosters, meta.poster) {
-            buildSeasonCarousel(
+    val seasonSelection = if (metaScreenSettings.episodeLayout == EpisodeLayout.SeasonButtons) {
+        remember(grouped, selectedSeason, defaultSeason, summary.completedSeasons) {
+            buildSeasonSelection(
                 groupedEpisodes = grouped,
                 selectedSeason = selectedSeason ?: defaultSeason,
                 completedSeasons = summary.completedSeasons,
-                seasonPosters = meta.seasonPosters,
-                fallbackPoster = meta.poster,
             )
         }
     } else {
         null
     }
-    // In the carousel layout the seasons are the posters, so the list holds only the selected season's episodes.
-    val entries: List<EpisodeListEntry> = carousel?.episodes ?: listEntries
-    val rowOffset = if (carousel != null) 1 else 0
+    // With season buttons the seasons are the buttons, so the list holds only the selected season's episodes.
+    val entries: List<EpisodeListEntry> = seasonSelection?.episodes ?: listEntries
+    val rowOffset = if (seasonSelection != null) 1 else 0
 
     var episodeForActions by remember(meta.id) { mutableStateOf<MetaVideo?>(null) }
     var seasonForActions by remember(meta.id) { mutableStateOf<Int?>(null) }
@@ -443,16 +441,15 @@ private fun PlayerEpisodeList(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(top = 8.dp, bottom = safeBottomPadding(16.dp)),
     ) {
-        if (carousel != null) {
-            item(key = "season-carousel") {
-                SeasonPosterCarousel(
-                    carousel = carousel,
+        if (seasonSelection != null) {
+            item(key = "season-buttons") {
+                SeasonToggleRow(
+                    selection = seasonSelection,
                     meta = meta,
                     onSeasonSelected = { season -> selectedSeason = season },
                     onSeasonLongPress = { season -> seasonForActions = season },
-                    modifier = Modifier
-                        .padding(horizontal = StreamsHorizontalPadding)
-                        .padding(bottom = 12.dp),
+                    modifier = Modifier.padding(bottom = 12.dp),
+                    contentPadding = PaddingValues(horizontal = StreamsHorizontalPadding),
                 )
             }
         }

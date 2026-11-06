@@ -873,7 +873,7 @@ private fun MetaDetailsContent(
                     episodeListEntries = episodeList.entries,
                     todayIsoDate = todayIsoDate,
                     onEpisodeSeasonToggle = episodeList.onSeasonToggle,
-                    seasonCarousel = episodeList.carousel,
+                    seasonSelection = episodeList.seasonSelection,
                     onSeasonSelected = episodeList.onSeasonSelected,
                     onRetryComments = {
                         detailsScope.launch { comments.loadFirstPage(meta, forceRefresh = true) }

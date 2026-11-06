@@ -1,7 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -44,23 +44,17 @@ internal fun EpisodeLayoutPreview(layout: EpisodeLayout) {
                 PreviewSeasonRow(color = colors.surfaceContainerHighest)
             }
 
-            EpisodeLayout.Carousel -> {
-                // The seasons' posters, large to small as a multi-browse carousel shows them, the first one picked, then its episodes.
+            EpisodeLayout.SeasonButtons -> {
+                // The season buttons, the first one checked: squarer and in the selected colour, as a
+                // checked toggle button is. Then its episodes.
                 Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                    PosterWidths.forEachIndexed { index, width ->
+                    repeat(3) { index ->
                         Box(
                             modifier = Modifier
-                                .width(width)
-                                .height(PosterHeight)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(colors.surfaceContainerHighest)
-                                .then(
-                                    if (index == 0) {
-                                        Modifier.border(1.5.dp, colors.primary, RoundedCornerShape(4.dp))
-                                    } else {
-                                        Modifier
-                                    },
-                                ),
+                                .width(ButtonWidth)
+                                .height(ButtonHeight)
+                                .clip(if (index == 0) RoundedCornerShape(3.dp) else CircleShape)
+                                .background(if (index == 0) colors.primary else colors.surfaceContainerHighest),
                         )
                     }
                 }
@@ -112,5 +106,5 @@ private fun PreviewEpisodeRow(block: Color, thumbnail: Color) {
 
 private val PreviewWidth = 72.dp
 private val PreviewHeight = 84.dp
-private val PosterWidths = listOf(28.dp, 18.dp, 8.dp)
-private val PosterHeight = 36.dp
+private val ButtonWidth = 18.dp
+private val ButtonHeight = 10.dp

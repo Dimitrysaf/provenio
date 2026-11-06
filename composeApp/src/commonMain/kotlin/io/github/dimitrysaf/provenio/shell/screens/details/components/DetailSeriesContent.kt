@@ -5,16 +5,17 @@ import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.screens.watchprogress.computeAirDateText
 import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
-import androidx.compose.material3.carousel.rememberCarouselState
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -225,95 +226,78 @@ internal fun buildEpisodeListEntries(
     }
 }
 
-/**
- * The carousel layout: every season as a poster, the selected one's episodes as a plain list.
- *
- * Null when no season has a poster of its own, so the caller keeps to the expandable list. A
- * season missing one, such as Specials often is, shows the show's poster instead.
- */
-internal class SeasonCarousel(
+/** The season buttons layout: a button per season, the selected one's episodes as a plain list. */
+internal class SeasonSelection(
     val seasons: List<EpisodeListEntry.Season>,
     val selectedSeason: Int,
     val episodes: List<EpisodeListEntry.Episode>,
 )
 
-internal fun buildSeasonCarousel(
+internal fun buildSeasonSelection(
     groupedEpisodes: Map<Int, List<MetaVideo>>,
     selectedSeason: Int?,
     completedSeasons: Set<Int>,
-    seasonPosters: Map<Int, String>,
-    fallbackPoster: String?,
-): SeasonCarousel? {
+): SeasonSelection? {
     val seasons = buildEpisodeListEntries(groupedEpisodes, expandedSeasons = emptySet(), completedSeasons = completedSeasons)
         .filterIsInstance<EpisodeListEntry.Season>()
-        .map { it.copy(posterUrl = it.posterUrl ?: seasonPosters[it.season]) }
-    if (seasons.none { it.posterUrl != null }) return null
+    if (seasons.isEmpty()) return null
     val selected = selectedSeason?.takeIf { season -> seasons.any { it.season == season } } ?: seasons.first().season
     val episodes = buildEpisodeListEntries(
         groupedEpisodes = mapOf(selected to groupedEpisodes.getValue(selected)),
         expandedSeasons = setOf(selected),
     ).filterIsInstance<EpisodeListEntry.Episode>()
-    return SeasonCarousel(
-        seasons = seasons.map { it.copy(posterUrl = it.posterUrl ?: fallbackPoster) },
-        selectedSeason = selected,
-        episodes = episodes,
-    )
+    return SeasonSelection(seasons = seasons, selectedSeason = selected, episodes = episodes)
 }
 
-/** The seasons' posters in a Material multi-browse carousel; the selected season is outlined. */
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * The seasons as a scrolling row of Material toggle buttons: the selected season is the checked
+ * button, which morphs to its checked shape. A watched season carries a check in the icon slot.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-internal fun SeasonPosterCarousel(
-    carousel: SeasonCarousel,
+internal fun SeasonToggleRow(
+    selection: SeasonSelection,
     meta: MetaDetails,
     onSeasonSelected: (Int) -> Unit,
     onSeasonLongPress: ((Int) -> Unit)?,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
 ) {
-    val seasons = carousel.seasons
-    val state = rememberCarouselState(
-        initialItem = seasons.indexOfFirst { it.season == carousel.selectedSeason }.coerceAtLeast(0),
-    ) { seasons.size }
-    HorizontalMultiBrowseCarousel(
-        state = state,
-        preferredItemWidth = SeasonCarouselItemWidth,
-        itemSpacing = 8.dp,
-        modifier = modifier.fillMaxWidth().height(SeasonCarouselItemWidth * 3f / 2f),
-    ) { index ->
-        val season = seasons[index]
-        val isSelected = season.season == carousel.selectedSeason
-        val label = seasonLabel(meta, season.season)
-        val shape = MaterialTheme.shapes.medium
-        val longPress = onSeasonLongPress?.let { handler -> { handler(season.season) } }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .maskClip(shape)
-                .then(
-                    if (isSelected) {
-                        Modifier.maskBorder(BorderStroke(3.dp, MaterialTheme.colorScheme.primary), shape)
-                    } else {
-                        Modifier
-                    },
-                )
-                .combinedClickable(
-                    onClick = { onSeasonSelected(season.season) },
-                    onLongClick = longPress,
-                    onClickLabel = label,
-                    role = Role.Tab,
-                )
-                .onSecondaryClick(longPress)
-                .semantics { selected = isSelected }
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-            contentAlignment = Alignment.Center,
-        ) {
-            ShapedArtworkImage(
-                candidates = listOf(season.posterUrl),
-                contentDescription = label,
-                letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                modifier = Modifier.matchParentSize(),
-            )
-            if (season.completed) EpisodeStatusBadge(EpisodeStatus.Watched)
+    val seasons = selection.seasons
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = seasons.indexOfFirst { it.season == selection.selectedSeason }.coerceAtLeast(0),
+    )
+    LazyRow(
+        state = listState,
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = contentPadding,
+        horizontalArrangement = Arrangement.spacedBy(ToggleButtonDefaults.IconSpacing),
+    ) {
+        items(seasons, key = { it.key }) { season ->
+            val interactionSource = remember { MutableInteractionSource() }
+            val longPress = onSeasonLongPress?.let { handler -> { handler(season.season) } }
+            val gate = rememberLongPressGate(interactionSource = interactionSource, onLongClick = longPress)
+            ToggleButton(
+                checked = season.season == selection.selectedSeason,
+                onCheckedChange = { if (!gate.consume()) onSeasonSelected(season.season) },
+                shapes = ToggleButtonDefaults.shapesFor(ToggleButtonDefaults.MinHeight),
+                contentPadding = ButtonDefaults.contentPaddingFor(
+                    buttonHeight = ToggleButtonDefaults.MinHeight,
+                    hasStartIcon = season.completed,
+                ),
+                interactionSource = interactionSource,
+                modifier = Modifier.onSecondaryClick(longPress),
+            ) {
+                if (season.completed) {
+                    Icon(
+                        imageVector = Icons.Rounded.Check,
+                        contentDescription = stringResource(Res.string.episodes_cd_watched),
+                        modifier = Modifier.size(ToggleButtonDefaults.IconSize),
+                    )
+                    Spacer(modifier = Modifier.width(ToggleButtonDefaults.IconSpacing))
+                }
+                Text(text = seasonLabel(meta, season.season), maxLines = 1)
+            }
         }
     }
 }
@@ -622,7 +606,6 @@ private enum class EpisodeStatus(val icon: ImageVector, val label: StringResourc
 
 private val EpisodeThumbnailWidth = 128.dp
 private val SeasonPosterWidth = 40.dp
-private val SeasonCarouselItemWidth = 104.dp
 private val EpisodeStatusSize = 36.dp
 private val EpisodeStatusIconSize = 20.dp
 private val EpisodeProgressHeight = 4.dp

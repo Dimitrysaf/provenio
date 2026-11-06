@@ -2718,8 +2718,8 @@
     <string name="settings_meta_episode_layout_description">Πώς εμφανίζει μια σειρά τις σεζόν της, εδώ και στη λίστα Επεισόδια του προγράμματος αναπαραγωγής.</string>
     <string name="settings_meta_episode_layout_list">Λίστα</string>
     <string name="settings_meta_episode_layout_list_description">Κάθε σεζόν είναι μια γραμμή που ανοίγει και δείχνει τα επεισόδιά της.</string>
-    <string name="settings_meta_episode_layout_carousel">Καρουζέλ</string>
-    <string name="settings_meta_episode_layout_carousel_description">Αφίσες σεζόν σε καρουζέλ, με τα επεισόδια της επιλεγμένης σεζόν από κάτω. Οι σεζόν χωρίς αφίσες εμφανίζονται ως λίστα.</string>
+    <string name="settings_meta_episode_layout_season_buttons">Κουμπιά σεζόν</string>
+    <string name="settings_meta_episode_layout_season_buttons_description">Μια σειρά κουμπιών σεζόν, με τα επεισόδια της επιλεγμένης σεζόν από κάτω.</string>
     <string name="season_action_info">Πληροφορίες σεζόν</string>
     <string name="season_action_play_manually">Χειροκίνητη αναπαραγωγή όλης της σεζόν</string>
     <string name="season_details_section">Λεπτομέρειες σεζόν</string>

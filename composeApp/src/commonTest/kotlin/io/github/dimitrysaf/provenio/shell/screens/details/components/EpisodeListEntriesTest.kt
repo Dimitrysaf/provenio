@@ -142,26 +142,23 @@ class EpisodeListEntriesTest {
     }
 
     @Test
-    fun theCarouselFallsBackToTheListWhenNoSeasonHasAPoster() {
-        assertNull(
-            buildSeasonCarousel(grouped, selectedSeason = null, completedSeasons = emptySet(), seasonPosters = emptyMap(), fallbackPoster = "show"),
-        )
+    fun theSeasonButtonsListTheSelectedSeasonsEpisodesAlone() {
+        val selection = buildSeasonSelection(grouped, selectedSeason = 2, completedSeasons = setOf(2))!!
+        assertEquals(listOf(1, 2, 0), selection.seasons.map { it.season })
+        assertEquals(2, selection.selectedSeason)
+        assertTrue(selection.seasons.single { it.season == 2 }.completed)
+        assertTrue(selection.episodes.all { it.episode.season == 2 })
     }
 
     @Test
-    fun theCarouselListsTheSelectedSeasonsEpisodesAlone() {
-        val carousel = buildSeasonCarousel(
-            groupedEpisodes = grouped,
-            selectedSeason = 2,
-            completedSeasons = emptySet(),
-            seasonPosters = mapOf(2 to "season-2"),
-            fallbackPoster = "show",
-        )!!
-        assertEquals(listOf(1, 2, 0), carousel.seasons.map { it.season })
-        // A season without a poster of its own shows the show's.
-        assertEquals(listOf("show", "season-2", "show"), carousel.seasons.map { it.posterUrl })
-        assertEquals(2, carousel.selectedSeason)
-        assertTrue(carousel.episodes.all { it.episode.season == 2 })
+    fun anUnknownSelectedSeasonFallsBackToTheFirst() {
+        val selection = buildSeasonSelection(grouped, selectedSeason = 9, completedSeasons = emptySet())!!
+        assertEquals(1, selection.selectedSeason)
+    }
+
+    @Test
+    fun noSeasonsMeansNoSeasonButtons() {
+        assertNull(buildSeasonSelection(emptyMap(), selectedSeason = null, completedSeasons = emptySet()))
     }
 
     private fun episode(season: Int, number: Int): MetaVideo =

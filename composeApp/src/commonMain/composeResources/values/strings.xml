@@ -2750,8 +2750,8 @@
     <string name="settings_meta_episode_layout_description">How a series shows its seasons, here and in the player's Episodes sheet.</string>
     <string name="settings_meta_episode_layout_list">List</string>
     <string name="settings_meta_episode_layout_list_description">Each season is a row that opens to show its episodes.</string>
-    <string name="settings_meta_episode_layout_carousel">Carousel</string>
-    <string name="settings_meta_episode_layout_carousel_description">Season posters in a carousel, with the selected season's episodes below. Seasons without posters use the list.</string>
+    <string name="settings_meta_episode_layout_season_buttons">Season buttons</string>
+    <string name="settings_meta_episode_layout_season_buttons_description">A row of season buttons, with the selected season's episodes below.</string>
     <string name="season_action_info">Season info</string>
     <string name="season_action_play_manually">Play whole season manually</string>
     <string name="season_details_section">Season details</string>

@@ -34,8 +34,8 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPare
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailPosterRailSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailProductionSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailEpisodeListRow
-import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonCarousel
-import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonPosterCarousel
+import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonSelection
+import io.github.dimitrysaf.provenio.shell.screens.details.components.SeasonToggleRow
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSectionSkeleton
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSectionTitle
 import io.github.dimitrysaf.provenio.shell.screens.details.components.EpisodeListEntry
@@ -93,7 +93,7 @@ internal fun LazyListScope.configuredMetaSectionItems(
     episodeListEntries: List<EpisodeListEntry>,
     todayIsoDate: String,
     onEpisodeSeasonToggle: (Int) -> Unit,
-    seasonCarousel: SeasonCarousel? = null,
+    seasonSelection: SeasonSelection? = null,
     onSeasonSelected: (Int) -> Unit = {},
     onRetryComments: () -> Unit,
     onLoadMoreComments: () -> Unit,
@@ -203,15 +203,15 @@ internal fun LazyListScope.configuredMetaSectionItems(
                 DetailSectionTitle(title = stringResource(Res.string.details_episodes))
             }
         }
-        if (seasonCarousel != null) {
-            item(key = "$key-season-carousel", contentType = "detail-season-carousel") {
+        if (seasonSelection != null) {
+            item(key = "$key-season-buttons", contentType = "detail-season-buttons") {
                 DetailSectionContainer(
                     horizontalPadding = contentHorizontalPadding,
                     contentMaxWidth = contentMaxWidth,
                     bottomPadding = 14.dp,
                 ) {
-                    SeasonPosterCarousel(
-                        carousel = seasonCarousel,
+                    SeasonToggleRow(
+                        selection = seasonSelection,
                         meta = meta,
                         onSeasonSelected = onSeasonSelected,
                         onSeasonLongPress = onSeasonLongPress,
@@ -219,8 +219,8 @@ internal fun LazyListScope.configuredMetaSectionItems(
                 }
             }
         }
-        // In the carousel layout the season rows are the posters above, so only the selected season's episodes list here.
-        val rows: List<EpisodeListEntry> = seasonCarousel?.episodes ?: episodeListEntries
+        // With season buttons the season rows are the buttons above, so only the selected season's episodes list here.
+        val rows: List<EpisodeListEntry> = seasonSelection?.episodes ?: episodeListEntries
         itemsIndexed(
             items = rows,
             key = { _, entry -> "$key-${entry.key}" },

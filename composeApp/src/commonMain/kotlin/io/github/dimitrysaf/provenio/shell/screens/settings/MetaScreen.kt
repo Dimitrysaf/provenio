@@ -36,8 +36,8 @@ import provenio.composeapp.generated.resources.settings_meta_background_mode
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenBackgroundMode
 import io.github.dimitrysaf.provenio.core.metadata.EpisodeLayout
 import provenio.composeapp.generated.resources.settings_meta_episode_layout
-import provenio.composeapp.generated.resources.settings_meta_episode_layout_carousel
-import provenio.composeapp.generated.resources.settings_meta_episode_layout_carousel_description
+import provenio.composeapp.generated.resources.settings_meta_episode_layout_season_buttons
+import provenio.composeapp.generated.resources.settings_meta_episode_layout_season_buttons_description
 import provenio.composeapp.generated.resources.settings_meta_episode_layout_description
 import provenio.composeapp.generated.resources.settings_meta_episode_layout_list
 import provenio.composeapp.generated.resources.settings_meta_episode_layout_list_description
@@ -353,13 +353,13 @@ private val MetaScreenBackgroundMode.descriptionRes: StringResource
 private val EpisodeLayout.labelRes: StringResource
     get() = when (this) {
         EpisodeLayout.List -> Res.string.settings_meta_episode_layout_list
-        EpisodeLayout.Carousel -> Res.string.settings_meta_episode_layout_carousel
+        EpisodeLayout.SeasonButtons -> Res.string.settings_meta_episode_layout_season_buttons
     }
 
 private val EpisodeLayout.descriptionRes: StringResource
     get() = when (this) {
         EpisodeLayout.List -> Res.string.settings_meta_episode_layout_list_description
-        EpisodeLayout.Carousel -> Res.string.settings_meta_episode_layout_carousel_description
+        EpisodeLayout.SeasonButtons -> Res.string.settings_meta_episode_layout_season_buttons_description
     }
 
 private val MetaScreenSectionKey.titleRes: StringResource
