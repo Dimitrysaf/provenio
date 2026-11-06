@@ -31,6 +31,8 @@ import io.github.dimitrysaf.provenio.core.search.DiscoverUiState
 
 internal fun LazyListScope.discoverContent(
     state: DiscoverUiState,
+    // The heading, when the grid is something other than Discover.
+    title: String? = null,
     isSourceLoading: Boolean,
     columns: Int,
     networkCondition: NetworkCondition,
@@ -41,7 +43,7 @@ internal fun LazyListScope.discoverContent(
     onPosterLongClick: ((MetaPreview) -> Unit)? = null,
 ) {
     item {
-        DiscoverHeaderRow(modifier = Modifier.padding(horizontal = 16.dp))
+        DiscoverHeaderRow(title = title, modifier = Modifier.padding(horizontal = 16.dp))
     }
     state.selectedCatalog?.let { selectedCatalog ->
         item {
@@ -106,9 +108,9 @@ internal fun LazyListScope.discoverContent(
 
 /** The Discover heading; its filters live in the search field's filter button. */
 @Composable
-private fun DiscoverHeaderRow(modifier: Modifier = Modifier) {
+private fun DiscoverHeaderRow(title: String?, modifier: Modifier = Modifier) {
     Text(
-        text = stringResource(Res.string.compose_search_discover_title),
+        text = title ?: stringResource(Res.string.compose_search_discover_title),
         modifier = modifier.fillMaxWidth(),
         style = MaterialTheme.typography.headlineMedium,
         color = MaterialTheme.colorScheme.onSurface,

@@ -75,6 +75,8 @@ import provenio.composeapp.generated.resources.settings_meta_comments
 import provenio.composeapp.generated.resources.settings_meta_comments_description
 import provenio.composeapp.generated.resources.settings_meta_details
 import provenio.composeapp.generated.resources.settings_meta_details_description
+import provenio.composeapp.generated.resources.settings_meta_keywords
+import provenio.composeapp.generated.resources.settings_meta_keywords_description
 import provenio.composeapp.generated.resources.settings_meta_episodes
 import provenio.composeapp.generated.resources.settings_meta_episodes_description
 import provenio.composeapp.generated.resources.settings_meta_hero_trailer_playback
@@ -373,6 +375,7 @@ private val MetaScreenSectionKey.titleRes: StringResource
         MetaScreenSectionKey.TRAILERS -> Res.string.settings_meta_trailers
         MetaScreenSectionKey.EPISODES -> Res.string.settings_meta_episodes
         MetaScreenSectionKey.DETAILS -> Res.string.settings_meta_details
+        MetaScreenSectionKey.KEYWORDS -> Res.string.settings_meta_keywords
         MetaScreenSectionKey.COLLECTION -> Res.string.settings_meta_collection
         MetaScreenSectionKey.MORE_LIKE_THIS -> Res.string.settings_meta_more_like_this
     }
@@ -388,6 +391,7 @@ private val MetaScreenSectionKey.descriptionRes: StringResource
         MetaScreenSectionKey.TRAILERS -> Res.string.settings_meta_trailers_description
         MetaScreenSectionKey.EPISODES -> Res.string.settings_meta_episodes_description
         MetaScreenSectionKey.DETAILS -> Res.string.settings_meta_details_description
+        MetaScreenSectionKey.KEYWORDS -> Res.string.settings_meta_keywords_description
         MetaScreenSectionKey.COLLECTION -> Res.string.settings_meta_collection_description
         MetaScreenSectionKey.MORE_LIKE_THIS -> Res.string.settings_meta_more_like_this_description
     }

@@ -1,24 +1,21 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
-import io.github.dimitrysaf.provenio.shell.components.rowFocusEntry
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
-import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ListItemShapes
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -29,21 +26,22 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.components.LocalWindowBreakpoint
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
-import io.github.dimitrysaf.provenio.shell.components.horizontalScrollBleed
-import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
 import io.github.dimitrysaf.provenio.core.metadata.MetaTrailer
 import io.github.dimitrysaf.provenio.core.metadata.youtubeThumbnailUrl
 import provenio.composeapp.generated.resources.*
@@ -84,7 +82,6 @@ fun DetailTrailersSection(
     if (trailers.isEmpty()) return
 
     val categories = rememberTrailerCategories(trailers)
-    val cornerRadius = rememberPosterCardStyleUiState().cornerRadiusDp.dp
     val trailersTitle = stringResource(Res.string.detail_trailers_title)
 
     Column(
@@ -103,26 +100,14 @@ fun DetailTrailersSection(
             }
         }
 
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val sizing = trailerSectionSizing(maxWidth.value)
-            val trailerRowState = rememberLazyListState()
-            LazyRow(
-                modifier = Modifier
-                    .horizontalScrollBleed(horizontalScrollPadding)
-                    .fillMaxWidth()
-                    .rowFocusEntry(),
-                state = trailerRowState,
-                contentPadding = PaddingValues(horizontal = horizontalScrollPadding),
-                horizontalArrangement = Arrangement.spacedBy(sizing.cardSpacing),
-            ) {
-                itemsIndexed(
-                    items = categories.selectedTrailers,
-                    key = { index, trailer -> trailerKey(trailer, index) },
-                ) { _, trailer ->
-                    TrailerCard(
+        // Laid out as the episode list is: a still on the left, the title and year beside it.
+        val trailersShown = categories.selectedTrailers
+        DetailSegmentedColumn {
+            trailersShown.forEachIndexed { index, trailer ->
+                key(trailerKey(trailer, index)) {
+                    TrailerRow(
                         trailer = trailer,
-                        cardWidth = sizing.cardWidth,
-                        cornerRadius = cornerRadius,
+                        shapes = detailSegmentShapes(index = index, count = trailersShown.size),
                         onClick = { onTrailerClick(trailer) },
                     )
                 }
@@ -130,6 +115,43 @@ fun DetailTrailersSection(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun TrailerRow(
+    trailer: MetaTrailer,
+    shapes: ListItemShapes,
+    onClick: () -> Unit,
+) {
+    val title = trailer.displayName?.takeIf { it.isNotBlank() } ?: trailer.name
+    SegmentedListItem(
+        onClick = onClick,
+        shapes = shapes,
+        modifier = Modifier.fillMaxWidth(),
+        colors = ListItemDefaults.segmentedColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        ),
+        leadingContent = {
+            AsyncImage(
+                model = trailer.youtubeThumbnailUrl(),
+                contentDescription = null,
+                modifier = Modifier
+                    .width(TrailerThumbnailWidth)
+                    .aspectRatio(16f / 9f)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                contentScale = ContentScale.Crop,
+            )
+        },
+        supportingContent = trailer.publishedAt?.take(4)?.takeIf { it.isNotBlank() }?.let { year ->
+            { FindableText(text = year, maxLines = 1) }
+        },
+    ) {
+        FindableText(text = title, maxLines = 2, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+private val TrailerThumbnailWidth = 128.dp
 
 internal fun trailerKey(trailer: MetaTrailer, index: Int): String =
     "${trailer.type}-${trailer.id}-${trailer.seasonNumber ?: 0}#$index"
@@ -203,62 +225,3 @@ internal fun TrailerCategoryPicker(categories: TrailerCategories) {
         )
     }
 }
-
-@Composable
-internal fun TrailerCard(
-    trailer: MetaTrailer,
-    cardWidth: Dp,
-    cornerRadius: Dp,
-    onClick: () -> Unit,
-) {
-    val title = trailer.displayName?.takeIf { it.isNotBlank() } ?: trailer.name
-
-    Column(
-        modifier = Modifier.width(cardWidth),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Card(
-            onClick = onClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(16f / 9f),
-            shape = RoundedCornerShape(cornerRadius),
-        ) {
-            AsyncImage(
-                model = trailer.youtubeThumbnailUrl(),
-                contentDescription = title,
-                modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
-                contentScale = ContentScale.Crop,
-            )
-        }
-
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-
-        trailer.publishedAt?.take(4)?.takeIf { it.isNotBlank() }?.let { year ->
-            Text(
-                text = year,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-internal data class TrailerSectionSizing(
-    val cardWidth: Dp,
-    val cardSpacing: Dp,
-)
-
-internal fun trailerSectionSizing(maxWidthDp: Float): TrailerSectionSizing =
-    when {
-        maxWidthDp >= 1200f -> TrailerSectionSizing(cardWidth = 360.dp, cardSpacing = 16.dp)
-        maxWidthDp >= 1024f -> TrailerSectionSizing(cardWidth = 320.dp, cardSpacing = 14.dp)
-        maxWidthDp >= 768f -> TrailerSectionSizing(cardWidth = 300.dp, cardSpacing = 12.dp)
-        else -> TrailerSectionSizing(cardWidth = 260.dp, cardSpacing = 12.dp)
-    }

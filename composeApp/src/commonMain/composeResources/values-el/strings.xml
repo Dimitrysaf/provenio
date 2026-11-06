@@ -2735,4 +2735,20 @@
     <string name="streams_download_season_started">Αναζήτηση πηγών για %1$d επεισόδια…</string>
     <string name="streams_download_season_done">Προστέθηκαν %1$d από %2$d επεισόδια για λήψη</string>
     <string name="streams_no_season_packs">Καμία πηγή δεν περιέχει όλη τη σεζόν. Δοκιμάστε Επεισόδιο προς επεισόδιο.</string>
+    <string name="settings_meta_keywords">Ετικέτες</string>
+    <string name="settings_meta_keywords_description">Οι λέξεις-κλειδιά του TMDB για τον τίτλο, όπως &quot;ταξίδι στον χρόνο&quot;.</string>
+    <string name="meta_section_keywords_title">Ετικέτες</string>
+    <string name="meta_section_keywords_description">Οι λέξεις-κλειδιά του TMDB για τον τίτλο, όπως &quot;ταξίδι στον χρόνο&quot;.</string>
+    <string name="details_browse_kind_keyword">Λέξη-κλειδί</string>
+    <string name="details_view_all">Προβολή όλων</string>
+    <string name="details_view_all_count">Προβολή όλων %1$d</string>
+    <string name="details_cast_search_placeholder">Αναζήτηση ηθοποιών</string>
+    <string name="details_comments_search_placeholder">Αναζήτηση σχολίων</string>
+    <string name="details_list_no_matches">Τίποτα δεν ταιριάζει με την αναζήτησή σας.</string>
+    <string name="search_filter_keyword">Λέξη-κλειδί</string>
+    <string name="search_filter_any_keyword">Οποιαδήποτε λέξη-κλειδί</string>
+    <string name="search_keyword_placeholder">Αναζήτηση λέξεων-κλειδιών TMDB</string>
+    <string name="search_keyword_clear">Καθαρισμός λέξης-κλειδιού</string>
+    <string name="search_keyword_results_title">Με ετικέτα «%1$s»</string>
+    <string name="search_keyword_no_results">Καμία λέξη-κλειδί δεν ταιριάζει.</string>
 </resources>

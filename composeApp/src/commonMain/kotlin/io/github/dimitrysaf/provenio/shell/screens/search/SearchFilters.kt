@@ -7,6 +7,7 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -14,14 +15,18 @@ import androidx.compose.runtime.setValue
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSection
 import io.github.dimitrysaf.provenio.core.search.DiscoverUiState
 import io.github.dimitrysaf.provenio.core.search.SearchFilterState
+import io.github.dimitrysaf.provenio.core.search.SearchKeyword
 import io.github.dimitrysaf.provenio.core.search.SearchRepository
 import io.github.dimitrysaf.provenio.core.search.SearchSortOrder
 import io.github.dimitrysaf.provenio.core.search.searchCatalogOptions
 import io.github.dimitrysaf.provenio.core.search.searchGenreOptions
 import io.github.dimitrysaf.provenio.core.search.searchTypeOptions
+import io.github.dimitrysaf.provenio.shell.components.SearchField
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.*
 
@@ -50,7 +55,7 @@ internal fun SearchFiltersButton(
         searchSections.searchGenreOptions(filters.type, filters.catalogKey)
     }
 
-    val active = if (searching) {
+    val active = filters.keyword != null || if (searching) {
         filters.hasSearchFilters || filters.sort != SearchSortOrder.Default
     } else {
         filters.sort != SearchSortOrder.Default || discoverState.selectedGenre != null
@@ -94,6 +99,11 @@ internal fun SearchFiltersButton(
                     enabled = searchGenres.isNotEmpty() || filters.genre != null,
                 ),
                 SingleChoiceOption(
+                    value = SearchFilter.KEYWORD,
+                    label = stringResource(Res.string.search_filter_keyword),
+                    supportingText = filters.keyword?.name ?: stringResource(Res.string.search_filter_any_keyword),
+                ),
+                SingleChoiceOption(
                     value = SearchFilter.SORT,
                     label = stringResource(Res.string.search_sort),
                     supportingText = sortLabel,
@@ -120,6 +130,11 @@ internal fun SearchFiltersButton(
                     label = stringResource(Res.string.discover_genre),
                     supportingText = discoverState.selectedGenre ?: allGenresLabel,
                     enabled = discoverState.genreOptions.isNotEmpty() || selectedCatalog?.genreRequired == true,
+                ),
+                SingleChoiceOption(
+                    value = SearchFilter.KEYWORD,
+                    label = stringResource(Res.string.search_filter_keyword),
+                    supportingText = filters.keyword?.name ?: stringResource(Res.string.search_filter_any_keyword),
                 ),
                 SingleChoiceOption(
                     value = SearchFilter.SORT,
@@ -218,8 +233,52 @@ internal fun SearchFiltersButton(
             onDismiss = { openFilter = null },
         )
 
+        SearchFilter.KEYWORD -> KeywordFilterSheet(selected = filters.keyword, onDismiss = { openFilter = null })
+
         null -> Unit
     }
+}
+
+/** Picks the keyword filter from TMDB's keywords, searched by name as you type. */
+@Composable
+private fun KeywordFilterSheet(selected: SearchKeyword?, onDismiss: () -> Unit) {
+    var query by remember { mutableStateOf("") }
+    var results by remember { mutableStateOf<List<SearchKeyword>>(emptyList()) }
+    LaunchedEffect(query) {
+        if (query.isBlank()) {
+            results = emptyList()
+            return@LaunchedEffect
+        }
+        delay(300)
+        results = try {
+            SearchRepository.searchKeywords(query)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+    SingleChoiceBottomSheet(
+        title = stringResource(Res.string.search_filter_keyword),
+        header = {
+            SearchField(
+                query = query,
+                onQueryChange = { query = it },
+                placeholder = stringResource(Res.string.search_keyword_placeholder),
+            )
+        },
+        options = buildList<SingleChoiceOption<SearchKeyword?>> {
+            add(SingleChoiceOption(value = null, label = stringResource(Res.string.search_filter_any_keyword)))
+            selected?.takeIf { current -> results.none { it.id == current.id } }?.let { current ->
+                add(SingleChoiceOption(value = current, label = current.name))
+            }
+            results.forEach { keyword -> add(SingleChoiceOption(value = keyword, label = keyword.name)) }
+        },
+        footnote = if (query.isNotBlank() && results.isEmpty()) stringResource(Res.string.search_keyword_no_results) else null,
+        isSelected = { it?.id == selected?.id },
+        onSelected = SearchRepository::setSearchKeyword,
+        onDismiss = onDismiss,
+    )
 }
 
 /** Which filter's choices are open. */
@@ -227,6 +286,7 @@ private enum class SearchFilter {
     TYPE,
     CATALOG,
     GENRE,
+    KEYWORD,
     SORT,
 }
 

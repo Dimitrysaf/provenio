@@ -25,9 +25,7 @@ import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailActi
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSecondaryAction
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailAdditionalInfoSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailCastSection
-import io.github.dimitrysaf.provenio.shell.screens.details.components.CastCell
-import io.github.dimitrysaf.provenio.shell.screens.details.components.CastGridPreviewRows
-import io.github.dimitrysaf.provenio.shell.screens.details.components.castSectionSizing
+import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailKeywordsSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailCommentsSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailMetaInfo
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailParentsGuideSection
@@ -48,6 +46,7 @@ import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressEntry
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.metadata.MetaCompany
+import io.github.dimitrysaf.provenio.core.metadata.MetaKeyword
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
 import io.github.dimitrysaf.provenio.core.metadata.MetaPerson
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSectionItem
@@ -109,6 +108,9 @@ internal fun LazyListScope.configuredMetaSectionItems(
     onOpenMeta: ((MetaPreview) -> Unit)?,
     onCastClick: ((MetaPerson, String?) -> Unit)?,
     onCompanyClick: ((MetaCompany, String) -> Unit)?,
+    onViewAllCast: (() -> Unit)? = null,
+    onViewAllComments: (() -> Unit)? = null,
+    onKeywordClick: ((MetaKeyword) -> Unit)? = null,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
     pendingSections: Set<MetaScreenSectionKey> = emptySet(),
@@ -181,6 +183,9 @@ internal fun LazyListScope.configuredMetaSectionItems(
                     onOpenMeta = onOpenMeta,
                     onCastClick = onCastClick,
                     onCompanyClick = onCompanyClick,
+                    onViewAllCast = onViewAllCast,
+                    onViewAllComments = onViewAllComments,
+                    onKeywordClick = onKeywordClick,
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
                 )
@@ -270,29 +275,8 @@ internal fun LazyListScope.configuredMetaSectionItems(
     fun addGridSection(section: MetaScreenSectionItem, key: String): Boolean {
         val grid = shelfGrid ?: return false
         when (section.key) {
-            MetaScreenSectionKey.CAST -> {
-                val sizing = castSectionSizing(grid.contentWidth.value)
-                detailShelfGrid(
-                    key = key,
-                    title = { stringResource(Res.string.settings_meta_cast) },
-                    entries = resolvedCast,
-                    cellWidth = sizing.itemWidth,
-                    spacing = sizing.avatarGap,
-                    context = grid,
-                    previewRows = CastGridPreviewRows,
-                ) { index, person ->
-                    CastCell(
-                        index = index,
-                        person = person,
-                        sizing = sizing,
-                        onCastClick = onCastClick,
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                    )
-                }
-            }
-            // Trailers and comments stay rows that scroll sideways, a card at a time.
-            MetaScreenSectionKey.TRAILERS, MetaScreenSectionKey.COMMENTS -> return false
+            // Cast, trailers and comments are segmented lists, never grid shelves.
+            MetaScreenSectionKey.CAST, MetaScreenSectionKey.TRAILERS, MetaScreenSectionKey.COMMENTS -> return false
             MetaScreenSectionKey.COLLECTION -> detailPosterShelfGrid(
                 key = key,
                 title = { meta.collectionName.orEmpty() },
@@ -401,6 +385,7 @@ internal fun metaSectionHasContent(
         MetaScreenSectionKey.TRAILERS -> hasTrailersSection
         MetaScreenSectionKey.EPISODES -> hasEpisodes
         MetaScreenSectionKey.DETAILS -> hasAdditionalInfoSection
+        MetaScreenSectionKey.KEYWORDS -> meta.keywords.isNotEmpty()
         MetaScreenSectionKey.COLLECTION -> !hasEpisodes && hasCollectionSection
         MetaScreenSectionKey.MORE_LIKE_THIS -> moreLikeThisItems.isNotEmpty()
     }
@@ -447,6 +432,9 @@ internal fun ConfiguredMetaSections(
     onOpenMeta: ((MetaPreview) -> Unit)?,
     onCastClick: ((MetaPerson, String?) -> Unit)?,
     onCompanyClick: ((MetaCompany, String) -> Unit)?,
+    onViewAllCast: (() -> Unit)? = null,
+    onViewAllComments: (() -> Unit)? = null,
+    onKeywordClick: ((MetaKeyword) -> Unit)? = null,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
 ) {
@@ -518,12 +506,12 @@ internal fun ConfiguredMetaSections(
             MetaScreenSectionKey.CAST -> {
                 DetailCastSection(
                     cast = meta.cast,
-                    horizontalScrollPadding = horizontalScrollPadding,
                     onCastClick = onCastClick,
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
                     metaId = meta.id,
                     metaType = meta.type,
+                    onViewAll = onViewAllCast,
                 )
             }
             MetaScreenSectionKey.COMMENTS -> {
@@ -531,13 +519,10 @@ internal fun ConfiguredMetaSections(
                     DetailCommentsSection(
                         comments = comments,
                         isLoading = isCommentsLoading,
-                        isLoadingMore = isCommentsLoadingMore,
-                        canLoadMore = commentsCurrentPage < commentsPageCount,
                         error = commentsError,
                         onRetry = onRetryComments,
-                        onLoadMore = onLoadMoreComments,
                         onCommentClick = onCommentClick,
-                        horizontalScrollPadding = horizontalScrollPadding,
+                        onViewAll = onViewAllComments,
                     )
                 }
             }
@@ -556,6 +541,9 @@ internal fun ConfiguredMetaSections(
                 if (hasAdditionalInfoSection) {
                     DetailAdditionalInfoSection(meta = meta)
                 }
+            }
+            MetaScreenSectionKey.KEYWORDS -> {
+                DetailKeywordsSection(keywords = meta.keywords, onKeywordClick = onKeywordClick)
             }
             MetaScreenSectionKey.COLLECTION -> {
                 if (!hasEpisodes && hasCollectionSection) {

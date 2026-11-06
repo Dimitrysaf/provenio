@@ -21,6 +21,7 @@ import io.github.dimitrysaf.provenio.core.home.HomeCatalogSection
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.home.filterReleasedItems
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
+import io.github.dimitrysaf.provenio.core.metadata.tmdb.TmdbMetadataService
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -235,6 +236,67 @@ object SearchRepository {
 
     fun clearSearchFilters() {
         _filters.value = SearchFilterState(sort = _filters.value.sort)
+        setSearchKeyword(null)
+    }
+
+    private val _keywordResults = MutableStateFlow(DiscoverUiState())
+
+    /** The titles for the keyword filter, a page of movies and series at a time. */
+    val keywordResults: StateFlow<DiscoverUiState> = _keywordResults.asStateFlow()
+    private var keywordJob: Job? = null
+    private var keywordPage = 0
+
+    /** Opens Search on the titles with [keyword], as a Details page tag asks. */
+    fun requestKeyword(keyword: SearchKeyword) {
+        setSearchKeyword(keyword)
+    }
+
+    fun setSearchKeyword(keyword: SearchKeyword?) {
+        if (_filters.value.keyword != keyword) _filters.value = _filters.value.copy(keyword = keyword)
+        keywordJob?.cancel()
+        keywordPage = 0
+        _keywordResults.value = DiscoverUiState(isLoading = keyword != null)
+        if (keyword != null) loadKeywordPage(keyword)
+    }
+
+    fun loadMoreKeyword() {
+        val keyword = _filters.value.keyword ?: return
+        val current = _keywordResults.value
+        if (current.isLoading || current.nextSkip == null) return
+        loadKeywordPage(keyword)
+    }
+
+    /** TMDB keywords matching [query], for picking one in the filters. */
+    suspend fun searchKeywords(query: String): List<SearchKeyword> =
+        TmdbMetadataService.searchKeywords(query).map { SearchKeyword(id = it.id, name = it.name) }
+
+    private fun loadKeywordPage(keyword: SearchKeyword) {
+        val page = keywordPage + 1
+        _keywordResults.value = _keywordResults.value.copy(isLoading = true)
+        keywordJob = scope.launch {
+            val result = try {
+                TmdbMetadataService.fetchKeywordTitlesPage(keywordId = keyword.id, page = page)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                log.w(error) { "Failed to load titles for keyword ${keyword.id}" }
+                _keywordResults.value = _keywordResults.value.copy(
+                    isLoading = false,
+                    emptyStateReason = DiscoverEmptyStateReason.RequestFailed,
+                    errorMessage = error.message,
+                )
+                return@launch
+            }
+            keywordPage = page
+            val current = _keywordResults.value
+            val items = (current.items + result.items).distinctBy { "${it.type}:${it.id}" }
+            _keywordResults.value = current.copy(
+                items = items,
+                isLoading = false,
+                nextSkip = if (result.hasMore) page + 1 else null,
+                emptyStateReason = if (items.isEmpty()) DiscoverEmptyStateReason.NoResults else null,
+            )
+        }
     }
 
     fun reset() {

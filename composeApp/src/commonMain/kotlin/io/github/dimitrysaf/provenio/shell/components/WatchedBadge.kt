@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
@@ -28,41 +29,6 @@ import androidx.compose.ui.unit.dp
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.episodes_cd_watched
 import org.jetbrains.compose.resources.stringResource
-
-@Composable
-fun WatchedBadge(
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .size(20.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = Icons.Default.Check,
-            contentDescription = stringResource(Res.string.episodes_cd_watched),
-            tint = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier.size(12.dp),
-        )
-    }
-}
-
-@Composable
-fun AnimatedWatchedBadge(
-    isVisible: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = modifier,
-    ) {
-        WatchedBadge()
-    }
-}
 
 /**
  * A finished title: its artwork dimmed under a see-through scrim, with a large check in the middle.
@@ -80,13 +46,41 @@ fun BoxScope.PosterWatchedOverlay(
     )
 }
 
-/** The scrim and large check of [PosterWatchedOverlay], over whatever box it is put in; [content] replaces the check. */
+/**
+ * The scrim and large check of [PosterWatchedOverlay], over whatever box it is put in; [content]
+ * replaces the check. The same mark as [StatusOverlay], with the check as its icon.
+ */
 @Composable
 fun BoxScope.CompletedOverlay(
     visible: Boolean,
     modifier: Modifier = Modifier,
     badgeSize: Dp = CompletedBadgeSize,
     checkDescription: String? = null,
+    content: (@Composable () -> Unit)? = null,
+) {
+    StatusOverlay(
+        visible = visible,
+        icon = Icons.Default.Check,
+        contentDescription = checkDescription,
+        modifier = modifier,
+        badgeSize = badgeSize,
+        content = content,
+    )
+}
+
+/**
+ * The one status mark over any artwork, poster, episode still or season poster alike: the whole
+ * picture dimmed, a darker circle in the middle, and the state's [icon] in it, such as a check
+ * for watched or a timer for not aired yet. [content] replaces the icon.
+ */
+@Composable
+fun BoxScope.StatusOverlay(
+    visible: Boolean,
+    icon: ImageVector,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    badgeSize: Dp = CompletedBadgeSize,
+    iconTint: Color = Color.White,
     content: (@Composable () -> Unit)? = null,
 ) {
     AnimatedVisibility(
@@ -96,23 +90,23 @@ fun BoxScope.CompletedOverlay(
         modifier = modifier.matchParentSize(),
     ) {
         Box(
-            modifier = Modifier.background(Color.Black.copy(alpha = CompletedScrimAlpha)),
+            modifier = Modifier.background(Color.Black.copy(alpha = StatusScrimAlpha)),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
                     .size(badgeSize)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(Color.Black.copy(alpha = StatusBadgeAlpha)),
                 contentAlignment = Alignment.Center,
             ) {
                 if (content != null) {
                     content()
                 } else {
                     Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = checkDescription,
-                        tint = MaterialTheme.colorScheme.onPrimary,
+                        imageVector = icon,
+                        contentDescription = contentDescription,
+                        tint = iconTint,
                         modifier = Modifier.size(badgeSize * 0.6f),
                     )
                 }
@@ -151,4 +145,6 @@ internal fun posterProgressHeight(windowWidthDp: Float): Dp = when {
 }
 
 private val CompletedBadgeSize = 40.dp
-private const val CompletedScrimAlpha = 0.45f
+private const val StatusScrimAlpha = 0.45f
+// Darker than the scrim around it, so the circle reads on any picture.
+private const val StatusBadgeAlpha = 0.6f

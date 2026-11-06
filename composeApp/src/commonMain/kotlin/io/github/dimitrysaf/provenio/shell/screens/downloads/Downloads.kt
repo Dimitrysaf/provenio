@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.downloads
 
+import io.github.dimitrysaf.provenio.shell.components.StatusOverlay
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -532,24 +533,17 @@ private fun DownloadThumbnail(item: DownloadItem) {
 
         // Every download states what it is doing over its own artwork, so the icon is where the
         // state is read, in every state. The scrim keeps it legible on a bright still.
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.45f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = item.status.icon(),
-                contentDescription = null,
-                tint = if (item.status == DownloadStatus.Failed) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    Color.White
-                },
-            )
-        }
+        StatusOverlay(
+            visible = true,
+            icon = item.status.icon(),
+            contentDescription = null,
+            badgeSize = DownloadStatusBadgeSize,
+            iconTint = if (item.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else Color.White,
+        )
     }
 }
+
+private val DownloadStatusBadgeSize = 28.dp
 
 /** A downloaded show, which opens its own list of episodes. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

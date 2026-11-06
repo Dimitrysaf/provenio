@@ -94,11 +94,19 @@ enum class SearchSortOrder {
     Rating,
 }
 
+/** A TMDB keyword the Search page can show titles for. */
+data class SearchKeyword(
+    val id: Int,
+    val name: String,
+)
+
 data class SearchFilterState(
     val type: String? = null,
     val catalogKey: String? = null,
     val genre: String? = null,
     val sort: SearchSortOrder = SearchSortOrder.Default,
+    /** While set, Search lists the titles TMDB tags with this keyword. */
+    val keyword: SearchKeyword? = null,
 ) {
     val hasSearchFilters: Boolean
         get() = type != null || catalogKey != null || genre != null

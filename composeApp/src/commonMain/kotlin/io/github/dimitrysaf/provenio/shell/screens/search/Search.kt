@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -31,6 +32,8 @@ import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.Icon
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -84,6 +87,8 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.action_retry
+import provenio.composeapp.generated.resources.search_keyword_clear
+import provenio.composeapp.generated.resources.search_keyword_results_title
 import provenio.composeapp.generated.resources.compose_search_empty_failed_message
 import provenio.composeapp.generated.resources.compose_search_empty_failed_title
 import provenio.composeapp.generated.resources.compose_search_empty_no_active_addons_message
@@ -98,6 +103,7 @@ import provenio.composeapp.generated.resources.compose_search_remove_recent_sear
 import provenio.composeapp.generated.resources.search_filters_clear
 import provenio.composeapp.generated.resources.search_filters_no_match_message
 import provenio.composeapp.generated.resources.search_filters_no_match_title
+import io.github.dimitrysaf.provenio.shell.screens.details.listSearchMatcher
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.search.SearchEmptyStateReason
 import io.github.dimitrysaf.provenio.core.search.SearchHistoryRepository
@@ -144,6 +150,7 @@ fun SearchScreen(
     val uiState by SearchRepository.uiState.collectAsStateWithLifecycle()
     val discoverUiState by SearchRepository.discoverUiState.collectAsStateWithLifecycle()
     val filters by SearchRepository.filters.collectAsStateWithLifecycle()
+    val keywordUiState by SearchRepository.keywordResults.collectAsStateWithLifecycle()
     val visibleSections = remember(uiState.sections, filters) { uiState.sections.applySearchFilters(filters) }
     val sortedDiscoverUiState = remember(discoverUiState, filters.sort) {
         discoverUiState.copy(items = discoverUiState.items.sortedFor(filters.sort))
@@ -199,8 +206,21 @@ fun SearchScreen(
         }
     }
 
-    ScreenActivityEffect(listState, query, discoverUiState.canLoadMore, discoverUiState.isLoading) { screenActive ->
-        if (!screenActive || query.isNotBlank()) return@ScreenActivityEffect
+    // With a keyword filter the list is the keyword's titles, which load their next page the same way.
+    ScreenActivityEffect(listState, filters.keyword, keywordUiState.canLoadMore, keywordUiState.isLoading) { screenActive ->
+        if (!screenActive || filters.keyword == null) return@ScreenActivityEffect
+        snapshotFlow { listState.layoutInfo }
+            .map { layoutInfo ->
+                val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+                lastVisible >= layoutInfo.totalItemsCount - 4
+            }
+            .distinctUntilChanged()
+            .filter { it && keywordUiState.canLoadMore && !keywordUiState.isLoading }
+            .collect { SearchRepository.loadMoreKeyword() }
+    }
+
+    ScreenActivityEffect(listState, query, filters.keyword, discoverUiState.canLoadMore, discoverUiState.isLoading) { screenActive ->
+        if (!screenActive || query.isNotBlank() || filters.keyword != null) return@ScreenActivityEffect
 
         snapshotFlow { listState.layoutInfo }
             .map { layoutInfo ->
@@ -256,6 +276,20 @@ fun SearchScreen(
             -> Unit
         }
     }
+
+    // The keyword's titles, narrowed by the text in the field and the type filter, in the chosen order.
+    val keyword = filters.keyword
+    val keywordMatcher = remember(query) { listSearchMatcher(query) }
+    val keywordView = remember(keywordUiState, keywordMatcher, filters.type, filters.sort) {
+        keywordUiState.copy(
+            items = keywordUiState.items
+                .filter { item -> filters.type == null || item.type == filters.type }
+                .filter { item -> keywordMatcher == null || keywordMatcher(item.name) }
+                .sortedFor(filters.sort),
+        )
+    }
+    val keywordTitle = keyword?.let { stringResource(Res.string.search_keyword_results_title, it.name) }
+    val keywordClearLabel = stringResource(Res.string.search_keyword_clear)
 
     BoxWithConstraints(
         modifier = modifier.fillMaxSize(),
@@ -326,7 +360,35 @@ fun SearchScreen(
                 listState = listState,
                 modifier = Modifier.weight(1f),
             ) {
-            if (query.isBlank()) {
+            if (keyword != null) {
+                item(key = "keyword_filter") {
+                    InputChip(
+                        selected = true,
+                        onClick = { SearchRepository.setSearchKeyword(null) },
+                        label = { Text(keyword.name) },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = keywordClearLabel,
+                                modifier = Modifier.size(InputChipDefaults.IconSize),
+                            )
+                        },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
+                discoverContent(
+                    state = keywordView,
+                    title = keywordTitle,
+                    isSourceLoading = false,
+                    columns = discoverColumns,
+                    networkCondition = networkStatusUiState.condition,
+                    onRetry = { SearchRepository.setSearchKeyword(keyword) },
+                    watchedKeys = watchedUiState.watchedKeys,
+                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                    onPosterClick = onPosterClick,
+                    onPosterLongClick = onPosterLongClick,
+                )
+            } else if (query.isBlank()) {
                 if (recentSearches.isNotEmpty() && !largeScreen) {
                     item(key = "recent_searches") {
                         SearchRecentSection(

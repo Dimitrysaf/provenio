@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import io.github.dimitrysaf.provenio.core.addons.httpGetText
 import io.github.dimitrysaf.provenio.core.metadata.MetaCompany
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
+import io.github.dimitrysaf.provenio.core.metadata.MetaKeyword
 import io.github.dimitrysaf.provenio.core.metadata.MetaPerson
 import io.github.dimitrysaf.provenio.core.metadata.MetaTrailer
 import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
@@ -412,6 +413,40 @@ object TmdbMetadataService {
             }
     }
 
+    /** Titles TMDB tags with [keywordId], movies and series interleaved, a page of each at a time. */
+    suspend fun fetchKeywordTitlesPage(keywordId: Int, page: Int): TmdbEntityRailPageResult =
+        withContext(Dispatchers.Default) {
+            val settings = TmdbSettingsRepository.snapshot()
+            if (!settings.enabled) return@withContext TmdbEntityRailPageResult(items = emptyList(), hasMore = false)
+            val language = normalizeTmdbLanguage(settings.language)
+            val (movies, series) = coroutineScope {
+                val movies = async {
+                    fetchEntityRailPage(TmdbEntityKind.KEYWORD, keywordId, TmdbEntityMediaType.MOVIE, TmdbEntityRailType.POPULAR, language, page)
+                }
+                val series = async {
+                    fetchEntityRailPage(TmdbEntityKind.KEYWORD, keywordId, TmdbEntityMediaType.TV, TmdbEntityRailType.POPULAR, language, page)
+                }
+                movies.await() to series.await()
+            }
+            val items = buildList {
+                for (index in 0 until maxOf(movies.items.size, series.items.size)) {
+                    movies.items.getOrNull(index)?.let(::add)
+                    series.items.getOrNull(index)?.let(::add)
+                }
+            }
+            TmdbEntityRailPageResult(items = items, hasMore = movies.hasMore || series.hasMore)
+        }
+
+    /** TMDB keywords whose name matches [query], for the Search keyword filter. */
+    suspend fun searchKeywords(query: String): List<MetaKeyword> = withContext(Dispatchers.Default) {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty() || !TmdbSettingsRepository.snapshot().enabled) return@withContext emptyList()
+        fetch<TmdbKeywordSearchResponse>(endpoint = "search/keyword", query = mapOf("query" to trimmed))
+            ?.results
+            .orEmpty()
+            .mapNotNull { it.toMetaKeyword() }
+    }
+
     suspend fun fetchEntityBrowse(
         entityKind: TmdbEntityKind,
         entityId: Int,
@@ -524,14 +559,11 @@ object TmdbMetadataService {
                     put("language", requestLanguage)
                     put("page", page.toString())
                     put("sort_by", sortBy)
-                    when (mediaType) {
-                        TmdbEntityMediaType.MOVIE -> {
-                            put("with_companies", entityId.toString())
-                        }
-                        TmdbEntityMediaType.TV -> {
-                            if (entityKind == TmdbEntityKind.COMPANY) put("with_companies", entityId.toString())
-                            if (entityKind == TmdbEntityKind.NETWORK) put("with_networks", entityId.toString())
-                        }
+                    when {
+                        entityKind == TmdbEntityKind.KEYWORD -> put("with_keywords", entityId.toString())
+                        mediaType == TmdbEntityMediaType.MOVIE -> put("with_companies", entityId.toString())
+                        entityKind == TmdbEntityKind.COMPANY -> put("with_companies", entityId.toString())
+                        entityKind == TmdbEntityKind.NETWORK -> put("with_networks", entityId.toString())
                     }
                     if (voteCountFloor != null) put("vote_count.gte", voteCountFloor.toString())
                 }
@@ -625,6 +657,8 @@ object TmdbMetadataService {
                         )
                     }
                 }
+                // A keyword has no details of its own; the header falls back to its name.
+                TmdbEntityKind.KEYWORD -> null
             }
         } catch (e: Exception) {
             log.w(e) { "Failed to fetch ${entityKind.routeValue} header for $entityId" }
@@ -871,6 +905,7 @@ object TmdbMetadataService {
             cast = enrichment.people,
             productionCompanies = enrichment.productionCompanies,
             networks = enrichment.networks,
+            keywords = enrichment.keywords,
             country = enrichment.countries.takeIf { it.isNotEmpty() }?.joinToString(", "),
             language = enrichment.language,
             moreLikeThis = enrichment.moreLikeThis,
@@ -952,6 +987,10 @@ object TmdbMetadataService {
 
         if (enrichment != null && settings.useNetworks && enrichment.networks.isNotEmpty()) {
             updated = updated.copy(networks = enrichment.networks)
+        }
+
+        if (enrichment != null && enrichment.keywords.isNotEmpty()) {
+            updated = updated.copy(keywords = enrichment.keywords)
         }
 
         if (episodeMap.isNotEmpty()) {
@@ -1049,7 +1088,7 @@ object TmdbMetadataService {
             val details = async {
                 fetch<TmdbDetailsResponse>(
                     endpoint = "$mediaType/$numericId",
-                    query = mapOf("language" to normalizedLanguage),
+                    query = mapOf("language" to normalizedLanguage, "append_to_response" to "keywords"),
                 )
             }
             val credits = async {
@@ -1179,6 +1218,7 @@ object TmdbMetadataService {
             language = details.originalLanguage?.trim()?.takeIf(String::isNotBlank),
             productionCompanies = details.productionCompanies.mapNotNull { it.toMetaCompany() },
             networks = details.networks.mapNotNull { it.toMetaCompany() },
+            keywords = details.keywords?.all().orEmpty().mapNotNull { it.toMetaKeyword() },
             collectionName = details.belongsToCollection?.name?.trim()?.takeIf(String::isNotBlank),
             collectionItems = if (settings.useCollections && details.belongsToCollection?.id != null) {
                 fetchCollection(
@@ -1558,6 +1598,7 @@ internal data class TmdbEnrichment(
     val language: String?,
     val productionCompanies: List<MetaCompany>,
     val networks: List<MetaCompany>,
+    val keywords: List<MetaKeyword> = emptyList(),
     val collectionName: String? = null,
     val collectionItems: List<MetaPreview> = emptyList(),
     val moreLikeThis: List<MetaPreview> = emptyList(),
@@ -1994,7 +2035,34 @@ private data class TmdbDetailsResponse(
     val networks: List<TmdbCompany> = emptyList(),
     @SerialName("belongs_to_collection") val belongsToCollection: TmdbCollectionRef? = null,
     @SerialName("number_of_seasons") val numberOfSeasons: Int? = null,
+    // Appended to the details request: a movie lists them under "keywords", a series under "results".
+    val keywords: TmdbKeywordsResponse? = null,
 )
+
+@Serializable
+private data class TmdbKeywordsResponse(
+    val keywords: List<TmdbKeyword> = emptyList(),
+    val results: List<TmdbKeyword> = emptyList(),
+) {
+    fun all(): List<TmdbKeyword> = keywords + results
+}
+
+@Serializable
+private data class TmdbKeywordSearchResponse(
+    val results: List<TmdbKeyword> = emptyList(),
+)
+
+@Serializable
+private data class TmdbKeyword(
+    val id: Int? = null,
+    val name: String? = null,
+) {
+    fun toMetaKeyword(): MetaKeyword? {
+        val keywordId = id?.takeIf { it > 0 } ?: return null
+        val keywordName = name?.trim()?.takeIf(String::isNotBlank) ?: return null
+        return MetaKeyword(keywordId, keywordName)
+    }
+}
 
 @Serializable
 private data class TmdbVideosResponse(
@@ -2308,11 +2376,13 @@ private const val ENTITY_TOP_RATED_VOTE_FLOOR = 200
 
 enum class TmdbEntityKind(val routeValue: String) {
     COMPANY("company"),
-    NETWORK("network");
+    NETWORK("network"),
+    KEYWORD("keyword");
 
     companion object {
         fun fromRouteValue(value: String): TmdbEntityKind = when (value.trim().lowercase()) {
             "network" -> NETWORK
+            "keyword" -> KEYWORD
             else -> COMPANY
         }
     }

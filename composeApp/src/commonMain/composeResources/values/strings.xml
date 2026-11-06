@@ -2767,4 +2767,20 @@
     <string name="streams_download_season_started">Finding sources for %1$d episodes…</string>
     <string name="streams_download_season_done">Queued %1$d of %2$d episodes for download</string>
     <string name="streams_no_season_packs">No source holds the whole season. Try Episode by episode.</string>
+    <string name="settings_meta_keywords">Tags</string>
+    <string name="settings_meta_keywords_description">TMDB's keywords for the title, such as &quot;time travel&quot;.</string>
+    <string name="meta_section_keywords_title">Tags</string>
+    <string name="meta_section_keywords_description">TMDB's keywords for the title, such as &quot;time travel&quot;.</string>
+    <string name="details_browse_kind_keyword">Keyword</string>
+    <string name="details_view_all">View all</string>
+    <string name="details_view_all_count">View all %1$d</string>
+    <string name="details_cast_search_placeholder">Search cast</string>
+    <string name="details_comments_search_placeholder">Search comments</string>
+    <string name="details_list_no_matches">Nothing matches your search.</string>
+    <string name="search_filter_keyword">Keyword</string>
+    <string name="search_filter_any_keyword">Any keyword</string>
+    <string name="search_keyword_placeholder">Search TMDB keywords</string>
+    <string name="search_keyword_clear">Clear keyword</string>
+    <string name="search_keyword_results_title">Tagged “%1$s”</string>
+    <string name="search_keyword_no_results">No keywords match.</string>
 </resources>

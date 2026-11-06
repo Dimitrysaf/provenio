@@ -127,6 +127,7 @@ import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.metadata.HeroTrailerAudioState
 import io.github.dimitrysaf.provenio.core.metadata.MetaCompany
+import io.github.dimitrysaf.provenio.core.metadata.MetaKeyword
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSectionKey
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
 import io.github.dimitrysaf.provenio.core.metadata.MetaPerson
@@ -152,6 +153,9 @@ fun MetaDetailsScreen(
     onOpenMeta: ((MetaPreview) -> Unit)? = null,
     onCastClick: ((MetaPerson, String?) -> Unit)? = null,
     onCompanyClick: ((MetaCompany, String) -> Unit)? = null,
+    onViewAllCast: (() -> Unit)? = null,
+    onViewAllComments: (() -> Unit)? = null,
+    onKeywordClick: ((MetaKeyword) -> Unit)? = null,
     onOpenEpisode: ((MetaVideo) -> Unit)? = null,
     onOpenSeason: ((season: Int, seasonTitle: String) -> Unit)? = null,
     /** Opens the Sources sheet for a whole season, listing sources the way [SeasonSourceMode] asks. */
@@ -363,6 +367,9 @@ fun MetaDetailsScreen(
                         onOpenMeta = onOpenMeta,
                         onCastClick = onCastClick,
                         onCompanyClick = onCompanyClick,
+                        onViewAllCast = onViewAllCast,
+                        onViewAllComments = onViewAllComments,
+                        onKeywordClick = onKeywordClick,
                         onOpenEpisode = onOpenEpisode,
                         onOpenSeason = onOpenSeason,
                         onPlayWholeSeason = onPlayWholeSeason,
@@ -591,6 +598,9 @@ private fun MetaDetailsContent(
     onOpenMeta: ((MetaPreview) -> Unit)?,
     onCastClick: ((MetaPerson, String?) -> Unit)?,
     onCompanyClick: ((MetaCompany, String) -> Unit)?,
+    onViewAllCast: (() -> Unit)?,
+    onViewAllComments: (() -> Unit)?,
+    onKeywordClick: ((MetaKeyword) -> Unit)?,
     onOpenEpisode: ((MetaVideo) -> Unit)?,
     onOpenSeason: ((season: Int, seasonTitle: String) -> Unit)?,
     onPlayWholeSeason: ((SeasonSourceMode) -> DetailPlayHandler)?,
@@ -891,6 +901,9 @@ private fun MetaDetailsContent(
                     onOpenMeta = onOpenMeta,
                     onCastClick = onCastClick,
                     onCompanyClick = onCompanyClick,
+                    onViewAllCast = onViewAllCast,
+                    onViewAllComments = onViewAllComments,
+                    onKeywordClick = onKeywordClick,
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
                     pendingSections = pendingSections,

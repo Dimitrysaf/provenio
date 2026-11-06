@@ -75,6 +75,26 @@ data class SeasonDetailRoute(
 }
 
 @Serializable
+data class CastListRoute(
+    val type: String,
+    val metaId: String,
+    val castTitle: String,
+) : AppRoute {
+    override val title: String
+        get() = castTitle
+}
+
+@Serializable
+data class CommentsListRoute(
+    val type: String,
+    val metaId: String,
+    val commentsTitle: String,
+) : AppRoute {
+    override val title: String
+        get() = commentsTitle
+}
+
+@Serializable
 data class EntityBrowseRoute(
     val entityKind: String,
     val entityId: Int,

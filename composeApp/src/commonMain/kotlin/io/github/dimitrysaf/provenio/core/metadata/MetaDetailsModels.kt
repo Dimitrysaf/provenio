@@ -41,6 +41,8 @@ data class MetaDetails(
     val trailers: List<MetaTrailer> = emptyList(),
     val links: List<MetaLink> = emptyList(),
     val seasonPosters: Map<Int, String> = emptyMap(),
+    /** TMDB's keywords for the title, such as "time travel". */
+    val keywords: List<MetaKeyword> = emptyList(),
     val videos: List<MetaVideo> = emptyList(),
 )
 
@@ -75,6 +77,11 @@ data class MetaPerson(
     val tmdbId: Int? = null,
     val imdbId: String? = null,
     val deceased: Boolean = false,
+)
+
+data class MetaKeyword(
+    val id: Int,
+    val name: String,
 )
 
 data class MetaCompany(

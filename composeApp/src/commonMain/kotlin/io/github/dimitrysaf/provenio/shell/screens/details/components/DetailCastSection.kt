@@ -1,73 +1,61 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
-import io.github.dimitrysaf.provenio.shell.components.rowFocusEntry
-import androidx.compose.foundation.lazy.rememberLazyListState
-import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.ui.draw.clip
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.Hyphens
-import androidx.compose.ui.text.style.LineBreak
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
-import io.github.dimitrysaf.provenio.shell.components.horizontalScrollBleed
-import io.github.dimitrysaf.provenio.shell.components.CollapsibleShelfHeader
-import io.github.dimitrysaf.provenio.shell.components.ShelfExpansion
-import io.github.dimitrysaf.provenio.shell.components.ShelfGridRow
-import io.github.dimitrysaf.provenio.shell.components.shelfGridColumns
 import io.github.dimitrysaf.provenio.core.metadata.CastResolver
 import io.github.dimitrysaf.provenio.core.metadata.MetaPerson
+import io.github.dimitrysaf.provenio.core.metadata.castAvatarSharedTransitionKey
 import io.github.dimitrysaf.provenio.shell.components.DeceasedPhotoFilter
+import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.components.ImageViewerRequest
 import io.github.dimitrysaf.provenio.shell.components.LocalImageViewerLauncher
 import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
 import io.github.dimitrysaf.provenio.shell.components.viewerImageOf
-import io.github.dimitrysaf.provenio.core.metadata.castAvatarSharedTransitionKey
-import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.settings_meta_cast
 
+/**
+ * The cast as a segmented list: the first few, then View all for the cast page when [onViewAll]
+ * is given; every member when it is not, as in the player's info sheet.
+ */
 @Composable
 @OptIn(ExperimentalSharedTransitionApi::class)
 fun DetailCastSection(
     cast: List<MetaPerson>,
     modifier: Modifier = Modifier,
     showHeader: Boolean = true,
-    horizontalScrollPadding: Dp = 0.dp,
     onCastClick: ((MetaPerson, String?) -> Unit)? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     metaId: String? = null,
     metaType: String? = null,
+    onViewAll: (() -> Unit)? = null,
 ) {
     if (cast.isEmpty()) return
     val resolvedCast = rememberResolvedCast(cast, metaId, metaType)
@@ -77,98 +65,23 @@ fun DetailCastSection(
         modifier = modifier,
         showHeader = showHeader,
     ) {
-        BoxWithConstraints {
-            val sizing = castSectionSizing(maxWidth.value)
-
-            val castRowState = rememberLazyListState()
-            LazyRow(
-                modifier = Modifier
-                    .horizontalScrollBleed(horizontalScrollPadding)
-                    .fillMaxWidth()
-                    .rowFocusEntry(),
-                state = castRowState,
-                contentPadding = PaddingValues(horizontal = horizontalScrollPadding),
-                horizontalArrangement = Arrangement.spacedBy(sizing.avatarGap),
-            ) {
-                itemsIndexed(
-                    items = resolvedCast,
-                    key = { index, person -> castCellKey(index, person) },
-                ) { index, person ->
-                    CastCell(
-                        index = index,
-                        person = person,
-                        sizing = sizing,
-                        onCastClick = onCastClick,
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * The cast as a grid shelf, for places that are not a lazy list: the title opens and closes it,
- * and [CastGridPreviewRows] rows show until Show All opens the rest, as on the Details page.
- */
-@Composable
-internal fun DetailCastGrid(
-    cast: List<MetaPerson>,
-    expansionKey: String,
-    expandedByDefault: Boolean,
-    modifier: Modifier = Modifier,
-    metaId: String? = null,
-    metaType: String? = null,
-) {
-    if (cast.isEmpty()) return
-    val resolvedCast = rememberResolvedCast(cast, metaId, metaType)
-    val expanded = ShelfExpansion.isExpanded(expansionKey, expandedByDefault)
-    val showAllKey = "$expansionKey:all"
-    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val sizing = castSectionSizing(maxWidth.value)
-        val columns = shelfGridColumns(maxWidth, sizing.itemWidth, sizing.avatarGap)
-        val rows = resolvedCast.withIndex().toList().chunked(columns)
-        val canShowAll = rows.size > CastGridPreviewRows
-        val showingAll = canShowAll && ShelfExpansion.isExpanded(showAllKey, false)
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            CollapsibleShelfHeader(
-                title = stringResource(Res.string.settings_meta_cast),
-                expanded = expanded,
-                onToggle = { ShelfExpansion.toggle(expansionKey, expandedByDefault) },
-                onViewAllClick = if (expanded && canShowAll) {
-                    { ShelfExpansion.toggle(showAllKey, false) }
-                } else {
-                    null
-                },
-                viewAllLabel = stringResource(if (showingAll) Res.string.details_show_less else Res.string.shelf_show_all),
+        DetailSegmentedList(
+            items = resolvedCast.withIndex().toList(),
+            previewCount = DetailListPreviewCount,
+            showingAll = false,
+            onViewAll = onViewAll,
+        ) { (index, person), shapes ->
+            CastRow(
+                index = index,
+                person = person,
+                shapes = shapes,
+                onCastClick = onCastClick,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
             )
-            if (expanded) {
-                val shownRows = if (canShowAll && !showingAll) rows.take(CastGridPreviewRows) else rows
-                shownRows.forEach { row ->
-                    ShelfGridRow(
-                        items = row,
-                        columns = columns,
-                        cellWidth = sizing.itemWidth,
-                        spacing = sizing.avatarGap,
-                    ) { indexed ->
-                        CastCell(
-                            index = indexed.index,
-                            person = indexed.value,
-                            sizing = sizing,
-                            onCastClick = null,
-                            sharedTransitionScope = null,
-                            animatedVisibilityScope = null,
-                        )
-                    }
-                }
-            }
         }
     }
 }
-
-/** How many rows of cast a grid shows before Show All. */
-internal const val CastGridPreviewRows = 2
 
 /** The cast with their photos and IDs filled in where the resolver finds them; the raw cast until then. */
 @Composable
@@ -179,13 +92,13 @@ internal fun rememberResolvedCast(cast: List<MetaPerson>, metaId: String?, metaT
     return resolvedCast
 }
 
-/** One cast member: opens their page on click and their photo on long press. */
+/** One cast member as a list row: opens their page on click and their photo on long press. */
 @Composable
-@OptIn(ExperimentalSharedTransitionApi::class)
-internal fun CastCell(
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
+internal fun CastRow(
     index: Int,
     person: MetaPerson,
-    sizing: CastSectionSizing,
+    shapes: ListItemShapes,
     onCastClick: ((MetaPerson, String?) -> Unit)?,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
@@ -194,196 +107,115 @@ internal fun CastCell(
     val sharedTransitionKey = person.tmdbId
         ?.takeIf { it > 0 }
         ?.let { castAvatarSharedTransitionKey(it, occurrenceIndex = index) }
-    CastItem(
-        person = person,
-        sharedTransitionKey = sharedTransitionKey,
-        sizing = sizing,
-        sharedTransitionScope = sharedTransitionScope,
-        animatedVisibilityScope = animatedVisibilityScope,
-        onClick = if (onCastClick != null && person.tmdbId != null && person.tmdbId > 0) {
-            { onCastClick(person, sharedTransitionKey) }
-        } else {
-            null
-        },
-        onLongClick = person.photo
-            ?.takeIf(String::isNotBlank)
-            ?.let { photo ->
-                launchImageViewer?.let { openViewer ->
-                    {
-                        openViewer(
-                            ImageViewerRequest(
-                                images = listOf(viewerImageOf(photo)),
-                                title = person.name,
-                                colorFilter = if (person.deceased) DeceasedPhotoFilter else null,
-                            ),
-                        )
-                    }
+    val onClick = if (onCastClick != null && person.tmdbId != null && person.tmdbId > 0) {
+        { onCastClick(person, sharedTransitionKey) }
+    } else {
+        null
+    }
+    val onLongClick = person.photo
+        ?.takeIf(String::isNotBlank)
+        ?.let { photo ->
+            launchImageViewer?.let { openViewer ->
+                {
+                    openViewer(
+                        ImageViewerRequest(
+                            images = listOf(viewerImageOf(photo)),
+                            title = person.name,
+                            colorFilter = if (person.deceased) DeceasedPhotoFilter else null,
+                        ),
+                    )
                 }
-            },
-    )
+            }
+        }
+    SegmentedListItem(
+        onClick = { onClick?.invoke() },
+        onLongClick = onLongClick,
+        shapes = shapes,
+        modifier = Modifier.fillMaxWidth().onSecondaryClick(onLongClick),
+        colors = ListItemDefaults.segmentedColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        ),
+        leadingContent = {
+            CastPhoto(
+                person = person,
+                sharedTransitionKey = sharedTransitionKey,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
+            )
+        },
+        supportingContent = person.role?.takeIf(String::isNotBlank)?.let { role ->
+            { FindableText(text = role, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+        },
+    ) {
+        FindableText(text = person.name, maxLines = 2, overflow = TextOverflow.Ellipsis)
+    }
 }
 
-internal fun castCellKey(index: Int, person: MetaPerson): String =
-    "${person.name}-${person.role.orEmpty()}-${person.photo.orEmpty()}-$index"
-
 @Composable
-@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
-internal fun CastItem(
+@OptIn(ExperimentalSharedTransitionApi::class)
+private fun CastPhoto(
     person: MetaPerson,
-    modifier: Modifier = Modifier,
-    sharedTransitionKey: String? = null,
-    sizing: CastSectionSizing,
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
-    onClick: (() -> Unit)? = null,
-    onLongClick: (() -> Unit)? = null,
+    sharedTransitionKey: String?,
+    sharedTransitionScope: SharedTransitionScope?,
+    animatedVisibilityScope: AnimatedVisibilityScope?,
 ) {
-    val avatarCacheKey = sharedTransitionKey
     val platformContext = LocalPlatformContext.current
-    val avatarRequest = if (!person.photo.isNullOrBlank() && !avatarCacheKey.isNullOrBlank()) {
-        remember(platformContext, person.photo, avatarCacheKey) {
+    val avatarRequest = if (!person.photo.isNullOrBlank() && !sharedTransitionKey.isNullOrBlank()) {
+        remember(platformContext, person.photo, sharedTransitionKey) {
             ImageRequest.Builder(platformContext)
                 .data(person.photo)
-                .memoryCacheKey(avatarCacheKey)
-                .placeholderMemoryCacheKey(avatarCacheKey)
+                .memoryCacheKey(sharedTransitionKey)
+                .placeholderMemoryCacheKey(sharedTransitionKey)
                 .diskCacheKey(person.photo)
                 .build()
         }
     } else {
         null
     }
-
-    val avatarSharedElementModifier = if (
+    val sharedElement = if (
         sharedTransitionScope != null &&
-            animatedVisibilityScope != null &&
-            !sharedTransitionKey.isNullOrBlank()
+        animatedVisibilityScope != null &&
+        !sharedTransitionKey.isNullOrBlank()
     ) {
         with(sharedTransitionScope) {
             Modifier.sharedElement(
-                sharedContentState = rememberSharedContentState(
-                    key = sharedTransitionKey,
-                ),
+                sharedContentState = rememberSharedContentState(key = sharedTransitionKey),
                 animatedVisibilityScope = animatedVisibilityScope,
             )
         }
     } else {
         Modifier
     }
-
-    Column(
-        modifier = modifier
-            .width(sizing.itemWidth)
-            .then(
-                if (onClick != null || onLongClick != null) {
-                    Modifier
-                        .onSecondaryClick(onLongClick)
-                        .combinedClickable(
-                            onClick = { onClick?.invoke() },
-                            onLongClick = onLongClick,
-                        )
-                } else {
-                    Modifier
-                },
-            ),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+    // Profile photos are 2:3 portraits, so a frame of that shape shows the whole face rather than a crop of it.
+    Box(
+        modifier = Modifier
+            .then(sharedElement)
+            .width(CastPhotoWidth)
+            .aspectRatio(2f / 3f)
+            .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center,
     ) {
-        // Profile photos are 2:3 portraits, so a frame of that shape shows the whole face rather than a crop of it.
-        Box(
-            modifier = Modifier
-                .then(avatarSharedElementModifier)
-                .width(sizing.photoWidth)
-                .aspectRatio(CastPhotoAspectRatio)
-                .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (person.photo != null) {
-                AsyncImage(
-                    model = avatarRequest ?: person.photo,
-                    contentDescription = person.name,
-                    modifier = Modifier.matchParentSize(),
-                    contentScale = ContentScale.Crop,
-                    colorFilter = if (person.deceased) DeceasedPhotoFilter else null,
-                )
-            } else {
-                FindableText(
-                    text = person.name.initials(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-        }
-        // Names wrap to as many lines as they need, splitting a word that does not fit with a hyphen.
-        FindableText(
-            text = person.name,
-            modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = sizing.nameLabelSize,
-                hyphens = Hyphens.Auto,
-                lineBreak = LineBreak.Simple,
-            ),
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        if (!person.role.isNullOrBlank()) {
+        if (person.photo != null) {
+            AsyncImage(
+                model = avatarRequest ?: person.photo,
+                contentDescription = person.name,
+                modifier = Modifier.matchParentSize(),
+                contentScale = ContentScale.Crop,
+                colorFilter = if (person.deceased) DeceasedPhotoFilter else null,
+            )
+        } else {
             FindableText(
-                text = person.role,
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = sizing.subLabelSize,
-                    hyphens = Hyphens.Auto,
-                    lineBreak = LineBreak.Simple,
-                ),
+                text = person.name.initials(),
+                style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold,
             )
         }
     }
 }
 
-internal data class CastSectionSizing(
-    val photoWidth: androidx.compose.ui.unit.Dp,
-    val itemWidth: androidx.compose.ui.unit.Dp,
-    val avatarGap: androidx.compose.ui.unit.Dp,
-    val nameLabelSize: TextUnit,
-    val subLabelSize: TextUnit,
-)
-
-internal fun castSectionSizing(maxWidthDp: Float): CastSectionSizing =
-    when {
-        maxWidthDp >= 1200f -> CastSectionSizing(
-            photoWidth = 100.dp,
-            itemWidth = 112.dp,
-            avatarGap = 20.dp,
-            nameLabelSize = 16.sp,
-            subLabelSize = 14.sp,
-        )
-        maxWidthDp >= 840f -> CastSectionSizing(
-            photoWidth = 90.dp,
-            itemWidth = 102.dp,
-            avatarGap = 18.dp,
-            nameLabelSize = 15.sp,
-            subLabelSize = 13.sp,
-        )
-        maxWidthDp >= 600f -> CastSectionSizing(
-            photoWidth = 85.dp,
-            itemWidth = 98.dp,
-            avatarGap = 16.dp,
-            nameLabelSize = 14.sp,
-            subLabelSize = 12.sp,
-        )
-        else -> CastSectionSizing(
-            photoWidth = 80.dp,
-            itemWidth = 92.dp,
-            avatarGap = 16.dp,
-            nameLabelSize = 14.sp,
-            subLabelSize = 12.sp,
-        )
-    }
-
-private const val CastPhotoAspectRatio = 2f / 3f
+private val CastPhotoWidth = 48.dp
 
 private fun String.initials(): String {
     val parts = trim().split(" ").filter { it.isNotBlank() }

@@ -38,12 +38,12 @@ internal fun DetailSectionSkeleton(
     ) {
         SkeletonBlock(width = 160.dp, height = 24.dp)
         when (key) {
-            MetaScreenSectionKey.CAST -> CastSkeletonRow(horizontalScrollPadding)
-            MetaScreenSectionKey.TRAILERS -> LandscapeCardSkeletonRow(horizontalScrollPadding)
+            MetaScreenSectionKey.CAST,
+            MetaScreenSectionKey.TRAILERS,
+            MetaScreenSectionKey.COMMENTS -> DetailListSkeleton()
             MetaScreenSectionKey.PRODUCTION -> ProductionSkeletonRow()
             MetaScreenSectionKey.COLLECTION,
             MetaScreenSectionKey.MORE_LIKE_THIS -> PosterSkeletonRow(horizontalScrollPadding)
-            MetaScreenSectionKey.COMMENTS -> CommentSkeletonRow(horizontalScrollPadding)
             MetaScreenSectionKey.DETAILS -> InfoRowsSkeleton()
             else -> TextLinesSkeleton()
         }
@@ -74,64 +74,10 @@ private fun SkeletonRow(
 }
 
 @Composable
-private fun CastSkeletonRow(horizontalScrollPadding: Dp) {
-    val photoWidth = 80.dp
-    SkeletonRow(horizontalScrollPadding = horizontalScrollPadding, spacing = 16.dp, itemWidth = photoWidth) { count ->
-        repeat(count) {
-            Column(
-                modifier = Modifier.width(photoWidth),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(2f / 3f)
-                        .skeleton(MaterialTheme.shapes.medium),
-                )
-                SkeletonBlock(modifier = Modifier.fillMaxWidth(0.86f), height = 14.dp)
-                SkeletonBlock(modifier = Modifier.fillMaxWidth(0.6f), height = 12.dp)
-            }
-        }
-    }
-}
-
-@Composable
-private fun LandscapeCardSkeletonRow(horizontalScrollPadding: Dp) {
-    val cardWidth = 260.dp
-    SkeletonRow(horizontalScrollPadding = horizontalScrollPadding, spacing = 12.dp, itemWidth = cardWidth) { count ->
-        repeat(count) {
-            Column(
-                modifier = Modifier.width(cardWidth),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .skeleton(MaterialTheme.shapes.medium),
-                )
-                SkeletonBlock(modifier = Modifier.fillMaxWidth(0.7f), height = 14.dp)
-            }
-        }
-    }
-}
-
-@Composable
 private fun ProductionSkeletonRow() {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf(132.dp, 108.dp, 120.dp).forEach { width ->
             SkeletonBlock(width = width, height = 32.dp, cornerRadius = 8.dp)
-        }
-    }
-}
-
-@Composable
-private fun CommentSkeletonRow(horizontalScrollPadding: Dp) {
-    val cardWidth = 280.dp
-    SkeletonRow(horizontalScrollPadding = horizontalScrollPadding, spacing = 12.dp, itemWidth = cardWidth) { count ->
-        repeat(count) {
-            SkeletonBlock(width = cardWidth, height = 140.dp, cornerRadius = 16.dp)
         }
     }
 }

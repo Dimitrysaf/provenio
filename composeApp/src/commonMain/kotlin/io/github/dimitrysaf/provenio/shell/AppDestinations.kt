@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell
 
 import io.github.dimitrysaf.provenio.core.profiles.Profile
+import io.github.dimitrysaf.provenio.core.search.SearchKeyword
 import io.github.dimitrysaf.provenio.core.search.SearchRepository
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -241,6 +242,14 @@ internal fun appEntryProvider(
             onPlayManually = playback.onPlayManually,
             onPlayWholeSeason = playback::playWholeSeason,
             onPlayTrailer = playback::playTrailer,
+            onKeywordSearch = { keyword ->
+                SearchRepository.requestKeyword(SearchKeyword(id = keyword.id, name = keyword.name))
+                navController.navigate(TabsRoute) {
+                    popUpTo<TabsRoute>()
+                    launchSingleTop = true
+                }
+                activateTab(AppScreenTab.Search)
+            },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )
@@ -258,6 +267,12 @@ internal fun appEntryProvider(
     }
     entry<SeasonDetailRoute> { route ->
         SeasonDestination(route = route, navController = navController)
+    }
+    entry<CastListRoute> { route ->
+        CastListDestination(route = route, navController = navController)
+    }
+    entry<CommentsListRoute> { route ->
+        CommentsListDestination(route = route, navController = navController)
     }
     entry<EntityBrowseRoute> { route ->
         EntityDestination(route = route, navController = navController)

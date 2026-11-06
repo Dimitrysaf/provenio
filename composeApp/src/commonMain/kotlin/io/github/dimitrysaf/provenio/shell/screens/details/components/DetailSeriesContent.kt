@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
 import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
+import io.github.dimitrysaf.provenio.shell.components.StatusOverlay
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.screens.watchprogress.computeAirDateText
 import io.github.dimitrysaf.provenio.shell.components.onSecondaryClick
@@ -18,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
@@ -54,7 +54,6 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
 import io.github.dimitrysaf.provenio.core.metadata.SPECIALS_SEASON_NUMBER
 import io.github.dimitrysaf.provenio.core.metadata.isReleasedBy
 import io.github.dimitrysaf.provenio.core.metadata.seasonSortKey
-import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroOnArtworkColor
 import io.github.dimitrysaf.provenio.shell.screens.settings.InnerCorner
 import io.github.dimitrysaf.provenio.shell.screens.settings.ListItemBetweenSpace
 import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
@@ -308,7 +307,11 @@ internal fun SeasonItemRow(
                                 letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                 modifier = Modifier.matchParentSize(),
                             )
-                            if (season.completed) EpisodeStatusBadge(EpisodeStatus.Watched)
+                            StatusOverlay(
+                                visible = season.completed,
+                                icon = EpisodeStatus.Watched.icon,
+                                contentDescription = stringResource(EpisodeStatus.Watched.label),
+                            )
                         }
                     }
                 },
@@ -629,25 +632,11 @@ private fun EpisodeThumbnail(
                 .matchParentSize()
                 .then(if (blurArtwork) Modifier.blur(12.dp) else Modifier),
         )
-        if (status != null) EpisodeStatusBadge(status)
-    }
-}
-
-/** The watched or unaired mark over an episode's still, and over a watched season's poster. */
-@Composable
-private fun EpisodeStatusBadge(status: EpisodeStatus) {
-    Box(
-        modifier = Modifier
-            .size(EpisodeStatusSize)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = status.icon,
-            contentDescription = stringResource(status.label),
-            modifier = Modifier.size(EpisodeStatusIconSize),
-            tint = HeroOnArtworkColor,
+        StatusOverlay(
+            visible = status != null,
+            icon = (status ?: EpisodeStatus.Watched).icon,
+            contentDescription = status?.let { stringResource(it.label) },
+            badgeSize = EpisodeStatusSize,
         )
     }
 }
@@ -661,5 +650,4 @@ private val EpisodeThumbnailWidth = 128.dp
 private val SeasonPosterWidth = 40.dp
 private val SeasonItemWidth = 136.dp
 private val EpisodeStatusSize = 36.dp
-private val EpisodeStatusIconSize = 20.dp
 private val EpisodeProgressHeight = 4.dp

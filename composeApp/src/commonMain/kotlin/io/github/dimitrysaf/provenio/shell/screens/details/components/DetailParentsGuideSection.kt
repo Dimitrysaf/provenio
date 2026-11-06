@@ -1,14 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
-import androidx.compose.foundation.background
 import io.github.dimitrysaf.provenio.shell.components.FindableText
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Explicit
 import androidx.compose.material.icons.rounded.LocalBar
@@ -18,21 +10,17 @@ import androidx.compose.material.icons.rounded.SportsMma
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.playback.ParentalWarning
 import io.github.dimitrysaf.provenio.shell.theme.provenio
 import org.jetbrains.compose.resources.stringResource
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.meta_section_parents_guide_title
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DetailParentsGuideSection(
     warnings: List<ParentalWarning>,
@@ -46,42 +34,28 @@ fun DetailParentsGuideSection(
         modifier = modifier,
         showHeader = showHeader,
     ) {
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            warnings.forEach { warning -> ParentalWarningChip(warning) }
+        DetailSegmentedColumn {
+            warnings.forEachIndexed { index, warning ->
+                val color = warning.severityColor()
+                DetailStaticSegment(
+                    index = index,
+                    count = warnings.size,
+                    leadingContent = {
+                        Icon(imageVector = warning.icon(), contentDescription = null, tint = color)
+                    },
+                    trailingContent = {
+                        FindableText(
+                            text = warning.severity,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = color,
+                        )
+                    },
+                ) {
+                    FindableText(text = warning.label)
+                }
+            }
         }
-    }
-}
-
-@Composable
-private fun ParentalWarningChip(warning: ParentalWarning) {
-    val color = warning.severityColor()
-    Row(
-        modifier = Modifier
-            .background(color.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Icon(
-            imageVector = warning.icon(),
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(16.dp),
-        )
-        FindableText(
-            text = warning.label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        FindableText(
-            text = warning.severity,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = color,
-        )
     }
 }
 

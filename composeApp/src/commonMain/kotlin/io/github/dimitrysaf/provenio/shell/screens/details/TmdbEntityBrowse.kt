@@ -325,6 +325,7 @@ private fun EntityAbout(description: String) {
 private fun entityKindLabel(kind: TmdbEntityKind): String = when (kind) {
     TmdbEntityKind.COMPANY -> stringResource(Res.string.details_browse_kind_company)
     TmdbEntityKind.NETWORK -> stringResource(Res.string.details_browse_kind_network)
+    TmdbEntityKind.KEYWORD -> stringResource(Res.string.details_browse_kind_keyword)
 }
 
 @Composable
