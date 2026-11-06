@@ -39,9 +39,9 @@ internal fun DetailSectionSkeleton(
         SkeletonBlock(width = 160.dp, height = 24.dp)
         when (key) {
             MetaScreenSectionKey.CAST,
+            MetaScreenSectionKey.PRODUCTION,
             MetaScreenSectionKey.TRAILERS,
             MetaScreenSectionKey.COMMENTS -> DetailListSkeleton()
-            MetaScreenSectionKey.PRODUCTION -> ProductionSkeletonRow()
             MetaScreenSectionKey.COLLECTION,
             MetaScreenSectionKey.MORE_LIKE_THIS -> PosterSkeletonRow(horizontalScrollPadding)
             MetaScreenSectionKey.DETAILS -> InfoRowsSkeleton()
@@ -69,15 +69,6 @@ private fun SkeletonRow(
             horizontalArrangement = Arrangement.spacedBy(spacing),
         ) {
             content(count)
-        }
-    }
-}
-
-@Composable
-private fun ProductionSkeletonRow() {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf(132.dp, 108.dp, 120.dp).forEach { width ->
-            SkeletonBlock(width = width, height = 32.dp, cornerRadius = 8.dp)
         }
     }
 }

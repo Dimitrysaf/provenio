@@ -219,6 +219,8 @@ internal fun DetailPage(
     railItems: LazyListScope.(DetailPageMetrics) -> Unit,
     placeholderIcon: ImageVector? = null,
     hasRails: Boolean = true,
+    /** More artwork the first picture may fall back to when another shape suits the hero better, as on Details. */
+    firstImageFallbacks: List<String?> = emptyList(),
 ) {
     val metaScreenSettingsUiState by remember {
         MetaScreenSettingsRepository.ensureLoaded()
@@ -295,6 +297,7 @@ internal fun DetailPage(
                             images = images,
                             deceased = deceased,
                             placeholderIcon = placeholderIcon,
+                            firstImageFallbacks = firstImageFallbacks,
                             viewportHeight = viewportHeight,
                             onOpenImage = { viewerIndex = it },
                             onHeightChanged = { scroll.heroHeightPx.intValue = it },
@@ -419,6 +422,7 @@ private fun PersonHero(
     images: List<String>,
     deceased: Boolean,
     placeholderIcon: ImageVector?,
+    firstImageFallbacks: List<String?>,
     viewportHeight: Dp,
     onOpenImage: (Int) -> Unit,
     onHeightChanged: (Int) -> Unit,
@@ -456,6 +460,7 @@ private fun PersonHero(
                 ) {
                     PersonHeroPage(
                         url = pages[0],
+                        fallbacks = firstImageFallbacks,
                         name = name,
                         subtitle = subtitle,
                         deceased = deceased,
@@ -498,6 +503,7 @@ private fun PersonHero(
                     ) {
                         PersonHeroPage(
                             url = pages[index],
+                            fallbacks = if (index == 0) firstImageFallbacks else emptyList(),
                             name = name,
                             subtitle = subtitle,
                             deceased = deceased,
@@ -518,6 +524,7 @@ private fun PersonHero(
 @Composable
 private fun PersonHeroPage(
     url: String,
+    fallbacks: List<String?>,
     name: String,
     subtitle: String?,
     deceased: Boolean,
@@ -548,7 +555,7 @@ private fun PersonHeroPage(
             }
         } else {
             ShapedArtworkImage(
-                candidates = listOf(url),
+                candidates = listOf(url) + fallbacks,
                 contentDescription = name,
                 alignment = Alignment.TopCenter,
                 colorFilter = if (deceased) DeceasedPhotoFilter else null,

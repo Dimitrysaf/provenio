@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -132,6 +133,8 @@ internal fun <T> DetailSegmentedList(
     previewCount: Int,
     showingAll: Boolean,
     onViewAll: (() -> Unit)?,
+    // True when View all opens the rest in place, so it points down rather than to another page.
+    viewAllExpands: Boolean = false,
     row: @Composable (item: T, shapes: ListItemShapes) -> Unit,
 ) {
     val viewAll = onViewAll?.takeIf { !showingAll && items.size > previewCount }
@@ -148,7 +151,14 @@ internal fun <T> DetailSegmentedList(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                 ),
                 trailingContent = {
-                    Icon(imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
+                    Icon(
+                        imageVector = if (viewAllExpands) {
+                            Icons.Rounded.KeyboardArrowDown
+                        } else {
+                            Icons.AutoMirrored.Rounded.KeyboardArrowRight
+                        },
+                        contentDescription = null,
+                    )
                 },
             ) {
                 Text(stringResource(Res.string.details_view_all_count, items.size))

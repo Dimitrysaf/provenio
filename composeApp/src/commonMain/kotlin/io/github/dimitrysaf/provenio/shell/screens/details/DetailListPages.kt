@@ -20,7 +20,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.github.dimitrysaf.provenio.core.metadata.DetailHeroSlide
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
+import io.github.dimitrysaf.provenio.core.metadata.buildDetailHeroSlides
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaPerson
 import io.github.dimitrysaf.provenio.shell.components.FindableText
@@ -80,6 +82,7 @@ fun CastListScreen(
             name = stringResource(Res.string.settings_meta_cast),
             subtitle = meta?.name?.takeIf(String::isNotBlank),
             images = meta.listPageImages(),
+                firstImageFallbacks = meta.listPageImageFallbacks(),
             deceased = false,
             onBack = onBack,
             infoItems = { metrics ->
@@ -147,6 +150,7 @@ fun CommentsListScreen(
             name = stringResource(Res.string.detail_comments_title),
             subtitle = meta?.name?.takeIf(String::isNotBlank),
             images = meta.listPageImages(),
+                firstImageFallbacks = meta.listPageImageFallbacks(),
             deceased = false,
             onBack = onBack,
             infoItems = { metrics ->
@@ -198,8 +202,15 @@ private fun rememberListPageMeta(type: String, metaId: String): MetaDetails? {
     return meta
 }
 
+// The title's own hero artwork, chosen as the Details page chooses it.
 private fun MetaDetails?.listPageImages(): List<String> =
-    listOfNotNull(this?.background?.takeIf(String::isNotBlank) ?: this?.poster?.takeIf(String::isNotBlank))
+    this?.let { meta ->
+        buildDetailHeroSlides(meta, includeTrailers = false).mapNotNull { (it as? DetailHeroSlide.Artwork)?.url }
+    }.orEmpty()
+
+// Like the Details hero, the first picture gives way to whichever artwork suits the hero's shape.
+private fun MetaDetails?.listPageImageFallbacks(): List<String?> =
+    this?.let { meta -> listOf(meta.background) + meta.extraArtwork + listOf(meta.poster) }.orEmpty()
 
 private fun LazyListScope.listSearchItem(
     metrics: DetailPageMetrics,
