@@ -44,30 +44,36 @@ internal fun EpisodeLayoutPreview(layout: EpisodeLayout) {
             }
 
             EpisodeLayout.SeasonButtons -> {
-                // The seasons side by side, each with its poster, the first one selected in the
-                // selected colour. Then its episodes.
+                // The seasons side by side, each a poster with its title below, the first one
+                // selected in the selected colour. Then its episodes.
                 Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    repeat(2) { index ->
-                        Row(
+                    repeat(3) { index ->
+                        Column(
                             modifier = Modifier
                                 .width(SeasonItemWidth)
-                                .height(SeasonItemHeight)
                                 .clip(RoundedCornerShape(3.dp))
                                 .background(if (index == 0) colors.secondaryContainer else colors.surfaceContainerHighest)
                                 .padding(2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .width(8.dp)
-                                    .height(12.dp)
+                                    .fillMaxWidth()
+                                    .height(PosterHeight)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(colors.outlineVariant),
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(3.dp)
                                     .clip(RoundedCornerShape(2.dp))
                                     .background(colors.outlineVariant),
                             )
                         }
                     }
                 }
-                repeat(3) { PreviewEpisodeRow(block = colors.surfaceContainerHighest, thumbnail = colors.outlineVariant) }
+                repeat(2) { PreviewEpisodeRow(block = colors.surfaceContainerHighest, thumbnail = colors.outlineVariant) }
             }
         }
     }
@@ -115,5 +121,5 @@ private fun PreviewEpisodeRow(block: Color, thumbnail: Color) {
 
 private val PreviewWidth = 72.dp
 private val PreviewHeight = 84.dp
-private val SeasonItemWidth = 34.dp
-private val SeasonItemHeight = 16.dp
+private val SeasonItemWidth = 18.dp
+private val PosterHeight = 22.dp

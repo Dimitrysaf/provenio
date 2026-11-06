@@ -290,24 +290,32 @@ internal fun SeasonItemRow(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ),
                 modifier = Modifier.width(SeasonItemWidth).onSecondaryClick(longPress),
-                leadingContent = posterUrl?.let { url ->
+                // The poster tops the item, full width, with the episodes' watched mark over it;
+                // the season's title sits below it.
+                overlineContent = posterUrl?.let { url ->
                     {
-                        ShapedArtworkImage(
-                            candidates = listOf(url),
-                            contentDescription = null,
-                            letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        Box(
                             modifier = Modifier
-                                .width(SeasonPosterWidth)
+                                .fillMaxWidth()
                                 .aspectRatio(2f / 3f)
-                                .clip(MaterialTheme.shapes.small)
+                                .clip(MaterialTheme.shapes.medium)
                                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                        )
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            ShapedArtworkImage(
+                                candidates = listOf(url),
+                                contentDescription = null,
+                                letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                modifier = Modifier.matchParentSize(),
+                            )
+                            if (season.completed) EpisodeStatusBadge(EpisodeStatus.Watched)
+                        }
                     }
                 },
-                overlineContent = name?.let {
-                    { FindableText(text = label, fontWeight = FontWeight.Bold, maxLines = 1) }
+                supportingContent = name?.let {
+                    { FindableText(text = label, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 },
-                trailingContent = if (season.completed) {
+                trailingContent = if (season.completed && posterUrl == null) {
                     {
                         Icon(
                             imageVector = Icons.Rounded.Check,
@@ -651,7 +659,7 @@ private enum class EpisodeStatus(val icon: ImageVector, val label: StringResourc
 
 private val EpisodeThumbnailWidth = 128.dp
 private val SeasonPosterWidth = 40.dp
-private val SeasonItemWidth = 176.dp
+private val SeasonItemWidth = 136.dp
 private val EpisodeStatusSize = 36.dp
 private val EpisodeStatusIconSize = 20.dp
 private val EpisodeProgressHeight = 4.dp
