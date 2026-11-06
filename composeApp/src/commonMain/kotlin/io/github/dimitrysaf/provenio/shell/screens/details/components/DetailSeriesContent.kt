@@ -271,7 +271,8 @@ internal fun SeasonItemRow(
         itemsIndexed(seasons, key = { _, season -> season.key }) { index, season ->
             val label = seasonLabel(meta, season.season)
             val name = season.name?.takeIf { season.season > 0 && !isGenericSeasonName(it, season.season) }
-            val posterUrl = season.posterUrl ?: meta.seasonPosters[season.season]
+            // A season without a poster of its own shows the title's, so the row stays even.
+            val posterUrl = season.posterUrl ?: meta.seasonPosters[season.season] ?: meta.poster?.takeIf(String::isNotBlank)
             val shape = horizontalSegmentShape(index = index, count = seasons.size)
             val longPress = onSeasonLongPress?.let { handler -> { handler(season.season) } }
             SegmentedListItem(
@@ -396,7 +397,7 @@ internal fun DetailEpisodeListRow(
         is EpisodeListEntry.Season -> SeasonRow(
             label = seasonLabel(meta, entry.season),
             name = entry.name?.takeIf { entry.season > 0 && !isGenericSeasonName(it, entry.season) },
-            posterUrl = entry.posterUrl ?: meta.seasonPosters[entry.season],
+            posterUrl = entry.posterUrl ?: meta.seasonPosters[entry.season] ?: meta.poster?.takeIf(String::isNotBlank),
             episodeCount = entry.episodeCount,
             expanded = entry.expanded,
             completed = entry.completed,
