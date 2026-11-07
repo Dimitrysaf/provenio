@@ -23,7 +23,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import io.github.dimitrysaf.provenio.core.calendar.UpcomingEpisode
 import io.github.dimitrysaf.provenio.core.calendar.UpcomingEpisodesUiState
 import io.github.dimitrysaf.provenio.core.format.formatReleaseDateLong
@@ -122,7 +122,7 @@ private fun CalendarEpisodeTile(
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
         ) {
             if (episode.poster != null) {
-                AsyncImage(
+                SkeletonAsyncImage(
                     model = episode.poster,
                     contentDescription = episode.showName,
                     modifier = Modifier.fillMaxSize(),

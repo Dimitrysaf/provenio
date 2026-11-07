@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.streams
 
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +43,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
 import io.github.dimitrysaf.provenio.shell.components.ExpandableListHeader
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
@@ -315,7 +315,7 @@ private fun StreamAddonIcon(
         contentAlignment = Alignment.Center,
     ) {
         if (!logo.isNullOrBlank()) {
-            AsyncImage(
+            SkeletonAsyncImage(
                 model = logo,
                 contentDescription = addonName,
                 modifier = Modifier.size(AddonIconSize),

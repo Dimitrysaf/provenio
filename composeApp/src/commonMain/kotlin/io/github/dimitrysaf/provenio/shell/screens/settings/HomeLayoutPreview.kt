@@ -115,7 +115,7 @@ internal fun HomeLayoutPreview(highlight: HomePreviewSection) {
                 .padding(top = 16.dp),
         ) {
             AnimatedVisibility(
-                visible = showSectionsAbove && homeSettings.heroEnabled,
+                visible = showSectionsAbove && homeSettings.heroShown,
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut(),
             ) {

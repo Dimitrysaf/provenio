@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.isSpecified
@@ -101,7 +102,7 @@ fun ShapedArtworkImage(
     alignment: Alignment = Alignment.Center,
     colorFilter: ColorFilter? = null,
     letterboxColor: Color = Color.Black,
-    showSkeleton: Boolean = false,
+    showSkeleton: Boolean = true,
     fallback: (@Composable () -> Unit)? = null,
 ) {
     val urls = remember(candidates) {
@@ -114,8 +115,10 @@ fun ShapedArtworkImage(
             null
         }
         val choice = chooseArtwork(urls, slotRatio, ArtworkRatios::ratioOf)
+        // The wave stays until the chosen picture has loaded, not only until one is chosen.
+        var loading by remember(choice?.url) { mutableStateOf(true) }
         val skeletonAlpha by animateFloatAsState(
-            targetValue = if (showSkeleton && (choice == null && urls.isNotEmpty() || choice?.pending == true)) 1f else 0f,
+            targetValue = if (showSkeleton && (choice == null && urls.isNotEmpty() || choice != null && (choice.pending || loading))) 1f else 0f,
             animationSpec = tween(durationMillis = 260),
             label = "artwork_skeleton",
         )
@@ -138,8 +141,12 @@ fun ShapedArtworkImage(
                 val size = state.painter.intrinsicSize
                 val ratio = size.takeIf { it.isSpecified && it.width > 0f && it.height > 0f }?.let { it.width / it.height }
                 ArtworkRatios.record(choice.url, ratio ?: slotRatio)
+                loading = false
             },
-            onError = { ArtworkRatios.record(choice.url, null) },
+            onError = {
+                ArtworkRatios.record(choice.url, null)
+                loading = false
+            },
         )
         if (skeletonAlpha > 0.01f) {
             Box(

@@ -26,6 +26,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -34,13 +35,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 
 @Stable
 private class SkeletonAnimation {
@@ -121,6 +126,27 @@ internal fun Modifier.skeleton(
                 )
             }
         }
+}
+
+/** A picture that shows the skeleton's wave in its place until it loads or fails. */
+@Composable
+internal fun SkeletonAsyncImage(
+    model: Any?,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Crop,
+    colorFilter: ColorFilter? = null,
+) {
+    var loading by remember(model) { mutableStateOf(true) }
+    AsyncImage(
+        model = model,
+        contentDescription = contentDescription,
+        modifier = if (loading) modifier.skeleton(RectangleShape) else modifier,
+        contentScale = contentScale,
+        colorFilter = colorFilter,
+        onSuccess = { loading = false },
+        onError = { loading = false },
+    )
 }
 
 @Composable

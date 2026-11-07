@@ -24,9 +24,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import io.github.dimitrysaf.provenio.core.metadata.CastResolver
 import io.github.dimitrysaf.provenio.core.metadata.MetaPerson
 import io.github.dimitrysaf.provenio.core.metadata.castAvatarSharedTransitionKey
@@ -197,7 +197,7 @@ private fun CastPhoto(
         contentAlignment = Alignment.Center,
     ) {
         if (person.photo != null) {
-            AsyncImage(
+            SkeletonAsyncImage(
                 model = avatarRequest ?: person.photo,
                 contentDescription = person.name,
                 modifier = Modifier.matchParentSize(),

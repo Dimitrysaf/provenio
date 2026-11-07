@@ -8,8 +8,6 @@ internal enum class GestureFeedbackIcon {
     Brightness,
     Volume,
     VolumeMuted,
-    SeekForward,
-    SeekBackward,
 }
 
 internal data class GestureFeedbackState(

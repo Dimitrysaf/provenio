@@ -259,7 +259,7 @@ fun HomeScreen(
     }
     val hasRenderableHomeRows = homeUiState.sections.isNotEmpty() || hasRenderableCollectionRows
     val showHeroSlot = shouldShowHomeHeroSlot(
-        heroEnabled = homeSettingsUiState.heroEnabled,
+        heroEnabled = homeSettingsUiState.heroShown,
         hasHeroItems = homeUiState.heroItems.isNotEmpty(),
         isResolvingHeroSources = isResolvingHeroSources,
         hasRenderableHomeRows = hasRenderableHomeRows,

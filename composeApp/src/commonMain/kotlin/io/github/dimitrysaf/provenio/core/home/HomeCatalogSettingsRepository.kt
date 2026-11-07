@@ -49,6 +49,10 @@ data class HomeCatalogSettingsUiState(
     val shelvesExpandedByDefault: Boolean = true,
     val items: List<HomeCatalogSettingsItem> = emptyList(),
 ) {
+    /** The Hero Carousel shows only while it is on and at least one catalog feeds it; none chosen is off. */
+    val heroShown: Boolean
+        get() = heroEnabled && items.any { it.heroSourceEnabled }
+
     val signature: String
         get() = buildString {
             append(heroEnabled)

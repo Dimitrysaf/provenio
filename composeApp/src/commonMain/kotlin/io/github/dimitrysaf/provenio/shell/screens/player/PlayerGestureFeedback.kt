@@ -26,8 +26,6 @@ import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.BrightnessHigh
 import androidx.compose.material.icons.rounded.BrightnessLow
 import androidx.compose.material.icons.rounded.BrightnessMedium
-import androidx.compose.material.icons.rounded.FastForward
-import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -193,6 +191,4 @@ private fun GestureFeedbackIcon.imageVector(): ImageVector = when (this) {
     GestureFeedbackIcon.Brightness -> Icons.Rounded.BrightnessMedium
     GestureFeedbackIcon.Volume -> Icons.AutoMirrored.Rounded.VolumeUp
     GestureFeedbackIcon.VolumeMuted -> Icons.AutoMirrored.Rounded.VolumeOff
-    GestureFeedbackIcon.SeekForward -> Icons.Rounded.FastForward
-    GestureFeedbackIcon.SeekBackward -> Icons.Rounded.FastRewind
 }

@@ -47,7 +47,6 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import kotlin.math.roundToInt
-import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 
 /**
@@ -122,7 +121,7 @@ fun MediaActionsSheet(
                         .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 ) {
                     if (imageUrl != null) {
-                        AsyncImage(
+                        SkeletonAsyncImage(
                             model = imageUrl,
                             contentDescription = null,
                             modifier = Modifier

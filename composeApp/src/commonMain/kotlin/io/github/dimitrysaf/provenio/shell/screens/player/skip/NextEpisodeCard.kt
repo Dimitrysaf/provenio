@@ -56,7 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import io.github.dimitrysaf.provenio.core.playback.skip.NextEpisodeInfo
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
@@ -263,7 +263,7 @@ private fun NextEpisodeCardContent(
                 )
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
         ) {
-            AsyncImage(
+            SkeletonAsyncImage(
                 model = nextEpisode.thumbnail,
                 contentDescription = stringResource(Res.string.player_next_episode_thumbnail),
                 modifier = Modifier

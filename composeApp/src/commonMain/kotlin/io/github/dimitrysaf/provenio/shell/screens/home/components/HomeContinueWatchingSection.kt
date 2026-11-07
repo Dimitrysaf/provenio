@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import io.github.dimitrysaf.provenio.shell.components.posterProgressHeight
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterAreaContentWidth
 import io.github.dimitrysaf.provenio.shell.components.posterAreaMarginDp
@@ -1127,7 +1128,7 @@ private fun ArtworkPanel(
                     .then(if (blurred) Modifier.blur(18.dp) else Modifier),
             )
         } else if (imageCandidates.isNotEmpty()) {
-            AsyncImage(
+            SkeletonAsyncImage(
                 model = cloudLibraryDisplayArtworkUrl(imageCandidates.first()),
                 contentDescription = null,
                 modifier = Modifier

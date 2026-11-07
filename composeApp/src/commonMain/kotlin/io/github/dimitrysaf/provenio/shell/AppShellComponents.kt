@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.shell
 
 import io.github.dimitrysaf.provenio.core.downloads.DownloadItem
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
 import io.github.dimitrysaf.provenio.shell.components.DisintegrationRequest
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
@@ -34,7 +36,7 @@ import io.github.dimitrysaf.provenio.core.library.LibrarySortOption
 import io.github.dimitrysaf.provenio.core.profiles.Profile
 import io.github.dimitrysaf.provenio.shell.screens.profiles.ProfileBackgroundBackdrop
 import io.github.dimitrysaf.provenio.shell.screens.search.SearchScreen
-import io.github.dimitrysaf.provenio.shell.screens.settings.AppBrandWordmark
+import io.github.dimitrysaf.provenio.shell.screens.settings.AnimatedAppBrandWordmark
 import io.github.dimitrysaf.provenio.shell.screens.settings.SettingsScreen
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingItem
 import io.github.dimitrysaf.provenio.shell.nav.AppRoute
@@ -211,6 +213,8 @@ internal fun ContinueWatchingItem.isCloudLibraryContinueWatchingItem(): Boolean 
 internal fun AppLoadingContent(
     modifier: Modifier = Modifier,
 ) {
+    var nameShown by remember { mutableStateOf(false) }
+    val spinnerAlpha by animateFloatAsState(if (nameShown) 1f else 0f, label = "app_loading_spinner")
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center,
@@ -218,14 +222,16 @@ internal fun AppLoadingContent(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            AppBrandWordmark(
+            AnimatedAppBrandWordmark(
                 contentDescription = stringResource(Res.string.app_brand_name),
                 modifier = Modifier
                     .fillMaxWidth(0.48f)
                     .height(44.dp),
+                onFinished = { nameShown = true },
             )
             Spacer(modifier = Modifier.height(LoadingContentGap))
-            LoadingSpinner()
+            // The spinner keeps its place from the start, so the name does not move when it shows.
+            LoadingSpinner(modifier = Modifier.graphicsLayer { alpha = spinnerAlpha })
         }
     }
 }

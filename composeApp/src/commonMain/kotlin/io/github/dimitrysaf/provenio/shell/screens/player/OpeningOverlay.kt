@@ -87,6 +87,7 @@ internal fun OpeningOverlay(
                 candidates = artworkCandidates,
                 contentDescription = null,
                 alignment = Alignment.TopEnd,
+                showSkeleton = false,
             )
             Box(
                 modifier = Modifier

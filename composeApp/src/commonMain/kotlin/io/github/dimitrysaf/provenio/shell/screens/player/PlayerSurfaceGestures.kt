@@ -16,19 +16,24 @@ internal fun Modifier.playerSurfaceTapGestures(
     playerControlsLockedState: State<Boolean>,
     onSurfaceTap: State<(Offset) -> Unit>,
     onSurfaceDoubleTap: State<(Offset) -> Unit>,
+    onSeekRunTap: State<(Offset) -> Boolean>,
     activateHoldToSpeedState: State<() -> Unit>,
     deactivateHoldToSpeedState: State<() -> Unit>,
     revealLockedOverlayState: State<() -> Unit>,
 ): Modifier =
     pointerInput(layoutSize, playbackGesturesEnabled) {
+        // During a run of seeks every press on a side is a step right away, like YouTube, so the
+        // tap or double tap that press later completes must not count it again.
+        var pressWasSeekStep = false
         detectTapGestures(
-            onPress = {
+            onPress = { offset ->
+                pressWasSeekStep = playbackGesturesEnabled && onSeekRunTap.value(offset)
                 tryAwaitRelease()
                 deactivateHoldToSpeedState.value()
             },
-            onTap = { offset -> onSurfaceTap.value(offset) },
+            onTap = { offset -> if (!pressWasSeekStep) onSurfaceTap.value(offset) },
             onDoubleTap = if (playbackGesturesEnabled) {
-                { offset -> onSurfaceDoubleTap.value(offset) }
+                { offset -> if (!pressWasSeekStep) onSurfaceDoubleTap.value(offset) }
             } else null,
             onLongPress = if (playbackGesturesEnabled) {
                 {

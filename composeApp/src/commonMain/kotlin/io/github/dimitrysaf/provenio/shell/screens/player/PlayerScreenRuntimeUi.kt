@@ -120,6 +120,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                 playerControlsLockedState = gestureCallbacks.playerControlsLocked,
                 onSurfaceTap = gestureCallbacks.onSurfaceTap,
                 onSurfaceDoubleTap = gestureCallbacks.onSurfaceDoubleTap,
+                onSeekRunTap = gestureCallbacks.onSeekRunTap,
                 activateHoldToSpeedState = gestureCallbacks.activateHoldToSpeed,
                 deactivateHoldToSpeedState = gestureCallbacks.deactivateHoldToSpeed,
                 revealLockedOverlayState = gestureCallbacks.revealLockedOverlay,
@@ -229,6 +230,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             displayedPositionMs = displayedPositionMs,
             statusLines = if (isStillLoading()) openingStatusLines else torrentStatusLines,
         )
+        PlayerSeekRipple(state = accumulatedSeekState)
         PlayerGestureFeedbackOverlay(
             visible = (liveGestureFeedback ?: gestureFeedback) != null,
             feedback = renderedGestureFeedback,

@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.shell.screens.addons
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -66,7 +67,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
 import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.shell.components.NewEntryRow
@@ -618,7 +618,7 @@ private fun AddonIconBadge(
         contentAlignment = Alignment.Center,
     ) {
         if (!imageUrl.isNullOrBlank()) {
-            AsyncImage(
+            SkeletonAsyncImage(
                 model = imageUrl,
                 contentDescription = null,
                 modifier = Modifier.matchParentSize(),

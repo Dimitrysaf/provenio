@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.streams
 
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import io.github.dimitrysaf.provenio.shell.components.sheetHeaderFocus
 import io.github.dimitrysaf.provenio.shell.components.LocalSheetFocus
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
@@ -48,7 +49,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.shell.components.MediaActionsSheet
 import io.github.dimitrysaf.provenio.shell.components.SheetNavigation
 import io.github.dimitrysaf.provenio.shell.components.SheetNavigationButton
@@ -633,7 +633,7 @@ private fun StreamsSheetThumbnail(
             .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         if (!imageUrl.isNullOrBlank()) {
-            AsyncImage(
+            SkeletonAsyncImage(
                 model = imageUrl,
                 contentDescription = null,
                 modifier = Modifier

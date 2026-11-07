@@ -36,6 +36,8 @@ class PlayerSurfaceGesturesTest {
     private var doubleTaps = 0
     private var speedBoosts = 0
     private var sideAdjustments = 0
+    private var seekRunActive = false
+    private var seekSteps = 0
     private val gestureController = object : PlayerGestureController {
         override fun currentBrightness() = 0.5f
         override fun currentVolume() = PlayerAudioLevel(0.5f, false)
@@ -61,7 +63,13 @@ class PlayerSurfaceGesturesTest {
                         playbackGesturesEnabled = playbackReady.value,
                         playerControlsLockedState = unlocked,
                         onSurfaceTap = rememberUpdatedState { _: Offset -> taps++ },
-                        onSurfaceDoubleTap = rememberUpdatedState { _: Offset -> doubleTaps++ },
+                        onSurfaceDoubleTap = rememberUpdatedState { _: Offset ->
+                            doubleTaps++
+                            seekRunActive = true
+                        },
+                        onSeekRunTap = rememberUpdatedState { offset: Offset ->
+                            (seekRunActive && offset.x > 320 * PlayerRightGestureBoundary).also { if (it) seekSteps++ }
+                        },
                         activateHoldToSpeedState = rememberUpdatedState { speedBoosts++ },
                         deactivateHoldToSpeedState = noop,
                         revealLockedOverlayState = noop,
@@ -113,6 +121,21 @@ class PlayerSurfaceGesturesTest {
             assertEquals(1, doubleTaps)
             assertEquals(1, speedBoosts)
             assertTrue(sideAdjustments > 0)
+        }
+    }
+
+    @Test
+    fun tapsDuringASeekRunEachStepAtOnce() {
+        setContent()
+        compose.runOnIdle { playbackReady.value = true }
+        val surface = compose.onNodeWithTag("surface")
+        surface.performTouchInput { doubleClick(Offset(width * 0.85f, centerY)) }
+        surface.performTouchInput { click(Offset(width * 0.85f, centerY)) }
+        surface.performTouchInput { doubleClick(Offset(width * 0.85f, centerY)) }
+        compose.runOnIdle {
+            assertEquals(1, doubleTaps)
+            assertEquals(3, seekSteps)
+            assertEquals(0, taps)
         }
     }
 }

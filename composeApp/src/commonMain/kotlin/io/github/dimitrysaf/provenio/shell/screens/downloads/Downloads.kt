@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.downloads
 
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import io.github.dimitrysaf.provenio.shell.components.StatusOverlay
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
@@ -54,7 +55,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.i18n.localizedByteUnit
 import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
@@ -523,7 +523,7 @@ private fun DownloadThumbnail(item: DownloadItem) {
         contentAlignment = Alignment.Center,
     ) {
         if (artwork != null) {
-            AsyncImage(
+            SkeletonAsyncImage(
                 model = artwork,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),

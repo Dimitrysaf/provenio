@@ -37,7 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.components.LocalWindowBreakpoint
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
@@ -133,7 +133,7 @@ private fun TrailerRow(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
         leadingContent = {
-            AsyncImage(
+            SkeletonAsyncImage(
                 model = trailer.youtubeThumbnailUrl(),
                 contentDescription = null,
                 modifier = Modifier

@@ -21,6 +21,8 @@ import io.github.dimitrysaf.provenio.core.playback.next
 internal data class PlayerSurfaceGestureCallbacks(
     val onSurfaceTap: State<(Offset) -> Unit>,
     val onSurfaceDoubleTap: State<(Offset) -> Unit>,
+    /** A press while a run of seeks goes on; true when it was taken as one more step. */
+    val onSeekRunTap: State<(Offset) -> Boolean>,
     val activateHoldToSpeed: State<() -> Unit>,
     val deactivateHoldToSpeed: State<() -> Unit>,
     val showBrightnessFeedback: State<(Float) -> Unit>,
@@ -78,26 +80,6 @@ internal fun PlayerScreenRuntime.unlockPlayerControls() {
     controlsVisible = true
 }
 
-internal fun PlayerScreenRuntime.showSeekFeedback(direction: PlayerSeekDirection, amountMs: Long) {
-    val seconds = amountMs / 1000L
-    if (seconds <= 0L) return
-    showGestureFeedback(
-        GestureFeedbackState(
-            messageRes = if (direction == PlayerSeekDirection.Forward) {
-                Res.string.compose_player_seek_feedback_forward
-            } else {
-                Res.string.compose_player_seek_feedback_backward
-            },
-            messageArgs = listOf(seconds),
-            icon = if (direction == PlayerSeekDirection.Forward) {
-                GestureFeedbackIcon.SeekForward
-            } else {
-                GestureFeedbackIcon.SeekBackward
-            },
-        ),
-    )
-}
-
 internal fun PlayerScreenRuntime.showBrightnessFeedback(level: Float) {
     val percentage = (level.coerceIn(0f, 1f) * 100f).roundToInt()
     showGestureFeedback(
@@ -150,15 +132,12 @@ internal fun PlayerScreenRuntime.togglePlayback() {
 }
 
 internal fun PlayerScreenRuntime.seekBy(offsetMs: Long) {
-    if (partySeekLocked) return
-    if (partySeekSuggests) return askPartyHost(PartyControlAction.SEEK, (playbackSnapshot.positionMs + offsetMs).coerceAtLeast(0L))
-    playerController?.seekBy(offsetMs)
-    scheduleProgressSyncAfterSeek()
+    if (offsetMs == 0L) return
+    accumulateSeek(
+        direction = if (offsetMs > 0L) PlayerSeekDirection.Forward else PlayerSeekDirection.Backward,
+        stepMs = abs(offsetMs),
+    )
     controlsVisible = true
-    when {
-        offsetMs > 0L -> showSeekFeedback(PlayerSeekDirection.Forward, offsetMs)
-        offsetMs < 0L -> showSeekFeedback(PlayerSeekDirection.Backward, abs(offsetMs))
-    }
 }
 
 internal fun PlayerScreenRuntime.seekStepMs(direction: PlayerSeekDirection): Long =
@@ -167,21 +146,29 @@ internal fun PlayerScreenRuntime.seekStepMs(direction: PlayerSeekDirection): Lon
         PlayerSeekDirection.Forward -> playerSettingsUiState.seekForwardSeconds
     } * 1000L
 
-internal fun PlayerScreenRuntime.handleDoubleTapSeek(direction: PlayerSeekDirection) {
+/**
+ * One more step of a run of seeks in one direction, by double tap, the taps after it, the seek
+ * buttons or the keys: the steps add up from where the run started, and the side's ripple shows
+ * the total, until a moment passes with no step.
+ */
+internal fun PlayerScreenRuntime.accumulateSeek(
+    direction: PlayerSeekDirection,
+    stepMs: Long = seekStepMs(direction),
+) {
     if (partySeekLocked) return
     if (partySeekSuggests) {
-        val offsetMs = if (direction == PlayerSeekDirection.Forward) seekStepMs(direction) else -seekStepMs(direction)
+        val offsetMs = if (direction == PlayerSeekDirection.Forward) stepMs else -stepMs
         return askPartyHost(PartyControlAction.SEEK, (playbackSnapshot.positionMs + offsetMs).coerceAtLeast(0L))
     }
     val currentPositionMs = playbackSnapshot.positionMs.coerceAtLeast(0L)
     val currentSeekState = accumulatedSeekState
     val nextState = if (currentSeekState?.direction == direction) {
-        currentSeekState.copy(amountMs = currentSeekState.amountMs + seekStepMs(direction))
+        currentSeekState.copy(amountMs = currentSeekState.amountMs + stepMs)
     } else {
         PlayerAccumulatedSeekState(
             direction = direction,
             baselinePositionMs = currentPositionMs,
-            amountMs = seekStepMs(direction),
+            amountMs = stepMs,
         )
     }
     accumulatedSeekState = nextState
@@ -198,7 +185,6 @@ internal fun PlayerScreenRuntime.handleDoubleTapSeek(direction: PlayerSeekDirect
     }
     playerController?.seekTo(targetPositionMs)
     scheduleProgressSyncAfterSeek()
-    showSeekFeedback(direction, nextState.amountMs)
 
     accumulatedSeekResetJob?.cancel()
     accumulatedSeekResetJob = scope.launch {
@@ -299,16 +285,28 @@ internal fun PlayerScreenRuntime.rememberSurfaceGestureCallbacks(): PlayerSurfac
         }
         when {
             offset.x < layoutSize.width * PlayerLeftGestureBoundary -> {
-                handleDoubleTapSeek(PlayerSeekDirection.Backward)
+                accumulateSeek(PlayerSeekDirection.Backward)
             }
             offset.x > layoutSize.width * PlayerRightGestureBoundary -> {
-                handleDoubleTapSeek(PlayerSeekDirection.Forward)
+                accumulateSeek(PlayerSeekDirection.Forward)
             }
             else -> controlsVisible = !controlsVisible
         }
     }
+    val onSeekRunTap = rememberUpdatedState { offset: Offset ->
+        if (playerControlsLocked || accumulatedSeekState == null || !playerSettingsUiState.touchGesturesEnabled) {
+            return@rememberUpdatedState false
+        }
+        when {
+            offset.x < layoutSize.width * PlayerLeftGestureBoundary -> accumulateSeek(PlayerSeekDirection.Backward)
+            offset.x > layoutSize.width * PlayerRightGestureBoundary -> accumulateSeek(PlayerSeekDirection.Forward)
+            else -> return@rememberUpdatedState false
+        }
+        true
+    }
     return PlayerSurfaceGestureCallbacks(
         onSurfaceTap = onSurfaceTap,
+        onSeekRunTap = onSeekRunTap,
         onSurfaceDoubleTap = onSurfaceDoubleTap,
         activateHoldToSpeed = rememberUpdatedState(::activateHoldToSpeed),
         deactivateHoldToSpeed = rememberUpdatedState(::deactivateHoldToSpeed),
