@@ -91,7 +91,16 @@ fun FolderDetailScreen(
         WatchedRepository.ensureLoaded()
         WatchedRepository.uiState
     }.collectAsState()
-    val fullyWatchedSeriesKeys by WatchedRepository.fullyWatchedSeriesKeys.collectAsState()
+    val fullyWatchedSeriesKeysRaw by WatchedRepository.fullyWatchedSeriesKeys.collectAsState()
+    // TMDB-built folders carry TMDB ids; their IMDb ones, once looked up, are what watched
+    // titles are kept by, so the TMDB ids count as watched alongside them.
+    val imdbAliases by PosterImdbAliases.aliases.collectAsState()
+    val watchedKeys = remember(watchedUiState.watchedKeys, imdbAliases) {
+        PosterImdbAliases.withAliases(watchedUiState.watchedKeys, imdbAliases)
+    }
+    val fullyWatchedSeriesKeys = remember(fullyWatchedSeriesKeysRaw, imdbAliases) {
+        PosterImdbAliases.withAliases(fullyWatchedSeriesKeysRaw, imdbAliases)
+    }
     val folder = uiState.folder
     val useNativeNavigation = LocalUseNativeNavigation.current
     // The same collapsing app bar as a catalog's page: large over the top of the titles, a title
@@ -157,7 +166,7 @@ fun FolderDetailScreen(
             when (uiState.viewMode) {
                 FolderViewMode.TABBED_GRID -> TabbedGridContent(
                     uiState = uiState,
-                    watchedKeys = watchedUiState.watchedKeys,
+                    watchedKeys = watchedKeys,
                     fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                     modifier = Modifier.weight(1f),
                     onTabSelected = { FolderDetailRepository.selectTab(it) },
@@ -165,7 +174,7 @@ fun FolderDetailScreen(
                 )
                 FolderViewMode.ROWS -> RowsContent(
                     uiState = uiState,
-                    watchedKeys = watchedUiState.watchedKeys,
+                    watchedKeys = watchedKeys,
                     fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                     modifier = Modifier.weight(1f),
                     onCatalogClick = onCatalogClick,
@@ -173,7 +182,7 @@ fun FolderDetailScreen(
                 )
                 FolderViewMode.FOLLOW_LAYOUT -> RowsContent(
                     uiState = uiState,
-                    watchedKeys = watchedUiState.watchedKeys,
+                    watchedKeys = watchedKeys,
                     fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                     modifier = Modifier.weight(1f),
                     onCatalogClick = onCatalogClick,
@@ -244,7 +253,6 @@ private fun TabbedGridContent(
 
         val selectedTab = uiState.tabs.getOrNull(uiState.selectedTabIndex)
         if (selectedTab == null) return
-        // TMDB-built tabs carry TMDB ids; their IMDb ones are what match the watched titles.
         LaunchedEffect(selectedTab.items) { PosterImdbAliases.resolve(selectedTab.items) }
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {

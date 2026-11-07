@@ -21,16 +21,9 @@ object WatchingState {
         item: MetaPreview,
         fullyWatchedSeriesKeys: Set<String> = emptySet(),
     ): Boolean {
-        val posterKeys = posterKeysOf(item)
+        val posterKeys = watchedItemKeys(type = item.type, id = item.id)
         if (posterKeys.any(watchedKeys::contains)) return true
         return item.type.isSeriesLikePosterType() && posterKeys.any(fullyWatchedSeriesKeys::contains)
-    }
-
-    // A TMDB-only poster also answers to its IMDb id, which is how watched titles are kept.
-    private fun posterKeysOf(item: MetaPreview): Set<String> {
-        val keys = watchedItemKeys(type = item.type, id = item.id)
-        val imdbId = PosterImdbAliases.imdbIdOf(item) ?: return keys
-        return keys + watchedItemKeys(type = item.type, id = imdbId)
     }
 
     /**
@@ -43,7 +36,7 @@ object WatchingState {
         movieProgress: Map<String, Float>,
         seriesProgress: Map<String, Float>,
     ): Float? {
-        val posterKeys = posterKeysOf(item)
+        val posterKeys = watchedItemKeys(type = item.type, id = item.id)
         val progress = if (item.type.isSeriesLikePosterType()) seriesProgress else movieProgress
         return posterKeys.firstNotNullOfOrNull(progress::get)?.takeIf { it > 0f && it < 1f }
     }
