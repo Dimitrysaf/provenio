@@ -41,8 +41,8 @@ internal fun DetailSectionSkeleton(
             MetaScreenSectionKey.CAST,
             MetaScreenSectionKey.PRODUCTION,
             MetaScreenSectionKey.TRAILERS,
-            MetaScreenSectionKey.COMMENTS -> DetailListSkeleton()
-            MetaScreenSectionKey.COLLECTION,
+            MetaScreenSectionKey.COMMENTS,
+            MetaScreenSectionKey.COLLECTION -> DetailListSkeleton()
             MetaScreenSectionKey.MORE_LIKE_THIS -> PosterSkeletonRow(horizontalScrollPadding)
             MetaScreenSectionKey.DETAILS -> InfoRowsSkeleton()
             else -> TextLinesSkeleton()

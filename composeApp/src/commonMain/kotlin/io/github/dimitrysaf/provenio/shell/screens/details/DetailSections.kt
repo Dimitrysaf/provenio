@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailCollectionSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailActionButtons
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSecondaryAction
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailAdditionalInfoSection
@@ -275,17 +276,12 @@ internal fun LazyListScope.configuredMetaSectionItems(
     fun addGridSection(section: MetaScreenSectionItem, key: String): Boolean {
         val grid = shelfGrid ?: return false
         when (section.key) {
-            // Cast, trailers and comments are segmented lists, never grid shelves.
-            MetaScreenSectionKey.CAST, MetaScreenSectionKey.TRAILERS, MetaScreenSectionKey.COMMENTS -> return false
-            MetaScreenSectionKey.COLLECTION -> detailPosterShelfGrid(
-                key = key,
-                title = { meta.collectionName.orEmpty() },
-                items = meta.collectionItems,
-                context = grid,
-                watchedKeys = watchedKeys,
-                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                onPosterClick = onOpenMeta,
-            )
+            // Cast, trailers, comments and the collection are segmented lists, never grid shelves.
+            MetaScreenSectionKey.CAST,
+            MetaScreenSectionKey.TRAILERS,
+            MetaScreenSectionKey.COMMENTS,
+            MetaScreenSectionKey.COLLECTION,
+            -> return false
             MetaScreenSectionKey.MORE_LIKE_THIS -> detailPosterShelfGrid(
                 key = key,
                 title = { stringResource(Res.string.details_more_like_this) },
@@ -547,13 +543,12 @@ internal fun ConfiguredMetaSections(
             }
             MetaScreenSectionKey.COLLECTION -> {
                 if (!hasEpisodes && hasCollectionSection) {
-                    DetailPosterRailSection(
+                    DetailCollectionSection(
                         title = meta.collectionName.orEmpty(),
                         items = meta.collectionItems,
                         watchedKeys = watchedKeys,
                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                        horizontalScrollPadding = horizontalScrollPadding,
-                        onPosterClick = onOpenMeta,
+                        onItemClick = onOpenMeta,
                     )
                 }
             }

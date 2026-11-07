@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -90,14 +91,17 @@ fun DetailTrailersSection(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         if (categories.hasChoice || showHeader) {
+            // The title on the left, the kind of trailer picked at the right edge.
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TrailerCategoryPicker(categories)
                 if (showHeader) {
                     DetailSectionTitle(title = trailersTitle, fullWidth = false)
                 }
+                Spacer(modifier = Modifier.weight(1f))
+                TrailerCategoryPicker(categories)
             }
         }
 
