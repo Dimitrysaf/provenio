@@ -18,7 +18,7 @@ import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.profile_avatar_choose_picture
 
 @Composable
-internal actual fun rememberAvatarPicturePicker(onPicked: (ByteArray?) -> Unit): (() -> Unit)? {
+internal actual fun rememberPicturePicker(onPicked: (ByteArray?) -> Unit): (() -> Unit)? {
     val scope = rememberCoroutineScope()
     val currentOnPicked by rememberUpdatedState(onPicked)
     return remember {
@@ -43,6 +43,21 @@ internal actual fun squareAvatarJpeg(bytes: ByteArray, size: Int): ByteArray? = 
         image,
         Rect.makeXYWH(((image.width - side) / 2).toFloat(), ((image.height - side) / 2).toFloat(), side.toFloat(), side.toFloat()),
         Rect.makeWH(size.toFloat(), size.toFloat()),
+    )
+    surface.makeImageSnapshot().encodeToData(EncodedImageFormat.JPEG, JpegQuality)?.bytes
+}.getOrNull()
+
+internal actual fun fittedPictureJpeg(bytes: ByteArray, maxSide: Int): ByteArray? = runCatching {
+    val image = Image.makeFromEncoded(bytes)
+    if (image.width <= 0 || image.height <= 0) return@runCatching null
+    val scale = minOf(1f, maxSide.toFloat() / maxOf(image.width, image.height))
+    val width = (image.width * scale).toInt().coerceAtLeast(1)
+    val height = (image.height * scale).toInt().coerceAtLeast(1)
+    val surface = Surface.makeRasterN32Premul(width, height)
+    surface.canvas.drawImageRect(
+        image,
+        Rect.makeWH(image.width.toFloat(), image.height.toFloat()),
+        Rect.makeWH(width.toFloat(), height.toFloat()),
     )
     surface.makeImageSnapshot().encodeToData(EncodedImageFormat.JPEG, JpegQuality)?.bytes
 }.getOrNull()

@@ -977,7 +977,6 @@ internal fun rememberSettingsData(): SettingsData {
         HomeCatalogSettingsRepository.snapshot()
         HomeCatalogSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
-    val collections by CollectionRepository.collections.collectAsStateWithLifecycle()
     val metaScreenSettingsUiState by remember {
         MetaScreenSettingsRepository.ensureLoaded()
         MetaScreenSettingsRepository.uiState
@@ -1007,10 +1006,6 @@ internal fun rememberSettingsData(): SettingsData {
 
     LaunchedEffect(Unit) {
         CollectionRepository.initialize()
-    }
-
-    LaunchedEffect(collections) {
-        HomeCatalogSettingsRepository.syncCollections(collections)
     }
 
     return SettingsData(

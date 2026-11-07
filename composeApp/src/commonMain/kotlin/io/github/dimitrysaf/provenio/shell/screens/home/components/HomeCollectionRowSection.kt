@@ -33,13 +33,10 @@ import io.github.dimitrysaf.provenio.shell.components.LocalScreenActive
 import io.github.dimitrysaf.provenio.shell.components.CollapsibleShelfHeader
 import io.github.dimitrysaf.provenio.shell.components.ShelfGrid
 import io.github.dimitrysaf.provenio.shell.components.ShelfSection
-import io.github.dimitrysaf.provenio.shell.components.PosterLandscapeAspectRatio
-import io.github.dimitrysaf.provenio.shell.components.landscapePosterWidth
 import io.github.dimitrysaf.provenio.shell.components.posterCardClickable
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
 import io.github.dimitrysaf.provenio.core.collection.Collection
 import io.github.dimitrysaf.provenio.core.collection.CollectionFolder
-import io.github.dimitrysaf.provenio.core.home.PosterShape
 
 @Composable
 fun HomeCollectionRowSection(
@@ -141,25 +138,9 @@ private fun CollectionFolderCard(
     onClick: (() -> Unit)? = null,
 ) {
     val posterCardStyle = rememberPosterCardStyleUiState()
-    val isLandscapeMode = posterCardStyle.catalogLandscapeModeEnabled
-    val shape = if (isLandscapeMode) PosterShape.Landscape else folder.posterShape
-    val cardWidth: Dp
-    val aspectRatio: Float
-
-    when (shape) {
-        PosterShape.Poster -> {
-            cardWidth = posterCardStyle.widthDp.dp
-            aspectRatio = PosterPortraitAspectRatio
-        }
-        PosterShape.Landscape -> {
-            cardWidth = landscapePosterWidth(posterCardStyle.widthDp)
-            aspectRatio = PosterLandscapeAspectRatio
-        }
-        PosterShape.Square -> {
-            cardWidth = posterCardStyle.widthDp.dp
-            aspectRatio = 1f
-        }
-    }
+    // A folder is always a poster, whatever shape the catalogs' cards take.
+    val cardWidth = posterCardStyle.widthDp.dp
+    val aspectRatio = PosterPortraitAspectRatio
 
     Column(
         modifier = modifier.width(cardWidth),

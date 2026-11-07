@@ -9,10 +9,13 @@ import kotlin.io.encoding.ExperimentalEncodingApi
  * null itself where pictures cannot be picked.
  */
 @Composable
-internal expect fun rememberAvatarPicturePicker(onPicked: (ByteArray?) -> Unit): (() -> Unit)?
+internal expect fun rememberPicturePicker(onPicked: (ByteArray?) -> Unit): (() -> Unit)?
 
 /** The middle square of a picture, [size] pixels across, as a JPEG; null when it cannot be read. */
 internal expect fun squareAvatarJpeg(bytes: ByteArray, size: Int): ByteArray?
+
+/** A picture scaled down until its longer side is at most [maxSide] pixels, as a JPEG; null when it cannot be read. */
+internal expect fun fittedPictureJpeg(bytes: ByteArray, maxSide: Int): ByteArray?
 
 /**
  * A picked picture as the profile keeps it: small, and inside the profile itself, so it goes with
@@ -21,6 +24,14 @@ internal expect fun squareAvatarJpeg(bytes: ByteArray, size: Int): ByteArray?
 @OptIn(ExperimentalEncodingApi::class)
 internal fun avatarPictureDataUri(bytes: ByteArray): String? =
     squareAvatarJpeg(bytes, AvatarPicturePixels)?.let { jpeg -> "$AvatarPictureDataUriPrefix${Base64.encode(jpeg)}" }
+
+/**
+ * A picked picture kept inside what shows it, a collection or a folder, as an avatar is kept in
+ * its profile, so it syncs with it rather than pointing at a file on one device.
+ */
+@OptIn(ExperimentalEncodingApi::class)
+internal fun pictureDataUri(bytes: ByteArray, maxSide: Int): String? =
+    fittedPictureJpeg(bytes, maxSide)?.let { jpeg -> "$AvatarPictureDataUriPrefix${Base64.encode(jpeg)}" }
 
 internal const val AvatarPictureDataUriPrefix = "data:image/jpeg;base64,"
 private const val AvatarPicturePixels = 256

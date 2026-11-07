@@ -35,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
 import io.github.dimitrysaf.provenio.core.addons.ManagedAddon
-import io.github.dimitrysaf.provenio.core.collection.Collection
 import io.github.dimitrysaf.provenio.shell.components.DuplicateSafeLazyEntry
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.network.NetworkCondition
@@ -71,9 +70,7 @@ import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressEntry
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressRepository
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressSourceCoordinator
 import io.github.dimitrysaf.provenio.shell.components.DisintegrationRequest
-import io.github.dimitrysaf.provenio.core.collection.CollectionRepository
 import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
-import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeCollectionRowSection
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -102,7 +99,6 @@ import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingSta
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    animateCollectionGifs: Boolean = true,
     scrollToTopRequests: Flow<Unit> = emptyFlow(),
     onCatalogClick: ((HomeCatalogSection) -> Unit)? = null,
     onPosterClick: ((MetaPreview) -> Unit)? = null,
@@ -110,13 +106,11 @@ fun HomeScreen(
     onContinueWatchingClick: ((ContinueWatchingItem) -> Unit)? = null,
     onContinueWatchingLongPress: ((ContinueWatchingItem) -> Unit)? = null,
     continueWatchingDisintegrationRequest: DisintegrationRequest<String>? = null,
-    onFolderClick: ((collectionId: String, folderId: String) -> Unit)? = null,
     onFirstCatalogRendered: (() -> Unit)? = null,
     onSearch: ((String) -> Unit)? = null,
 ) {
     LaunchedEffect(Unit) {
         AddonRepository.initialize()
-        CollectionRepository.initialize()
         ContinueWatchingPreferencesRepository.ensureLoaded()
         WatchedRepository.ensureLoaded()
         WatchProgressRepository.ensureLoaded()
@@ -139,7 +133,6 @@ fun HomeScreen(
             upcomingListState.stopScroll(MutatePriority.PreventUserInput)
         }
     }
-    val collections by CollectionRepository.collections.collectAsStateWithLifecycle()
     val continueWatchingPreferences by ContinueWatchingPreferencesRepository.uiState.collectAsStateWithLifecycle()
     val watchedUiState by WatchedRepository.uiState.collectAsStateWithLifecycle()
     val fullyWatchedSeriesKeys by WatchedRepository.fullyWatchedSeriesKeys.collectAsStateWithLifecycle()
@@ -183,11 +176,6 @@ fun HomeScreen(
     KeepRowAtStartUntilScrolled(upcomingListState, activeProfileId, upcomingItems.isNotEmpty())
 
 
-    ScreenActivityEffect(activeProfileId, collections) { active ->
-        if (!active) return@ScreenActivityEffect
-        HomeCatalogSettingsRepository.syncCollections(collections)
-    }
-
     val hasActiveAddons = enabledAddons.any { it.manifest != null }
     val addonManifestsLoading = enabledAddons.any { it.isRefreshing }
     val addonManifestErrorMessage = enabledAddons.firstEnabledManifestError()
@@ -200,12 +188,6 @@ fun HomeScreen(
         onFirstCatalogRendered?.invoke()
     }
 
-    val visibleCollections = remember(collections) {
-        collections.filter { it.folders.isNotEmpty() }
-    }
-    val collectionsMap = remember(visibleCollections) {
-        visibleCollections.associateBy { "collection_${it.id}" }
-    }
     val sectionsMap = remember(homeUiState.sections) {
         homeUiState.sections.associateBy(HomeCatalogSection::key)
     }
@@ -252,12 +234,7 @@ fun HomeScreen(
             resolvedBadgeInputs.value = inputs
         }
     }
-    val hasRenderableCollectionRows = remember(enabledHomeItems, collectionsMap) {
-        enabledHomeItems.any { item ->
-            item.isCollection && collectionsMap[item.key] != null
-        }
-    }
-    val hasRenderableHomeRows = homeUiState.sections.isNotEmpty() || hasRenderableCollectionRows
+    val hasRenderableHomeRows = homeUiState.sections.isNotEmpty()
     val showHeroSlot = shouldShowHomeHeroSlot(
         heroEnabled = homeSettingsUiState.heroShown,
         hasHeroItems = homeUiState.heroItems.isNotEmpty(),
@@ -368,7 +345,7 @@ fun HomeScreen(
                     }
                 }
 
-                !hasActiveAddons && !hasRenderableCollectionRows -> {
+                !hasActiveAddons -> {
                     continueWatchingSections()
                     item(key = "home_empty", contentType = "empty") {
                         HomeNoAddonsState(
@@ -380,8 +357,7 @@ fun HomeScreen(
                 }
 
                 homeUiState.sections.isEmpty() && homeUiState.heroItems.isEmpty() &&
-                    (!continueWatchingPreferences.isVisible || !hasContinueWatchingRows) &&
-                    !hasRenderableCollectionRows -> {
+                    (!continueWatchingPreferences.isVisible || !hasContinueWatchingRows) -> {
                     item(key = "home_empty", contentType = "empty") {
                         HomeNoRowsState(
                             condition = networkStatusUiState.condition,
@@ -400,7 +376,6 @@ fun HomeScreen(
 
                     homeRows(
                         keyedItems = keyedEnabledHomeItems,
-                        collectionsMap = collectionsMap,
                         sectionsMap = sectionsMap,
                         catalogKeys = homeUiState.catalogKeys,
                         attemptedCatalogKeys = homeUiState.attemptedCatalogKeys,
@@ -410,11 +385,9 @@ fun HomeScreen(
                         shelfGridRows = posterCardStyle.shelfRows,
                         shelfCellWidth = shelfCellWidth,
                         sectionPadding = homeSectionPadding,
-                        animateCollectionGifs = animateCollectionGifs,
                         watchedKeys = watchedUiState.watchedKeys,
                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                         onCatalogClick = onCatalogClick,
-                        onFolderClick = onFolderClick,
                         onPosterClick = onPosterClick,
                         onPosterLongClick = onPosterLongClick,
                     )
@@ -566,7 +539,7 @@ private fun HomeHeroSlot(
 }
 
 /**
- * The collection and catalog rows, in the order the home settings put them.
+ * The catalog rows, in the order the home settings put them.
  *
  * Catalogs load as Home reaches them: the first catalog not fetched yet shows a placeholder, which
  * asks for it once it comes into view, and nothing is placed below it until it has loaded, so the
@@ -577,7 +550,6 @@ private fun HomeHeroSlot(
  */
 private fun LazyListScope.homeRows(
     keyedItems: List<DuplicateSafeLazyEntry<HomeCatalogSettingsItem>>,
-    collectionsMap: Map<String, Collection>,
     sectionsMap: Map<String, HomeCatalogSection>,
     catalogKeys: Set<String>,
     attemptedCatalogKeys: Set<String>,
@@ -587,38 +559,15 @@ private fun LazyListScope.homeRows(
     shelfGridRows: Int,
     shelfCellWidth: Dp,
     sectionPadding: Dp,
-    animateCollectionGifs: Boolean,
     watchedKeys: Set<String>,
     fullyWatchedSeriesKeys: Set<String>,
     onCatalogClick: ((HomeCatalogSection) -> Unit)?,
-    onFolderClick: ((collectionId: String, folderId: String) -> Unit)?,
     onPosterClick: ((MetaPreview) -> Unit)?,
     onPosterLongClick: ((MetaPreview) -> Unit)?,
 ) {
     val asGrid = shelfLayout == HomeShelfLayout.Grid
     for (keyedSettingsItem in keyedItems) {
         val settingsItem = keyedSettingsItem.value
-        if (settingsItem.isCollection) {
-            val collection = collectionsMap[settingsItem.key] ?: continue
-            val expansionKey = settingsItem.key
-            item(key = keyedSettingsItem.lazyKey, contentType = "collection") {
-                HomeCollectionRowSection(
-                    collection = collection,
-                    modifier = Modifier.padding(bottom = 12.dp),
-                    sectionPadding = sectionPadding,
-                    animateGifs = animateCollectionGifs,
-                    onFolderClick = onFolderClick,
-                    gridExpanded = if (asGrid) {
-                        ShelfExpansion.isExpanded(expansionKey, shelvesExpandedByDefault)
-                    } else {
-                        null
-                    },
-                    onToggleExpanded = { ShelfExpansion.toggle(expansionKey, shelvesExpandedByDefault) },
-                )
-            }
-            continue
-        }
-
         val section = sectionsMap[settingsItem.key]
         if (section == null || section.items.isEmpty()) {
             if (settingsItem.key in catalogKeys && settingsItem.key !in attemptedCatalogKeys) {

@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.media.ExifInterface
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,11 +20,12 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
 @Composable
-internal actual fun rememberAvatarPicturePicker(onPicked: (ByteArray?) -> Unit): (() -> Unit)? {
+internal actual fun rememberPicturePicker(onPicked: (ByteArray?) -> Unit): (() -> Unit)? {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val currentOnPicked by rememberUpdatedState(onPicked)
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    // The system photo picker: no storage permission, and the gallery the person knows.
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) {
             currentOnPicked(null)
             return@rememberLauncherForActivityResult
@@ -35,7 +37,9 @@ internal actual fun rememberAvatarPicturePicker(onPicked: (ByteArray?) -> Unit):
             currentOnPicked(bytes)
         }
     }
-    return remember(launcher) { { launcher.launch("image/*") } }
+    return remember(launcher) {
+        { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+    }
 }
 
 internal actual fun squareAvatarJpeg(bytes: ByteArray, size: Int): ByteArray? = runCatching {
@@ -51,6 +55,28 @@ internal actual fun squareAvatarJpeg(bytes: ByteArray, size: Int): ByteArray? = 
     val side = minOf(upright.width, upright.height)
     val square = Bitmap.createBitmap(upright, (upright.width - side) / 2, (upright.height - side) / 2, side, side)
     val scaled = Bitmap.createScaledBitmap(square, size, size, true)
+    ByteArrayOutputStream().use { output ->
+        scaled.compress(Bitmap.CompressFormat.JPEG, JpegQuality, output)
+        output.toByteArray()
+    }
+}.getOrNull()
+
+internal actual fun fittedPictureJpeg(bytes: ByteArray, maxSide: Int): ByteArray? = runCatching {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runCatching null
+    var sample = 1
+    while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= maxSide) sample *= 2
+    val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
+        ?: return@runCatching null
+    val upright = decoded.rotatedBy(exifRotation(bytes))
+    val scale = minOf(1f, maxSide.toFloat() / maxOf(upright.width, upright.height))
+    val scaled = Bitmap.createScaledBitmap(
+        upright,
+        (upright.width * scale).toInt().coerceAtLeast(1),
+        (upright.height * scale).toInt().coerceAtLeast(1),
+        true,
+    )
     ByteArrayOutputStream().use { output ->
         scaled.compress(Bitmap.CompressFormat.JPEG, JpegQuality, output)
         output.toByteArray()

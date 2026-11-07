@@ -103,6 +103,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.dimitrysaf.provenio.core.collection.CollectionRepository
+import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeCollectionRowSection
 import io.github.dimitrysaf.provenio.shell.components.ScreenActivityEffect
 import io.github.dimitrysaf.provenio.core.i18n.localizedByteUnit
 import io.github.dimitrysaf.provenio.core.network.NetworkCondition
@@ -162,7 +164,13 @@ fun LibraryScreen(
     onCloudFilePlay: ((CloudLibraryItem, CloudLibraryFile) -> Unit)? = null,
     onConnectCloudClick: (() -> Unit)? = null,
     disintegrationRequest: DisintegrationRequest<String>? = null,
+    animateCollectionGifs: Boolean = true,
+    onFolderClick: ((collectionId: String, folderId: String) -> Unit)? = null,
 ) {
+    val collections by remember {
+        CollectionRepository.initialize()
+        CollectionRepository.collections
+    }.collectAsStateWithLifecycle()
     val uiState by remember {
         LibraryRepository.ensureLoaded()
         LibraryRepository.uiState
@@ -411,6 +419,17 @@ fun LibraryScreen(
             topPadding = 8.dp,
             listState = listState,
         ) {
+            // The collections lead the Library, whatever it shows below them.
+            collections.filter { it.folders.isNotEmpty() }.forEach { collection ->
+                item(key = "library-collection-${collection.id}", contentType = "collection") {
+                    HomeCollectionRowSection(
+                        collection = collection,
+                        modifier = Modifier.padding(bottom = 12.dp),
+                        animateGifs = animateCollectionGifs,
+                        onFolderClick = onFolderClick,
+                    )
+                }
+            }
 
             if (sourceMode == LibraryViewMode.Cloud) {
                 cloudLibraryContent(

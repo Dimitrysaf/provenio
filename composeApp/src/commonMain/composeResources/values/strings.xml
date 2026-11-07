@@ -160,6 +160,10 @@
     <string name="collections_editor_catalog_sources_empty_title">No catalog sources yet</string>
     <string name="collections_editor_catalog_picker_empty_title">No addon catalogs</string>
     <string name="collections_editor_catalog_picker_empty_subtitle">Install an addon that publishes catalogs to pick from here.</string>
+    <string name="collections_editor_cover_image">Image</string>
+    <string name="collections_editor_choose_image">Choose image</string>
+    <string name="collections_editor_remove_image">Remove image</string>
+    <string name="collections_editor_choose_image_desc">Pick a picture from this device. It is saved with the collection, so your other devices show it too.</string>
     <string name="collections_editor_cover_image_url">Image URL</string>
     <string name="collections_editor_cover_text">Text</string>
     <string name="collections_editor_cover">Cover</string>
@@ -196,7 +200,7 @@
     <string name="collections_editor_shape_wide">Wide</string>
     <string name="collections_editor_show_all_tab_desc">Combine all catalogs into one tab</string>
     <string name="collections_editor_show_all_tab">Show &quot;All&quot; Tab</string>
-    <string name="collections_editor_source_count">%1$d source(s) · %2$s</string>
+    <string name="collections_editor_source_count">%1$d source(s)</string>
     <string name="collections_editor_tile_shape">Tile Shape</string>
     <string name="collections_editor_view_mode_rows">Rows</string>
     <string name="collections_editor_view_mode_tabs">Tabs</string>
@@ -865,7 +869,7 @@
     <string name="settings_content_discovery_addons_description_appstore">Add and manage the addons you use with Provenio.</string>
     <string name="settings_content_discovery_homescreen_description">Adjust home layout, content visibility, and poster behavior</string>
     <string name="settings_content_discovery_meta_screen_description">Settings for the detail and episode screens.</string>
-    <string name="settings_content_discovery_collections_description">Create custom catalog groupings with folders shown on Home.</string>
+    <string name="settings_content_discovery_collections_description">Create custom catalog groupings with folders shown at the top of the Library.</string>
     <string name="settings_integrations_section_title">Integrations</string>
     <string name="settings_integration_options">Options</string>
     <string name="settings_integration_status_on">On</string>

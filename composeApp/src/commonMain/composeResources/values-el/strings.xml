@@ -160,6 +160,10 @@
     <string name="collections_editor_catalog_sources_empty_title">Δεν υπάρχουν πηγές καταλόγου ακόμα</string>
     <string name="collections_editor_catalog_picker_empty_title">Δεν υπάρχουν κατάλογοι πρόσθετων</string>
     <string name="collections_editor_catalog_picker_empty_subtitle">Εγκαταστήστε ένα πρόσθετο που δημοσιεύει καταλόγους για να επιλέξετε από εδώ.</string>
+    <string name="collections_editor_cover_image">Εικόνα</string>
+    <string name="collections_editor_choose_image">Επιλογή εικόνας</string>
+    <string name="collections_editor_remove_image">Αφαίρεση εικόνας</string>
+    <string name="collections_editor_choose_image_desc">Διάλεξε μια εικόνα από αυτή τη συσκευή. Αποθηκεύεται μαζί με τη συλλογή, ώστε να εμφανίζεται και στις άλλες συσκευές σου.</string>
     <string name="collections_editor_cover_image_url">URL εικόνας</string>
     <string name="collections_editor_cover_text">Κείμενο</string>
     <string name="collections_editor_cover">Εξώφυλλο</string>
@@ -196,7 +200,7 @@
     <string name="collections_editor_shape_wide">Πλατύ</string>
     <string name="collections_editor_show_all_tab_desc">Συνδυασμός όλων των καταλόγων σε μία καρτέλα</string>
     <string name="collections_editor_show_all_tab">Εμφάνιση καρτέλας «Όλα»</string>
-    <string name="collections_editor_source_count">%1$d πηγή(ές) · %2$s</string>
+    <string name="collections_editor_source_count">%1$d πηγή(ές)</string>
     <string name="collections_editor_tile_shape">Σχήμα πλακιδίου</string>
     <string name="collections_editor_view_mode_rows">Γραμμές</string>
     <string name="collections_editor_view_mode_tabs">Καρτέλες</string>
@@ -865,7 +869,7 @@
     <string name="settings_content_discovery_addons_description_appstore">Προσθέστε και διαχειριστείτε τα πρόσθετα που χρησιμοποιείτε με το Provenio.</string>
     <string name="settings_content_discovery_homescreen_description">Προσαρμογή διάταξης Αρχικής, ορατότητας περιεχομένου και συμπεριφοράς αφισών</string>
     <string name="settings_content_discovery_meta_screen_description">Ρυθμίσεις για τις οθόνες λεπτομερειών και επεισοδίων.</string>
-    <string name="settings_content_discovery_collections_description">Δημιουργία προσαρμοσμένων ομαδοποιήσεων καταλόγου με φακέλους που εμφανίζονται στην Αρχική.</string>
+    <string name="settings_content_discovery_collections_description">Δημιουργία προσαρμοσμένων ομαδοποιήσεων καταλόγου με φακέλους που εμφανίζονται στην κορυφή της Βιβλιοθήκης.</string>
     <string name="settings_integrations_section_title">Ενσωματώσεις</string>
     <string name="settings_integration_options">Επιλογές</string>
     <string name="settings_integration_status_on">Ενεργό</string>

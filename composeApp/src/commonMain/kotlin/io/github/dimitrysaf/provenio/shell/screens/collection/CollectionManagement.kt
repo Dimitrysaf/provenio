@@ -300,13 +300,7 @@ private fun CollectionListItem(
     onMove: (Int) -> Unit,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
-    val summary = buildString {
-        append(stringResource(Res.string.collections_folder_count, collection.folders.size))
-        if (collection.pinToTop) {
-            append(" · ")
-            append(stringResource(Res.string.collections_pinned))
-        }
-    }
+    val summary = stringResource(Res.string.collections_folder_count, collection.folders.size)
 
     // The expressive list item itself, not a container built to look like one: it owns the
     // segmented shape, the selected container pair and the morph between them, so dragging only

@@ -155,7 +155,6 @@ internal fun FolderListItem(
     val summary = stringResource(
         Res.string.collections_editor_source_count,
         folder.resolvedSources.size,
-        posterShapeLabel(folder.posterShape),
     )
 
     // One row: the handle leads, the cover and text are the row's content, the actions trail it.
@@ -313,8 +312,8 @@ internal fun FolderEditorPage(
                 onEditImage = { showCoverDialog = true },
                 onEditTitle = { showTitleDialog = true },
                 emoji = folder.coverEmoji,
-                // The header is the tile, so it stands in the shape the tile will be drawn in.
-                aspectRatio = folder.posterShape.aspectRatio(),
+                // The header is the tile, so it stands as a poster, as every folder tile does.
+                aspectRatio = 2f / 3f,
             )
 
             if (showTitleDialog) {
@@ -334,14 +333,12 @@ internal fun FolderEditorPage(
                 FolderCoverDialog(
                     initialEmoji = folder.coverEmoji,
                     initialImageUrl = folder.coverImageUrl,
-                    initialShape = folder.posterShape,
-                    onConfirm = { emoji, imageUrl, tileShape ->
+                    onConfirm = { emoji, imageUrl ->
                         when {
                             emoji != null -> CollectionEditorRepository.updateFolderCoverEmoji(emoji)
                             imageUrl != null -> CollectionEditorRepository.updateFolderCoverImage(imageUrl)
                             else -> CollectionEditorRepository.clearFolderCover()
                         }
-                        CollectionEditorRepository.updateFolderTileShape(tileShape)
                         showCoverDialog = false
                     },
                     onDismiss = { showCoverDialog = false },

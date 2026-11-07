@@ -29,6 +29,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -49,6 +50,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,10 +64,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import io.github.dimitrysaf.provenio.shell.components.ListSubheader
+import io.github.dimitrysaf.provenio.shell.screens.profiles.pictureDataUri
+import io.github.dimitrysaf.provenio.shell.screens.profiles.rememberPicturePicker
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
-import io.github.dimitrysaf.provenio.core.home.PosterShape
 import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.shell.screens.settings.OuterCorner
 import provenio.composeapp.generated.resources.*
@@ -188,21 +194,17 @@ internal fun EditableIdentityHeader(
 private enum class FolderCoverKind { TEXT, IMAGE }
 
 /**
- * A folder's cover and the shape it is drawn in, as one dialog.
- *
- * Cover and tile shape were two rows in the form that each opened a sheet, which put three taps
- * between wanting a cover and having one. They belong together: the shape is what the cover is cut
- * to, so choosing it here shows immediately in the header the dialog was opened from.
+ * A folder's cover: a few characters, or a picture from the device. Every folder is a poster, so
+ * there is no shape to choose.
  *
  * Both drafts are kept while the dialog is open, so switching between text and image does not
- * discard what was typed in the other. Confirming with an empty field is how a cover is removed.
+ * discard what was typed in the other. Confirming with nothing set is how a cover is removed.
  */
 @Composable
 internal fun FolderCoverDialog(
     initialEmoji: String?,
     initialImageUrl: String?,
-    initialShape: PosterShape,
-    onConfirm: (emoji: String?, imageUrl: String?, shape: PosterShape) -> Unit,
+    onConfirm: (emoji: String?, imageUrl: String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var kind by remember {
@@ -212,10 +214,9 @@ internal fun FolderCoverDialog(
     }
     var textDraft by remember { mutableStateOf(initialEmoji.orEmpty()) }
     var urlDraft by remember { mutableStateOf(initialImageUrl.orEmpty()) }
-    var tileShape by remember { mutableStateOf(initialShape) }
+    val pickCover = rememberStoredPicturePicker(CoverPictureMaxSide) { picture -> urlDraft = picture }
 
     val kinds = FolderCoverKind.entries
-    val shapes = PosterShape.entries
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -249,7 +250,29 @@ internal fun FolderCoverDialog(
                         label = { Text(stringResource(Res.string.collections_editor_cover_text)) },
                     )
 
-                    FolderCoverKind.IMAGE -> OutlinedTextField(
+                    // A picture from the device; a link only where there is no picker.
+                    FolderCoverKind.IMAGE -> if (pickCover != null) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            if (urlDraft.isNotBlank()) {
+                                AsyncImage(
+                                    model = urlDraft,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(96.dp)
+                                        .aspectRatio(2f / 3f)
+                                        .clip(MaterialTheme.shapes.medium),
+                                    contentScale = ContentScale.Crop,
+                                )
+                            }
+                            FilledTonalButton(onClick = pickCover) {
+                                Text(stringResource(Res.string.collections_editor_choose_image))
+                            }
+                        }
+                    } else OutlinedTextField(
                         value = urlDraft,
                         onValueChange = { urlDraft = it },
                         modifier = Modifier.fillMaxWidth(),
@@ -259,25 +282,6 @@ internal fun FolderCoverDialog(
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                     )
-                }
-
-                ListSubheader(text = stringResource(Res.string.collections_editor_tile_shape))
-
-                // The three shapes share their width and their corner radius, so the choice is
-                // only ever about how tall the tile stands.
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    shapes.forEachIndexed { index, entry ->
-                        SegmentedButton(
-                            selected = entry == tileShape,
-                            onClick = { tileShape = entry },
-                            shape = SegmentedButtonDefaults.itemShape(
-                                index = index,
-                                count = shapes.size,
-                            ),
-                        ) {
-                            Text(posterShapeLabel(entry))
-                        }
-                    }
                 }
             }
         },
@@ -289,7 +293,6 @@ internal fun FolderCoverDialog(
                     onConfirm(
                         text.takeIf { kind == FolderCoverKind.TEXT && it.isNotBlank() },
                         url.takeIf { kind == FolderCoverKind.IMAGE && it.isNotBlank() },
-                        tileShape,
                     )
                 },
             ) {
@@ -308,8 +311,56 @@ internal fun FolderCoverDialog(
 private fun folderCoverKindLabel(kind: FolderCoverKind): String =
     when (kind) {
         FolderCoverKind.TEXT -> stringResource(Res.string.collections_editor_cover_text)
-        FolderCoverKind.IMAGE -> stringResource(Res.string.collections_editor_cover_image_url)
+        FolderCoverKind.IMAGE -> stringResource(Res.string.collections_editor_cover_image)
     }
+
+/**
+ * Opens the device's picker and gives the picked picture as the collection keeps it: scaled down
+ * so its longer side is at most [maxSide] pixels, inside the collection itself. Nothing is given
+ * when the picker is closed or the picture cannot be read. Null where there is no picker.
+ */
+@Composable
+internal fun rememberStoredPicturePicker(maxSide: Int, onPicked: (String) -> Unit): (() -> Unit)? {
+    val scope = rememberCoroutineScope()
+    val currentOnPicked by rememberUpdatedState(onPicked)
+    return rememberPicturePicker { bytes ->
+        if (bytes == null) return@rememberPicturePicker
+        scope.launch {
+            withContext(Dispatchers.Default) { pictureDataUri(bytes, maxSide) }?.let(currentOnPicked)
+        }
+    }
+}
+
+/** Choosing a picture from the device, or removing the one there is. */
+@Composable
+internal fun PictureChoiceDialog(
+    title: String,
+    hasPicture: Boolean,
+    onChoose: () -> Unit,
+    onRemove: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(stringResource(Res.string.collections_editor_choose_image_desc)) },
+        confirmButton = {
+            TextButton(onClick = onChoose) { Text(stringResource(Res.string.collections_editor_choose_image)) }
+        },
+        dismissButton = {
+            Row {
+                if (hasPicture) {
+                    TextButton(onClick = onRemove) { Text(stringResource(Res.string.collections_editor_remove_image)) }
+                }
+                TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) }
+            }
+        },
+    )
+}
+
+// Long enough for the tile on a large screen, small enough to keep inside the collection.
+internal const val CoverPictureMaxSide = 720
+internal const val BackdropPictureMaxSide = 1280
 
 /**
  * A folder's name, and whether that name is shown at all.
@@ -391,17 +442,6 @@ internal fun FolderTitleDialog(
         },
     )
 }
-
-/**
- * How tall a tile of each shape stands against a fixed width. The width and the corner radius do
- * not change with the shape, so this ratio is the whole of the difference between them.
- */
-internal fun PosterShape.aspectRatio(): Float =
-    when (this) {
-        PosterShape.Poster -> 2f / 3f
-        PosterShape.Square -> 1f
-        PosterShape.Landscape -> 16f / 9f
-    }
 
 /** One way to add something: what it is called and what it does. */
 internal data class AddSourceChoice(

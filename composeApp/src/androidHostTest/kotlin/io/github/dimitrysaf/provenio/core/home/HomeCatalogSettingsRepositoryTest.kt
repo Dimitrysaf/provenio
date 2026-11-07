@@ -6,22 +6,8 @@ import android.content.ContextWrapper
 import android.content.SharedPreferences
 import io.github.dimitrysaf.provenio.core.addons.AddonCatalog
 import io.github.dimitrysaf.provenio.core.addons.AddonManifest
-import io.github.dimitrysaf.provenio.core.addons.AddonRepository
-import io.github.dimitrysaf.provenio.core.addons.AddonStorage
 import io.github.dimitrysaf.provenio.core.addons.ManagedAddon
-import io.github.dimitrysaf.provenio.core.collection.Collection
-import io.github.dimitrysaf.provenio.core.collection.CollectionFolder
-import io.github.dimitrysaf.provenio.core.collection.CollectionMobileSettingsRepository
-import io.github.dimitrysaf.provenio.core.collection.CollectionMobileSettingsStorage
 import io.github.dimitrysaf.provenio.core.collection.CollectionRepository
-import io.github.dimitrysaf.provenio.core.collection.CollectionSource
-import io.github.dimitrysaf.provenio.core.collection.CollectionStorage
-import io.github.dimitrysaf.provenio.core.profiles.ProfileRepository
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
@@ -31,8 +17,6 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)
@@ -78,152 +62,25 @@ class HomeCatalogSettingsRepositoryTest {
     }
 
     @Test
-    fun unchangedCollectionsDoNotRewriteSettings() {
-        val collections = listOf(collection())
-        HomeCatalogSettingsRepository.syncCollections(collections)
-        val editCount = preferences.editCount
-
-        HomeCatalogSettingsRepository.syncCollections(collections.map { it.copy() })
-
-        assertEquals(editCount, preferences.editCount)
-        assertEquals("Favorites", HomeCatalogSettingsRepository.uiState.value.items.single().defaultTitle)
-    }
-
-    @Test
-    fun collectionSyncReappliesInputsAfterCatalogSyncReplacedCollections() {
-        val collections = listOf(collection())
-        HomeCatalogSettingsRepository.syncCollections(collections)
-        HomeCatalogSettingsRepository.syncCatalogs(listOf(addon()))
-        assertTrue(HomeCatalogSettingsRepository.uiState.value.items.none { it.isCollection })
-
-        HomeCatalogSettingsRepository.syncCollections(collections)
-
-        assertEquals(
-            listOf("Favorites"),
-            HomeCatalogSettingsRepository.uiState.value.items.filter { it.isCollection }.map { it.defaultTitle },
-        )
-    }
-
-    @Test
-    fun catalogSyncReappliesInputsAfterCollectionSyncReplacedCollections() {
+    fun localeChangesRebuildCatalogLabels() {
         val addons = listOf(addon())
         HomeCatalogSettingsRepository.syncCatalogs(addons)
-        HomeCatalogSettingsRepository.syncCollections(listOf(collection()))
-        assertTrue(HomeCatalogSettingsRepository.uiState.value.items.any { it.isCollection })
-
-        HomeCatalogSettingsRepository.syncCatalogs(addons)
-
-        assertTrue(HomeCatalogSettingsRepository.uiState.value.items.none { it.isCollection })
-        assertEquals("test:movie:popular", HomeCatalogSettingsRepository.uiState.value.items.single().key)
-    }
-
-    @Test
-    fun catalogSyncPreservesPendingCollectionHeroSourceChanges(): Unit = runBlocking {
-        val context = RuntimeEnvironment.getApplication()
-        listOf("provenio_addons", "provenio_collections", "provenio_collection_mobile_settings").forEach { name ->
-            context.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear().commit()
-        }
-        AddonStorage.initialize(context)
-        CollectionStorage.initialize(context)
-        CollectionMobileSettingsStorage.initialize(context)
-        AddonRepository.clearLocalState()
-        CollectionMobileSettingsRepository.clearLocalState()
-        MockWebServer().use { server ->
-            server.enqueue(MockResponse().setBody("""
-                {"id":"test","name":"Catalogs","description":"","version":"1","resources":["catalog"],
-                 "types":["movie"],"catalogs":[{"type":"movie","id":"old"},{"type":"movie","id":"new"}]}
-            """.trimIndent()))
-            server.enqueue(MockResponse().setBody("""{"metas":[{"id":"old","type":"movie","name":"Old"}]}"""))
-            server.enqueue(MockResponse().setBody("""{"metas":[{"id":"new","type":"movie","name":"New"}]}"""))
-            try {
-                AddonStorage.saveInstalledAddonUrls(ProfileRepository.activeProfileId, listOf(server.url("/manifest.json").toString()))
-                AddonRepository.initialize()
-                withTimeout(5_000) { AddonRepository.awaitManifestsLoaded() }
-                val addons = AddonRepository.uiState.value.addons
-                assertNotNull(addons.single().manifest)
-                HomeCatalogSettingsRepository.setHeroEnabled(true)
-                val initialCollection = collection().copy(
-                    folders = listOf(CollectionFolder(
-                        id = "movies",
-                        title = "Movies",
-                        sources = listOf(CollectionSource(addonId = "test", type = "movie", catalogId = "old")),
-                    )),
-                )
-                CollectionRepository.setCollections(listOf(initialCollection))
-                HomeCatalogSettingsRepository.syncCatalogs(addons)
-                HomeCatalogSettingsRepository.syncCollections(CollectionRepository.collections.value)
-                withTimeout(5_000) { HomeRepository.uiState.first { it.heroItems.singleOrNull()?.id == "old" } }
-                val settings = HomeCatalogSettingsRepository.uiState.value
-                CollectionRepository.updateCollection(initialCollection.copy(
-                    folders = initialCollection.folders.map { folder ->
-                        folder.copy(sources = listOf(CollectionSource(addonId = "test", type = "movie", catalogId = "new")))
-                    },
-                ))
-
-                HomeCatalogSettingsRepository.syncCatalogs(addons)
-                val editCount = preferences.editCount
-                assertEquals(settings, HomeCatalogSettingsRepository.uiState.value)
-                assertEquals("old", HomeRepository.uiState.value.heroItems.single().id)
-                HomeCatalogSettingsRepository.syncCollections(CollectionRepository.collections.value)
-
-                withTimeout(5_000) { HomeRepository.uiState.first { it.heroItems.singleOrNull()?.id == "new" } }
-                assertEquals(editCount + 1, preferences.editCount)
-                HomeCatalogSettingsRepository.syncCatalogs(addons)
-                HomeCatalogSettingsRepository.syncCollections(CollectionRepository.collections.value)
-                assertEquals(editCount + 1, preferences.editCount)
-                assertEquals(3, server.requestCount)
-            } finally {
-                HomeRepository.clear()
-                AddonRepository.clearLocalState()
-                CollectionMobileSettingsRepository.clearLocalState()
-            }
-        }
-    }
-
-    @Test
-    fun collectionSourceChangesAreAppliedWithTheSameTitleAndFolderCount() {
-        val collection = collection()
-        HomeCatalogSettingsRepository.syncCollections(listOf(collection))
-        val editCount = preferences.editCount
-        val settings = HomeCatalogSettingsRepository.uiState.value
-        val changed = collection.copy(
-            folders = collection.folders.map { folder ->
-                folder.copy(sources = listOf(CollectionSource(addonId = "other", type = "movie", catalogId = "new")))
-            },
-        )
-
-        HomeCatalogSettingsRepository.syncCollections(listOf(changed))
-
-        assertTrue(preferences.editCount > editCount)
-        assertEquals(settings, HomeCatalogSettingsRepository.uiState.value)
-    }
-
-    @Test
-    fun localeChangesRebuildCatalogAndCollectionLabels() {
-        val addons = listOf(addon())
-        val collections = listOf(collection())
-        HomeCatalogSettingsRepository.syncCatalogs(addons)
-        HomeCatalogSettingsRepository.syncCollections(collections)
         val editCount = preferences.editCount
 
         Locale.setDefault(Locale.FRENCH)
         HomeCatalogSettingsRepository.syncCatalogs(addons)
-        HomeCatalogSettingsRepository.syncCollections(collections)
 
-        assertEquals(editCount + 2, preferences.editCount)
+        assertEquals(editCount + 1, preferences.editCount)
     }
 
     @Test
-    fun profileChangesRebuildTheSameCatalogAndCollectionInputs() {
+    fun profileChangesRebuildTheSameCatalogInputs() {
         val addons = listOf(addon())
-        val collections = listOf(collection())
         HomeCatalogSettingsRepository.syncCatalogs(addons)
-        HomeCatalogSettingsRepository.syncCollections(collections)
         val settings = HomeCatalogSettingsRepository.uiState.value
 
         HomeCatalogSettingsRepository.onProfileChanged()
         HomeCatalogSettingsRepository.syncCatalogs(addons)
-        HomeCatalogSettingsRepository.syncCollections(collections)
 
         assertEquals(settings, HomeCatalogSettingsRepository.uiState.value)
     }
@@ -240,12 +97,6 @@ class HomeCatalogSettingsRepositoryTest {
             catalogs = listOf(AddonCatalog(type = "movie", id = "popular", name = "Popular")),
             transportUrl = "https://example.com",
         ),
-    )
-
-    private fun collection() = Collection(
-        id = "favorites",
-        title = "Favorites",
-        folders = listOf(CollectionFolder(id = "movies", title = "Movies")),
     )
 
     private class RecordingPreferences(

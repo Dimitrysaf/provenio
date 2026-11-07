@@ -41,7 +41,6 @@ fun HomescreenSettingsScreen(
         HomeCatalogSettingsRepository.snapshot()
         HomeCatalogSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
-    val collections by CollectionRepository.collections.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         AddonRepository.initialize()
@@ -53,10 +52,6 @@ fun HomescreenSettingsScreen(
         if (!enabledAddons.isWaitingForFirstEnabledManifest()) {
             HomeCatalogSettingsRepository.syncCatalogs(enabledAddons)
         }
-    }
-
-    LaunchedEffect(collections) {
-        HomeCatalogSettingsRepository.syncCollections(collections)
     }
 
     ScreenScaffold(

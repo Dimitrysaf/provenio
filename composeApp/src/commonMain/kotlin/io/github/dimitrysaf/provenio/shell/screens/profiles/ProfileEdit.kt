@@ -588,8 +588,8 @@ private fun ProfileAvatarDialog(
     val scope = rememberCoroutineScope()
     var processing by remember { mutableStateOf(false) }
     val unreadableMessage = stringResource(Res.string.profile_avatar_picture_unreadable)
-    val pickPicture = rememberAvatarPicturePicker { bytes ->
-        if (bytes == null) return@rememberAvatarPicturePicker
+    val pickPicture = rememberPicturePicker { bytes ->
+        if (bytes == null) return@rememberPicturePicker
         processing = true
         scope.launch {
             val url = withContext(Dispatchers.Default) { avatarPictureDataUri(bytes) }

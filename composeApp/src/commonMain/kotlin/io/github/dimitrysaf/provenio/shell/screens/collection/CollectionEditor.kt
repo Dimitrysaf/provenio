@@ -23,7 +23,6 @@ import io.github.dimitrysaf.provenio.shell.components.StatusModal
 import io.github.dimitrysaf.provenio.shell.components.PlatformBackHandler
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
-import io.github.dimitrysaf.provenio.core.home.PosterShape
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import io.github.dimitrysaf.provenio.core.collection.CollectionEditorRepository
@@ -263,6 +262,9 @@ fun CollectionEditorScreen(
             // own dialog rather than in place.
             var showRenameDialog by remember { mutableStateOf(false) }
             var showBackdropDialog by remember { mutableStateOf(false) }
+            val pickBackdrop = rememberStoredPicturePicker(BackdropPictureMaxSide) { picture ->
+                CollectionEditorRepository.setBackdropImageUrl(picture)
+            }
 
             EditableIdentityHeader(
                 imageUrl = state.backdropImageUrl,
@@ -285,9 +287,24 @@ fun CollectionEditorScreen(
                 )
             }
 
-            if (showBackdropDialog) {
-                // Blank is allowed: clearing the field is how the backdrop is removed, and the
-                // header falls back to its placeholder.
+            if (showBackdropDialog && pickBackdrop != null) {
+                // A picture from the device, or none: the header then falls back to its placeholder.
+                PictureChoiceDialog(
+                    title = stringResource(Res.string.collections_editor_backdrop_image),
+                    hasPicture = state.backdropImageUrl.isNotBlank(),
+                    onChoose = {
+                        showBackdropDialog = false
+                        pickBackdrop()
+                    },
+                    onRemove = {
+                        CollectionEditorRepository.setBackdropImageUrl("")
+                        showBackdropDialog = false
+                    },
+                    onDismiss = { showBackdropDialog = false },
+                )
+            } else if (showBackdropDialog) {
+                // Where there is no picker, a link. Blank is allowed: clearing the field is how
+                // the backdrop is removed, and the header falls back to its placeholder.
                 TextPromptDialog(
                     title = stringResource(Res.string.collections_editor_backdrop_image),
                     label = stringResource(Res.string.collections_editor_placeholder_backdrop),
@@ -309,15 +326,6 @@ fun CollectionEditorScreen(
             val modes = FolderViewMode.entries.filter { it != FolderViewMode.FOLLOW_LAYOUT }
 
             CollectionEditorGroup {
-                row { shape ->
-                    CollectionEditorSwitchRow(
-                        title = stringResource(Res.string.collections_editor_pin_above),
-                        description = stringResource(Res.string.collections_editor_pin_above_desc),
-                        checked = state.pinToTop,
-                        onCheckedChange = { CollectionEditorRepository.setPinToTop(it) },
-                        shape = shape,
-                    )
-                }
                 row { shape ->
                     CollectionEditorChoiceRow(
                         title = stringResource(Res.string.collections_editor_view_mode),
@@ -408,11 +416,3 @@ private fun folderViewModeLabel(mode: FolderViewMode): String = when (mode) {
     FolderViewMode.TABBED_GRID -> stringResource(Res.string.collections_editor_view_mode_tabs)
     else -> stringResource(Res.string.collections_editor_view_mode_rows)
 }
-
-@Composable
-internal fun posterShapeLabel(shape: PosterShape): String =
-    when (shape) {
-        PosterShape.Poster -> stringResource(Res.string.collections_editor_shape_poster)
-        PosterShape.Square -> stringResource(Res.string.collections_editor_shape_square)
-        PosterShape.Landscape -> stringResource(Res.string.collections_editor_shape_wide)
-    }
