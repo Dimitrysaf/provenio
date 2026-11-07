@@ -31,6 +31,17 @@ import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.shell.screens.home.components.PosterGridRow
 import io.github.dimitrysaf.provenio.shell.screens.home.components.PosterGridSkeletonRow
 import provenio.composeapp.generated.resources.Res
+import provenio.composeapp.generated.resources.search_sort_rating
+import provenio.composeapp.generated.resources.search_sort_oldest
+import provenio.composeapp.generated.resources.search_sort_newest
+import provenio.composeapp.generated.resources.settings_integration_status_off
+import provenio.composeapp.generated.resources.settings_integration_status_on
+import provenio.composeapp.generated.resources.search_filter_hide_watched
+import provenio.composeapp.generated.resources.discover_select_genre
+import provenio.composeapp.generated.resources.search_filter_year
+import provenio.composeapp.generated.resources.discover_genre
+import provenio.composeapp.generated.resources.search_filter_any_year
+import provenio.composeapp.generated.resources.discover_all_genres
 import provenio.composeapp.generated.resources.library_filter_all_types
 import provenio.composeapp.generated.resources.library_filter_list
 import provenio.composeapp.generated.resources.library_filter_sort
@@ -48,6 +59,7 @@ import io.github.dimitrysaf.provenio.core.library.LibrarySortOption
 import io.github.dimitrysaf.provenio.core.library.LibrarySourceMode
 import io.github.dimitrysaf.provenio.core.library.LibraryVerticalEntry
 import io.github.dimitrysaf.provenio.core.library.LibraryVerticalProjection
+import io.github.dimitrysaf.provenio.core.library.LibraryFilterState
 import io.github.dimitrysaf.provenio.core.library.availableLibrarySortOptions
 import io.github.dimitrysaf.provenio.core.library.isRemoteTrackingSource
 import io.github.dimitrysaf.provenio.core.library.toMetaPreview
@@ -56,13 +68,17 @@ import io.github.dimitrysaf.provenio.core.library.toMetaPreview
 private enum class LibraryFilter {
     List,
     Type,
+    Genre,
+    Year,
     Sort,
+    HideWatched,
 }
 
 /**
- * The Library's filters, as a button inside its search field: the list and the type to show, for
- * the grid layout, and the order. It opens the filters as a sheet, each opening its own choices,
- * as Search's filters do, and is badged while a type is picked.
+ * The Library's filters, as a button inside its search field: the list, for the grid layout, then
+ * the type, genre and year to show, the order and whether watched titles are hidden, as Search's
+ * filters. It opens the filters as a sheet, each opening its own choices, and is badged while any
+ * of them narrows the titles.
  */
 @Composable
 internal fun LibraryFiltersButton(
@@ -70,24 +86,29 @@ internal fun LibraryFiltersButton(
     sourceMode: LibrarySourceMode,
     sortOption: LibrarySortOption,
     verticalProjection: LibraryVerticalProjection,
+    filters: LibraryFilterState,
+    types: List<String>,
+    genres: List<String>,
+    years: List<Int>,
     enabled: Boolean,
     onSectionSelected: (String) -> Unit,
-    onTypeSelected: (String?) -> Unit,
+    onFiltersChange: (LibraryFilterState) -> Unit,
     onSortSelected: (LibrarySortOption) -> Unit,
 ) {
     var showFilters by remember { mutableStateOf(false) }
     var openFilter by remember { mutableStateOf<LibraryFilter?>(null) }
     val sortOptions = availableLibrarySortOptions(sourceMode)
     val allTypesLabel = stringResource(Res.string.library_filter_all_types)
+    val allGenresLabel = stringResource(Res.string.discover_all_genres)
+    val anyYearLabel = stringResource(Res.string.search_filter_any_year)
     val showsList = layoutMode == LibraryLayoutMode.VERTICAL && sourceMode.isRemoteTrackingSource
-    val showsType = layoutMode == LibraryLayoutMode.VERTICAL
     val selectedSection = verticalProjection.availableSections
         .firstOrNull { section -> section.type == verticalProjection.selectedSectionKey }
     val label = stringResource(Res.string.discover_filters)
 
     WithTooltip(label) {
         IconButton(onClick = { showFilters = true }, enabled = enabled) {
-            BadgedBox(badge = { if (verticalProjection.selectedType != null) Badge() }) {
+            BadgedBox(badge = { if (filters.isActive) Badge() }) {
                 Icon(imageVector = Icons.Rounded.Tune, contentDescription = label)
             }
         }
@@ -107,17 +128,30 @@ internal fun LibraryFiltersButton(
                         ),
                     )
                 }
-                if (showsType) {
-                    add(
-                        SingleChoiceOption(
-                            value = LibraryFilter.Type,
-                            label = stringResource(Res.string.discover_type),
-                            supportingText = verticalProjection.selectedType?.let(::localizedMediaTypeLabel)
-                                ?: allTypesLabel,
-                            enabled = verticalProjection.availableTypes.isNotEmpty(),
-                        ),
-                    )
-                }
+                add(
+                    SingleChoiceOption(
+                        value = LibraryFilter.Type,
+                        label = stringResource(Res.string.discover_type),
+                        supportingText = filters.type?.let(::localizedMediaTypeLabel) ?: allTypesLabel,
+                        enabled = types.isNotEmpty() || filters.type != null,
+                    ),
+                )
+                add(
+                    SingleChoiceOption(
+                        value = LibraryFilter.Genre,
+                        label = stringResource(Res.string.discover_genre),
+                        supportingText = filters.genre ?: allGenresLabel,
+                        enabled = genres.isNotEmpty() || filters.genre != null,
+                    ),
+                )
+                add(
+                    SingleChoiceOption(
+                        value = LibraryFilter.Year,
+                        label = stringResource(Res.string.search_filter_year),
+                        supportingText = filters.year?.toString() ?: anyYearLabel,
+                        enabled = years.isNotEmpty() || filters.year != null,
+                    ),
+                )
                 add(
                     SingleChoiceOption(
                         value = LibraryFilter.Sort,
@@ -126,9 +160,29 @@ internal fun LibraryFiltersButton(
                         enabled = sortOptions.size > 1,
                     ),
                 )
+                add(
+                    SingleChoiceOption(
+                        value = LibraryFilter.HideWatched,
+                        label = stringResource(Res.string.search_filter_hide_watched),
+                        supportingText = stringResource(
+                            if (filters.hideWatched) {
+                                Res.string.settings_integration_status_on
+                            } else {
+                                Res.string.settings_integration_status_off
+                            },
+                        ),
+                    ),
+                )
             },
             isSelected = { false },
-            onSelected = { filter -> openFilter = filter },
+            // On or off, so choosing it flips it rather than opening a sheet.
+            onSelected = { filter ->
+                if (filter == LibraryFilter.HideWatched) {
+                    onFiltersChange(filters.copy(hideWatched = !filters.hideWatched))
+                } else {
+                    openFilter = filter
+                }
+            },
             onDismiss = { showFilters = false },
         )
     }
@@ -148,12 +202,34 @@ internal fun LibraryFiltersButton(
             title = stringResource(Res.string.library_filter_type),
             options = buildList {
                 add(SingleChoiceOption(value = "", label = allTypesLabel))
-                verticalProjection.availableTypes.forEach { type ->
+                types.forEach { type ->
                     add(SingleChoiceOption(value = type, label = localizedMediaTypeLabel(type)))
                 }
             },
-            isSelected = { it == verticalProjection.selectedType.orEmpty() },
-            onSelected = { type -> onTypeSelected(type.ifBlank { null }) },
+            isSelected = { it == filters.type.orEmpty() },
+            onSelected = { type -> onFiltersChange(filters.copy(type = type.ifBlank { null })) },
+            onDismiss = { openFilter = null },
+        )
+
+        LibraryFilter.Genre -> SingleChoiceBottomSheet(
+            title = stringResource(Res.string.discover_select_genre),
+            options = buildList {
+                add(SingleChoiceOption(value = "", label = allGenresLabel))
+                genres.forEach { add(SingleChoiceOption(value = it, label = it)) }
+            },
+            isSelected = { it == filters.genre.orEmpty() },
+            onSelected = { genre -> onFiltersChange(filters.copy(genre = genre.ifBlank { null })) },
+            onDismiss = { openFilter = null },
+        )
+
+        LibraryFilter.Year -> SingleChoiceBottomSheet(
+            title = stringResource(Res.string.search_filter_year),
+            options = buildList<SingleChoiceOption<Int?>> {
+                add(SingleChoiceOption(value = null, label = anyYearLabel))
+                years.forEach { add(SingleChoiceOption(value = it, label = it.toString())) }
+            },
+            isSelected = { it == filters.year },
+            onSelected = { year -> onFiltersChange(filters.copy(year = year)) },
             onDismiss = { openFilter = null },
         )
 
@@ -167,7 +243,7 @@ internal fun LibraryFiltersButton(
             onDismiss = { openFilter = null },
         )
 
-        null -> Unit
+        LibraryFilter.HideWatched, null -> Unit
     }
 }
 
@@ -233,6 +309,9 @@ private fun librarySortOptionLabel(option: LibrarySortOption): String =
         LibrarySortOption.ADDED_ASC -> stringResource(Res.string.library_sort_added_asc)
         LibrarySortOption.TITLE_ASC -> stringResource(Res.string.library_sort_title_asc)
         LibrarySortOption.TITLE_DESC -> stringResource(Res.string.library_sort_title_desc)
+        LibrarySortOption.RELEASE_DESC -> stringResource(Res.string.search_sort_newest)
+        LibrarySortOption.RELEASE_ASC -> stringResource(Res.string.search_sort_oldest)
+        LibrarySortOption.RATING -> stringResource(Res.string.search_sort_rating)
     }
 
 private fun List<LibraryVerticalEntry>.findEntry(preview: MetaPreview): LibraryVerticalEntry? =

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import io.github.dimitrysaf.provenio.shell.components.rememberWatchedKeysWithAliases
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.runtime.CompositionLocalProvider
 import io.github.dimitrysaf.provenio.shell.components.FindableText
@@ -163,6 +164,11 @@ fun PersonDetailScreen(
         )
     }
 
+    val credits = (uiState as? PersonDetailUiState.Success)?.personDetail
+        ?.let { it.movieCredits + it.tvCredits }.orEmpty()
+    val creditWatchedKeys = rememberWatchedKeysWithAliases(watchedUiState.watchedKeys, credits)
+    val creditWatchedSeriesKeys = rememberWatchedKeysWithAliases(fullyWatchedSeriesKeys, credits)
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -185,8 +191,8 @@ fun PersonDetailScreen(
             )
             is PersonDetailUiState.Success -> PersonDetailContent(
                 person = state.personDetail,
-                watchedKeys = watchedUiState.watchedKeys,
-                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                watchedKeys = creditWatchedKeys,
+                fullyWatchedSeriesKeys = creditWatchedSeriesKeys,
                 onBack = onBack,
                 onOpenMeta = onOpenMeta,
                 initialProfilePhoto = initialProfilePhoto,

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.search
 
+import io.github.dimitrysaf.provenio.shell.components.rememberWatchedKeysWithAliases
 import io.github.dimitrysaf.provenio.shell.components.TextFieldEntry
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
@@ -154,21 +155,27 @@ fun SearchScreen(
     val filters by SearchRepository.filters.collectAsStateWithLifecycle()
     val keywordUiState by SearchRepository.keywordResults.collectAsStateWithLifecycle()
     val watchedUiState by WatchedRepository.uiState.collectAsStateWithLifecycle()
-    val fullyWatchedSeriesKeys by WatchedRepository.fullyWatchedSeriesKeys.collectAsStateWithLifecycle()
+    val watchedSeriesKeys by WatchedRepository.fullyWatchedSeriesKeys.collectAsStateWithLifecycle()
+    // Results carrying only a TMDB id, as keyword results and TMDB add-ons give, match by IMDb id as well.
+    val resultItems = remember(uiState.sections, discoverUiState.items, keywordUiState.items) {
+        uiState.sections.flatMap { it.items } + discoverUiState.items + keywordUiState.items
+    }
+    val watchedKeys = rememberWatchedKeysWithAliases(watchedUiState.watchedKeys, resultItems)
+    val fullyWatchedSeriesKeys = rememberWatchedKeysWithAliases(watchedSeriesKeys, resultItems)
     // Hiding the watched titles leaves out every poster that would carry the watched mark.
     val unwatched: (List<MetaPreview>) -> List<MetaPreview> = { items ->
         if (!filters.hideWatched) {
             items
         } else {
-            items.filterNot { WatchingState.isPosterWatched(watchedUiState.watchedKeys, it, fullyWatchedSeriesKeys) }
+            items.filterNot { WatchingState.isPosterWatched(watchedKeys, it, fullyWatchedSeriesKeys) }
         }
     }
-    val visibleSections = remember(uiState.sections, filters, watchedUiState.watchedKeys, fullyWatchedSeriesKeys) {
+    val visibleSections = remember(uiState.sections, filters, watchedKeys, fullyWatchedSeriesKeys) {
         uiState.sections.applySearchFilters(filters)
             .map { section -> section.copy(items = unwatched(section.items)) }
             .filter { it.items.isNotEmpty() }
     }
-    val sortedDiscoverUiState = remember(discoverUiState, filters, watchedUiState.watchedKeys, fullyWatchedSeriesKeys) {
+    val sortedDiscoverUiState = remember(discoverUiState, filters, watchedKeys, fullyWatchedSeriesKeys) {
         discoverUiState.copy(items = unwatched(discoverUiState.items.releasedIn(filters.year).sortedFor(filters.sort)))
     }
     val homeCatalogSettingsUiState by remember {
@@ -294,7 +301,7 @@ fun SearchScreen(
     // The keyword's titles, narrowed by the text in the field and the type filter, in the chosen order.
     val keyword = filters.keyword
     val keywordMatcher = remember(query) { listSearchMatcher(query) }
-    val keywordView = remember(keywordUiState, keywordMatcher, filters, watchedUiState.watchedKeys, fullyWatchedSeriesKeys) {
+    val keywordView = remember(keywordUiState, keywordMatcher, filters, watchedKeys, fullyWatchedSeriesKeys) {
         keywordUiState.copy(
             items = unwatched(
                 keywordUiState.items
@@ -400,7 +407,7 @@ fun SearchScreen(
                     columns = discoverColumns,
                     networkCondition = networkStatusUiState.condition,
                     onRetry = { SearchRepository.setSearchKeyword(keyword) },
-                    watchedKeys = watchedUiState.watchedKeys,
+                    watchedKeys = watchedKeys,
                     fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                     onPosterClick = onPosterClick,
                     onPosterLongClick = onPosterLongClick,
@@ -431,7 +438,7 @@ fun SearchScreen(
                                 )
                             }
                         },
-                        watchedKeys = watchedUiState.watchedKeys,
+                        watchedKeys = watchedKeys,
                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                         onPosterClick = onPosterClick,
                         onPosterLongClick = onPosterLongClick,
@@ -503,7 +510,7 @@ fun SearchScreen(
                                 HomeCatalogRowSection(
                                     section = section,
                                     modifier = Modifier.padding(bottom = 12.dp),
-                                    watchedKeys = watchedUiState.watchedKeys,
+                                    watchedKeys = watchedKeys,
                                     fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                                     onPosterClick = onPosterClick,
                                     onPosterLongClick = onPosterLongClick,

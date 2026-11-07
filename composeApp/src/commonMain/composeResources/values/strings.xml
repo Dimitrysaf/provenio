@@ -1926,6 +1926,7 @@
     <string name="library_search_trakt_placeholder">Search your Trakt library</string>
     <string name="library_search_simkl_placeholder">Search your Simkl library</string>
     <string name="library_search_no_results">Nothing in your library matches “%1$s”.</string>
+    <string name="library_filters_no_results">Nothing in your library matches these filters.</string>
     <string name="library_load_failed">Couldn't load library</string>
     <string name="library_other">Other</string>
     <string name="library_sort_added_asc">Oldest added</string>

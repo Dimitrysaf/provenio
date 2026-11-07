@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import io.github.dimitrysaf.provenio.shell.components.rememberWatchedKeysWithAliases
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCellWidth
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
@@ -97,6 +98,9 @@ fun TmdbEntityBrowseScreen(
     }
 
     val state = uiState
+    val railItems = (state as? EntityBrowseUiState.Success)?.data?.rails?.flatMap { it.items }.orEmpty()
+    val watchedKeys = rememberWatchedKeysWithAliases(watchedUiState.watchedKeys, railItems)
+    val watchedSeriesKeys = rememberWatchedKeysWithAliases(fullyWatchedSeriesKeys, railItems)
     val title = (state as? EntityBrowseUiState.Success)?.data?.header?.name ?: entityName
     val shelfSettings by remember {
         HomeCatalogSettingsRepository.uiState
@@ -132,8 +136,8 @@ fun TmdbEntityBrowseScreen(
                         is EntityBrowseUiState.Error -> Unit
                         is EntityBrowseUiState.Success -> entityRails(
                             data = state.data,
-                            watchedKeys = watchedUiState.watchedKeys,
-                            fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                            watchedKeys = watchedKeys,
+                            fullyWatchedSeriesKeys = watchedSeriesKeys,
                             railShelfGrid = railShelfGrid,
                             onOpenMeta = onOpenMeta,
                         )
@@ -165,8 +169,8 @@ fun TmdbEntityBrowseScreen(
                     if (!isTwoPane) {
                         entityRails(
                             data = state.data,
-                            watchedKeys = watchedUiState.watchedKeys,
-                            fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                            watchedKeys = watchedKeys,
+                            fullyWatchedSeriesKeys = watchedSeriesKeys,
                             railShelfGrid = railShelfGrid,
                             onOpenMeta = onOpenMeta,
                         )

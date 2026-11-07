@@ -1,6 +1,7 @@
 package io.github.dimitrysaf.provenio.core.library
 
 import io.github.dimitrysaf.provenio.core.home.HomeShelfLayout
+import io.github.dimitrysaf.provenio.core.search.releaseSortKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,9 @@ enum class LibrarySortOption {
     ADDED_ASC,
     TITLE_ASC,
     TITLE_DESC,
+    RELEASE_DESC,
+    RELEASE_ASC,
+    RATING,
 }
 
 data class LibraryDisplaySettingsUiState(
@@ -149,6 +153,19 @@ internal fun sortLibraryItems(
             compareByDescending<LibraryItem> { libraryTitleSortKey(it) }
                 .thenBy { it.id },
         )
+        // As Search orders them: undated titles last, the newest or oldest release first.
+        LibrarySortOption.RELEASE_DESC -> items.sortedWith(
+            compareByDescending<LibraryItem, String?>(nullsFirst()) { it.toMetaPreview().releaseSortKey() }
+                .thenBy { libraryTitleSortKey(it) },
+        )
+        LibrarySortOption.RELEASE_ASC -> items.sortedWith(
+            compareBy<LibraryItem, String?>(nullsLast()) { it.toMetaPreview().releaseSortKey() }
+                .thenBy { libraryTitleSortKey(it) },
+        )
+        LibrarySortOption.RATING -> items.sortedWith(
+            compareByDescending<LibraryItem, Double?>(nullsFirst()) { it.imdbRating?.trim()?.toDoubleOrNull() }
+                .thenBy { libraryTitleSortKey(it) },
+        )
     }
 
 internal fun sortLibrarySections(
@@ -266,7 +283,7 @@ private fun libraryTitleTieBreakKey(item: LibraryItem): String =
 private fun libraryDisplayItemKey(item: LibraryItem): String =
     "${item.type.normalizedLibraryType()}:${item.id.trim()}"
 
-private fun String.normalizedLibraryType(): String = trim().lowercase()
+internal fun String.normalizedLibraryType(): String = trim().lowercase()
 
 internal val LibrarySourceMode.isRemoteTrackingSource: Boolean
     get() = this != LibrarySourceMode.LOCAL

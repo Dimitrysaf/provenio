@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import io.github.dimitrysaf.provenio.shell.components.rememberWatchedKeysWithAliases
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.FocusDirection
@@ -619,6 +620,10 @@ private fun MetaDetailsContent(
     ) {
         LibraryRepository.isSaved(meta.id, meta.type)
     }
+    // More like this and the collection list TMDB titles, so they are matched by IMDb id as well.
+    val tmdbPosters = remember(meta.moreLikeThis, meta.collectionItems) { meta.moreLikeThis + meta.collectionItems }
+    val sectionWatchedKeys = rememberWatchedKeysWithAliases(watchedUiState.watchedKeys, tmdbPosters)
+    val sectionWatchedSeriesKeys = rememberWatchedKeysWithAliases(fullyWatchedSeriesKeys, tmdbPosters)
     val isWatched = remember(watchedUiState.watchedKeys, fullyWatchedSeriesKeys, metaPreview) {
         WatchingState.isPosterWatched(
             watchedKeys = watchedUiState.watchedKeys,
@@ -884,8 +889,8 @@ private fun MetaDetailsContent(
                     onCommentClick = { review -> comments.selected = review },
                     onTrailerClick = playTrailer,
                     progressByVideoId = progressByVideoId,
-                    watchedKeys = watchedUiState.watchedKeys,
-                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                    watchedKeys = sectionWatchedKeys,
+                    fullyWatchedSeriesKeys = sectionWatchedSeriesKeys,
                     blurUnwatchedEpisodes = metaScreenSettingsUiState.blurUnwatchedEpisodes,
                     onEpisodeClick = onEpisodePlayClick,
                     onEpisodeLongPress = { video -> selectedEpisodeForActions = video },

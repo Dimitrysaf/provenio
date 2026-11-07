@@ -1,5 +1,10 @@
 package io.github.dimitrysaf.provenio.shell.screens.library
 
+import io.github.dimitrysaf.provenio.core.library.libraryFilterYears
+import io.github.dimitrysaf.provenio.core.library.libraryFilterGenres
+import io.github.dimitrysaf.provenio.core.library.libraryFilterTypes
+import io.github.dimitrysaf.provenio.core.library.filteredBy
+import io.github.dimitrysaf.provenio.core.library.LibraryFilterState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.LocalContentColor
 import io.github.dimitrysaf.provenio.shell.components.textActionsMenu
@@ -202,11 +207,30 @@ fun LibraryScreen(
     var selectedCloudItemKey by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedLibrarySectionKey by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedLibraryType by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedLibraryGenre by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedLibraryYear by rememberSaveable { mutableStateOf<Int?>(null) }
+    var hideWatchedInLibrary by rememberSaveable { mutableStateOf(false) }
+    val libraryFilters = LibraryFilterState(
+        type = selectedLibraryType,
+        genre = selectedLibraryGenre,
+        year = selectedLibraryYear,
+        hideWatched = hideWatchedInLibrary,
+    )
     var librarySearchQuery by rememberSaveable { mutableStateOf("") }
     val searchTerm = librarySearchQuery.trim()
-    // The search narrows what is shown, shelves and grid alike; the library itself is unchanged.
-    val searchedSections = remember(uiState.sections, searchTerm) {
-        uiState.sections.matchingSearch(searchTerm)
+    // The search and the filters narrow what is shown, shelves and grid alike; the library itself is unchanged.
+    val shelvesLayout = displaySettings.layoutMode == LibraryLayoutMode.HORIZONTAL
+    val searchedSections = remember(
+        uiState.sections,
+        searchTerm,
+        libraryFilters,
+        shelvesLayout,
+        watchedUiState.watchedKeys,
+        fullyWatchedSeriesKeys,
+    ) {
+        uiState.sections.matchingSearch(searchTerm).filteredBy(libraryFilters, forShelves = shelvesLayout) { item ->
+            WatchingState.isPosterWatched(watchedUiState.watchedKeys, item.toMetaPreview(), fullyWatchedSeriesKeys)
+        }
     }
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -325,12 +349,22 @@ fun LibraryScreen(
                     sourceMode = uiState.sourceMode,
                     sortOption = effectiveSortOption,
                     verticalProjection = verticalProjection,
+                    filters = libraryFilters,
+                    // The grid offers the types of the list it shows; the shelves, every type saved.
+                    types = if (shelvesLayout) uiState.sections.libraryFilterTypes() else verticalProjection.availableTypes,
+                    genres = remember(uiState.sections) { uiState.sections.libraryFilterGenres() },
+                    years = remember(uiState.sections) { uiState.sections.libraryFilterYears() },
                     enabled = uiState.sections.isNotEmpty(),
                     onSectionSelected = { sectionKey ->
                         selectedLibrarySectionKey = sectionKey
                         selectedLibraryType = null
                     },
-                    onTypeSelected = { type -> selectedLibraryType = type },
+                    onFiltersChange = { filters ->
+                        selectedLibraryType = filters.type
+                        selectedLibraryGenre = filters.genre
+                        selectedLibraryYear = filters.year
+                        hideWatchedInLibrary = filters.hideWatched
+                    },
                     onSortSelected = LibraryDisplaySettingsRepository::setSortOption,
                 )
             }
@@ -511,7 +545,7 @@ fun LibraryScreen(
                         item { LibraryEmptyState(uiState.sourceMode) }
                     }
 
-                    searchedSections.isEmpty() -> {
+                    searchedSections.all { it.items.isEmpty() } -> {
                         item(key = "library-search-no-results") { LibrarySearchNoResults(searchTerm) }
                     }
 
@@ -1650,7 +1684,12 @@ private fun LibrarySearchNoResults(query: String) {
         icon = Icons.Rounded.SearchOff,
         modifier = Modifier.padding(horizontal = 16.dp),
         title = stringResource(Res.string.compose_search_empty_no_results_title),
-        message = stringResource(Res.string.library_search_no_results, query),
+        // With no search, it is the filters that left nothing.
+        message = if (query.isEmpty()) {
+            stringResource(Res.string.library_filters_no_results)
+        } else {
+            stringResource(Res.string.library_search_no_results, query)
+        },
     )
 }
 

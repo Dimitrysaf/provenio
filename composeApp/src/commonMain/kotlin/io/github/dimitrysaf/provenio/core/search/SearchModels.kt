@@ -205,7 +205,7 @@ fun MetaPreview.releaseYears(currentYear: Int): IntRange? {
 private val OpenRange = Regex("""\d{4}\s*[-–—]\s*$""")
 
 /** A sortable release date, from the full date when known and the year otherwise. */
-private fun MetaPreview.releaseSortKey(): String? {
+internal fun MetaPreview.releaseSortKey(): String? {
     rawReleaseDate?.trim()?.takeIf { it.length >= 4 && it.take(4).all(Char::isDigit) }?.let { return it.take(10) }
     return releaseInfo?.let { YearPrefix.find(it)?.value }
 }

@@ -1925,6 +1925,7 @@
     <string name="library_search_trakt_placeholder">Αναζήτηση στη βιβλιοθήκη Trakt σας</string>
     <string name="library_search_simkl_placeholder">Αναζήτηση στη βιβλιοθήκη Simkl σας</string>
     <string name="library_search_no_results">Τίποτα στη βιβλιοθήκη σας δεν ταιριάζει με «%1$s».</string>
+    <string name="library_filters_no_results">Τίποτα στη βιβλιοθήκη σας δεν ταιριάζει με αυτά τα φίλτρα.</string>
     <string name="library_load_failed">Αδυναμία φόρτωσης βιβλιοθήκης</string>
     <string name="library_other">Άλλο</string>
     <string name="library_sort_added_asc">Παλαιότερη προσθήκη</string>
