@@ -11,23 +11,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.splashscreen.R as SplashR
-import android.util.TypedValue
-import android.graphics.drawable.AnimatedVectorDrawable
-import android.view.Gravity
-import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
-import io.github.dimitrysaf.provenio.core.startup.AppStartupState
-import kotlin.math.roundToInt
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import io.github.dimitrysaf.provenio.core.auth.AuthStorage
 import io.github.dimitrysaf.provenio.core.deeplink.handleAppUrl
 import io.github.dimitrysaf.provenio.core.sync.SyncClientIdentityStorage
@@ -90,20 +79,14 @@ import io.github.dimitrysaf.provenio.core.docs.DocsStorage
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPreferencesStorage
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.shell.App
+import io.github.dimitrysaf.provenio.shell.components.AppLaunchScreen
+import androidx.compose.ui.graphics.Color
 
-private const val LaunchLogoSizeDp = 288
-private const val MaxLaunchOverlayMillis = 6_000L
-private const val LaunchOverlayFadeMillis = 220L
 
 open class MainActivity : AppCompatActivity() {
     private var pipRemoteActionReceiver: PipRemoteActionReceiver? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val launchLogo = TypedValue()
-            .takeIf { theme.resolveAttribute(SplashR.attr.windowSplashScreenAnimatedIcon, it, true) }
-            ?.resourceId
-            ?.takeIf { it != 0 }
-            ?: R.drawable.ic_splash_logo_arctic_blue
         installSplashScreen()
         enableEdgeToEdge(
             navigationBarStyle = SystemBarStyle.dark(
@@ -176,7 +159,9 @@ open class MainActivity : AppCompatActivity() {
         deleteLeftoverPluginData()
 
         setContent {
-            App()
+            AppLaunchScreen(background = Color(ContextCompat.getColor(this, R.color.provenio_background))) {
+                App()
+            }
         }
         lifecycleScope.launch {
             AppFullscreen.isFullscreen.collect { fullscreen ->
@@ -189,53 +174,12 @@ open class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        showLaunchOverlay(launchLogoColor(launchLogo))
     }
 
     // Older versions downloaded plugin scrapers; Provenio no longer runs them, so their code and settings go.
     private fun deleteLeftoverPluginData() {
         deleteSharedPreferences("provenio_plugins")
         filesDir.resolve("provenio_plugin_scrapers").deleteRecursively()
-    }
-
-    private fun showLaunchOverlay(logoColor: Int) {
-        val logo = ContextCompat.getDrawable(this, R.drawable.launch_logo_animated)
-            ?.mutate() as? AnimatedVectorDrawable
-            ?: return
-        logo.setTint(logoColor)
-        val overlay = FrameLayout(this).apply {
-            setBackgroundColor(ContextCompat.getColor(context, R.color.provenio_background))
-            isClickable = true
-        }
-        val logoSize = (LaunchLogoSizeDp * resources.displayMetrics.density).roundToInt()
-        overlay.addView(
-            ImageView(this).apply { setImageDrawable(logo) },
-            FrameLayout.LayoutParams(logoSize, logoSize, Gravity.CENTER),
-        )
-        addContentView(overlay, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        logo.start()
-        lifecycleScope.launch {
-            withTimeoutOrNull(MaxLaunchOverlayMillis) {
-                AppStartupState.firstScreenReady.first { it }
-            }
-            overlay.animate()
-                .alpha(0f)
-                .setDuration(LaunchOverlayFadeMillis)
-                .withEndAction {
-                    logo.stop()
-                    (overlay.parent as? ViewGroup)?.removeView(overlay)
-                }
-                .start()
-        }
-    }
-
-    private fun launchLogoColor(splashIcon: Int): Int = when (splashIcon) {
-        R.drawable.ic_splash_logo -> 0xFFD0BCFF.toInt()
-        R.drawable.ic_splash_logo_copper -> 0xFFFFB690.toInt()
-        R.drawable.ic_splash_logo_emerald -> 0xFF81D8AD.toInt()
-        R.drawable.ic_splash_logo_graphite -> 0xFFC5C6D0.toInt()
-        R.drawable.ic_splash_logo_rose_gold -> 0xFFF1B7C4.toInt()
-        else -> 0xFFA9C7FF.toInt()
     }
 
     override fun onNewIntent(intent: Intent) {

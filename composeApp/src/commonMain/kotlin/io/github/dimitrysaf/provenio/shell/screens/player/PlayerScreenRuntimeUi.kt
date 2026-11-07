@@ -230,7 +230,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             displayedPositionMs = displayedPositionMs,
             statusLines = if (isStillLoading()) openingStatusLines else torrentStatusLines,
         )
-        PlayerSeekRipple(state = accumulatedSeekState)
+        PlayerSeekRipple(state = accumulatedSeekState, compact = metrics.transportAtBottom)
         PlayerGestureFeedbackOverlay(
             visible = (liveGestureFeedback ?: gestureFeedback) != null,
             feedback = renderedGestureFeedback,
