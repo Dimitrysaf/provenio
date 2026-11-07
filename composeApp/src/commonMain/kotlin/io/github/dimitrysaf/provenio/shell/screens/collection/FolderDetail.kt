@@ -42,7 +42,19 @@ import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.shell.components.PosterCard
 import io.github.dimitrysaf.provenio.shell.components.LocalPosterProgress
 import io.github.dimitrysaf.provenio.shell.components.PosterCardShape
-import io.github.dimitrysaf.provenio.shell.components.ScreenHeader
+import io.github.dimitrysaf.provenio.shell.components.WithTooltip
+import io.github.dimitrysaf.provenio.core.watch.watching.application.PosterImdbAliases
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import provenio.composeapp.generated.resources.action_back
 import io.github.dimitrysaf.provenio.shell.components.safeBottomPadding
 import io.github.dimitrysaf.provenio.shell.components.withDuplicateSafeLazyKeys
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSection
@@ -68,6 +80,7 @@ import io.github.dimitrysaf.provenio.core.collection.FolderDetailRepository
 
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 fun FolderDetailScreen(
     onBack: () -> Unit,
     onCatalogClick: (HomeCatalogSection) -> Unit,
@@ -81,59 +94,92 @@ fun FolderDetailScreen(
     val fullyWatchedSeriesKeys by WatchedRepository.fullyWatchedSeriesKeys.collectAsState()
     val folder = uiState.folder
     val useNativeNavigation = LocalUseNativeNavigation.current
+    // The same collapsing app bar as a catalog's page: large over the top of the titles, a title
+    // bar once they scroll.
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    Column(
+    Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-    ) {
-        if (!useNativeNavigation) {
-            ScreenHeader(
-                title = folder?.title ?: uiState.collectionTitle,
-                modifier = Modifier.padding(horizontal = 16.dp),
-                onBack = onBack,
-            )
-        }
-
-        if (folder == null && !uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(Res.string.collections_folder_not_found),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            .then(if (useNativeNavigation) Modifier else Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)),
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            if (!useNativeNavigation) {
+                LargeFlexibleTopAppBar(
+                    title = {
+                        Text(
+                            text = folder?.title ?: uiState.collectionTitle,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
+                    subtitle = uiState.collectionTitle.takeIf { folder != null && it.isNotBlank() }?.let { text ->
+                        { Text(text = text, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    },
+                    navigationIcon = {
+                        WithTooltip(stringResource(Res.string.action_back)) {
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                    contentDescription = stringResource(Res.string.action_back),
+                                )
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    ),
+                    scrollBehavior = scrollBehavior,
                 )
             }
-            return@Column
-        }
+        },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = innerPadding.calculateTopPadding()),
+        ) {
+            if (folder == null && !uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(Res.string.collections_folder_not_found),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                return@Column
+            }
 
-        when (uiState.viewMode) {
-            FolderViewMode.TABBED_GRID -> TabbedGridContent(
-                uiState = uiState,
-                watchedKeys = watchedUiState.watchedKeys,
-                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                modifier = Modifier.weight(1f),
-                onTabSelected = { FolderDetailRepository.selectTab(it) },
-                onPosterClick = onPosterClick,
-            )
-            FolderViewMode.ROWS -> RowsContent(
-                uiState = uiState,
-                watchedKeys = watchedUiState.watchedKeys,
-                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                modifier = Modifier.weight(1f),
-                onCatalogClick = onCatalogClick,
-                onPosterClick = onPosterClick,
-            )
-            FolderViewMode.FOLLOW_LAYOUT -> RowsContent(
-                uiState = uiState,
-                watchedKeys = watchedUiState.watchedKeys,
-                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                modifier = Modifier.weight(1f),
-                onCatalogClick = onCatalogClick,
-                onPosterClick = onPosterClick,
-            )
+            when (uiState.viewMode) {
+                FolderViewMode.TABBED_GRID -> TabbedGridContent(
+                    uiState = uiState,
+                    watchedKeys = watchedUiState.watchedKeys,
+                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                    modifier = Modifier.weight(1f),
+                    onTabSelected = { FolderDetailRepository.selectTab(it) },
+                    onPosterClick = onPosterClick,
+                )
+                FolderViewMode.ROWS -> RowsContent(
+                    uiState = uiState,
+                    watchedKeys = watchedUiState.watchedKeys,
+                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                    modifier = Modifier.weight(1f),
+                    onCatalogClick = onCatalogClick,
+                    onPosterClick = onPosterClick,
+                )
+                FolderViewMode.FOLLOW_LAYOUT -> RowsContent(
+                    uiState = uiState,
+                    watchedKeys = watchedUiState.watchedKeys,
+                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                    modifier = Modifier.weight(1f),
+                    onCatalogClick = onCatalogClick,
+                    onPosterClick = onPosterClick,
+                )
+            }
         }
     }
 }
@@ -198,6 +244,8 @@ private fun TabbedGridContent(
 
         val selectedTab = uiState.tabs.getOrNull(uiState.selectedTabIndex)
         if (selectedTab == null) return
+        // TMDB-built tabs carry TMDB ids; their IMDb ones are what match the watched titles.
+        LaunchedEffect(selectedTab.items) { PosterImdbAliases.resolve(selectedTab.items) }
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val columns = remember(maxWidth) { folderDetailGridColumnsForWidth(maxWidth) }
@@ -261,6 +309,7 @@ private fun RowsContent(
     onPosterClick: (MetaPreview) -> Unit,
 ) {
     val sections = FolderDetailRepository.getCatalogSectionsForRows()
+    LaunchedEffect(sections) { PosterImdbAliases.resolve(sections.flatMap { it.items.take(18) }) }
 
     if (uiState.isLoading && sections.isEmpty()) {
         LoadingIndicator()

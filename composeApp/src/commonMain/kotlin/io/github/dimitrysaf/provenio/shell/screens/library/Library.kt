@@ -418,8 +418,8 @@ fun LibraryScreen(
             topPadding = 8.dp,
             listState = listState,
         ) {
-            // The collections lead the Library, whatever it shows below them.
-            collections.filter { it.folders.isNotEmpty() }.forEach { collection ->
+            // The collections lead the saved titles; the calendar and the cloud are other views.
+            if (sourceMode == LibraryViewMode.Saved) collections.filter { it.folders.isNotEmpty() }.forEach { collection ->
                 item(key = "library-collection-${collection.id}", contentType = "collection") {
                     HomeCollectionRowSection(
                         collection = collection,
