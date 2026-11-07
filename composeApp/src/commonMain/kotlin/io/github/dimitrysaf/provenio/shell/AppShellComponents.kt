@@ -74,7 +74,6 @@ internal data class AppTabState(
     val profileId: Int? = null,
     val searchFocusRequestCount: Int = 0,
     val rootActionsEnabled: Boolean = true,
-    val animateCollectionGifs: Boolean = true,
     val libraryDisintegrationRequest: DisintegrationRequest<String>? = null,
     val continueWatchingDisintegrationRequest: DisintegrationRequest<String>? = null,
     val requestedSettingsPageName: String? = null,
@@ -172,7 +171,6 @@ internal fun AppTabHost(
                     onCloudFilePlay = actions.onCloudFilePlay,
                     onConnectCloudClick = actions.onConnectCloudClick,
                     disintegrationRequest = state.libraryDisintegrationRequest,
-                    animateCollectionGifs = state.animateCollectionGifs,
                     onFolderClick = actions.onFolderClick,
                 )
             }

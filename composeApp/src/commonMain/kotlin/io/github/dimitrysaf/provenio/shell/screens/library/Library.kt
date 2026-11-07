@@ -164,7 +164,6 @@ fun LibraryScreen(
     onCloudFilePlay: ((CloudLibraryItem, CloudLibraryFile) -> Unit)? = null,
     onConnectCloudClick: (() -> Unit)? = null,
     disintegrationRequest: DisintegrationRequest<String>? = null,
-    animateCollectionGifs: Boolean = true,
     onFolderClick: ((collectionId: String, folderId: String) -> Unit)? = null,
 ) {
     val collections by remember {
@@ -425,7 +424,6 @@ fun LibraryScreen(
                     HomeCollectionRowSection(
                         collection = collection,
                         modifier = Modifier.padding(bottom = 12.dp),
-                        animateGifs = animateCollectionGifs,
                         onFolderClick = onFolderClick,
                     )
                 }

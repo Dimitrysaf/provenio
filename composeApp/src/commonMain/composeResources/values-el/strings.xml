@@ -162,8 +162,6 @@
     <string name="collections_editor_catalog_picker_empty_subtitle">Εγκαταστήστε ένα πρόσθετο που δημοσιεύει καταλόγους για να επιλέξετε από εδώ.</string>
     <string name="collections_editor_cover_image">Εικόνα</string>
     <string name="collections_editor_choose_image">Επιλογή εικόνας</string>
-    <string name="collections_editor_remove_image">Αφαίρεση εικόνας</string>
-    <string name="collections_editor_choose_image_desc">Διάλεξε μια εικόνα από αυτή τη συσκευή. Αποθηκεύεται μαζί με τη συλλογή, ώστε να εμφανίζεται και στις άλλες συσκευές σου.</string>
     <string name="collections_editor_cover_image_url">URL εικόνας</string>
     <string name="collections_editor_cover_text">Κείμενο</string>
     <string name="collections_editor_cover">Εξώφυλλο</string>

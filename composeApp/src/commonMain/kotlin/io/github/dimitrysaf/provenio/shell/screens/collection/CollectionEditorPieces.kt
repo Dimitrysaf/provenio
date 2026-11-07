@@ -86,14 +86,14 @@ import org.jetbrains.compose.resources.stringResource
  */
 @Composable
 internal fun EditableIdentityHeader(
-    imageUrl: String?,
     title: String,
     titlePlaceholder: String,
-    onEditImage: () -> Unit,
     onEditTitle: () -> Unit,
     modifier: Modifier = Modifier,
-    emoji: String? = null,
-    aspectRatio: Float = 16f / 9f,
+    imageUrl: String? = null,
+    // Null for a collection, which has no picture.
+    onEditImage: (() -> Unit)? = null,
+    imageAspectRatio: Float = 2f / 3f,
 ) {
     val shape = RoundedCornerShape(OuterCorner)
 
@@ -102,10 +102,10 @@ internal fun EditableIdentityHeader(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(
+        if (onEditImage != null) Surface(
             modifier = Modifier
                 .width(120.dp)
-                .aspectRatio(aspectRatio)
+                .aspectRatio(imageAspectRatio)
                 .clip(shape)
                 .shapedClickable(shape, onClick = onEditImage),
             shape = shape,
@@ -118,11 +118,6 @@ internal fun EditableIdentityHeader(
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
-                    )
-
-                    !emoji.isNullOrBlank() -> Text(
-                        text = emoji,
-                        style = MaterialTheme.typography.headlineMedium,
                     )
 
                     else -> Icon(
@@ -187,134 +182,6 @@ internal fun EditableIdentityHeader(
 }
 
 /**
- * Which of the two things a folder's cover can be. They are mutually exclusive in the folder
- * itself, which holds an emoji or an image and never both, so the dialog picks between them rather
- * than offering two fields that quietly clear each other.
- */
-private enum class FolderCoverKind { TEXT, IMAGE }
-
-/**
- * A folder's cover: a few characters, or a picture from the device. Every folder is a poster, so
- * there is no shape to choose.
- *
- * Both drafts are kept while the dialog is open, so switching between text and image does not
- * discard what was typed in the other. Confirming with nothing set is how a cover is removed.
- */
-@Composable
-internal fun FolderCoverDialog(
-    initialEmoji: String?,
-    initialImageUrl: String?,
-    onConfirm: (emoji: String?, imageUrl: String?) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var kind by remember {
-        mutableStateOf(
-            if (!initialImageUrl.isNullOrBlank()) FolderCoverKind.IMAGE else FolderCoverKind.TEXT,
-        )
-    }
-    var textDraft by remember { mutableStateOf(initialEmoji.orEmpty()) }
-    var urlDraft by remember { mutableStateOf(initialImageUrl.orEmpty()) }
-    val pickCover = rememberStoredPicturePicker(CoverPictureMaxSide) { picture -> urlDraft = picture }
-
-    val kinds = FolderCoverKind.entries
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(Res.string.collections_editor_cover)) },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    kinds.forEachIndexed { index, entry ->
-                        SegmentedButton(
-                            selected = entry == kind,
-                            onClick = { kind = entry },
-                            shape = SegmentedButtonDefaults.itemShape(
-                                index = index,
-                                count = kinds.size,
-                            ),
-                        ) {
-                            Text(folderCoverKindLabel(entry))
-                        }
-                    }
-                }
-
-                when (kind) {
-                    FolderCoverKind.TEXT -> OutlinedTextField(
-                        value = textDraft,
-                        onValueChange = { textDraft = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        label = { Text(stringResource(Res.string.collections_editor_cover_text)) },
-                    )
-
-                    // A picture from the device; a link only where there is no picker.
-                    FolderCoverKind.IMAGE -> if (pickCover != null) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            if (urlDraft.isNotBlank()) {
-                                AsyncImage(
-                                    model = urlDraft,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .width(96.dp)
-                                        .aspectRatio(2f / 3f)
-                                        .clip(MaterialTheme.shapes.medium),
-                                    contentScale = ContentScale.Crop,
-                                )
-                            }
-                            FilledTonalButton(onClick = pickCover) {
-                                Text(stringResource(Res.string.collections_editor_choose_image))
-                            }
-                        }
-                    } else OutlinedTextField(
-                        value = urlDraft,
-                        onValueChange = { urlDraft = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        label = {
-                            Text(stringResource(Res.string.collections_editor_cover_image_url))
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val text = textDraft.trim()
-                    val url = urlDraft.trim()
-                    onConfirm(
-                        text.takeIf { kind == FolderCoverKind.TEXT && it.isNotBlank() },
-                        url.takeIf { kind == FolderCoverKind.IMAGE && it.isNotBlank() },
-                    )
-                },
-            ) {
-                Text(stringResource(Res.string.action_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(Res.string.action_cancel))
-            }
-        },
-    )
-}
-
-@Composable
-private fun folderCoverKindLabel(kind: FolderCoverKind): String =
-    when (kind) {
-        FolderCoverKind.TEXT -> stringResource(Res.string.collections_editor_cover_text)
-        FolderCoverKind.IMAGE -> stringResource(Res.string.collections_editor_cover_image)
-    }
-
-/**
  * Opens the device's picker and gives the picked picture as the collection keeps it: scaled down
  * so its longer side is at most [maxSide] pixels, inside the collection itself. Nothing is given
  * when the picker is closed or the picture cannot be read. Null where there is no picker.
@@ -331,52 +198,17 @@ internal fun rememberStoredPicturePicker(maxSide: Int, onPicked: (String) -> Uni
     }
 }
 
-/** Choosing a picture from the device, or removing the one there is. */
-@Composable
-internal fun PictureChoiceDialog(
-    title: String,
-    hasPicture: Boolean,
-    onChoose: () -> Unit,
-    onRemove: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { Text(stringResource(Res.string.collections_editor_choose_image_desc)) },
-        confirmButton = {
-            TextButton(onClick = onChoose) { Text(stringResource(Res.string.collections_editor_choose_image)) }
-        },
-        dismissButton = {
-            Row {
-                if (hasPicture) {
-                    TextButton(onClick = onRemove) { Text(stringResource(Res.string.collections_editor_remove_image)) }
-                }
-                TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) }
-            }
-        },
-    )
-}
+// Long enough for a tile on a large screen, small enough to keep inside the collection.
+internal const val FolderPictureMaxSide = 960
 
-// Long enough for the tile on a large screen, small enough to keep inside the collection.
-internal const val CoverPictureMaxSide = 720
-internal const val BackdropPictureMaxSide = 1280
-
-/**
- * A folder's name, and whether that name is shown at all.
- *
- * Hiding the title is a fact about the title, so it is asked where the title is set rather than
- * sitting several rows away under a heading of its own.
- */
+/** A folder's name, which is all a folder shows. */
 @Composable
 internal fun FolderTitleDialog(
     initialTitle: String,
-    initialHideTitle: Boolean,
-    onConfirm: (title: String, hideTitle: Boolean) -> Unit,
+    onConfirm: (title: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var draft by remember { mutableStateOf(initialTitle) }
-    var hideTitle by remember { mutableStateOf(initialHideTitle) }
     val focusRequester = remember { FocusRequester() }
 
     AlertDialog(
@@ -385,51 +217,27 @@ internal fun FolderTitleDialog(
         text = {
             LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
 
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                OutlinedTextField(
-                    value = draft,
-                    onValueChange = { draft = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester),
-                    singleLine = true,
-                    label = {
-                        Text(stringResource(Res.string.collections_editor_placeholder_folder))
+            OutlinedTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester),
+                singleLine = true,
+                label = {
+                    Text(stringResource(Res.string.collections_editor_placeholder_folder))
+                },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        if (draft.isNotBlank()) onConfirm(draft.trim())
                     },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            if (draft.isNotBlank()) onConfirm(draft.trim(), hideTitle)
-                        },
-                    ),
-                )
-
-                // The whole row flips the switch, which keeps it to one target rather than two.
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { hideTitle = !hideTitle },
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(Res.string.collections_editor_hide_title),
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                        Text(
-                            text = stringResource(Res.string.collections_editor_hide_title_desc),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(checked = hideTitle, onCheckedChange = { hideTitle = it })
-                }
-            }
+                ),
+            )
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(draft.trim(), hideTitle) },
+                onClick = { onConfirm(draft.trim()) },
                 enabled = draft.isNotBlank(),
             ) {
                 Text(stringResource(Res.string.action_save))

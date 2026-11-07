@@ -1,6 +1,9 @@
 package io.github.dimitrysaf.provenio.shell.screens.home.components
 
+import io.github.dimitrysaf.provenio.shell.components.PosterLandscapeAspectRatio
 import io.github.dimitrysaf.provenio.shell.components.PosterPortraitAspectRatio
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
+import io.github.dimitrysaf.provenio.shell.components.landscapePosterWidth
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -14,6 +17,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -23,13 +27,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import io.github.dimitrysaf.provenio.shell.components.LocalScreenActive
 import io.github.dimitrysaf.provenio.shell.components.CollapsibleShelfHeader
 import io.github.dimitrysaf.provenio.shell.components.ShelfGrid
 import io.github.dimitrysaf.provenio.shell.components.ShelfSection
@@ -43,7 +44,6 @@ fun HomeCollectionRowSection(
     collection: Collection,
     modifier: Modifier = Modifier,
     sectionPadding: Dp? = null,
-    animateGifs: Boolean = true,
     onFolderClick: ((collectionId: String, folderId: String) -> Unit)? = null,
     gridExpanded: Boolean? = null,
     onToggleExpanded: () -> Unit = {},
@@ -55,7 +55,6 @@ fun HomeCollectionRowSection(
             collection = collection,
             modifier = modifier.fillMaxWidth(),
             sectionPadding = sectionPadding,
-            animateGifs = animateGifs,
             onFolderClick = onFolderClick,
             gridExpanded = gridExpanded,
             onToggleExpanded = onToggleExpanded,
@@ -66,8 +65,7 @@ fun HomeCollectionRowSection(
                 collection = collection,
                 modifier = Modifier.fillMaxWidth(),
                 sectionPadding = homeSectionHorizontalPaddingForWidth(maxWidth.value),
-                animateGifs = animateGifs,
-                onFolderClick = onFolderClick,
+                    onFolderClick = onFolderClick,
                 gridExpanded = gridExpanded,
                 onToggleExpanded = onToggleExpanded,
             )
@@ -80,7 +78,6 @@ private fun HomeCollectionRowSectionContent(
     collection: Collection,
     modifier: Modifier,
     sectionPadding: Dp,
-    animateGifs: Boolean,
     onFolderClick: ((collectionId: String, folderId: String) -> Unit)?,
     gridExpanded: Boolean?,
     onToggleExpanded: () -> Unit,
@@ -106,8 +103,7 @@ private fun HomeCollectionRowSectionContent(
                 ) { folder ->
                     CollectionFolderCard(
                         folder = folder,
-                        animateGifs = animateGifs,
-                        onClick = onFolderClick?.let { { it(collection.id, folder.id) } },
+                                    onClick = onFolderClick?.let { { it(collection.id, folder.id) } },
                     )
                 }
             }
@@ -124,7 +120,6 @@ private fun HomeCollectionRowSectionContent(
     ) { folder ->
         CollectionFolderCard(
             folder = folder,
-            animateGifs = animateGifs,
             onClick = onFolderClick?.let { { it(collection.id, folder.id) } },
         )
     }
@@ -134,27 +129,28 @@ private fun HomeCollectionRowSectionContent(
 private fun CollectionFolderCard(
     folder: CollectionFolder,
     modifier: Modifier = Modifier,
-    animateGifs: Boolean = true,
     onClick: (() -> Unit)? = null,
 ) {
     val posterCardStyle = rememberPosterCardStyleUiState()
-    // A folder is always a poster, whatever shape the catalogs' cards take.
-    val cardWidth = posterCardStyle.widthDp.dp
-    val aspectRatio = PosterPortraitAspectRatio
+    // A folder takes the card style the catalogs use: a poster, or landscape when they are.
+    val landscape = posterCardStyle.catalogLandscapeModeEnabled
+    val cardWidth = if (landscape) landscapePosterWidth(posterCardStyle.widthDp) else posterCardStyle.widthDp.dp
+    val aspectRatio = if (landscape) PosterLandscapeAspectRatio else PosterPortraitAspectRatio
+    val imageUrl = folder.coverImageUrl?.takeIf(String::isNotBlank)
 
     Column(
         modifier = modifier.width(cardWidth),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         val shapeCorner = RoundedCornerShape(posterCardStyle.cornerRadiusDp.dp)
-        val imageUrl = collectionFolderCardImageUrl(folder)
+        // Its picture, or its title in the card's place when it has none.
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(aspectRatio),
             shape = shapeCorner,
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             ),
             elevation = CardDefaults.cardElevation(
                 defaultElevation = 2.dp,
@@ -164,32 +160,22 @@ private fun CollectionFolderCard(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                when {
-                    !imageUrl.isNullOrBlank() -> {
-                        CollectionCardRemoteImage(
-                            imageUrl = imageUrl,
-                            contentDescription = folder.title,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop,
-                            animateIfPossible = animateGifs &&
-                                isAnimatedCollectionFolderImage(folder, imageUrl) &&
-                                LocalScreenActive.current,
-                        )
-                    }
-                    !folder.coverEmoji.isNullOrBlank() -> {
-                        Text(
-                            text = folder.coverEmoji,
-                            fontSize = 36.sp,
-                        )
-                    }
-                    else -> {
-                        Text(
-                            text = folder.title.take(2).uppercase(),
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
+                if (imageUrl != null) {
+                    SkeletonAsyncImage(
+                        model = imageUrl,
+                        contentDescription = folder.title,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    Text(
+                        text = folder.title,
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        maxLines = 4,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
 
                 if (onClick != null) {
@@ -202,7 +188,7 @@ private fun CollectionFolderCard(
             }
         }
 
-        if (!folder.hideTitle) {
+        if (imageUrl != null) {
             Text(
                 text = folder.title,
                 style = MaterialTheme.typography.bodyMedium,
@@ -212,24 +198,4 @@ private fun CollectionFolderCard(
             )
         }
     }
-}
-
-private fun collectionFolderCardImageUrl(folder: CollectionFolder): String? {
-    return if (folder.mobileFocusGifEnabled) {
-        firstNonBlank(folder.focusGifUrl, folder.coverImageUrl)
-    } else {
-        firstNonBlank(folder.coverImageUrl)
-    }
-}
-
-private fun firstNonBlank(vararg candidates: String?): String? {
-    return candidates.firstOrNull { !it.isNullOrBlank() }?.trim()
-}
-
-private fun isAnimatedCollectionFolderImage(
-    folder: CollectionFolder,
-    imageUrl: String,
-): Boolean {
-    val gifUrl = firstNonBlank(folder.focusGifUrl) ?: return false
-    return folder.mobileFocusGifEnabled && imageUrl == gifUrl
 }

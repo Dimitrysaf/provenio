@@ -14,7 +14,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import io.github.dimitrysaf.provenio.shell.components.TextPromptDialog
 import io.github.dimitrysaf.provenio.shell.components.EmptyState
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
@@ -257,20 +256,13 @@ fun CollectionEditorScreen(
     ) {
 
         item {
-            // What the collection is called and what it looks like lead the page instead of being
-            // two more fields in the form: they are what identifies it, and each is edited in its
-            // own dialog rather than in place.
+            // What the collection is called leads the page; a collection has no picture, its
+            // folders do.
             var showRenameDialog by remember { mutableStateOf(false) }
-            var showBackdropDialog by remember { mutableStateOf(false) }
-            val pickBackdrop = rememberStoredPicturePicker(BackdropPictureMaxSide) { picture ->
-                CollectionEditorRepository.setBackdropImageUrl(picture)
-            }
 
             EditableIdentityHeader(
-                imageUrl = state.backdropImageUrl,
                 title = state.title,
                 titlePlaceholder = stringResource(Res.string.collections_editor_placeholder_name),
-                onEditImage = { showBackdropDialog = true },
                 onEditTitle = { showRenameDialog = true },
             )
 
@@ -287,37 +279,6 @@ fun CollectionEditorScreen(
                 )
             }
 
-            if (showBackdropDialog && pickBackdrop != null) {
-                // A picture from the device, or none: the header then falls back to its placeholder.
-                PictureChoiceDialog(
-                    title = stringResource(Res.string.collections_editor_backdrop_image),
-                    hasPicture = state.backdropImageUrl.isNotBlank(),
-                    onChoose = {
-                        showBackdropDialog = false
-                        pickBackdrop()
-                    },
-                    onRemove = {
-                        CollectionEditorRepository.setBackdropImageUrl("")
-                        showBackdropDialog = false
-                    },
-                    onDismiss = { showBackdropDialog = false },
-                )
-            } else if (showBackdropDialog) {
-                // Where there is no picker, a link. Blank is allowed: clearing the field is how
-                // the backdrop is removed, and the header falls back to its placeholder.
-                TextPromptDialog(
-                    title = stringResource(Res.string.collections_editor_backdrop_image),
-                    label = stringResource(Res.string.collections_editor_placeholder_backdrop),
-                    initialValue = state.backdropImageUrl,
-                    onConfirm = {
-                        CollectionEditorRepository.setBackdropImageUrl(it)
-                        showBackdropDialog = false
-                    },
-                    onDismiss = { showBackdropDialog = false },
-                    keyboardType = KeyboardType.Uri,
-                    allowBlank = true,
-                )
-            }
         }
 
         item {

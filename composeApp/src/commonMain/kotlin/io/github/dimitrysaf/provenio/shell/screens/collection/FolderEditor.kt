@@ -1,5 +1,8 @@
 package io.github.dimitrysaf.provenio.shell.screens.collection
 
+import androidx.compose.ui.text.input.KeyboardType
+import io.github.dimitrysaf.provenio.shell.components.TextPromptDialog
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
 import io.github.dimitrysaf.provenio.shell.components.ReorderKeyButtons
 import androidx.compose.ui.focus.focusProperties
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
@@ -189,13 +192,6 @@ internal fun FolderListItem(
                         )
                     }
                 }
-                if (folder.coverEmoji != null) {
-                    Text(
-                        text = folder.coverEmoji,
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(start = 4.dp),
-                    )
-                }
             }
         },
         supportingContent = { Text(summary, maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -300,48 +296,49 @@ internal fun FolderEditorPage(
     ) {
 
         item {
-            // The whole of the folder's appearance lives here now: the header shows it, and its
-            // two pencils open the only two dialogs that change it.
+            // The folder's picture and name lead the page, each with its own pencil.
             var showTitleDialog by remember { mutableStateOf(false) }
-            var showCoverDialog by remember { mutableStateOf(false) }
+            var showImageDialog by remember { mutableStateOf(false) }
+            val pickImage = rememberStoredPicturePicker(FolderPictureMaxSide) { picture ->
+                CollectionEditorRepository.updateFolderCoverImage(picture)
+            }
+            val catalogCardsLandscape = rememberPosterCardStyleUiState().catalogLandscapeModeEnabled
 
             EditableIdentityHeader(
-                imageUrl = folder.coverImageUrl,
                 title = folder.title,
                 titlePlaceholder = stringResource(Res.string.collections_editor_placeholder_folder),
-                onEditImage = { showCoverDialog = true },
                 onEditTitle = { showTitleDialog = true },
-                emoji = folder.coverEmoji,
-                // The header is the tile, so it stands as a poster, as every folder tile does.
-                aspectRatio = 2f / 3f,
+                imageUrl = folder.coverImageUrl,
+                // Straight to the device's picker; a new picture replaces the old one.
+                onEditImage = { pickImage?.invoke() ?: run { showImageDialog = true } },
+                // The tile's own shape: the card style the catalogs use.
+                imageAspectRatio = if (catalogCardsLandscape) 16f / 9f else 2f / 3f,
             )
+
+            if (showImageDialog) {
+                // Where there is no picker, a link. Blank removes the picture.
+                TextPromptDialog(
+                    title = stringResource(Res.string.collections_editor_cover_image),
+                    label = stringResource(Res.string.collections_editor_cover_image_url),
+                    initialValue = folder.coverImageUrl.orEmpty(),
+                    onConfirm = {
+                        CollectionEditorRepository.updateFolderCoverImage(it)
+                        showImageDialog = false
+                    },
+                    onDismiss = { showImageDialog = false },
+                    keyboardType = KeyboardType.Uri,
+                    allowBlank = true,
+                )
+            }
 
             if (showTitleDialog) {
                 FolderTitleDialog(
                     initialTitle = folder.title,
-                    initialHideTitle = folder.hideTitle,
-                    onConfirm = { title, hideTitle ->
+                    onConfirm = { title ->
                         CollectionEditorRepository.updateFolderTitle(title)
-                        CollectionEditorRepository.updateFolderHideTitle(hideTitle)
                         showTitleDialog = false
                     },
                     onDismiss = { showTitleDialog = false },
-                )
-            }
-
-            if (showCoverDialog) {
-                FolderCoverDialog(
-                    initialEmoji = folder.coverEmoji,
-                    initialImageUrl = folder.coverImageUrl,
-                    onConfirm = { emoji, imageUrl ->
-                        when {
-                            emoji != null -> CollectionEditorRepository.updateFolderCoverEmoji(emoji)
-                            imageUrl != null -> CollectionEditorRepository.updateFolderCoverImage(imageUrl)
-                            else -> CollectionEditorRepository.clearFolderCover()
-                        }
-                        showCoverDialog = false
-                    },
-                    onDismiss = { showCoverDialog = false },
                 )
             }
         }

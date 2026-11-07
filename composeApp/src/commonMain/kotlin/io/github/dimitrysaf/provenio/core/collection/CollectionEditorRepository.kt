@@ -1,7 +1,6 @@
 package io.github.dimitrysaf.provenio.core.collection
 
 import co.touchlab.kermit.Logger
-import io.github.dimitrysaf.provenio.core.home.PosterShape
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktPublicListSearchResult
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktPublicListSourceResolver
 import kotlinx.coroutines.CoroutineScope
@@ -271,38 +270,11 @@ object CollectionEditorRepository {
         _uiState.value = _uiState.value.copy(editingFolder = folder.copy(title = title))
     }
 
+    /** The folder's picture; blank removes it. */
     fun updateFolderCoverImage(url: String) {
         val folder = _uiState.value.editingFolder ?: return
         _uiState.value = _uiState.value.copy(
-            editingFolder = folder.copy(coverImageUrl = url, coverEmoji = null),
-        )
-    }
-
-    fun updateFolderCoverEmoji(emoji: String) {
-        val folder = _uiState.value.editingFolder ?: return
-        _uiState.value = _uiState.value.copy(
-            editingFolder = folder.copy(coverEmoji = emoji, coverImageUrl = null),
-        )
-    }
-
-    fun clearFolderCover() {
-        val folder = _uiState.value.editingFolder ?: return
-        _uiState.value = _uiState.value.copy(
-            editingFolder = folder.copy(coverImageUrl = null, coverEmoji = null),
-        )
-    }
-
-    fun updateFolderTileShape(shape: PosterShape) {
-        val folder = _uiState.value.editingFolder ?: return
-        _uiState.value = _uiState.value.copy(
-            editingFolder = folder.copy(tileShape = shape.name.lowercase()),
-        )
-    }
-
-    fun updateFolderHideTitle(hide: Boolean) {
-        val folder = _uiState.value.editingFolder ?: return
-        _uiState.value = _uiState.value.copy(
-            editingFolder = folder.copy(hideTitle = hide),
+            editingFolder = folder.copy(coverImageUrl = url.trim().ifBlank { null }, coverEmoji = null),
         )
     }
 

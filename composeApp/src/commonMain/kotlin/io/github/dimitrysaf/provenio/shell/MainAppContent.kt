@@ -593,7 +593,6 @@ internal fun MainAppContent(
                                 profileId = profileState.activeProfile?.profileIndex,
                                 searchFocusRequestCount = searchFocusRequestCount,
                                 rootActionsEnabled = currentRoute is TabsRoute,
-                                animateCollectionGifs = currentRoute is TabsRoute,
                                 libraryDisintegrationRequest = libraryDisintegrationRequests.current,
                                 continueWatchingDisintegrationRequest = continueWatchingDisintegrationRequests.current,
                                 requestedSettingsPageName = requestedSettingsPageName,

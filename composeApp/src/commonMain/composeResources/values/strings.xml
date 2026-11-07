@@ -162,8 +162,6 @@
     <string name="collections_editor_catalog_picker_empty_subtitle">Install an addon that publishes catalogs to pick from here.</string>
     <string name="collections_editor_cover_image">Image</string>
     <string name="collections_editor_choose_image">Choose image</string>
-    <string name="collections_editor_remove_image">Remove image</string>
-    <string name="collections_editor_choose_image_desc">Pick a picture from this device. It is saved with the collection, so your other devices show it too.</string>
     <string name="collections_editor_cover_image_url">Image URL</string>
     <string name="collections_editor_cover_text">Text</string>
     <string name="collections_editor_cover">Cover</string>

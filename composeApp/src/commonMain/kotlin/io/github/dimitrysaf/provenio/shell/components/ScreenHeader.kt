@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -66,6 +68,9 @@ fun ScreenHeader(
                 .background(MaterialTheme.colorScheme.surface)
                 .consumeAllPointerEvents(),
         ) {}
+        // The header draws its own surface, so its icons take that surface's colour rather than
+        // whatever the page around it provides, which a page without a Surface leaves black.
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -104,6 +109,7 @@ fun ScreenHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 content = actions,
             )
+        }
         }
     }
 }
