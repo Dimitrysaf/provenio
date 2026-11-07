@@ -4,7 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -17,9 +17,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
+import io.github.dimitrysaf.provenio.core.home.PosterShape
+import io.github.dimitrysaf.provenio.core.home.landscapeArtworkCandidates
 import io.github.dimitrysaf.provenio.core.home.portraitArtworkCandidates
 import io.github.dimitrysaf.provenio.core.home.stableKey
 import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingState
+import io.github.dimitrysaf.provenio.shell.components.ArtworkRatios
 import io.github.dimitrysaf.provenio.shell.components.CompletedOverlay
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
@@ -28,8 +31,9 @@ import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.episodes_cd_watched
 
 /**
- * The titles of the collection as a segmented list, laid out as the trailers are: the poster on
- * the left, marked when watched, with the title and its year beside it.
+ * The titles of the collection as a segmented list, laid out as the trailers are: the artwork on
+ * the left, marked when watched, with the title and its year beside it. The artwork's frame takes
+ * the picture's own shape: a poster for a tall one, a still for a wide one.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -48,6 +52,11 @@ internal fun DetailCollectionSection(
         DetailSegmentedColumn {
             items.forEachIndexed { index, item ->
                 key(item.stableKey()) {
+                    // Measured once the picture loads; until then the catalog's word for its shape.
+                    val measured = (item.poster?.takeIf(String::isNotBlank) ?: item.banner)
+                        ?.let(ArtworkRatios::ratioOf)
+                        ?.takeIf { it > 0f }
+                    val wide = measured?.let { it > 1f } ?: (item.posterShape == PosterShape.Landscape)
                     SegmentedListItem(
                         onClick = { onItemClick?.invoke(item) },
                         enabled = onItemClick != null,
@@ -59,14 +68,14 @@ internal fun DetailCollectionSection(
                         leadingContent = {
                             Box(
                                 modifier = Modifier
-                                    .width(CollectionPosterWidth)
-                                    .aspectRatio(2f / 3f)
+                                    .height(CollectionArtworkHeight)
+                                    .aspectRatio(if (wide) 16f / 9f else 2f / 3f, matchHeightConstraintsFirst = true)
                                     .clip(MaterialTheme.shapes.small)
                                     .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 ShapedArtworkImage(
-                                    candidates = item.portraitArtworkCandidates(),
+                                    candidates = if (wide) item.landscapeArtworkCandidates() else item.portraitArtworkCandidates(),
                                     contentDescription = null,
                                     letterboxColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                     modifier = Modifier.matchParentSize(),
@@ -94,6 +103,6 @@ internal fun DetailCollectionSection(
     }
 }
 
-// As tall as a trailer's still beside it in the list.
-private val CollectionPosterWidth = 48.dp
+// As tall as a trailer's 128dp-wide still.
+private val CollectionArtworkHeight = 72.dp
 private val CollectionWatchedBadgeSize = 28.dp
