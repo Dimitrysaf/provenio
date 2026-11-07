@@ -6,6 +6,20 @@ import io.github.dimitrysaf.provenio.core.cast.CastNetwork
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.content.res.ColorStateList
+import android.graphics.drawable.AnimatedVectorDrawable
+import android.view.Gravity
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.ProgressBar
+import androidx.core.content.ContextCompat
+import io.github.dimitrysaf.provenio.core.startup.AppStartupState
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
@@ -78,8 +92,15 @@ import io.github.dimitrysaf.provenio.core.docs.DocsStorage
 import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPreferencesStorage
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.shell.App
-import io.github.dimitrysaf.provenio.shell.components.AppLaunchScreen
 
+
+private const val MaxLaunchOverlayMillis = 6_000L
+private const val LaunchOverlayFadeMillis = 220L
+// When launch_wordmark_animated.xml has the whole name in place.
+private const val LaunchNameMillis = 1_290L
+private const val WordmarkWidth = 1387f
+private const val WordmarkHeight = 344f
+private const val DefaultLaunchPrimary = 0xFFA9C7FF.toInt()
 
 open class MainActivity : AppCompatActivity() {
     private var pipRemoteActionReceiver: PipRemoteActionReceiver? = null
@@ -157,9 +178,7 @@ open class MainActivity : AppCompatActivity() {
         deleteLeftoverPluginData()
 
         setContent {
-            AppLaunchScreen {
-                App()
-            }
+            App()
         }
         lifecycleScope.launch {
             AppFullscreen.isFullscreen.collect { fullscreen ->
@@ -171,6 +190,72 @@ open class MainActivity : AppCompatActivity() {
                     controller.show(WindowInsetsCompat.Type.systemBars())
                 }
             }
+        }
+        showLaunchOverlay()
+    }
+
+    /**
+     * The launch animation over the app until its first screen is ready. It is native rather than
+     * Compose: an animated vector and a platform spinner both animate on the RenderThread, so they
+     * stay smooth while the main thread builds the first screen underneath.
+     */
+    private fun showLaunchOverlay() {
+        val logo = ContextCompat.getDrawable(this, R.drawable.launch_wordmark_animated)
+            ?.mutate() as? AnimatedVectorDrawable
+            ?: return
+        // The colours the app's theme had last time; the defaults before the first run.
+        val (primary, background) = ThemeSettingsStorage.loadLaunchColors()
+            ?: (DefaultLaunchPrimary to ContextCompat.getColor(this, R.color.provenio_background))
+        logo.setTint(primary)
+
+        // Sized as the Compose launch screen: the name a share of the screen, measured by the
+        // height on a wide but short one; the gap and spinner follow the name's height.
+        val metrics = resources.displayMetrics
+        val screenWidth = metrics.widthPixels.toFloat()
+        val screenHeight = metrics.heightPixels.toFloat()
+        val nameWidth = min(screenWidth, screenHeight * 1.6f) * 0.42f
+        val nameHeight = nameWidth * WordmarkHeight / WordmarkWidth
+        val gap = nameHeight * 0.55f
+        val spinnerSize = max(nameHeight, 48f * metrics.density)
+        val groupTop = (screenHeight - (nameHeight + gap + spinnerSize)) / 2f
+        // The vector is square, the name across its middle, so the large "p" has room.
+        val logoTop = groupTop + nameHeight / 2f - nameWidth / 2f
+
+        val overlay = FrameLayout(this).apply {
+            setBackgroundColor(background)
+            isClickable = true
+        }
+        overlay.addView(
+            ImageView(this).apply { setImageDrawable(logo) },
+            FrameLayout.LayoutParams(nameWidth.roundToInt(), nameWidth.roundToInt(), Gravity.CENTER_HORIZONTAL or Gravity.TOP)
+                .apply { topMargin = logoTop.roundToInt() },
+        )
+        val spinner = ProgressBar(this).apply {
+            isIndeterminate = true
+            indeterminateTintList = ColorStateList.valueOf(primary)
+            alpha = 0f
+        }
+        overlay.addView(
+            spinner,
+            FrameLayout.LayoutParams(spinnerSize.roundToInt(), spinnerSize.roundToInt(), Gravity.CENTER_HORIZONTAL or Gravity.TOP)
+                .apply { topMargin = (groupTop + nameHeight + gap).roundToInt() },
+        )
+        addContentView(overlay, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        logo.start()
+        // Once the whole name is in place.
+        spinner.animate().alpha(1f).setStartDelay(LaunchNameMillis).setDuration(LaunchOverlayFadeMillis).start()
+        lifecycleScope.launch {
+            withTimeoutOrNull(MaxLaunchOverlayMillis) {
+                AppStartupState.firstScreenReady.first { it }
+            }
+            overlay.animate()
+                .alpha(0f)
+                .setDuration(LaunchOverlayFadeMillis)
+                .withEndAction {
+                    logo.stop()
+                    (overlay.parent as? ViewGroup)?.removeView(overlay)
+                }
+                .start()
         }
     }
 

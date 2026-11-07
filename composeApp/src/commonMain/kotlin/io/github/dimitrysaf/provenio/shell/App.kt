@@ -27,6 +27,8 @@ import coil3.request.crossfade
 import coil3.svg.SvgDecoder
 import io.github.dimitrysaf.provenio.shell.components.NativeProfileSwitcherController
 import io.github.dimitrysaf.provenio.shell.theme.Theme
+import io.github.dimitrysaf.provenio.shell.theme.saveLaunchColors
+import androidx.compose.ui.graphics.toArgb
 import io.github.dimitrysaf.provenio.shell.components.configurePlatformImageLoader
 import io.github.dimitrysaf.provenio.shell.theme.isDynamicColorAvailable
 import io.github.dimitrysaf.provenio.core.settings.ThemeSettingsRepository
@@ -125,6 +127,11 @@ internal fun AppThemeEnvironment(content: @Composable () -> Unit) {
         val accentHex = MaterialTheme.themePalette.nativeAccentHex
         LaunchedEffect(accentHex) {
             NativeTabBridge.publishAccentColor(accentHex)
+        }
+        val launchPrimary = MaterialTheme.colorScheme.primary.toArgb()
+        val launchBackground = MaterialTheme.colorScheme.background.toArgb()
+        LaunchedEffect(launchPrimary, launchBackground) {
+            saveLaunchColors(launchPrimary, launchBackground)
         }
         AdaptiveWindowRoot(content = content)
     }

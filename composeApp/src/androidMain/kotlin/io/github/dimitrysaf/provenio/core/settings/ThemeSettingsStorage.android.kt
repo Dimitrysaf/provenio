@@ -22,6 +22,8 @@ actual object ThemeSettingsStorage {
     private const val displayScaleKey = "display_scale"
     private const val scrollbarFocusKey = "scrollbar_focus"
     private const val showImportsKey = "show_imports"
+    private const val launchPrimaryKey = "launch_primary"
+    private const val launchBackgroundKey = "launch_background"
     private val profileScopedSyncKeys = listOf(
         amoledEnabledKey,
     )
@@ -76,6 +78,19 @@ actual object ThemeSettingsStorage {
 
     actual fun saveShowImports(enabled: Boolean) {
         preferences?.edit()?.putBoolean(showImportsKey, enabled)?.apply()
+    }
+
+    /** The theme's last primary and background colours, for the launch screen; null before the first run. */
+    fun loadLaunchColors(): Pair<Int, Int>? =
+        preferences
+            ?.takeIf { it.contains(launchPrimaryKey) && it.contains(launchBackgroundKey) }
+            ?.let { it.getInt(launchPrimaryKey, 0) to it.getInt(launchBackgroundKey, 0) }
+
+    fun saveLaunchColors(primary: Int, background: Int) {
+        preferences?.edit()
+            ?.putInt(launchPrimaryKey, primary)
+            ?.putInt(launchBackgroundKey, background)
+            ?.apply()
     }
 
     actual fun loadSelectedAppLanguage(): String? {
