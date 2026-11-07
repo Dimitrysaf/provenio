@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
@@ -96,6 +97,8 @@ internal fun AnimatedAppBrandWordmark(
         AppIconRepository.state
     }.collectAsStateWithLifecycle()
     val painter = painterResource(state.selected.wordmarkResource)
+    // In the theme's own colour, so it matches the palette chosen in Appearance.
+    val tint = ColorFilter.tint(MaterialTheme.colorScheme.primary)
     val drop = remember { Animatable(0f) }
     val slide = remember { Animatable(0f) }
     val letters = remember { Animatable(0f) }
@@ -137,7 +140,7 @@ internal fun AnimatedAppBrandWordmark(
                         bottom = top + height,
                     ) {
                         translate(left = left, top = top) {
-                            with(painter) { draw(Size(width, height), alpha = alpha) }
+                            with(painter) { draw(Size(width, height), alpha = alpha, colorFilter = tint) }
                         }
                     }
                 }

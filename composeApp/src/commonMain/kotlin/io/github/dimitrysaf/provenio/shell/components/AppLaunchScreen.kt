@@ -14,14 +14,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import io.github.dimitrysaf.provenio.core.startup.AppStartupState
 import io.github.dimitrysaf.provenio.shell.AppLoadingContent
+import io.github.dimitrysaf.provenio.shell.AppTheme
 import kotlinx.coroutines.delay
 
 @Composable
 fun AppLaunchScreen(
-    background: Color,
     content: @Composable () -> Unit,
 ) {
     val firstScreenReady by AppStartupState.firstScreenReady.collectAsState()
@@ -37,12 +37,16 @@ fun AppLaunchScreen(
             enter = EnterTransition.None,
             exit = fadeOut(),
         ) {
-            // The "p" drops in, the name follows it letter by letter, then the spinner.
-            AppLoadingContent(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(background),
-            )
+            // The launch screen sits outside the app, so it takes the app's theme itself: the
+            // name, spinner and background in the palette chosen in Appearance.
+            AppTheme {
+                // The "p" drops in, the name follows it letter by letter, then the spinner.
+                AppLoadingContent(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                )
+            }
         }
     }
 }

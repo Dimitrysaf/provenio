@@ -121,6 +121,18 @@ internal fun AppEnvironment(content: @Composable () -> Unit) {
 
 @Composable
 internal fun AppThemeEnvironment(content: @Composable () -> Unit) {
+    AppTheme {
+        val accentHex = MaterialTheme.themePalette.nativeAccentHex
+        LaunchedEffect(accentHex) {
+            NativeTabBridge.publishAccentColor(accentHex)
+        }
+        AdaptiveWindowRoot(content = content)
+    }
+}
+
+/** The theme as the person set it in Appearance: mode, AMOLED and palette. */
+@Composable
+internal fun AppTheme(content: @Composable () -> Unit) {
     val amoledEnabled by remember {
         ThemeSettingsRepository.ensureLoaded()
         ThemeSettingsRepository.amoledEnabled
@@ -148,11 +160,6 @@ internal fun AppThemeEnvironment(content: @Composable () -> Unit) {
         amoled = amoledEnabled,
         useDynamicColor = useDynamicColor,
         paletteIcon = (palette as? ColorPalette.Icon)?.icon ?: AppIconOption.DEFAULT,
-    ) {
-        val accentHex = MaterialTheme.themePalette.nativeAccentHex
-        LaunchedEffect(accentHex) {
-            NativeTabBridge.publishAccentColor(accentHex)
-        }
-        AdaptiveWindowRoot(content = content)
-    }
+        content = content,
+    )
 }

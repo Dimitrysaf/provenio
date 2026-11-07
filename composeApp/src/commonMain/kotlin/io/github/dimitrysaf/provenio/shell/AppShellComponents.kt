@@ -3,11 +3,14 @@ package io.github.dimitrysaf.provenio.shell
 import io.github.dimitrysaf.provenio.core.downloads.DownloadItem
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.min
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -215,29 +218,34 @@ internal fun AppLoadingContent(
 ) {
     var nameShown by remember { mutableStateOf(false) }
     val spinnerAlpha by animateFloatAsState(if (nameShown) 1f else 0f, label = "app_loading_spinner")
-    Box(
+    BoxWithConstraints(
         modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
+        // The name takes a share of the screen, so a big screen gets a big name; a wide but short
+        // window is measured by its height instead. The gap and spinner follow the name's height.
+        val wordmarkWidth = min(maxWidth, maxHeight * 1.6f) * 0.42f
+        val wordmarkHeight = wordmarkWidth / AppWordmarkAspect
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             AnimatedAppBrandWordmark(
                 contentDescription = stringResource(Res.string.app_brand_name),
-                modifier = Modifier
-                    .fillMaxWidth(0.48f)
-                    .height(44.dp),
+                modifier = Modifier.size(width = wordmarkWidth, height = wordmarkHeight),
                 onFinished = { nameShown = true },
             )
-            Spacer(modifier = Modifier.height(LoadingContentGap))
+            Spacer(modifier = Modifier.height(wordmarkHeight * 0.55f))
             // The spinner keeps its place from the start, so the name does not move when it shows.
-            LoadingSpinner(modifier = Modifier.graphicsLayer { alpha = spinnerAlpha })
+            LoadingSpinner(
+                modifier = Modifier.graphicsLayer { alpha = spinnerAlpha },
+                size = maxOf(wordmarkHeight, 48.dp),
+            )
         }
     }
 }
 
-/** The gap between the wordmark and the indicator under it. */
-private val LoadingContentGap = 24.dp
+// The wordmark picture's width to height.
+private const val AppWordmarkAspect = 1387f / 344f
 
 @Composable
 internal fun AppLaunchOverlay(

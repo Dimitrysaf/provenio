@@ -11,7 +11,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -80,7 +79,6 @@ import io.github.dimitrysaf.provenio.core.watch.progress.ContinueWatchingPrefere
 import io.github.dimitrysaf.provenio.core.watch.progress.WatchProgressStorage
 import io.github.dimitrysaf.provenio.shell.App
 import io.github.dimitrysaf.provenio.shell.components.AppLaunchScreen
-import androidx.compose.ui.graphics.Color
 
 
 open class MainActivity : AppCompatActivity() {
@@ -159,7 +157,7 @@ open class MainActivity : AppCompatActivity() {
         deleteLeftoverPluginData()
 
         setContent {
-            AppLaunchScreen(background = Color(ContextCompat.getColor(this, R.color.provenio_background))) {
+            AppLaunchScreen {
                 App()
             }
         }
