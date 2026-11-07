@@ -143,6 +143,8 @@ data class CollectionsRoute(override val title: String = "") : SettingsDestinati
 data class CollectionEditorRoute(
     val collectionId: String? = null,
     override val title: String = "",
+    /** Opens the editor straight on this folder, as a folder's page does, and leaves when it is done. */
+    val folderId: String? = null,
 ) : AppRoute
 
 @Serializable

@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import io.github.dimitrysaf.provenio.core.collection.CollectionEditorRepository
 import androidx.compose.ui.Modifier
 import io.github.dimitrysaf.provenio.shell.screens.collection.CollectionEditorPage
 import io.github.dimitrysaf.provenio.shell.screens.collection.CollectionEditorScreen
@@ -139,6 +142,23 @@ internal fun CollectionEditorDestination(
     useNativeNavigation: Boolean,
 ) {
     val onBack = rememberGuardedPopBackStack(navController, route)
+    val folderId = route.folderId
+    if (folderId != null) {
+        // From a folder's page: the editor opens on that folder, saves the collection when the
+        // folder is saved, and goes back to the page either way.
+        remember(route) {
+            CollectionEditorRepository.initialize(route.collectionId)
+            CollectionEditorRepository.editFolder(folderId)
+        }
+        CollectionEditorScreen(
+            collectionId = route.collectionId,
+            onBack = onBack,
+            initialPage = CollectionEditorPage.FolderEditor,
+            initializeRepository = false,
+            saveCollectionWithFolder = true,
+        )
+        return
+    }
     CollectionEditorScreen(
         collectionId = route.collectionId,
         onBack = onBack,
@@ -196,7 +216,9 @@ internal fun FolderDestination(
     onCatalogClick: (HomeCatalogSection) -> Unit,
 ) {
     val onBack = rememberGuardedPopBackStack(navController, route)
-    LaunchedEffect(route.collectionId, route.folderId) {
+    // Read again whenever the collections change, so an edit made from here shows on return.
+    val collections by CollectionRepository.collections.collectAsState()
+    LaunchedEffect(route.collectionId, route.folderId, collections) {
         FolderDetailRepository.initialize(route.collectionId, route.folderId)
     }
     FolderDetailScreen(
@@ -204,6 +226,15 @@ internal fun FolderDestination(
         onCatalogClick = onCatalogClick,
         onPosterClick = { meta: MetaPreview ->
             navController.navigate(DetailRoute(type = meta.type, id = meta.id, title = meta.name))
+        },
+        onEdit = {
+            navController.navigate(
+                CollectionEditorRoute(
+                    collectionId = route.collectionId,
+                    title = FolderDetailRepository.uiState.value.folder?.title.orEmpty(),
+                    folderId = route.folderId,
+                ),
+            )
         },
     )
 }

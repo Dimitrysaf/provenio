@@ -15,6 +15,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CheckCircleOutline
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.rounded.Folder
+import io.github.dimitrysaf.provenio.core.collection.CollectionManualItem
+import io.github.dimitrysaf.provenio.shell.screens.details.components.AddToCollectionFolderSheet
 import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -440,6 +447,7 @@ internal fun ConfiguredMetaSections(
     fun RenderSection(key: MetaScreenSectionKey) {
         when (key) {
             MetaScreenSectionKey.ACTIONS -> {
+                var showAddToFolder by remember { mutableStateOf(false) }
                 DetailActionButtons(
                     playLabel = if (isPrimaryPlayEnabled) playButtonLabel else playDisabledLabel ?: stringResource(Res.string.playback_unavailable),
                     playEnabled = isPrimaryPlayEnabled,
@@ -479,11 +487,28 @@ internal fun ConfiguredMetaSections(
                                 onClick = openListPicker,
                             ))
                         }
+                        add(DetailSecondaryAction(
+                            label = stringResource(Res.string.details_add_to_collection_folder),
+                            icon = Icons.Rounded.Folder,
+                            onClick = { showAddToFolder = true },
+                        ))
                     },
                     isTablet = isTablet,
                     onPlayClick = onPrimaryPlayClick,
                     onPlayLongClick = if (showManualPlayOption) onPrimaryPlayLongClick else null,
                 )
+                if (showAddToFolder) {
+                    AddToCollectionFolderSheet(
+                        item = CollectionManualItem(
+                            id = meta.id,
+                            type = meta.type,
+                            name = meta.name,
+                            poster = meta.poster,
+                            releaseInfo = meta.releaseInfo,
+                        ),
+                        onDismiss = { showAddToFolder = false },
+                    )
+                }
             }
             MetaScreenSectionKey.OVERVIEW -> {
                 DetailMetaInfo(

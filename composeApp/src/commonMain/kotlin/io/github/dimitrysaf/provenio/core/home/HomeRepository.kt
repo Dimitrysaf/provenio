@@ -12,6 +12,8 @@ import io.github.dimitrysaf.provenio.core.collection.TmdbCollectionSourceResolve
 import io.github.dimitrysaf.provenio.core.collection.catalogRouteKey
 import io.github.dimitrysaf.provenio.core.collection.findCollectionCatalog
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktPublicListSourceResolver
+import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklPublicListSourceResolver
+import io.github.dimitrysaf.provenio.core.collection.manualPage
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.getAndUpdate
@@ -395,6 +397,8 @@ object HomeRepository {
         val page = when {
             isTmdb -> TmdbCollectionSourceResolver.resolve(source = this, page = 1)
             isTrakt -> TraktPublicListSourceResolver.resolve(source = this, page = 1)
+            isSimkl -> SimklPublicListSourceResolver.resolve(source = this, page = 1)
+            isManual -> manualPage()
             else -> {
                 val catalogSource = addonCatalogSource() ?: return emptyList()
                 val resolvedCatalog = addons.findCollectionCatalog(catalogSource) ?: return emptyList()

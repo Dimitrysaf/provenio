@@ -16,6 +16,7 @@ import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.home.filterReleasedItems
 import io.github.dimitrysaf.provenio.core.home.stableKey
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktPublicListSourceResolver
+import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklPublicListSourceResolver
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +29,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import provenio.composeapp.generated.resources.Res
 import provenio.composeapp.generated.resources.collections_folder_addon_not_found
+import provenio.composeapp.generated.resources.collections_folder_simkl_list
+import provenio.composeapp.generated.resources.collections_folder_manual_items
 import provenio.composeapp.generated.resources.collections_folder_trakt_movie_list
 import provenio.composeapp.generated.resources.collections_folder_trakt_series_list
 import provenio.composeapp.generated.resources.collections_tab_all
@@ -105,6 +108,33 @@ object FolderDetailRepository {
                             isLoading = true,
                         ),
                     )
+                } else if (source.isManual) {
+                    add(
+                        FolderTab(
+                            label = source.title?.takeIf { it.isNotBlank() }
+                                ?: runBlocking { getString(Res.string.collections_folder_manual_items) },
+                            typeLabel = runBlocking { getString(Res.string.collections_folder_manual_items) },
+                            source = source,
+                            sourceKey = source.catalogRouteKey(),
+                            type = "movie",
+                            catalogId = "manual",
+                            supportsPagination = false,
+                            isLoading = true,
+                        ),
+                    )
+                } else if (source.isSimkl) {
+                    add(
+                        FolderTab(
+                            label = source.title?.takeIf { it.isNotBlank() } ?: "Simkl",
+                            typeLabel = runBlocking { getString(Res.string.collections_folder_simkl_list) },
+                            source = source,
+                            sourceKey = source.catalogRouteKey(),
+                            type = "movie",
+                            catalogId = "simkl_list_${source.simklListId}",
+                            supportsPagination = true,
+                            isLoading = true,
+                        ),
+                    )
                 } else if (source.isTrakt) {
                     val mediaType = TmdbCollectionMediaType.fromString(source.mediaType)
                     val type = if (mediaType == TmdbCollectionMediaType.TV) "series" else "movie"
@@ -170,7 +200,7 @@ object FolderDetailRepository {
             val tabIndex = if (showAll) sourceIndex + 1 else sourceIndex
             val catalogSource = source.addonCatalogSource()
             val resolvedCatalog = catalogSource?.let { addons.findCollectionCatalog(it) }
-            if (!source.isTmdb && !source.isTrakt && resolvedCatalog == null) {
+            if (!source.isDirect && resolvedCatalog == null) {
                 updateTab(tabIndex) {
                     it.copy(
                         isLoading = false,
@@ -238,8 +268,7 @@ object FolderDetailRepository {
         val requestedSkip = if (reset) 0 else currentTab.nextSkip ?: return
         val currentSource = currentTab.source
         if (
-            currentSource?.isTmdb != true &&
-            currentSource?.isTrakt != true &&
+            currentSource?.isDirect != true &&
             currentTab.manifestUrl == null
         ) return
 
@@ -272,6 +301,13 @@ object FolderDetailRepository {
                     )
 
                     source?.isTrakt == true -> TraktPublicListSourceResolver.resolve(
+                        source = source,
+                        page = if (reset) 1 else requestedSkip,
+                    )
+
+                    source?.isManual == true -> source.manualPage()
+
+                    source?.isSimkl == true -> SimklPublicListSourceResolver.resolve(
                         source = source,
                         page = if (reset) 1 else requestedSkip,
                     )
@@ -372,7 +408,7 @@ object FolderDetailRepository {
         val collectionId = activeCollectionId ?: return emptyList()
 
         return current.tabs.filter { !it.isAllTab && it.items.isNotEmpty() }.mapNotNull { tab ->
-            val directSource = tab.source?.let { it.isTmdb || it.isTrakt } == true
+            val directSource = tab.source?.isDirect == true
             val target = if (directSource) {
                 val sourceKey = tab.sourceKey ?: return@mapNotNull null
                 CatalogTarget.CollectionSource(

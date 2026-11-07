@@ -43,6 +43,9 @@ data class CollectionSource(
     val title: String? = null,
     val tmdbId: Int? = null,
     val traktListId: Long? = null,
+    val simklListId: Long? = null,
+    /** The titles of a hand-made source, put in the folder one by one. */
+    val items: List<CollectionManualItem>? = null,
     val mediaType: String? = null,
     val sortBy: String? = null,
     val sortHow: String? = null,
@@ -54,8 +57,18 @@ data class CollectionSource(
     val isTrakt: Boolean
         get() = provider.equals("trakt", ignoreCase = true)
 
+    val isSimkl: Boolean
+        get() = provider.equals("simkl", ignoreCase = true)
+
+    val isManual: Boolean
+        get() = provider.equals("manual", ignoreCase = true)
+
+    /** Read straight from a service, or kept in the folder itself, rather than through an addon's catalog. */
+    val isDirect: Boolean
+        get() = isTmdb || isTrakt || isSimkl || isManual
+
     fun addonCatalogSource(): CollectionCatalogSource? {
-        if (isTmdb || isTrakt) return null
+        if (isDirect) return null
         val sourceAddonId = addonId?.takeIf { it.isNotBlank() } ?: return null
         val sourceType = type?.takeIf { it.isNotBlank() } ?: return null
         val sourceCatalogId = catalogId?.takeIf { it.isNotBlank() } ?: return null
@@ -77,6 +90,11 @@ internal fun CollectionSource.catalogRouteKey(): String =
         isTrakt -> {
             "trakt_${traktListId}_${mediaType}_${TraktListSort.normalize(sortBy)}_${TraktSortHow.normalize(sortHow)}"
         }
+
+        isSimkl -> "simkl_$simklListId"
+
+        // A folder has at most one hand-made source, so its kind is its key.
+        isManual -> "manual"
 
         else -> {
             "addon_${addonId}_${type}_${catalogId}_${genre.orEmpty()}"

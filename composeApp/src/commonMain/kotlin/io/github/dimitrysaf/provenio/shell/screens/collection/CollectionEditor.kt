@@ -47,15 +47,8 @@ fun disposeCollectionEditorPage(page: CollectionEditorPage) {
     }
 }
 
-private val autoDismissedPickerPages = setOf(
-    CollectionEditorPage.TmdbSourcePicker,
-    CollectionEditorPage.TraktSourcePicker,
-)
-
 private fun CollectionEditorUiState.activeEditorPage(): CollectionEditorPage = when {
-    // No CatalogPicker here: it is a sheet over the folder editor, so the editor stays the page.
-    showTmdbSourcePicker -> CollectionEditorPage.TmdbSourcePicker
-    showTraktSourcePicker -> CollectionEditorPage.TraktSourcePicker
+    // No pickers here: they are sheets over the folder editor, so the editor stays the page.
     showFolderEditor && editingFolder != null -> CollectionEditorPage.FolderEditor
     else -> CollectionEditorPage.Root
 }
@@ -67,6 +60,8 @@ fun CollectionEditorScreen(
     onBack: () -> Unit,
     initialPage: CollectionEditorPage? = null,
     initializeRepository: Boolean = true,
+    /** Saves the whole collection when its folder is saved, for an editor opened on one folder. */
+    saveCollectionWithFolder: Boolean = false,
     onNavigateToPage: ((page: CollectionEditorPage, title: String) -> Unit)? = null,
 ) {
     val state by CollectionEditorRepository.uiState.collectAsState()
@@ -78,18 +73,6 @@ fun CollectionEditorScreen(
     }
 
     val page = initialPage ?: state.activeEditorPage()
-    val initialPickerCompletionGeneration = remember(initialPage) {
-        state.sourcePickerCompletionGeneration
-    }
-
-    LaunchedEffect(initialPage, state.sourcePickerCompletionGeneration) {
-        if (
-            initialPage in autoDismissedPickerPages &&
-            state.sourcePickerCompletionGeneration != initialPickerCompletionGeneration
-        ) {
-            onBack()
-        }
-    }
 
     if (
         initialPage != null &&
@@ -126,11 +109,22 @@ fun CollectionEditorScreen(
             onNavigateToPage = onNavigateToPage,
             onSave = {
                 CollectionEditorRepository.saveFolderEdit()
+                if (saveCollectionWithFolder) CollectionEditorRepository.save()
                 if (initialPage == CollectionEditorPage.FolderEditor) {
                     onBack()
                 }
             },
         )
+
+        if (state.showTmdbSourcePicker) {
+            TmdbSourceSheet(state = state, onDismiss = { CollectionEditorRepository.hideTmdbSourcePicker() })
+        }
+        if (state.showTraktSourcePicker) {
+            TraktSourceSheet(state = state, onDismiss = { CollectionEditorRepository.hideTraktSourcePicker() })
+        }
+        if (state.showSimklSourcePicker) {
+            SimklSourceSheet(state = state, onDismiss = { CollectionEditorRepository.hideSimklSourcePicker() })
+        }
 
         if (state.showCatalogPicker) {
             CatalogPickerSheet(
@@ -162,37 +156,17 @@ fun CollectionEditorScreen(
         return
     }
 
-    if (page == CollectionEditorPage.CatalogPicker) {
-        // The picker is a sheet on the folder editor now. The enum entry stays so a back stack
-        // saved before the change still deserializes; a route that reaches it closes itself.
+    if (
+        page == CollectionEditorPage.CatalogPicker ||
+        page == CollectionEditorPage.TmdbSourcePicker ||
+        page == CollectionEditorPage.TraktSourcePicker
+    ) {
+        // The pickers are sheets on the folder editor now. The enum entries stay so a back stack
+        // saved before the change still deserializes; a route that reaches one closes itself.
         LaunchedEffect(Unit) {
-            CollectionEditorRepository.hideCatalogPicker()
+            disposeCollectionEditorPage(page)
             onBack()
         }
-        return
-    }
-
-    if (page == CollectionEditorPage.TmdbSourcePicker) {
-        TmdbSourcePickerScreen(
-            state = state,
-            onBack = {
-                closePage(CollectionEditorPage.TmdbSourcePicker) {
-                    CollectionEditorRepository.hideTmdbSourcePicker()
-                }
-            },
-        )
-        return
-    }
-
-    if (page == CollectionEditorPage.TraktSourcePicker) {
-        TraktSourcePickerScreen(
-            state = state,
-            onBack = {
-                closePage(CollectionEditorPage.TraktSourcePicker) {
-                    CollectionEditorRepository.hideTraktSourcePicker()
-                }
-            },
-        )
         return
     }
 

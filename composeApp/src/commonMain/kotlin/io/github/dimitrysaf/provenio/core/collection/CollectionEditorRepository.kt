@@ -3,6 +3,7 @@ package io.github.dimitrysaf.provenio.core.collection
 import co.touchlab.kermit.Logger
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktPublicListSearchResult
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktPublicListSourceResolver
+import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklPublicListSourceResolver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,6 +29,8 @@ import provenio.composeapp.generated.resources.collections_editor_trakt_input_re
 import provenio.composeapp.generated.resources.collections_editor_trakt_list_title_format
 import provenio.composeapp.generated.resources.collections_editor_trakt_load_error
 import provenio.composeapp.generated.resources.collections_editor_trakt_no_lists_found
+import provenio.composeapp.generated.resources.collections_simkl_invalid_list
+import provenio.composeapp.generated.resources.collections_simkl_list_title_format
 import org.jetbrains.compose.resources.getString
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -70,7 +73,10 @@ data class CollectionEditorUiState(
     val traktTrendingResults: List<TraktPublicListSearchResult> = emptyList(),
     val traktPopularResults: List<TraktPublicListSearchResult> = emptyList(),
     val traktSearchError: String? = null,
-    val sourcePickerCompletionGeneration: Long = 0L,
+    val showSimklSourcePicker: Boolean = false,
+    val simklInput: String = "",
+    val simklTitleInput: String = "",
+    val simklError: String? = null,
 )
 
 enum class TmdbBuilderMode {
@@ -338,6 +344,7 @@ object CollectionEditorRepository {
             showCatalogPicker = true,
             showTmdbSourcePicker = false,
             showTraktSourcePicker = false,
+            showSimklSourcePicker = false,
             editingTraktSourceIndex = null,
             genrePickerSourceIndex = null,
         )
@@ -352,6 +359,7 @@ object CollectionEditorRepository {
             showTmdbSourcePicker = true,
             showCatalogPicker = false,
             showTraktSourcePicker = false,
+            showSimklSourcePicker = false,
             editingTraktSourceIndex = null,
             genrePickerSourceIndex = null,
             tmdbSearchError = null,
@@ -367,6 +375,7 @@ object CollectionEditorRepository {
             showTraktSourcePicker = true,
             showCatalogPicker = false,
             showTmdbSourcePicker = false,
+            showSimklSourcePicker = false,
             editingTraktSourceIndex = null,
             genrePickerSourceIndex = null,
             traktInput = "",
@@ -387,6 +396,70 @@ object CollectionEditorRepository {
             editingTraktSourceIndex = null,
             traktSearchError = null,
         )
+    }
+
+    fun showSimklSourcePicker() {
+        _uiState.value = _uiState.value.copy(
+            showSimklSourcePicker = true,
+            showCatalogPicker = false,
+            showTmdbSourcePicker = false,
+            showTraktSourcePicker = false,
+            genrePickerSourceIndex = null,
+            simklInput = "",
+            simklTitleInput = "",
+            simklError = null,
+        )
+    }
+
+    fun hideSimklSourcePicker() {
+        _uiState.value = _uiState.value.copy(showSimklSourcePicker = false, simklError = null)
+    }
+
+    fun setSimklInput(value: String) {
+        _uiState.value = _uiState.value.copy(simklInput = value, simklError = null)
+    }
+
+    fun setSimklTitleInput(value: String) {
+        _uiState.value = _uiState.value.copy(simklTitleInput = value)
+    }
+
+    /** Adds the Simkl list the link or id names; the sheet stays open for another. */
+    fun addSimklSourceFromInput() {
+        val state = _uiState.value
+        val listId = SimklPublicListSourceResolver.parseListId(state.simklInput)
+        if (listId == null) {
+            scope.launch {
+                _uiState.value = _uiState.value.copy(simklError = getString(Res.string.collections_simkl_invalid_list))
+            }
+            return
+        }
+        scope.launch {
+            // Simkl names a list only to a PRO or VIP account, so a free one falls back to its number.
+            val title = state.simklTitleInput.trim().ifBlank {
+                runCatching { SimklPublicListSourceResolver.listTitle(listId) }.getOrNull()
+                    ?: getString(Res.string.collections_simkl_list_title_format, listId)
+            }
+            val folder = _uiState.value.editingFolder ?: return@launch
+            val source = CollectionSource(provider = "simkl", title = title, simklListId = listId)
+            if (folder.resolvedSources.any { collectionSourceKey(it) == collectionSourceKey(source) }) {
+                _uiState.value = _uiState.value.copy(simklInput = "", simklTitleInput = "")
+                return@launch
+            }
+            _uiState.value = _uiState.value.copy(
+                editingFolder = folder.withSources(folder.resolvedSources + source),
+                simklInput = "",
+                simklTitleInput = "",
+                simklError = null,
+            )
+        }
+    }
+
+    /** Removes every source of the folder being edited that [matches], for the pickers' checkboxes. */
+    fun removeSources(matches: (CollectionSource) -> Boolean) {
+        val folder = _uiState.value.editingFolder ?: return
+        val remaining = folder.resolvedSources.filterNot(matches)
+        if (remaining.size == folder.resolvedSources.size) return
+        _uiState.value = _uiState.value.copy(editingFolder = folder.withSources(remaining))
     }
 
     fun editTraktSource(index: Int) {
@@ -500,6 +573,7 @@ object CollectionEditorRepository {
             showCatalogPicker = false,
             showTmdbSourcePicker = false,
             showTraktSourcePicker = false,
+            showSimklSourcePicker = false,
         )
     }
 
@@ -523,6 +597,7 @@ object CollectionEditorRepository {
             showCatalogPicker = false,
             showTmdbSourcePicker = false,
             showTraktSourcePicker = false,
+            showSimklSourcePicker = false,
             editingTraktSourceIndex = null,
             genrePickerSourceIndex = null,
         )
@@ -535,6 +610,7 @@ object CollectionEditorRepository {
             showCatalogPicker = false,
             showTmdbSourcePicker = false,
             showTraktSourcePicker = false,
+            showSimklSourcePicker = false,
             editingTraktSourceIndex = null,
             genrePickerSourceIndex = null,
         )
@@ -746,15 +822,12 @@ object CollectionEditorRepository {
         } else {
             folder.withSources(folder.resolvedSources + newSources)
         }
+        // The sheet stays open, as the catalog picker does, so several sources can be added.
         _uiState.value = _uiState.value.copy(
             editingFolder = updatedFolder,
-            showTmdbSourcePicker = false,
             tmdbInput = "",
             tmdbTitleInput = "",
-            tmdbCompanyResults = emptyList(),
-            tmdbCollectionResults = emptyList(),
             tmdbSearchError = null,
-            sourcePickerCompletionGeneration = _uiState.value.sourcePickerCompletionGeneration + 1L,
         )
     }
 
@@ -855,15 +928,14 @@ object CollectionEditorRepository {
             folder.withSources(updatedSources)
         }
 
+        // Editing one source ends there; adding leaves the sheet open for more.
         _uiState.value = state.copy(
             editingFolder = updatedFolder,
-            showTraktSourcePicker = false,
+            showTraktSourcePicker = editingIndex == null,
             editingTraktSourceIndex = null,
-            traktInput = "",
+            traktInput = if (editingIndex == null) state.traktInput else "",
             traktTitleInput = "",
-            traktSearchResults = emptyList(),
             traktSearchError = null,
-            sourcePickerCompletionGeneration = state.sourcePickerCompletionGeneration + 1L,
         )
     }
 
@@ -917,7 +989,7 @@ private fun CollectionFolder.withSources(nextSources: List<CollectionSource>): C
         catalogSources = nextSources.mapNotNull { it.addonCatalogSource() },
     )
 
-private fun collectionSourceKey(source: CollectionSource): String =
+internal fun collectionSourceKey(source: CollectionSource): String =
     source.catalogRouteKey()
 
 private fun selectedMediaTypes(

@@ -244,9 +244,6 @@ internal fun FolderEditorPage(
     onSave: () -> Unit,
 ) {
     val folder = state.editingFolder ?: return
-    val tmdbSourcePickerTitle = stringResource(Res.string.collections_editor_tmdb_sources)
-    val traktSourcePickerTitle = stringResource(Res.string.collections_editor_trakt_sources)
-    val editTraktSourcePickerTitle = stringResource(Res.string.collections_editor_edit_trakt_source)
 
     var showDiscardConfirm by remember { mutableStateOf(false) }
     val guardedBack: () -> Unit = {
@@ -360,23 +357,15 @@ internal fun FolderEditorPage(
                             ),
                             AddSourceChoice(
                                 label = stringResource(Res.string.source_tmdb),
-                                onClick = {
-                                    CollectionEditorRepository.showTmdbSourcePicker()
-                                    onNavigateToPage?.invoke(
-                                        CollectionEditorPage.TmdbSourcePicker,
-                                        tmdbSourcePickerTitle,
-                                    )
-                                },
+                                onClick = { CollectionEditorRepository.showTmdbSourcePicker() },
                             ),
                             AddSourceChoice(
                                 label = stringResource(Res.string.source_trakt),
-                                onClick = {
-                                    CollectionEditorRepository.showTraktSourcePicker()
-                                    onNavigateToPage?.invoke(
-                                        CollectionEditorPage.TraktSourcePicker,
-                                        traktSourcePickerTitle,
-                                    )
-                                },
+                                onClick = { CollectionEditorRepository.showTraktSourcePicker() },
+                            ),
+                            AddSourceChoice(
+                                label = stringResource(Res.string.source_simkl),
+                                onClick = { CollectionEditorRepository.showSimklSourcePicker() },
                             ),
                         ),
                     )
@@ -401,17 +390,28 @@ internal fun FolderEditorPage(
                                     shape = shape,
                                     onRemove = { CollectionEditorRepository.removeCatalogSource(index) },
                                 )
+                            } else if (source.isManual) {
+                                // The titles put in from their pages; removing it empties them all.
+                                FolderSourceRow(
+                                    title = stringResource(Res.string.collections_folder_manual_items),
+                                    supporting = stringResource(Res.string.collections_folder_item_count, source.items.orEmpty().size),
+                                    shape = shape,
+                                    onClick = null,
+                                    onRemove = { CollectionEditorRepository.removeCatalogSource(index) },
+                                )
+                            } else if (source.isSimkl) {
+                                FolderSourceRow(
+                                    title = source.title?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.source_simkl),
+                                    supporting = "${stringResource(Res.string.source_simkl)} · ${source.simklListId}",
+                                    shape = shape,
+                                    onClick = null,
+                                    onRemove = { CollectionEditorRepository.removeCatalogSource(index) },
+                                )
                             } else if (source.isTrakt) {
                                 FolderTraktSourceCard(
                                     source = source,
                                     shape = shape,
-                                    onEdit = {
-                                        CollectionEditorRepository.editTraktSource(index)
-                                        onNavigateToPage?.invoke(
-                                            CollectionEditorPage.TraktSourcePicker,
-                                            editTraktSourcePickerTitle,
-                                        )
-                                    },
+                                    onEdit = { CollectionEditorRepository.editTraktSource(index) },
                                     onRemove = { CollectionEditorRepository.removeCatalogSource(index) },
                                 )
                             } else if (addonSource != null) {

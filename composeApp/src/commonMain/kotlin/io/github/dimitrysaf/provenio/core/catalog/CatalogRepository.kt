@@ -7,6 +7,8 @@ import io.github.dimitrysaf.provenio.core.library.LibraryRepository
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
 import io.github.dimitrysaf.provenio.core.home.filterReleasedItems
 import io.github.dimitrysaf.provenio.core.tracking.trakt.TraktPublicListSourceResolver
+import io.github.dimitrysaf.provenio.core.tracking.simkl.SimklPublicListSourceResolver
+import io.github.dimitrysaf.provenio.core.collection.manualPage
 import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -214,6 +216,8 @@ private suspend fun fetchCollectionSourcePage(
     return when {
         source.isTmdb -> TmdbCollectionSourceResolver.resolve(source = source, page = page)
         source.isTrakt -> TraktPublicListSourceResolver.resolve(source = source, page = page)
+        source.isSimkl -> SimklPublicListSourceResolver.resolve(source = source, page = page)
+        source.isManual -> source.manualPage()
         else -> error(getString(Res.string.catalog_load_failed))
     }
 }

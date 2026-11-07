@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.screens.details.DetailPrimaryPaneWeight
+import io.github.dimitrysaf.provenio.shell.screens.details.DetailTwoPaneMinWidth
 import io.github.dimitrysaf.provenio.shell.components.arrowKeyScrollContent
 import io.github.dimitrysaf.provenio.shell.components.arrowKeyScrollHost
 import io.github.dimitrysaf.provenio.shell.components.rememberArrowKeyScroll
@@ -199,7 +201,8 @@ fun SettingsScreen(
         }
         var currentPage by rememberSaveable(initialPageName) { mutableStateOf(initialPage.name) }
         var downloadsOpen by rememberSaveable { mutableStateOf(false) }
-        val twoPane = maxWidth >= 768.dp
+        // Split as the Details page splits, from the same width.
+        val twoPane = maxWidth >= DetailTwoPaneMinWidth
         val scrollToTopRequests = remember { MutableSharedFlow<Unit>(extraBufferCapacity = 1) }
         val pageTitles = if (onNavigatePage != null) settingsPageTitles() else emptyMap()
         val page = remember(currentPage) {
@@ -345,12 +348,6 @@ fun SettingsScreen(
         }
     }
 }
-
-/**
- * Wide enough to hold the search bar, whose spec minimum container width is 360dp. This also
- * matches the layout spec's default fixed-pane width at the expanded breakpoint.
- */
-private val SettingsSidebarWidth = 384.dp
 
 internal val SettingsContentMaxWidth = 720.dp
 
@@ -620,7 +617,8 @@ private fun TabletSettingsScreen(
     var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-    val categoryPaneWidth = (maxWidth * 0.5f).coerceIn(SettingsSidebarWidth, SettingsCategoryPaneMaxWidth)
+    // The categories take the Details page's main share, the open page the rest.
+    val categoryPaneWidth = maxWidth * DetailPrimaryPaneWeight
     Row(modifier = Modifier.fillMaxSize()) {
         // The categories take the same collapsing app bar as the page beside them, so the two
         // halves read as one screen with a title over each.
@@ -878,8 +876,6 @@ private fun TabletSettingsScreen(
     }
     }
 }
-
-private val SettingsCategoryPaneMaxWidth = 560.dp
 
 // Everything the settings pages show, collected once for whichever layout is on screen.
 internal data class SettingsData(

@@ -152,6 +152,11 @@ internal object CollectionJsonPreserver {
                 val sortBy = obj["sortBy"]?.jsonPrimitive?.contentOrNull.orEmpty()
                 "$provider|$sourceType|$tmdbId|$mediaType|$sortBy"
             }
+            provider.equals("manual", ignoreCase = true) -> provider
+            provider.equals("simkl", ignoreCase = true) -> {
+                val listId = obj["simklListId"]?.jsonPrimitive?.contentOrNull ?: return null
+                "$provider|$listId"
+            }
             provider.equals("trakt", ignoreCase = true) -> {
                 val listId = obj["traktListId"]?.jsonPrimitive?.contentOrNull ?: return null
                 val mediaType = obj["mediaType"]?.jsonPrimitive?.contentOrNull.orEmpty()

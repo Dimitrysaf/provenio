@@ -43,6 +43,13 @@ import io.github.dimitrysaf.provenio.shell.components.PosterCard
 import io.github.dimitrysaf.provenio.shell.components.LocalPosterProgress
 import io.github.dimitrysaf.provenio.shell.components.PosterCardShape
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
+import io.github.dimitrysaf.provenio.shell.components.SearchField
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import provenio.composeapp.generated.resources.collections_folder_edit
+import provenio.composeapp.generated.resources.collections_folder_item_count
+import provenio.composeapp.generated.resources.collections_folder_search_placeholder
 import io.github.dimitrysaf.provenio.core.watch.watching.application.PosterImdbAliases
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -85,6 +92,7 @@ fun FolderDetailScreen(
     onBack: () -> Unit,
     onCatalogClick: (HomeCatalogSection) -> Unit,
     onPosterClick: (MetaPreview) -> Unit,
+    onEdit: (() -> Unit)? = null,
 ) {
     val uiState by FolderDetailRepository.uiState.collectAsState()
     val watchedUiState by remember {
@@ -103,6 +111,15 @@ fun FolderDetailScreen(
     }
     val folder = uiState.folder
     val useNativeNavigation = LocalUseNativeNavigation.current
+    // The search and filters narrow whatever the page shows: the open tab, or every row.
+    var filters by remember(folder?.id) { mutableStateOf(FolderFilterState()) }
+    val viewItems = if (uiState.viewMode == FolderViewMode.TABBED_GRID) {
+        uiState.tabs.getOrNull(uiState.selectedTabIndex)?.items.orEmpty()
+    } else {
+        FolderDetailRepository.getCatalogSectionsForRows().flatMap { it.items }
+    }
+    val shownCount = remember(viewItems, filters) { viewItems.filteredBy(filters).size }
+    val countLabel = stringResource(Res.string.collections_folder_item_count, shownCount)
     // The same collapsing app bar as a catalog's page: large over the top of the titles, a title
     // bar once they scroll.
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -122,8 +139,28 @@ fun FolderDetailScreen(
                             overflow = TextOverflow.Ellipsis,
                         )
                     },
-                    subtitle = uiState.collectionTitle.takeIf { folder != null && it.isNotBlank() }?.let { text ->
-                        { Text(text = text, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    // The collection it is in, and how many titles are showing.
+                    subtitle = {
+                        Text(
+                            text = listOfNotNull(
+                                uiState.collectionTitle.takeIf { folder != null && it.isNotBlank() },
+                                countLabel.takeIf { folder != null },
+                            ).joinToString(" · "),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
+                    actions = {
+                        if (onEdit != null && folder != null) {
+                            WithTooltip(stringResource(Res.string.collections_folder_edit)) {
+                                IconButton(onClick = onEdit) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Edit,
+                                        contentDescription = stringResource(Res.string.collections_folder_edit),
+                                    )
+                                }
+                            }
+                        }
                     },
                     navigationIcon = {
                         WithTooltip(stringResource(Res.string.action_back)) {
@@ -163,11 +200,22 @@ fun FolderDetailScreen(
                 return@Column
             }
 
+            SearchField(
+                query = filters.query,
+                onQueryChange = { filters = filters.copy(query = it) },
+                placeholder = stringResource(Res.string.collections_folder_search_placeholder),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                actions = {
+                    FolderFiltersButton(items = viewItems, filters = filters, onChange = { filters = it })
+                },
+            )
+
             when (uiState.viewMode) {
                 FolderViewMode.TABBED_GRID -> TabbedGridContent(
                     uiState = uiState,
                     watchedKeys = watchedKeys,
                     fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                    filters = filters,
                     modifier = Modifier.weight(1f),
                     onTabSelected = { FolderDetailRepository.selectTab(it) },
                     onPosterClick = onPosterClick,
@@ -176,6 +224,7 @@ fun FolderDetailScreen(
                     uiState = uiState,
                     watchedKeys = watchedKeys,
                     fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                    filters = filters,
                     modifier = Modifier.weight(1f),
                     onCatalogClick = onCatalogClick,
                     onPosterClick = onPosterClick,
@@ -184,6 +233,7 @@ fun FolderDetailScreen(
                     uiState = uiState,
                     watchedKeys = watchedKeys,
                     fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                    filters = filters,
                     modifier = Modifier.weight(1f),
                     onCatalogClick = onCatalogClick,
                     onPosterClick = onPosterClick,
@@ -198,6 +248,7 @@ private fun TabbedGridContent(
     uiState: FolderDetailUiState,
     watchedKeys: Set<String>,
     fullyWatchedSeriesKeys: Set<String>,
+    filters: FolderFilterState,
     modifier: Modifier = Modifier,
     onTabSelected: (Int) -> Unit,
     onPosterClick: (MetaPreview) -> Unit,
@@ -254,6 +305,7 @@ private fun TabbedGridContent(
         val selectedTab = uiState.tabs.getOrNull(uiState.selectedTabIndex)
         if (selectedTab == null) return
         LaunchedEffect(selectedTab.items) { PosterImdbAliases.resolve(selectedTab.items) }
+        val shownItems = remember(selectedTab.items, filters) { selectedTab.items.filteredBy(filters) }
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val columns = remember(maxWidth) { folderDetailGridColumnsForWidth(maxWidth) }
@@ -261,7 +313,7 @@ private fun TabbedGridContent(
             when {
                 selectedTab.isLoading && selectedTab.items.isEmpty() -> LoadingIndicator()
                 selectedTab.error != null && selectedTab.items.isEmpty() -> ErrorMessage(selectedTab.error)
-                selectedTab.items.isEmpty() -> EmptyMessage()
+                shownItems.isEmpty() -> EmptyMessage()
                 else -> {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(columns),
@@ -276,7 +328,7 @@ private fun TabbedGridContent(
                         verticalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
                         items(
-                            items = selectedTab.items.withDuplicateSafeLazyKeys { item -> item.stableKey() },
+                            items = shownItems.withDuplicateSafeLazyKeys { item -> item.stableKey() },
                             key = { item -> item.lazyKey },
                         ) { keyedItem ->
                             val item = keyedItem.value
@@ -312,14 +364,18 @@ private fun RowsContent(
     uiState: FolderDetailUiState,
     watchedKeys: Set<String>,
     fullyWatchedSeriesKeys: Set<String>,
+    filters: FolderFilterState,
     modifier: Modifier = Modifier,
     onCatalogClick: (HomeCatalogSection) -> Unit,
     onPosterClick: (MetaPreview) -> Unit,
 ) {
-    val sections = FolderDetailRepository.getCatalogSectionsForRows()
-    LaunchedEffect(sections) { PosterImdbAliases.resolve(sections.flatMap { it.items.take(18) }) }
+    val allSections = FolderDetailRepository.getCatalogSectionsForRows()
+    LaunchedEffect(allSections) { PosterImdbAliases.resolve(allSections.flatMap { it.items.take(18) }) }
+    val sections = remember(allSections, filters) {
+        allSections.map { it.copy(items = it.items.filteredBy(filters)) }.filter { it.items.isNotEmpty() }
+    }
 
-    if (uiState.isLoading && sections.isEmpty()) {
+    if (uiState.isLoading && allSections.isEmpty()) {
         LoadingIndicator()
         return
     }

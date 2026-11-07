@@ -320,7 +320,7 @@ private enum class SearchFilter {
 }
 
 @Composable
-private fun SearchSortOrder.label(): String =
+internal fun SearchSortOrder.label(): String =
     stringResource(
         when (this) {
             SearchSortOrder.Default -> Res.string.search_sort_default

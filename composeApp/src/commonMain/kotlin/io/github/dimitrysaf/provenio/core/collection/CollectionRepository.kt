@@ -305,7 +305,7 @@ internal fun validateImportModel(collections: List<Collection>): CollectionImpor
                     return CollectionImportModelError.InvalidTraktListId(si + 1, f.title)
                 }
 
-                val invalidAddon = !s.isTmdb && !s.isTrakt &&
+                val invalidAddon = !s.isDirect &&
                     (s.addonId.isNullOrBlank() || s.type.isNullOrBlank() || s.catalogId.isNullOrBlank())
                 val invalidTmdb = s.isTmdb &&
                     s.tmdbSourceType.isNullOrBlank()
