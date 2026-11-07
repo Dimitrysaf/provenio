@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.shell.components.stillListItemShapes
 import io.github.dimitrysaf.provenio.shell.components.sheetHeaderFocus
 import io.github.dimitrysaf.provenio.shell.components.LocalSheetFocus
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
@@ -904,7 +905,7 @@ private fun SubtitleDelayRow(
     Box(modifier = modifier) {
         SegmentedListItem(
             onClick = { onDelayChanged(0) },
-            shapes = ListItemDefaults.shapes(
+            shapes = stillListItemShapes(
                 shape = shape,
                 selectedShape = shape,
                 pressedShape = shape,

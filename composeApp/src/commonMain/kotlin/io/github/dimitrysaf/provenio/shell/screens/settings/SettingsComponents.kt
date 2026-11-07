@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.stillListItemShapes
 import io.github.dimitrysaf.provenio.shell.components.ReorderKeyButtons
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.BorderStroke
@@ -97,7 +98,7 @@ internal fun SettingsSidebarItem(
     SegmentedListItem(
         selected = selected,
         onClick = onClick,
-        shapes = ListItemDefaults.shapes(
+        shapes = stillListItemShapes(
             shape = unselected,
             pressedShape = unselected,
             focusedShape = unselected,

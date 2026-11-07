@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.stillListItemShapes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -109,7 +110,7 @@ internal fun DetailStaticSegment(
 @Composable
 internal fun detailSegmentShapes(index: Int, count: Int): ListItemShapes {
     val shape = segmentShape(index = index, count = count)
-    return ListItemDefaults.shapes(
+    return stillListItemShapes(
         shape = shape,
         selectedShape = RoundedCornerShape(OuterCorner),
         pressedShape = shape,

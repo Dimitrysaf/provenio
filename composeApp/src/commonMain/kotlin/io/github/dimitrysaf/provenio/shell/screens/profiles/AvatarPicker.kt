@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.profiles.AvatarCatalogItem
 import io.github.dimitrysaf.provenio.core.profiles.avatarImageUrl
 import io.github.dimitrysaf.provenio.shell.components.shapedClickable
@@ -81,7 +81,7 @@ private fun AvatarChoiceItem(
             .shapedClickable(CircleShape, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        AsyncImage(
+        SkeletonAsyncImage(
             model = avatarImageUrl(avatar),
             contentDescription = avatar.displayName,
             modifier = Modifier.fillMaxSize().clip(CircleShape),

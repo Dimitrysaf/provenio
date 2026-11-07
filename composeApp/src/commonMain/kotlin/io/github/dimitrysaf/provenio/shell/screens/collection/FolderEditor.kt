@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.collection
 
+import io.github.dimitrysaf.provenio.shell.components.stillListItemShapes
 import androidx.compose.ui.text.input.KeyboardType
 import io.github.dimitrysaf.provenio.shell.components.TextPromptDialog
 import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
@@ -122,7 +123,7 @@ internal fun FolderReorderableList(
                 FolderListItem(
                     folder = folder,
                     selected = isDragging,
-                    shapes = ListItemDefaults.shapes(
+                    shapes = stillListItemShapes(
                         shape = unselected,
                         pressedShape = unselected,
                         focusedShape = unselected,
@@ -547,7 +548,7 @@ internal fun FolderSourceRow(
     SegmentedListItem(
         onClick = onClick ?: {},
         enabled = onClick != null,
-        shapes = ListItemDefaults.shapes(
+        shapes = stillListItemShapes(
             shape = shape,
             selectedShape = shape,
             pressedShape = shape,

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.stillListItemShapes
 import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
 import io.github.dimitrysaf.provenio.shell.components.StatusOverlay
 import io.github.dimitrysaf.provenio.shell.components.FindableText
@@ -279,7 +280,7 @@ internal fun SeasonItemRow(
                 selected = season.season == selection.selectedSeason,
                 onClick = { onSeasonSelected(season.season) },
                 onLongClick = longPress,
-                shapes = ListItemDefaults.shapes(
+                shapes = stillListItemShapes(
                     shape = shape,
                     selectedShape = RoundedCornerShape(OuterCorner),
                     pressedShape = shape,
@@ -385,7 +386,7 @@ internal fun DetailEpisodeListRow(
     currentEpisodeId: String? = null,
 ) {
     val shape = segmentShape(index = index, count = count)
-    val shapes = ListItemDefaults.shapes(
+    val shapes = stillListItemShapes(
         shape = shape,
         selectedShape = RoundedCornerShape(OuterCorner),
         pressedShape = shape,

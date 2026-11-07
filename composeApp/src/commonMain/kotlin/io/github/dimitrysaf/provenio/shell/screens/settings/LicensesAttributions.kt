@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,7 +20,6 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.shell.components.ListSubheader
 import io.github.dimitrysaf.provenio.shell.components.ScreenScaffold
 import io.github.dimitrysaf.provenio.core.cloud.PremiumizeCloudLibraryPosterUrl
@@ -246,7 +246,7 @@ private fun ProviderLogoImage(
     contentDescription: String,
     isTablet: Boolean,
 ) {
-    AsyncImage(
+    SkeletonAsyncImage(
         model = url,
         contentDescription = contentDescription,
         modifier = Modifier

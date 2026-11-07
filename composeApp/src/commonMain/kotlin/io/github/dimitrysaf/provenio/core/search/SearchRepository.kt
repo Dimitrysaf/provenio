@@ -234,6 +234,10 @@ object SearchRepository {
         _filters.value = _filters.value.copy(year = year)
     }
 
+    fun setHideWatched(hide: Boolean) {
+        _filters.value = _filters.value.copy(hideWatched = hide)
+    }
+
     fun setSortOrder(sort: SearchSortOrder) {
         _filters.value = _filters.value.copy(sort = sort)
     }

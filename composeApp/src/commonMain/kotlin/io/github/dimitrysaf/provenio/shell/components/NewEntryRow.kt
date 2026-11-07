@@ -29,7 +29,7 @@ fun NewEntryRow(
 ) {
     SegmentedListItem(
         onClick = onClick,
-        shapes = ListItemDefaults.shapes(
+        shapes = stillListItemShapes(
             shape = shape,
             selectedShape = shape,
             pressedShape = shape,

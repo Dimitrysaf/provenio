@@ -266,12 +266,7 @@ private fun DocumentationIndex(isTablet: Boolean) {
                 message = stringResource(Res.string.docs_empty_message),
             )
             // Nothing saved yet and the first fetch still on its way.
-            else -> Box(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                LoadingSpinner()
-            }
+            else -> SegmentedListSkeleton()
         }
     }
 }

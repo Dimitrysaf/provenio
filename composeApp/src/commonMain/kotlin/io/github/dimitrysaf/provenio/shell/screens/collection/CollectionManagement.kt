@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.collection
 
+import io.github.dimitrysaf.provenio.shell.components.stillListItemShapes
 import io.github.dimitrysaf.provenio.shell.components.ReorderKeyButtons
 import androidx.compose.ui.focus.focusProperties
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
@@ -267,7 +268,7 @@ private fun CollectionReorderableList(
                 CollectionListItem(
                     collection = collection,
                     selected = isDragging,
-                    shapes = ListItemDefaults.shapes(
+                    shapes = stillListItemShapes(
                         shape = unselected,
                         pressedShape = unselected,
                         focusedShape = unselected,

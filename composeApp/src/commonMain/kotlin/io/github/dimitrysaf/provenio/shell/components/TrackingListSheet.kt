@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.components
 
+import io.github.dimitrysaf.provenio.shell.screens.settings.SegmentedListSkeleton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -104,7 +105,7 @@ fun TrackingListPickerSheet(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        SmallLoadingSpinner(size = 32.dp)
+                        SegmentedListSkeleton(count = 3)
                         Text(
                             text = stringResource(Res.string.compose_tracking_list_picker_loading),
                             style = MaterialTheme.typography.bodyMedium,

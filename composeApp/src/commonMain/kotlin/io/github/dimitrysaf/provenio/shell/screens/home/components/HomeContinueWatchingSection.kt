@@ -50,7 +50,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.shell.components.DisintegratingContainer
 import io.github.dimitrysaf.provenio.shell.components.DisintegrationRequest
 import io.github.dimitrysaf.provenio.shell.components.ShelfSection
@@ -1021,7 +1020,7 @@ private fun ContinueWatchingPosterCard(
                     artworkUrl = imageUrl,
                 )
                 if (imageUrl != null && item.isCloudLibraryItem()) {
-                    AsyncImage(
+                    SkeletonAsyncImage(
                         model = cloudLibraryDisplayArtworkUrl(imageUrl),
                         contentDescription = item.title,
                         modifier = Modifier

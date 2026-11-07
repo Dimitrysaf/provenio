@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.stillListItemShapes
 import androidx.compose.foundation.layout.Row
 import io.github.dimitrysaf.provenio.shell.components.ReorderKeyButtons
 import androidx.compose.animation.core.animateDpAsState
@@ -299,7 +300,7 @@ private fun MetaSectionRow(
         onClick = { onEnabledChange(!item.enabled) },
         // Only the selected shape differs, so pressing or focusing a row does not re-round it
         // while a dragged one takes the group's outer corner on every edge.
-        shapes = ListItemDefaults.shapes(
+        shapes = stillListItemShapes(
             shape = shape,
             selectedShape = RoundedCornerShape(OuterCorner),
             pressedShape = shape,

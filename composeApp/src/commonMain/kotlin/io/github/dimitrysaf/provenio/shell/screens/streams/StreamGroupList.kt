@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.streams
 
+import io.github.dimitrysaf.provenio.shell.components.stillListItemShapes
 import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
 import androidx.compose.foundation.background
@@ -25,7 +26,6 @@ import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -198,7 +198,7 @@ internal fun LazyListScope.streamGroups(
         key = { _, entry -> entry.key },
     ) { index, entry ->
         val shape = segmentShape(index = index, count = entries.size)
-        val shapes = ListItemDefaults.shapes(
+        val shapes = stillListItemShapes(
             shape = shape,
             selectedShape = RoundedCornerShape(OuterCorner),
             pressedShape = shape,

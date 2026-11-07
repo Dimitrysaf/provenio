@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.streams
 
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -21,7 +22,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.i18n.localizedByteUnit
 import io.github.dimitrysaf.provenio.shell.theme.Tokens
 import kotlin.math.round
@@ -106,7 +106,7 @@ internal fun StreamBadgeChip(
             .padding(horizontal = size.horizontalPadding, vertical = size.verticalPadding),
         contentAlignment = Alignment.Center,
     ) {
-        AsyncImage(
+        SkeletonAsyncImage(
             model = imageURL,
             contentDescription = name,
             modifier = Modifier

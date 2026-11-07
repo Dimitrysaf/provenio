@@ -32,7 +32,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
-import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
+import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailsSkeleton
 import io.github.dimitrysaf.provenio.shell.components.ErrorDialog
 import io.github.dimitrysaf.provenio.shell.components.LoadErrorDialog
 import io.github.dimitrysaf.provenio.shell.components.PageScrollbar
@@ -314,17 +314,9 @@ fun MetaDetailsScreen(
                 )
             }
 
-            displayedMeta == null -> {
-                LoadingSpinner(
-                    modifier = Modifier.align(Alignment.Center),
-                )
-            }
+            displayedMeta == null -> DetailsSkeleton()
 
-            ageAllowed == null -> {
-                LoadingSpinner(
-                    modifier = Modifier.align(Alignment.Center),
-                )
-            }
+            ageAllowed == null -> DetailsSkeleton()
 
             ageAllowed == false -> {
                 EmptyState(

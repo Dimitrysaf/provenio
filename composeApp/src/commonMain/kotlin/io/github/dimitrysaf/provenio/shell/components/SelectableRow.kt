@@ -89,7 +89,7 @@ fun selectableListRowColors(containerColor: Color = Color.Transparent): ListItem
 /** [unselectedShape] in every state but being chosen, which morphs the row to the full corner. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun selectableListRowShapes(unselectedShape: RoundedCornerShape): ListItemShapes = ListItemDefaults.shapes(
+fun selectableListRowShapes(unselectedShape: RoundedCornerShape): ListItemShapes = stillListItemShapes(
     shape = unselectedShape,
     selectedShape = RoundedCornerShape(ChoiceSelectedCorner),
     pressedShape = unselectedShape,

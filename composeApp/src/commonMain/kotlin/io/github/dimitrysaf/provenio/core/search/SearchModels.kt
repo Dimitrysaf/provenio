@@ -110,9 +110,11 @@ data class SearchFilterState(
     val keyword: SearchKeyword? = null,
     /** Titles out in this year: a series counts for every year from its first to its last. */
     val year: Int? = null,
+    /** Leaves out the titles already watched. */
+    val hideWatched: Boolean = false,
 ) {
     val hasSearchFilters: Boolean
-        get() = type != null || catalogKey != null || genre != null || year != null
+        get() = type != null || catalogKey != null || genre != null || year != null || hideWatched
 }
 
 data class SearchCatalogFilterOption(

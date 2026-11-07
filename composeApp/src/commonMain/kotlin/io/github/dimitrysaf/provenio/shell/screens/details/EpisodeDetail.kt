@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailListSkeleton
 import androidx.compose.foundation.background
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.foundation.layout.Box
@@ -22,7 +23,6 @@ import io.github.dimitrysaf.provenio.core.i18n.localizedSeasonEpisodeCode
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
-import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailInfoRows
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.ExpandableDescription
@@ -172,11 +172,11 @@ private fun EpisodeDetailPlaceholder(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(32.dp),
+                        .padding(if (loading) 16.dp else 32.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (loading) {
-                        LoadingSpinner()
+                        DetailListSkeleton()
                     } else {
                         FindableText(
                             text = stringResource(Res.string.episode_details_not_found),

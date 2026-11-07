@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.catalog
 
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.FocusRequester
@@ -56,7 +57,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dimitrysaf.provenio.core.network.NetworkCondition
 import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.core.format.formatReleaseDateForDisplay
 import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.NetworkOfflineCard
@@ -326,7 +326,7 @@ private fun CatalogPosterTile(
                 ),
         ) {
             if (item.poster != null) {
-                AsyncImage(
+                SkeletonAsyncImage(
                     model = item.poster,
                     contentDescription = item.name,
                     modifier = Modifier.fillMaxSize(),

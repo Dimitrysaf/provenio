@@ -46,6 +46,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
 
 @Stable
 private class SkeletonAnimation {
@@ -136,6 +137,7 @@ internal fun SkeletonAsyncImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
     colorFilter: ColorFilter? = null,
+    onSuccess: ((AsyncImagePainter.State.Success) -> Unit)? = null,
 ) {
     var loading by remember(model) { mutableStateOf(true) }
     AsyncImage(
@@ -144,7 +146,10 @@ internal fun SkeletonAsyncImage(
         modifier = if (loading) modifier.skeleton(RectangleShape) else modifier,
         contentScale = contentScale,
         colorFilter = colorFilter,
-        onSuccess = { loading = false },
+        onSuccess = {
+            loading = false
+            onSuccess?.invoke(it)
+        },
         onError = { loading = false },
     )
 }

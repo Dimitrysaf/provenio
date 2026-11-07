@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.collection
 
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -63,7 +64,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import io.github.dimitrysaf.provenio.shell.screens.profiles.pictureDataUri
 import io.github.dimitrysaf.provenio.shell.screens.profiles.rememberPicturePicker
 import kotlinx.coroutines.Dispatchers
@@ -113,7 +113,7 @@ internal fun EditableIdentityHeader(
         ) {
             Box(contentAlignment = Alignment.Center) {
                 when {
-                    !imageUrl.isNullOrBlank() -> AsyncImage(
+                    !imageUrl.isNullOrBlank() -> SkeletonAsyncImage(
                         model = imageUrl,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),

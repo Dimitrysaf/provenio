@@ -56,7 +56,7 @@ internal fun SearchFiltersButton(
         searchSections.searchGenreOptions(filters.type, filters.catalogKey)
     }
 
-    val active = filters.keyword != null || filters.year != null || if (searching) {
+    val active = filters.keyword != null || filters.year != null || filters.hideWatched || if (searching) {
         filters.hasSearchFilters || filters.sort != SearchSortOrder.Default
     } else {
         filters.sort != SearchSortOrder.Default || discoverState.selectedGenre != null
@@ -79,6 +79,13 @@ internal fun SearchFiltersButton(
     }
 
     if (showFilters) {
+        val hideWatchedOption = SingleChoiceOption(
+            value = SearchFilter.HIDE_WATCHED,
+            label = stringResource(Res.string.search_filter_hide_watched),
+            supportingText = stringResource(
+                if (filters.hideWatched) Res.string.settings_integration_status_on else Res.string.settings_integration_status_off,
+            ),
+        )
         val options = if (searching) {
             listOf(
                 SingleChoiceOption(
@@ -114,6 +121,7 @@ internal fun SearchFiltersButton(
                     label = stringResource(Res.string.search_sort),
                     supportingText = sortLabel,
                 ),
+                hideWatchedOption,
             )
         } else {
             val selectedCatalog = discoverState.selectedCatalog
@@ -152,13 +160,21 @@ internal fun SearchFiltersButton(
                     label = stringResource(Res.string.search_sort),
                     supportingText = sortLabel,
                 ),
+                hideWatchedOption,
             )
         }
         SingleChoiceBottomSheet(
             title = stringResource(Res.string.discover_filters),
             options = options,
             isSelected = { false },
-            onSelected = { filter -> openFilter = filter },
+            // Hiding the watched titles is on or off, so choosing it flips it rather than opening a sheet.
+            onSelected = { filter ->
+                if (filter == SearchFilter.HIDE_WATCHED) {
+                    SearchRepository.setHideWatched(!filters.hideWatched)
+                } else {
+                    openFilter = filter
+                }
+            },
             onDismiss = { showFilters = false },
         )
     }
@@ -260,6 +276,8 @@ internal fun SearchFiltersButton(
 
         SearchFilter.KEYWORD -> KeywordFilterSheet(selected = filters.keyword, onDismiss = { openFilter = null })
 
+        SearchFilter.HIDE_WATCHED -> Unit
+
         null -> Unit
     }
 }
@@ -317,6 +335,7 @@ private enum class SearchFilter {
     YEAR,
     KEYWORD,
     SORT,
+    HIDE_WATCHED,
 }
 
 @Composable

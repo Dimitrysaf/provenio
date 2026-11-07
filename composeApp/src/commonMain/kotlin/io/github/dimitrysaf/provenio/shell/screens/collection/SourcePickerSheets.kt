@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.collection
 
+import io.github.dimitrysaf.provenio.shell.components.stillListItemShapes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -23,7 +24,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -625,7 +625,7 @@ private fun LazyListScope.sourceGroup(
                 ExpandableListHeader(
                     title = title,
                     expanded = expanded,
-                    shapes = ListItemDefaults.shapes(
+                    shapes = stillListItemShapes(
                         shape = shape,
                         selectedShape = shape,
                         pressedShape = shape,

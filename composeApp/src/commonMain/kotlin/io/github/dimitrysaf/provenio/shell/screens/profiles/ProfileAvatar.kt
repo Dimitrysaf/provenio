@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.profiles
 
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -17,7 +18,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 
 /**
  * A profile's face, wherever it appears.
@@ -54,7 +54,7 @@ internal fun ProfileAvatar(
         contentAlignment = Alignment.Center,
     ) {
         when {
-            imageUrl != null -> AsyncImage(
+            imageUrl != null -> SkeletonAsyncImage(
                 model = imageUrl,
                 contentDescription = contentDescription,
                 modifier = Modifier.size(size).clip(CircleShape),

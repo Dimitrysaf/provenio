@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details
 
+import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailListSkeleton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,7 +22,6 @@ import io.github.dimitrysaf.provenio.core.metadata.MetaDetailsRepository
 import io.github.dimitrysaf.provenio.core.metadata.MetaVideo
 import io.github.dimitrysaf.provenio.core.metadata.normalizeSeasonNumber
 import io.github.dimitrysaf.provenio.shell.components.FindableText
-import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailInfoRows
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailSection
 import io.github.dimitrysaf.provenio.shell.screens.details.components.ExpandableDescription
@@ -151,11 +151,11 @@ private fun SeasonDetailPlaceholder(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(32.dp),
+                        .padding(if (loading) 16.dp else 32.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (loading) {
-                        LoadingSpinner()
+                        DetailListSkeleton()
                     } else {
                         FindableText(
                             text = stringResource(Res.string.season_details_not_found),

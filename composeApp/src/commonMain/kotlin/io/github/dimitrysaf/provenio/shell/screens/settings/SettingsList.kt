@@ -1,7 +1,9 @@
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.stillListItemShapes
 import androidx.compose.animation.AnimatedVisibility
 import io.github.dimitrysaf.provenio.shell.components.restoresFocus
+import io.github.dimitrysaf.provenio.shell.components.SkeletonBlock
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
@@ -141,7 +143,7 @@ private fun SettingsListRow.RenderSegment(index: Int, count: Int) {
     val shape = segmentShape(index = index, count = count)
     Render(
         shape = shape,
-        shapes = ListItemDefaults.shapes(
+        shapes = stillListItemShapes(
             shape = shape,
             selectedShape = shape,
             pressedShape = shape,
@@ -642,5 +644,36 @@ internal fun SettingsIconCircle(
             tint = content,
             modifier = Modifier.size(24.dp),
         )
+    }
+}
+
+/**
+ * A segmented list while its rows load: [count] rows in the list's own corners and colour, each an
+ * icon and two lines of the skeleton's wave.
+ */
+@Composable
+internal fun SegmentedListSkeleton(count: Int = 4, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(ListItemBetweenSpace),
+    ) {
+        repeat(count) { index ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 72.dp)
+                    .clip(segmentShape(index = index, count = count))
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SkeletonBlock(width = 24.dp, height = 24.dp, cornerRadius = 12.dp)
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SkeletonBlock(modifier = Modifier.fillMaxWidth(0.6f), height = 14.dp)
+                    SkeletonBlock(modifier = Modifier.fillMaxWidth(0.4f), height = 12.dp)
+                }
+            }
+        }
     }
 }

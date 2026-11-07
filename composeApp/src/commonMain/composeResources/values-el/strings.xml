@@ -1563,6 +1563,7 @@
     <string name="discover_type">Τύπος</string>
     <string name="search_filter_all_types">Όλοι οι τύποι</string>
     <string name="search_filter_all_catalogs">Όλοι οι κατάλογοι</string>
+    <string name="search_filter_hide_watched">Απόκρυψη όσων είδες</string>
     <string name="search_sort">Ταξινόμηση κατά</string>
     <string name="search_sort_default">Προεπιλεγμένη σειρά</string>
     <string name="search_sort_name_ascending">Όνομα, Α έως Ω</string>

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.addons
 
+import io.github.dimitrysaf.provenio.shell.components.stillListItemShapes
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
@@ -337,7 +338,7 @@ private fun AddonListRow(
         onClick = { onEnabledChange(!addon.enabled) },
         // Only the selected shape differs, so a dragged row takes the group's outer corner
         // while pressing or focusing one leaves it where it sits.
-        shapes = ListItemDefaults.shapes(
+        shapes = stillListItemShapes(
             shape = shape,
             selectedShape = RoundedCornerShape(OuterCorner),
             pressedShape = shape,

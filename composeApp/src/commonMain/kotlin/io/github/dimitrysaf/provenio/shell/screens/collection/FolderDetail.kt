@@ -1,7 +1,10 @@
 package io.github.dimitrysaf.provenio.shell.screens.collection
 
 import androidx.compose.foundation.background
+import io.github.dimitrysaf.provenio.shell.components.SkeletonPoster
 import io.github.dimitrysaf.provenio.shell.components.SmallLoadingSpinner
+import io.github.dimitrysaf.provenio.shell.components.rememberPosterCardStyleUiState
+import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeSkeletonRow
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -118,7 +121,10 @@ fun FolderDetailScreen(
     } else {
         FolderDetailRepository.getCatalogSectionsForRows().flatMap { it.items }
     }
-    val shownCount = remember(viewItems, filters) { viewItems.filteredBy(filters).size }
+    val isWatched: (MetaPreview) -> Boolean = { WatchingState.isPosterWatched(watchedKeys, it, fullyWatchedSeriesKeys) }
+    val shownCount = remember(viewItems, filters, watchedKeys, fullyWatchedSeriesKeys) {
+        viewItems.filteredBy(filters, isWatched).size
+    }
     val countLabel = stringResource(Res.string.collections_folder_item_count, shownCount)
     // The same collapsing app bar as a catalog's page: large over the top of the titles, a title
     // bar once they scroll.
@@ -305,13 +311,15 @@ private fun TabbedGridContent(
         val selectedTab = uiState.tabs.getOrNull(uiState.selectedTabIndex)
         if (selectedTab == null) return
         LaunchedEffect(selectedTab.items) { PosterImdbAliases.resolve(selectedTab.items) }
-        val shownItems = remember(selectedTab.items, filters) { selectedTab.items.filteredBy(filters) }
+        val shownItems = remember(selectedTab.items, filters, watchedKeys, fullyWatchedSeriesKeys) {
+            selectedTab.items.filteredBy(filters) { WatchingState.isPosterWatched(watchedKeys, it, fullyWatchedSeriesKeys) }
+        }
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val columns = remember(maxWidth) { folderDetailGridColumnsForWidth(maxWidth) }
 
             when {
-                selectedTab.isLoading && selectedTab.items.isEmpty() -> LoadingIndicator()
+                selectedTab.isLoading && selectedTab.items.isEmpty() -> SkeletonGrid(columns)
                 selectedTab.error != null && selectedTab.items.isEmpty() -> ErrorMessage(selectedTab.error)
                 shownItems.isEmpty() -> EmptyMessage()
                 else -> {
@@ -371,12 +379,23 @@ private fun RowsContent(
 ) {
     val allSections = FolderDetailRepository.getCatalogSectionsForRows()
     LaunchedEffect(allSections) { PosterImdbAliases.resolve(allSections.flatMap { it.items.take(18) }) }
-    val sections = remember(allSections, filters) {
-        allSections.map { it.copy(items = it.items.filteredBy(filters)) }.filter { it.items.isNotEmpty() }
+    val sections = remember(allSections, filters, watchedKeys, fullyWatchedSeriesKeys) {
+        allSections
+            .map { section ->
+                section.copy(
+                    items = section.items.filteredBy(filters) {
+                        WatchingState.isPosterWatched(watchedKeys, it, fullyWatchedSeriesKeys)
+                    },
+                )
+            }
+            .filter { it.items.isNotEmpty() }
     }
 
     if (uiState.isLoading && allSections.isEmpty()) {
-        LoadingIndicator()
+        Column(
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) { repeat(3) { HomeSkeletonRow() } }
         return
     }
 
@@ -434,13 +453,25 @@ private fun folderDetailGridColumnsForWidth(screenWidth: Dp): Int =
         else -> 3
     }
 
+/** The grid's posters as skeletons while the folder's first titles load, as the catalog page does. */
 @Composable
-private fun LoadingIndicator() {
-    Box(
+private fun SkeletonGrid(columns: Int) {
+    val posterCardStyle = rememberPosterCardStyleUiState()
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(columns),
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = safeBottomPadding(18.dp)),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        userScrollEnabled = false,
     ) {
-        SmallLoadingSpinner(size = 32.dp)
+        items(columns * 3) {
+            SkeletonPoster(
+                modifier = Modifier.fillMaxWidth(),
+                cornerRadius = posterCardStyle.cornerRadiusDp.dp,
+                showLabels = !posterCardStyle.hideLabelsEnabled,
+            )
+        }
     }
 }
 

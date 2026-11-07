@@ -73,6 +73,7 @@ import io.github.dimitrysaf.provenio.core.addons.firstEnabledManifestError
 import io.github.dimitrysaf.provenio.core.addons.hasPendingEnabledManifests
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSettingsRepository
 import io.github.dimitrysaf.provenio.core.home.MetaPreview
+import io.github.dimitrysaf.provenio.core.watch.watching.application.WatchingState
 import io.github.dimitrysaf.provenio.core.home.buildAddonCatalogRefreshSignature
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeCatalogRowSection
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeSkeletonRow
@@ -152,17 +153,29 @@ fun SearchScreen(
     val discoverUiState by SearchRepository.discoverUiState.collectAsStateWithLifecycle()
     val filters by SearchRepository.filters.collectAsStateWithLifecycle()
     val keywordUiState by SearchRepository.keywordResults.collectAsStateWithLifecycle()
-    val visibleSections = remember(uiState.sections, filters) { uiState.sections.applySearchFilters(filters) }
-    val sortedDiscoverUiState = remember(discoverUiState, filters.sort, filters.year) {
-        discoverUiState.copy(items = discoverUiState.items.releasedIn(filters.year).sortedFor(filters.sort))
+    val watchedUiState by WatchedRepository.uiState.collectAsStateWithLifecycle()
+    val fullyWatchedSeriesKeys by WatchedRepository.fullyWatchedSeriesKeys.collectAsStateWithLifecycle()
+    // Hiding the watched titles leaves out every poster that would carry the watched mark.
+    val unwatched: (List<MetaPreview>) -> List<MetaPreview> = { items ->
+        if (!filters.hideWatched) {
+            items
+        } else {
+            items.filterNot { WatchingState.isPosterWatched(watchedUiState.watchedKeys, it, fullyWatchedSeriesKeys) }
+        }
+    }
+    val visibleSections = remember(uiState.sections, filters, watchedUiState.watchedKeys, fullyWatchedSeriesKeys) {
+        uiState.sections.applySearchFilters(filters)
+            .map { section -> section.copy(items = unwatched(section.items)) }
+            .filter { it.items.isNotEmpty() }
+    }
+    val sortedDiscoverUiState = remember(discoverUiState, filters, watchedUiState.watchedKeys, fullyWatchedSeriesKeys) {
+        discoverUiState.copy(items = unwatched(discoverUiState.items.releasedIn(filters.year).sortedFor(filters.sort)))
     }
     val homeCatalogSettingsUiState by remember {
         HomeCatalogSettingsRepository.snapshot()
         HomeCatalogSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
     val recentSearches by SearchHistoryRepository.uiState.collectAsStateWithLifecycle()
-    val watchedUiState by WatchedRepository.uiState.collectAsStateWithLifecycle()
-    val fullyWatchedSeriesKeys by WatchedRepository.fullyWatchedSeriesKeys.collectAsStateWithLifecycle()
     val networkStatusUiState by NetworkStatusRepository.uiState.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
     var lastRequestedQuery by rememberSaveable { mutableStateOf<String?>(null) }
@@ -281,13 +294,15 @@ fun SearchScreen(
     // The keyword's titles, narrowed by the text in the field and the type filter, in the chosen order.
     val keyword = filters.keyword
     val keywordMatcher = remember(query) { listSearchMatcher(query) }
-    val keywordView = remember(keywordUiState, keywordMatcher, filters.type, filters.sort, filters.year) {
+    val keywordView = remember(keywordUiState, keywordMatcher, filters, watchedUiState.watchedKeys, fullyWatchedSeriesKeys) {
         keywordUiState.copy(
-            items = keywordUiState.items
-                .filter { item -> filters.type == null || item.type == filters.type }
-                .filter { item -> keywordMatcher == null || keywordMatcher(item.name) }
-                .releasedIn(filters.year)
-                .sortedFor(filters.sort),
+            items = unwatched(
+                keywordUiState.items
+                    .filter { item -> filters.type == null || item.type == filters.type }
+                    .filter { item -> keywordMatcher == null || keywordMatcher(item.name) }
+                    .releasedIn(filters.year)
+                    .sortedFor(filters.sort),
+            ),
         )
     }
     val keywordTitle = keyword?.let { stringResource(Res.string.search_keyword_results_title, it.name) }

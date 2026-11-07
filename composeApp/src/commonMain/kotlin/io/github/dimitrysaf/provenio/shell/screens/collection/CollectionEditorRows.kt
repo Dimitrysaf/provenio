@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.collection
 
+import io.github.dimitrysaf.provenio.shell.components.stillListItemShapes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -44,7 +45,7 @@ internal fun PickerOptionRow(
     // take the group's container, its corners and its own press handling.
     SegmentedListItem(
         onClick = onClick,
-        shapes = ListItemDefaults.shapes(
+        shapes = stillListItemShapes(
             shape = shape,
             selectedShape = shape,
             pressedShape = shape,
@@ -124,7 +125,7 @@ internal fun CollectionEditorChoiceRow(
 ) {
     SegmentedListItem(
         onClick = onClick,
-        shapes = ListItemDefaults.shapes(
+        shapes = stillListItemShapes(
             shape = shape,
             selectedShape = shape,
             pressedShape = shape,
@@ -157,7 +158,7 @@ internal fun CollectionEditorSwitchRow(
 ) {
     SegmentedListItem(
         onClick = { onCheckedChange(!checked) },
-        shapes = ListItemDefaults.shapes(
+        shapes = stillListItemShapes(
             shape = shape,
             selectedShape = shape,
             pressedShape = shape,

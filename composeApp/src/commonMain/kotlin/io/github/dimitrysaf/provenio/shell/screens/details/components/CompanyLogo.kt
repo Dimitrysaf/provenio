@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,7 +24,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -41,7 +41,7 @@ internal fun CompanyLogo(
 ) {
     val darkSurface = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     var plate by remember(url, darkSurface) { mutableStateOf<Color?>(null) }
-    AsyncImage(
+    SkeletonAsyncImage(
         model = url,
         contentDescription = contentDescription,
         modifier = modifier.then(

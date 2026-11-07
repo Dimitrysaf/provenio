@@ -2,11 +2,14 @@
 
 package io.github.dimitrysaf.provenio.shell.screens.settings
 
+import io.github.dimitrysaf.provenio.shell.components.SkeletonBlock
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -194,8 +197,15 @@ internal fun DocsPageMessage(page: LoadedDocsPage) {
             actionLabel = stringResource(Res.string.action_retry),
             onActionClick = page.retry,
         )
-        else -> Box(modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp), contentAlignment = Alignment.Center) {
-            LoadingSpinner()
+        // The page's text as lines of the skeleton's wave until it arrives.
+        else -> Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            SkeletonBlock(modifier = Modifier.fillMaxWidth(0.5f), height = 24.dp)
+            repeat(6) { line ->
+                SkeletonBlock(modifier = Modifier.fillMaxWidth(if (line == 5) 0.6f else 1f), height = 14.dp)
+            }
         }
     }
 }

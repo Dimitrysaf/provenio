@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.downloads
 
+import io.github.dimitrysaf.provenio.shell.components.stillListItemShapes
 import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import io.github.dimitrysaf.provenio.shell.components.StatusOverlay
 import io.github.dimitrysaf.provenio.shell.components.WithTooltip
@@ -365,7 +366,7 @@ private fun DownloadRow(
                 item.isPlayable -> onOpen()
             }
         },
-        shapes = ListItemDefaults.shapes(
+        shapes = stillListItemShapes(
             shape = shape,
             selectedShape = shape,
             pressedShape = shape,
@@ -556,7 +557,7 @@ private fun DownloadShowRow(
 ) {
     SegmentedListItem(
         onClick = onOpen,
-        shapes = ListItemDefaults.shapes(
+        shapes = stillListItemShapes(
             shape = shape,
             selectedShape = shape,
             pressedShape = shape,

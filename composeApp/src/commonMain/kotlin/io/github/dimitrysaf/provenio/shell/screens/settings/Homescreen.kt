@@ -120,12 +120,7 @@ internal fun LazyListScope.homescreenSettingsContent(
     }
     item {
         if (isCatalogLoading && items.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                SmallLoadingSpinner(size = 28.dp)
-            }
+            SegmentedListSkeleton()
         } else if (catalogErrorMessage != null && items.isEmpty()) {
             HomeEmptyStateCard(
                 modifier = Modifier.fillMaxWidth(),

@@ -30,6 +30,7 @@ import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.SearchField
 import io.github.dimitrysaf.provenio.shell.screens.details.components.CastRow
 import io.github.dimitrysaf.provenio.shell.screens.details.components.CommentRow
+import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailListPreviewCount
 import io.github.dimitrysaf.provenio.shell.screens.details.components.DetailListSkeleton
 import io.github.dimitrysaf.provenio.shell.screens.details.components.detailSegmentShapes
 import io.github.dimitrysaf.provenio.shell.screens.details.components.rememberResolvedCast
@@ -88,7 +89,7 @@ fun CastListScreen(
             infoItems = { metrics ->
                 listSearchItem(metrics, query, placeholder) { query = it }
                 when {
-                    meta == null -> listLoadingItem()
+                    meta == null -> listLoadingItem(metrics)
                     shown.isEmpty() -> listNoMatchesItem(metrics)
                     else -> itemsIndexed(shown, key = { _, (index, person) -> "cast-$index-${person.name}" }) { position, (index, person) ->
                         DetailSectionContainer(
@@ -244,8 +245,13 @@ private fun LazyListScope.listNoMatchesItem(metrics: DetailPageMetrics) {
     }
 }
 
-private fun LazyListScope.listLoadingItem() {
-    item(key = "list-loading") { ListLoadingIndicator() }
+private fun LazyListScope.listLoadingItem(metrics: DetailPageMetrics) {
+    item(key = "list-loading") {
+        DetailSectionContainer(
+            horizontalPadding = metrics.horizontalPadding,
+            contentMaxWidth = metrics.contentMaxWidth,
+        ) { DetailListSkeleton(count = DetailListPreviewCount) }
+    }
 }
 
 @Composable

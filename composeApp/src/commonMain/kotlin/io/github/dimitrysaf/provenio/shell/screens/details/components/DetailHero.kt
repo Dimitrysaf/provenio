@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
+import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import androidx.compose.ui.focus.onFocusChanged
 import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
 import io.github.dimitrysaf.provenio.shell.components.SelectableText
@@ -399,7 +400,7 @@ private fun HeroTrailerPage(
                         .clip(MaterialTheme.shapes.large)
                         .background(Color.Black),
                 ) {
-                    AsyncImage(
+                    SkeletonAsyncImage(
                         model = trailer.youtubeThumbnailUrl(),
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),

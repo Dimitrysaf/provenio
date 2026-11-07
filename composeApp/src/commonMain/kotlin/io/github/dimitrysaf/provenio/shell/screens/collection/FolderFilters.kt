@@ -32,23 +32,28 @@ internal data class FolderFilterState(
     val genre: String? = null,
     val year: Int? = null,
     val sort: SearchSortOrder = SearchSortOrder.Default,
+    val hideWatched: Boolean = false,
 ) {
     val hasFilters: Boolean
-        get() = type != null || genre != null || year != null || sort != SearchSortOrder.Default
+        get() = type != null || genre != null || year != null || sort != SearchSortOrder.Default || hideWatched
 }
 
 /** The titles the search and filters keep, in the order the sort asks for. */
-internal fun List<MetaPreview>.filteredBy(filters: FolderFilterState): List<MetaPreview> {
+internal fun List<MetaPreview>.filteredBy(
+    filters: FolderFilterState,
+    isWatched: (MetaPreview) -> Boolean,
+): List<MetaPreview> {
     val query = filters.query.trim()
     if (query.isEmpty() && !filters.hasFilters) return this
     return filter { query.isEmpty() || it.name.contains(query, ignoreCase = true) }
+        .filter { !filters.hideWatched || !isWatched(it) }
         .filter { filters.type == null || it.type == filters.type }
         .filter { item -> filters.genre == null || item.genres.any { it.trim().equals(filters.genre, ignoreCase = true) } }
         .releasedIn(filters.year)
         .sortedFor(filters.sort)
 }
 
-private enum class FolderFilter { TYPE, GENRE, YEAR, SORT }
+private enum class FolderFilter { TYPE, GENRE, YEAR, SORT, HIDE_WATCHED }
 
 /** The filter button in the folder's search field, as Search's: type, genre, year and sort. */
 @Composable
@@ -109,9 +114,19 @@ internal fun FolderFiltersButton(
                     label = stringResource(Res.string.search_sort),
                     supportingText = filters.sort.label(),
                 ),
+                SingleChoiceOption(
+                    value = FolderFilter.HIDE_WATCHED,
+                    label = stringResource(Res.string.search_filter_hide_watched),
+                    supportingText = stringResource(
+                        if (filters.hideWatched) Res.string.settings_integration_status_on else Res.string.settings_integration_status_off,
+                    ),
+                ),
             ),
             isSelected = { false },
-            onSelected = { openFilter = it },
+            // On or off, so choosing it flips it rather than opening a sheet.
+            onSelected = {
+                if (it == FolderFilter.HIDE_WATCHED) onChange(filters.copy(hideWatched = !filters.hideWatched)) else openFilter = it
+            },
             onDismiss = { showFilters = false },
         )
     }
@@ -158,6 +173,6 @@ internal fun FolderFiltersButton(
             onDismiss = { openFilter = null },
         )
 
-        null -> Unit
+        FolderFilter.HIDE_WATCHED, null -> Unit
     }
 }
