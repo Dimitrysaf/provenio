@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSection
 import io.github.dimitrysaf.provenio.core.search.DiscoverUiState
+import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import io.github.dimitrysaf.provenio.core.search.SearchFilterState
 import io.github.dimitrysaf.provenio.core.search.SearchKeyword
 import io.github.dimitrysaf.provenio.core.search.SearchRepository
@@ -55,7 +56,7 @@ internal fun SearchFiltersButton(
         searchSections.searchGenreOptions(filters.type, filters.catalogKey)
     }
 
-    val active = filters.keyword != null || if (searching) {
+    val active = filters.keyword != null || filters.year != null || if (searching) {
         filters.hasSearchFilters || filters.sort != SearchSortOrder.Default
     } else {
         filters.sort != SearchSortOrder.Default || discoverState.selectedGenre != null
@@ -99,6 +100,11 @@ internal fun SearchFiltersButton(
                     enabled = searchGenres.isNotEmpty() || filters.genre != null,
                 ),
                 SingleChoiceOption(
+                    value = SearchFilter.YEAR,
+                    label = stringResource(Res.string.search_filter_year),
+                    supportingText = filters.year?.toString() ?: stringResource(Res.string.search_filter_any_year),
+                ),
+                SingleChoiceOption(
                     value = SearchFilter.KEYWORD,
                     label = stringResource(Res.string.search_filter_keyword),
                     supportingText = filters.keyword?.name ?: stringResource(Res.string.search_filter_any_keyword),
@@ -130,6 +136,11 @@ internal fun SearchFiltersButton(
                     label = stringResource(Res.string.discover_genre),
                     supportingText = discoverState.selectedGenre ?: allGenresLabel,
                     enabled = discoverState.genreOptions.isNotEmpty() || selectedCatalog?.genreRequired == true,
+                ),
+                SingleChoiceOption(
+                    value = SearchFilter.YEAR,
+                    label = stringResource(Res.string.search_filter_year),
+                    supportingText = filters.year?.toString() ?: stringResource(Res.string.search_filter_any_year),
                 ),
                 SingleChoiceOption(
                     value = SearchFilter.KEYWORD,
@@ -233,6 +244,20 @@ internal fun SearchFiltersButton(
             onDismiss = { openFilter = null },
         )
 
+        SearchFilter.YEAR -> {
+            val currentYear = remember { CurrentDateProvider.todayIsoDate().take(4).toIntOrNull() ?: FirstFilterYear }
+            SingleChoiceBottomSheet(
+                title = stringResource(Res.string.search_filter_year),
+                options = buildList<SingleChoiceOption<Int?>> {
+                    add(SingleChoiceOption(value = null, label = stringResource(Res.string.search_filter_any_year)))
+                    for (year in (currentYear + 1) downTo FirstFilterYear) add(SingleChoiceOption(value = year, label = year.toString()))
+                },
+                isSelected = { it == filters.year },
+                onSelected = SearchRepository::setSearchYear,
+                onDismiss = { openFilter = null },
+            )
+        }
+
         SearchFilter.KEYWORD -> KeywordFilterSheet(selected = filters.keyword, onDismiss = { openFilter = null })
 
         null -> Unit
@@ -281,11 +306,15 @@ private fun KeywordFilterSheet(selected: SearchKeyword?, onDismiss: () -> Unit) 
     )
 }
 
+/** The earliest year the year filter offers. */
+private const val FirstFilterYear = 1900
+
 /** Which filter's choices are open. */
 private enum class SearchFilter {
     TYPE,
     CATALOG,
     GENRE,
+    YEAR,
     KEYWORD,
     SORT,
 }

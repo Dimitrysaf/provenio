@@ -109,6 +109,7 @@ import io.github.dimitrysaf.provenio.core.search.SearchEmptyStateReason
 import io.github.dimitrysaf.provenio.core.search.SearchHistoryRepository
 import io.github.dimitrysaf.provenio.core.search.SearchRepository
 import io.github.dimitrysaf.provenio.core.search.applySearchFilters
+import io.github.dimitrysaf.provenio.core.search.releasedIn
 import io.github.dimitrysaf.provenio.core.search.sortedFor
 
 /** The side margin the discover grid sits in, which its column count has to allow for. */
@@ -152,8 +153,8 @@ fun SearchScreen(
     val filters by SearchRepository.filters.collectAsStateWithLifecycle()
     val keywordUiState by SearchRepository.keywordResults.collectAsStateWithLifecycle()
     val visibleSections = remember(uiState.sections, filters) { uiState.sections.applySearchFilters(filters) }
-    val sortedDiscoverUiState = remember(discoverUiState, filters.sort) {
-        discoverUiState.copy(items = discoverUiState.items.sortedFor(filters.sort))
+    val sortedDiscoverUiState = remember(discoverUiState, filters.sort, filters.year) {
+        discoverUiState.copy(items = discoverUiState.items.releasedIn(filters.year).sortedFor(filters.sort))
     }
     val homeCatalogSettingsUiState by remember {
         HomeCatalogSettingsRepository.snapshot()
@@ -280,11 +281,12 @@ fun SearchScreen(
     // The keyword's titles, narrowed by the text in the field and the type filter, in the chosen order.
     val keyword = filters.keyword
     val keywordMatcher = remember(query) { listSearchMatcher(query) }
-    val keywordView = remember(keywordUiState, keywordMatcher, filters.type, filters.sort) {
+    val keywordView = remember(keywordUiState, keywordMatcher, filters.type, filters.sort, filters.year) {
         keywordUiState.copy(
             items = keywordUiState.items
                 .filter { item -> filters.type == null || item.type == filters.type }
                 .filter { item -> keywordMatcher == null || keywordMatcher(item.name) }
+                .releasedIn(filters.year)
                 .sortedFor(filters.sort),
         )
     }

@@ -4,6 +4,7 @@ import io.github.dimitrysaf.provenio.core.home.MetaPreview
 import io.github.dimitrysaf.provenio.core.home.HomeCatalogSection
 import io.github.dimitrysaf.provenio.core.catalog.CatalogTarget
 import io.github.dimitrysaf.provenio.core.catalog.supportsPagination
+import io.github.dimitrysaf.provenio.core.watch.progress.CurrentDateProvider
 import provenio.composeapp.generated.resources.*
 
 enum class SearchEmptyStateReason {
@@ -107,9 +108,11 @@ data class SearchFilterState(
     val sort: SearchSortOrder = SearchSortOrder.Default,
     /** While set, Search lists the titles TMDB tags with this keyword. */
     val keyword: SearchKeyword? = null,
+    /** Titles out in this year: a series counts for every year from its first to its last. */
+    val year: Int? = null,
 ) {
     val hasSearchFilters: Boolean
-        get() = type != null || catalogKey != null || genre != null
+        get() = type != null || catalogKey != null || genre != null || year != null
 }
 
 data class SearchCatalogFilterOption(
@@ -152,6 +155,7 @@ fun List<HomeCatalogSection>.applySearchFilters(filters: SearchFilterState): Lis
         .map { section ->
             val items = section.items
                 .filter { item -> filters.genre == null || item.genres.any { it.trim().equals(filters.genre, ignoreCase = true) } }
+                .releasedIn(filters.year)
                 .sortedFor(filters.sort)
             if (items == section.items) section else section.copy(items = items)
         }
@@ -168,6 +172,35 @@ fun List<MetaPreview>.sortedFor(order: SearchSortOrder): List<MetaPreview> =
         SearchSortOrder.Oldest -> sortedWith(compareBy(nullsLast<String>()) { it.releaseSortKey() })
         SearchSortOrder.Rating -> sortedWith(compareByDescending(nullsFirst<Double>()) { it.imdbRating?.trim()?.toDoubleOrNull() })
     }
+
+/** The titles out in [year], all of them for null. */
+fun List<MetaPreview>.releasedIn(year: Int?): List<MetaPreview> {
+    if (year == null) return this
+    val currentYear = CurrentDateProvider.todayIsoDate().take(4).toIntOrNull() ?: year
+    return filter { item -> item.releaseYears(currentYear)?.contains(year) == true }
+}
+
+/**
+ * The years a title was out: one year for a movie, and for a series every year from its first to
+ * its last, so "2002–2010" holds 2006. A series still running ("2002–") runs to [currentYear].
+ * Null when nothing gives a year.
+ */
+fun MetaPreview.releaseYears(currentYear: Int): IntRange? {
+    val info = releaseInfo?.trim().orEmpty()
+    val years = YearPrefix.findAll(info).map { it.value.toInt() }.toList()
+    val first = years.firstOrNull()
+        ?: rawReleaseDate?.trim()?.take(4)?.takeIf { it.length == 4 && it.all(Char::isDigit) }?.toInt()
+        ?: return null
+    val last = when {
+        years.size >= 2 -> years[1]
+        years.size == 1 && OpenRange.containsMatchIn(info) -> maxOf(currentYear, first)
+        else -> first
+    }
+    return first..maxOf(first, last)
+}
+
+// A year followed by a dash and nothing after it: a series still airing.
+private val OpenRange = Regex("""\d{4}\s*[-–—]\s*$""")
 
 /** A sortable release date, from the full date when known and the year otherwise. */
 private fun MetaPreview.releaseSortKey(): String? {

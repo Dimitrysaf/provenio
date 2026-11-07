@@ -230,6 +230,10 @@ object SearchRepository {
         _filters.value = _filters.value.copy(genre = genre)
     }
 
+    fun setSearchYear(year: Int?) {
+        _filters.value = _filters.value.copy(year = year)
+    }
+
     fun setSortOrder(sort: SearchSortOrder) {
         _filters.value = _filters.value.copy(sort = sort)
     }

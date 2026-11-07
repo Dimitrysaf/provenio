@@ -2784,4 +2784,6 @@
     <string name="search_keyword_results_title">Tagged “%1$s”</string>
     <string name="search_keyword_no_results">No keywords match.</string>
     <string name="player_info_show_more">Show more info</string>
+    <string name="search_filter_year">Year</string>
+    <string name="search_filter_any_year">Any year</string>
 </resources>
