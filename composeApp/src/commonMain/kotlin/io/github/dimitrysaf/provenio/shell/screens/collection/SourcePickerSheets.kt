@@ -358,7 +358,7 @@ private fun TmdbOptionChips(state: CollectionEditorUiState, showMedia: Boolean, 
 internal fun TraktSourceSheet(state: CollectionEditorUiState, onDismiss: () -> Unit) {
     val traktSources = state.editingFolder?.resolvedSources.orEmpty().filter { it.isTrakt }
     val editing = state.editingTraktSourceIndex != null
-    var expanded by rememberSaveable { mutableStateOf(if (editing) "search" else "trending") }
+    var expanded by rememberSaveable { mutableStateOf<String?>(if (editing) "search" else "trending") }
     val searchTitle = stringResource(Res.string.collections_editor_trakt_search_results)
     val trendingTitle = stringResource(Res.string.collections_editor_trakt_trending)
     val popularTitle = stringResource(Res.string.collections_editor_trakt_popular)
