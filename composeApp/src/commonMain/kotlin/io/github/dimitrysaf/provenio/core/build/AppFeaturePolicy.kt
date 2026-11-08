@@ -9,7 +9,6 @@ expect object AppFeaturePolicy {
     val personalMediaAddonCopyEnabled: Boolean
     val p2pEnabled: Boolean
     val trailerPlaybackMode: TrailerPlaybackMode
-    val heroTrailerPlaybackSupported: Boolean
     val inAppUpdaterEnabled: Boolean
     val imdbRatingLogoEnabled: Boolean
     val mediaPlaybackForegroundServiceEnabled: Boolean

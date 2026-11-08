@@ -598,8 +598,6 @@
     <string name="settings_meta_comments_description">Recenzie z Trakt</string>
     <string name="settings_meta_details">Podrobnosti</string>
     <string name="settings_meta_details_description">Dĺžka, stav, vydanie, jazyk a súvisiace informácie.</string>
-    <string name="settings_meta_hero_trailer_playback">Prehrávanie trailera v hero sekcii</string>
-    <string name="settings_meta_hero_trailer_playback_description">Prehrávať náhľady trailera v hero sekcii metadát, keď je trailer dostupný.</string>
     <string name="settings_meta_episodes">Epizódy</string>
     <string name="settings_meta_episodes_description">Série a zoznam epizód pre seriály.</string>
     <string name="settings_meta_blur_unwatched_episodes">Rozmazať nepozreté epizódy</string>

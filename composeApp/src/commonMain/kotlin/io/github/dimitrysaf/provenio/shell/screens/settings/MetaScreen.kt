@@ -53,8 +53,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
-import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
-import io.github.dimitrysaf.provenio.core.build.TrailerPlaybackMode
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSectionItem
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSectionKey
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSettingsRepository
@@ -80,8 +78,6 @@ import provenio.composeapp.generated.resources.settings_meta_keywords
 import provenio.composeapp.generated.resources.settings_meta_keywords_description
 import provenio.composeapp.generated.resources.settings_meta_episodes
 import provenio.composeapp.generated.resources.settings_meta_episodes_description
-import provenio.composeapp.generated.resources.settings_meta_hero_trailer_playback
-import provenio.composeapp.generated.resources.settings_meta_hero_trailer_playback_description
 import provenio.composeapp.generated.resources.settings_meta_more_like_this
 import provenio.composeapp.generated.resources.settings_meta_more_like_this_description
 import provenio.composeapp.generated.resources.settings_meta_overview
@@ -106,8 +102,6 @@ internal fun LazyListScope.metaScreenSettingsContent(
     isTablet: Boolean,
     uiState: MetaScreenSettingsUiState,
 ) {
-    val showHeroTrailerPlaybackSetting = AppFeaturePolicy.heroTrailerPlaybackSupported &&
-        AppFeaturePolicy.trailerPlaybackMode == TrailerPlaybackMode.IN_APP
     item {
         var showBackgroundSheet by rememberSaveable { mutableStateOf(false) }
         var showEpisodeLayoutSheet by rememberSaveable { mutableStateOf(false) }
@@ -127,14 +121,6 @@ internal fun LazyListScope.metaScreenSettingsContent(
                         description = stringResource(Res.string.settings_meta_poster_transition_description),
                         checked = { uiState.posterTransitionEnabled },
                         onCheckedChange = MetaScreenSettingsRepository::setPosterTransitionEnabled,
-                    )
-                }
-                if (showHeroTrailerPlaybackSetting) {
-                    switchRow(
-                        title = stringResource(Res.string.settings_meta_hero_trailer_playback),
-                        description = stringResource(Res.string.settings_meta_hero_trailer_playback_description),
-                        checked = { uiState.heroTrailerPlayback },
-                        onCheckedChange = { MetaScreenSettingsRepository.setHeroTrailerPlayback(it) },
                     )
                 }
                 navigationRow(

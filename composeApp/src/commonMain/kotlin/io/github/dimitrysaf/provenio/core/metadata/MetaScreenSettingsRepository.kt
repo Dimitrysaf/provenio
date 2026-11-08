@@ -39,7 +39,6 @@ data class MetaScreenSectionItem(
 data class MetaScreenSettingsUiState(
     val items: List<MetaScreenSectionItem> = emptyList(),
     val backgroundMode: MetaScreenBackgroundMode = MetaScreenBackgroundMode.Normal,
-    val heroTrailerPlayback: Boolean = false,
     val blurUnwatchedEpisodes: Boolean = false,
     val posterTransitionEnabled: Boolean = false,
     val episodeLayout: EpisodeLayout = EpisodeLayout.List,
@@ -105,8 +104,6 @@ private data class StoredMetaScreenSettingsPayload(
     val backgroundMode: String? = null,
     /** Older payloads stored the background as this flag before there was a choice of modes. */
     val cinematicBackground: Boolean = false,
-    @SerialName("hero_trailer_playback")
-    val heroTrailerPlayback: Boolean = false,
     @SerialName("blur_unwatched_episodes")
     val blurUnwatchedEpisodes: Boolean = false,
     @SerialName("poster_transition_enabled")
@@ -196,7 +193,6 @@ object MetaScreenSettingsRepository {
     private var hasLoaded = false
     private var preferences: MutableMap<MetaScreenSectionKey, StoredMetaScreenSectionPreference> = mutableMapOf()
     private var backgroundMode: MetaScreenBackgroundMode = MetaScreenBackgroundMode.Normal
-    private var heroTrailerPlayback: Boolean = false
     private var blurUnwatchedEpisodes: Boolean = false
     private var posterTransitionEnabled: Boolean = false
     private var episodeLayout: EpisodeLayout = EpisodeLayout.List
@@ -214,7 +210,6 @@ object MetaScreenSettingsRepository {
             if (parsed != null) {
                 backgroundMode = MetaScreenBackgroundMode.parse(parsed.backgroundMode)
                     ?: if (parsed.cinematicBackground) MetaScreenBackgroundMode.Cinematic else MetaScreenBackgroundMode.Normal
-                heroTrailerPlayback = parsed.heroTrailerPlayback
                 blurUnwatchedEpisodes = parsed.blurUnwatchedEpisodes
                 posterTransitionEnabled = parsed.posterTransitionEnabled
                 episodeLayout = EpisodeLayout.parse(parsed.episodeLayout) ?: EpisodeLayout.List
@@ -234,7 +229,6 @@ object MetaScreenSettingsRepository {
         hasLoaded = false
         preferences.clear()
         backgroundMode = MetaScreenBackgroundMode.Normal
-        heroTrailerPlayback = false
         blurUnwatchedEpisodes = false
         posterTransitionEnabled = false
         episodeLayout = EpisodeLayout.List
@@ -245,13 +239,6 @@ object MetaScreenSettingsRepository {
     fun setBackgroundMode(mode: MetaScreenBackgroundMode) {
         ensureLoaded()
         backgroundMode = mode
-        publish()
-        persist()
-    }
-
-    fun setHeroTrailerPlayback(enabled: Boolean) {
-        ensureLoaded()
-        heroTrailerPlayback = enabled
         publish()
         persist()
     }
@@ -281,7 +268,6 @@ object MetaScreenSettingsRepository {
         hasLoaded = false
         preferences.clear()
         backgroundMode = MetaScreenBackgroundMode.Normal
-        heroTrailerPlayback = false
         blurUnwatchedEpisodes = false
         posterTransitionEnabled = false
         episodeLayout = EpisodeLayout.List
@@ -373,7 +359,6 @@ object MetaScreenSettingsRepository {
                     )
                 },
             backgroundMode = backgroundMode,
-            heroTrailerPlayback = heroTrailerPlayback,
             blurUnwatchedEpisodes = blurUnwatchedEpisodes,
             posterTransitionEnabled = posterTransitionEnabled,
             episodeLayout = episodeLayout,
@@ -387,7 +372,6 @@ object MetaScreenSettingsRepository {
                     items = preferences.values.sortedBy { it.order },
                     backgroundMode = MetaScreenBackgroundMode.persist(backgroundMode),
                     cinematicBackground = backgroundMode == MetaScreenBackgroundMode.Cinematic,
-                    heroTrailerPlayback = heroTrailerPlayback,
                     blurUnwatchedEpisodes = blurUnwatchedEpisodes,
                     posterTransitionEnabled = posterTransitionEnabled,
                     episodeLayout = EpisodeLayout.persist(episodeLayout),

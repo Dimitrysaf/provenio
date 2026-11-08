@@ -7,21 +7,18 @@ import kotlin.test.assertTrue
 class DetailHeroSlidesTest {
 
     @Test
-    fun `main artwork leads, trailers follow, extra artwork closes`() {
+    fun `main artwork leads, extra artwork follows, and trailers stay out`() {
         val slides = buildDetailHeroSlides(
             meta = meta(
                 background = "main.jpg",
                 extraArtwork = listOf("extra-one.jpg", "extra-two.jpg"),
                 trailers = listOf(trailer("teaser", type = "Teaser"), trailer("official", official = true)),
             ),
-            includeTrailers = true,
         )
 
         assertEquals(
             listOf(
                 DetailHeroSlide.Artwork("main.jpg"),
-                DetailHeroSlide.Trailer(trailer("official", official = true)),
-                DetailHeroSlide.Trailer(trailer("teaser", type = "Teaser")),
                 DetailHeroSlide.Artwork("extra-one.jpg"),
                 DetailHeroSlide.Artwork("extra-two.jpg"),
             ),
@@ -36,7 +33,6 @@ class DetailHeroSlidesTest {
                 background = "main.jpg",
                 extraArtwork = listOf("main.jpg", "extra.jpg", "extra.jpg"),
             ),
-            includeTrailers = true,
         )
 
         assertEquals(
@@ -47,7 +43,7 @@ class DetailHeroSlidesTest {
 
     @Test
     fun `falls back to the poster when there is no backdrop`() {
-        val slides = buildDetailHeroSlides(meta = meta(poster = "poster.jpg"), includeTrailers = true)
+        val slides = buildDetailHeroSlides(meta = meta(poster = "poster.jpg"))
 
         assertEquals(listOf(DetailHeroSlide.Artwork("poster.jpg")), slides)
     }
@@ -56,7 +52,6 @@ class DetailHeroSlidesTest {
     fun `uses a backdrop rather than the poster when there is no background`() {
         val slides = buildDetailHeroSlides(
             meta = meta(poster = "poster.jpg", extraArtwork = listOf("backdrop.jpg", "other.jpg")),
-            includeTrailers = true,
         )
 
         assertEquals(
@@ -66,34 +61,21 @@ class DetailHeroSlidesTest {
     }
 
     @Test
-    fun `leaves trailers out when hero trailer playback is off`() {
-        val slides = buildDetailHeroSlides(
-            meta = meta(background = "main.jpg", trailers = listOf(trailer("official"))),
-            includeTrailers = false,
-        )
-
-        assertEquals(listOf(DetailHeroSlide.Artwork("main.jpg")), slides)
-    }
-
-    @Test
     fun `caps the pages a title can add`() {
         val slides = buildDetailHeroSlides(
             meta = meta(
                 background = "main.jpg",
                 extraArtwork = List(12) { "extra-$it.jpg" },
-                trailers = List(9) { trailer("trailer-$it") },
             ),
-            includeTrailers = true,
         )
 
-        assertEquals(4, slides.count { it is DetailHeroSlide.Trailer })
-        assertEquals(6, slides.count { it is DetailHeroSlide.Artwork })
+        assertEquals(6, slides.size)
         assertTrue(slides.first() is DetailHeroSlide.Artwork)
     }
 
     @Test
-    fun `has no pages without artwork or trailers`() {
-        assertTrue(buildDetailHeroSlides(meta = meta(), includeTrailers = true).isEmpty())
+    fun `has no pages without artwork`() {
+        assertTrue(buildDetailHeroSlides(meta = meta()).isEmpty())
     }
 
     private fun meta(

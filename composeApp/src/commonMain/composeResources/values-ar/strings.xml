@@ -647,8 +647,6 @@
     <string name="settings_meta_comments_description">المراجعات من Trakt</string>
     <string name="settings_meta_details">التفاصيل</string>
     <string name="settings_meta_details_description">مدة التشغيل والحالة والإصدار واللغة ومعلومات ذات صلة.</string>
-    <string name="settings_meta_hero_trailer_playback">تشغيل الإعلان في الواجهة البارزة</string>
-    <string name="settings_meta_hero_trailer_playback_description">تشغيل معاينات الإعلان في الواجهة البارزة للبيانات الوصفية عند توفر إعلان.</string>
     <string name="settings_meta_episodes">الحلقات</string>
     <string name="settings_meta_episodes_description">المواسم وقائمة الحلقات للمسلسلات.</string>
     <string name="settings_meta_blur_unwatched_episodes">تعتيم الحلقات غير المشاهدة</string>

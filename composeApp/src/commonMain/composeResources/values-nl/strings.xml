@@ -651,8 +651,6 @@
     <string name="settings_meta_comments_description">Recensies van Trakt</string>
     <string name="settings_meta_details">Details</string>
     <string name="settings_meta_details_description">Speelduur, status, releasedatum, taal en gerelateerde info.</string>
-    <string name="settings_meta_hero_trailer_playback">Hero-trailerweergave</string>
-    <string name="settings_meta_hero_trailer_playback_description">Speel trailervoorbeelden af in de metadata-hero wanneer een trailer beschikbaar is.</string>
     <string name="settings_meta_episodes">Afleveringen</string>
     <string name="settings_meta_episodes_description">Seizoenen en afleveringenlijst voor series.</string>
     <string name="settings_meta_blur_unwatched_episodes">Onbekeken afleveringen vervagen</string>

@@ -1,28 +1,17 @@
 package io.github.dimitrysaf.provenio.core.metadata
 
-private const val MAX_HERO_TRAILERS = 4
 private const val MAX_HERO_EXTRA_ARTWORK = 5
 
 /** One page of the details hero carousel. */
 sealed interface DetailHeroSlide {
     data class Artwork(val url: String) : DetailHeroSlide
-
-    data class Trailer(val trailer: MetaTrailer) : DetailHeroSlide
 }
 
-/** The hero pages in swipe order: the main artwork always leads, then trailers, then more artwork. */
-internal fun buildDetailHeroSlides(
-    meta: MetaDetails,
-    includeTrailers: Boolean,
-): List<DetailHeroSlide> {
+/** The hero pages in swipe order: the main artwork always leads, then more artwork. Trailers have their own section. */
+internal fun buildDetailHeroSlides(meta: MetaDetails): List<DetailHeroSlide> {
     val mainArtwork = (sequenceOf(meta.background) + meta.extraArtwork.asSequence() + sequenceOf(meta.poster))
         .mapNotNull { it?.trim()?.takeIf(String::isNotBlank) }
         .firstOrNull()
-    val trailers = if (includeTrailers) {
-        selectHeroTrailers(meta.trailers, limit = MAX_HERO_TRAILERS)
-    } else {
-        emptyList()
-    }
     val extraArtwork = meta.extraArtwork
         .asSequence()
         .map(String::trim)
@@ -32,7 +21,6 @@ internal fun buildDetailHeroSlides(
 
     return buildList {
         mainArtwork?.let { add(DetailHeroSlide.Artwork(it)) }
-        trailers.forEach { add(DetailHeroSlide.Trailer(it)) }
         extraArtwork.forEach { add(DetailHeroSlide.Artwork(it)) }
     }
 }

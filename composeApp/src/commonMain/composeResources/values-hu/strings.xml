@@ -1156,8 +1156,6 @@
     <string name="settings_meta_background_mode_normal_description">Az alkalmazás szabványos hátterének használata.</string>
     <string name="settings_meta_background_mode_cinematic">Mozi hatás</string>
     <string name="settings_meta_background_mode_cinematic_description">Lágyan elmosott háttérkép megjelenítése az oldal mögött.</string>
-    <string name="settings_meta_hero_trailer_playback">Kiemelt előzetes lejátszása</string>
-    <string name="settings_meta_hero_trailer_playback_description">Előzetesek automatikus lejátszása a fejlécben, ha elérhető előzetes.</string>
     <string name="settings_playback_external_player_forward_subtitles">Feliratok továbbítása a külső lejátszónak</string>
     <string name="settings_playback_external_player_forward_subtitles_description">Lekéri a kiegészítő feliratokat a preferált nyelveden, és átadja azokat a külső lejátszónak.</string>
     <string name="settings_playback_external_player_send_skip_segments">Intro és Outro időbélyegek küldése</string>

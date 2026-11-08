@@ -651,8 +651,6 @@
     <string name="settings_meta_comments_description">Рецензии от Trakt</string>
     <string name="settings_meta_details">Детайли</string>
     <string name="settings_meta_details_description">Продължителност, статус, дата на излизане, език и свързана информация.</string>
-    <string name="settings_meta_hero_trailer_playback">Възпроизвеждане на трейлър в основната секция</string>
-    <string name="settings_meta_hero_trailer_playback_description">Пускай трейлъри в основната секция на метаданните, когато е наличен трейлър.</string>
     <string name="settings_meta_episodes">Епизоди</string>
     <string name="settings_meta_episodes_description">Сезони и списък с епизоди за сериали.</string>
     <string name="settings_meta_blur_unwatched_episodes">Замъгли негледаните епизоди</string>

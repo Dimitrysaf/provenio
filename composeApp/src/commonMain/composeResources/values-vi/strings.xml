@@ -653,8 +653,6 @@
     <string name="settings_meta_comments_description">Đánh giá và bình luận từ Trakt</string>
     <string name="settings_meta_details">Chi tiết</string>
     <string name="settings_meta_details_description">Thời lượng, trạng thái, ngày phát hành, ngôn ngữ và thông tin liên quan</string>
-    <string name="settings_meta_hero_trailer_playback">Phát trailer trong Khu vực Nổi bật</string>
-    <string name="settings_meta_hero_trailer_playback_description">Tự động phát xem trước trailer trong Khu vực Nổi bật khi có sẵn trailer</string>
     <string name="settings_meta_episodes">Tập phim</string>
     <string name="settings_meta_episodes_description">Danh sách các mùa và tập phim cho loạt phim</string>
     <string name="settings_meta_blur_unwatched_episodes">Làm mờ tập phim chưa xem.</string>

@@ -1009,8 +1009,6 @@
     <string name="settings_meta_details_description">Διάρκεια, κατάσταση, κυκλοφορία, γλώσσα και σχετικές πληροφορίες.</string>
     <string name="settings_meta_parents_guide">Οδηγός γονέων</string>
     <string name="settings_meta_parents_guide_description">Πόση βία, γυμνό, χυδαία γλώσσα και άλλο ευαίσθητο περιεχόμενο έχει ο τίτλος.</string>
-    <string name="settings_meta_hero_trailer_playback">Αναπαραγωγή τρέιλερ Hero</string>
-    <string name="settings_meta_hero_trailer_playback_description">Αναπαραγωγή προεπισκοπήσεων τρέιλερ στο κύριο πλαίσιο μεταδεδομένων όταν υπάρχει διαθέσιμο τρέιλερ.</string>
     <string name="settings_meta_episodes">Επεισόδια</string>
     <string name="settings_meta_episodes_description">Σεζόν και λίστα επεισοδίων για σειρές.</string>
     <string name="settings_meta_blur_unwatched_episodes">Θόλωμα μη προβληθέντων επεισοδίων</string>

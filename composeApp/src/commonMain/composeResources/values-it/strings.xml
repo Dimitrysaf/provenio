@@ -1202,8 +1202,6 @@
   <string name="cw_airs_tomorrow_short">Domani</string>
   <string name="cw_new_episode">Nuovo episodio</string>
   <string name="cw_new_season">Nuova stagione</string>
-  <string name="settings_meta_hero_trailer_playback">Riproduci Trailer in Hero</string>
-  <string name="settings_meta_hero_trailer_playback_description">Riproduci l'anteprima dei trailer nella sezione hero quando un trailer è disponibile.</string>
   <string name="settings_fusion_badges_empty">Nessun URL di badge Fusion importato.</string>
   <string name="settings_p2p_title">Streaming P2P</string>
   <string name="settings_p2p_subtitle">Consenti lo streaming peer-to-peer (torrent)</string>

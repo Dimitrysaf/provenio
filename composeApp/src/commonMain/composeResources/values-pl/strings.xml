@@ -1380,8 +1380,6 @@
     <string name="settings_fusion_badge_url_label">URL JSON badge Fusion</string>
     <string name="settings_fusion_badge_urls_imported">%1$d/%2$d URL Fusion zaimportowanych</string>
     <string name="settings_fusion_badge_url_status_summary">%1$s, %2$d włączonych badge, %3$d grup</string>
-    <string name="settings_meta_hero_trailer_playback">Odtwarzanie zwiastuna w tle</string>
-    <string name="settings_meta_hero_trailer_playback_description">Odtwarzaj podgląd zwiastuna w tle szczegółów gdy dostępny.</string>
     <string name="settings_p2p_hide_stats_subtitle">Ukryj bufor, seedy, peery i prędkość pobierania podczas ładowania i odtwarzania</string>
     <string name="settings_p2p_prefetch_title">Wstępnie pobieraj informacje o torrencie</string>
     <string name="settings_p2p_prefetch_subtitle">Pobiera listę plików najlepszych wyników torrent podczas przeglądania źródeł, aby szybciej startowały. Zużywa trochę danych.</string>

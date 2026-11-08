@@ -82,8 +82,6 @@ import io.github.dimitrysaf.provenio.core.home.HomeCatalogSection
 import io.github.dimitrysaf.provenio.core.playback.PlayerSettingsUiState
 import io.github.dimitrysaf.provenio.shell.screens.library.rememberLibraryListPickerState
 import io.github.dimitrysaf.provenio.shell.screens.library.LibraryListPickerHost
-import io.github.dimitrysaf.provenio.core.build.AppFeaturePolicy
-import io.github.dimitrysaf.provenio.core.build.TrailerPlaybackMode
 import io.github.dimitrysaf.provenio.core.network.NetworkCondition
 import io.github.dimitrysaf.provenio.core.network.NetworkStatusRepository
 import io.github.dimitrysaf.provenio.shell.components.BackButton
@@ -126,7 +124,6 @@ import io.github.dimitrysaf.provenio.core.watch.watched.releasedEpisodesForSeaso
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceBottomSheet
 import io.github.dimitrysaf.provenio.shell.components.SingleChoiceOption
 import org.jetbrains.compose.resources.stringResource
-import io.github.dimitrysaf.provenio.core.metadata.HeroTrailerAudioState
 import io.github.dimitrysaf.provenio.core.metadata.MetaCompany
 import io.github.dimitrysaf.provenio.core.metadata.MetaKeyword
 import io.github.dimitrysaf.provenio.core.metadata.MetaScreenSectionKey
@@ -698,15 +695,7 @@ private fun MetaDetailsContent(
             add(MetaScreenSectionKey.COMMENTS)
         }
     }
-    val inAppTrailerPlaybackEnabled = AppFeaturePolicy.trailerPlaybackMode == TrailerPlaybackMode.IN_APP
-    var isLeavingDetails by remember(meta.id) { mutableStateOf(false) }
-    val heroTrailerPlaybackEnabled = AppFeaturePolicy.heroTrailerPlaybackSupported &&
-        inAppTrailerPlaybackEnabled &&
-        metaScreenSettingsUiState.heroTrailerPlayback
-    val heroSlides = remember(meta, heroTrailerPlaybackEnabled) {
-        buildDetailHeroSlides(meta, includeTrailers = heroTrailerPlaybackEnabled)
-    }
-    val heroTrailerMuted by HeroTrailerAudioState.muted.collectAsStateWithLifecycle()
+    val heroSlides = remember(meta) { buildDetailHeroSlides(meta) }
     val launchImageViewer = LocalImageViewerLauncher.current
     val artworkImages = remember(heroSlides, meta.poster) {
         (heroSlides.mapNotNull { (it as? DetailHeroSlide.Artwork)?.url } + listOfNotNull(meta.poster))
@@ -724,10 +713,7 @@ private fun MetaDetailsContent(
             )
         }
     }
-    val onBackFromDetails: () -> Unit = {
-        isLeavingDetails = true
-        onBack()
-    }
+    val onBackFromDetails: () -> Unit = onBack
     val playTrailer: (MetaTrailer) -> Unit = { trailer ->
         onPlayTrailer?.invoke(trailer, meta.name, meta.logo, meta.poster, meta.background)
     }
@@ -954,16 +940,6 @@ private fun MetaDetailsContent(
                                     slides = heroSlides,
                                     viewportHeight = viewportHeight,
                                     onHeightChanged = { heroHeightPx.intValue = it },
-                                    trailerResolutionEnabled = heroTrailerPlaybackEnabled &&
-                                        deferredMetaWorkAllowed &&
-                                        !isLeavingDetails,
-                                    trailerPlayWhenReady = {
-                                        !isLeavingDetails && !isHeroCollapsed.value
-                                    },
-                                    trailerMuted = heroTrailerMuted,
-                                    onTrailerMuteToggle = {
-                                        HeroTrailerAudioState.toggleMuted()
-                                    },
                                     onOpenArtwork = openArtwork,
                                 )
                             }

@@ -206,7 +206,7 @@ private fun rememberListPageMeta(type: String, metaId: String): MetaDetails? {
 // The title's own hero artwork, chosen as the Details page chooses it.
 private fun MetaDetails?.listPageImages(): List<String> =
     this?.let { meta ->
-        buildDetailHeroSlides(meta, includeTrailers = false).mapNotNull { (it as? DetailHeroSlide.Artwork)?.url }
+        buildDetailHeroSlides(meta).mapNotNull { (it as? DetailHeroSlide.Artwork)?.url }
     }.orEmpty()
 
 // Like the Details hero, the first picture gives way to whichever artwork suits the hero's shape.

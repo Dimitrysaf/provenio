@@ -634,8 +634,6 @@
     <string name="settings_meta_comments_description">Trakt yorumları bölümü.</string>
     <string name="settings_meta_details">Detaylar</string>
     <string name="settings_meta_details_description">Süre, durum, yayın tarihi, dil ve ilgili bilgiler.</string>
-    <string name="settings_meta_hero_trailer_playback">Öne Çıkan Fragman Oynatma</string>
-    <string name="settings_meta_hero_trailer_playback_description">Bir fragman mevcut olduğunda metadata öne çıkan alanında fragman önizlemelerini oynatın.</string>
     <string name="settings_meta_episodes">Bölümler</string>
     <string name="settings_meta_episodes_description">Diziler için sezon ve bölüm listesi.</string>
     <string name="settings_meta_blur_unwatched_episodes">İzlenmemiş Bölümleri Bulanıklaştır</string>

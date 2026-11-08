@@ -600,8 +600,6 @@
     <string name="settings_meta_comments_description">Section de commentaires Trakt.</string>
     <string name="settings_meta_details">Détails</string>
     <string name="settings_meta_details_description">Durée, statut, date de sortie, langue et informations associées.</string>
-    <string name="settings_meta_hero_trailer_playback">Lecture des bandes-annonces dans le Hero</string>
-    <string name="settings_meta_hero_trailer_playback_description">Lit un aperçu de la bande-annonce dans le Hero des métadonnées quand une bande-annonce est disponible.</string>
     <string name="settings_meta_episodes">Épisodes</string>
     <string name="settings_meta_episodes_description">Saisons et liste d’épisodes pour les séries.</string>
     <string name="settings_meta_blur_unwatched_episodes">Flouter les épisodes non vus</string>

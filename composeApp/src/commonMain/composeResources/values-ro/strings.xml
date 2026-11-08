@@ -608,8 +608,6 @@
     <string name="settings_meta_comments_description">Recenzii de pe Trakt</string>
     <string name="settings_meta_details">Detalii</string>
     <string name="settings_meta_details_description">Durată, stare, lansare, limbă și informații înrudite.</string>
-    <string name="settings_meta_hero_trailer_playback">Redare trailer în secțiunea principală</string>
-    <string name="settings_meta_hero_trailer_playback_description">Redă previzualizări ale trailerelor în zona principală de metadate atunci când este disponibil un trailer.</string>
     <string name="settings_meta_episodes">Episoade</string>
     <string name="settings_meta_episodes_description">Sezoane și lista de episoade pentru seriale.</string>
     <string name="settings_meta_blur_unwatched_episodes">Estompează episoadele nevizionate</string>

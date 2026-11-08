@@ -1,48 +1,33 @@
 package io.github.dimitrysaf.provenio.shell.screens.details.components
 
-import io.github.dimitrysaf.provenio.shell.components.SkeletonAsyncImage
 import androidx.compose.ui.focus.onFocusChanged
 import io.github.dimitrysaf.provenio.shell.components.ShapedArtworkImage
 import io.github.dimitrysaf.provenio.shell.components.SelectableText
 import io.github.dimitrysaf.provenio.shell.components.FindableText
 import io.github.dimitrysaf.provenio.shell.components.horizontalWheelPaging
-import io.github.dimitrysaf.provenio.shell.components.WithTooltip
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.VolumeOff
-import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconToggleButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,13 +41,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import io.github.dimitrysaf.provenio.shell.components.LoadingSpinner
 import io.github.dimitrysaf.provenio.shell.components.shapedClickable
 import io.github.dimitrysaf.provenio.core.metadata.DetailHeroSlide
 import io.github.dimitrysaf.provenio.core.metadata.MetaDetails
-import io.github.dimitrysaf.provenio.core.metadata.MetaTrailer
-import io.github.dimitrysaf.provenio.core.metadata.youtubePlaybackUrl
-import io.github.dimitrysaf.provenio.core.metadata.youtubeThumbnailUrl
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroMinSmallItemWidth
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroOnArtworkColor
 import io.github.dimitrysaf.provenio.shell.screens.home.components.HeroOnArtworkVariantColor
@@ -70,18 +51,14 @@ import io.github.dimitrysaf.provenio.shell.screens.home.components.HomeHeroLayou
 import io.github.dimitrysaf.provenio.shell.screens.home.components.heroCarouselTopInset
 import io.github.dimitrysaf.provenio.shell.screens.home.components.heroItemContentAlpha
 import io.github.dimitrysaf.provenio.shell.screens.home.components.homeHeroLayout
-import io.github.dimitrysaf.provenio.core.trailer.TrailerPlaybackResolver
-import io.github.dimitrysaf.provenio.core.trailer.TrailerPlaybackSource
 import kotlinx.coroutines.launch
 import provenio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
 private const val TRAILER_ASPECT_RATIO = 16f / 9f
 
-/** Room kept under the trailer band for its audio button. */
-private val TrailerBandBottomClearance = 52.dp
 
-/** The home screen's hero carousel, over one title's own pages: artwork, trailers, more artwork. */
+/** The home screen's hero carousel, over one title's own pictures: its main artwork, then more. */
 @Composable
 fun DetailHero(
     meta: MetaDetails,
@@ -89,10 +66,6 @@ fun DetailHero(
     modifier: Modifier = Modifier,
     viewportHeight: Dp? = null,
     onHeightChanged: (Int) -> Unit = {},
-    trailerResolutionEnabled: Boolean = false,
-    trailerPlayWhenReady: () -> Boolean = { false },
-    trailerMuted: Boolean = true,
-    onTrailerMuteToggle: () -> Unit = {},
     onOpenArtwork: ((String) -> Unit)? = null,
 ) {
     // A title with no artwork at all still gets its page, over the plain surface.
@@ -113,10 +86,6 @@ fun DetailHero(
             pages = pages,
             layout = layout,
             topInset = topInset,
-            trailerResolutionEnabled = trailerResolutionEnabled,
-            trailerPlayWhenReady = trailerPlayWhenReady,
-            trailerMuted = trailerMuted,
-            onTrailerMuteToggle = onTrailerMuteToggle,
             onOpenArtwork = onOpenArtwork,
         )
     }
@@ -129,10 +98,6 @@ private fun DetailHeroPages(
     pages: List<DetailHeroSlide>,
     layout: HomeHeroLayout,
     topInset: Dp,
-    trailerResolutionEnabled: Boolean,
-    trailerPlayWhenReady: () -> Boolean,
-    trailerMuted: Boolean,
-    onTrailerMuteToggle: () -> Unit,
     onOpenArtwork: ((String) -> Unit)?,
 ) {
     val carouselState = rememberCarouselState(itemCount = { pages.size })
@@ -141,26 +106,6 @@ private fun DetailHeroPages(
     }
     val coroutineScope = rememberCoroutineScope()
     val focalPage = carouselState.currentItem
-    val focalTrailer = (pages.getOrNull(focalPage) as? DetailHeroSlide.Trailer)?.trailer
-    val trailerSources = remember(meta.id) { mutableStateMapOf<String, TrailerPlaybackSource>() }
-    // Trailers that have played out, errored, or have no playable stream: the page keeps its still.
-    val spentTrailerIds = remember(meta.id) { mutableStateListOf<String>() }
-
-    LaunchedEffect(focalTrailer?.id, trailerResolutionEnabled) {
-        val trailer = focalTrailer ?: return@LaunchedEffect
-        if (!trailerResolutionEnabled) return@LaunchedEffect
-        if (trailerSources.containsKey(trailer.id) || trailer.id in spentTrailerIds) {
-            return@LaunchedEffect
-        }
-        val source = runCatching {
-            TrailerPlaybackResolver.resolveFromYouTubeUrl(trailer.youtubePlaybackUrl())
-        }.getOrNull()
-        if (source == null) {
-            spentTrailerIds.add(trailer.id)
-        } else {
-            trailerSources[trailer.id] = source
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -184,15 +129,8 @@ private fun DetailHeroPages(
                     meta = meta,
                     layout = layout,
                     posterFallback = true,
-                    isFocal = true,
-                    trailerSources = trailerSources,
-                    spentTrailerIds = spentTrailerIds,
-                    trailerPlayWhenReady = trailerPlayWhenReady,
-                    trailerMuted = trailerMuted,
                     contentAlpha = { 1f },
-                    onTrailerMuteToggle = onTrailerMuteToggle,
-                    onTrailerSpent = { spentTrailerIds.add(it) },
-                        )
+                )
             }
         } else {
             HorizontalCenteredHeroCarousel(
@@ -238,18 +176,8 @@ private fun DetailHeroPages(
                         meta = meta,
                         layout = layout,
                         posterFallback = index == 0,
-                        isFocal = isFocal,
-                        trailerSources = trailerSources,
-                        spentTrailerIds = spentTrailerIds,
-                        // A drag pauses the trailer rather than tearing its player down.
-                        trailerPlayWhenReady = {
-                            trailerPlayWhenReady() && !carouselState.isScrollInProgress
-                        },
-                        trailerMuted = trailerMuted,
                         contentAlpha = { heroItemContentAlpha(drawInfo) },
-                        onTrailerMuteToggle = onTrailerMuteToggle,
-                        onTrailerSpent = { spentTrailerIds.add(it) },
-                                )
+                    )
                 }
             }
         }
@@ -264,38 +192,17 @@ private fun DetailHeroPage(
     meta: MetaDetails,
     layout: HomeHeroLayout,
     posterFallback: Boolean,
-    isFocal: Boolean,
-    trailerSources: Map<String, TrailerPlaybackSource>,
-    spentTrailerIds: List<String>,
-    trailerPlayWhenReady: () -> Boolean,
-    trailerMuted: Boolean,
     contentAlpha: () -> Float,
-    onTrailerMuteToggle: () -> Unit,
-    onTrailerSpent: (String) -> Unit,
 ) {
     when (page) {
         is DetailHeroSlide.Artwork -> HeroArtworkPage(
             url = page.url,
-            meta = meta,
+        meta = meta,
             layout = layout,
             posterFallback = posterFallback,
             // The title, its logo and genres belong to the first page only; the others are its pictures.
             showTitle = posterFallback,
             contentAlpha = contentAlpha,
-        )
-
-        is DetailHeroSlide.Trailer -> HeroTrailerPage(
-            trailer = page.trailer,
-            artworkCandidates = meta.landscapeArtworkCandidates(),
-            source = trailerSources[page.trailer.id],
-            isFocal = isFocal,
-            spent = page.trailer.id in spentTrailerIds,
-            playWhenReady = trailerPlayWhenReady,
-            muted = trailerMuted,
-            layout = layout,
-            contentAlpha = contentAlpha,
-            onMuteToggle = onTrailerMuteToggle,
-            onSpent = { onTrailerSpent(page.trailer.id) },
         )
     }
 }
@@ -339,144 +246,6 @@ private fun HeroArtworkPage(
                 .graphicsLayer { alpha = contentAlpha() },
         ) {
             HeroTitleBlock(meta = meta, layout = layout)
-        }
-    }
-}
-
-/** A trailer over the dimmed artwork, in a band of its own shape so its frame is never cropped. */
-@Composable
-private fun HeroTrailerPage(
-    trailer: MetaTrailer,
-    artworkCandidates: List<String?>,
-    source: TrailerPlaybackSource?,
-    isFocal: Boolean,
-    spent: Boolean,
-    playWhenReady: () -> Boolean,
-    muted: Boolean,
-    layout: HomeHeroLayout,
-    contentAlpha: () -> Float,
-    onMuteToggle: () -> Unit,
-    onSpent: () -> Unit,
-) {
-    var videoReady by remember(trailer.id, isFocal) { mutableStateOf(false) }
-    val videoAlpha by animateFloatAsState(
-        targetValue = if (videoReady) 1f else 0f,
-        animationSpec = tween(durationMillis = 300),
-        label = "detail_hero_trailer_alpha",
-    )
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        ShapedArtworkImage(
-            candidates = artworkCandidates,
-            contentDescription = null,
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.45f)),
-        )
-
-        HeroPageScrim()
-
-        if (isFocal) {
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(
-                        horizontal = layout.contentHorizontalPadding,
-                        vertical = layout.contentVerticalPadding,
-                    )
-                    .padding(bottom = TrailerBandBottomClearance),
-                contentAlignment = Alignment.Center,
-            ) {
-                val bandFill = if (maxWidth / maxHeight < TRAILER_ASPECT_RATIO) {
-                    Modifier.fillMaxWidth()
-                } else {
-                    Modifier.fillMaxHeight()
-                }
-                Box(
-                    modifier = bandFill
-                        .aspectRatio(TRAILER_ASPECT_RATIO)
-                        .clip(MaterialTheme.shapes.large)
-                        .background(Color.Black),
-                ) {
-                    SkeletonAsyncImage(
-                        model = trailer.youtubeThumbnailUrl(),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                    if (!spent && !videoReady && playWhenReady()) {
-                        LoadingSpinner(
-                            modifier = Modifier.align(Alignment.Center),
-                            color = Color.White,
-                        )
-                    }
-                    if (source != null && !spent) {
-                        HeroTrailerPlayerSurface(
-                            sourceUrl = source.videoUrl,
-                            sourceAudioUrl = source.audioUrl?.takeIf { it.isNotBlank() },
-                            playWhenReady = playWhenReady(),
-                            muted = muted,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer { alpha = videoAlpha },
-                            onReady = { videoReady = true },
-                            onEnded = {
-                                videoReady = false
-                                onSpent()
-                            },
-                            onError = {
-                                videoReady = false
-                                onSpent()
-                            },
-                        )
-                    }
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .fillMaxWidth(layout.contentWidthFraction)
-                .widthIn(max = layout.contentMaxWidth)
-                .padding(
-                    horizontal = layout.contentHorizontalPadding,
-                    vertical = layout.contentVerticalPadding,
-                )
-                .graphicsLayer { alpha = contentAlpha() },
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            WithTooltip(
-                stringResource(
-                    if (muted) Res.string.detail_hero_trailer_audio_unmute else Res.string.detail_hero_trailer_audio_mute,
-                ),
-            ) {
-                FilledTonalIconToggleButton(
-                    checked = !muted,
-                    onCheckedChange = { onMuteToggle() },
-                ) {
-                    Icon(
-                        imageVector = if (muted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
-                        contentDescription = stringResource(
-                            if (muted) {
-                                Res.string.detail_hero_trailer_audio_unmute
-                            } else {
-                                Res.string.detail_hero_trailer_audio_mute
-                            },
-                        ),
-                    )
-                }
-            }
-            FindableText(
-                text = trailer.displayName?.takeIf { it.isNotBlank() } ?: trailer.name,
-                style = MaterialTheme.typography.labelLarge,
-                color = HeroOnArtworkColor,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
         }
     }
 }

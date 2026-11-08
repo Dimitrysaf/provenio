@@ -593,8 +593,6 @@
     <string name="settings_meta_comments_description">Críticas do Trakt</string>
     <string name="settings_meta_details">Detalhes</string>
     <string name="settings_meta_details_description">Duração, estado, lançamento, idioma e informações relacionadas.</string>
-    <string name="settings_meta_hero_trailer_playback">Reprodução do trailer em destaque</string>
-    <string name="settings_meta_hero_trailer_playback_description">Reproduz pré-visualizações de trailers no destaque dos metadados quando houver um trailer disponível.</string>
     <string name="settings_meta_episodes">Episódios</string>
     <string name="settings_meta_episodes_description">Lista de temporadas e episódios para séries.</string>
     <string name="settings_meta_blur_unwatched_episodes">Desfocar episódios não vistos</string>
