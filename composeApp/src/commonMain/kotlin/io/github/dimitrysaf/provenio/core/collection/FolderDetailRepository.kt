@@ -25,6 +25,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import provenio.composeapp.generated.resources.Res
@@ -250,17 +251,19 @@ object FolderDetailRepository {
         }
     }
 
+    // Atomic, as the tabs load at once and each finishes on its own.
     private fun updateTab(index: Int, transform: (FolderTab) -> FolderTab) {
-        val current = _uiState.value
-        val updatedTabs = current.tabs.toMutableList()
-        if (index !in updatedTabs.indices) return
-        updatedTabs[index] = transform(updatedTabs[index])
+        _uiState.update { current ->
+            val updatedTabs = current.tabs.toMutableList()
+            if (index !in updatedTabs.indices) return@update current
+            updatedTabs[index] = transform(updatedTabs[index])
 
-        val allDone = updatedTabs.none { !it.isAllTab && it.isLoading }
-        _uiState.value = current.copy(
-            tabs = updatedTabs,
-            isLoading = !allDone,
-        )
+            val allDone = updatedTabs.none { !it.isAllTab && it.isLoading }
+            current.copy(
+                tabs = updatedTabs,
+                isLoading = !allDone,
+            )
+        }
     }
 
     private fun loadTabPage(index: Int, reset: Boolean) {

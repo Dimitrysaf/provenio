@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.trailer
 
+import io.github.dimitrysaf.provenio.core.network.NetworkErrorInterceptor
 import android.net.Uri
 import io.github.dimitrysaf.provenio.core.network.IPv4FirstDns
 import kotlinx.coroutines.CompletableDeferred
@@ -24,6 +25,7 @@ internal object TrailerExtractionPlatform {
     )
 
     private val httpClient = OkHttpClient.Builder()
+        .addInterceptor(NetworkErrorInterceptor())
         .dns(IPv4FirstDns())
         .connectTimeout(TRAILER_REQUEST_TIMEOUT_MS, TimeUnit.MILLISECONDS)
         .readTimeout(TRAILER_REQUEST_TIMEOUT_MS, TimeUnit.MILLISECONDS)
@@ -33,6 +35,7 @@ internal object TrailerExtractionPlatform {
         .build()
 
     private val probeClient = OkHttpClient.Builder()
+        .addInterceptor(NetworkErrorInterceptor())
         .dns(IPv4FirstDns())
         .connectTimeout(2, TimeUnit.SECONDS)
         .readTimeout(2, TimeUnit.SECONDS)

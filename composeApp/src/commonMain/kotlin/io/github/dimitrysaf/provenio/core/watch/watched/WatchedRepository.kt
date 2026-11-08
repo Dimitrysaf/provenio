@@ -1028,7 +1028,8 @@ object WatchedRepository {
                         extraWatchedKeyGroups = compactExtraWatchedKeys(
                             providerExtraWatchedKeys[providerId].orEmpty(),
                         ),
-                        dirtyWatchedKeys = dirtyProviderKeys[providerId].orEmpty(),
+                        // A copy: the live set keeps changing while the payload is encoded.
+                        dirtyWatchedKeys = dirtyProviderKeys[providerId].orEmpty().toSet(),
                     )
                 },
             )

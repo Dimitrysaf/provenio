@@ -74,7 +74,8 @@ internal class PlayerScreenRuntime(
     lateinit var scope: CoroutineScope
     lateinit var hapticFeedback: HapticFeedback
 
-    var playerSettingsUiState: PlayerSettingsUiState = PlayerSettingsUiState()
+    // State, so a style change redraws the subtitles even while playback is paused.
+    var playerSettingsUiState by mutableStateOf(PlayerSettingsUiState())
     var p2pSettingsUiState by mutableStateOf(P2pSettingsUiState())
     var p2pStreamingState by mutableStateOf<P2pStreamingState>(P2pStreamingState.Idle)
     var metaScreenSettingsUiState: MetaScreenSettingsUiState = MetaScreenSettingsUiState()

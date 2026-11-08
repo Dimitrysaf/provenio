@@ -19,6 +19,15 @@ class PlayerScreenRuntimeStateTest {
     }
 
     @Test
+    fun subtitleStyleUpdatesWithoutAPlaybackSnapshot() {
+        val runtime = PlayerScreenRuntime(testPlayerScreenArgs())
+        val visibleStyle = derivedStateOf { runtime.playerSettingsUiState.subtitleStyle }
+        val style = visibleStyle.value.copy(fontSizeSp = visibleStyle.value.fontSizeSp + 6, bold = true)
+        runtime.playerSettingsUiState = runtime.playerSettingsUiState.copy(subtitleStyle = style)
+        assertEquals(style, visibleStyle.value)
+    }
+
+    @Test
     fun sourceFilterUpdatesInvalidateUiWithoutPlaybackUpdates() {
         val runtime = PlayerScreenRuntime(testPlayerScreenArgs())
         val selectedFilter = derivedStateOf { runtime.sourceStreamsState.selectedFilter }

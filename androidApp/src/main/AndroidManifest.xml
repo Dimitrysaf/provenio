@@ -31,7 +31,16 @@
             android:name="io.github.dimitrysaf.provenio.MainActivity"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
             android:supportsPictureInPicture="true"
-            android:theme="@style/Theme.Provenio.Splash">
+            android:theme="@style/Theme.Provenio.Splash" />
+
+        <!-- Links, sign-in callbacks included, go to the running app through this, not a second copy. -->
+        <activity
+            android:name="io.github.dimitrysaf.provenio.LinkActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 

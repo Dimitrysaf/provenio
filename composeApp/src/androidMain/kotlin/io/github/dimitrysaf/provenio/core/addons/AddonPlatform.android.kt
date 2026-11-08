@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.addons
 
+import io.github.dimitrysaf.provenio.core.network.NetworkErrorInterceptor
 import io.github.dimitrysaf.provenio.core.network.EmptyResponseException
 import io.github.dimitrysaf.provenio.core.network.HttpStatusException
 import android.content.Context
@@ -103,6 +104,7 @@ internal object AddonHttpClientProvider {
 
 private fun buildAddonHttpClient(cache: Cache? = null): OkHttpClient =
     OkHttpClient.Builder()
+        .addInterceptor(NetworkErrorInterceptor())
         .dns(IPv4FirstDns())
         .connectTimeout(60, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)

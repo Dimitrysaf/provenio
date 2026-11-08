@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.updater
 
+import io.github.dimitrysaf.provenio.core.network.NetworkErrorInterceptor
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -26,6 +27,7 @@ object AndroidAppUpdaterPlatform {
     private const val ignoredTagKey = "ignored_release_tag"
 
     private val httpClient = OkHttpClient.Builder()
+        .addInterceptor(NetworkErrorInterceptor())
         .connectTimeout(60, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS)

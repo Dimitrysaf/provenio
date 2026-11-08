@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.notifications
 
+import io.github.dimitrysaf.provenio.core.network.NetworkErrorInterceptor
 import android.Manifest
 import android.app.PendingIntent
 import android.app.NotificationChannel
@@ -60,6 +61,9 @@ internal actual object EpisodeReleaseNotificationPlatform {
                 requestTimeoutMillis = 15_000
                 connectTimeoutMillis = 15_000
                 socketTimeoutMillis = 15_000
+            }
+            engine {
+                addInterceptor(NetworkErrorInterceptor())
             }
         }
     }

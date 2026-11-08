@@ -67,3 +67,6 @@ internal fun String.hasLikelyExpiringPlaybackCredentials(): Boolean {
                 }
         }
 }
+
+/** The URL without its query or fragment, where keys and tokens ride, for logs. */
+internal fun String.redactedForLogs(): String = substringBefore('?').substringBefore('#')

@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.playback
 
+import io.github.dimitrysaf.provenio.core.network.NetworkErrorInterceptor
 import android.content.Context
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
@@ -44,6 +45,7 @@ internal object PlayerPlaybackNetworking {
 
     private val playbackHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .addInterceptor(NetworkErrorInterceptor())
             .dns(IPv4FirstDns())
             .sslSocketFactory(sslContext.socketFactory, trustAllManager)
             .hostnameVerifier(playbackHostnameVerifier)

@@ -1,5 +1,7 @@
 package io.github.dimitrysaf.provenio.core.playback
 
+import io.github.dimitrysaf.provenio.core.streams.redactedForLogs
+import io.github.dimitrysaf.provenio.core.network.NetworkErrorInterceptor
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -22,6 +24,7 @@ object SubtitleFileCache {
     private var appContext: Context? = null
     private val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .addInterceptor(NetworkErrorInterceptor())
             .build()
     }
 
@@ -82,7 +85,7 @@ object SubtitleFileCache {
                 val request = Request.Builder().url(input.url).build()
                 okHttpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
-                        Log.w(TAG, "HTTP ${response.code} downloading subtitle: ${input.url}")
+                        Log.w(TAG, "HTTP ${response.code} downloading subtitle: ${input.url.redactedForLogs()}")
                         return@withContext null
                     }
 
@@ -99,7 +102,7 @@ object SubtitleFileCache {
                     file
                 )
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to download subtitle file: ${input.url}", e)
+                Log.w(TAG, "Failed to download subtitle file: ${input.url.redactedForLogs()}", e)
                 file.delete()
                 null
             }

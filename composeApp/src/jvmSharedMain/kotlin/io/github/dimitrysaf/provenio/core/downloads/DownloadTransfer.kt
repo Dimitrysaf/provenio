@@ -1,5 +1,6 @@
 package io.github.dimitrysaf.provenio.core.downloads
 
+import io.github.dimitrysaf.provenio.core.network.NetworkErrorInterceptor
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -14,6 +15,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 internal val downloadHttpClient = OkHttpClient.Builder()
+    .addInterceptor(NetworkErrorInterceptor())
     .connectTimeout(60, TimeUnit.SECONDS)
     .readTimeout(60, TimeUnit.SECONDS)
     .writeTimeout(60, TimeUnit.SECONDS)

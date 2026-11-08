@@ -24,6 +24,8 @@ import java.util.Collections
 import java.util.WeakHashMap
 
 private val assHandlersByPlayer = Collections.synchronizedMap(WeakHashMap<ExoPlayer, AssHandler>())
+private val assMediaSourceFactoriesByPlayer =
+    Collections.synchronizedMap(WeakHashMap<ExoPlayer, DefaultMediaSourceFactory>())
 
 @OptIn(UnstableApi::class)
 internal fun ExoPlayer.Builder.buildWithAssSupportCompat(
@@ -52,6 +54,7 @@ internal fun ExoPlayer.Builder.buildWithAssSupportCompat(
         .build()
 
     assHandlersByPlayer[player] = assHandler
+    assMediaSourceFactoriesByPlayer[player] = mediaSourceFactory
 
     assHandler.init(player)
     return player
@@ -59,9 +62,13 @@ internal fun ExoPlayer.Builder.buildWithAssSupportCompat(
 
 internal fun ExoPlayer.getAssHandlerCompat(): AssHandler? = assHandlersByPlayer[this]
 
+/** The libass-aware media source factory, for sources built outside the player (e.g. merged audio). */
+internal fun ExoPlayer.getAssMediaSourceFactoryCompat(): DefaultMediaSourceFactory? = assMediaSourceFactoriesByPlayer[this]
+
 @OptIn(UnstableApi::class)
 internal fun ExoPlayer.releaseWithAssSupportCompat() {
     val assHandler = assHandlersByPlayer.remove(this)
+    assMediaSourceFactoriesByPlayer.remove(this)
     try {
         release()
     } finally {

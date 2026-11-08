@@ -477,6 +477,28 @@ internal fun findPersistedAudioTrackIndex(
     }?.index ?: languageCandidates.firstOrNull()?.index ?: -1
 }
 
+/**
+ * The addon subtitle to restore. Each episode has its own subtitle URLs, so after the saved URL
+ * the saved language, addon and name pick the same kind of subtitle among this episode's.
+ */
+internal fun findPersistedAddonSubtitle(
+    subtitles: List<AddonSubtitle>,
+    preference: PersistedPlayerTrackPreference,
+): AddonSubtitle? {
+    preference.addonSubtitleUrl?.takeIf { it.isNotBlank() }?.let { url ->
+        subtitles.firstOrNull { it.url == url }?.let { return it }
+    }
+    val language = preference.subtitleLanguage?.takeIf { it.isNotBlank() } ?: return null
+    val candidates = subtitles.filter { addonSubtitleMatchesLanguage(it, language) }
+    val providerCandidates = preference.addonSubtitleAddonName?.takeIf { it.isNotBlank() }?.let { name ->
+        candidates.filter { it.addonName.equals(name, ignoreCase = true) }
+    }.orEmpty()
+    val preferredCandidates = providerCandidates.ifEmpty { candidates }
+    return preferredCandidates.firstOrNull {
+        it.display.equals(preference.subtitleName, ignoreCase = true)
+    } ?: preferredCandidates.firstOrNull()
+}
+
 internal fun findPersistedSubtitleTrackIndex(
     tracks: List<SubtitleTrack>,
     preference: PersistedPlayerTrackPreference,

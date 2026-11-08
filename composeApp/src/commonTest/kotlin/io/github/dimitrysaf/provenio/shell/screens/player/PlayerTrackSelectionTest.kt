@@ -11,6 +11,7 @@ import io.github.dimitrysaf.provenio.core.playback.PersistedSubtitleSelectionTyp
 import io.github.dimitrysaf.provenio.core.playback.SubtitleAutoSelectionMode
 import io.github.dimitrysaf.provenio.core.playback.SubtitleTrack
 import io.github.dimitrysaf.provenio.core.playback.addonSubtitleIsForced
+import io.github.dimitrysaf.provenio.core.playback.findPersistedAddonSubtitle
 import io.github.dimitrysaf.provenio.core.playback.addonSubtitleMatchesLanguage
 import io.github.dimitrysaf.provenio.core.playback.addonSubtitleMatchesSelectedAudioLanguage
 import io.github.dimitrysaf.provenio.core.playback.findPersistedSubtitleTrackIndex
@@ -386,4 +387,22 @@ class PlayerTrackSelectionTest {
         display = id,
         addonName = "Addon",
     )
+
+    @Test
+    fun aSavedAddonSubtitleIsFoundAgainInTheNextEpisode() {
+        val preference = PersistedPlayerTrackPreference(
+            subtitleType = PersistedSubtitleSelectionType.ADDON,
+            subtitleLanguage = "en",
+            subtitleName = "English",
+            addonSubtitleUrl = "https://subs.example.com/s01e01.en.srt",
+            addonSubtitleAddonName = "OpenSubtitles",
+        )
+        val nextEpisode = listOf(
+            AddonSubtitle(id = "1", url = "https://other.example.com/s01e02.en.srt", language = "en", display = "English", addonName = "Other"),
+            AddonSubtitle(id = "2", url = "https://subs.example.com/s01e02.el.srt", language = "el", display = "Greek", addonName = "OpenSubtitles"),
+            AddonSubtitle(id = "3", url = "https://subs.example.com/s01e02.en.srt", language = "en", display = "English", addonName = "OpenSubtitles"),
+        )
+        assertEquals("3", findPersistedAddonSubtitle(nextEpisode, preference)?.id)
+        assertNull(findPersistedAddonSubtitle(nextEpisode.filter { it.language == "el" }, preference))
+    }
 }

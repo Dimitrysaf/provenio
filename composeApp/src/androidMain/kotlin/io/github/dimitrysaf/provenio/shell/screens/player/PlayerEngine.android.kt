@@ -1,5 +1,12 @@
 package io.github.dimitrysaf.provenio.shell.screens.player
 
+import io.github.dimitrysaf.provenio.core.playback.addonSubtitleTrackId
+import io.github.dimitrysaf.provenio.core.playback.markedSubtitleUri
+import io.github.dimitrysaf.provenio.core.playback.getAssMediaSourceFactoryCompat
+import io.github.dimitrysaf.provenio.core.playback.subtitleDataSourceFactory
+import io.github.dimitrysaf.provenio.core.playback.SubtitleRoutingDataSourceFactory
+import androidx.compose.ui.unit.IntSize
+import io.github.dimitrysaf.provenio.core.streams.redactedForLogs
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -12,7 +19,6 @@ import android.graphics.Typeface
 import android.os.Build
 import android.os.SystemClock
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.util.AttributeSet
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
@@ -87,16 +93,12 @@ import io.github.dimitrysaf.provenio.core.playback.PlayerChapter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import io.github.dimitrysaf.provenio.core.streams.normalizeStreamType
-import `is`.xyz.mpv.BaseMPVView
 import `is`.xyz.mpv.MPV
 import `is`.xyz.mpv.MPVNode
 import `is`.xyz.mpv.Utils
 import io.github.peerless2012.ass.media.widget.AssSubtitleView
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlin.math.cos
 import kotlin.math.log10
 import kotlin.math.sin
@@ -107,8 +109,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.URI
-import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 import io.github.dimitrysaf.provenio.core.playback.CustomDefaultTrackNameProvider
 import io.github.dimitrysaf.provenio.core.playback.LibassRenderType
 import io.github.dimitrysaf.provenio.core.playback.SidecarSubtitleController
@@ -357,19 +357,25 @@ private fun ExoPlayerSurface(
         useYoutubeChunkedPlayback,
         externalSubtitles,
     ) {
-        PlatformPlaybackDataSourceFactory.create(
-            context = context,
-            defaultRequestHeaders = sanitizedSourceHeaders,
-            defaultResponseHeaders = sanitizedSourceResponseHeaders,
-            useYoutubeChunkedPlayback = useYoutubeChunkedPlayback,
-            useLongReadTimeout = isLoopbackPlaybackSource(sourceUrl),
-            externalSubtitles = externalSubtitles,
+        // Addon subtitles load on their own, without the stream's headers or its credentials.
+        SubtitleRoutingDataSourceFactory(
+            media = PlatformPlaybackDataSourceFactory.create(
+                context = context,
+                defaultRequestHeaders = sanitizedSourceHeaders,
+                defaultResponseHeaders = sanitizedSourceResponseHeaders,
+                useYoutubeChunkedPlayback = useYoutubeChunkedPlayback,
+                useLongReadTimeout = isLoopbackPlaybackSource(sourceUrl),
+                externalSubtitles = externalSubtitles,
+            ),
+            subtitles = subtitleDataSourceFactory(context, externalSubtitles),
         )
     }
 
     fun ExoPlayer.setPlaybackMediaItem(videoMediaItem: MediaItem, startPositionMs: Long? = null) {
         if (!sourceAudioUrl.isNullOrBlank()) {
-            val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory, extractorsFactory)
+            // Keep libass parsing for addon ASS subtitles, like sources the player builds itself.
+            val mediaSourceFactory = getAssMediaSourceFactoryCompat()
+                ?: DefaultMediaSourceFactory(dataSourceFactory, extractorsFactory)
             val videoSource = mediaSourceFactory.createMediaSource(videoMediaItem)
             val audioSource = mediaSourceFactory.createMediaSource(playbackMediaItemFromUrl(sourceAudioUrl))
             val mergedSource = MergingMediaSource(videoSource, audioSource)
@@ -421,12 +427,12 @@ private fun ExoPlayerSurface(
             val captioningManager = context.getSystemService(Context.CAPTIONING_SERVICE)
                 as? android.view.accessibility.CaptioningManager
             if (captioningManager != null) {
-                if (!captioningManager.isEnabled) {
+                if (!runCatching { captioningManager.isEnabled }.getOrDefault(false)) {
                     parameters = parameters.setIgnoredTextSelectionFlags(
                         parameters.build().ignoredTextSelectionFlags or C.SELECTION_FLAG_DEFAULT
                     )
                 }
-                captioningManager.locale?.let { locale ->
+                runCatching { captioningManager.locale }.getOrNull()?.let { locale ->
                     parameters = parameters.setPreferredTextLanguage(locale.isO3Language)
                 }
             }
@@ -550,7 +556,11 @@ private fun ExoPlayerSurface(
     val pendingAudioTrackSelection = remember { mutableListOf<TrackSelectionSnapshot>() }
     var subtitleSelectionJob by remember { mutableStateOf<Job?>(null) }
     val isInPip = rememberIsInPictureInPicture()
-    val pipSubtitleScale by rememberUpdatedState(if (isInPip) 0.4f else 1.0f)
+    // Player size outside PiP, so PiP subtitles keep the full-screen size relative to the video.
+    var playerSizeOutsidePip by remember { mutableStateOf(IntSize.Zero) }
+    val pipVideoHeightPx by rememberUpdatedState(
+        if (isInPip) displayedVideoHeightPx(playerSizeOutsidePip, exoPlayer.videoSize) ?: 0f else null,
+    )
 
     val sidecarController = remember(exoPlayer, coroutineScope) {
         SidecarSubtitleController(
@@ -896,10 +906,10 @@ private fun ExoPlayerSurface(
                 }
 
                 override fun setSubtitleUri(url: String) {
-                    Log.d(TAG, "setSubtitleUri: url=$url")
+                    Log.d(TAG, "setSubtitleUri: url=${url.redactedForLogs()}")
                     subtitleSelectionJob?.cancel()
                     if (sidecarController.canAttachAddonSubtitleViaSidecar(url, useLibass)) {
-                        Log.d(TAG, "setSubtitleUri: using buffer-preserving sidecar for url=$url")
+                        Log.d(TAG, "setSubtitleUri: using buffer-preserving sidecar for url=${url.redactedForLogs()}")
                         val headers = externalSubtitles.firstOrNull { it.url == url }?.headers.orEmpty()
                         val attached = sidecarController.startSidecarAddonSubtitle(
                             url = url,
@@ -925,14 +935,15 @@ private fun ExoPlayerSurface(
                         val resolvedMime = PlayerSubtitleUtils.mimeTypeFromUrl(url)
                         selectedExternalSubtitleMimeType = resolvedMime
                         Log.d(TAG, "setSubtitleUri: currentPosition=$currentPosition, wasPlaying=$wasPlaying")
-                        val subtitleConfig = MediaItem.SubtitleConfiguration.Builder(Uri.parse(url))
+                        val subtitleConfig = MediaItem.SubtitleConfiguration.Builder(markedSubtitleUri(url))
+                            .setId(addonSubtitleTrackId(url))
                             .setMimeType(resolvedMime)
                             .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
                             .setRoleFlags(C.ROLE_FLAG_SUBTITLE)
                             .build()
                         Log.d(
                             TAG,
-                            "setSubtitleUri: subtitleConfig built, uri=${subtitleConfig.uri}, mime=${subtitleConfig.mimeType}, selectionFlags=${subtitleConfig.selectionFlags}"
+                            "setSubtitleUri: subtitleConfig built, uri=${subtitleConfig.uri.toString().redactedForLogs()}, mime=${subtitleConfig.mimeType}, selectionFlags=${subtitleConfig.selectionFlags}"
                         )
                         val newMediaItem = currentMediaItem.buildUpon()
                             .setSubtitleConfigurations(listOf(subtitleConfig))
@@ -1001,7 +1012,7 @@ private fun ExoPlayerSurface(
 
                 override fun applySubtitleStyle(style: SubtitleStyleState) {
                     currentSubtitleStyle = style
-                    playerViewRef?.applySubtitleStyle(style, pipSubtitleScale)
+                    playerViewRef?.applySubtitleStyle(style, pipVideoHeightPx)
                 }
 
                 override fun applySubtitlePreferences(
@@ -1047,12 +1058,24 @@ private fun ExoPlayerSurface(
                 setShutterBackgroundColor(android.graphics.Color.BLACK)
                 playerViewRef = this
                 sidecarController.bindSubtitleView(this.subtitleView)
+                subtitleView?.addOnLayoutChangeListener { view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                    val inPip = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
+                        context.findActivity()?.isInPictureInPictureMode == true
+                    val size = IntSize(
+                        view.width - view.paddingLeft - view.paddingRight,
+                        view.height - view.paddingTop - view.paddingBottom,
+                    )
+                    if (!inPip && size.width > 0 && size.height > 0) playerSizeOutsidePip = size
+                    // The shadow is sized in pixels, so a resized PiP window needs it again.
+                    val resized = right - left != oldRight - oldLeft || bottom - top != oldBottom - oldTop
+                    if (inPip && resized) view.post { applySubtitleStyle(currentSubtitleStyle, pipVideoHeightPx) }
+                }
                 syncLibassOverlay(
                     player = exoPlayer,
                     enabled = useLibass,
                     renderType = libassRenderType,
                 )
-                applySubtitleStyle(currentSubtitleStyle, pipSubtitleScale)
+                applySubtitleStyle(currentSubtitleStyle, pipVideoHeightPx)
             }
         },
         update = { playerView ->
@@ -1067,7 +1090,7 @@ private fun ExoPlayerSurface(
                 enabled = useLibass,
                 renderType = libassRenderType,
             )
-            playerView.applySubtitleStyle(currentSubtitleStyle, pipSubtitleScale)
+            playerView.applySubtitleStyle(currentSubtitleStyle, pipVideoHeightPx)
         },
     )
 }
@@ -1218,6 +1241,9 @@ private fun LibmpvPlayerSurface(
                         }
                     }
                     MPV.mpvEvent.MPV_EVENT_END_FILE -> {
+                        val endReason = data.nodeString("reason")
+                        val fileError = data.nodeString("file_error")
+                        val endFileJson = data.toJson()
                         coroutineScope.launch(Dispatchers.Main.immediate) {
                             val snapshot = view.snapshot()
                             Log.w(
@@ -1226,11 +1252,21 @@ private fun LibmpvPlayerSurface(
                                     "elapsedMs=${diagnosticElapsedSince(playbackDiagnostics.prepareStartedAtMs)} " +
                                     "positionMs=${snapshot.positionMs} bufferedMs=${snapshot.bufferedPositionMs} " +
                                     "durationMs=${snapshot.durationMs} eof=${snapshot.isEnded} " +
-                                    "data=${diagnosticPlayerMessage(data.toJson())}",
+                                    "data=${diagnosticPlayerMessage(endFileJson)}",
                             )
                             latestOnSnapshot.value(snapshot)
                             nowPlayingController?.syncPlayback(snapshot)
                             view.keepScreenOn = snapshot.isPlaying || snapshot.isLoading
+                            // A file mpv could not open ends with an error, which the player shows
+                            // instead of spinning on a source that will never load.
+                            if (endReason.equals("error", ignoreCase = true)) {
+                                Log.e(
+                                    PLAYER_DIAGNOSTIC_TAG,
+                                    "mpv_error attempt=${playbackDiagnostics.attempt} " +
+                                        "fileError=${diagnosticPlayerMessage(fileError)}",
+                                )
+                                latestOnError.value(getString(Res.string.player_unable_to_play_stream))
+                            }
                         }
                     }
                 }
@@ -1369,16 +1405,10 @@ private tailrec fun Context.findActivity(): Activity? =
 
 private class LibmpvView(
     context: Context,
-    private val videoOutput: AndroidLibmpvVideoOutput,
+    videoOutput: AndroidLibmpvVideoOutput,
     private val hardwareDecodingEnabled: Boolean,
     private val yuv420pEnabled: Boolean,
-    attrs: AttributeSet? = null,
-) : BaseMPVView(context, attrs) {
-    private val mpvDispatcher = Executors.newSingleThreadExecutor { runnable ->
-        Thread(runnable, "ProvenioLibmpv").apply { isDaemon = true }
-    }.asCoroutineDispatcher()
-    private val mpvScope = CoroutineScope(SupervisorJob() + mpvDispatcher)
-    private val released = AtomicBoolean(false)
+) : MpvSurfaceView(context, videoOutput.mpvValue) {
     private var currentSourceUrl: String? = null
     private var currentSourceAudioUrl: String? = null
     private var currentRequestHeaders: Map<String, String> = emptyMap()
@@ -1391,7 +1421,6 @@ private class LibmpvView(
     private var latestSubtitleTracks: List<LibmpvTrack> = emptyList()
 
     override fun initOptions() {
-        setVo(videoOutput.mpvValue)
         mpv.setOptionString("profile", "fast")
         mpv.setOptionString("hwdec", if (hardwareDecodingEnabled) "auto" else "no")
         if (yuv420pEnabled) {
@@ -1407,8 +1436,6 @@ private class LibmpvView(
         mpv.setPropertyBoolean("input-default-bindings", true)
         mpv.setPropertyBoolean("audio-fallback-to-null", true)
     }
-
-    override fun postInitOptions() = Unit
 
     override fun observeProperties() {
         val props = mapOf(
@@ -1701,12 +1728,12 @@ private class LibmpvView(
                             !language.equals(SubtitleLanguageOption.FORCED, ignoreCase = true)
                     },
                 )
-                if (languages.isEmpty()) {
-                    mpv.setPropertyString("sid", "no")
-                    return
-                }
-                runCatching {
-                    mpv.setPropertyString("slang", languages.joinToString(","))
+                executeMpv {
+                    if (languages.isEmpty()) {
+                        mpv.setPropertyString("sid", "no")
+                    } else {
+                        mpv.setPropertyString("slang", languages.joinToString(","))
+                    }
                 }
             }
 
@@ -1734,15 +1761,6 @@ private class LibmpvView(
         executeMpv {
             latestAudioTracks = extractLibmpvTracks(context, type = "audio")
             latestSubtitleTracks = extractLibmpvTracks(context, type = "sub")
-        }
-    }
-
-    fun releaseMpv() {
-        if (!released.compareAndSet(false, true)) return
-        holder.removeCallback(this)
-        mpvScope.launch {
-            runCatching { mpv.destroy() }
-            mpvDispatcher.close()
         }
     }
 
@@ -1851,16 +1869,6 @@ private class LibmpvView(
         executeMpv {
             mpv.setPropertyString("volume-max", "$MpvVolumeBoostMaxPercent")
             mpv.setPropertyInt("volume", (mpvBoostGain * mpvFadeVolume * 100f).roundToInt())
-        }
-    }
-
-    private fun executeMpv(block: () -> Unit) {
-        if (released.get()) return
-        mpvScope.launch {
-            if (released.get()) return@launch
-            runCatching(block).onFailure { error ->
-                Log.w(TAG, "libmpv operation failed", error)
-            }
         }
     }
 
@@ -2127,7 +2135,20 @@ private fun PlayerView.releaseLibassOverlay() {
     setTag(R.id.libass_overlay_bound_player, null)
 }
 
-private fun PlayerView.applySubtitleStyle(style: SubtitleStyleState, pipScale: Float = 1.0f) {
+private const val PIP_FALLBACK_SUBTITLE_SCALE = 0.4f
+
+/** Height of a fitted video inside [viewSize], or null if either size is unknown. */
+private fun displayedVideoHeightPx(viewSize: IntSize, videoSize: VideoSize): Float? {
+    if (viewSize.width <= 0 || viewSize.height <= 0 || videoSize.width <= 0 || videoSize.height <= 0) return null
+    val videoAspect = videoSize.width * videoSize.pixelWidthHeightRatio / videoSize.height
+    return minOf(viewSize.height.toFloat(), viewSize.width / videoAspect)
+}
+
+/**
+ * [pipVideoHeightPx] is null outside PiP. In PiP it is the video height outside PiP (0 if unknown),
+ * so subtitles shrink and grow with the video exactly as it is shown full screen.
+ */
+private fun PlayerView.applySubtitleStyle(style: SubtitleStyleState, pipVideoHeightPx: Float? = null) {
     subtitleView?.apply {
         val baseBottomPaddingFraction = SubtitleView.DEFAULT_BOTTOM_PADDING_FRACTION * 2f / 3f
         val offsetFraction = (style.bottomOffset / 1000f).coerceIn(0f, 0.2f)
@@ -2146,12 +2167,28 @@ private fun PlayerView.applySubtitleStyle(style: SubtitleStyleState, pipScale: F
                 Typeface.create(style.fontFamily.toTypeface(), if (style.bold) Typeface.BOLD else Typeface.NORMAL),
             )
         )
-        setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, style.fontSizeSp.toFloat() * pipScale)
-        val textSizePx = TypedValue.applyDimension(
+        val fullSizePx = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_SP,
-            style.fontSizeSp.toFloat() * pipScale,
+            style.fontSizeSp.toFloat(),
             resources.displayMetrics,
         )
+        val textSizePx = when {
+            pipVideoHeightPx == null -> {
+                setFixedTextSize(TypedValue.COMPLEX_UNIT_PX, fullSizePx)
+                fullSizePx
+            }
+            // The PiP window matches the video, so a fraction of its height follows window resizes.
+            pipVideoHeightPx > 0f -> {
+                val fraction = fullSizePx / pipVideoHeightPx
+                setFractionalTextSize(fraction)
+                fraction * (height - paddingTop - paddingBottom).coerceAtLeast(0)
+            }
+            // Full-screen size unknown: fall back to a fixed PiP scale.
+            else -> {
+                setFixedTextSize(TypedValue.COMPLEX_UNIT_PX, fullSizePx * PIP_FALLBACK_SUBTITLE_SCALE)
+                fullSizePx * PIP_FALLBACK_SUBTITLE_SCALE
+            }
+        }
         shadowFrame()?.shadow = if (style.shadowEnabled) {
             val offset = textSizePx * style.shadowOffsetFraction
             val radians = Math.toRadians(style.shadowAngle.toDouble())
